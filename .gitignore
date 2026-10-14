@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 /.eslint-tmp-*/
 node_modules/
+# exec-fn tooling, pulled by scripts/pre-commit when cloned outside exec-fn
+/.exec-fn/

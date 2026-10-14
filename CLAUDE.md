@@ -27,12 +27,7 @@ this repo runs only INSIDE exec-fn. Runtime data stays in exec-fn's
 - **Commit in this repo** (`git -C apps/spire commit …` from exec-fn). exec-fn's
   push hook pushes it, then bumps + pushes exec-fn's pointer. Never edit the
   files through exec-fn's index.
-- **Pre-commit = exec-fn's shared hook + this repo's own.** exec-fn's
-  `scripts/pre-commit` is symlinked in as the git hook (by exec-fn's session
-  hook): lints, 500-line cap, cache-bust (`?v=` in `aspira.html` bumps with the
-  asset), the tests. It then runs THIS repo's `scripts/pre-commit`: the game
-  smoke (`node scripts/spire-smoke/smoke.mjs`). Game-only checks go there;
-  shared ones (colour/scale lints) stay in exec-fn.
+- **Lints, hooks and checks are exec-fn's, not this repo's.** `scripts/pre-commit` here is a SHIM (verbatim copy of exec-fn's `scripts/subrepo-pre-commit`; git runs it via `core.hooksPath=scripts`, which exec-fn's session hook sets). Inside exec-fn it runs exec-fn's `scripts/pre-commit`; cloned on its own it sparse-pulls ONLY the lint files (exec-fn `scripts/tooling-paths.txt`) into the gitignored `.exec-fn/` and runs that (lints only; tests need exec-fn). Never edit the shim here — change checks in exec-fn. A standalone clone: `git config core.hooksPath scripts` once. exec-fn ARCHITECTURE.md §1e. The game smoke (`node scripts/spire-smoke/smoke.mjs`, this repo's) is run by exec-fn's hook when a game file is staged.
 - **Tests:** from exec-fn, `.venv/bin/pytest apps/spire/tests` (the shared
   fixtures live in exec-fn's root `conftest.py`).
 - **Colours** come from exec-fn's `web/chrome.css` tokens via the swatches in
