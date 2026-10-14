@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# THE SPIRE's own pre-commit checks. exec-fn's shared hook (its scripts/pre-commit,
+# symlinked in as this repo's git hook) runs first -- lints, caps, cache-bust,
+# tests -- and then calls THIS for what only the game needs. Never call exec-fn's
+# hook from here (it calls us). cwd = this repo's root.
+set -e
+
+# ── Game smoke (node, no browser) — only when the game changed. ──
+# Loads every /spire script in the template's order into a fake DOM with a
+# RECORDING canvas and drives the real frame loop: boot, 2D / low / 3D-fallback
+# draws, each tower built (range, tower, movement arrows drawn), a wave fought,
+# the boss sky, Temporal Drive, the lives-left line, loss / win / Ascendants.
+# Checks things DRAW, not just that nothing threw (a swallowed else once blanked
+# the board with no error at all). ARCHITECTURE.md.
+SPIRE_CHANGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^web/aspira-.*\.js$|^api/templates/aspira\.html$|^scripts/spire-smoke/' || true)
+if [ -n "$SPIRE_CHANGED" ]; then
+  if ! command -v node &>/dev/null; then
+    echo "NOTE: skipping /spire smoke — no node."
+  elif ! node scripts/spire-smoke/smoke.mjs; then
+    echo ""
+    echo "/spire smoke failed — commit blocked. Run: node scripts/spire-smoke/smoke.mjs"
+    exit 1
+  fi
+fi
+exit 0

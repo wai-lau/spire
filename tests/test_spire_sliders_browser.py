@@ -68,7 +68,7 @@ def test_sliders_preview_limits_and_lock_in(guest_page):
     page = guest_page
     _place_arc(page)
     assert page.evaluate("CELLS.length") == 6
-    assert page.evaluate("CORE_PICKS") == [30, 60]
+    assert page.evaluate("CORE_PICKS") == []  # no picking: CORE_GRANTS hands them out (waves 24, 48)
     assert page.locator(".asp-axis-row").count() == 3
     top = page.evaluate("SKILL_TIERS")
     up = page.locator("#asp-up")

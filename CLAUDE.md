@@ -27,9 +27,12 @@ this repo runs only INSIDE exec-fn. Runtime data stays in exec-fn's
 - **Commit in this repo** (`git -C apps/spire commit …` from exec-fn). exec-fn's
   push hook pushes it, then bumps + pushes exec-fn's pointer. Never edit the
   files through exec-fn's index.
-- **Pre-commit is exec-fn's** (symlinked in by its session hook): lints,
-  500-line cap, cache-bust (`?v=` in `aspira.html` bumps with the asset), the
-  game smoke (`node scripts/spire-smoke/smoke.mjs`) and the tests.
+- **Pre-commit = exec-fn's shared hook + this repo's own.** exec-fn's
+  `scripts/pre-commit` is symlinked in as the git hook (by exec-fn's session
+  hook): lints, 500-line cap, cache-bust (`?v=` in `aspira.html` bumps with the
+  asset), the tests. It then runs THIS repo's `scripts/pre-commit`: the game
+  smoke (`node scripts/spire-smoke/smoke.mjs`). Game-only checks go there;
+  shared ones (colour/scale lints) stay in exec-fn.
 - **Tests:** from exec-fn, `.venv/bin/pytest apps/spire/tests` (the shared
   fixtures live in exec-fn's root `conftest.py`).
 - **Colours** come from exec-fn's `web/chrome.css` tokens via the swatches in
