@@ -5,10 +5,12 @@
 .asp-asc-title { font-size: var(--fs-sm); letter-spacing: var(--tracking-mega); text-transform: uppercase; color: hsl(var(--orange-hsl)); }
 #asp-asc-form { display: flex; gap: var(--space-2); }
 #asp-asc-form[hidden] { display: none; }
+
 /* three UNDERSCORES, gold for a win and green otherwise (owner, 2026-10-12: "the initials box should be gold or green
    underscores, with AAA as hint"): each letter 1ch over its own 1ch line, ASC_GAP apart */
 #asp-asc-in {
   --asc-gap: 0.6ch;
+
   width: calc(3ch + 3 * var(--asc-gap));
   padding: 0 0 var(--space-1) calc(var(--asc-gap) / 2);
   font: inherit;
