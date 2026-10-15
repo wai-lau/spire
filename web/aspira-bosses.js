@@ -45,7 +45,7 @@ const ARCANA = [
 // the Empress 271 -> 213 and Strength 273 -> 231; Death 346 -> 296 at x2.4, 169 at x3.5 (2 of 36 games lost), so x2.8
 const BOSS_FAR = { empress: 3.5, strength: 3.5, death: 2.8 };
 let BOSS_HP_K = 1.4; // waverep 2026-10-13: x1.4 brings bosses 24-108 in 16% (mean nearest 252 -> 211), x1.8 21%; still 36/36 won
-const BOSS_HP = { star: 32 /* (owner, 2026-10-12: "require 2 towers or an upgrade to beat the star", SOL and ACD may solo it; solo.mjs; was 5.4) */, empress: 6.8, strength: 2.2, chariot: 3.4, lovers: 2.4, temperance: 1.22, devil: 0.76, justice: 6.4, judgement: 3.4, death: 3.2 }; // every one DOUBLED (owner, 2026-10-12: "double each bosses hp"; was 2.7 3.4 1.1 1.7 1.2 0.61 0.38 3.2 1.7 1.6)
+const BOSS_HP = { star: 25.6 /* x0.8 (owner, 2026-10-15: "any pair of two towers doesn't leak on waves 1-12" - two ARCs broke through at 32) */ /* (owner, 2026-10-12: "require 2 towers or an upgrade to beat the star", SOL and ACD may solo it; solo.mjs; was 5.4) */, empress: 6.8, strength: 2.2, chariot: 3.4, lovers: 2.4, temperance: 1.22, devil: 0.76, justice: 6.4, judgement: 3.4, death: 3.2 }; // every one DOUBLED (owner, 2026-10-12: "double each bosses hp"; was 2.7 3.4 1.1 1.7 1.2 0.61 0.38 3.2 1.7 1.6)
 // each boss's ARMOR (x the armored enemy's growth curve at its wave, like ENEMIES.armor) and SPEED
 // (x the boss base) - owner, 2026-10-08: the bosses ACD is too good against get armor and speed and
 // lose HP, so SOL (whose hits strip armor) and ACD (whose ramp wants a long-lived target) boss alike
