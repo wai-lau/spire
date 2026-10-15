@@ -188,7 +188,10 @@ function upgradeButton(t) {
   const btn = button(box, "asp-primary asp-up-big" + (n && G.money >= cost ? " asp-confirm" : ""), label, () => lockIn(t), "asp-up"); // pulses while a pull waits to be locked in (owner)
   fitUpLabel(btn);
   btn.classList.toggle("poor", n > 0 && G.money < cost); btn.disabled = !n || G.money < cost; // greyed until a slider moves; red, no tap, when the bank cannot cover it (owner)
-  button(box, "asp-up-cancel", n ? "cancel" : "close", () => { if (basketPoints(t)) { basket.add = {}; refreshPanels(); } else closeCard(); }, "asp-up-cancel");
+  // an X RIGHT of upgrade, on its line (owner, 2026-10-14: "replace close button with X button to the right of upgrade
+  // button"; was a "cancel" / "close" word that wrapped under it on a phone): pulled points, it drops them; none, it closes
+  const x = button(box, "asp-up-cancel", "×", () => { if (basketPoints(t)) { basket.add = {}; refreshPanels(); } else closeCard(); }, "asp-up-cancel");
+  x.title = n ? "cancel" : "close"; x.setAttribute("aria-label", x.title);
 }
 // the COST is never cut off (owner, 2026-10-14: "the cost should never be hidden ... remove the tower name and then the
 // level if there isn't enough space"): too wide, the name goes; still too wide, the level too

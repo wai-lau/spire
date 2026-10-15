@@ -556,13 +556,15 @@ Corrosion/Rime sources).
   auto-wait, auto-move (ascendants only) and the quality slider. Top-right: mute over a
   vertical volume slider (0-2, boosted x2).
 - Bottom: a speed bar (pause + speeds, the pause button flashing while paused by the
-  button); above it bottom-left the "upcoming waves" list; centred, the boss's haiku, the
+  button; a tap on the bar's EMPTY part, right of the buttons on a wide screen, closes the
+  open chooser or tower card); above it bottom-left the "upcoming waves" list; centred, the boss's haiku, the
   core-power buttons and the title. Under 700 px the wave list drops numbers and names to
   icons plus the countdown. Cards sit at `--z-bubble`, above the bar, the wave list and the
   spend bar, and **never scroll** (`fitPop` shrinks the chart to a floor `CHART_MIN` 140,
   then `CHART_FLOOR` 80 against the window). One **spend bar** — credits above the open
   cards, `(-Xc)` in red, one cancel/close below — is the same spot on every screen that
-  spends. Wide screens (landscape, >= 700 px) put the tower card's description and control
+  spends. The tower card's own close is a square **X right of the upgrade button**, on its
+  line (`#asp-upbox` never wraps): with points pulled it drops them, else it closes. Wide screens (landscape, >= 700 px) put the tower card's description and control
   side by side.
 - Never put an Exec bubble, a modal or an inset on the board: pages lay out as if no
   overlay exists.

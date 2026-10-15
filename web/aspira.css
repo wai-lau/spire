@@ -755,12 +755,12 @@
 /* the BUTTON GROUP at the foot of the control half, CENTRED (owner): upgrade + cancel,
    and sell under them, smaller */
 #asp-upline { display: flex; justify-content: center; align-items: center; gap: var(--space-2); margin-top: auto; padding-top: var(--space-7); margin-bottom: var(--space-7); } /* breathing room under AND above the buttons (owner, 2026-10-08); sell left of upgrade (owner, 2026-10-13) */
-#asp-upbox { display: flex; justify-content: center; gap: var(--space-2); }
+#asp-upbox { display: flex; flex-wrap: nowrap; justify-content: center; gap: var(--space-2); } /* the X stays beside upgrade, never under it (owner, 2026-10-14) */
 #asp-acts { display: flex; }
 
 /* SMALL buttons and a small targeting slider (owner, 2026-10-07): the triangle is the card's focus */
 #asp #asp-upbox button.asp-up-big { flex: 0 0 auto; width: calc(var(--space-10) * 5); overflow: hidden; text-overflow: ellipsis; /* FIXED (owner, 2026-10-13) */ white-space: nowrap; padding-block: var(--space-1-5); font-size: var(--fs-md); }
-#asp #asp-upbox button.asp-up-cancel { flex: 0 0 auto; width: calc(var(--space-10) * 2.5); /* fixed: "cancel" and "close" the same */ padding-block: var(--space-1-5); padding-inline: var(--space-3); font-size: var(--fs-sm); background: hsl(var(--bg-hsl)); }
+#asp #asp-upbox button.asp-up-cancel { flex: 0 0 auto; align-self: stretch; width: var(--space-10); /* a SQUARE X as tall as upgrade (owner, 2026-10-14; was a 2.5x-wide "cancel" / "close") */ padding: 0; line-height: var(--lh-none); font-size: var(--fs-xl); background: hsl(var(--bg-hsl)); }
 #asp #asp-acts button { flex: 0 0 auto; width: calc(var(--space-10) * 4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: var(--space-1) var(--space-2); font-size: var(--fs-2xs); } /* FIXED width (owner, 2026-10-13: armed sell grew over upgrade) */
 
 /* the targeting slider SMALLER than the triangle's sliders (owner), its caption kept, small */

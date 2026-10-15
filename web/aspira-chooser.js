@@ -103,6 +103,13 @@ function spendRoom() { const cv0 = cv.getBoundingClientRect(); return cv0.bottom
 // close the cards (nothing was charged); a pick pays through upgradeTower
 // the BUILD dialog UNPAUSES when it closes - a tower built or the cancel (owner,
 // 2026-10-07), whatever the pause before it; the upgrade chooser puts the old pause back
+// the EMPTY bar right of the speed buttons (where the screen is wide enough to leave some) closes the open window -
+// the build / upgrade chooser, else the tower card (closeCard, aspira-ui.js) (owner, 2026-10-14: "make the area to the right of the speed controls
+// close the window too"). Only a tap on the bar itself: the buttons, and the gaps between them, keep their own job
+document.querySelector(".asp-foot").addEventListener("click", ev => {
+  if (ev.target !== ev.currentTarget) return;
+  if (chooser.t) closeChooser(); else if (ui.sel != null) closeCard();
+});
 function closeChooser() {
   if (!chooser.t) return;
   const building = chooser.ci != null;
