@@ -324,7 +324,9 @@ function resolveColors() {
 // and what the player reads is the real value, rounded DOWN. Hit flashes and beam widths are
 // sized by VIS_DMG x the damage, so they look as they did before the halving.
 const VIS_DMG = 2;
-const dmgUnits = v => Math.floor(v);
+// SHORT past a thousand (owner, 2026-10-15: "card numbers are weirdly huge" - Voltage IV read 1677, late floats 52836):
+// 1.7k, 17k, 1.2M - every damage figure on the cards and the floating numbers goes through here
+const dmgUnits = v => { const n = Math.floor(v), a = Math.abs(n); return a < 1000 ? n : a < 999500 ? (a < 9950 ? (n / 1e3).toFixed(1) : Math.round(n / 1e3)) + "k" : (a < 9950000 ? (n / 1e6).toFixed(1) : Math.round(n / 1e6)) + "M"; };
 // ONE BLINK for everything that blinks (owner, 2026-10-08): CSS --asp-blink (aspira.css) is the same 0.7s.
 // blinkWave(): 1 bright .. 0 dim, in phase with the CSS (its 0% is the bright end; syncBlinks pins it to t = 0)
 const BLINK_S = 0.7;

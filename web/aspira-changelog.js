@@ -8,6 +8,7 @@ const CHANGELOG = [
   { v: "4.4", day: "Oct 15", bu: [
     "Armor waves: x1.5 enemies (was x2), each worth 1.33 credits (was 1).",
   ], u: [
+    "Damage numbers over 1,000 read short: 1.7k, 17k, 1.2M.",
     "Upgrades: four buys an axis, numbered I-IV; IV is the capstone. The old II-III and IV-V are one buy each, at both tiers' price.",
     "Build cards: 'good vs' follows the counter matrix - the type a tower is THE counter of, then the ones it helps against (Freeze no longer claims shields).",
   ] },

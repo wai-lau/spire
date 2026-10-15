@@ -13,6 +13,7 @@ import { FLOOR_HPX } from "./holdpower.mjs";
 const LEVERS = {
   conductivity: { kind: "arc", get: k => `ARC_CONDUCTIVITY[${k}].d`, set: (k, v) => `ARC_CONDUCTIVITY[${k}] = { ...ARC_CONDUCTIVITY[${k}], d: ${v} };`, min: 0.1 },
   voltage: { kind: "arc", get: k => `ARC_VOLTAGE_DMG[${k}]`, set: (k, v) => `ARC_VOLTAGE_DMG[${k}] = ${v};`, min: 0.1 },
+  voltfall: { kind: "arc", axis: "voltage", get: k => `ARC_VOLTAGE_FALL[${k}]`, set: (k, v) => `ARC_VOLTAGE_FALL[${k}] = ${v};`, min: 0.05 }, // how much a jump carries of the hit
   capacitance: { kind: "arc", get: k => `ARC_CAPACITANCE[${k}].frac`, set: (k, v) => `ARC_CAPACITANCE[${k}] = { ...ARC_CAPACITANCE[${k}], frac: ${v} };`, min: 0.001 },
   temp: { kind: "frz", get: k => `FRZ_TEMP_SLOW[${k}]`, set: (k, v) => `FRZ_TEMP_SLOW[${k}] = ${v};`, min: 0.05, max: 0.85 },
   rime: { kind: "frz", get: k => `FRZ_RIME[${k}]`, set: (k, v) => `FRZ_RIME[${k}] = ${v};`, min: 0.001, max: 0.6 },
@@ -24,7 +25,7 @@ const LEVERS = {
   spray: { kind: "acd", get: k => `ACD_SPRAY_MUL[${k}]`, set: (k, v) => `ACD_SPRAY_MUL[${k}] = ${v};`, min: 0.1 },
   contagion: { kind: "acd", get: k => `ACD_PUDDLE_HEAT[${k}]`, set: (k, v) => `ACD_PUDDLE_HEAT[${k}] = ${v};`, min: 0.01 },
 };
-const AXES = process.env.AXES ? process.env.AXES.split(",") : Object.keys(LEVERS);
+const AXES = process.env.AXES ? process.env.AXES.split(",") : Object.keys(LEVERS).filter(a => !LEVERS[a].axis); // (alternate levers only when named)
 const TARGET = (process.env.TARGET || "1.6,2.56,2.56,3").split(",").map(Number), STOPS = [1, 3, 5, 6], ROMAN = ["I", "II", "III", "IV"];
 const CUM = TARGET.map((_, i) => TARGET.slice(0, i + 1).reduce((a, b) => a * b, 1));
 const LEAK = Number(process.env.LEAK || 0.05);
@@ -49,10 +50,10 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("holdfit.mjs")) 
   // 2. each (axis, purchase): the lever (log2 x its current value) bisected until the trio just holds bare x CUM
   const cells = [];
   for (const axis of AXES) STOPS.forEach((k, i) => { const cur = g0.run(LEVERS[axis].get(k)); cells.push({ axis, k, i, cur, lo: -5, hi: 5, hpx: +(bare[LEVERS[axis].kind].hold * CUM[i]).toPrecision(4) }); });
-  { const fl = await floorOf(cells.map(c => ({ kind: LEVERS[c.axis].kind, axis: c.axis, k: c.k }))); cells.forEach((c, i) => { c.floor = fl[i]; }); }
+  { const fl = await floorOf(cells.map(c => ({ kind: LEVERS[c.axis].kind, axis: LEVERS[c.axis].axis || c.axis, k: c.k }))); cells.forEach((c, i) => { c.floor = fl[i]; }); }
   for (let r = 0; r < ROUNDS; r++) {
     const jobs = [];
-    for (const c of cells) { c.m = (c.lo + c.hi) / 2; c.v = +clampV(c.axis, c.cur * 2 ** c.m).toPrecision(4); for (let seed = 1; seed <= SEEDS; seed++) jobs.push({ kind: LEVERS[c.axis].kind, axis: c.axis, k: c.k, seed, hpx: c.hpx, patch: LEVERS[c.axis].set(c.k, c.v), cell: cells.indexOf(c) }); }
+    for (const c of cells) { c.m = (c.lo + c.hi) / 2; c.v = +clampV(c.axis, c.cur * 2 ** c.m).toPrecision(4); for (let seed = 1; seed <= SEEDS; seed++) jobs.push({ kind: LEVERS[c.axis].kind, axis: LEVERS[c.axis].axis || c.axis, k: c.k, seed, hpx: c.hpx, patch: LEVERS[c.axis].set(c.k, c.v), cell: cells.indexOf(c) }); }
     const res = await runPool(task, jobs, { quiet: true });
     for (const c of cells) { const ok = share(res.filter((x, i) => jobs[i].cell === cells.indexOf(c))) <= c.floor + LEAK; if (ok) { c.hi = c.m; c.best = c.v; } else c.lo = c.m; }
     console.error(`round ${r + 1}/${ROUNDS} done`);
