@@ -1,0 +1,5 @@
+flowchart LR
+  plain["plain wave"] --> timer{"WAVE_TIMER 6.4 s ran out,<br/>or the field is clear"} --> next["next wave"]
+  hold["a boss alive, a fleet queued (G.fleetQ),<br/>or Temporal Drive running"] -- "holds the timer" --> timer
+  bossw["boss wave"] -- "only on a clear field,<br/>never on the timer" --> next
+  bossw --> dead["fleet dead"] --> sky["the sky closes (§5.5)"] -- "2 s" --> btn["challenge-the-next-boss button<br/>(after 12, 24 .. 108; not the last)"] --> next

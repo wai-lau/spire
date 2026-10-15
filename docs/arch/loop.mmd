@@ -1,0 +1,8 @@
+flowchart TD
+  build["tap an open slot: build<br/>(the 1st tower sends wave 1)"] --> wave
+  wave["a wave warps in<br/>WAVE_TIMER 6.4 s, or at once on a clear field"] --> kills["kills pay credits<br/>(gold dots fly home to the core)"]
+  kills --> spend["spend: a tower (x1.5 each) or chart buys"] --> wave
+  wave -. "every 12th wave" .-> boss["a boss (Major Arcana) + its fleet<br/>+6 lives OR +1% interest; the core's powers at 24 / 48;<br/>score lives paid when it falls"]
+  boss --> wave
+  boss -- "the 10th boss (wave 120, Death) and its fleet fall" --> win(["WIN"])
+  wave -- "core lives hit 0, or any boss reaches the core" --> lose(["LOSE"])

@@ -16,16 +16,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 
 ## 1. Overview and pillars
 
-```mermaid
-flowchart TD
-  build["tap an open slot: build<br/>(the 1st tower sends wave 1)"] --> wave
-  wave["a wave warps in<br/>WAVE_TIMER 6.4 s, or at once on a clear field"] --> kills["kills pay credits<br/>(gold dots fly home to the core)"]
-  kills --> spend["spend: a tower (x1.5 each) or chart buys"] --> wave
-  wave -. "every 12th wave" .-> boss["a boss (Major Arcana) + its fleet<br/>+6 lives OR +1% interest; the core's powers at 24 / 48;<br/>score lives paid when it falls"]
-  boss --> wave
-  boss -- "the 10th boss (wave 120, Death) and its fleet fall" --> win(["WIN"])
-  wave -- "core lives hit 0, or any boss reaches the core" --> lose(["LOSE"])
-```
+![The loop](docs/arch/loop.svg)
 
 | # | Pillar (an owner rule) | What it fixes | Where |
 |---|---|---|---|
@@ -88,13 +79,7 @@ lost core segment flashes the boss red.
 
 **Wave gating** (`bossUp` includes `G.fleetQ`):
 
-```mermaid
-flowchart LR
-  plain["plain wave"] --> timer{"WAVE_TIMER 6.4 s ran out,<br/>or the field is clear"} --> next["next wave"]
-  hold["a boss alive, a fleet queued (G.fleetQ),<br/>or Temporal Drive running"] -- "holds the timer" --> timer
-  bossw["boss wave"] -- "only on a clear field,<br/>never on the timer" --> next
-  bossw --> dead["fleet dead"] --> sky["the sky closes (§5.5)"] -- "2 s" --> btn["challenge-the-next-boss button<br/>(after 12, 24 .. 108; not the last)"] --> next
-```
+![Wave gating](docs/arch/wave-gating.svg)
 
 **Auto-wait** (on by default; only ever slows): x0.5 / 0.25 / 0.125 of the chosen speed
 when a live enemy is 6 / 2 / 1 game s from the core; a stage is left past 1.25x its line,
@@ -511,6 +496,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | stylesheets | `aspira.css` (page, chart, cards), `aspira-endstats.css`, `aspira-ascend.css`, `aspira-changelog.css` |
 | colours | **never in JS**: hidden `.asp-sw` swatches in the template, styled from exec-fn's `chrome.css` tokens, read once by `resolveColors()` into `COL`; a new colour or alpha is exec-fn's palette lint's call |
 | python | `api/routes_aspira.py` (page, redirect, sfx, ascendants, perflog), `spire_board.py`, `spire_perflog.py` (stdlib-only), `templates/aspira.html` |
+| diagrams | `docs/arch/*.mmd` is the mermaid source, rendered to the `.svg` beside it by exec-fn's pre-commit (`scripts/render-mermaid.py`) whenever a `.mmd` is staged; `geometry`, `play-box`, `layout` are hand-written SVGs. The doc embeds the SVGs: the app's markdown viewer does not render a mermaid fence |
 
 ### 10.2 exec-fn integration
 
