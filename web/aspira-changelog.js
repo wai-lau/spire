@@ -12,7 +12,7 @@ const CHANGELOG = [
     "Armor waves: x1.5 enemies (was x2), each worth 1.33 credits (was 1).",
   ], u: [
     "Damage numbers over 1,000 read short: 1.7k, 17k, 1.2M.",
-    "All text 10% smaller.",
+    "Changelog text smaller.",
     "A tower flashes for an upgrade only when its next buy is affordable.",
     "Using either core power slams the core down while it runs.",
     "Swarm enemies drawn 1.5x bigger, fast 0.9x, shield 0.8x.",

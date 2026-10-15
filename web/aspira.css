@@ -2,7 +2,6 @@
    the .doc-card idiom (green 0.12 fill + hairline). The canvas fills the
    screen above the nav; HUD and decks float over it (deck on the right on
    wide screens, a bottom sheet on phones). */
-html:has(#asp) { font-size: 90%; } /* EVERY font a step down on /spire (owner, 2026-10-15: "bump down all font sizes"): the type tokens are rem, the spacing px - only the text shrinks */
 
 #asp {
   /* ONE BLINK (owner, 2026-10-08: "sync all the blinking rates"): every blinking thing runs on --asp-blink,
