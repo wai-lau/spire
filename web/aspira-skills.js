@@ -17,7 +17,7 @@ const SKILL_POINTS = 16, SKILL_TIERS = 6;
 // ...and on, for the three points past the sixth (owner, 2026-10-07: "keep increasing
 // the prices"): the step grows by one more each time, a full chart 174.5 builds (6,980c)
 // (the six points past the ninth, 2026-10-07: each step grows by one more again - a full chart 695.5 builds, 27,820c)
-const SKILL_STEP_COST = [2.5, 4, 7, 11, 16, 22, 29, 37, 46, 56, 67, 79, 92, 106, 121, 137, 154]; // the 17th: a capstone takes TWO levels (aspira-capstone.js) // the 16th: the capstone point (2026-10-11)
+const SKILL_STEP_COST = [4, 6.4, 11.2, 17.6, 25.6, 35.2, 46.4, 59.2, 73.6, 89.6, 107.2, 126.4, 147.2, 169.6, 193.6, 219.2, 246.4] /* x1.6 (owner, 2026-10-15: "the worst [no-weakness trio] is able to afford 100% upgrades with perfect play and interest" - eco.mjs: ARC+FRZ+ACD owned 109-287% of a max build at x1.5, 86-93% at x1.75; was 2.5 4 7 11 16 22 29 37 46 56 67 79 92 106 121 137 154) */; // the 17th: a capstone takes TWO levels (aspira-capstone.js) // the 16th: the capstone point (2026-10-11)
 // Each axis: its `id`, its `name` (the slider) and its tiers' `name`s (the end screen). WHAT A TOWER DOES is
 // one composed sentence for the whole chart, aspira-desc.js, each tier changing as few words as carry the
 // gain (owner, 2026-10-07) - the card shows the change in track changes (aspira-sliders.js); the reach each

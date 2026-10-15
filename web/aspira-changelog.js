@@ -6,6 +6,7 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
   { v: "4.4", day: "Oct 15", ne: [
+    "Upgrades cost x1.6.",
     "A boss on two lanes pays its reward once (Strength and Temperance paid twice).",
     "Arc Voltage: hit x1.9 / x3.9 / x6.4 / x8.4 at purchases I-IV (was up to x69.9).",
     "Core powers: one at a time - the other waits until it ends.",
