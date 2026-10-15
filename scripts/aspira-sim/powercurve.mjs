@@ -117,4 +117,6 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("powercurve.mjs"
     }
   }
   if (OUT) fs.writeFileSync(OUT, JSON.stringify(table, null, 1));
+  // RAW (2026-10-15, owner: "keep a record of all the stats"): every ranking game and every hold cell, for later analysis
+  if (process.env.RAW) fs.writeFileSync(process.env.RAW, JSON.stringify({ credits: inc, builds: BUILDS.map(label), rank: jobs.map((j, i) => ({ bi: j.bi, type: j.type, w: j.w, hpx: j.hpx, leaked: res[i].leaked, spawned: res[i].spawned })), cells: cells.map(c => ({ type: c.type, w: c.w, side: c.side, build: label(BUILDS[c.bi]), credits: c.credits, floor: c.floor, hold: pw(c) })) }));
 }
