@@ -63,11 +63,11 @@ const SKILL_TREES = {
 // tower at half of everything.
 SKILL_TREES.frz = [
   { id: "temp", name: "Sublimation" /* (owner, 2026-10-12; was Temp) */, base: "The aura slows what it holds.", tiers: [
-    { name: "Chill", desc: "A colder, wider aura slows what it holds, and turns the light ones brittle." },
-    { name: "Freeze", desc: "A far colder, wider aura slows what it holds, and turns the light ones brittle." },
-    { name: "Absolute Zero", desc: "A chill slows all it holds, and turns the light ones brittle." },
-    { name: "Permafrost", desc: "A chill slows all it holds, and turns the light ones brittle." },
-    { name: "Heat Death", desc: "A chill slows all it holds, and turns the light ones brittle." },
+    { name: "Chill", desc: "A colder, wider aura slows what it holds, and makes them brittle." },
+    { name: "Freeze", desc: "A far colder, wider aura slows what it holds, and makes them brittle." },
+    { name: "Absolute Zero", desc: "A chill slows all it holds, and makes them brittle." },
+    { name: "Permafrost", desc: "A chill slows all it holds, and makes them brittle." },
+    { name: "Heat Death", desc: "A chill slows all it holds, and makes them brittle." },
   ] },
   { id: "rime", name: "Permafrost" /* (owner, 2026-10-12; was Rime) */, base: "", tiers: [
     { name: "Frost", desc: "Pulses leave a slow that lingers past the aura and stacks; full frost spreads to the nearest enemy." },
@@ -77,11 +77,11 @@ SKILL_TREES.frz = [
     { name: "Glaciation", desc: "Rings of frost roll out, leaving behind a frost that layers and never thaws; full frost spreads to the nearest enemy." },
   ] },
   { id: "moons", name: "Moons", base: "", tiers: [
-    { name: "Moon", desc: "One moon orbits the tower, a weaker copy of it. Its chill cracks armor for good." },
-    { name: "Twin Moons", desc: "Two moons orbit the tower, near copies of it. Its chill cracks armor for good." },
-    { name: "Desolation", desc: "Three moons orbit the tower, full copies of it. Its chill cracks armor for good." },
-    { name: "Satellites", desc: "Three moons orbit it, each with a small moon of its own. Its chill cracks armor for good." },
-    { name: "Eclipse", desc: "Three moons orbit it, each with three small moons of its own. Its chill cracks armor for good." },
+    { name: "Moon", desc: "One moon orbits the tower, a weaker copy of it." },
+    { name: "Twin Moons", desc: "Two moons orbit the tower, near copies of it." },
+    { name: "Desolation", desc: "Three moons orbit the tower, full copies of it." },
+    { name: "Satellites", desc: "Three moons orbit it, each with a small moon of its own." },
+    { name: "Eclipse", desc: "Three moons orbit it, each with three small moons of its own." },
   ] },
 ];
 // SOL (owner, 2026-10-05): Focus = more beams (the old Quad look: side by

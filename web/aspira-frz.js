@@ -19,13 +19,11 @@ const FRZ_BRITTLE = [1, 1.15, 1.3, 1.45, 1.6, 1.75]; // x damage from every towe
 // reference off its armor (less frost, that share of it), past zero - damage(). Rime is FRZ's armor answer, Temp the
 // fast (slow + tick + brittle); a pulse no longer breaks shield charges (it did until 2026-10-12)
 const FRZ_RIME_CRACK = [0, 0.25, 0.4, 0.55, 0.7, 0.85];
-// FRZ_MOON_CRACK: the old Moons armor crack - still set into st.frost and listed in aspira-giga.js's tuning table,
-// but NOTHING READS st.frost any more (the effect was removed 2026-10-12; ARCHAEOLOGY.md). Moons only add aura sources.
-// (FRZ_HARD, a hard-types-skip-brittle table, is gone: brittle applies to every slowed enemy.)
+// Moons only add aura sources; their armor crack (FRZ_MOON_CRACK) and the hard-types-skip-brittle table (FRZ_HARD)
+// were removed with the effects (2026-10-12; ARCHAEOLOGY.md) - brittle applies to every slowed enemy.
 // a tick is QUIET (no flash, no crit) yet ARMOR takes its flat bite like any hit (owner, 2026-10-12: "frz ticks should not
 // ignore armor" - damage() now bites every hit); the empty opts the shield-pop call passes
 const FRZ_TICK_HIT = {};
-const FRZ_MOON_CRACK = [0, 0.3, 0.45, 0.6, 0.7, 0.8];
 const FRZ_RIME = [0, 0.04, 0.07, 0.12, 0.17, 0.22]; // each pulse's permanent stacking slow - the SHIELD answer (2026-10-11: a slow, tanky shield takes the most pulses; was 0 .024 .035 .054 .064 .068): Rime build leaks 13% of shields, Temp 24, Moons 23
 // FRZ's own levers (owner: no generic multipliers): Rime pulses MORE OFTEN each tier, the moons are STRONGER copies each tier
 const FRZ_RIME_PERIOD = [2, 2, 1.7, 1.4, 1.2, 1], FRZ_MOON_BY = [0.6, 0.85, 0.86, 0.95, 0.95, 0.95]; /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
@@ -37,7 +35,7 @@ const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit 
 function frzSkillStats(t, s, b) {
   const f = skillOf(t, "temp");
   s.range = b.range * RANGE_BONUS;
-  s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.frost = FRZ_MOON_CRACK[skillOf(t, "moons")]; s.dmg = b.dmg * b.rate * FRZ_TICK; s.rate = 1 / FRZ_TEMP_TICK[f]; // dmg / rate: a TICK - the same bite, more often up Temp
+  s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = b.dmg * b.rate * FRZ_TICK; s.rate = 1 / FRZ_TEMP_TICK[f]; // dmg / rate: a TICK - the same bite, more often up Temp
   s.rime = FRZ_RIME[skillOf(t, "rime")]; s.rimeCrack = FRZ_RIME_CRACK[skillOf(t, "rime")]; s.rimeEvery = FRZ_RIME_PERIOD[skillOf(t, "rime")]; s.moonN = FRZ_MOON_COUNT[skillOf(t, "moons")]; s.moonK = FRZ_MOON_BY[skillOf(t, "moons")]; s.subN = FRZ_SUBMOON_N[skillOf(t, "moons")]; s.skill = true;
 }
 // moons and SMALL MOONS by tier (owner, 2026-10-08): 1 / 2 / 3 moons at I-III, then still THREE at IV and V,
@@ -60,16 +58,7 @@ function frzSources(t, st) {
 }
 // every step (aspira-game.js): slow what is inside each aura, tick its damage,
 // and grow the Rime pulses
-// FROST BITES THE FAST (2026-10-08: FRZ must answer fast enemies - it leaked 73% of them): an aura tick
-// hurts x (the enemy TYPE's base speed / FRZ_BITE.ref) - fast (135) and swarms (125) take far more, shields
-// (37.5) and armor (30) far less: FRZ the fast answer and weak against armor, as the counter table says.
-// ref 0 = off (the simulator's probes set it)
-const FRZ_BITE = { ref: 40 }; // fast x3.4, swarm x3.1, shield x0.94, armor x0.75: mono FRZ waves 61-69 leaks fast 75% -> 7% (ref 75: 59%, 55: 35%); swarm / shield / armor stay 0%
-// DEAD CODE, both tables (FRZ_BITE, FRZ_BITE_BY): nothing reads them since 2026-10-12 - frzBite (below) replaced them.
-// BY TYPE, not by speed (2026-10-11): since ONE SPEED (2026-10-08) every type but fast moves at the base speed, so the
-// speed ratio gave swarm, shield and armor all x1.9 and fast x2.85 - FRZ lost its niche. The designed bites, restored as a
-// table: the fast answer, good on swarms, weak against shield and armor (counter matrix, ARCHITECTURE.md §4.6)
-const FRZ_BITE_BY = { fast: 9, swarm: 4.5, shield: 1.3, armor: 2 }; // swarm 3.1 -> 4.5, shield 0.94 -> 1.3 (2026-10-12, swap.mjs: FRZ the least needed tower, two FRZ kept 62 lives vs ARC 87 - with this 78) // fast 9 / armor 2 (2026-10-11 sweep, countermx 61-69: FRZ fast 30-77% -> 0-6% leaked, armor 97-100% -> 17-68%; FRZ+SOL+ACD 0/9 -> 6/9)
+// The per-type bite tables (FRZ_BITE, FRZ_BITE_BY, 2026-10-08..11) were replaced by frzBite below; ARCHAEOLOGY.md.
 // THE COLDER, THE HARDER (owner, 2026-10-12: "make frz deal damage relative to slow percentage"; replaced the bite by
 // TYPE - "get rid of all enemy based damage multis"; the tables above are dead): a tick hurts x (1 + FRZ_CHILL_K x
 // the enemy's slow now, 0..1) - every slow on it counts, so the fast (slowed twice as hard) and anything held by other

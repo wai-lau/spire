@@ -303,10 +303,9 @@ only while inside, `FRZ_AURA_HOLD`) and takes a quiet tick.
 - Names: Temp Chill / Freeze / Absolute Zero / Permafrost / Heat Death / Zero Point; Rime
   Frost / Glacier / Cryosphere / Ice Sheet / Glaciation / Ice Age; Moons Moon / Twin Moons
   / Desolation / Satellites / Eclipse / Constellation.
-- *Known text/code gap:* the Moons tiers' card text ends "its chill cracks armor for good",
-  and `FRZ_MOON_CRACK` is still set (`st.frost`), but nothing reads it any more (the owner
-  removed the effect 2026-10-12). Temp's text says "turns the light ones brittle"; the
-  code brittles every slowed enemy (`FRZ_HARD` is defined, unused).
+- Card text matches the code (2026-10-14): Temp "makes them brittle" (every slowed enemy;
+  shields escape only by not being slowed); Moons claim no armor effect. The Moons armor
+  crack, `FRZ_HARD` and the per-type bite tables were removed as dead code (ARCHAEOLOGY.md).
 
 ### 4.4 SOL — the focused ray (armor and bosses)
 A tower with **locks**: it locks a target in range (a lock may start inside `range`,
