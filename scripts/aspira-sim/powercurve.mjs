@@ -84,21 +84,25 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("powercurve.mjs"
   const inc = (await runPool(url, [{ mode: "income", seed: 1 }], { quiet: true }))[0].at, cr = w => Math.round(inc[w] || 0);
   const share = rs => rs.reduce((a, x) => a + x.leaked, 0) / Math.max(1, rs.reduce((a, x) => a + x.spawned, 0));
   // 3. RANK every build per type at each scout wave
+  // PRIOR=<an earlier run's out.json> (2026-10-15, simulation speed): rank only the builds that run found best or worst for
+  // some type, plus every no-skip trio (~40, not 256), and start each hold search +-PRIOR_SPAN log2 round its earlier answer
+  const prior = process.env.PRIOR ? JSON.parse(fs.readFileSync(process.env.PRIOR, "utf8")) : null, PRIOR_SPAN = Number(process.env.PRIOR_SPAN || 3);
+  const keep = prior ? new Set([...Object.values(prior).flatMap(rows => Object.values(rows).flatMap(r => [r.bestBuild, r.worstBuild])), ...BUILDS.filter(b => !Object.values(b.skip).some(Boolean)).map(label)]) : null;
   const jobs = [];
-  for (const type of TYPES) for (const w of SCOUT) BUILDS.forEach((_, bi) => { for (const hpx of [1, 8]) jobs.push({ bi, type, w, credits: cr(w), seed: 1, hpx }); });
+  for (const type of TYPES) for (const w of SCOUT) BUILDS.forEach((b, bi) => { if (keep && !keep.has(label(b))) return; for (const hpx of [1, 8]) jobs.push({ bi, type, w, credits: cr(w), seed: 1, hpx }); });
   const res = await runPool(url, jobs, { quiet: true });
   console.error("ranking done");
   const pick = {}; // type -> scout wave -> { best, worst }
   for (const type of TYPES) for (const w of SCOUT) {
-    const score = BUILDS.map(() => 0);
-    res.forEach((r, i) => { const j = jobs[i]; if (j.type === type && j.w === w) score[j.bi] += r.leaked / Math.max(1, r.spawned); });
-    const order = score.map((s, bi) => [s, bi]).sort((x, y) => x[0] - y[0]);
+    const score = BUILDS.map(() => null); // (null: not ranked this run - PRIOR)
+    res.forEach((r, i) => { const j = jobs[i]; if (j.type === type && j.w === w) score[j.bi] = (score[j.bi] ?? 0) + r.leaked / Math.max(1, r.spawned); });
+    const order = score.map((s, bi) => [s, bi]).filter(x => x[0] !== null).sort((x, y) => x[0] - y[0]);
     (pick[type] ||= {})[w] = { best: order[0][1], worst: order[order.length - 1][1] };
   }
   const nearest = w => SCOUT.reduce((a, s) => (Math.abs(s - w) < Math.abs(a - w) ? s : a), SCOUT[0]);
   // 4. HOLD of the best and worst build per type and wave
   const cells = [];
-  for (const type of TYPES) for (const w of WAVES) for (const side of ["best", "worst"]) cells.push({ type, w, side, bi: pick[type][nearest(w)][side], credits: cr(w), lo: -10, hi: 10 });
+  for (const type of TYPES) for (const w of WAVES) for (const side of ["best", "worst"]) { const was = prior && prior[type] && prior[type][w] ? Math.log2(prior[type][w][side]) : null; cells.push({ type, w, side, bi: pick[type][nearest(w)][side], credits: cr(w), lo: was == null ? -10 : Math.max(-10, was - PRIOR_SPAN), hi: was == null ? 10 : Math.min(10, was + PRIOR_SPAN) }); }
   const run = async (hpxOf, floor = false) => { const js = []; cells.forEach((c, n) => { for (let seed = 1; seed <= SEEDS; seed++) js.push({ bi: c.bi, type: c.type, w: c.w, credits: c.credits, seed, hpx: hpxOf(c), n, floor }); }); const rs = await runPool(url, js, { quiet: true }); return cells.map((_, n) => share(rs.filter((x, i) => js[i].n === n))); };
   (await run(() => FLOOR_HPX, true)).forEach((f, n) => { cells[n].floor = f; });
   for (let r = 0; r < ROUNDS; r++) {
