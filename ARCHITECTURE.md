@@ -235,7 +235,7 @@ Hack cyan inverted) for `SEG_FLASH_T` 0.8 s. The core shows up to `LIFE_RINGS` 5
   grow the leash (`SKILL_MOVE`); range tiers grow the range.
 - **Auto-move** (a checkbox, **only after the game has been beaten**, `best.ascended`):
   the simulator's positioning (`bestSpot`, every 0.5 s) but the tower glides at
-  `HUMAN_V` 300 units/s. Arming it takes a second tap, and **any time on it disqualifies
+  `HUMAN_V` 450 units/s of REAL time (the game speed `speedX()` reads 1 during a Temporal Drive freeze, which plays at 1x - the glide crawled at 1/10 at 10x until 2026-10-14). Arming it takes a second tap, and **any time on it disqualifies
   that game from TOP PLAYERS** ("(DQ)").
 - **Targeting** is a slider on the card: **Fresh** (an enemy with no debuff first — slow,
   stun, breach, burn, corrosion, charge... — then nearest the core), **Biggest** (most HP

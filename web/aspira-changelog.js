@@ -5,6 +5,7 @@
 const CHANGELOG = [ // each day's lines in two groups: b = Balance, u = Perf/UI. Facts only, no reasons (owner, 2026-10-14)
   { v: "4.3", day: "Oct 14", b: [
     "Permafrost pulses twice as often, each half as strong.",
+    "Auto-move glides 1.5x faster.",
     "Swarms: 20% fewer enemies.",
     "Swarm enemies vary more in speed (50-150%).",
     "Swarm waves: at least 12 enemies.",
@@ -21,6 +22,7 @@ const CHANGELOG = [ // each day's lines in two groups: b = Balance, u = Perf/UI.
     "Orbital Relay: 11.25 s (was 22.5); stays on its tower.",
     "Temporal Drive: ends when no enemies are left; can't be used on an empty board.",
   ], u: [
+    "Auto-move no longer crawls during Temporal Drive at high game speed.",
     "The tower card closes with an X beside the upgrade button.",
     "Permafrost's stat says what it adds: \"+11% slow, stacking\".",
     "Tower descriptions match what towers do: Arc Conductivity IV twin arcs, V three; Voltage VI 1.6x per jump; Sublimation VI deeply brittle.",

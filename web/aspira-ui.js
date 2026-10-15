@@ -167,7 +167,7 @@ const ICON_UNCHECKED = '<svg class="asp-box" viewBox="0 0 20 20"><rect x="2" y="
 const ICON_CHECKED = '<svg class="asp-box" viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M5.5 10.5l3 3 6-7"/></svg>';
 // (AUTO-SPEED - 3x far from every tower's reach, easing to the chosen speed - ran 2026-10-09..12; removed, owner: "remove auto-speed feature")
 // the speed the game runs at (x): the chosen one, held down by auto-wait
-const speedX = () => Math.min(autoWaiting() || Infinity, ui.speed);
+const speedX = () => (timeStopped() ? 1 : Math.min(autoWaiting() || Infinity, ui.speed)); // the speed the game REALLY runs at: a Temporal Drive freeze plays at 1x (frame) - auto-move's glide read the setting and crawled at 1/10 (owner, 2026-10-14)
 function updateAutoWait() {
   const btn = $("asp-autowait"), html = (autoWait ? ICON_CHECKED : ICON_UNCHECKED) + "<span>auto-wait</span>"; // the box bigger than the words (owner)
   if (btn.dataset.html !== html) { btn.dataset.html = html; btn.innerHTML = html; btn.setAttribute("aria-checked", String(autoWait)); }
@@ -471,7 +471,7 @@ function frame(now) {
   last = now;
   if (!ui.paused) {
     // the game HOLDS while the boss sky turns over (aspira-bosses.js); the real-time bits below still run
-    let left = typeof skyTurning === "function" && skyTurning() ? 0 : dt * BASE_SPEED * (freezing() ? 1 : speedX()); // auto-wait only ever SLOWS; a time freeze runs at 1x
+    let left = typeof skyTurning === "function" && skyTurning() ? 0 : dt * BASE_SPEED * speedX(); // auto-wait only ever SLOWS; a time freeze runs at 1x (speedX)
     while (left > 0) { const h = Math.min(0.02, left); step(h); stepFx(h); left -= h; }
     stepFloats(dt); // real time: unaffected by the game speed
     if (autoMove && best.ascended && G.started && !G.over) G.autoMoveS = (G.autoMoveS || 0) + dt; // auto-move's REAL seconds this game (autoBarred, aspira-ascend.js)

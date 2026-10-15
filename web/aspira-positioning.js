@@ -103,7 +103,7 @@ function bestSpot(t, range) {
 // game time), but the tower GLIDES there at up to HUMAN_V world units a REAL second, so the eye can follow it. The checkbox: aspira-ui.js
 let autoMove = false;
 try { autoMove = localStorage.getItem("spire.automove") === "1"; } catch (e) { /* not remembered */ }
-const HUMAN_V = 300; // a phone's width (500 units) in under two seconds (halved, owner 2026-10-13; was 600)
+const HUMAN_V = 450; // a phone's width (500 units) in about a second (x1.5, owner 2026-10-14: "increase auto-move speed by 1.5x"; was 300, halved 2026-10-13 from 600)
 const GLIDE_TURNS = [0, 0.5, -0.5, 1, -1, 1.4, -1.4], GLIDE_GIVE_UP = 2; // radians off the straight line, tried in order
 const GLIDE_ESCAPE = 4; // a tower caught overlapping glides out this many times faster (at the halved HUMAN_V one sat overlapped 42 frames - stuck.mjs)
 function autoGlide(t, dt) {
