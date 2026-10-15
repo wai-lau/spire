@@ -279,7 +279,7 @@ A hit-scan tree: the strike hits a target, then forks.
   Voltage Spark / Fry / Vaporize / Arc Flash / Plasma / Gigavolt; Capacitance Static /
   Charge / Overload / Discharge / Tempest / Superstorm.
 
-### 4.3 FRZ — the aura (fast and shields)
+### 4.3 FRZ — the aura (fast, and armor via Permafrost)
 An **aura** (no shots): everything inside the tower's range is slowed (the slow lasts
 only while inside, `FRZ_AURA_HOLD`) and takes a quiet tick.
 - **Temp** (card name **Sublimation**; id `temp`): aura slow `FRZ_TEMP_SLOW` 0.40, .41 ..
@@ -298,7 +298,8 @@ only while inside, `FRZ_AURA_HOLD`) and takes a quiet tick.
   `MOON_SPIN` 2/3 rad/s) as weaker copies of its aura (`FRZ_MOON_BY` .85 .. .95, VI 1 of
   everything; their slows are separate sources so they multiply); IV gives each moon 1
   small moon, V 3, VI 4 (`FRZ_SUBMOON`: radius 84, aura x0.2, the other way round).
-- **Weakness: shields.** A shielded enemy cannot be slowed (no chill, no brittle) — only
+- **Weakness: shields.** A shielded enemy cannot be slowed (no chill, no brittle, and a
+  Permafrost pulse does NOTHING to it: no slow, no frost, no pop) — only
   Temporal Drive stops it. A tick on a shielded enemy pops one charge.
 - Names: Temp Chill / Freeze / Absolute Zero / Permafrost / Heat Death / Zero Point; Rime
   Frost / Glacier / Cryosphere / Ice Sheet / Glaciation / Ice Age; Moons Moon / Twin Moons
