@@ -374,6 +374,11 @@
 .asp-pop .asp-cols dt { white-space: nowrap; }
 .asp-pop .asp-spec { padding-left: var(--space-4); border-left: 1px solid hsl(var(--green-hsl) / 0.12); }
 .asp-pop .asp-cols dd { white-space: normal; overflow-wrap: break-word; } /* a long "now -> next" wraps at its words, never a letter a line */
+/* the stats in SECTIONS (aspira-sliders.js STAT_SECTIONS): two columns of whole sections, each under its mechanic's name */
+.asp-pop .asp-cols.asp-secs { display: block; columns: 160px 2; column-gap: var(--space-4); font-size: var(--fs-xs); }
+.asp-pop .asp-sec { break-inside: avoid; margin-bottom: var(--space-2); }
+.asp-pop .asp-sec h5 { margin: 0 0 var(--space-1); font-size: var(--fs-2xs); font-weight: var(--fw-normal); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: hsl(var(--orange-hsl)); }
+.asp-pop .asp-sec dl { margin: 0; }
 .asp-hint { margin: 0; font-size: var(--fs-sm); line-height: var(--lh-snug); color: hsl(var(--green-hsl)); } /* bright on every card alike, the stats' old size (owner) */
 
 .asp-bar { height: 6px; background: hsl(var(--bg-hsl) / 0.45); border-radius: var(--radius-1); overflow: hidden; }

@@ -11,6 +11,7 @@ const CHANGELOG = [
   ], u: [
     "Damage numbers over 1,000 read short: 1.7k, 17k, 1.2M.",
     "Swarm enemies drawn 1.5x bigger, fast 0.9x, shield 0.8x.",
+    "Tower card stats in sections, one a mechanic (e.g. Freeze Aura, Permafrost, Moons).",
     "Tower card: a stat an upgrade adds shows its new value alone (no \"— →\").",
     "Upgrades: four buys an axis, numbered I-IV; IV is the capstone. The old II-III and IV-V are one buy each, at both tiers' price.",
     "Build cards: 'good vs' follows the counter matrix - the type a tower is THE counter of, then the ones it helps against (Freeze no longer claims shields).",

@@ -123,11 +123,16 @@ function refreshUpgradePreview(t) {
 }
 
 // ---------- the card's preview: stats, description, button ----------
-// the two stat columns (owner, 2026-10-07): the rows that MATTER for this kind on
-// the left, bigger (KEY_STATS, in that order), everything else on the right, small;
-// "now -> next" where the pulled points change a value (statRow paints a change for
-// the worse red); rows the tower has not got yet ("—") are left out
-const KEY_STATS = { arc: ["Damage", "Hits", "Arc dmg", "Charge", "Range"], frz: ["Aura slow", "Range", "Permafrost", "Frost armor", "Moons", "Aura dmg"], sol: ["Damage", "Beams", "Crit", "Crit ×", "Breach", "Refract"], acd: ["Corrode", "Jets", "Peak", "Builds", "Pool burn"] };
+// the stats in SECTIONS, one a mechanic (owner, 2026-10-15: "the stats should be in sections, like a Permafrost and Freeze
+// Aura section"; were two columns, KEY_STATS bigger on the left, 2026-10-07): each kind's sections by row label, in order;
+// a row no section names lands in the last, "Tower" (with Kills). "now -> next" where the pulled points change a value
+// (statRow paints a change for the worse red); rows the tower has not got yet ("—") are left out, and so is a section left empty
+const STAT_SECTIONS = {
+  arc: [["Arc", ["Damage", "Rate", "Range", "Shields", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
+  frz: [["Freeze Aura", ["Aura slow", "Aura dmg", "Cold bite", "Brittle", "Shields", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
+  sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Refraction", ["Refract"]], ["Breach", ["Breach", "Bleed", "Shrapnel"]]],
+  acd: [["Jets", ["Corrode", "Builds", "Peak", "Jets", "Carry", "Jet slow", "Shields", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
+};
 function cardStats(t, pv) {
   const b = TOWERS[t.kind], st = towerStats(t), nx = pv ? towerStats(pv) : null, spN = nx ? SPEC[t.kind](nx, pv) : null;
   const rows = [];
@@ -135,10 +140,11 @@ function cardStats(t, pv) {
   rows.push(["Range", Math.round(st.range), nx && Math.round(nx.range)], ["Rate", st.rate.toFixed(2) + "/s", nx && nx.rate.toFixed(2) + "/s"],
     ["Leash", slideSpan(t), nx && slideSpan(pv)]);
   SPEC[t.kind](st, t).forEach((r, k) => rows.push([r[0], r[1], spN ? spN[k][1] : null]));
-  const shown = rows.filter(r => r[1] !== "—" || (r[2] != null && r[2] !== "—")), key = KEY_STATS[t.kind] || [];
-  const left = key.map(l => shown.find(r => r[0] === l)).filter(Boolean), right = shown.filter(r => !key.includes(r[0]));
+  const shown = rows.filter(r => r[1] !== "—" || (r[2] != null && r[2] !== "—")), secs = STAT_SECTIONS[t.kind] || [];
   const row = ([label, now, next]) => statRow(label, now, nx && String(next) !== String(now) ? next : null);
-  return '<div class="asp-cols"><dl class="asp-key">' + left.map(row).join("") + '</dl><dl class="asp-spec">' + right.map(row).join("") + '<dt>Kills</dt><dd id="asp-kills"></dd></dl></div>';
+  const named = new Set(secs.flatMap(([, ls]) => ls)), sec = (title, rs, extra = "") => (rs.length || extra ? '<section class="asp-sec"><h5>' + title + "</h5><dl>" + rs.map(row).join("") + extra + "</dl></section>" : "");
+  return '<div class="asp-cols asp-secs">' + secs.map(([title, ls]) => sec(title, ls.map(l => shown.find(r => r[0] === l)).filter(Boolean))).join("") +
+    sec("Tower", shown.filter(r => !named.has(r[0])), '<dt>Kills</dt><dd id="asp-kills"></dd>') + "</div>";
 }
 // The tower's prose (aspira-desc.js describeTower) for the locked tiers against the
 // pulled ones, in a box of FIXED height (owner, 2026-10-07)
