@@ -9,7 +9,8 @@ A chart tower is upgraded a tier at a time on each axis of its triangle with
 - the pulled points PREVIEW: stat rows show now -> next, the description shows
   the change as track changes (an <ins>), the button prices the basket;
 - the upgrade button locks every pulled point in at once; the U key locks in;
-- six tower slots only, the core's picks at waves 30 and 60.
+- six tower slots only (CELLS), and no core picks to choose (CORE_PICKS is empty;
+  the core's powers are granted at waves 24 and 48 by CORE_GRANTS).
 - the BUILD cards fit the screen, landscape and portrait alike, with the cancel
   button visible below them.
 

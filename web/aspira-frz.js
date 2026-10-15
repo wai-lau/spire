@@ -9,25 +9,21 @@
 // guesses were 2-4x too strong; range moves little so "colder" reads as colder
 // early-game balance 2026-10-06: +0.03 on every tier (FRZ stays a pure SUPPORT tower - owner)
 const FRZ_TEMP_SLOW = [0.4, 0.41, 0.42, 0.43, 0.44, 0.45]; // a small ramp (overnight fit 2026-10-08: even a flat 0.4 overshot - Temp's reach is the next lever) // weakened (owner, 2026-10-08; isolation: Temp V 438% team, leaks 660 -> 56); was .43 .46 .5 .54 .58 // the aura's range is in SKILL_MOVE
-// Temp III's TEAM hook (owner, 2026-10-07: FRZ's chart was flat, 97-103%): an enemy
+// Temp's TEAM hook (owner, 2026-10-07: FRZ's chart was flat, 97-103%): an enemy
 // its aura touches turns BRITTLE - while slowed it takes x FRZ_BRITTLE from every
 // tower (damage(), which already reads e.brittle; drawStatus shows the crack)
 // from tier I (owner, 2026-10-11: slows are SHAPED now - aspira-game.js slowShape - so FRZ's payoff moves from how
 // slow to what the slowed suffer; was 1 1 1 1.15 1.2 1.25, from III)
-const FRZ_BRITTLE = [1, 1.15, 1.3, 1.45, 1.6, 1.75]; // BRITTLE now TAKES ARMOR (owner, 2026-10-12): an enemy the aura holds keeps (2 - this) of its armor; before, it took this much from every tower; was 1.06 .. 1.3 - the no-ARC team 0/9 -> 5/9 with the ARC nerf and fast HP x0.75
-// RIME SHATTERS SHIELDS (owner, 2026-10-11: "make upgrade choices matter" - Rime was the dead axis): a pulse that
-// reaches a shielded enemy breaks this share of its charges (160+ by wave 85) - Rime is FRZ's shield answer, Temp the
-// fast (slow + bite + brittle), Moons the armor (FRZ_MOON_CRACK)
+const FRZ_BRITTLE = [1, 1.15, 1.3, 1.45, 1.6, 1.75]; // x damage from every tower while slowed (an armor-taking Brittle was tried 2026-10-12 and reverted the same day - ARCHAEOLOGY.md); was 1.06 .. 1.3 - the no-ARC team 0/9 -> 5/9 with the ARC nerf and fast HP x0.75
 // FROST TAKES ARMOR (owner, 2026-10-12: "let rime reduce armor"): an enemy at FULL frost has this x the wave's armor
-// reference off its armor (less frost, that share of it), past zero - damage(). (It stripped shields until earlier that day)
+// reference off its armor (less frost, that share of it), past zero - damage(). Rime is FRZ's armor answer, Temp the
+// fast (slow + tick + brittle); a pulse no longer breaks shield charges (it did until 2026-10-12)
 const FRZ_RIME_CRACK = [0, 0.25, 0.4, 0.55, 0.7, 0.85];
-// MOONS CRACK ARMOR (owner, 2026-10-11: "make upgrade choices matter"): an enemy any of this FRZ's auras holds keeps only
-// (1 - this) of its armor against every tower (damage(), aspira-game.js)
-// BRITTLE IS FOR LIGHT BODIES (2026-10-11, "make upgrade choices matter"): x brittle on all made Temp the best axis
-// against every type - now fast, swarms and bosses shatter, and Moons (armor) and Rime (shields) answer the hard ones
-const FRZ_HARD = { armor: true, shield: true };
+// FRZ_MOON_CRACK: the old Moons armor crack - still set into st.frost and listed in aspira-giga.js's tuning table,
+// but NOTHING READS st.frost any more (the effect was removed 2026-10-12; ARCHAEOLOGY.md). Moons only add aura sources.
+// (FRZ_HARD, a hard-types-skip-brittle table, is gone: brittle applies to every slowed enemy.)
 // a tick is QUIET (no flash, no crit) yet ARMOR takes its flat bite like any hit (owner, 2026-10-12: "frz ticks should not
-// ignore armor" - damage() now bites every hit); kept for the shield pop's call
+// ignore armor" - damage() now bites every hit); the empty opts the shield-pop call passes
 const FRZ_TICK_HIT = {};
 const FRZ_MOON_CRACK = [0, 0.3, 0.45, 0.6, 0.7, 0.8];
 const FRZ_RIME = [0, 0.04, 0.07, 0.12, 0.17, 0.22]; // each pulse's permanent stacking slow - the SHIELD answer (2026-10-11: a slow, tanky shield takes the most pulses; was 0 .024 .035 .054 .064 .068): Rime build leaks 13% of shields, Temp 24, Moons 23
@@ -69,12 +65,13 @@ function frzSources(t, st) {
 // (37.5) and armor (30) far less: FRZ the fast answer and weak against armor, as the counter table says.
 // ref 0 = off (the simulator's probes set it)
 const FRZ_BITE = { ref: 40 }; // fast x3.4, swarm x3.1, shield x0.94, armor x0.75: mono FRZ waves 61-69 leaks fast 75% -> 7% (ref 75: 59%, 55: 35%); swarm / shield / armor stay 0%
+// DEAD CODE, both tables (FRZ_BITE, FRZ_BITE_BY): nothing reads them since 2026-10-12 - frzBite (below) replaced them.
 // BY TYPE, not by speed (2026-10-11): since ONE SPEED (2026-10-08) every type but fast moves at the base speed, so the
 // speed ratio gave swarm, shield and armor all x1.9 and fast x2.85 - FRZ lost its niche. The designed bites, restored as a
-// table: the fast answer, good on swarms, weak against shield and armor (counter matrix, ARCHITECTURE.md section 22)
+// table: the fast answer, good on swarms, weak against shield and armor (counter matrix, ARCHITECTURE.md §4.6)
 const FRZ_BITE_BY = { fast: 9, swarm: 4.5, shield: 1.3, armor: 2 }; // swarm 3.1 -> 4.5, shield 0.94 -> 1.3 (2026-10-12, swap.mjs: FRZ the least needed tower, two FRZ kept 62 lives vs ARC 87 - with this 78) // fast 9 / armor 2 (2026-10-11 sweep, countermx 61-69: FRZ fast 30-77% -> 0-6% leaked, armor 97-100% -> 17-68%; FRZ+SOL+ACD 0/9 -> 6/9)
 // THE COLDER, THE HARDER (owner, 2026-10-12: "make frz deal damage relative to slow percentage"; replaced the bite by
-// TYPE, now gone - "get rid of all enemy based damage multis"; the table above is dead): a tick hurts x (1 + FRZ_CHILL_K x
+// TYPE - "get rid of all enemy based damage multis"; the tables above are dead): a tick hurts x (1 + FRZ_CHILL_K x
 // the enemy's slow now, 0..1) - every slow on it counts, so the fast (slowed twice as hard) and anything held by other
 // slows take the most. let: the simulator sweeps it
 let FRZ_CHILL_K = 6;
@@ -111,7 +108,7 @@ function frzStep(t, dt) {
       if (st.brittle > 1 && st.brittle >= (e.brittle || 1)) { e.brittle = st.brittle; e.brittleBy = t.id; } // brittleBy: its added damage is this FRZ's (damageCredit)
       if (!tick) continue;
       ticked = true;
-      // (Moons cracked armor for good here until 2026-10-12 - owner: "moons should not affect armor"; Brittle is the armor answer)
+      // (Moons cracked armor for good here until 2026-10-12 - owner: "moons should not affect armor"; Rime's frost is the armor answer)
       // a tick POPS a shield (owner, 2026-10-06) and is never blunted by armor;
       // otherwise it is quiet (no flash) but shows its NUMBER, sized by what it took
       if (e.shield > 0) { damage(e, st.dmg * s.k, t, false, false, FRZ_TICK_HIT); continue; } // a tick POPS a shield (owner, 2026-10-12: "shields should not absorb ticks")

@@ -4,7 +4,7 @@ Runs the REAL game code (`web/aspira-{defs,upgrades,game,towers}.js`) in a Node 
 with drawing, sound and input stubbed out and every tick run as fast as it can,
 then plays it with a scripted player (opening, build mix, upgrade appetite,
 interest reserve, chosen path/form per tower). Built for the 2026-10-02
-overnight balance pass; ARCHITECTURE.md §22 has the findings.
+overnight balance pass; ARCHAEOLOGY.md has the findings (ARCHITECTURE.md §10 describes the tooling).
 
 Run one at a time with `nice -n 19` on the droplet (2 cores, serves the site).
 On a big box the pool scripts below use every core but two (`POOL_WORKERS=n`

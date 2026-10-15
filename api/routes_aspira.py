@@ -16,7 +16,7 @@ Nightfall Tower sprite traced to web/icons/tower.svg).
 The sound samples (Brood War) are served to the SAME guest tier from
 /aspira-sfx/ (owner: "it's guest but still personal use"); they live only in
 the gitignored api/data/aspira-sfx/, never in the public repo.
-See ARCHITECTURE.md §22.
+See ARCHITECTURE.md (§9 meta: leaderboard and saves; §10 tech).
 """
 import hmac
 import time

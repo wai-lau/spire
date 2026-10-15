@@ -1,6 +1,6 @@
 // /aspira — tower defence on twelve spirals. Definitions: the path, towers, enemies,
 // powers. Same-global-scope files, loaded in order:
-// aspira-defs -> aspira-game -> aspira-draw -> aspira-ui. ARCHITECTURE.md §22.
+// aspira-defs -> aspira-game -> aspira-draw -> aspira-ui. ARCHITECTURE.md §10 (Tech).
 
 // World is a fixed 1000x1000 chart; the camera (aspira-draw.js) fits it into
 // whatever part of the full-screen canvas the decks leave open.

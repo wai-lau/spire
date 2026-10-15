@@ -154,7 +154,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   // armor takes a flat bite out of every hit (never below 10% of it)
   const raw = amt;
   // (SOL ignored armor until 2026-10-07; owner: "SOL should no longer ignore armor" - its damage rose x1.3 to match, solarmor.mjs)
-  // (FROST CRACKED ARMOR here while slowed until 2026-10-11 - brittle x FRZ_CRACK; Moons now crack it for good, aspira-frz.js)
+  // (FROST CRACKED ARMOR here while slowed until 2026-10-11, then Moons did until 2026-10-12; both gone - the frost below is Rime's)
   // FRZ's FROST (Permafrost) takes a FLAT share of the wave's armor reference (armorRefOf, aspira-acid.js), as much as the
   // frost it holds - STACKING with Corrosion, below zero like it (owner, 2026-10-12: "let rime reduce armor"; Brittle did it
   // for an hour, "brittle should stack with corrosion (both should allow negative)")

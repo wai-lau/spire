@@ -1,36 +1,27 @@
-// /spire — the 3D VIEW (owner, 2026-10-09: "change quality to a slider: low,
-// high, 3D"; "curved spacetime ... reverse the dip, so it's a tower").
-// A VIEW, never a rule: the 2D canvas still draws the board exactly as on high,
-// only hidden (opacity 0), and this WebGL canvas over it lays that picture on a
-// FUNNEL - a GRAVITY WELL flipped upside down (owner, 2026-10-09: a black hole diagram's funnel,
-// "flipped, towers like angels dancing on the top"): the towers and core stand on a level HEAD
-// (out to WARP_TOWERS), then the neck falls away, steep first and flattening to the floor at the
-// lanes' mouths (R0): height -WARP.depth x (1 - (1 - t)^WARP.pow), t = 0 at the head's rim, 1 at R0.
-// Enemies come in on the level floor and climb the spire to the core.
+// /spire — the 3D VIEW (owner, 2026-10-09: "change quality to a slider: low, high, 3D").
+// A VIEW, never a rule: the 2D canvas still draws the board exactly as on high, only hidden
+// (opacity 0), and this WebGL canvas over it lays that picture on a FLAT floor seen by a perspective
+// camera: leaned back `tilt`, under a `fov` lens, centred on the core (WARP.depth 0, so there is no
+// dip or spire - the floor is level; the funnel / bell / gravity-well surface this file once built is
+// history, ARCHAEOLOGY.md, and why the surface is still called "the bell" in comments and uniforms).
 // SEMI-TRANSPARENT (owner: "should not occlude"): no depth test, the whole surface at WARP.alpha,
 // and the board's own background is clear - only what is drawn on it shows, front and back.
-// The TOWERS (and their slots), the CORE and the ENEMIES are not stretched with it (owner: "use
-// positions based on the bell, but the enemies and towers are drawn separately,
-// as if on a flat plane"): each is drawn undistorted on a 2D canvas over the
-// bell, at its spot's projected point, smaller the deeper it sits
-// (warpEntities). Lanes, ranges and beams stay on the bell; a beam's ends land
-// on the same projected points, so it still meets its tower and its enemy.
-// Ranges, hits and timing stay 2D. Taps map back through the bell (unwarp).
-// Loads after aspira-draw.js and aspira-camera.js, before aspira-ui.js.
-//   tilt, fov  the board leans back `tilt` (radians) under a `fov` lens (owner, "more top down", then
-//          with the bell 5x taller: tilt 0.62 -> 0.35 -> 0.15, fov 0.87 -> 0.45 - a longer lens from further
-//          back, so the drop's walls and the lanes below stay in sight)
-//   zoom   the 3D view's magnification (owner: "zoom in"); anchor  the view rides up this fraction of
-//          the way from the core's tip to the bell's foot, so the tip and the floor both fit
+// The TOWERS (and their slots), the CORE and the ENEMIES are drawn on a 2D canvas over the floor
+// at their spot's projected point (warpEntities): towers and core as hexagonal PRISMS, centred on
+// the floor (half below it), the slots as dotted prisms, enemies as lit DICE; everything below the
+// floor fades slice by slice (aspira-fog.js). Lanes, ranges and beams stay on the floor, and a
+// beam's ends land on the same projected points, so it still meets its tower and its enemy.
+// Ranges, hits and timing stay 2D. Taps map back through the floor (unwarp).
+// Loads after aspira-draw.js and aspira-camera.js, before aspira-ui.js. ARCHITECTURE.md §8.1-8.2.
+//   tilt, fov  the board leans back `tilt` (radians) under a `fov` lens (owner: "much more top down",
+//          then "a little bit less"; "increase size changes based on distance from camera" -> 0.9)
+//   zoom   the 3D view's magnification (owner: "zoom in"); anchor  the fraction the view rides up
+//          from the core's tip toward the floor (0 now: centred on the core)
 //   edge   the board's picture fades out between these radii (world units from the core)
-//   grid   the BLACK HOLE GRID (owner: "add more rings in the bg to make it look more like a black hole"):
-//          rings every `ring` world units and `spokes` radial lines on the bell past the towers, out to
-//          `far`, where the bell itself ends; over the board only `onBoard` as strong, and outside
-//          the board's circle half as many (owner: "fewer curvature lines outside the circle")
-// ISOMETRIC (owner, 2026-10-09, after the funnel: "keep everything on the flat plane, but in 3D just have a
-// camera pointed isometrically to the core"): the board stays FLAT (depth 0, head 1 - the funnel's knobs
-// left at rest), seen from 35.3 deg above it (tilt = atan(sqrt 2), the isometric elevation) through a lens
-// so long (fov 0.02) it is all but orthographic, centred on the core (anchor 0); the surface opaque again
+//   depth, pow, head, shoulder (and grid.neck)  the funnel's knobs, left at rest (depth 0, head 1): the floor is flat
+//   grid   the black-hole grid: rings every `ring` world units and `spokes` radial lines out to `far`;
+//          off now (a 0), the code stays for the shader
+//   prism  the heights of the towers, slots and the core (see towerH / coreH3dFull)
 const WARP = { tilt: 0.55 /* owner: "much more top down instead" (was 0.9553, isometric), then "a little bit less top down" (was 0.4) */, fov: 0.9 /* owner: "increase size changes based on distance from camera" (was 0.02, near-orthographic); the scale AT the core is the same for any fov */, edge: [760, 840], depth: 0, pow: 2, zoom: 1, anchor: 0, alpha: 1, bgA: 1, prism: { tower: 18 /* a fresh tower (was 24, then 6; owner: "triple heights of towers and core") */, slot: 6, perPoint: 12, below: 1 /* centred on the plane (owner, was 3) */ } /* the core's height: towerH's sum / 6 + the tallest (warpEntities) */, head: 1, shoulder: 0.12, grid: { ring: 110, neck: 0, spokes: 24, far: 2400, a: 0, onBoard: 0.8 } }; // grid.a 0: no gravity-well grid (owner: "get rid of gravity well curvature indicators")
 // the tower ring's outer edge, world units from the core: the plateau the towers stand on
 const WARP_TOWERS = Math.max(...CELLS.map(c => Math.hypot(c.x - CX, c.y - CY))) + CELL_S * 1.5;
