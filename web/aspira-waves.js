@@ -67,7 +67,7 @@ const earlyHpMemo = new Map();
 function earlyHpX(type, n0) { // enemyHp (aspira-game.js)
   if (earlyX(n0) === 1 || ENEMIES[type].star) return 1;
   const key = type + n0;
-  if (!earlyHpMemo.has(key)) { const raw = waveCount(type, n0), cnt = Math.max(type === "swarm" ? Math.round(SWARM_WAVE_MIN / earlyX(n0)) : 1, laneCount(type, raw, formSplit(type, raw, n0))); earlyHpMemo.set(key, earlyX(n0) * Math.min(1, raw / cnt)); }
+  if (!earlyHpMemo.has(key)) { const raw = waveCount(type, n0), k = formSplit(type, raw, n0), cnt = Math.max(type === "swarm" ? Math.round(SWARM_WAVE_MIN / earlyX(n0)) : k, laneCount(type, raw, k)); earlyHpMemo.set(key, earlyX(n0) * Math.min(1, raw / cnt)); } // (as wavePlan counts it: one a lane at least)
   return earlyHpMemo.get(key);
 }
 // swarms are DOUBLED on waves 11-60 and x1.5 after (owner, 2026-10-06): a
@@ -102,8 +102,9 @@ function wavePlan(n, prev) {
   // FORMATIONS stay whole (aspira-formations.js): shields split only into whole Vs, armor into whole rows
   const split = formSplit(type, raw, n);
   const count = laneCount(type, raw, split);
-  // a swarm wave is never under SWARM_WAVE_MIN bodies, AFTER the lane rounding (owner, 2026-10-14: "make sure swarm waves have at least 12 units")
-  return { type, count: type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : count, split, star: n % STAR_EVERY === 0 };
+  // a swarm wave is never under SWARM_WAVE_MIN bodies, AFTER the lane rounding (owner, 2026-10-14: "make sure swarm waves have at least 12 units");
+  // and no lane copy of any OTHER type is empty (owner, 2026-10-15: "min 1 enemy per lane also ... except swarm")
+  return { type, count: type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : Math.max(split, count), split, star: n % STAR_EVERY === 0 };
 }
 function makeWave(n) {
   const { type, count } = wavePlan(n, G.lastType);
