@@ -24,6 +24,7 @@ export function makeGame(seed, patch = "") {
     Math: M, console, JSON, Map, Set, Array, Object, Number, String, Infinity, NaN, isFinite, parseInt,
     performance: { now: () => 0 }, Path2D: class { moveTo() {} lineTo() {} },
     document: { querySelectorAll: () => [], querySelector: () => null },
+    innerWidth: 390, innerHeight: 844, // (only a cache key for REAL_LANES - laneTurnScores scores against the fixed phone box)
     window: {}, localStorage: { getItem: () => null, setItem: () => {} },
     ui: { speed: 1, paused: false, sel: null, build: null },
     sfx: () => null, sfxSeq: () => null, bossVoice: () => "", shakeScreen: () => {}, showOverlay: () => {}, cam: { k: 1, ox: 0, oy: 0 }, cv: { width: 1000, height: 1000 },
@@ -64,7 +65,7 @@ export function makeGame(seed, patch = "") {
     // no nose-first turning (drawing only), and each lane copy's rotation trig
     // computed once instead of every enemy every tick - both exact
     FACING = false;
-    AUTO_POS = true; INSTANT_COINS = true; dmgNumber = dmgTick = hitFlash = () => {}; // (no screen: the numbers and flashes were ~6% of a game) // the simulated player drags every tower to its best spot (aspira-positioning.js)
+    AUTO_POS = true; INSTANT_COINS = true; if (${process.env.REAL_LANES ? 1 : 0}) SIM_REAL_LANES = true; /* REAL_LANES=1: lanes turned as the game turns them (laneBestTurn) */ dmgNumber = dmgTick = hitFlash = () => {}; // (no screen: the numbers and flashes were ~6% of a game) // the simulated player drags every tower to its best spot (aspira-positioning.js)
     var __trig = new Map();
     rotAbout = function (p, ang) {
       let t = __trig.get(ang);

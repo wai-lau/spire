@@ -281,7 +281,7 @@ function laneTurnScores(pi, k) {
 }
 function laneBestTurn(pi, k, n) {
   const base = laneTurn(n);
-  if ((typeof AUTO_POS !== "undefined" && AUTO_POS) || typeof phoneInside !== "function" || !PATHS[pi]) return base;
+  if ((typeof AUTO_POS !== "undefined" && AUTO_POS && !(typeof SIM_REAL_LANES !== "undefined" && SIM_REAL_LANES)) || typeof phoneInside !== "function" || !PATHS[pi]) return base; // (SIM_REAL_LANES: the simulator turns them as the game does - REAL_LANES=1)
   const sc = laneTurnScores(pi, k), best = Math.max(...sc), step = Math.PI * 2 / LANE_TURNS;
   let pick = base, gap = Infinity;
   sc.forEach((l, i) => { if (l < best * (1 - LANE_TURN_SLACK)) return; const t = i * step, d = Math.abs(((t - base) % (Math.PI * 2) + 3 * Math.PI) % (Math.PI * 2) - Math.PI); if (d < gap) { gap = d; pick = t; } });
