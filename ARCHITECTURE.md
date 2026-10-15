@@ -221,6 +221,39 @@ The matrix is DATA: `COUNTERS` in `aspira-defs.js`, from which the build card's 
 `BOSS_KILLERS`), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
 measures it.
 
+### 4.6b GRV, the gravity tower (spec, 2026-10-15 - being built)
+
+The fifth tower (owner's design, 2026-10-15; one of the two new ones - PSY the other). In the six-tower square every tower
+is strong against a PAIR of enemy types and weak to the other two; GRV takes the diagonal **swarm + armor**, weak to
+**fast + shield**. Reach: **mid**, about ARC's.
+
+**The attack.** Every fire, a **nova** comes into being at the target enemy's spot - no projectile. Its **yellow front**
+expands quickly (~0.25 s to its radius); enemies take the nova's hit as the front reaches them. It leaves a **black sphere
+with a purple outline** at its centre, and a **purple aura** expands from it at the front's speed until the aura's size
+(it keeps going after the yellow front stops, or stops first if smaller) - it reads as blown out by the nova.
+
+**The sphere's MASS** drives everything: the sphere's drawn size, the aura's radius, the aura's slow, its damage, and the
+pellet rate (capped at x3 the starting mass).
+- **Gains** mass from the DAMAGE the sphere deals (nova, aura, pellets): a crowd feeds it fast (swarm); armor is stripped by
+  the aura (below), so damage - and growth - climbs on armor; SHIELDS soak hits (little damage, little growth); FAST pass
+  quickly (few ticks, little growth).
+- **Loses** a LINEAR share of its starting mass every second (an unfed sphere lasts ~5 s); gone at zero.
+- **The aura**: a DoT, a SLOW, and an ARMOR STRIP like Corrosion (a multiplier on damage dealt, biting only positive armor).
+  Shielded enemies are NOT slowed; the nova and every aura tick pop a shield charge. Drawn as a radial gradient band -
+  clear at the sphere, 30% at mid-radius, clear at the edge. Its damage numbers drift INWARD, toward the sphere.
+- **Radiation**: every sphere sprays PELLETS around it from the start, more the bigger it is; each pellet a small hit (and
+  one shield charge, like any hit - kept sparse, ~2 a second at starting mass, so GRV stays weak to shields).
+
+**Axes** (purchases I-IV, IV the capstone; one capstone a tower):
+| axis | buys | capstone (IV) |
+|---|---|---|
+| **Void** | a bigger aura, a stronger slow | **Event Horizon**: near-total slow (90%) in a full-grown sphere, unshielded only |
+| **Supernova** | a bigger nova - the swarm answer | **Hypernova**: the nova strips a chunk of armor at once - a sphere starts heavy |
+| **Radiation** | more pellets per mass, harder pellets | **Hawking**: a sphere whose mass runs out evaporates in a last burst of pellets |
+
+Colours: violet (aura, outline) and yellow (nova) - new palette colours are allowed for /spire (owner, 2026-10-15).
+Numbers start as guesses and are fitted with the sims to "strong vs swarm and armor, weak vs fast and shield".
+
 ### 4.7 The core and its two powers
 
 The core is **free**: no price, no tiers. Bosses hand its powers out outright at full
