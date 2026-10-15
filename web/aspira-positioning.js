@@ -100,10 +100,10 @@ function bestSpot(t, range) {
 }
 // AUTO-MOVE (owner, 2026-10-13: "add an auto-move checkbox that uses the simulator movement, but limit the movement speed to
 // something a human can process, i.e. avoid teleporting"): the simulator's choice of spot (bestSpot, every POS_EVERY s of
-// game time), but the tower GLIDES there at up to HUMAN_V world units a REAL second, so the eye can follow it. The checkbox: aspira-ui.js
+// game time), but the tower GLIDES there at up to HUMAN_V world units a game second (at 1x, so the eye can follow it). The checkbox: aspira-ui.js
 let autoMove = false;
 try { autoMove = localStorage.getItem("spire.automove") === "1"; } catch (e) { /* not remembered */ }
-const HUMAN_V = 450; // a phone's width (500 units) in about a second (x1.5, owner 2026-10-14: "increase auto-move speed by 1.5x"; was 300, halved 2026-10-13 from 600)
+const HUMAN_V = 450; // a phone's width (500 units) in about a game second (x1.5, owner 2026-10-14: "increase auto-move speed by 1.5x"; was 300, halved 2026-10-13 from 600)
 const GLIDE_TURNS = [0, 0.5, -0.5, 1, -1, 1.4, -1.4], GLIDE_GIVE_UP = 2; // radians off the straight line, tried in order
 const GLIDE_ESCAPE = 4; // a tower caught overlapping glides out this many times faster (at the halved HUMAN_V one sat overlapped 42 frames - stuck.mjs)
 function autoGlide(t, dt) {
@@ -114,7 +114,9 @@ function autoGlide(t, dt) {
   t.posT = (t.posT || 0) - dt;
   if (t.posT <= 0) { t.posT = POS_EVERY; const s = bestSpot(t, towerStats(t).range); if (s) t.goal = s; }
   if (!t.goal || (typeof towerHeld === "function" && towerHeld(t)) || t.fling) return;
-  const real = dt / Math.max(0.01, typeof speedX === "function" ? speedX() : 1), dx = t.goal.x - t.x, dy = t.goal.y - t.y, d = Math.hypot(dx, dy), step = HUMAN_V * (caught ? GLIDE_ESCAPE : 1) * real;
+  // GAME time (owner, 2026-10-15: "auto-move at 10x should be 10x speed"): at a REAL-time pace a 10x game outran the towers
+  // tenfold, and the simulator (no game speed) never saw it
+  const dx = t.goal.x - t.x, dy = t.goal.y - t.y, d = Math.hypot(dx, dy), step = HUMAN_V * (caught ? GLIDE_ESCAPE : 1) * dt;
   if (d <= step) { moveTower(t, t.goal); t.goal = null; return; }
   // NEVER STUCK (owner, 2026-10-13: "ensure that the towers don't get stuck during simulations"): straight at it, else STEERED
   // round what is in the way (another tower, the core) - the first heading GLIDE_TURNS off the line that both moves it and

@@ -7,7 +7,7 @@
 const CHANGELOG = [
   { v: "4.3", day: "Oct 14", bu: [
     "Permafrost pulses twice as often, each half as strong.",
-    "Auto-move glides 1.5x faster.",
+    "Auto-move glides 1.5x faster, and as fast as the game speed (10x glides 10x).",
     "Swarms: 20% fewer enemies.",
     "Acid Contagion: a kill in a pool leaves a new pool.",
     "Acid Corrosion: goo lasts 40 s (was 8).",
@@ -28,7 +28,6 @@ const CHANGELOG = [
     "Orbital Relay: 11.25 s (was 22.5); stays on its tower.",
     "Temporal Drive: ends when no enemies are left; can't be used on an empty board.",
   ], u: [
-    "Auto-move no longer crawls during Temporal Drive at high game speed.",
     "The tower card closes with an X beside the upgrade button.",
     "Permafrost's stat says what it adds: \"+11% slow, stacking\".",
     "Tower descriptions match what towers do: Arc Conductivity IV twin arcs, V three; Voltage VI 1.6x per jump; Sublimation VI deeply brittle.",
