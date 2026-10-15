@@ -46,6 +46,11 @@ const SPEC = {
     // always the same rows ("—" with no puddles), so a pull from Contagion 0 lines up now -> next
     ["Pool burn", st.contagion ? Math.round(st.contagionHeat * 100) + "% of jet" : "—"], ["Drips every", st.contagion ? st.contagion.every + "s" : "—"],
     ["Pool size", st.contagion ? st.contagion.r : "—"], ["Pool lasts", st.contagion ? st.contagion.life + "s" : "—"], ["Carry", st.carry ? Math.round(st.carry * 100) + "%" : "—"], ["Jet slow", st.burnSlow ? Math.round(st.burnSlow * 100) + "%" : "—"]],
+  // GRV (aspira-grv.js): at STARTING mass - a sphere grows up to x GRV_MASS_MAX with the damage it deals
+  grv: st => [["Nova hit", dmgUnits(st.dmg * st.novaMul)], ["Nova reach", st.novaR], ["Aura size", st.auraR],
+    ["Aura slow", Math.round(st.slow * 100) + "%" + (st.horizon ? " · 90% full" : "")], ["Aura dmg", dmgUnits(st.dmg * GRV_AURA_K) + "/s"],
+    ["Armor strip", Math.round(GRV_STRIP * 100) + "% of dmg"], ["Pellets", +st.pellets.toFixed(1) + "/s" + (st.hawking ? " · last burst" : "")],
+    ["Pellet hit", dmgUnits(st.dmg * st.pelletK)], ["Mass", "up to ×" + GRV_MASS_MAX + " · " + GRV_LIFE + "s unfed"], ["Shields", "−1 / hit"]],
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
     ["Beams", st.beams || 1], ...(st.skill ? [["Shields", "−" + st.shieldPop + " / beam"]] : []) /* SOL_SHIELD_POP + SOL_REFRACT_POP */, ...(st.skill ? [["Refract", st.refraction ? (st.refraction === Infinity ? "all" : "+" + st.refraction) + " in a " + (st.cone || SOL_CONE) * 2 + "° cone" : "—"]] : []),
     // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)

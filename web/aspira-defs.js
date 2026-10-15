@@ -340,6 +340,7 @@ const TOWERS = {
   sol:     { name: "Sol",      ab: "SOL", color: "pink",   cost: 40,  dmg: 73, /* 1.5x the rate at 2/3 the hit (owner, 2026-10-12: "1.5x SOL"; was 110 / rate 1).  2026-10-08: halved (was 220).  2026-10-07: x1.3 (was 170) - armor now bites SOL (owner); solarmor.mjs: 170 piercing dealt 1.10M, unpierced x1.25 1.05M, x1.5 1.39M */  rate: 1.5, /* 2026-10-06: slower, harder shots (was 140 / 1.35) - an armor and boss specialist, not a swarm answer; 170 with every Focus beam a FULL hit (4 x 170 is about the old 7 shared beams); range 200 (was 175): the fast waves 14 / 18 outran the halved range */  range: 260 /* owner 2026-10-06: 200 still felt too small (was 350, halved) */, blurb: "Concentrated sun.", up: "crit chance" },
   // dmg = damage per SECOND at x1; rate = ticks per second (owner: a DoT line)
   acd:     { name: "Acid",    ab: "ACD", color: "chatsubo", cost: 40,  dmg: 23,  rate: 4, /* 2026-10-08: halved (was 46).  early-game balance 2026-10-06: was 18, then 26; 46 with the range halved (and a faster base ramp, ACD_DOUBLE) */    range: 88 /* x1.1 "a little" (owner, 2026-10-12; was 80) - owner 2026-10-11: "reduce acd range a lot" (was 115) */, blurb: "Definitely not basic.", up: "burn" },
+  grv:     { name: "Gravity", ab: "GRV", color: "violet", cost: 40,  dmg: 30, rate: 1.5 /* solo.mjs: 20 / 0.5 lost 26 lives on waves 1-11 alone; 30 / 1.5 with the aura 0.6 none, every pair clean on 1-12 */, range: 115, blurb: "Everything falls.", up: "mass" }, // the gravity tower (owner, 2026-10-15; aspira-grv.js, ARCHITECTURE.md 4.6b): dmg = the nova's hit; mid reach, like ARC
 };
 const KINDS = Object.keys(TOWERS);
 // THE COUNTER MATRIX (owner, 2026-10-08: each enemy type has ONE main counter and two helpers;
@@ -348,11 +349,11 @@ const KINDS = Object.keys(TOWERS);
 // matrix") so the two can never drift: GOOD_VS = the types a kind is the MAIN counter of (plus
 // bosses for the two single-target kinds), HELPS_VS = the types it is a helper against. The card
 // used to say FRZ was good vs shields - the one type it cannot slow at all.
-const COUNTERS = { swarm: { main: "arc", help: ["frz", "acd"] }, fast: { main: "frz", help: ["arc", "sol"] }, armor: { main: "sol", help: ["acd", "frz"] }, shield: { main: "acd", help: ["arc", "sol"] } };
+const COUNTERS = { swarm: { main: ["arc", "grv"], help: ["frz", "acd"] }, fast: { main: ["frz"], help: ["arc", "sol"] }, armor: { main: ["sol", "grv"], help: ["acd", "frz"] }, shield: { main: ["acd"], help: ["arc", "sol"] } }; // main: a LIST since GRV (2026-10-15) - it is built against swarm AND armor
 const BOSS_KILLERS = ["sol", "acd"]; // the focused ray and the ramping jets: built for one big target
 const TYPE_PLURAL = { swarm: "swarms", fast: "fast", armor: "armor", shield: "shields" };
 const vsList = pick => Object.keys(COUNTERS).filter(e => pick(COUNTERS[e])).map(e => TYPE_PLURAL[e]);
-const GOOD_VS = Object.fromEntries(KINDS.map(k => [k, vsList(c => c.main === k).concat(BOSS_KILLERS.includes(k) ? ["bosses"] : []).join(", ")]));
+const GOOD_VS = Object.fromEntries(KINDS.map(k => [k, vsList(c => c.main.includes(k)).concat(BOSS_KILLERS.includes(k) ? ["bosses"] : []).join(", ")]));
 const HELPS_VS = Object.fromEntries(KINDS.map(k => [k, vsList(c => c.help.includes(k)).join(", ")]));
 const MAX_LVL = 4;
 let RANGE_BONUS = 1.165; /* x0.75 (owner, 2026-10-12: "reduce all tower ranges by 25%"; was 1.553) */ /* x1.5 for THREE towers (owner, 2026-10-09: "increase range of all towers by some percentage" - "don't let range go over 1.5x"; was 1.035) */ /* let: the simulator tries others (three towers, 2026-10-09) */ // +15% across the board (owner, 2026-10-06; was 0.9) // 75% of the old 1.2 (owner, 2026-10-04: towers move now; a halving to 0.6 was meant as 75%)
@@ -441,6 +442,7 @@ function towerStats(t, noAura = false) {
       s.crit = LVL_SOL_CRIT[i]; s.rate = b.rate * LVL_SOL_RATE[i]; break;
     case "frz": if (hasSkills(t)) { frzSkillStats(t, s, b); break; } s.slow = LVL_SLOW[i]; s.targets = 3; break; // owner: 3 rays by default (2026-10-04; was 1 since 2026-10-02)
     // ACD levels up MODESTLY like ARC (owner): the L2 path brings the big change
+    case "grv": grvSkillStats(t, s, b); break; // the gravity tower (aspira-grv.js)
     case "acd":
       if (hasSkills(t)) { acdSkillStats(t, s, b); break; } // ACD's chart (aspira-skills.js)
       s.dmg = b.dmg * LVL_ARC_DMG[i]; s.range = b.range * RANGE_BONUS * LVL_ARC_RANGE[i];
@@ -480,7 +482,7 @@ const upCost = t => Math.round(TOWERS[t.kind].cost * (hasSkills(t) ? SKILL_STEP_
 // starts its tree on whatever is nearest the core, FRZ slows what nothing has
 // touched yet (Fresh), SOL saves its big hit for the most HP, ACD holds its
 // ramping burn on the longest-lived (Biggest)
-const DEFAULT_MODE = { arc: "close", frz: "fresh", sol: "biggest", acd: "biggest" };
+const DEFAULT_MODE = { arc: "close", frz: "fresh", sol: "biggest", acd: "biggest", grv: "close" };
 // each new tower costs 1.5x the last (owner, 2026-10-04; was 2x): 40, 60, 90, 135, 203, 304
 const towerCost = k => Math.round(TOWERS[k].cost * Math.pow(1.5, G.towers.length));
 const sellValue = t => Math.floor(t.spent * 0.95); // 95% back (owner, 2026-10-13; was 70%)

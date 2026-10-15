@@ -216,7 +216,7 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 | **armor** | weak (grounds the arc) | help | MAIN | help | strip below zero = a flat bonus; armor scales with HP |
 | **shield** | help | weak (no slow) | help | MAIN | pops a hit: ACD one a tick, SOL by Focus |
 
-The matrix is DATA: `COUNTERS` in `aspira-defs.js`, from which the build card's "good vs"
+The matrix is DATA: `COUNTERS` in `aspira-defs.js` (each type's `main` a LIST since GRV joined swarm and armor, 2026-10-15), from which the build card's "good vs"
 (main) and "helps vs" lines derive (`GOOD_VS`, `HELPS_VS`; SOL and ACD add bosses,
 `BOSS_KILLERS`), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
 measures it.

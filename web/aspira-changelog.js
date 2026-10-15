@@ -5,6 +5,9 @@
 // each day's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
+  { v: "4.5", day: "Oct 15", bu: [
+    "New tower: Gravity. A nova leaves a black sphere whose aura burns, slows and strips armor, growing with every hit; it radiates pellets. Strong against swarm and armor, weak to fast and shields. Axes: Void, Supernova, Radiation.",
+  ] },
   { v: "4.4", day: "Oct 15", ne: [
     "Upgrades cost x1.6.",
     "A boss on two lanes pays its reward once (Strength and Temperance paid twice).",

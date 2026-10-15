@@ -131,12 +131,13 @@ const STAT_SECTIONS = {
   arc: [["Arc", ["Damage", "Rate", "Range", "Shields", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
   frz: [["Freeze Aura", ["Aura slow", "Aura dmg", "Cold bite", "Brittle", "Shields", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
   sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Refraction", ["Refract"]], ["Breach", ["Breach", "Bleed", "Shrapnel"]]],
+  grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Aura size", "Aura slow", "Aura dmg", "Armor strip"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]]],
   acd: [["Jets", ["Corrode", "Builds", "Peak", "Jets", "Carry", "Jet slow", "Shields", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
 function cardStats(t, pv) {
   const b = TOWERS[t.kind], st = towerStats(t), nx = pv ? towerStats(pv) : null, spN = nx ? SPEC[t.kind](nx, pv) : null;
   const rows = [];
-  if (b.dmg && t.kind !== "acd") rows.push(["Damage", dmgUnits(st.dmg), nx && dmgUnits(nx.dmg)]); // (ACD's Corrode row is its damage)
+  if (b.dmg && t.kind !== "acd" && t.kind !== "grv") rows.push(["Damage", dmgUnits(st.dmg), nx && dmgUnits(nx.dmg)]); // (ACD's Corrode row is its damage)
   rows.push(["Range", Math.round(st.range), nx && Math.round(nx.range)], ["Rate", st.rate.toFixed(2) + "/s", nx && nx.rate.toFixed(2) + "/s"],
     ["Leash", slideSpan(t), nx && slideSpan(pv)]);
   SPEC[t.kind](st, t).forEach((r, k) => rows.push([r[0], r[1], spN ? spN[k][1] : null]));

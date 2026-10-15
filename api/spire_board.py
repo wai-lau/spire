@@ -40,7 +40,7 @@ HIDDEN = "spire_ascendants_hidden.json"
 SHOW_MAX = 500  # the most the GET returns (display only - the store keeps every entry)
 MAX_LIVES = 100000
 MIN_WAVE, WIN_WAVE, MAX_WAVE = 11, 120, 1000  # (a win is wave 120 since the 12-wave boss cycle, 2026-10-12)
-TOWER_KINDS = ("arc", "frz", "sol", "acd")
+TOWER_KINDS = ("arc", "frz", "sol", "acd", "grv")
 _INITIALS = re.compile(r"[A-Z]{3}")
 _LOCK = threading.Lock()
 

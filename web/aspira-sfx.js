@@ -93,6 +93,8 @@ const SFX = {
     tone({ f0: 600, f1: 90, dur: 0.32, vol: 0.06, delay: 0.12 });
   },
   frz:     () => tone({ f0: 900, f1: 480, dur: 0.18, vol: 0.1 }),
+  // the GRV nova (2026-10-15): a deep thump that swells, a bright crack on top - a star going off
+  grv:     () => { tone({ type: "sine", f0: 70, f1: 140, dur: 0.3, vol: 0.22 }); noise({ dur: 0.12, vol: 0.12, freq: 2200, q: 1.5 }); },
   kill:    () => tone({ type: "triangle", f0: 520, f1: 1040, dur: 0.07, vol: 0.16 }),
   // the core is hit: a SHUTDOWN (owner) - a click, then the power sliding
   // away, everything falling to nothing like a machine switching off
@@ -154,7 +156,7 @@ function loadSamples() {
 // Each TOWER's sound plays at most 3 copies at once (owner, 2026-10-02),
 // sample or synth alike: playing[name] counts live copies and a 4th is
 // skipped. A sample copy is also quieter by how many are already sounding.
-const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3 }, playing = {};
+const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3 }, playing = {};
 let curSound = null; // the synth sound being built, so envelope() can count it
 // LOUDNESS (owner, 2026-10-02): the bosses' warnings and voices and every
 // upgrade/build sound stand well above the towers' shots - about 10 dB

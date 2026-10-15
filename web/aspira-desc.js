@@ -44,6 +44,14 @@ const DESCRIBE = {
     const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0; // pools from the start (owner, 2026-10-12)
     return ACD_JETS[f] + (f ? " slowing" : "") + " jets of " + "acid" + (k >= 6 ? " that dissolves armor" : k ? " that corrodes armor" : "") + ", dripping " + (c >= 6 ? "massive" : c >= 3 ? "huge" : c ? "larger" : "large") + " pools; each kill leaves one more. " + (c ? "What dies in a pool leaves one of its own. " : "") /* Contagion spreads (aspira-acid.js) */ + (k ? "Eaten armor drops a corrosive goo. " : "") /* the drip (aspira-acid.js) */ + (f ? "A jet keeps its flow on its next enemy." : "A jet starts cold on each new enemy.");
   },
+  // GRV (owner, 2026-10-15): Supernova a wider nova (Hypernova tears armor away); Void a harder slow (Event Horizon all but
+  // stops it); Radiation more pellets (Hawking: a last burst)
+  grv(sk) {
+    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0;
+    return (n >= 6 ? "A hypernova that tears armor away" : n ? "A wide nova" : "A nova") + " leaves a black sphere. Its aura burns, " +
+      (v >= 6 ? "holds what a full sphere catches almost still" : v ? "drags hard" : "slows") + " and strips armor, and the sphere grows with every hit. It radiates " +
+      (r >= 6 ? "a storm of pellets and bursts as it fades." : r ? "pellets, thick and hard." : "a few pellets.");
+  },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
 // (the per-tier `desc` / `base` sentences in SKILL_TREES were never shown once these existed, and had drifted; removed 2026-10-14)

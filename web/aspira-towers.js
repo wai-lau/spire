@@ -319,6 +319,7 @@ function fire(t, st) {
   // (a chart ARC's two strikes are two SEPARATE attacks - owner: each its own tree)
   if (t.kind === "arc") { for (const e of targets) fireChain(t, st, e); return true; }
   if (t.kind === "sol") { fireRay(t, st, targets[0]); return true; }
+  if (t.kind === "grv") return novaAt(t, st, targets[0]); // a nova on it, no projectile (aspira-grv.js)
   const col = TOWERS[t.kind].color;
   for (const e of targets) {
     const d = shotDamage(t, st, e, st.dmg);
@@ -354,7 +355,7 @@ function usePower(code) {
 // its slide tiers have room - about a third of the phone at base, all of it by tier V (and further at the capstone, VI). MOVE_BASE x the tier's slide
 // (SKILL_MOVE), up to SLIDE_MAX. (Was the old spoke's travel x MOVE_SPAN 3.375: ARC 434, FRZ 519, ACD 869 - most of the
 // phone before a tier, so the slide tiers bought nothing - and SLIDE_MAX 2 voided every tier past x2; SOL halved to 74 that day)
-const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74 }, SLIDE_MAX = 3;
+const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74, grv: 200 }, SLIDE_MAX = 3;
 const MOVE_EDGE = 12; // world units kept clear of the screen's edge
 const leashR = t => MOVE_BASE[t.kind] * Math.min(towerStats(t, true).slide, SLIDE_MAX);
 const slideSpan = t => Math.round(leashR(t)); // the card's Leash row

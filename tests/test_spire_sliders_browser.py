@@ -86,10 +86,11 @@ def test_sliders_preview_limits_and_lock_in(guest_page):
     # past the top: it stops at the top tier
     _tap(page, 0, 1, top + 2)
     assert _basket(page).get("conductivity") == top
-    assert page.locator(".asp-axis-tier").nth(0).inner_text() == "0→" + page.evaluate(f"roman({top})")
-    _tap(page, 0, -1, top - 3)  # back down to III
+    # the shown tier is the PURCHASE count (I-IV, IV the capstone - aspira-capstone.js SHOWN_TIERS), the pull a stop at a time
+    assert page.locator(".asp-axis-tier").nth(0).inner_text() == "0→" + page.evaluate("roman(SHOWN_TIERS)")
+    _tap(page, 0, -1, 2)  # back down two stops: VI -> V -> III (shown II)
     assert _basket(page).get("conductivity") == 3
-    assert "Arc III" in up.inner_text()
+    assert "Arc II" in up.inner_text()
 
     # a poor bank: the pull still lands, the button goes red and takes no tap
     page.evaluate("G.money = 150")
@@ -110,13 +111,13 @@ def test_sliders_preview_limits_and_lock_in(guest_page):
     assert t["skills"] == {"conductivity": 3} and t["lvl"] == 4
     assert t["money"] == 100000 - cost
     assert _basket(page) == {}
-    assert "III" in up.inner_text() and "(" not in up.inner_text()
+    assert "II" in up.inner_text() and "(" not in up.inner_text()
 
     # pulling back below the locked tier: refused, and the reason shows
     _tap(page, 0, -1)
     assert not any(_basket(page).values())
     assert "locked" in page.locator("#asp-slider-note").inner_text()
-    assert page.locator(".asp-axis-tier").nth(0).inner_text() == "III"
+    assert page.locator(".asp-axis-tier").nth(0).inner_text() == "II"
 
     # the second axis one stop out, then the U key locks it in
     _tap(page, 1, 1)
@@ -142,7 +143,7 @@ def test_build_cards_fit_landscape_and_portrait(guest_page):
     page.evaluate("() => { G.money = 100000; openBuildChooser(0); }")
     page.wait_for_selector(".asp-build-cards .asp-card")
     fit = _cards_fit(page)
-    assert fit["n"] == 4 and fit["cardsIn"] and fit["btnIn"], fit
+    assert fit["n"] == page.evaluate("KINDS.length") and fit["cardsIn"] and fit["btnIn"], fit
     assert fit["cols"] >= 2, fit  # landscape: side by side, not one tall column
     page.evaluate("closeChooser()")
 
@@ -150,5 +151,5 @@ def test_build_cards_fit_landscape_and_portrait(guest_page):
     page.evaluate("() => { openBuildChooser(0); }")
     page.wait_for_selector(".asp-build-cards .asp-card")
     fit = _cards_fit(page)
-    assert fit["n"] == 4 and fit["cardsIn"] and fit["btnIn"], fit
+    assert fit["n"] == page.evaluate("KINDS.length") and fit["cardsIn"] and fit["btnIn"], fit
     assert fit["cols"] == 1, fit  # portrait: one column

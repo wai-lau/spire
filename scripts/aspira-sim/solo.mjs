@@ -9,7 +9,7 @@ import { makeGame } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
 import { simBanner } from "./simver.mjs";
 
-const K = ["arc", "frz", "sol", "acd"], LAST = 12;
+const K = (process.env.KINDS || "arc,frz,sol,acd,grv").split(","), LAST = 12; // (grv: the gravity tower, 2026-10-15)
 // one game: towers [[kind, cell, axis?]] placed at the start, nothing bought after
 function game(towers, seed) {
   const g = makeGame(seed);

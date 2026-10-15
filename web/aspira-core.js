@@ -98,6 +98,7 @@ const relayMul = t => (relayed(t) ? RELAY_MUL : 1);
 function relayStats(s, kind, m) {
   if (kind === "sol" || kind === "acd") s.targets *= m;
   if (kind === "frz") { s.dmg *= m; s.targets *= m; if (s.moonN) s.moonN *= m; if (s.moons) s.moons *= m; }
+  if (kind === "grv") s.rate *= m; // GRV: three novas for one
 }
 
 // ---------- Temporal Drive: the stopping ring ----------

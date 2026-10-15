@@ -84,7 +84,7 @@ function layoutCards(el, row) {
   const availH = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - el.firstElementChild.offsetHeight - CARD_GAP_PX;
   const width = cols => Math.min(CARD_W, (availW - CARD_GAP_PX * (cols - 1)) / cols);
   const apply = cols => { row.style.setProperty("--cols", cols); row.style.setProperty("--card-w", Math.floor(width(cols)) + "px"); };
-  const tries = Array.from({ length: n }, (_, k) => (landscape ? n - k : k + 1)).filter(c => n % c === 0); // FULL rows only (owner, 2026-10-13: four cards "1 by 4 or 4 by 1 or 2 by 2, never like this" - a 3 + 1)
+  const tries = Array.from({ length: n }, (_, k) => (landscape ? n - k : k + 1)).filter(c => n % c === 0 || n % c === c - 1); // a last row at most ONE short (2026-10-15: five cards since GRV - 3 + 2, not one tall column) // FULL rows only (owner, 2026-10-13: four cards "1 by 4 or 4 by 1 or 2 by 2, never like this" - a 3 + 1)
   for (const min of [CARD_MIN, CARD_FLOOR]) {
     for (const cols of tries) {
       if (cols > 1 && width(cols) < min) continue;
@@ -135,7 +135,7 @@ function buildCard(k, i) {
   const b = TOWERS[k], cost = towerCost(k);
   // "good vs" right under the title (owner); the base stats on ONE line so all
   // four cards fit on a phone above the spend bar (owner: everything fits)
-  return '<div class="name">' + (i + 1) + " · " + b.name + " · -" + cr(cost) + "</div>" + '<div class="asp-goodvs">good vs ' + GOOD_VS[k] + " · helps vs " + HELPS_VS[k] + "</div>" + // main counter first, then its helper roles (COUNTERS, aspira-defs.js)
+  return '<div class="name">' + (i + 1) + " · " + b.name + " · -" + cr(cost) + "</div>" + '<div class="asp-goodvs">good vs ' + GOOD_VS[k] + (HELPS_VS[k] ? " · helps vs " + HELPS_VS[k] : "") + "</div>" + // main counter first, then its helper roles (COUNTERS, aspira-defs.js)
     '<p class="asp-hint">' + b.blurb + "</p>"; // WHY it works, no stat dump (owner, 2026-10-07)
 }
 function openBuildChooser(ci) {

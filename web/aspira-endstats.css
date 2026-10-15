@@ -19,6 +19,7 @@
 .asp-end-towers tr[data-kind="frz"] { color: hsl(var(--cyan-hsl)); }
 .asp-end-towers tr[data-kind="sol"] { color: hsl(var(--pink-hsl)); }
 .asp-end-towers tr[data-kind="acd"] { color: hsl(var(--cat-social-h) var(--cat-social-s) var(--cat-social-l)); }
+.asp-end-towers tr[data-kind="grv"] { color: hsl(var(--asp-violet-hsl)); }
 
 .asp-end-waves {
   max-height: 30dvh;
