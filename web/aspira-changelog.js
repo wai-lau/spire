@@ -22,6 +22,7 @@ const CHANGELOG = [ // each day's lines in two groups: b = Balance, u = Perf/UI.
     "Temporal Drive: ends when no enemies are left; can't be used on an empty board.",
   ], u: [
     "The tower card closes with an X beside the upgrade button.",
+    "Permafrost's stat says what it adds: \"+11% slow, stacking\".",
     "Tapping the empty bar beside the speed buttons closes the open window.",
     "Autosave: resume from the start of the last wave.",
     "Game speeds: 1x, 1.5x, 2x, 3x (keys 1-4).",
