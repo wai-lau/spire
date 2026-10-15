@@ -1,9 +1,11 @@
 # THE SPIRE
 
 Spiral tower defence at `wai-lau.net/spire` (`/aspira` 301s to it; files, code
-and the nav key keep the name `aspira`). Full design, balance and every trap:
-**ARCHITECTURE.md** (this repo); incidents, superseded designs and
-balance/perf history: **ARCHAEOLOGY.md**.
+and the nav key keep the name `aspira`). The current game design, topic by topic
+(§1 overview .. §10 tech): **ARCHITECTURE.md** (this repo), whose **§11 is every
+trap** - read it before changing code. Incidents, superseded designs and
+balance/perf history: **ARCHAEOLOGY.md** (same top-level numbering). Code comments
+that say `ARCHITECTURE.md §22` mean the whole of ARCHITECTURE.md.
 
 ## Where this repo lives
 
