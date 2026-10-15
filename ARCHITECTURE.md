@@ -16,21 +16,15 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 
 ## 1. Overview and pillars
 
-```
- tap an open slot -> build (the 1st tower sends wave 1)
-        ^                     |
-        |                     v
-   spend credits       waves warp in: a 6.4 s timer, or at once on a clear field
-   (tower x1.5 each,          |
-    chart buys)               v
-        ^              kills pay credits -> gold dots fly home to the core
-        |                     |
-        +---------------------+
-   every 12th wave a boss (Major Arcana) + fleet -> +6 lives OR +1% interest;
-   the core's two powers at waves 24 and 48; score lives paid when it falls
-
-   WIN   the 10th boss (wave 120, Death) and its fleet fall
-   LOSE  core lives hit 0, or any boss reaches the core
+```mermaid
+flowchart TD
+  build["tap an open slot: build<br/>(the 1st tower sends wave 1)"] --> wave
+  wave["a wave warps in<br/>WAVE_TIMER 6.4 s, or at once on a clear field"] --> kills["kills pay credits<br/>(gold dots fly home to the core)"]
+  kills --> spend["spend: a tower (x1.5 each) or chart buys"] --> wave
+  wave -. "every 12th wave" .-> boss["a boss (Major Arcana) + its fleet<br/>+6 lives OR +1% interest; the core's powers at 24 / 48;<br/>score lives paid when it falls"]
+  boss --> wave
+  boss -- "the 10th boss (wave 120, Death) and its fleet fall" --> win(["WIN"])
+  wave -- "core lives hit 0, or any boss reaches the core" --> lose(["LOSE"])
 ```
 
 | # | Pillar (an owner rule) | What it fixes | Where |
@@ -49,17 +43,8 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 
 ### 2.1 Geometry (fixed, never random)
 
-```
-   spawn: the lane's first crossing of SPAWN_R 600         lead-in LEAD_R 2400 -> R0 760,
-          (every spawn equidistant)           o~~~~~~~~~\   then an Archimedean spiral
-                                                         \  to the core
-   12 lanes, 30 deg apart, in mirror pairs (2j, 2j+1);    )
-   only the odd twin is ridden: EVERYTHING RIDES CLOCKWISE/
-                                                . . . .  /     six hex slots round the core
-   FIRE_R 250 = where "time under fire" is      .  O  . /      (CELL_S 32, SLOT_R 78);
-   measured; rim RIM_R 482                      . . . .        THREE open: -120 / 0 / 120
-                     core: a white hexagon, CORE_R 25; lives as shield segments, credits as a number
-```
+![The chart: lanes, slots, core (to scale)](docs/arch/geometry.svg)
+
 
 | Rule | Design |
 |---|---|
@@ -71,15 +56,8 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 
 ### 2.2 The play box (pillar 1)
 
-```
-          +-------------------+   ^
-          |                   |   |  VIEW_UP = 1.5 x VIEW_SIDE
-          |                   |   v
-          |<- 250 -> O <- 250 ->|     O = core, VIEW_SIDE 250 world units
-          |                   |   ^
-          |                   |   |  VIEW_DOWN ~506
-          +-------------------+   v
-```
+![The play box](docs/arch/play-box.svg)
+
 
 `PHONES` lists standard phone page sizes; at `PHONE_ZOOM` 0.72 the tightest gives the box
 (`aspira-positioning.js`). **Every screen zooms to fit it** (`resize`, centred on the
@@ -110,12 +88,12 @@ lost core segment flashes the boss red.
 
 **Wave gating** (`bossUp` includes `G.fleetQ`):
 
-```
-plain wave    WAVE_TIMER 6.4 s  -or-  field clear                -> next wave
-boss alive / fleet queued / Temporal Drive running               -> timer HELD
-boss wave     never on the timer; only on a clear field
-after a boss  fleet dead -> sky closes (§5.5) -> 2 s -> [challenge the <next boss>] -> next wave
-              (after waves 12, 24 .. 108; not after the last)
+```mermaid
+flowchart LR
+  plain["plain wave"] --> timer{"WAVE_TIMER 6.4 s ran out,<br/>or the field is clear"} --> next["next wave"]
+  hold["a boss alive, a fleet queued (G.fleetQ),<br/>or Temporal Drive running"] -- "holds the timer" --> timer
+  bossw["boss wave"] -- "only on a clear field,<br/>never on the timer" --> next
+  bossw --> dead["fleet dead"] --> sky["the sky closes (§5.5)"] -- "2 s" --> btn["challenge-the-next-boss button<br/>(after 12, 24 .. 108; not the last)"] --> next
 ```
 
 **Auto-wait** (on by default; only ever slows): x0.5 / 0.25 / 0.125 of the chosen speed
@@ -385,21 +363,8 @@ spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**
 
 ### 7.1 Layout (phone first, 430x932)
 
-```
- [home]  LIVES  INTEREST  WAVE  BEST  V(tap: changelog)  FPS         [mute]
-         [ ] auto-wait  [ ] auto-move (ascendants)  quality low|high|3D   [|] volume
-                         +------------------------+                       [|]
-                         |                        |
-                         |        the board       |    cards: centred above the bar at
-                         |      (the play box)    |    --z-bubble, lifted clear of list
-                         |           O            |    and title (cardLift); NEVER scroll
-                         |                        |
-                         +------------------------+
-   upcoming waves              haiku
-   (10 rows, icons)       [Temporal] [Relay]
-                              title
- [pause] [1x] [1.5x] [2x] [3x]  . . . a tap on the empty part closes the open card
-```
+![Layout at 430x932](docs/arch/layout.svg)
+
 
 | Rule | Design |
 |---|---|
@@ -524,19 +489,19 @@ add a line with every change a player would notice.
 
 ### 10.1 Files and load order
 
-The template's `<script>` order, one shared global scope, files capped at 500 lines
-(exec-fn's pre-commit) and so split by seam:
+The template's `<script>` order (the truth is `templates/aspira.html`), one shared global scope,
+files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 
-```
-defs (geometry, tables, towerStats) -> sfx -> upgrades (dormant) -> game (G, combat, damage, slows)
- -> formations -> floats (numbers, coins) -> waves -> bosses -> positioning (+ the play box)
- -> towers (ARC, SOL, moons, leash) -> acid -> skills (the charts, ARC) -> frz -> desc
- -> capstone (index 6 on every table) -> chart -> stats -> sliders (the card) -> core -> core-fx
- -> powers -> endstats -> ascend -> quality (lowQ, just before draw) -> threat -> draw -> textcache
- -> effects -> enemies -> lanes -> camera -> fling -> fog -> warp -> warplayers -> fxgl -> glctx
- -> pick -> solids -> walls -> chooser -> wavelist -> ui (HUD, input, the frame loop) -> perflog
- -> changelog -> autosave
-```
+| Stage (in order) | Scripts |
+|---|---|
+| data and state | `defs` (geometry, tables, `towerStats`), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows) |
+| waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
+| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `desc`, `capstone` (index 6 on every table), `chart`, `stats`, `sliders` (the card) |
+| core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
+| draw (2D) | `quality` (`lowQ`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
+| draw (3D) | `warp`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
+| UI and tail | `chooser`, `wavelist`, `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave` |
+
 
 | Piece | Where |
 |---|---|
