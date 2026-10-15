@@ -411,7 +411,7 @@ multipliers `ENEMY_HP_MUL` 0.225 on HP and `BOUNTY_MUL` 0.7 on bounty):
 |---|---|---|---|---|
 | swarm | x1.1 | 0.112 x1.15 | 0.36 | leaks 2; wander; HP and size jittered 50-300% of average; speed x0.5-1.5, its own roll (not tied to size) |
 | shield | x0.933 | 0.6 | 1.6 | 4 base charges, scale with the wave |
-| armor | x0.7 | 1.25 | 2 | armor 15 x`ENEMY_HP_MUL` base, scales with HP (`armorGrow`) |
+| armor | x0.7 | 1.25 | 1 (was 2; x2 bodies, 2026-10-14) | armor 15 x`ENEMY_HP_MUL` base, scales with HP (`armorGrow`) |
 | fast | x1.5 x1.037 x1.1 | 0.65 | 0.8 | trails a long tracer |
 | boss | x1.0 | 3.5 | 3 | leaks 10 = game over |
 
@@ -447,7 +447,9 @@ cycle was 10 waves and the curves were tuned on it).
 - **Counts:** a plain wave's base is `10 + floor(0.5 x eqWave)`, swarm x6, all /2, then x
   `WAVE_COUNT_MUL` (waves 1-11 hand-tuned so one L1 tower can clear them: 2 x.5, 1 x.75,
   3 x.67, 4 x.75, 6 x.67, 7 x.75, 10 and 11 x.5) x `TYPE_COUNT_MUL` (swarm 0.1625 x0.8 — 2026-10-14, "easier for humans", no HP back — shield
-  .99, armor 1.07, fast 2, all x0.9); swarms x2 from (eq) wave 11 (`SWARM_X2_FROM`) and a
+  .99, armor 1.07 x2 — 2026-10-14, twice the bodies at half the bounty (1, was 2) — fast 2, all x0.9);
+  a swarm WAVE is never under `SWARM_WAVE_MIN` 12 bodies, applied after the lane rounding
+  (`wavePlan`; boss fleets keep their own counts); swarms x2 from (eq) wave 11 (`SWARM_X2_FROM`) and a
   further x2 over (eq) waves 11-60, x1.5 after (`swarmMul`), x the late swarm trait; fast
   x0.65 past (eq) wave 80. Counts are rounded to whole formations (§5.4). (`WAVE_COUNT_MUL`
   keys are real waves; the rest read the equivalent wave.)

@@ -7,6 +7,8 @@ const CHANGELOG = [ // each day's lines in two groups: b = Balance, u = Perf/UI.
     "Permafrost pulses twice as often, each half as strong.",
     "Swarms: 20% fewer enemies.",
     "Swarm enemies vary more in speed (50-150%).",
+    "Swarm waves: at least 12 enemies.",
+    "Armor waves: twice as many enemies, each worth half the credits.",
     "Enemies speed up through the mid-game and have less HP.",
     "Mid-game enemies: up to x1.5 HP.",
     "Late enemies: faster, less HP.",

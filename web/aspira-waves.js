@@ -50,11 +50,12 @@ function fixedRand(n, salt) {
 // tower, on ENEMY-SECONDS - the first fit, on closest approach, piled on slow
 // armor and shields); used for EVERY wave (owner: no upgrades in the test)
 const TYPE_COUNT_MUL = { swarm: 0.1625 /* HALF the bodies (owner, 2026-10-14: "halving swarm counts, and balancing with hp and speed" - fewer dice to draw; each one x2 bounty and leak, x1.15 HP); 0.325: x1.25 bodies, each /1.25 HP (owner, 2026-10-12: "a little more swarmy"; was 0.26) */ /* 2026-10-08 owner: half as many, double hp (was 0.52) */, shield: 0.99, armor: 1.07, fast: 2 /* 2026-10-07: the early fit wanted 1.99 (was 1.47) - fast put the least early pressure of any type */ }, WAVE_TYPE_FORCE = {};
+TYPE_COUNT_MUL.armor *= 2; // TWICE the armor bodies at HALF the bounty each (owner, 2026-10-14: "double quantity of armor waves (split bounty into 2)"; ENEMIES.armor.bounty 2 -> 1)
 TYPE_COUNT_MUL.swarm *= 0.8; // x0.8 swarm bodies, no HP back (owner, 2026-10-14: "just to make it easier for humans")
 for (const k in TYPE_COUNT_MUL) TYPE_COUNT_MUL[k] *= 0.9; // 2026-10-11: a tenth fewer of each, with the faster short-lane mix (aspira-defs.js)
 // DOUBLE the swarms past SWARM_X2_FROM, each at its own HP (owner, 2026-10-12: "dont triple swarms, just double"; then
 // not before wave 11 - SOL openers died at wave 6 to wave 1's doubled swarm, SOL being weak to it)
-const SWARM_X2_FROM = 11;
+const SWARM_X2_FROM = 11, SWARM_WAVE_MIN = 12;
 // swarms are DOUBLED on waves 11-60 and x1.5 after (owner, 2026-10-06): a
 // SOL-heavy build must find a swarm answer; x2 past 60 cost ARC+SOL+FRZ teams 20 waves
 const SWARM_MID_MUL = 2, SWARM_MID = [11, 60], SWARM_LATE_MUL = 1.5;
@@ -86,7 +87,9 @@ function wavePlan(n, prev) {
   // split k ways, ROUNDED DOWN so every lane copy gets the same number (owner)
   // FORMATIONS stay whole (aspira-formations.js): shields split only into whole Vs, armor into whole rows
   const split = formSplit(type, raw, n);
-  return { type, count: laneCount(type, raw, split), split, star: n % STAR_EVERY === 0 };
+  const count = laneCount(type, raw, split);
+  // a swarm wave is never under SWARM_WAVE_MIN bodies, AFTER the lane rounding (owner, 2026-10-14: "make sure swarm waves have at least 12 units")
+  return { type, count: type === "swarm" ? Math.max(SWARM_WAVE_MIN, count) : count, split, star: n % STAR_EVERY === 0 };
 }
 function makeWave(n) {
   const { type, count } = wavePlan(n, G.lastType);
