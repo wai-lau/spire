@@ -67,7 +67,7 @@ const earlyHpMemo = new Map();
 function earlyHpX(type, n0) { // enemyHp (aspira-game.js)
   if (earlyX(n0) === 1 || ENEMIES[type].star) return 1;
   const key = type + n0;
-  if (!earlyHpMemo.has(key)) { const raw = waveCount(type, n0), k = formSplit(type, raw, n0), cnt = Math.max(type === "swarm" ? Math.round(SWARM_WAVE_MIN / earlyX(n0)) : k, laneCount(type, raw, k)); earlyHpMemo.set(key, earlyX(n0) * Math.min(1, raw / cnt)); } // (as wavePlan counts it: one a lane at least)
+  if (!earlyHpMemo.has(key)) { const raw = waveCount(type, n0), k = formSplit(type, waveCount(type, n0, false), n0), cnt = Math.max(type === "swarm" ? Math.round(SWARM_WAVE_MIN / earlyX(n0)) : k, laneCount(type, raw, k)); earlyHpMemo.set(key, earlyX(n0) * Math.min(1, raw / cnt)); } // (as wavePlan counts it: one a lane at least)
   return earlyHpMemo.get(key);
 }
 // swarms are DOUBLED on waves 11-60 and x1.5 after (owner, 2026-10-06): a
@@ -80,14 +80,14 @@ const WAVE_COUNT_MUL = { [UNLOCK.indexOf("shield") + 1]: 0.5, 1: 0.75, 3: 0.67, 
 // other type under 2 - x FAST_LATE_MUL past FAST_LATE_FROM. waverep x3 with HP_END 1.06: 0.8 6.8 a wave, 0.65 2.6, 0.5 1.3
 const FAST_LATE_MUL = 0.65, FAST_LATE_FROM = 80;
 // how many of `type` a plain wave n brings (before the split onto lane copies) - wavePlan, and a boss's fleet (aspira-bosses.js)
-function waveCount(type, n0) {
+function waveCount(type, n0, cut = true) { // cut false: without the early thinning (the lanes are chosen from that)
   const n = eqWave(n0); // (the 10-cycle equivalent - aspira-defs.js; WAVE_COUNT_MUL keys stay real waves)
   const base = Math.min(10 + Math.floor(n * COUNT_SLOPE), COUNT_CAP); // let: the simulator sweeps both (owner, 2026-10-11: "enemy counts increase as the game progresses")
   // swarms: 3x the bodies (owner); split k ways onto rotated lane copies
   // HALF the bodies at TWICE the health (owner, 2026-10-02)
   // x WAVE_COUNT_MUL[n]: waves 1-30 tuned so each comes about as close to the
   // core against one L1 tower of each kind (owner; scripts/aspira-sim/wavebal.mjs)
-  const c = (type === "swarm" ? base * 6 : base) / 2 / earlyX(n0) * (WAVE_COUNT_MUL[n0] ?? 1) * (TYPE_COUNT_MUL[type] ?? 1) * (type === "swarm" ? swarmMul(n) * (n >= SWARM_X2_FROM ? 2 : 1) * lateK(n0, "swarm") : 1) * (type === "fast" && n > FAST_LATE_FROM ? FAST_LATE_MUL : 1); // swarms 6x (owner: doubled from 3x)
+  const c = (type === "swarm" ? base * 6 : base) / 2 / (cut ? earlyX(n0) : 1) * (WAVE_COUNT_MUL[n0] ?? 1) * (TYPE_COUNT_MUL[type] ?? 1) * (type === "swarm" ? swarmMul(n) * (n >= SWARM_X2_FROM ? 2 : 1) * lateK(n0, "swarm") : 1) * (type === "fast" && n > FAST_LATE_FROM ? FAST_LATE_MUL : 1); // swarms 6x (owner: doubled from 3x)
   // SYMMETRICAL FORMATIONS (owner, 2026-10-11: "2n+1 for fast, 3n for armor"): whole Vs and full lattice rows
   const unit = FORM_UNIT[type] || 1;
   return Math.max(unit, Math.round(c / unit) * unit);
@@ -100,7 +100,7 @@ function wavePlan(n, prev) {
   const raw = waveCount(type, n);
   // split k ways, ROUNDED DOWN so every lane copy gets the same number (owner)
   // FORMATIONS stay whole (aspira-formations.js): shields split only into whole Vs, armor into whole rows
-  const split = formSplit(type, raw, n);
+  const split = formSplit(type, waveCount(type, n, false), n); // LANES from the uncut count: the early cut thins each lane, never takes one (owner, 2026-10-15)
   const count = laneCount(type, raw, split);
   // a swarm wave is never under SWARM_WAVE_MIN bodies, AFTER the lane rounding (owner, 2026-10-14: "make sure swarm waves have at least 12 units");
   // and no lane copy of any OTHER type is empty (owner, 2026-10-15: "min 1 enemy per lane also ... except swarm")
