@@ -190,7 +190,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
   const interestPerWave = SMART_INTEREST;
   // every mutable bit of the player, so a snapshot is one clone
   const S = { buysLeft: Infinity, r: (seed * 9301 + 49297) % 233280, used: {}, time: 0, nearest: Infinity, lastLives: g.G.lives, hurtUntil: -1,
-    leaks: {}, leakWave: {}, coreMem: {}, trace: [], pivoted: [], hist: [], lastWave: -1, waveNear: Infinity, bossNear: Infinity, fired: [],
+    leaks: {}, leakWave: {}, coreMem: {}, trace: [], buys: [], pivoted: [], hist: [], lastWave: -1, waveNear: Infinity, bossNear: Infinity, fired: [],
     econ: [], builtAt: null, fullAt: null }; // the economy's ledger: a line every 10 waves, the wave every slot was filled / every tower maxed
   let next = null; // the committed next action (holds a tower: snapshotted by id)
   // the game's tower cap (MAX_TOWERS, 3 since 2026-10-11) holds every player; strategy.towerCap overrides it for a
@@ -227,13 +227,14 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
         if (G.money - g.upCost(t) < floor) return;
         const need = g.pendingChoice(t);
         const axis = need === "skill" ? ((strategy.skills || {})[t.kind] || []).find(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)) : null;
-        g.upgrade(t, axis || (need === "path" ? p : f));
+        const had = { ...(t.skills || {}) };
+        if (g.upgrade(t, axis || (need === "path" ? p : f))) S.buys.push({ w: G.wave, k: t.kind, id: t.id, a: Object.keys(t.skills || {}).find(x => (t.skills[x] || 0) > (had[x] || 0)) || "lvl", to: (t.skills || {})[Object.keys(t.skills || {}).find(x => (t.skills[x] || 0) > (had[x] || 0))] }); // the purchase log (buildlog.mjs)
         S.used[t.kind] = 1; next = null; S.buysLeft--; continue;
       }
       if (G.money - g.run("towerCost('" + next.kind + "')") < (G.towers.length < 2 ? 0 : floor)) return;
       const best = order[next.kind].find(i => g.cellOpen(i) && !g.run("occupied(" + i + ")"));
       if (best == null) { next = null; return; }
-      g.place(next.kind, best, (strategy.modes || {})[next.kind]); next = null; S.buysLeft--;
+      const built = g.place(next.kind, best, (strategy.modes || {})[next.kind]); if (built) S.buys.push({ w: G.wave, k: next.kind, id: built.id, a: "build" }); next = null; S.buysLeft--;
     }
   };
   const game = { setMode(kind, mode) { for (const t of g.G.towers) if (t.kind === kind) t.mode = mode; strategy.modes = { ...strategy.modes, [kind]: mode }; } };
@@ -338,7 +339,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
         towers[key].n++; towers[key].dealt += t.dealt || 0; towers[key].kills += t.kills || 0;
         build.push({ kind: t.kind, lvl: t.lvl, skills: t.skills || null, mode: t.mode });
       }
-      return { nearest: Math.round(S.nearest), wave: G.wave, over: G.over, won: !!G.won, lives: G.lives, core: G.core ? G.core.pw : null, fires: S.coreMem.fired || null, money: Math.round(G.money), spent: Math.round(G.towers.reduce((a, t) => a + (t.spent || 0), 0)), interest: Math.round(G.interestTotal || 0), econ: S.econ, builtAt: S.builtAt, fullAt: S.fullAt, time: Math.round(S.time), towers, build, leaks: S.leaks, leakWave: S.leakWave, waveStats: S.waveStats || {}, pivots: strategy.pivots ? S.pivoted : undefined, trace: strategy.trace ? S.trace : undefined };
+      return { nearest: Math.round(S.nearest), wave: G.wave, over: G.over, won: !!G.won, lives: G.lives, core: G.core ? G.core.pw : null, fires: S.coreMem.fired || null, money: Math.round(G.money), spent: Math.round(G.towers.reduce((a, t) => a + (t.spent || 0), 0)), interest: Math.round(G.interestTotal || 0), econ: S.econ, builtAt: S.builtAt, fullAt: S.fullAt, time: Math.round(S.time), towers, build, leaks: S.leaks, leakWave: S.leakWave, waveStats: S.waveStats || {}, pivots: strategy.pivots ? S.pivoted : undefined, trace: strategy.trace ? S.trace : undefined, buys: S.buys };
     },
   };
 }
