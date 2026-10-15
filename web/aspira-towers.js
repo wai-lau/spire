@@ -403,15 +403,15 @@ const hintLeash = t => { t.leashHint = performance.now() / 1000 + LEASH_HINT_S; 
 // AN UPGRADE READY (owner, 2026-10-13: "when a tower's upgrade is available, show a plus, centered on the origin hexagon of the
 // tower, flashing slowly, bold, flash the hex too at the same speed" - an UP CHEVRON since): affordable and not maxed; both pulse at UP_FLASH_HZ
 const UP_FLASH_HZ = 0.5, UP_PLUS_PX = 26;
-const upReady = t => t.lvl < maxLvl(t) && G.money >= upCost(t);
+const upReady = t => /* nextBuy: aspira-capstone.js */ { const b = nextBuy(t); return !!b && G.money >= b.cost; };
 const upPulse = now => 0.5 + 0.5 * Math.sin(now * UP_FLASH_HZ * 2 * Math.PI);
 // MORE OUTLINES, THE MORE YOU CAN BUY (owner, 2026-10-13: "more outlines ... levels of upgrades you can afford"): one hex per
 // upgrade the bank covers in a row (upAfford), up to UP_RING_MAX, each UP_RING_K of the hex further out
 // (on the map only - owner, 2026-10-13: "upgrade button on card should not have extra outlines")
 const UP_RING_MAX = 6, UP_RING_K = 0.14;
 function upAfford(t) {
-  let m = G.money, n = 0;
-  for (let l = t.lvl; l < maxLvl(t) && n < UP_RING_MAX; l++) { const c = upCost({ ...t, lvl: l }); if (c > m) break; m -= c; n++; }
+  let m = G.money, n = 0, u = t;
+  for (let b = nextBuy(u); b && b.cost <= m && n < UP_RING_MAX; b = nextBuy(u)) { m -= b.cost; u = b.t; n++; } // purchases, cheapest first
   return n;
 }
 const upRings = t => upAfford(t);

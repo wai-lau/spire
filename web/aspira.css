@@ -847,4 +847,5 @@
 #asp .asp-power.cyan { color: hsl(var(--cyan-hsl)); border-color: hsl(var(--cyan-hsl) / 0.45); }
 #asp .asp-power.white { color: hsl(var(--white-hsl)); border-color: hsl(var(--gray-hsl) / 0.45); } /* (silver: white has no 0.45) */
 #asp .asp-power.ready { animation: asp-flash var(--asp-blink) ease-in-out infinite; border-color: currentcolor; }
+#asp .asp-power.wait { opacity: 0.45; } /* the other power is running (aspira-powers.js) */
 #asp .asp-power.run, #asp .asp-power.armed { border-color: currentcolor; background: hsl(var(--white-hsl) / 0.12); }

@@ -5,11 +5,15 @@
 // each day's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
-  { v: "4.4", day: "Oct 15", bu: [
+  { v: "4.4", day: "Oct 15", ne: [
+    "Core powers: one at a time - the other waits until it ends.",
+  ], bu: [
     "Waves 1-24: a quarter as many enemies, each x4 HP and x4 credits, easing back by wave 36. Bosses unchanged.",
     "Armor waves: x1.5 enemies (was x2), each worth 1.33 credits (was 1).",
   ], u: [
     "Damage numbers over 1,000 read short: 1.7k, 17k, 1.2M.",
+    "A tower flashes for an upgrade only when its next buy is affordable.",
+    "Using either core power slams the core down while it runs.",
     "Swarm enemies drawn 1.5x bigger, fast 0.9x, shield 0.8x.",
     "Tower card stats in sections, one a mechanic (e.g. Freeze Aura, Permafrost, Moons).",
     "Tower card: a stat an upgrade adds shows its new value alone (no \"— →\").",

@@ -20,6 +20,19 @@ const SHOWN_TIERS = SKILL_STOPS.length - 1;
 const shownTier = k => SKILL_STOPS.filter(s => s > 0 && s <= k).length;
 // the purchases a tower has made (its card title's level): the sum over its axes, with `add` pulled on
 const shownLevel = (t, add = {}) => SKILL_TREES[t.kind].reduce((a, ax) => a + shownTier(skillOf(t, ax.id) + (add[ax.id] || 0)), 0);
+// the cheapest REAL purchase (owner, 2026-10-15: "upgrade tiles should stop flashing when you can no longer afford something"):
+// a chart tower's next buy goes to an axis's next STOP (II-III, IV-V are one buy - aspira-capstone.js), not one level
+function nextBuy(t) {
+  if (t.lvl >= maxLvl(t)) return null;
+  if (!hasSkills(t) || typeof stopLevels !== "function") return { cost: upCost(t), t: { ...t, lvl: t.lvl + 1 } };
+  let best = null;
+  for (const ax of SKILL_TREES[t.kind]) {
+    if (skillOf(t, ax.id) >= axisCap(t, ax.id)) continue;
+    const n = stopLevels(t, ax.id), cost = n > 1 ? skillPointsCost(t, n) : upCost(t);
+    if (!best || cost < best.cost) best = { cost, t: { ...t, lvl: t.lvl + n, skills: { ...t.skills, [ax.id]: nextStop(skillOf(t, ax.id)) } } };
+  }
+  return best;
+}
 // the levels one buy on axis `id` of t makes: to the next stop, and the capstone's extra level
 const stopLevels = (t, id) => { const k = skillOf(t, id), to = nextStop(k); return to - k + (to >= CAPSTONE_TIER && k < CAPSTONE_TIER ? CAPSTONE_LEVELS - 1 : 0); };
 // a CAPSTONE is TWO levels (owner, 2026-10-12: "buying a capstone should cost the same as increasing the level by 2 (and also
