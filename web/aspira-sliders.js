@@ -20,8 +20,8 @@ const previewTower = t => ({ ...t, lvl: t.lvl + levelsFor(t, basketFor(t)), skil
 // in order, whatever the axis)
 function axisRoom(t, id) {
   const add = basketFor(t), others = basketPoints(t) - (add[id] || 0), left = axisCap(t, id, add) - skillOf(t, id); // (one capstone VI a tower)
-  let afford = 0;
-  while (afford < left && skillPointsCost(t, levelsFor(t, { ...add, [id]: afford + 1 })) <= G.money) afford++;
+  let afford = 0; // (stop by stop: II-III and IV-V are one buy - aspira-capstone.js)
+  for (let k = nextStop(skillOf(t, id)); k - skillOf(t, id) <= left && k > skillOf(t, id) + afford; k = nextStop(k)) { if (skillPointsCost(t, levelsFor(t, { ...add, [id]: k - skillOf(t, id) })) > G.money) break; afford = k - skillOf(t, id); }
   return { others, left, afford };
 }
 
@@ -91,7 +91,7 @@ function refreshHandleFlash(t) {
 function bindSliders(t, root) {
   for (const b of root.querySelectorAll(".asp-axis-btn")) {
     const i = Number(b.dataset.axis), d = Number(b.dataset.d), ax = SKILL_TREES[t.kind][i];
-    b.onclick = () => pullAxis(t, i, skillOf(t, ax.id) + (basketFor(t)[ax.id] || 0) + d);
+    b.onclick = () => { const at = skillOf(t, ax.id) + (basketFor(t)[ax.id] || 0); pullAxis(t, i, d > 0 ? nextStop(at) : prevStop(at)); }; // a tap: the next / last STOP (aspira-capstone.js)
   }
   updateSliderChart(t, root.querySelector(".asp-sliders"));
 }
@@ -204,7 +204,7 @@ function lockIn(t) {
   if (!n) return;
   if (G.money < cost) { noFunds($("asp-up"), cost); return; }
   const leash = leashR(t);
-  for (const ax of SKILL_TREES[t.kind]) for (let k = 0; k < (add[ax.id] || 0); k++) upgradeTower(t, ax.id, true);
+  for (const ax of SKILL_TREES[t.kind]) { const to = skillOf(t, ax.id) + (add[ax.id] || 0); while (skillOf(t, ax.id) < to) { const k = skillOf(t, ax.id); upgradeTower(t, ax.id, true); if (skillOf(t, ax.id) === k) break; } } // stop by stop
   basket.add = {};
   if (leashR(t) > leash + 0.5) hintLeash(t); // a longer leash shows itself (aspira-towers.js)
   sfxFor("up", t.kind); ring(t.x, t.y, 64, TOWERS[t.kind].color); refreshPanels();

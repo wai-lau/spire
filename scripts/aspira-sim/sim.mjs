@@ -110,9 +110,9 @@ export function makeGame(seed, patch = "") {
           id = ids.includes(choice) ? choice : ids.sort((a, b) => skillOf(t, a) - skillOf(t, b))[0];
         }
         // a CAPSTONE (tier VI) is two levels at two steps' price, as in upgradeTower (aspira-ui.js)
-        const steps = id && skillOf(t, id) + 1 >= CAPSTONE_TIER ? CAPSTONE_LEVELS : 1, c = steps > 1 ? skillPointsCost(t, steps) : upCost(t);
+        const steps = id ? stopLevels(t, id) : 1, c = steps > 1 ? skillPointsCost(t, steps) : upCost(t); // to the axis's next STOP (II-III, IV-V one buy)
         if (G.money < c) return false;
-        if (id) t.skills = withSkill(t, id);
+        if (id) t.skills = { ...t.skills, [id]: nextStop(skillOf(t, id)) };
         if (need === "path") t.path = choice;
         else if (need === "form") { t.form = choice; t.mode = UPGRADES[t.kind][t.path].finals[choice].mode || t.mode; }
         G.money -= c; t.spent += c; t.lvl += steps;

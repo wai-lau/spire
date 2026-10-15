@@ -9,6 +9,13 @@ function capstoneHolder(t, id, add = {}) {
   return SKILL_TREES[t.kind].find(ax => ax.id !== id && skillOf(t, ax.id) + (add[ax.id] || 0) >= CAPSTONE_TIER) || null;
 }
 const axisCap = (t, id, add = {}) => (capstoneHolder(t, id, add) ? CAPSTONE_TIER - 1 : CAPSTONE_TIER);
+// MERGED TIERS (owner, 2026-10-15: "merge upgrades 2-3 and 4-5 in one for each axis ... merge the prices too"): an axis rests
+// only on these tiers - a buy from I lands on III, from III on V, each priced as the two steps it is (a tier is a level)
+const SKILL_STOPS = [0, 1, 3, 5, CAPSTONE_TIER];
+const nextStop = k => SKILL_STOPS.find(s => s > k) ?? k;
+const prevStop = k => SKILL_STOPS.filter(s => s < k).pop() ?? 0;
+// the levels one buy on axis `id` of t makes: to the next stop, and the capstone's extra level
+const stopLevels = (t, id) => { const k = skillOf(t, id), to = nextStop(k); return to - k + (to >= CAPSTONE_TIER && k < CAPSTONE_TIER ? CAPSTONE_LEVELS - 1 : 0); };
 // a CAPSTONE is TWO levels (owner, 2026-10-12: "buying a capstone should cost the same as increasing the level by 2 (and also
 // increase tower level by 2)"): it pays the next two ladder steps and raises t.lvl by 2 (upgradeTower, aspira-ui.js)
 const CAPSTONE_LEVELS = 2;

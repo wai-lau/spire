@@ -212,11 +212,11 @@ function upgradeTower(t, choice = null, quiet = false) {
   const need = pendingChoice(t);
   if (need && choice == null) return;
   if (need === "skill" && skillOf(t, choice) >= axisCap(t, choice)) return; // full, or a second capstone VI (aspira-capstone.js)
-  // a CAPSTONE (tier VI) is two levels: the next two ladder steps, t.lvl + 2 (aspira-capstone.js)
-  const steps = need === "skill" && typeof CAPSTONE_TIER !== "undefined" && skillOf(t, choice) + 1 >= CAPSTONE_TIER ? CAPSTONE_LEVELS : 1;
+  // a skill buy goes to the axis's next STOP (II-III and IV-V are one buy) and the capstone is two levels (aspira-capstone.js)
+  const steps = need === "skill" && typeof stopLevels === "function" ? stopLevels(t, choice) : 1;
   const c = steps > 1 ? skillPointsCost(t, steps) : upCost(t);
   if (G.money < c) return;
-  if (need === "skill") t.skills = withSkill(t, choice); // one tier up the chosen axis
+  if (need === "skill") t.skills = { ...t.skills, [choice]: typeof nextStop === "function" ? nextStop(skillOf(t, choice)) : skillOf(t, choice) + 1 };
   if (need === "path") t.path = choice;
   if (need === "form") { t.form = choice; t.mode = UPGRADES[t.kind][t.path].finals[choice].mode || t.mode; } // a form may set targeting (Residue)
   G.money -= c; t.spent += c; t.lvl += steps;

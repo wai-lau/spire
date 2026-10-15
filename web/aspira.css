@@ -804,6 +804,8 @@
 #asp .asp-axis-btn.dim { opacity: 0.45; } /* nothing pulled on this axis to put back */
 .asp-pips { display: flex; flex: 1; justify-content: space-between; gap: var(--space-1); min-width: 0; }
 .asp-pips i { flex: 1; height: var(--space-2-5); border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: var(--radius-1); }
+.asp-pips i:nth-child(2), .asp-pips i:nth-child(4) { margin-right: calc(var(--space-1) * -0.5); } /* II-III and IV-V are ONE buy (aspira-capstone.js SKILL_STOPS): each pair sits closer */
+.asp-pips i:nth-child(1), .asp-pips i:nth-child(3), .asp-pips i:nth-child(5) { margin-right: var(--space-1); }
 .asp-pips i.lock { background: hsl(var(--green-hsl)); border-color: hsl(var(--green-hsl)); } /* locked in */
 .asp-pips i.pull { background: hsl(var(--green-hsl) / 0.45); border-color: hsl(var(--green-hsl)); } /* pulled, not yet bought */
 
