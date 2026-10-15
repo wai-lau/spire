@@ -23,6 +23,8 @@ const CHANGELOG = [ // each day's lines in two groups: b = Balance, u = Perf/UI.
   ], u: [
     "The tower card closes with an X beside the upgrade button.",
     "Permafrost's stat says what it adds: \"+11% slow, stacking\".",
+    "Tower descriptions match what towers do: Arc Conductivity IV twin arcs, V three; Voltage VI 1.6x per jump; Sublimation VI deeply brittle.",
+    "New tower card stats: Arc strikes and burst slow, Freeze Brittle, Frost armor and Shields, Sol Shields; Acid Armor shows % of damage (was -0).",
     "Tapping the empty bar beside the speed buttons closes the open window.",
     "Autosave: resume from the start of the last wave.",
     "Game speeds: 1x, 1.5x, 2x, 3x (keys 1-4).",

@@ -3,16 +3,14 @@
 // template, so the card's track changes (aspira-sliders.js) read as a single
 // small edit from the locked tiers to the pulled ones. Loaded after
 // aspira-skills.js (the simulator too, for scripts/aspira-desc-graph.mjs).
-// (A tower without a composer here would fall back to its axes' `base` / `desc`
-// sentences, aspira-skills.js, run together.)
 const cap = s => s[0].toUpperCase() + s.slice(1);
 const ARC_CHARGES = ["", "a charge", "two charges", "three charges", "four charges", "five charges"]; // Capacitance (2026-10-08)
 const ARC_KEEP = ["half", "most of", "nearly all of", "all of", "more than", "far more than"], ARC_RETURN = ["", "", "", "once", "twice", "three times"];
+const ARC_STRIKES = ["", "", "twin", "three", "four"]; // by STRIKE COUNT (ARC_CONDUCTIVITY[c].s: 1 1 1 2 2 3, giga 4), not by tier - IV read "three" while it fired two (2026-10-14)
 // thematic words where they fit (owner): chill, rime, brittle, moons; rays, refract, pierce; jets, etch.
 // ONLY BEHAVIOUR is told here (owner, 2026-10-07): a tier that just moves a number - harder
 // hits, a colder or wider aura, faster pulses, a stronger acid, more or bigger puddles -
 // changes no words; the card's stat rows show that change (now -> next)
-const FRZ_RIME_TEXT = ["", ...Array(5).fill(" Frost rings leave lasting frost that stacks and spreads when full.") /* "rime" is FROST in every word shown (owner, 2026-10-12) */];
 const FRZ_MOONS = ["", " A moon copies it.", " Two moons copy it.", " Three moons copy it.", " Three moons copy it, each with a moonlet.", " Three moons copy it, each with three moonlets."];
 const SOL_RAYS = ["A ray", "Two rays", "Three rays", "Four rays", "Five rays", "Six rays"];
 const SOL_REFRACT = ["refracting on to one more enemy", "refracting on to three more enemies", "refracting on to six more enemies", "refracting on to ten more enemies", "refracting on to thirteen more enemies", "refracting through every enemy ahead"];
@@ -22,7 +20,7 @@ const DESCRIBE = {
   // three / twin; Voltage: most of .. all of (its harder hit is a stat row); Capacitance: the charge sentence (owner's words)
   arc(sk) {
     const c = sk.conductivity || 0, v = sk.voltage || 0, z = sk.capacitance || 0;
-    let s = [c >= 6 ? "six" : c >= 5 ? "four" : c >= 4 ? "three" : c >= 3 ? "twin" : "", "arcs", c >= 6 ? "chain twice and" : c >= 1 ? "chain once and" : "", "fork", c >= 2 ? "in three" : "", c >= 3 ? "on hit, re-striking " + ARC_RETURN[c] + "; each jump carries" : "on hit; each jump carries", ARC_KEEP[v], "the hit."].filter(Boolean).join(" ");
+    let s = [ARC_STRIKES[ARC_CONDUCTIVITY[c].s], "arcs", c >= 6 ? "chain twice and" : c >= 1 ? "chain once and" : "", "fork", c >= 2 ? "in three" : "", c >= 3 ? "on hit, re-striking " + ARC_RETURN[c] + "; each jump carries" : "on hit; each jump carries", ARC_KEEP[v], "the hit."].filter(Boolean).join(" ");
     if (z) s += " Hits leave " + ARC_CHARGES[ARC_CAPACITANCE[z].n] + (ARC_CAPACITANCE[z].n > 1 ? " that burst" : " that bursts") + " on a later hit, slowing all near.";
     return cap(s);
   },
@@ -30,7 +28,7 @@ const DESCRIBE = {
   // stat rows); Rime: the rings of rime; Moons: the moons
   frz(sk) {
     const tp = sk.temp || 0, rm = sk.rime || 0; // Sublimation turns them brittle; Permafrost's frost takes ARMOR - reducing, shattering, decimating (owner, 2026-10-12)
-    return "A chill that " + (tp >= 6 ? "shatters and hurts" : tp >= 1 ? "makes them brittle and hurts" : "hurts") + " more the colder they are." + // (owner, 2026-10-12: Sublimation "A chill that makes them brittle, and hurts more the colder they are")
+    return "A chill that " + (tp >= 6 ? "makes them deeply brittle and hurts" : tp >= 1 ? "makes them brittle and hurts" : "hurts") + " more the colder they are." + // (owner, 2026-10-12: Sublimation "A chill that makes them brittle, and hurts more the colder they are")
       (rm ? " It leaves behind a frost that seeps into their armor, never leaving." : "") /* Permafrost (owner, 2026-10-12) */ + FRZ_MOONS[sk.moons || 0] + "";
   },
   // "A ray of light, stopping at the first enemy struck; each beam weakens its target's armor for
@@ -47,9 +45,6 @@ const DESCRIBE = {
     return ACD_JETS[f] + (f ? " slowing" : "") + " jets of " + "acid" + (k >= 6 ? " that dissolves armor" : k ? " that corrodes armor" : "") + ", dripping " + (c >= 6 ? "massive" : c >= 3 ? "huge" : c ? "larger" : "large") + " pools; each kill leaves one more. " + (c ? "What dies in a pool leaves one of its own. " : "") /* Contagion spreads (aspira-acid.js) */ + (k ? "Eaten armor drops a corrosive goo. " : "") /* the drip (aspira-acid.js) */ + (f ? "A jet keeps its flow on its next enemy." : "A jet starts cold on each new enemy.");
   },
 };
-// the description for a chart (`skills`): the composer, else the axes' sentences run together
-function describeTower(kind, skills) {
-  const sk = skills || {};
-  if (DESCRIBE[kind]) return DESCRIBE[kind](sk);
-  return SKILL_TREES[kind].map(ax => (sk[ax.id] ? ax.tiers[sk[ax.id] - 1].desc : ax.base)).filter(Boolean).join(" ");
-}
+// the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
+// (the per-tier `desc` / `base` sentences in SKILL_TREES were never shown once these existed, and had drifted; removed 2026-10-14)
+const describeTower = (kind, skills) => DESCRIBE[kind](skills || {});

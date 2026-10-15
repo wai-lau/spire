@@ -18,41 +18,36 @@ const SKILL_POINTS = 16, SKILL_TIERS = 6;
 // the prices"): the step grows by one more each time, a full chart 174.5 builds (6,980c)
 // (the six points past the ninth, 2026-10-07: each step grows by one more again - a full chart 695.5 builds, 27,820c)
 const SKILL_STEP_COST = [2.5, 4, 7, 11, 16, 22, 29, 37, 46, 56, 67, 79, 92, 106, 121, 137, 154]; // the 17th: a capstone takes TWO levels (aspira-giga.js) // the 16th: the giga point (2026-10-11)
-// Every axis is ONE EVOLVING SENTENCE (owner, 2026-10-07): `base` says what the
-// tower does with no point on the axis, and each tier's `desc` is that sentence
-// with as few words changed as will carry the gain, so the card's track changes
-// (aspira-sliders.js) read as a single edit - "Arcs fork on hit." -> "Arcs *chain
-// once* and fork on hit." -> "... fork *into three* on hit."; no bare stat talk
-// ("slides further", "more range") unless that IS the upgrade - the reach each
-// tier buys is in SKILL_MOVE below. The tier `name`s are not shown on the card.
-// An axis whose tier 0 does NOTHING has an EMPTY base (owner): its line on the
-// card stays blank until a point is pulled, and the first tier reads as one insertion
+// Each axis: its `id`, its `name` (the slider) and its tiers' `name`s (the end screen). WHAT A TOWER DOES is
+// one composed sentence for the whole chart, aspira-desc.js, each tier changing as few words as carry the
+// gain (owner, 2026-10-07) - the card shows the change in track changes (aspira-sliders.js); the reach each
+// tier buys is in SKILL_MOVE below. (Per-tier `desc` / `base` sentences lived here until 2026-10-14.)
 const SKILL_TREES = {
   // ARC (owner): Conductivity = ALL the branching (owner, 2026-10-05) - how
   // many times the chain jumps AND how many ways each jump forks; Voltage =
   // raw power, damage and range; Static = an EXPLOSION on every hit that marks
   // what it catches. Base: one jump forking two ways, three enemies.
   arc: [
-    { id: "conductivity", name: "Conductivity", base: "Arcs fork on hit.", tiers: [
-      { name: "Transfer", desc: "Arcs chain once and fork on hit." },
-      { name: "Conduit", desc: "Arcs chain once and fork into three on hit." },
-      { name: "Superconductor", desc: "Two arcs chain once and fork into three on hit." },
-      { name: "Lattice", desc: "Three arcs chain once and fork into three on hit." },
-      { name: "Storm", desc: "Four arcs chain once and fork into three on hit." },
+    { id: "conductivity", name: "Conductivity", tiers: [
+      { name: "Transfer" },
+      { name: "Conduit" },
+      { name: "Superconductor" },
+      { name: "Lattice" },
+      { name: "Storm" },
     ] },
-    { id: "voltage", name: "Voltage", base: "Each jump carries half the hit.", tiers: [
-      { name: "Spark", desc: "Harder hits; each jump carries most of the hit." },
-      { name: "Fry", desc: "Harder hits; each jump carries nearly all of the hit." },
-      { name: "Vaporize", desc: "Hardest hits; each jump carries all of the hit." },
-      { name: "Arc Flash", desc: "Each jump carries more than the hit." },
-      { name: "Plasma", desc: "Each jump carries far more than the hit." },
+    { id: "voltage", name: "Voltage", tiers: [
+      { name: "Spark" },
+      { name: "Fry" },
+      { name: "Vaporize" },
+      { name: "Arc Flash" },
+      { name: "Plasma" },
     ] },
-    { id: "capacitance", name: "Capacitance", base: "", tiers: [
-      { name: "Static", desc: "Hits leave a charge, which bursts around the target when it is hit by anything, slowing what they hit." },
-      { name: "Charge", desc: "Hits leave two charges, which burst around the target when it is hit by anything, slowing what they hit." },
-      { name: "Overload", desc: "Hits leave three charges, which burst around the target when it is hit by anything, slowing what they hit." },
-      { name: "Discharge", desc: "Hits leave four charges, which burst around the target when it is hit by anything, slowing what they hit." },
-      { name: "Tempest", desc: "Hits leave five charges, which burst around the target when it is hit by anything, slowing what they hit." },
+    { id: "capacitance", name: "Capacitance", tiers: [
+      { name: "Static" },
+      { name: "Charge" },
+      { name: "Overload" },
+      { name: "Discharge" },
+      { name: "Tempest" },
     ] },
   ],
 };
@@ -62,26 +57,26 @@ const SKILL_TREES = {
 // PERMANENT slow on all it passes; Moons = 1 / 2 / 3 orbiting copies of the
 // tower at half of everything.
 SKILL_TREES.frz = [
-  { id: "temp", name: "Sublimation" /* (owner, 2026-10-12; was Temp) */, base: "The aura slows what it holds.", tiers: [
-    { name: "Chill", desc: "A colder, wider aura slows what it holds, and makes them brittle." },
-    { name: "Freeze", desc: "A far colder, wider aura slows what it holds, and makes them brittle." },
-    { name: "Absolute Zero", desc: "A chill slows all it holds, and makes them brittle." },
-    { name: "Permafrost", desc: "A chill slows all it holds, and makes them brittle." },
-    { name: "Heat Death", desc: "A chill slows all it holds, and makes them brittle." },
+  { id: "temp", name: "Sublimation" /* (owner, 2026-10-12; was Temp) */, tiers: [
+    { name: "Chill" },
+    { name: "Freeze" },
+    { name: "Absolute Zero" },
+    { name: "Permafrost" },
+    { name: "Heat Death" },
   ] },
-  { id: "rime", name: "Permafrost" /* (owner, 2026-10-12; was Rime) */, base: "", tiers: [
-    { name: "Frost", desc: "Pulses leave a slow that lingers past the aura and stacks; full frost spreads to the nearest enemy." },
-    { name: "Glacier", desc: "Faster pulses leave a deeper slow that lingers past the aura and stacks; full frost spreads to the nearest enemy." },
-    { name: "Cryosphere", desc: "The fastest pulses leave the deepest slow that lingers past the aura and stacks; full frost spreads to the nearest enemy." },
-    { name: "Ice Sheet", desc: "Rings of frost roll out, leaving behind a frost that layers and never thaws; full frost spreads to the nearest enemy." },
-    { name: "Glaciation", desc: "Rings of frost roll out, leaving behind a frost that layers and never thaws; full frost spreads to the nearest enemy." },
+  { id: "rime", name: "Permafrost" /* (owner, 2026-10-12; was Rime) */, tiers: [
+    { name: "Frost" },
+    { name: "Glacier" },
+    { name: "Cryosphere" },
+    { name: "Ice Sheet" },
+    { name: "Glaciation" },
   ] },
-  { id: "moons", name: "Moons", base: "", tiers: [
-    { name: "Moon", desc: "One moon orbits the tower, a weaker copy of it." },
-    { name: "Twin Moons", desc: "Two moons orbit the tower, near copies of it." },
-    { name: "Desolation", desc: "Three moons orbit the tower, full copies of it." },
-    { name: "Satellites", desc: "Three moons orbit it, each with a small moon of its own." },
-    { name: "Eclipse", desc: "Three moons orbit it, each with three small moons of its own." },
+  { id: "moons", name: "Moons", tiers: [
+    { name: "Moon" },
+    { name: "Twin Moons" },
+    { name: "Desolation" },
+    { name: "Satellites" },
+    { name: "Eclipse" },
   ] },
 ];
 // SOL (owner, 2026-10-05): Focus = more beams (the old Quad look: side by
@@ -93,26 +88,26 @@ SKILL_TREES.frz = [
 // good). Focus x Pierce multiply:
 // 4 beams x 6 = 24 Breaches a volley on one target.
 SKILL_TREES.sol = [
-  { id: "focus", name: "Focus", base: "One beam per shot.", tiers: [
-    { name: "Convergence", desc: "Two beams per shot, each a full hit." },
-    { name: "Crux", desc: "Three beams per shot, each a full hit." },
-    { name: "Disintegration", desc: "Four beams per shot, each a full hit." },
-    { name: "Lance", desc: "Five rays of light, each a full strike." },
-    { name: "Supernova", desc: "Six rays of light, each a full strike." },
+  { id: "focus", name: "Focus", tiers: [
+    { name: "Convergence" },
+    { name: "Crux" },
+    { name: "Disintegration" },
+    { name: "Lance" },
+    { name: "Supernova" },
   ] },
-  { id: "refraction", name: "Refraction", base: "", tiers: [
-    { name: "Lens", desc: "Shots bounce on to three more enemies ahead. Light outruns the fast: far harder on them." },
-    { name: "Prism", desc: "Shots bounce harder on to six more enemies ahead. Light outruns the fast: far harder on them." },
-    { name: "Spectrum", desc: "Shots bounce hardest on to ten more enemies ahead. Light outruns the fast: far harder on them." },
-    { name: "Halo", desc: "Refracting on to thirteen more ahead. Light outruns the fast: far harder on them." },
-    { name: "Aurora", desc: "Refracting on through every enemy ahead, and out of sight. Light outruns the fast: far harder on them." },
+  { id: "refraction", name: "Refraction", tiers: [
+    { name: "Lens" },
+    { name: "Prism" },
+    { name: "Spectrum" },
+    { name: "Halo" },
+    { name: "Aurora" },
   ] },
-  { id: "breach", name: "Breach", base: "", tiers: [
-    { name: "Pierce", desc: "Hits breach once: armor off and crits up for every tower, for good." },
-    { name: "Sear", desc: "Hits breach twice: armor off and crits up for every tower, for good." },
-    { name: "Flare", desc: "Hits breach six times: armor off and crits up for every tower, for good." },
-    { name: "Brand", desc: "Each beam weakens its target's armor for good, and pierces it so every tower crits it more." },
-    { name: "Sunfire", desc: "Each beam weakens its target's armor for good, and pierces it so every tower crits it more." },
+  { id: "breach", name: "Breach", tiers: [
+    { name: "Pierce" },
+    { name: "Sear" },
+    { name: "Flare" },
+    { name: "Brand" },
+    { name: "Sunfire" },
   ] },
 ];
 // ACD (owner, 2026-10-05): its lines DRIP burning PUDDLES onto the lane by
@@ -120,26 +115,26 @@ SKILL_TREES.sol = [
 // burn ramps faster (tier III: a line whose enemy dies hands half its ramp to
 // the next); Pour = 2 / 3 / 5 lines at once; Seep = more, longer, bigger puddles.
 SKILL_TREES.acd = [
-  { id: "corrosion", name: "Corrosion", base: "Acid that builds while a jet holds its enemy.", tiers: [
-    { name: "Etch", desc: "Acid eats armor, even below nothing: every tower hits the eaten harder. Eaten armor drops a corrosive goo." },
-    { name: "Corrode", desc: "Acid eats armor faster, even below nothing." },
-    { name: "Dissolve", desc: "Acid eats armor faster still, even below nothing." },
-    { name: "Erode", desc: "Acid devours armor, far below nothing." },
-    { name: "Annihilate", desc: "Acid devours armor, far below nothing." },
+  { id: "corrosion", name: "Corrosion", tiers: [
+    { name: "Etch" },
+    { name: "Corrode" },
+    { name: "Dissolve" },
+    { name: "Erode" },
+    { name: "Annihilate" },
   ] },
-  { id: "spray", name: "Flow", base: "Two jets, each starting cold on a new enemy.", tiers: [
-    { name: "Mist", desc: "Three slowing jets; a jet keeps some of its acid on its next enemy." },
-    { name: "Downpour", desc: "Four slowing jets; a jet keeps half its acid on its next enemy." },
-    { name: "Torrent", desc: "Six slowing jets; a jet keeps most of its acid on its next enemy." },
-    { name: "Deluge", desc: "Seven slowing jets; a jet keeps nearly all its acid on its next enemy." },
-    { name: "Cascade", desc: "Eight slowing jets; a jet lands hotter on its next enemy." },
+  { id: "spray", name: "Flow", tiers: [
+    { name: "Mist" },
+    { name: "Downpour" },
+    { name: "Torrent" },
+    { name: "Deluge" },
+    { name: "Cascade" },
   ] },
-  { id: "contagion", name: "Contagion", base: "Jets drip large pools of acid; each kill leaves one more.", tiers: [
-    { name: "Blister", desc: "Jets drip larger pools that linger longer; what dies in a pool leaves one of its own." },
-    { name: "Plague", desc: "Jets drip larger pools that linger longer." },
-    { name: "Pandemic", desc: "Jets drip wide pools that linger long." },
-    { name: "Epidemic", desc: "Jets drip wide pools that linger long." },
-    { name: "Blight", desc: "Jets drip vast pools that linger long." },
+  { id: "contagion", name: "Contagion", tiers: [
+    { name: "Blister" },
+    { name: "Plague" },
+    { name: "Pandemic" },
+    { name: "Epidemic" },
+    { name: "Blight" },
   ] },
 ];
 const hasSkills = t => !!SKILL_TREES[t.kind];
@@ -223,7 +218,7 @@ function arcSkillStats(t, s, b) {
 function skillOptions(t) {
   return SKILL_TREES[t.kind].filter(ax => skillOf(t, ax.id) < axisCap(t, ax.id)).map(ax => { // (one giga VI a tower - aspira-giga.js)
     const n = skillOf(t, ax.id), tier = ax.tiers[n];
-    return { choice: ax.id, name: ax.name + " " + roman(n + 1) + " · " + tier.name, desc: tier.desc };
+    return { choice: ax.id, name: ax.name + " " + roman(n + 1) + " · " + tier.name, desc: describeTower(t.kind, withSkill(t, ax.id)) };
   });
 }
 const withSkill = (t, id) => ({ ...t.skills, [id]: skillOf(t, id) + 1 });

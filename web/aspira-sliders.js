@@ -140,9 +140,6 @@ function cardStats(t, pv) {
   const row = ([label, now, next]) => statRow(label, now, nx && String(next) !== String(now) ? next : null);
   return '<div class="asp-cols"><dl class="asp-key">' + left.map(row).join("") + '</dl><dl class="asp-spec">' + right.map(row).join("") + '<dt>Kills</dt><dd id="asp-kills"></dd></dl></div>';
 }
-// the description: ONE evolving sentence per axis (its `base` at tier 0, the
-// tier's `desc` above it - aspira-skills.js) and, while points are pulled, the
-// change from the locked tier's sentence to the pulled one in TRACK CHANGES
 // The tower's prose (aspira-desc.js describeTower) for the locked tiers against the
 // pulled ones, in a box of FIXED height (owner, 2026-10-07)
 // PUNCTUATION is its own token (owner: "holds." -> "holds, and ..." marked "holds" as changed),

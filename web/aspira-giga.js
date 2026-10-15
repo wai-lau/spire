@@ -48,23 +48,22 @@ for (const [kind, axes] of Object.entries(GIGA_MOVE)) {
 
 // ---------- the words: each axis's tier VI, and the composers' (aspira-desc.js) index 6 ----------
 const GIGA_TIERS = {
-  conductivity: { name: "Hyperstorm", desc: "Six arcs chain twice and fork into three on hit." },
-  voltage: { name: "Gigavolt", desc: "Each jump carries twice the hit." },
-  capacitance: { name: "Superstorm", desc: "Hits leave eight charges, which burst around the target when it is hit by anything, slowing what they hit." },
-  temp: { name: "Zero Point", desc: "A deep chill slows all it holds, and makes them deeply brittle." },
-  rime: { name: "Ice Age", desc: "Rings of frost roll out fast, leaving behind a frost that layers and never thaws; full frost spreads to the nearest enemy." },
-  moons: { name: "Constellation", desc: "Four moons orbit it, each with four small moons of its own." },
-  focus: { name: "Solar Flare", desc: "Eight rays of light, each a full strike." },
-  refraction: { name: "Corona", desc: "Refracting on through every enemy ahead in a wide cone, and out of sight. Light outruns the fast: far harder on them." },
-  breach: { name: "Starfire", desc: "Each beam strips its target's armor for good, and pierces it so every tower crits it far more." },
-  corrosion: { name: "Oblivion", desc: "Acid dissolves armor far below nothing." },
-  spray: { name: "Monsoon", desc: "Eleven slowing jets; a jet lands far hotter on its next enemy." },
-  contagion: { name: "Extinction", desc: "Massive pools of acid that linger very long." },
+  conductivity: { name: "Hyperstorm" },
+  voltage: { name: "Gigavolt" },
+  capacitance: { name: "Superstorm" },
+  temp: { name: "Zero Point" },
+  rime: { name: "Ice Age" },
+  moons: { name: "Constellation" },
+  focus: { name: "Solar Flare" },
+  refraction: { name: "Corona" },
+  breach: { name: "Starfire" },
+  corrosion: { name: "Oblivion" },
+  spray: { name: "Monsoon" },
+  contagion: { name: "Extinction" },
 };
 for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === GIGA_TIER - 1 && GIGA_TIERS[ax.id]) ax.tiers.push(GIGA_TIERS[ax.id]);
-ARC_KEEP.push("twice"); ARC_RETURN.push("four times");
+ARC_KEEP.push("over one and a half times") /* ARC_VOLTAGE_FALL VI 1.6 (read "twice" - 2026-10-14) */; ARC_RETURN.push("four times");
 ARC_CHARGES.push("six charges", "seven charges", "eight charges"); // indexed by the charge COUNT (ARC_CAPACITANCE[z].n)
-FRZ_RIME_TEXT.push(FRZ_RIME_TEXT[5]);
 FRZ_MOONS.push(" Four moons copy it, each with four moonlets.");
 SOL_RAYS.push("Eight rays");
 SOL_REFRACT.push("refracting through every enemy in two opposite cones");
