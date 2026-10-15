@@ -827,7 +827,7 @@
 
 /* the reason a handle stopped, laid OVER the chart's lower edge (between the two
    bottom labels, which sit in the corners) so it reserves no line of its own */
-.asp-slider-note { min-height: calc(var(--fs-2xs) * var(--lh-tight)); text-align: center; font-size: var(--fs-2xs); line-height: var(--lh-tight); color: hsl(var(--green-hsl)); pointer-events: none; } /* its own line under the chart (it sat on the corner labels - owner) */
+.asp-slider-note { position: absolute; left: 0; right: 0; top: 100%; /* out of the flow: its line no longer lifted the chart (owner, 2026-10-15) */ min-height: calc(var(--fs-2xs) * var(--lh-tight)); text-align: center; font-size: var(--fs-2xs); line-height: var(--lh-tight); color: hsl(var(--green-hsl)); pointer-events: none; } /* its own line under the chart (it sat on the corner labels - owner) */
 
 /* the description's TRACK CHANGES (owner, 2026-10-07: like Word or Docs): removed
    words struck through in Ember red, added ones underlined in the acid green */
