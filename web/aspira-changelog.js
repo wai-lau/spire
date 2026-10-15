@@ -6,8 +6,10 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
   { v: "4.4", day: "Oct 15", ne: [
+    "Arc Voltage: hit x1.9 / x3.9 / x6.4 / x8.4 at purchases I-IV (was up to x69.9).",
     "Core powers: one at a time - the other waits until it ends.",
   ], bu: [
+    "Arc Conductivity and Capacitance: each purchase also raises the hit (x1.4 / x2.0 / x2.5 / x2.9).",
     "Waves 1-24: a quarter as many enemies, each x4 HP and x4 credits, easing back by wave 36. Bosses unchanged.",
     "Armor waves: x1.5 enemies (was x2), each worth 1.33 credits (was 1).",
   ], u: [

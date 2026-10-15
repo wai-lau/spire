@@ -179,7 +179,11 @@ function skillMove(t, s) {
 // is what each JUMP keeps of the hit before it (ARC_FALL 0.5 at 0; III = every jump
 // at full damage), on top of its damage step; the `pierce` flag it sets is only
 // the white core drawn in its arcs (aspira-draw.js), never a rule
-const ARC_VOLTAGE_DMG = [1, 3.64, 8.16, 15.55, 26.14, 40.76] /* x (1 + 0.1 tier) for the armor pierce it lost (owner, 2026-10-13: "arc voltage should just increase damage instead of pierce"; was 3.31 6.8 11.96 18.67 27.17) */ /* x (1 + 0.6 tier) (2026-10-11, roles: TEAM countermx 81-89 - Voltage leaks 4% of armor, Conductivity 10, Capacitance 12; was 2.068 3.093 4.272 5.492 6.793) */, ARC_VOLTAGE_FALL = [0.5, 0.65, 0.8, 1, 1.1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
+// ARC's HIT, SPREAD over its three axes (owner, 2026-10-15: "spread the damage across the upgrades, but keep it mainly in
+// voltage" -> "spread out a bit more" - a build without Voltage hit for 24 whatever it bought): the old Voltage curve's log shared
+// 50% Voltage, 25% each Conductivity and Capacitance (ARC_SIDE_DMG); a full ARC (Voltage VI, the others V) x53.5, was x69.9 on Voltage alone
+const ARC_SIDE_DMG = [1, 1.38, 1.69, 1.99, 2.26, 2.53, 2.89]; // Conductivity's and Capacitance's share, by tier (its VI here)
+const ARC_VOLTAGE_DMG = [1, 1.91, 2.86, 3.94, 5.11, 6.38] /* was 1 3.64 8.16 15.55 26.14 40.76 (Voltage alone) */ /* x (1 + 0.1 tier) for the armor pierce it lost (owner, 2026-10-13: "arc voltage should just increase damage instead of pierce"; was 3.31 6.8 11.96 18.67 27.17) */ /* x (1 + 0.6 tier) (2026-10-11, roles: TEAM countermx 81-89 - Voltage leaks 4% of armor, Conductivity 10, Capacitance 12; was 2.068 3.093 4.272 5.492 6.793) */, ARC_VOLTAGE_FALL = [0.5, 0.65, 0.8, 1, 1.1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
 // Conductivity's shape by tier (owner): strikes (separate first targets),
 // jumps, and forks per jump - 3, 7, 13, then two separate 13-hit attacks -
 // and r, how much further each JUMP reaches (owner; Voltage owns the tower's range)
@@ -209,7 +213,7 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.3, 1.45, 1.6, 1.75];
 // type): its arcs ignore this share of armor - Voltage is ARC's armor answer, Conductivity the shields, Capacitance the fast
 function arcSkillStats(t, s, b) {
   const c = skillOf(t, "conductivity"), v = skillOf(t, "voltage"), z = skillOf(t, "capacitance");
-  s.dmg = b.dmg * ARC_VOLTAGE_DMG[v] * ARC_CONDUCTIVITY[c].d; s.range = b.range * RANGE_BONUS;
+  s.dmg = b.dmg * ARC_VOLTAGE_DMG[v] * ARC_SIDE_DMG[c] * ARC_SIDE_DMG[z] * ARC_CONDUCTIVITY[c].d; s.range = b.range * RANGE_BONUS;
   const sh = ARC_CONDUCTIVITY[c]; // Conductivity: strikes, jumps AND forks
   s.arcRange = ARC_JUMP_BASE * ARC_VOLTAGE_JUMP[v] * sh.r; s.targets = sh.s; s.layers = sh.j; s.branch = sh.f; s.revisit = sh.v || 0;
   s.arcFall = ARC_VOLTAGE_FALL[v]; s.arcShrink = ARC_SHRINK; s.charge = ARC_CAPACITANCE[z]; s.statSlow = ARC_STAT_SLOW[z]; s.skill = true;
