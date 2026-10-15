@@ -336,9 +336,19 @@ const TOWERS = {
   // dmg = damage per SECOND at x1; rate = ticks per second (owner: a DoT line)
   acd:     { name: "Acid",    ab: "ACD", color: "chatsubo", cost: 40,  dmg: 23,  rate: 4, /* 2026-10-08: halved (was 46).  early-game balance 2026-10-06: was 18, then 26; 46 with the range halved (and a faster base ramp, ACD_DOUBLE) */    range: 88 /* x1.1 "a little" (owner, 2026-10-12; was 80) - owner 2026-10-11: "reduce acd range a lot" (was 115) */, blurb: "Definitely not basic.", up: "burn" },
 };
-// which enemies each tower is GOOD AGAINST (owner), on its build card
-const GOOD_VS = { arc: "swarms", frz: "fast, shields", sol: "armor, bosses", acd: "shields, bosses" };
 const KINDS = Object.keys(TOWERS);
+// THE COUNTER MATRIX (owner, 2026-10-08: each enemy type has ONE main counter and two helpers;
+// ARCHITECTURE.md §4.6; scripts/aspira-sim/countermx.mjs measures it). The build card's "good vs"
+// is DERIVED from it (owner, 2026-10-15: "show good_vs but make it correlate to the counter
+// matrix") so the two can never drift: GOOD_VS = the types a kind is the MAIN counter of (plus
+// bosses for the two single-target kinds), HELPS_VS = the types it is a helper against. The card
+// used to say FRZ was good vs shields - the one type it cannot slow at all.
+const COUNTERS = { swarm: { main: "arc", help: ["frz", "acd"] }, fast: { main: "frz", help: ["arc", "sol"] }, armor: { main: "sol", help: ["acd", "frz"] }, shield: { main: "acd", help: ["arc", "sol"] } };
+const BOSS_KILLERS = ["sol", "acd"]; // the focused ray and the ramping jets: built for one big target
+const TYPE_PLURAL = { swarm: "swarms", fast: "fast", armor: "armor", shield: "shields" };
+const vsList = pick => Object.keys(COUNTERS).filter(e => pick(COUNTERS[e])).map(e => TYPE_PLURAL[e]);
+const GOOD_VS = Object.fromEntries(KINDS.map(k => [k, vsList(c => c.main === k).concat(BOSS_KILLERS.includes(k) ? ["bosses"] : []).join(", ")]));
+const HELPS_VS = Object.fromEntries(KINDS.map(k => [k, vsList(c => c.help.includes(k)).join(", ")]));
 const MAX_LVL = 4;
 let RANGE_BONUS = 1.165; /* x0.75 (owner, 2026-10-12: "reduce all tower ranges by 25%"; was 1.553) */ /* x1.5 for THREE towers (owner, 2026-10-09: "increase range of all towers by some percentage" - "don't let range go over 1.5x"; was 1.035) */ /* let: the simulator tries others (three towers, 2026-10-09) */ // +15% across the board (owner, 2026-10-06; was 0.9) // 75% of the old 1.2 (owner, 2026-10-04: towers move now; a halving to 0.6 was meant as 75%)
 // targeting (owner, 2026-10-03): Fresh = no debuffs yet, Biggest = most HP,

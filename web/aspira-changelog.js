@@ -9,6 +9,7 @@ const CHANGELOG = [
     "Armor waves: x1.5 enemies (was x2), each worth 1.33 credits (was 1).",
   ], u: [
     "Upgrades: four buys an axis, numbered I-IV; IV is the capstone. The old II-III and IV-V are one buy each, at both tiers' price.",
+    "Build cards: 'good vs' follows the counter matrix - the type a tower is THE counter of, then the ones it helps against (Freeze no longer claims shields).",
   ] },
   { v: "4.3", day: "Oct 14", bu: [
     "Permafrost pulses twice as often, each half as strong.",

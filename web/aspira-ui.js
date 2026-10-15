@@ -298,7 +298,7 @@ function refreshPanels() {
     const k = ui.build, b = TOWERS[k];
     placing.dataset.kind = k;
     placing.innerHTML = '<div class="name">' + b.name + " · -" + cr(towerCost(k)) + "</div>" + '<p class="asp-hint">' + b.blurb +
-      " Good against " + GOOD_VS[k] + ".</p>"; // what it counters (owner)
+      " Good against " + GOOD_VS[k] + "; helps against " + HELPS_VS[k] + ".</p>"; // what it counters, from the counter matrix (owner)
   }
 }
 

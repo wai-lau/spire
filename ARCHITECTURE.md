@@ -115,8 +115,8 @@ and a slower speed holds 1.5 s real before speeding up.
 | design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools |
 | colour | orange | cyan | pink | chatsubo green |
 | default targeting | Near | Fresh | Biggest | Biggest |
-| `GOOD_VS` (build card) | swarms | fast, shields | armor, bosses | shields, bosses |
-| main counter of | swarm | fast | armor | shield |
+| main counter of (`GOOD_VS`) | swarm | fast | armor, bosses | shield, bosses |
+| helps against (`HELPS_VS`) | fast, shields | swarms, armor | fast, shields | swarms, armor |
 | weak to | armor (grounds the arc) | shields (cannot be slowed) | swarms (one lock) | fast and shields (cold jets) |
 | leash | medium | long | short | longest |
 
@@ -231,7 +231,10 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 | **armor** | weak (grounds the arc) | help | MAIN | help | strip below zero = a flat bonus; armor scales with HP |
 | **shield** | help | weak (no slow) | help | MAIN | pops a hit: ACD one a tick, SOL by Focus |
 
-`scripts/aspira-sim/countermx.mjs` measures it.
+The matrix is DATA: `COUNTERS` in `aspira-defs.js`, from which the build card's "good vs"
+(main) and "helps vs" lines derive (`GOOD_VS`, `HELPS_VS`; SOL and ACD add bosses,
+`BOSS_KILLERS`), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
+measures it.
 
 ### 4.7 The core and its two powers
 
