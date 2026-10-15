@@ -10,16 +10,18 @@
    underscores, with AAA as hint"): each letter 1ch over its own 1ch line, ASC_GAP apart */
 #asp-asc-in {
   --asc-gap: 0.6ch;
-
+  /* CONTENT-box, and room on the right for the last letter's own spacing and the caret: at exactly three letters wide the
+     field scrolled once full, the first letter cut off and every letter off its line (owner, 2026-10-14: "fix this") */
+  box-sizing: content-box;
   width: calc(3ch + 3 * var(--asc-gap));
-  padding: 0 0 var(--space-1) calc(var(--asc-gap) / 2);
+  padding: 0 calc(var(--asc-gap) / 2) var(--space-1) calc(var(--asc-gap) / 2);
   font: inherit;
   font-size: var(--fs-xl);
   letter-spacing: var(--asc-gap);
   text-align: left;
   text-transform: uppercase;
   color: currentcolor;
-  background: repeating-linear-gradient(90deg, currentcolor 0 1ch, transparent 1ch calc(1ch + var(--asc-gap))) calc(var(--asc-gap) / 2) 100% / calc(100% - var(--asc-gap)) var(--space-0-5) no-repeat;
+  background: repeating-linear-gradient(90deg, currentcolor 0 1ch, transparent 1ch calc(1ch + var(--asc-gap))) calc(var(--asc-gap) / 2) 100% / calc(3ch + 2 * var(--asc-gap)) var(--space-0-5) no-repeat; /* exactly three lines, one under each letter */
   border: none;
   outline: none;
 }
