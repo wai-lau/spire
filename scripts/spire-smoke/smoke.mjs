@@ -102,7 +102,7 @@ check("boss sky keeps tower colours: ranges drawn under it", () => {
   return seen.drawTowerRange ? "" : "no range drawn on the boss sky";
 });
 
-check("giga capstone: one axis to VI, a second refused; every tier table covers VI", () => {
+check("capstone: one axis to VI, a second refused; every tier table covers VI", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "arc";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -118,7 +118,7 @@ check("giga capstone: one axis to VI, a second refused; every tier table covers 
     return out;
   })()`);
   if (r.a !== 6) return "first axis reached " + r.a + ", not VI";
-  if (r.b !== 5) return "second axis reached " + r.b + " (one giga a tower)";
+  if (r.b !== 5) return "second axis reached " + r.b + " (one capstone a tower)";
   if (r.bad) return "tier VI incomplete: " + r.bad;
   return "";
 });

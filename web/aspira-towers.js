@@ -351,7 +351,7 @@ function usePower(code) {
 // Slide tiers grow it (SKILL_MOVE `slide`, aspira-skills.js); a tower is where the finger is.
 // THE LEASH BY KIND (owner, 2026-10-13: "do an audit of the tower movements now that the cap makes more sense" - "ok fix"): the
 // phone's screen caps where a tower may stand (phoneInside, aspira-positioning.js), so each leash is its own length, sized so
-// its slide tiers have room - about a third of the phone at base, all of it by the capstone. MOVE_BASE x the tier's slide
+// its slide tiers have room - about a third of the phone at base, all of it by tier V (and further at the capstone, VI). MOVE_BASE x the tier's slide
 // (SKILL_MOVE), up to SLIDE_MAX. (Was the old spoke's travel x MOVE_SPAN 3.375: ARC 434, FRZ 519, ACD 869 - most of the
 // phone before a tier, so the slide tiers bought nothing - and SLIDE_MAX 2 voided every tier past x2; SOL halved to 74 that day)
 const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74 }, SLIDE_MAX = 3;

@@ -13,7 +13,7 @@ import { patchProbe } from "./simver.mjs";
 // re-reads them, so a balance commit landing mid-run would otherwise mix two
 // versions (2026-10-07)
 const WEB = (process.env.ASPIRA_WEB || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "web")) + "/";
-const FILES = ["aspira-defs.js", "aspira-upgrades.js", "aspira-game.js", "aspira-formations.js", "aspira-floats.js", "aspira-waves.js", "aspira-bosses.js", "aspira-towers.js", "aspira-acid.js", "aspira-skills.js", "aspira-frz.js", "aspira-desc.js", "aspira-giga.js","aspira-positioning.js", "aspira-core.js"];
+const FILES = ["aspira-defs.js", "aspira-upgrades.js", "aspira-game.js", "aspira-formations.js", "aspira-floats.js", "aspira-waves.js", "aspira-bosses.js", "aspira-towers.js", "aspira-acid.js", "aspira-skills.js", "aspira-frz.js", "aspira-desc.js", "aspira-capstone.js","aspira-positioning.js", "aspira-core.js"];
 
 export function makeGame(seed, patch = "") {
   patch = [process.env.ASPIRA_PATCH, patch].filter(Boolean).join("\n"); // ASPIRA_PATCH: a balance experiment for every game of a run
@@ -106,11 +106,11 @@ export function makeGame(seed, patch = "") {
         // strategy) the lowest open axis, so builds spread evenly
         let id = null;
         if (need === "skill") {
-          const ids = SKILL_TREES[t.kind].map(a => a.id).filter(id => skillOf(t, id) < axisCap(t, id)); // (one giga VI a tower)
+          const ids = SKILL_TREES[t.kind].map(a => a.id).filter(id => skillOf(t, id) < axisCap(t, id)); // (one capstone VI a tower)
           id = ids.includes(choice) ? choice : ids.sort((a, b) => skillOf(t, a) - skillOf(t, b))[0];
         }
         // a CAPSTONE (tier VI) is two levels at two steps' price, as in upgradeTower (aspira-ui.js)
-        const steps = id && skillOf(t, id) + 1 >= GIGA_TIER ? GIGA_LEVELS : 1, c = steps > 1 ? skillPointsCost(t, steps) : upCost(t);
+        const steps = id && skillOf(t, id) + 1 >= CAPSTONE_TIER ? CAPSTONE_LEVELS : 1, c = steps > 1 ? skillPointsCost(t, steps) : upCost(t);
         if (G.money < c) return false;
         if (id) t.skills = withSkill(t, id);
         if (need === "path") t.path = choice;

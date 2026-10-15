@@ -20,7 +20,7 @@ SOL, six slots, fixed waves, the ten Arcana bosses, core upgrades). 10-03/04 tow
 spokes; renamed THE SPIRE for players, page at `/spire`. 10-05..06 skill charts, simulator-driven
 bosses, perf rounds 1-3. 10-07 free core, five tiers an axis, upgrade sliders. 10-08 +/- steppers,
 tier fits, ONE SPEED. 10-09 three towers; 3D view; the game renamed THE SOURCE. 10-10..11
-drag-the-towers, trios, Ascendants, giga capstones. 10-12 the 12-wave cycle. 10-12..14 GPU 3D layers,
+drag-the-towers, trios, Ascendants, capstones. 10-12 the 12-wave cycle. 10-12..14 GPU 3D layers,
 slow logs, autosave, changelog card. The shipped version stamp reads this back as majors: 1.0 the
 game (Oct 1), 2.0 skill charts, 3.0 3D, 4.0 the three-tower game (`3cd5877`); the in-game
 changelog card (`aspira-changelog.js`) keeps the per-day facts for players.
@@ -210,7 +210,7 @@ carry + slow, Contagion = coverage. ACD ramp "dissolve carries ALL of it" was an
 (10-06). ACD `ACD_LINES` 1/2/3/5 -> 2/3/4/6.
 
 ### 4.4 Tiers and the chart
-Three tiers -> five (10-07) -> six with the **giga capstone** (10-11: "add a 6th level to each of
+Three tiers -> five (10-07) -> six with the **capstone** (called the "giga capstone" until 10-14) (10-11: "add a 6th level to each of
 the axes", "you can only get 1/3 of the giga capstones"); `SKILL_POINTS` 6 -> 9 -> 15 -> 16; a capstone
 costing two levels (10-12). Reach by tier (`SKILL_MOVE`): range, slide extent and slide SPEED (speed
 gone 10-12) were all axes' levers; ARC's range tiers x4.3 maxed were cut to x1.25 (10-11,

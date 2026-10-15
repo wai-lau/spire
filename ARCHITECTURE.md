@@ -209,9 +209,9 @@ Hack cyan inverted) for `SEG_FLASH_T` 0.8 s. The core shows up to `LIFE_RINGS` 5
   2.5, 4, 7, 11, 16, 22, 29, 37, 46, 56, 67, 79, 92, 106, 121, 137, 154 (a full chart is
   986.5 build prices, ~39,460c). **The capstone is TWO levels and two ladder steps**
   (owner: "should cost the same as increasing the level by 2"). **One capstone per tower**
-  (`axisCap`: V while another axis is at VI, `gigaHolder`; the card says "One capstone
-  per tower · X VI holds it"). `aspira-giga.js` appends tier VI to EVERY per-tier table
-  in one place (`GIGA_NUM`), so no index-6 lookup is undefined.
+  (`axisCap`: V while another axis is at VI, `capstoneHolder`; the card says "One capstone
+  per tower · X VI holds it"). `aspira-capstone.js` appends tier VI to EVERY per-tier table
+  in one place (`CAPSTONE_NUM`), so no index-6 lookup is undefined.
 - **Upgrading.** A tower's card shows its chart as a triangle plus three `[-] pips [+]`
   steppers (§7.4). Several points may be pulled into the **basket** before buying; the
   card previews the result, the button prices the basket and locks it in. A step below
@@ -745,7 +745,7 @@ add a line with every change a player would notice.
 `defs` (geometry, tables, `towerStats`) -> `sfx` -> `upgrades` (dormant tree) -> `game`
 (state `G`, combat, damage, slows) -> `formations` -> `floats` (damage numbers, coins) ->
 `waves` -> `bosses` -> `positioning` (also the play box) -> `towers` (ARC, SOL, moons,
-leash) -> `acid` -> `skills` (the three charts and ARC) -> `frz` -> `desc` -> `giga`
+leash) -> `acid` -> `skills` (the three charts and ARC) -> `frz` -> `desc` -> `capstone`
 (tier VI appended to every table) -> `chart` -> `stats` -> `sliders` (tower card) -> `core`
 -> `core-fx` -> `powers` -> `endstats` -> `ascend` -> `quality` (just before draw: `lowQ`) ->
 `threat` -> `draw` -> `textcache` -> `effects` -> `enemies` -> `lanes` -> `camera` ->
@@ -784,7 +784,7 @@ lint/hooks are exec-fn's (the shim `scripts/pre-commit` here).
   template loads, in order, into one node vm over a fake DOM (`dom.mjs`) whose canvas
   RECORDS calls, drives the real frame loop and checks things **draw**: boot, 2D / low / the
   3D fallback, each kind built through `placeTower`, a fought wave, the boss sky spreading
-  and full, towers keeping their colours, a giga capstone (a second VI refused, every tier
+  and full, towers keeping their colours, a capstone (a second VI refused, every tier
   table covers VI), Temporal Drive, two fingers moving two towers, a fling coasting and
   bouncing, "X lives left", game over / a loss past wave 10 / a win and the Ascendants,
   play again. A new browser global a script starts using needs a stub in `dom.mjs`.
@@ -793,7 +793,7 @@ lint/hooks are exec-fn's (the shim `scripts/pre-commit` here).
 
 ### 10.4 Simulator and balance tooling (`scripts/aspira-sim/`, README there)
 Runs the REAL game code (the files listed in `sim.mjs` `FILES`: defs, upgrades, game,
-formations, floats, waves, bosses, towers, acid, skills, frz, desc, giga, positioning,
+formations, floats, waves, bosses, towers, acid, skills, frz, desc, capstone, positioning,
 core) in a Node vm with drawing, sound and input stubbed, every tick as fast as it can,
 with scripted players (opening, kind mix, upgrade appetite, interest reserve, chart axis
 per point, core use). `ASPIRA_WEB=<dir>` pins a run to a snapshot of the game files; a
@@ -824,9 +824,9 @@ scripts).
 - The simulator loads only the game-logic files: UI-only code that logic reaches needs a
   `typeof X === "function"` guard (and `typeof document.getElementById`-style checks); a new
   script that logic needs goes in `sim.mjs` `FILES`; a browser global needs a `dom.mjs` stub.
-- Every per-tier table needs exactly 6 entries before `aspira-giga.js` loads (it appends
-  index 6 to tables of length `SKILL_TIERS`); a new table or axis needs a giga entry and a
-  `GIGA_TIERS` name.
+- Every per-tier table needs exactly 6 entries before `aspira-capstone.js` loads (it appends
+  index 6 to tables of length `SKILL_TIERS`); a new table or axis needs a capstone entry and a
+  `CAPSTONE_TIERS` name.
 - `fixedRand(wave, salt)`, never `Math.random`, for anything that shapes a wave; changing a
   salt or count changes the sequence for everyone (and every sim seed).
 - Whole numbers: HP, armor and hits are floored; a landed hit is >= 1; fractions are banked

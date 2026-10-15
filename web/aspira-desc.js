@@ -6,7 +6,7 @@
 const cap = s => s[0].toUpperCase() + s.slice(1);
 const ARC_CHARGES = ["", "a charge", "two charges", "three charges", "four charges", "five charges"]; // Capacitance (2026-10-08)
 const ARC_KEEP = ["half", "most of", "nearly all of", "all of", "more than", "far more than"], ARC_RETURN = ["", "", "", "once", "twice", "three times"];
-const ARC_STRIKES = ["", "", "twin", "three", "four"]; // by STRIKE COUNT (ARC_CONDUCTIVITY[c].s: 1 1 1 2 2 3, giga 4), not by tier - IV read "three" while it fired two (2026-10-14)
+const ARC_STRIKES = ["", "", "twin", "three", "four"]; // by STRIKE COUNT (ARC_CONDUCTIVITY[c].s: 1 1 1 2 2 3, capstone 4), not by tier - IV read "three" while it fired two (2026-10-14)
 // thematic words where they fit (owner): chill, rime, brittle, moons; rays, refract, pierce; jets, etch.
 // ONLY BEHAVIOUR is told here (owner, 2026-10-07): a tier that just moves a number - harder
 // hits, a colder or wider aura, faster pulses, a stronger acid, more or bigger puddles -

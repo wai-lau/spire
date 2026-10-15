@@ -211,9 +211,9 @@ function upgradeTower(t, choice = null, quiet = false) {
   if (!t || t.lvl >= maxLvl(t) || G.money < upCost(t)) return;
   const need = pendingChoice(t);
   if (need && choice == null) return;
-  if (need === "skill" && skillOf(t, choice) >= axisCap(t, choice)) return; // full, or a second giga VI (aspira-giga.js)
-  // a CAPSTONE (tier VI) is two levels: the next two ladder steps, t.lvl + 2 (aspira-giga.js)
-  const steps = need === "skill" && typeof GIGA_TIER !== "undefined" && skillOf(t, choice) + 1 >= GIGA_TIER ? GIGA_LEVELS : 1;
+  if (need === "skill" && skillOf(t, choice) >= axisCap(t, choice)) return; // full, or a second capstone VI (aspira-capstone.js)
+  // a CAPSTONE (tier VI) is two levels: the next two ladder steps, t.lvl + 2 (aspira-capstone.js)
+  const steps = need === "skill" && typeof CAPSTONE_TIER !== "undefined" && skillOf(t, choice) + 1 >= CAPSTONE_TIER ? CAPSTONE_LEVELS : 1;
   const c = steps > 1 ? skillPointsCost(t, steps) : upCost(t);
   if (G.money < c) return;
   if (need === "skill") t.skills = withSkill(t, choice); // one tier up the chosen axis

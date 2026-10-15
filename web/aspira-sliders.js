@@ -13,13 +13,13 @@
 const basket = { id: null, add: {} }; // the pulled points per axis of the selected tower
 function basketFor(t) { if (basket.id !== t.id) { basket.id = t.id; basket.add = {}; } return basket.add; }
 const basketPoints = t => Object.values(basketFor(t)).reduce((a, b) => a + b, 0);
-const basketCost = t => skillPointsCost(t, levelsFor(t, basketFor(t))); // (a capstone counts two levels - aspira-giga.js)
+const basketCost = t => skillPointsCost(t, levelsFor(t, basketFor(t))); // (a capstone counts two levels - aspira-capstone.js)
 const previewTower = t => ({ ...t, lvl: t.lvl + levelsFor(t, basketFor(t)), skills: withSkills(t, basketFor(t)) });
 // how many more points axis `id` may take: the tiers it has left, and how many
 // of those the bank covers on top of the other axes' pulls (points are priced
 // in order, whatever the axis)
 function axisRoom(t, id) {
-  const add = basketFor(t), others = basketPoints(t) - (add[id] || 0), left = axisCap(t, id, add) - skillOf(t, id); // (one giga VI a tower)
+  const add = basketFor(t), others = basketPoints(t) - (add[id] || 0), left = axisCap(t, id, add) - skillOf(t, id); // (one capstone VI a tower)
   let afford = 0;
   while (afford < left && skillPointsCost(t, levelsFor(t, { ...add, [id]: afford + 1 })) <= G.money) afford++;
   return { others, left, afford };
@@ -48,13 +48,13 @@ const tierSpan = (lock, at) => (at > lock ? tierTxt(lock) + "→" + tierTxt(at) 
 const canPull = (t, ax) => { const r = axisRoom(t, ax.id); return r.left > 0 && r.afford > 0; };
 const shapeOf = (axes, sk, n) => axes.map((ax, i) => axisPt(i, (sk && sk[ax.id]) || 0, n).map(v => v.toFixed(1)).join(",")).join(" ");
 // one pip a tier: filled = locked in, half-lit = pulled in the basket, hollow = still to buy
-// the last pip and the outer ring are the GIGA tier VI (aspira-giga.js), marked in orange (aspira.css)
+// the last pip and the outer ring are the capstone tier VI (aspira-capstone.js), marked in orange (aspira.css)
 // ...and once ANOTHER axis has BOUGHT its VI, this axis's VI pip is RED: gone for this tower (owner, 2026-10-12)
-const pipsHtml = (lock, at, gone) => Array.from({ length: SKILL_TIERS }, (_, k) => '<i class="' + (k < lock ? "lock" : k < at ? "pull" : "") + (k === SKILL_TIERS - 1 ? " giga" + (gone ? " gone" : "") : "") + '"></i>').join("");
+const pipsHtml = (lock, at, gone) => Array.from({ length: SKILL_TIERS }, (_, k) => '<i class="' + (k < lock ? "lock" : k < at ? "pull" : "") + (k === SKILL_TIERS - 1 ? " capstone" + (gone ? " gone" : "") : "") + '"></i>').join("");
 function sliderChart(t) {
   const axes = SKILL_TREES[t.kind], n = axes.length, add = basketFor(t), pv = previewTower(t);
   let svg = '<svg class="asp-chart asp-sliders" viewBox="0 ' + SL_TOP + ' 120 ' + SL_H + '">';
-  for (let k = 1; k <= SKILL_TIERS; k++) svg += '<polygon class="grid' + (k === SKILL_TIERS ? " giga" : "") + '" points="' + axes.map((_, i) => axisPt(i, k, n).map(v => v.toFixed(1)).join(",")).join(" ") + '"/>';
+  for (let k = 1; k <= SKILL_TIERS; k++) svg += '<polygon class="grid' + (k === SKILL_TIERS ? " capstone" : "") + '" points="' + axes.map((_, i) => axisPt(i, k, n).map(v => v.toFixed(1)).join(",")).join(" ") + '"/>';
   axes.forEach((ax, i) => { const [ex, ey] = axisPt(i, SKILL_TIERS, n); svg += '<line class="grid" x1="' + SL_C + '" y1="' + SL_C + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) + '"/>'; });
   svg += '<polygon class="next" points="' + shapeOf(axes, pv.skills, n) + '"/><polygon class="now" points="' + shapeOf(axes, t.skills, n) + '"/>';
   axes.forEach((ax, i) => { const [tx, ty] = labelPt(i, n); svg += '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="middle">' + ax.name.slice(0, 4).toUpperCase() + "</text>"; });
@@ -64,7 +64,7 @@ function sliderChart(t) {
     const lock = skillOf(t, ax.id), at = lock + (add[ax.id] || 0);
     return '<div class="asp-axis-row"><span class="asp-axis-name">' + ax.name + '<b class="asp-axis-tier">' + tierSpan(lock, at) + "</b></span>" +
       '<div class="asp-axis-ctl"><button class="asp-axis-btn minus" data-axis="' + i + '" data-d="-1" aria-label="' + ax.name + ' down">−</button>' +
-      '<span class="asp-pips">' + pipsHtml(lock, at, !!gigaHolder(t, ax.id)) + "</span>" +
+      '<span class="asp-pips">' + pipsHtml(lock, at, !!capstoneHolder(t, ax.id)) + "</span>" +
       '<button class="asp-axis-btn plus' + (canPull(t, ax) ? " can" : "") + '" data-axis="' + i + '" data-d="1" aria-label="' + ax.name + ' up">+</button></div></div>';
   }).join("");
   return '<div class="asp-ctl-row"><div class="asp-axes">' + rows + '</div><div class="asp-chart-box">' + svg + '<div class="asp-slider-note" id="asp-slider-note"></div></div></div>';
@@ -78,10 +78,10 @@ function updateSliderChart(t, svg) {
     const lock = skillOf(t, ax.id), at = lock + (add[ax.id] || 0), row = rows[i];
     if (!row) return;
     row.querySelector(".asp-axis-tier").textContent = tierSpan(lock, at);
-    row.querySelector(".asp-pips").innerHTML = pipsHtml(lock, at, !!gigaHolder(t, ax.id));
+    row.querySelector(".asp-pips").innerHTML = pipsHtml(lock, at, !!capstoneHolder(t, ax.id));
     row.querySelector(".minus").classList.toggle("dim", at <= lock); // nothing pulled to put back
     const plus = row.querySelector(".plus");
-    plus.classList.toggle("can", canPull(t, ax)); plus.disabled = at >= SKILL_TIERS; // (a giga taken elsewhere: the tap SAYS so - pullAxis)
+    plus.classList.toggle("can", canPull(t, ax)); plus.disabled = at >= SKILL_TIERS; // (a capstone taken elsewhere: the tap SAYS so - pullAxis)
   });
 }
 // the HUD tick (aspira-ui.js updateHud): income may have brought a point within reach - the flash follows the bank
@@ -99,10 +99,10 @@ function bindSliders(t, root) {
 // step below the locked-in tier is refused (the bank is no limit - upgradeButton)
 function pullAxis(t, i, want) {
   const ax = SKILL_TREES[t.kind][i], add = basketFor(t), lock = skillOf(t, ax.id);
-  const top = axisCap(t, ax.id, add), holder = gigaHolder(t, ax.id, add);
+  const top = axisCap(t, ax.id, add), holder = capstoneHolder(t, ax.id, add);
   const to = Math.max(lock, Math.min(top, want));
   const why = want < lock ? ax.name + " " + roman(lock) + " is locked in" // (no "sell to undo" - owner, 2026-10-12)
-    : want > top && holder ? "One capstone per tower · " + holder.name + " " + roman(GIGA_TIER) + " holds it" : "";
+    : want > top && holder ? "One capstone per tower · " + holder.name + " " + roman(CAPSTONE_TIER) + " holds it" : "";
   const was = add[ax.id] || 0;
   add[ax.id] = to - lock;
   if (was !== to - lock) refreshUpgradePreview(t);

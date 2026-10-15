@@ -1,23 +1,23 @@
-// /spire - the GIGA CAPSTONES (owner, 2026-10-11: "add a 6th level to each of the axes for each tower that is a giga
-// version of the capstone", "you can only get 1/3 of the giga capstones"): every axis gains tier VI, a big leap
+// /spire - the CAPSTONES, tier VI (once "giga capstones"; renamed 2026-10-14) (owner, 2026-10-11: "add a 6th level to each of the axes for each tower that is a giga
+// version of the capstone", "you can only get 1/3 of the capstones"): every axis gains tier VI, a big leap
 // over its capstone V, and a tower may take ONE axis to VI - the other two stop at V (axisCap). Sixteen points
 // (5 + 5 + 6, SKILL_POINTS). Every per-tier table is extended here, in one place, so no index-6 lookup is ever
 // undefined. Loaded after aspira-skills.js, aspira-acid.js, aspira-frz.js and aspira-desc.js (the simulator too).
-const GIGA_TIER = SKILL_TIERS; // 6
+const CAPSTONE_TIER = SKILL_TIERS; // 6
 // the most axis `id` of tower t may reach, with `add` (axis -> points) pulled on: V while another axis is at VI
-function gigaHolder(t, id, add = {}) {
-  return SKILL_TREES[t.kind].find(ax => ax.id !== id && skillOf(t, ax.id) + (add[ax.id] || 0) >= GIGA_TIER) || null;
+function capstoneHolder(t, id, add = {}) {
+  return SKILL_TREES[t.kind].find(ax => ax.id !== id && skillOf(t, ax.id) + (add[ax.id] || 0) >= CAPSTONE_TIER) || null;
 }
-const axisCap = (t, id, add = {}) => (gigaHolder(t, id, add) ? GIGA_TIER - 1 : GIGA_TIER);
+const axisCap = (t, id, add = {}) => (capstoneHolder(t, id, add) ? CAPSTONE_TIER - 1 : CAPSTONE_TIER);
 // a CAPSTONE is TWO levels (owner, 2026-10-12: "buying a capstone should cost the same as increasing the level by 2 (and also
 // increase tower level by 2)"): it pays the next two ladder steps and raises t.lvl by 2 (upgradeTower, aspira-ui.js)
-const GIGA_LEVELS = 2;
+const CAPSTONE_LEVELS = 2;
 // the levels `add` (axis -> points) buys: its points, plus one when it takes an axis to the capstone
 const levelsFor = (t, add) => Object.values(add).reduce((a, b) => a + b, 0) +
-  (SKILL_TREES[t.kind].some(ax => skillOf(t, ax.id) < GIGA_TIER && skillOf(t, ax.id) + (add[ax.id] || 0) >= GIGA_TIER) ? GIGA_LEVELS - 1 : 0);
+  (SKILL_TREES[t.kind].some(ax => skillOf(t, ax.id) < CAPSTONE_TIER && skillOf(t, ax.id) + (add[ax.id] || 0) >= CAPSTONE_TIER) ? CAPSTONE_LEVELS - 1 : 0);
 
 // ---------- the numbers: index 6 of every tier table (a leap, not a step) ----------
-const GIGA_NUM = [
+const CAPSTONE_NUM = [
   // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit; Capacitance eight charges
   [ARC_VOLTAGE_DMG, 69.9], [ARC_VOLTAGE_FALL, 1.6], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
   [ARC_CONDUCTIVITY, { s: 4 /* was 6 - the ARC nerf, 2026-10-11 */, j: 3, f: 3, r: 2.4, d: 1, v: 4 }], [ARC_CAPACITANCE, { n: 8, frac: 0.2 /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
@@ -31,23 +31,23 @@ const GIGA_NUM = [
   [ACD_CORROSION_DMG, 1], [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9], [ACD_FLOW_SLOW, 0.2], [ACD_SPRAY_MUL, 1],
   [ACD_CONTAGION, { every: 1, life: 40, r: 150 }], [ACD_PUDDLE_HEAT, 0.2],
 ];
-for (const [table, v] of GIGA_NUM) if (table.length === GIGA_TIER) table.push(v);
-// the reach a giga tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)
-const GIGA_MOVE = {
+for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
+// the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)
+const CAPSTONE_MOVE = {
   arc: { conductivity: [1.15, 1], voltage: [1.15, 1], capacitance: [1, 3] },
   frz: { temp: [1.7, 1], rime: [1, 3], moons: [1, 1] },
   sol: { focus: [2.3, 1], refraction: [1.7, 1], breach: [1, 3] },
   acd: { corrosion: [1, 1], spray: [1.5, 1] /* VI: range, not a hotter carry (owner, 2026-10-12; was 1.25) */, contagion: [1, 2.1] },
 };
-for (const [kind, axes] of Object.entries(GIGA_MOVE)) {
+for (const [kind, axes] of Object.entries(CAPSTONE_MOVE)) {
   for (const [id, m] of Object.entries(axes)) {
     const tiers = SKILL_MOVE[kind][id];
-    SKILL_MOVE[kind][id] = tiers.length === GIGA_TIER ? [...tiers, m] : tiers; // a copy: NO_MOVE is shared between axes
+    SKILL_MOVE[kind][id] = tiers.length === CAPSTONE_TIER ? [...tiers, m] : tiers; // a copy: NO_MOVE is shared between axes
   }
 }
 
 // ---------- the words: each axis's tier VI, and the composers' (aspira-desc.js) index 6 ----------
-const GIGA_TIERS = {
+const CAPSTONE_TIERS = {
   conductivity: { name: "Hyperstorm" },
   voltage: { name: "Gigavolt" },
   capacitance: { name: "Superstorm" },
@@ -61,7 +61,7 @@ const GIGA_TIERS = {
   spray: { name: "Monsoon" },
   contagion: { name: "Extinction" },
 };
-for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === GIGA_TIER - 1 && GIGA_TIERS[ax.id]) ax.tiers.push(GIGA_TIERS[ax.id]);
+for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1 && CAPSTONE_TIERS[ax.id]) ax.tiers.push(CAPSTONE_TIERS[ax.id]);
 ARC_KEEP.push("over one and a half times") /* ARC_VOLTAGE_FALL VI 1.6 (read "twice" - 2026-10-14) */; ARC_RETURN.push("four times");
 ARC_CHARGES.push("six charges", "seven charges", "eight charges"); // indexed by the charge COUNT (ARC_CAPACITANCE[z].n)
 FRZ_MOONS.push(" Four moons copy it, each with four moonlets.");

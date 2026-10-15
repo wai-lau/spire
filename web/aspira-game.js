@@ -246,7 +246,7 @@ function applySlow(e, f, dur, src = "x", shape = "refresh") {
   if (e.arcana) { f *= bossSlowMul(e); if (f <= 0) return true; } // Strength / Death (aspira-bosses.js)
   if (e.type === "fast") f *= FAST_SLOW_MUL;
   // only Temporal Drive ("core:") is a FULL stop: a tower's slow stays under 1, so it is always shaped by the cap (owner,
-  // 2026-10-12, a recording: two fast enemies stopped dead - giga Temp's 0.55 doubled on the fast made 1.1, read as a stop)
+  // 2026-10-12, a recording: two fast enemies stopped dead - capstone Temp's 0.55 doubled on the fast made 1.1, read as a stop)
   if (!String(src).startsWith("core:")) f = Math.min(f, TOWER_SLOW_MAX);
   addDebuff(e.slows ||= {}, src, f, dur, shape);
   sumSlows(e);

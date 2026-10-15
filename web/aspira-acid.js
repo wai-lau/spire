@@ -150,7 +150,7 @@ const DRIP_SPREAD = 0.1, DRIP_TAU = 0.6, DRIP_STOP = 200, DRIP_V = DRIP_STOP / D
 const DRIP_V_JIT = 0.6; // launch speed x(1 +- this), so a drop rests 80-320 units back (owner, 2026-10-13: "add significant speed jitter to goo launch")
 // ...and it SEEKS (owner, 2026-10-13: "acid blobs need to gravitate towards other units at 50 units, this should improve as
 // corrosion levels up"): a drop homes on the nearest other enemy within its Corrosion tier's ACD_DRIP_PULL, at DRIP_HOME_V
-const ACD_DRIP_PULL = [0, 50, 65, 80, 100, 120]; /* (VI: GIGA_NUM, aspira-giga.js) */
+const ACD_DRIP_PULL = [0, 50, 65, 80, 100, 120]; /* (VI: CAPSTONE_NUM, aspira-capstone.js) */
 const DRIP_HOME_V = 260;
 function dripAcc(e, amt, t) {
   e.drip = (e.drip || 0) + amt; e.dripBy = t;
@@ -220,7 +220,7 @@ const ACD_FLOW_CARRY = [0, 0.3, 0.5, 0.7, 0.9, 0.9] /* V and VI no hotter (owner
 // CORROSION'S DAMAGE MOVED TO THE BASE (owner, 2026-10-12): a bare ACD burns ACD_BASE_DMG_MUL harder; Corrosion is
 // now the armor STRIP alone - into negative armor, a flat bonus on every tower's hits, so it pays on the unarmored too
 let ACD_BASE_DMG_MUL = 2; // let: the simulator sweeps it
-const ACD_CORROSION_DMG = [1, 1, 1, 1, 1, 1]; // was 1 1.4 2.1 3.1 4.2 4.9 (kept as a table: the giga tier and fits index it) // x1.15 I..V (owner, 2026-10-11: ACD's strength back through Corrosion; was 1.213 1.823 2.674 3.631 4.253)
+const ACD_CORROSION_DMG = [1, 1, 1, 1, 1, 1]; // was 1 1.4 2.1 3.1 4.2 4.9 (kept as a table: the capstone tier and fits index it) // x1.15 I..V (owner, 2026-10-11: ACD's strength back through Corrosion; was 1.213 1.823 2.674 3.631 4.253)
 const ACD_DOUBLE = [0.5, 0.39, 0.3, 0.12, 0.12, 0.12], ACD_LINES = [2, 3, 4, 6, 7, 8], /* early-game balance 2026-10-06: two lines from the start (was 1/2/3/5); Spray to be re-fitted */ ACD_SPRAY_MUL = [1, 1, 1, 1, 1, 1]; // every jet a full strike (owner, 2026-10-08: never below 1) - Spray's reach (SKILL_MOVE) is the lever
 // puddles by Seep tier (index 0 = the DEFAULT drip, owner): one every `every`
 // s per line, lasting `life` s, radius r; each burns at ACD_PUDDLE_HEAT of its
@@ -229,7 +229,7 @@ const ACD_DOUBLE = [0.5, 0.39, 0.3, 0.12, 0.12, 0.12], ACD_LINES = [2, 3, 4, 6, 
 // pools from the START, large and long (owner, 2026-10-12: "ACD should have pools ... large and last longer from the start";
 // Contagion grows them, massive at VI); was null at 0, then life 4 .. 10, r 36 .. 85
 // life x~1.8 (owner, 2026-10-12: "just make the pools last even longer with contagion"; was 6 7 8 10 12 14)
-const ACD_CONTAGION = [{ every: 1.2, life: 6, r: 55 }, { every: 1.2, life: 9, r: 62 }, { every: 1.18, life: 12, r: 70 }, { every: 1.18, life: 16, r: 80 }, { every: 1.18, life: 20, r: 92 }, { every: 1.18, life: 25, r: 105 }]; // BIGGER (x1.3) and LONGER (x1.5) pools that burn LESS (owner, 2026-10-08; were life 2.4 3.1 4.2 5 6.5, r 28 33 42 50 65) // drip 1.24 / 1.18s (owner, 2026-10-08: Contagion under 200% - was 1.2 .. 0.7; V at 643%); size and life keep climbing; // pools bigger (x1.25) and longer (x1.3) at every tier (owner, 2026-10-08); V the capstone
+const ACD_CONTAGION = [{ every: 1.2, life: 6, r: 55 }, { every: 1.2, life: 9, r: 62 }, { every: 1.18, life: 12, r: 70 }, { every: 1.18, life: 16, r: 80 }, { every: 1.18, life: 20, r: 92 }, { every: 1.18, life: 25, r: 105 }]; // BIGGER (x1.3) and LONGER (x1.5) pools that burn LESS (owner, 2026-10-08; were life 2.4 3.1 4.2 5 6.5, r 28 33 42 50 65) // drip 1.24 / 1.18s (owner, 2026-10-08: Contagion under 200% - was 1.2 .. 0.7; V at 643%); size and life keep climbing; // pools bigger (x1.25) and longer (x1.3) at every tier (owner, 2026-10-08); V the top regular tier (VI, the capstone, in aspira-capstone.js)
 // a puddle ramps to the OLD x32 ceiling (owner, 2026-10-08: "increase the puddle damage to compensate" for the jets' cap halved to x16)
 const ACD_PUDDLE_CAP = 8; // (2026-10-08: x8, was x32 - a pool held the jet's whole ramp)
 let ACD_SHIELD_POP = 1; // 1 (owner, 2026-10-12: ACD pops 1x, pools too - shields are a bare ACD's weakness); // 2026-10-11 (was 1, as every hit; 2 left ACD 16-34% leaked on shield waves, 3 gives 6-23%): let: the simulator sweeps it
@@ -288,7 +288,7 @@ function stepPuddles(t, st, dt) {
   for (const [e, d] of t.poolAcc) dmgNumber(e, String(dmgUnits(d)), d, "white", t);
   t.poolAcc.clear();
 }
-// LATE-GAME LAG (owner, 2026-10-12: "make late game acid pools less laggy"): a giga Contagion keeps 300+ pools, each of
+// LATE-GAME LAG (owner, 2026-10-12: "make late game acid pools less laggy"): a capstone Contagion keeps 300+ pools, each of
 // which checked EVERY enemy at every tick - now the live enemies are bucketed once a step into POOL_CELL squares and a
 // pool looks only in the squares it covers (the same hits, far fewer checks)
 const POOL_CELL = 128;

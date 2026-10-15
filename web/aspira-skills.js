@@ -8,7 +8,7 @@
 // by DRAGGING the axes of the chart on the tower card (aspira-sliders.js), any
 // number at once; each still costs its own step of the ladder below
 // FIVE tiers an axis (owner, 2026-10-07: "add another 2 tiers to each upgrade"; was 3), fifteen points a tower
-// SIX with the GIGA tier (owner, 2026-10-11; aspira-giga.js): ONE axis a tower may take to VI, so sixteen points (5 + 5 + 6)
+// SIX with the capstone tier (owner, 2026-10-11; aspira-capstone.js): ONE axis a tower may take to VI, so sixteen points (5 + 5 + 6)
 const SKILL_POINTS = 16, SKILL_TIERS = 6;
 // cost of each of the six small upgrades, x the build cost (about the old
 // three-step total, spread over six; balance later). DEARER (owner, 2026-10-06:
@@ -17,7 +17,7 @@ const SKILL_POINTS = 16, SKILL_TIERS = 6;
 // ...and on, for the three points past the sixth (owner, 2026-10-07: "keep increasing
 // the prices"): the step grows by one more each time, a full chart 174.5 builds (6,980c)
 // (the six points past the ninth, 2026-10-07: each step grows by one more again - a full chart 695.5 builds, 27,820c)
-const SKILL_STEP_COST = [2.5, 4, 7, 11, 16, 22, 29, 37, 46, 56, 67, 79, 92, 106, 121, 137, 154]; // the 17th: a capstone takes TWO levels (aspira-giga.js) // the 16th: the giga point (2026-10-11)
+const SKILL_STEP_COST = [2.5, 4, 7, 11, 16, 22, 29, 37, 46, 56, 67, 79, 92, 106, 121, 137, 154]; // the 17th: a capstone takes TWO levels (aspira-capstone.js) // the 16th: the capstone point (2026-10-11)
 // Each axis: its `id`, its `name` (the slider) and its tiers' `name`s (the end screen). WHAT A TOWER DOES is
 // one composed sentence for the whole chart, aspira-desc.js, each tier changing as few words as carry the
 // gain (owner, 2026-10-07) - the card shows the change in track changes (aspira-sliders.js); the reach each
@@ -138,7 +138,7 @@ SKILL_TREES.acd = [
   ] },
 ];
 const hasSkills = t => !!SKILL_TREES[t.kind];
-const maxLvl = t => (hasSkills(t) ? 2 + SKILL_POINTS : MAX_LVL); // (+1: the capstone is two levels - aspira-giga.js)
+const maxLvl = t => (hasSkills(t) ? 2 + SKILL_POINTS : MAX_LVL); // (+1: the capstone is two levels - aspira-capstone.js)
 const skillOf = (t, id) => (t.skills && t.skills[id]) || 0;
 // the level the TOWER'S LOOK shows (its rings, max-level spokes): a chart
 // tower's 7 levels fold onto the 4 drawn ones
@@ -216,7 +216,7 @@ function arcSkillStats(t, s, b) {
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
 function skillOptions(t) {
-  return SKILL_TREES[t.kind].filter(ax => skillOf(t, ax.id) < axisCap(t, ax.id)).map(ax => { // (one giga VI a tower - aspira-giga.js)
+  return SKILL_TREES[t.kind].filter(ax => skillOf(t, ax.id) < axisCap(t, ax.id)).map(ax => { // (one capstone VI a tower - aspira-capstone.js)
     const n = skillOf(t, ax.id), tier = ax.tiers[n];
     return { choice: ax.id, name: ax.name + " " + roman(n + 1) + " · " + tier.name, desc: describeTower(t.kind, withSkill(t, ax.id)) };
   });
@@ -247,7 +247,7 @@ function fireSkillChain(t, st, e, seen) {
   // strike point throws sparks
   const v = skillOf(t, "voltage");
   if (v) root.fx.pierce = true;
-  if (v >= SKILL_TIERS - 1) burst(e.x, e.y, "white", v > SKILL_TIERS - 1 ? 12 : 6); // V sparks, the giga VI twice as many
+  if (v >= SKILL_TIERS - 1) burst(e.x, e.y, "white", v > SKILL_TIERS - 1 ? 12 : 6); // V sparks, the capstone VI twice as many
   const c = { t, st, col, skill: true, seen: seen || new Set(), hits: new Map() }; // shared by the attack's strikes
   c.seen.add(e.id); c.hits.set(e.id, 1);
   skillHit(c, e, d);
