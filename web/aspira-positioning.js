@@ -69,26 +69,26 @@ function bestSpot(t, range) {
   }
   // NEAR: the same hits, each worth more the CLOSER it passes - only a tie-break
   // (a range covering the whole board scores every spot the same)
-  let near = 0;
   // CULLED (2026-10-15, simulation speed): every spot lies within the leash of the slot (or where the tower stands), so a
   // predicted point farther than that + range can count for none of them - dropped once, the rest scored from flat arrays
   const c0 = CELLS[t.cell], reach = Math.max(leashR(t), Math.hypot(t.x - c0.x, t.y - c0.y)) + range + 1, xs = [], ys = [], ws = [], is = [];
   pred.forEach(({ pts }, i) => { for (const p of pts) if ((p.x - c0.x) ** 2 + (p.y - c0.y) ** 2 <= reach * reach) { xs.push(p.x); ys.push(p.y); ws.push(p.w); is.push(i); } });
+  let wf = null, wfOf = null; // each point's weight x its enemy's targeting factor, made once a pass (f changes between passes)
   const score = s => {
+    if (wfOf !== f) { wfOf = f; wf = ws.map((w, k) => w * f[is[k]]); }
     let n = 0;
-    near = 0;
-    for (let k = 0; k < xs.length; k++) {
-      const d2 = (xs[k] - s.x) ** 2 + (ys[k] - s.y) ** 2;
-      if (d2 <= r2) { const v = ws[k] * f[is[k]]; n += v; near += v * (1 - Math.sqrt(d2) / range); }
-    }
+    for (let k = 0; k < xs.length; k++) if ((xs[k] - s.x) ** 2 + (ys[k] - s.y) ** 2 <= r2) n += wf[k];
     return n;
   };
-  let best = null, bestScore = 0, bestNear = 0;
+  // NEAR only for a TIE (rare): the square roots it costs were paid for every spot (2026-10-15, simulation speed)
+  const nearOf = s => { let m = 0; for (let k = 0; k < xs.length; k++) { const d2 = (xs[k] - s.x) ** 2 + (ys[k] - s.y) ** 2; if (d2 <= r2) m += wf[k] * (1 - Math.sqrt(d2) / range); } return m; };
+  let best = null, bestScore = 0, bestNear = null;
   for (let pass = 0; pass < 2 && !bestScore; pass++) {
     if (pass) { if (f === all) break; f = all; }
     for (const s of spots) {
       const sc = score(s);
-      if (sc > bestScore || (sc === bestScore && sc > 0 && near > bestNear)) { bestScore = sc; best = s; bestNear = near; }
+      if (sc > bestScore) { bestScore = sc; best = s; bestNear = null; }
+      else if (sc === bestScore && sc > 0) { if (bestNear === null) bestNear = nearOf(best); const nn = nearOf(s); if (nn > bestNear) { best = s; bestNear = nn; } }
     }
   }
   // nothing in range: the spot CLOSEST to the action (owner, 2026-10-06)
@@ -155,8 +155,9 @@ const VIEW_UP_K = 1.5;
 const VIEW_SIDE = Math.min(...PHONES.map(([w]) => w / 2)) / PHONE_ZOOM, VIEW_UP = VIEW_SIDE * VIEW_UP_K;
 const VIEW_DOWN = Math.min(...PHONES.map(([w, h]) => h - VIEW_UP_K * w / 2)) / PHONE_ZOOM;
 const PHONE_CORNER = 40 / PHONE_ZOOM, PHONE_ALPHA = 0.35 /* "less faint" (owner, 2026-10-13; was 0.15) */;
-function phoneBox() { // 2D: world units
-  return { x0: CX - VIEW_SIDE, y0: CY - VIEW_UP, x1: CX + VIEW_SIDE, y1: CY + VIEW_DOWN, r: PHONE_CORNER };
+let phoneBoxC = null;
+function phoneBox() { // 2D: world units (fixed: made once - legalSpot asks for it thousands of times a second in a simulation)
+  return (phoneBoxC ||= { x0: CX - VIEW_SIDE, y0: CY - VIEW_UP, x1: CX + VIEW_SIDE, y1: CY + VIEW_DOWN, r: PHONE_CORNER });
 }
 // in 3D it is a SCREEN rectangle (owner, 2026-10-13: "it should be rectangular not trapezoidal"), not a box on the floor: the
 // same rectangle on screen as 2D's (it fits the window), in the 3D view's pixels (under the texture camera);
