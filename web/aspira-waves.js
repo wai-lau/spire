@@ -64,7 +64,12 @@ const SWARM_X2_FROM = 11, SWARM_WAVE_MIN = 12;
 const EARLY_X = 4, EARLY_TO = 24, EARLY_END = 36;
 const earlyX = n => (n <= EARLY_TO ? EARLY_X : n >= EARLY_END ? 1 : EARLY_X ** ((EARLY_END - n) / (EARLY_END - EARLY_TO)));
 const earlyHpMemo = new Map();
+const EARLY_SWARM_HP = 0.8, EARLY_SWARM_TO = 12; // waves 1-12 swarmers x0.8 HP (owner, 2026-10-15: "any pair of two towers doesn't leak on waves 1-12" - two ACDs lost 2 to wave 7 in 1 game of 8; 0 of 8 at x0.8)
 function earlyHpX(type, n0) { // enemyHp (aspira-game.js)
+  if (type === "swarm" && n0 <= EARLY_SWARM_TO) return EARLY_SWARM_HP * earlyHpXBase(type, n0);
+  return earlyHpXBase(type, n0);
+}
+function earlyHpXBase(type, n0) {
   if (earlyX(n0) === 1 || ENEMIES[type].star) return 1;
   const key = type + n0;
   if (!earlyHpMemo.has(key)) { const raw = waveCount(type, n0), k = formSplit(type, waveCount(type, n0, false), n0), cnt = Math.max(type === "swarm" ? Math.round(SWARM_WAVE_MIN / earlyX(n0)) : k, laneCount(type, raw, k)); earlyHpMemo.set(key, earlyX(n0) * Math.min(1, raw / cnt)); } // (as wavePlan counts it: one a lane at least)
