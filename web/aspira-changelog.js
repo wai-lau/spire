@@ -5,7 +5,9 @@
 // each day's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
-  { v: "4.4", day: "Oct 15", u: [
+  { v: "4.4", day: "Oct 15", bu: [
+    "Armor waves: x1.5 enemies (was x2), each worth 1.33 credits (was 1).",
+  ], u: [
     "Upgrades: tiers II-III and IV-V are one buy each, at both tiers' price.",
   ] },
   { v: "4.3", day: "Oct 14", bu: [
