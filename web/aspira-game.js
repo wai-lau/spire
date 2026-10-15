@@ -80,10 +80,10 @@ function spawnEnemy(type, n, pi, ang = 0) {
   const armor = d.armor ? armorOf(type) : type === "fast" && late ? Math.floor(FAST_ARMOR * armorOf("armor")) : 0; // late fast a share of an armor unit's
   G.enemies.push({
     armor, armor0: armor, shield, shieldMax: shield, wave: n, aug: late && type === "swarm" ? "shield" : late && type === "fast" ? "armor" : null, /* aug: its late HYBRID trait - its outline wears that type's colour (owner, 2026-10-13) */ // armor0: as spawned (damageCredit) // the wave it CAME from (the end screen's leaks)
-    // swarm members wander widely off the lane, each at its own speed (+-20%)
+    // swarm members wander widely off the lane, each at its own speed (+-50%, its own roll - never tied to its size)
     // and its own wobble rate, so a clump churns as it moves
     jit: type === "swarm" ? 18 + Math.random() * 45 : 0, /* x1.5 wider (owner, 2026-10-12: "swarm units spread wider across lane"; was 12 + 30) */ ph: Math.random() * 6.283, // owner: tripled, halved twice, doubled 2026-10-08
-    spd: (type === "swarm" ? 0.8 + Math.random() * 0.4 : type === "fast" ? lateK(n, "fast") : 1) * speedRamp(n) * (ENEMIES[type].star ? 1 : speedGrow(n)), /* (aspira-defs.js) */ phr: 0.6 + Math.random(),
+    spd: (type === "swarm" ? 0.5 + Math.random() /* +-50% (owner, 2026-10-14: "increase their speed jitter significantly, not correlated to size" - a swarm strings out instead of arriving as one clump; was 0.8 + 0.4) */ : type === "fast" ? lateK(n, "fast") : 1) * speedRamp(n) * (ENEMIES[type].star ? 1 : speedGrow(n)), /* (aspira-defs.js) */ phr: 0.6 + Math.random(),
     id: G.id++, type, n, hp, max: hp, pi, ang, s: s0, x: p0.x, y: p0.y, rot: Math.random() * 6,
     // fractional, so a cheap swarmer really pays its share (owner: halved
     // swarm bounty must hold; money is shown rounded down)

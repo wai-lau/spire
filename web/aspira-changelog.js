@@ -5,6 +5,8 @@
 const CHANGELOG = [ // each day's lines in two groups: b = Balance, u = Perf/UI. Facts only, no reasons (owner, 2026-10-14)
   { v: "4.3", day: "Oct 14", b: [
     "Permafrost pulses twice as often, each half as strong.",
+    "Swarms: 20% fewer enemies.",
+    "Swarm enemies vary more in speed (50-150%).",
     "Enemies speed up through the mid-game and have less HP.",
     "Mid-game enemies: up to x1.5 HP.",
     "Late enemies: faster, less HP.",
