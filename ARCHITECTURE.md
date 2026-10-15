@@ -288,9 +288,9 @@ only while inside, `FRZ_AURA_HOLD`) and takes a quiet tick.
   EVERY tower while slowed (damage credited to the FRZ); aura range x1 .. 1.5 (VI 1.7).
   A tick is quiet but **armor bites it** and it hurts x(1 + `FRZ_CHILL_K` 6 x the enemy's
   slow now) — "the colder, the harder", so fast enemies (slowed twice as hard) take most.
-- **Rime** (card name **Permafrost**; id `rime`): every `FRZ_RIME_PERIOD` 2, 2, 1.7, 1.4,
-  1.2, 1 (VI .7) s a ring pulses out to the aura's edge over `FRZ_RIME_GROW` 2.4 game s,
-  leaving a **permanent stacking slow** `FRZ_RIME` .04, .07, .12, .17, .22 (VI .3) per pulse
+- **Rime** (card name **Permafrost**; id `rime`): every `FRZ_RIME_PERIOD` 1, 1, .85, .7,
+  .6, .5 (VI .35) s a ring pulses out to the aura's edge over `FRZ_RIME_GROW` 2.4 game s,
+  leaving a **permanent stacking slow** `FRZ_RIME` .02, .035, .06, .085, .11 (VI .15) per pulse (rate doubled, effect and ring opacity halved 2026-10-14: same frost a second)
   and **frost that takes armor** (`FRZ_RIME_CRACK` .25 .. .85, VI 1.2 x the wave's armor
   reference, past zero). At full frost (`FRZ_RIME_FULL` 0.7) the pulse's rime **spreads to
   the nearest enemy not yet full**. Slide x1.33 .. 2.4 (VI 3).

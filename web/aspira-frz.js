@@ -24,9 +24,9 @@ const FRZ_RIME_CRACK = [0, 0.25, 0.4, 0.55, 0.7, 0.85];
 // a tick is QUIET (no flash, no crit) yet ARMOR takes its flat bite like any hit (owner, 2026-10-12: "frz ticks should not
 // ignore armor" - damage() now bites every hit); the empty opts the shield-pop call passes
 const FRZ_TICK_HIT = {};
-const FRZ_RIME = [0, 0.04, 0.07, 0.12, 0.17, 0.22]; // each pulse's permanent stacking slow (a shielded enemy takes none - applySlow refuses it; this was "the SHIELD answer" while pulses shattered shields, until 2026-10-12) (2026-10-11: a slow, tanky shield takes the most pulses; was 0 .024 .035 .054 .064 .068): Rime build leaks 13% of shields, Temp 24, Moons 23
+const FRZ_RIME = [0, 0.02, 0.035, 0.06, 0.085, 0.11]; // HALVED with the period (owner, 2026-10-14: "double pulse rate, half effect and opacity" - was .04 .07 .12 .17 .22; same frost a second, twice the rings); each pulse's permanent stacking slow (a shielded enemy takes none - applySlow refuses it; this was "the SHIELD answer" while pulses shattered shields, until 2026-10-12) (2026-10-11: a slow, tanky shield takes the most pulses; was 0 .024 .035 .054 .064 .068): Rime build leaks 13% of shields, Temp 24, Moons 23
 // FRZ's own levers (owner: no generic multipliers): Rime pulses MORE OFTEN each tier, the moons are STRONGER copies each tier
-const FRZ_RIME_PERIOD = [2, 2, 1.7, 1.4, 1.2, 1], FRZ_MOON_BY = [0.6, 0.85, 0.86, 0.95, 0.95, 0.95]; /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
+const FRZ_RIME_PERIOD = [1, 1, 0.85, 0.7, 0.6, 0.5] /* halved (owner, 2026-10-14; was 2 2 1.7 1.4 1.2 1) */, FRZ_MOON_BY = [0.6, 0.85, 0.86, 0.95, 0.95, 0.95]; /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
 // TEMP CONDUCTS FASTER (owner, 2026-10-11: "make temp conduct faster"): each Temp tier shortens the aura's TICK (s) -
 // the same bite each tick, so more damage and more shield pops a second (giga VI in aspira-giga.js)
 const FRZ_TEMP_TICK = [0.5, 0.44, 0.39, 0.34, 0.3, 0.26];
@@ -155,7 +155,7 @@ function drawFrzSkill(t, st) {
   ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowColor = col; ctx.shadowBlur = 12 * cam.k;
   for (const p of t.pulses || []) {
     const f = Math.min(1, p.age / FRZ_RIME_GROW);
-    ctx.globalAlpha = 0.9 * (1 - f * 0.6) * (p.moon ? MOON_FX : 1); ctx.beginPath(); ctx.arc(p.x, p.y, p.R * f, 0, 6.283); ctx.stroke();
+    ctx.globalAlpha = 0.45 /* halved with the doubled rate (owner, 2026-10-14; was 0.9) */ * (1 - f * 0.6) * (p.moon ? MOON_FX : 1); ctx.beginPath(); ctx.arc(p.x, p.y, p.R * f, 0, 6.283); ctx.stroke();
   }
   ctx.shadowBlur = 0; ctx.globalAlpha = 1;
 }
