@@ -70,15 +70,17 @@ function bestSpot(t, range) {
   // NEAR: the same hits, each worth more the CLOSER it passes - only a tie-break
   // (a range covering the whole board scores every spot the same)
   let near = 0;
+  // CULLED (2026-10-15, simulation speed): every spot lies within the leash of the slot (or where the tower stands), so a
+  // predicted point farther than that + range can count for none of them - dropped once, the rest scored from flat arrays
+  const c0 = CELLS[t.cell], reach = Math.max(leashR(t), Math.hypot(t.x - c0.x, t.y - c0.y)) + range + 1, xs = [], ys = [], ws = [], is = [];
+  pred.forEach(({ pts }, i) => { for (const p of pts) if ((p.x - c0.x) ** 2 + (p.y - c0.y) ** 2 <= reach * reach) { xs.push(p.x); ys.push(p.y); ws.push(p.w); is.push(i); } });
   const score = s => {
     let n = 0;
     near = 0;
-    pred.forEach(({ pts }, i) => {
-      for (const p of pts) {
-        const d2 = (p.x - s.x) ** 2 + (p.y - s.y) ** 2;
-        if (d2 <= r2) { n += p.w * f[i]; near += p.w * f[i] * (1 - Math.sqrt(d2) / range); }
-      }
-    });
+    for (let k = 0; k < xs.length; k++) {
+      const d2 = (xs[k] - s.x) ** 2 + (ys[k] - s.y) ** 2;
+      if (d2 <= r2) { const v = ws[k] * f[is[k]]; n += v; near += v * (1 - Math.sqrt(d2) / range); }
+    }
     return n;
   };
   let best = null, bestScore = 0, bestNear = 0;
