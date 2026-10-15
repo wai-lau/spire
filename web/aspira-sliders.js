@@ -39,10 +39,10 @@ const SL_R = 50, SL_C = 60, SL_R0 = 8, LABEL_GAP = 7, SL_TOP = -3, SL_H = 97;
 const labelPt = (i, n) => { const a = axisAngle(i, n), r = SL_R + LABEL_GAP; return [SL_C + Math.cos(a) * r, SL_C + Math.sin(a) * r]; };
 const axisAngle = (i, n) => -Math.PI / 2 + i * 2 * Math.PI / n;
 function axisPt(i, k, n) {
-  const a = axisAngle(i, n), r = SL_R0 + (SL_R - SL_R0) * k / SKILL_TIERS;
+  const a = axisAngle(i, n), r = SL_R0 + (SL_R - SL_R0) * shownTier(k) / SHOWN_TIERS; // a ring a PURCHASE (aspira-capstone.js)
   return [SL_C + Math.cos(a) * r, SL_C + Math.sin(a) * r];
 }
-const tierTxt = k => (k ? roman(k) : "0");
+const tierTxt = k => (shownTier(k) ? roman(shownTier(k)) : "0"); // the purchase count, I..IV (aspira-capstone.js)
 const tierSpan = (lock, at) => (at > lock ? tierTxt(lock) + "→" + tierTxt(at) : tierTxt(lock));
 // an axis's + FLASHES while the bank covers one more point on it (owner: it must read as tappable)
 const canPull = (t, ax) => { const r = axisRoom(t, ax.id); return r.left > 0 && r.afford > 0; };
@@ -50,11 +50,11 @@ const shapeOf = (axes, sk, n) => axes.map((ax, i) => axisPt(i, (sk && sk[ax.id])
 // one pip a tier: filled = locked in, half-lit = pulled in the basket, hollow = still to buy
 // the last pip and the outer ring are the capstone tier VI (aspira-capstone.js), marked in orange (aspira.css)
 // ...and once ANOTHER axis has BOUGHT its VI, this axis's VI pip is RED: gone for this tower (owner, 2026-10-12)
-const pipsHtml = (lock, at, gone) => Array.from({ length: SKILL_TIERS }, (_, k) => '<i class="' + (k < lock ? "lock" : k < at ? "pull" : "") + (k === SKILL_TIERS - 1 ? " capstone" + (gone ? " gone" : "") : "") + '"></i>').join("");
+const pipsHtml = (lock, at, gone) => Array.from({ length: SHOWN_TIERS }, (_, k) => '<i class="' + (k < shownTier(lock) ? "lock" : k < shownTier(at) ? "pull" : "") + (k === SHOWN_TIERS - 1 ? " capstone" + (gone ? " gone" : "") : "") + '"></i>').join("");
 function sliderChart(t) {
   const axes = SKILL_TREES[t.kind], n = axes.length, add = basketFor(t), pv = previewTower(t);
   let svg = '<svg class="asp-chart asp-sliders" viewBox="0 ' + SL_TOP + ' 120 ' + SL_H + '">';
-  for (let k = 1; k <= SKILL_TIERS; k++) svg += '<polygon class="grid' + (k === SKILL_TIERS ? " capstone" : "") + '" points="' + axes.map((_, i) => axisPt(i, k, n).map(v => v.toFixed(1)).join(",")).join(" ") + '"/>';
+  for (const k of SKILL_STOPS.slice(1)) svg += '<polygon class="grid' + (k === SKILL_TIERS ? " capstone" : "") + '" points="' + axes.map((_, i) => axisPt(i, k, n).map(v => v.toFixed(1)).join(",")).join(" ") + '"/>';
   axes.forEach((ax, i) => { const [ex, ey] = axisPt(i, SKILL_TIERS, n); svg += '<line class="grid" x1="' + SL_C + '" y1="' + SL_C + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) + '"/>'; });
   svg += '<polygon class="next" points="' + shapeOf(axes, pv.skills, n) + '"/><polygon class="now" points="' + shapeOf(axes, t.skills, n) + '"/>';
   axes.forEach((ax, i) => { const [tx, ty] = labelPt(i, n); svg += '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="middle">' + ax.name.slice(0, 4).toUpperCase() + "</text>"; });
@@ -101,8 +101,8 @@ function pullAxis(t, i, want) {
   const ax = SKILL_TREES[t.kind][i], add = basketFor(t), lock = skillOf(t, ax.id);
   const top = axisCap(t, ax.id, add), holder = capstoneHolder(t, ax.id, add);
   const to = Math.max(lock, Math.min(top, want));
-  const why = want < lock ? ax.name + " " + roman(lock) + " is locked in" // (no "sell to undo" - owner, 2026-10-12)
-    : want > top && holder ? "One capstone per tower · " + holder.name + " " + roman(CAPSTONE_TIER) + " holds it" : "";
+  const why = want < lock ? ax.name + " " + tierTxt(lock) + " is locked in" // (no "sell to undo" - owner, 2026-10-12)
+    : want > top && holder ? "One capstone per tower · " + holder.name + " " + roman(SHOWN_TIERS) + " holds it" : "";
   const was = add[ax.id] || 0;
   add[ax.id] = to - lock;
   if (was !== to - lock) refreshUpgradePreview(t);
@@ -180,7 +180,7 @@ function upgradeButton(t) {
   const box = $("asp-upbox");
   if (!box) return;
   box.innerHTML = "";
-  const n = basketPoints(t), cost = basketCost(t), pts = t.lvl - 1 + levelsFor(t, basketFor(t));
+  const n = basketPoints(t), cost = basketCost(t), pts = shownLevel(t, basketFor(t)); // purchases, not levels (aspira-capstone.js)
   const label = '<span class="asp-up-name">' + towerTitle(t) + "</span>" + (pts ? '<span class="asp-up-lvl"> ' + roman(pts) + "</span>" : "") + (n ? ' <span class="asp-spend-cost' + (cost <= G.money ? " asp-cost-ok" : "") + '">(−' + cr(cost) + ")</span>" : ""); // affordable: just BOLD, its own colour (owner, 2026-10-09)
   const btn = button(box, "asp-primary asp-up-big" + (n && G.money >= cost ? " asp-confirm" : ""), label, () => lockIn(t), "asp-up"); // pulses while a pull waits to be locked in (owner)
   fitUpLabel(btn);

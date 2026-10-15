@@ -218,7 +218,7 @@ function arcSkillStats(t, s, b) {
 function skillOptions(t) {
   return SKILL_TREES[t.kind].filter(ax => skillOf(t, ax.id) < axisCap(t, ax.id)).map(ax => { // (one capstone VI a tower - aspira-capstone.js)
     const n = skillOf(t, ax.id), tier = ax.tiers[n];
-    return { choice: ax.id, name: ax.name + " " + roman(n + 1) + " · " + tier.name, desc: describeTower(t.kind, withSkill(t, ax.id)) };
+    return { choice: ax.id, name: ax.name + " " + roman(shownTier(nextStop(n))) + " · " + tier.name, desc: describeTower(t.kind, withSkill(t, ax.id)) };
   });
 }
 const withSkill = (t, id) => ({ ...t.skills, [id]: skillOf(t, id) + 1 });

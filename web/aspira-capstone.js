@@ -14,6 +14,12 @@ const axisCap = (t, id, add = {}) => (capstoneHolder(t, id, add) ? CAPSTONE_TIER
 const SKILL_STOPS = [0, 1, 3, 5, CAPSTONE_TIER];
 const nextStop = k => SKILL_STOPS.find(s => s > k) ?? k;
 const prevStop = k => SKILL_STOPS.filter(s => s < k).pop() ?? 0;
+// the tier a player SEES is the PURCHASE count (owner, 2026-10-15: "rename the upgrade levels ... fourth purchase is the
+// capstone ... just use the number"): internal 1 3 5 6 read I II III IV (an old save's 2 / 4 reads I / II); the tables keep 0..6
+const SHOWN_TIERS = SKILL_STOPS.length - 1;
+const shownTier = k => SKILL_STOPS.filter(s => s > 0 && s <= k).length;
+// the purchases a tower has made (its card title's level): the sum over its axes, with `add` pulled on
+const shownLevel = (t, add = {}) => SKILL_TREES[t.kind].reduce((a, ax) => a + shownTier(skillOf(t, ax.id) + (add[ax.id] || 0)), 0);
 // the levels one buy on axis `id` of t makes: to the next stop, and the capstone's extra level
 const stopLevels = (t, id) => { const k = skillOf(t, id), to = nextStop(k); return to - k + (to >= CAPSTONE_TIER && k < CAPSTONE_TIER ? CAPSTONE_LEVELS - 1 : 0); };
 // a CAPSTONE is TWO levels (owner, 2026-10-12: "buying a capstone should cost the same as increasing the level by 2 (and also
