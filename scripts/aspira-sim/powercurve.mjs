@@ -57,7 +57,8 @@ export default async function task(job) {
     return { at };
   }
   const { bi, type, credits, w, seed, hpx } = job;
-  const g = makeGame(seed, `for (const id in ENEMIES) ENEMIES[id].hp *= ${hpx};`); g.reset();
+  // the coverage FLOOR is lanes only: no shield charges either (they don't scale with HP - 2026-10-15, shields read x246)
+  const g = makeGame(seed, `for (const id in ENEMIES) ENEMIES[id].hp *= ${hpx};` + (job.floor ? " for (const id in ENEMIES) ENEMIES[id].shield = 0;" : "")); g.reset();
   g.run(`G.started = true; G.wave = ${w - 1}; G.lives = 1e6; OPEN_SLOTS = SLOT_ANGLES.slice(); G.opened ||= {}; CELLS.forEach((c, i) => { if (c.unlock) G.opened[i] = true; });`);
   buy(g, BUILDS[bi], credits);
   g.run(`for (let n = ${w}; n < ${w} + ${SPAN} + 2; n++) if (n % 12) WAVE_TYPE_FORCE[n] = "${type}";`); // the window: only this type
@@ -97,22 +98,22 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("powercurve.mjs"
   const nearest = w => SCOUT.reduce((a, s) => (Math.abs(s - w) < Math.abs(a - w) ? s : a), SCOUT[0]);
   // 4. HOLD of the best and worst build per type and wave
   const cells = [];
-  for (const type of TYPES) for (const w of WAVES) for (const side of ["best", "worst"]) cells.push({ type, w, side, bi: pick[type][nearest(w)][side], credits: cr(w), lo: -6, hi: 8 });
-  const run = async hpxOf => { const js = []; cells.forEach((c, n) => { for (let seed = 1; seed <= SEEDS; seed++) js.push({ bi: c.bi, type: c.type, w: c.w, credits: c.credits, seed, hpx: hpxOf(c), n }); }); const rs = await runPool(url, js, { quiet: true }); return cells.map((_, n) => share(rs.filter((x, i) => js[i].n === n))); };
-  (await run(() => FLOOR_HPX)).forEach((f, n) => { cells[n].floor = f; });
+  for (const type of TYPES) for (const w of WAVES) for (const side of ["best", "worst"]) cells.push({ type, w, side, bi: pick[type][nearest(w)][side], credits: cr(w), lo: -10, hi: 10 });
+  const run = async (hpxOf, floor = false) => { const js = []; cells.forEach((c, n) => { for (let seed = 1; seed <= SEEDS; seed++) js.push({ bi: c.bi, type: c.type, w: c.w, credits: c.credits, seed, hpx: hpxOf(c), n, floor }); }); const rs = await runPool(url, js, { quiet: true }); return cells.map((_, n) => share(rs.filter((x, i) => js[i].n === n))); };
+  (await run(() => FLOOR_HPX, true)).forEach((f, n) => { cells[n].floor = f; });
   for (let r = 0; r < ROUNDS; r++) {
     cells.forEach(c => { c.m = (c.lo + c.hi) / 2; });
     (await run(c => +(2 ** c.m).toPrecision(4))).forEach((x, n) => { const c = cells[n]; if (x <= c.floor + LEAK) c.lo = c.m; else c.hi = c.m; });
     console.error(`round ${r + 1}/${ROUNDS} done`);
   }
-  const pw = c => 2 ** ((c.lo + c.hi) / 2), table = {};
-  console.log(`POWER CURVES BY TYPE: enemy HP x (today's = 1) the best and worst of ${BUILDS.length} builds hold against ${SPAN} waves of ONLY that type from wave w (<= coverage floor + ${LEAK * 100}% leaked), bought with a kill-everything player's bounty by w (no interest); MIDDLE = sqrt(best x worst), what that type's HP would x by; ${SEEDS} seeds, ${ROUNDS} rounds`);
+  const pw = c => 2 ** ((c.lo + c.hi) / 2), edge = c => (c.hi - (-10) < 0.2 ? "<" : 10 - c.lo < 0.2 ? ">" : " "), table = {};
+  console.log(`POWER CURVES BY TYPE: enemy HP x (today's = 1) the best and worst of ${BUILDS.length} builds hold against ${SPAN} waves of ONLY that type from wave w (<= coverage floor + ${LEAK * 100}% leaked), bought with a kill-everything player's bounty by w (no interest); MIDDLE = sqrt(best x worst), what that type's HP would x by; < / > = at the edge of the search (x1/1024 / x1024); ${SEEDS} seeds, ${ROUNDS} rounds`);
   for (const type of TYPES) {
     console.log(`\n${type.toUpperCase()}\n wave  credits    best  worst  MIDDLE   best build / worst build`);
     for (const w of WAVES) {
       const b = cells.find(c => c.type === type && c.w === w && c.side === "best"), x = cells.find(c => c.type === type && c.w === w && c.side === "worst"), mid = Math.sqrt(pw(b) * pw(x));
-      (table[type] ||= {})[w] = { best: pw(b), worst: pw(x), mid, bestBuild: label(BUILDS[b.bi]), worstBuild: label(BUILDS[x.bi]) };
-      console.log(`${String(w).padStart(5)} ${String(b.credits).padStart(8)} ${pw(b).toFixed(2).padStart(7)} ${pw(x).toFixed(2).padStart(6)} ${mid.toFixed(2).padStart(7)}   ${label(BUILDS[b.bi])} / ${label(BUILDS[x.bi])}`);
+      (table[type] ||= {})[w] = { best: pw(b), worst: pw(x), mid, edge: edge(b) + edge(x), bestBuild: label(BUILDS[b.bi]), worstBuild: label(BUILDS[x.bi]) };
+      console.log(`${String(w).padStart(5)} ${String(b.credits).padStart(8)} ${edge(b)}${pw(b).toFixed(2).padStart(7)} ${edge(x)}${pw(x).toFixed(2).padStart(6)} ${mid.toFixed(2).padStart(7)}   ${label(BUILDS[b.bi])} / ${label(BUILDS[x.bi])}`);
     }
   }
   if (OUT) fs.writeFileSync(OUT, JSON.stringify(table, null, 1));

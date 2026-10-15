@@ -65,6 +65,9 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("solo.mjs")) {
   for (const k of K) console.log(line(k));
   console.log("\n== ALONE + ONE UPGRADE (target: the Star beaten)");
   for (const k of K) for (const ax of axes[k]) console.log(line(`${k}+${ax}`));
-  console.log("\n== TWO L1 TOWERS (target: the Star beaten)");
-  for (let a = 0; a < K.length; a++) for (let b = a; b < K.length; b++) console.log(line(`${K[a]}+${K[b]}`));
+  // EVERY placement, not just the best (owner, 2026-10-15: "ensure that any pair of two towers doesn't leak on waves 1-11 ...
+  // honestly 1-12"): a player puts towers anywhere - how many slot pairs hold 1-12 with no life lost (all seeds), the worst loss
+  const clean = setup => { const all = [...by.get(setup)], ok = all.filter(([, rs]) => rs.every(r => r && r.pre === 0 && r.star === "beaten")); const worst = all.map(([slot, rs]) => [slot, Math.max(...rs.map(r => (r ? r.pre + r.starLost + (r.star === "BREACH" ? 10 : 0) : 99)))]).sort((x, y) => y[1] - x[1])[0]; return `  every slot pair: ${ok.length}/${all.length} clean, worst ${worst[1]} lost (slots ${worst[0]})`; };
+  console.log("\n== TWO L1 TOWERS (target: the Star beaten - and EVERY slot pair clean on 1-12)");
+  for (let a = 0; a < K.length; a++) for (let b = a; b < K.length; b++) console.log(line(`${K[a]}+${K[b]}`) + clean(`${K[a]}+${K[b]}`));
 }
