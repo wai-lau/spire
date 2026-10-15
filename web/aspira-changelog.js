@@ -6,6 +6,7 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
   { v: "4.4", day: "Oct 15", bu: [
+    "Waves 1-24: a quarter as many enemies, each x4 HP and x4 credits, easing back by wave 36. Bosses unchanged.",
     "Armor waves: x1.5 enemies (was x2), each worth 1.33 credits (was 1).",
   ], u: [
     "Damage numbers over 1,000 read short: 1.7k, 17k, 1.2M.",

@@ -56,6 +56,20 @@ for (const k in TYPE_COUNT_MUL) TYPE_COUNT_MUL[k] *= 0.9; // 2026-10-11: a tenth
 // DOUBLE the swarms past SWARM_X2_FROM, each at its own HP (owner, 2026-10-12: "dont triple swarms, just double"; then
 // not before wave 11 - SOL openers died at wave 6 to wave 1's doubled swarm, SOL being weak to it)
 const SWARM_X2_FROM = 11, SWARM_WAVE_MIN = 12;
+// FEWER, TOUGHER EARLY ENEMIES (owner, 2026-10-15: "make it so that arc doesn't one shot everything in the first waves" ->
+// "target should be 0, adjust counts alongside hp to make it work"): through wave EARLY_TO a plain enemy has x EARLY_X the HP,
+// a wave brings /EARLY_X the bodies (waveCount) and each pays x EARLY_X (spawnEnemy), easing to x1 by EARLY_END. Bosses keep
+// theirs. A wave the formations round back UP (one V of shields can't shrink) gets that much less HP each, so no early wave
+// carries more HP than it did - solo.mjs: every lone L1 tower lost 2-7 lives on waves 1-11 before, x4 0-3
+const EARLY_X = 4, EARLY_TO = 24, EARLY_END = 36;
+const earlyX = n => (n <= EARLY_TO ? EARLY_X : n >= EARLY_END ? 1 : EARLY_X ** ((EARLY_END - n) / (EARLY_END - EARLY_TO)));
+const earlyHpMemo = new Map();
+function earlyHpX(type, n0) { // enemyHp (aspira-game.js)
+  if (earlyX(n0) === 1 || ENEMIES[type].star) return 1;
+  const key = type + n0;
+  if (!earlyHpMemo.has(key)) { const raw = waveCount(type, n0), cnt = Math.max(type === "swarm" ? Math.round(SWARM_WAVE_MIN / earlyX(n0)) : 1, laneCount(type, raw, formSplit(type, raw, n0))); earlyHpMemo.set(key, earlyX(n0) * Math.min(1, raw / cnt)); }
+  return earlyHpMemo.get(key);
+}
 // swarms are DOUBLED on waves 11-60 and x1.5 after (owner, 2026-10-06): a
 // SOL-heavy build must find a swarm answer; x2 past 60 cost ARC+SOL+FRZ teams 20 waves
 const SWARM_MID_MUL = 2, SWARM_MID = [11, 60], SWARM_LATE_MUL = 1.5;
@@ -73,7 +87,7 @@ function waveCount(type, n0) {
   // HALF the bodies at TWICE the health (owner, 2026-10-02)
   // x WAVE_COUNT_MUL[n]: waves 1-30 tuned so each comes about as close to the
   // core against one L1 tower of each kind (owner; scripts/aspira-sim/wavebal.mjs)
-  const c = (type === "swarm" ? base * 6 : base) / 2 * (WAVE_COUNT_MUL[n0] ?? 1) * (TYPE_COUNT_MUL[type] ?? 1) * (type === "swarm" ? swarmMul(n) * (n >= SWARM_X2_FROM ? 2 : 1) * lateK(n0, "swarm") : 1) * (type === "fast" && n > FAST_LATE_FROM ? FAST_LATE_MUL : 1); // swarms 6x (owner: doubled from 3x)
+  const c = (type === "swarm" ? base * 6 : base) / 2 / earlyX(n0) * (WAVE_COUNT_MUL[n0] ?? 1) * (TYPE_COUNT_MUL[type] ?? 1) * (type === "swarm" ? swarmMul(n) * (n >= SWARM_X2_FROM ? 2 : 1) * lateK(n0, "swarm") : 1) * (type === "fast" && n > FAST_LATE_FROM ? FAST_LATE_MUL : 1); // swarms 6x (owner: doubled from 3x)
   // SYMMETRICAL FORMATIONS (owner, 2026-10-11: "2n+1 for fast, 3n for armor"): whole Vs and full lattice rows
   const unit = FORM_UNIT[type] || 1;
   return Math.max(unit, Math.round(c / unit) * unit);
@@ -89,7 +103,7 @@ function wavePlan(n, prev) {
   const split = formSplit(type, raw, n);
   const count = laneCount(type, raw, split);
   // a swarm wave is never under SWARM_WAVE_MIN bodies, AFTER the lane rounding (owner, 2026-10-14: "make sure swarm waves have at least 12 units")
-  return { type, count: type === "swarm" ? Math.max(SWARM_WAVE_MIN, count) : count, split, star: n % STAR_EVERY === 0 };
+  return { type, count: type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : count, split, star: n % STAR_EVERY === 0 };
 }
 function makeWave(n) {
   const { type, count } = wavePlan(n, G.lastType);
