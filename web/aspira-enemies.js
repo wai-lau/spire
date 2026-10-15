@@ -72,7 +72,7 @@ function drawEnemy(e, solid) {
   // damage shows as both size and opacity: full HP = full size, solid; near death small (hpShrink), faint
   // a ghost (dead enemy) is INVISIBLE: it only carries the beams that follow it
   if (e.dead) return;
-  const d = ENEMIES[e.type], f = Math.max(0, e.hp / e.max), size = d.size * hpShrink(e, f) * (e.sizeMul || 1);
+  const d = ENEMIES[e.type], f = Math.max(0, e.hp / e.max), size = d.size * hpShrink(e, f) * (e.sizeMul || 1) * (DRAW_SIZE[e.type] || 1);
   if (TRAIL[e.type] && !lowQ && !(solid && farFx(e))) { // low quality: no tracers; 3D: none in the far ring
     drawStarTrail(e, size);
     // the body is see-through, so blank its shape first: the tracer must not

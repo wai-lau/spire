@@ -326,6 +326,9 @@ function resolveColors() {
 const VIS_DMG = 2;
 // SHORT past a thousand (owner, 2026-10-15: "card numbers are weirdly huge" - Voltage IV read 1677, late floats 52836):
 // 1.7k, 17k, 1.2M - every damage figure on the cards and the floating numbers goes through here
+// how big each type is DRAWN, over its size (owner, 2026-10-15: "1.5x the visual size of swarm enemies", "0.9x the size of
+// fast", "0.8x the size of shield units") - the look only: hits, drips and formation spacing still read ENEMIES[type].size
+const DRAW_SIZE = { swarm: 1.5, fast: 0.9, shield: 0.8 };
 const dmgUnits = v => { const n = Math.floor(v), a = Math.abs(n); return a < 1000 ? n : a < 999500 ? (a < 9950 ? (n / 1e3).toFixed(1) : Math.round(n / 1e3)) + "k" : (a < 9950000 ? (n / 1e6).toFixed(1) : Math.round(n / 1e6)) + "M"; };
 // ONE BLINK for everything that blinks (owner, 2026-10-08): CSS --asp-blink (aspira.css) is the same 0.7s.
 // blinkWave(): 1 bright .. 0 dim, in phase with the CSS (its 0% is the bright end; syncBlinks pins it to t = 0)

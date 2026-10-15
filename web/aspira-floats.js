@@ -86,7 +86,7 @@ function hitFlash(e, r, m, color, life) {
 // bigger the fewer remain - the last one biggest of all, with a white flash
 const SHIELD_BREAK_N = 5;
 function shieldBreak(e) {
-  const k = 1 - e.shield / SHIELD_BREAK_N, r = ENEMIES[e.type].size * (e.sizeMul || 1); // k: 0.2 at 4 left .. 1 at none
+  const k = 1 - e.shield / SHIELD_BREAK_N, r = ENEMIES[e.type].size * (e.sizeMul || 1) * (DRAW_SIZE[e.type] || 1); // k: 0.2 at 4 left .. 1 at none
   // ...one shockwave an enemy at a time (owner, 2026-10-14: ACD's pools pop five charges in a breath, five rings stacked): the newest replaces the last
   if (e.breakRing) e.breakRing.t = e.breakRing.life;
   ring(e.x, e.y, r * (2 + 3 * k), "cyan", 0.2 + 0.3 * k, true); const br = fx[fx.length - 1]; e.breakRing = br && br.k === "ring" ? br : null; // (the simulator stubs ring out)
@@ -140,7 +140,9 @@ let coins = [];
 // jitter from the enemy (COIN_JIT units); every coin banks its own value, and the kill's "+Nc" pops once, when its LAST
 // coin lands (the group's `left`). A fraction rides on the last coin; a sub-1 bounty is one plain dot.
 const COIN_FACES = [20, 10, 5], COIN_JIT = 14;
+let INSTANT_COINS = false; // the simulator: a kill banks at once, no coins to fly (2026-10-15, simulation speed - they were ~9% of a late game)
 function creditDot(x, y, b) {
+  if (INSTANT_COINS) { G.money += b; return; }
   const vals = [];
   let rest = b;
   for (const f of COIN_FACES) while (rest >= f) { vals.push(f); rest -= f; }

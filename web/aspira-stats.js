@@ -67,6 +67,7 @@ function worse(label, now, next) {
 }
 function statRow(label, now, next) {
   const cls = next !== null && worse(label, now, next) ? "asp-next asp-worse" : "asp-next";
+  if (next !== null && next !== now && String(now) === "—") return "<dt>" + label + '</dt><dd><span class="' + cls + '">' + next + "</span></dd>"; // NEW: no "— →" (owner, 2026-10-15: "if previously blank, don't need dash arrow")
   const arrow = next !== null && next !== now ? ' <span class="' + cls + '">→ ' + next + "</span>" : "";
   return "<dt>" + label + "</dt><dd>" + now + arrow + "</dd>";
 }
