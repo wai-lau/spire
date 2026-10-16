@@ -113,14 +113,14 @@ const belowFade = z => Math.max(1 - (WARP_FADE_BANDS - 0.5) / WARP_FADE_BANDS, M
 // everything of a die BELOW the floor in one go (warpBand clips it to z <= 0): each face at ONE fade, its clipped part's
 // mean depth's - the slices stepped a face 2-4 times; a face is small against WARP_FADE_Z, so it reads the same
 function warpSolidBelow(g) {
-  const col = g.col, frz = g.frz, bgR = rgbOf(COL.bg), colR = rgbOf(col), cyR = rgbOf(COL.tfrz);
+  const col = g.col, frz = g.frz, bgR = rgbOf(COL.bg), colR = rgbOf(col), cyR = rgbOf(COL.tfrz), whR = rgbOf(COL.white);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineJoin = "round"; ctx.globalAlpha = 1;
   ctx.lineWidth = g.lw;
   for (const F of g.faces) {
     if (F.lo > 0 || !warpPath(F.poly3)) continue;
     const fa = g.fa * belowFade((F.lo + Math.min(0, F.hi)) / 2), fA = F.fA * fa;
-    ctx.fillStyle = blendFill([[bgR, fa], [colR, fA], [cyR, fA * frz]]); ctx.fill();
-    warpEdges(F.poly3); ctx.strokeStyle = blendFill([[colR, 0.9 * fa], [cyR, 0.9 * fa * frz], [rgbOf(COL.white), 0.9 * fa * g.rime]]); ctx.stroke();
+    ctx.fillStyle = blendFill3(bgR, fa, colR, fA, cyR, fA * frz); ctx.fill();
+    warpEdges(F.poly3); ctx.strokeStyle = blendFill3(colR, 0.9 * fa, cyR, 0.9 * fa * frz, whR, 0.9 * fa * g.rime); ctx.stroke();
   }
 }
 // a die kind's edges, once: [corner i, corner j, face a, face b] (every edge of these closed solids has two faces)
@@ -143,6 +143,20 @@ function blendFill(layers) {
     r = (cr * a + r * A * (1 - a)) / na; g = (cg * a + g * A * (1 - a)) / na; b = (cb * a + b * A * (1 - a)) / na; A = na;
   }
   const a = Math.round(A * 1000), key = (((r | 0) * 256 + (g | 0)) * 256 + (b | 0)) * 1001 + a; // a number: no string built per call
+  let s = blendCache.get(key);
+  if (!s) { if (blendCache.size > 4000) blendCache.clear(); s = "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + a / 1000 + ")"; blendCache.set(key, s); }
+  return s;
+}
+// blendFill for three layers (colour arrays), the same three again if `twice` - the same arithmetic, no arrays built
+function blendFill3(c0, a0, c1, a1, c2, a2, twice) {
+  let r = 0, g = 0, b = 0, A = 0;
+  for (let pass = twice ? 2 : 1; pass > 0; pass--) for (let i = 0; i < 3; i++) {
+    const c = i === 0 ? c0 : i === 1 ? c1 : c2, a = Math.max(0, Math.min(1, i === 0 ? a0 : i === 1 ? a1 : a2));
+    if (!(a > 0)) continue;
+    const na = a + A * (1 - a);
+    r = (c[0] * a + r * A * (1 - a)) / na; g = (c[1] * a + g * A * (1 - a)) / na; b = (c[2] * a + b * A * (1 - a)) / na; A = na;
+  }
+  const a = Math.round(A * 1000), key = (((r | 0) * 256 + (g | 0)) * 256 + (b | 0)) * 1001 + a;
   let s = blendCache.get(key);
   if (!s) { if (blendCache.size > 4000) blendCache.clear(); s = "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + a / 1000 + ")"; blendCache.set(key, s); }
   return s;
@@ -190,21 +204,22 @@ function warpSolidWhole(e) {
   // is associative, so it is the same colour), and the edges stroked once for the whole die: the outline (an edge of
   // one face) once, the inner edges (shared by two faces) as their two strokes blended
   ctx.lineWidth = g.lw; ctx.globalAlpha = 1;
-  const drawn = g.faces.map(F => {
-    if (band && (F.hi < band.lo || F.lo > band.hi)) return false;
-    if (!warpPath(F.poly3)) return false; // clipped to the slice being drawn (aspira-fog.js)
+  const drawn = new Array(g.faces.length); let anyDrawn = false;
+  for (let i = 0; i < drawn.length; i++) {
+    const F = g.faces[i];
+    if ((band && (F.hi < band.lo || F.lo > band.hi)) || !warpPath(F.poly3)) { drawn[i] = false; continue; } // clipped to the slice being drawn (aspira-fog.js)
     const fA = F.fA * fa;
-    ctx.fillStyle = blendFill([[bgR, fa], [colR, fA], [cyR, fA * frz]]); ctx.fill();
-    return true;
-  });
-  if (drawn.some(Boolean)) {
-    const sa = 0.9 * fa;
-    for (const n of [1, 2]) {
+    ctx.fillStyle = blendFill3(bgR, fa, colR, fA, cyR, fA * frz); ctx.fill();
+    drawn[i] = anyDrawn = true;
+  }
+  if (anyDrawn) {
+    const sa = 0.9 * fa, whR = rgbOf(COL.white), ocR = rgbOf(g.ocol);
+    for (let n = 1; n <= 2; n++) {
       ctx.beginPath(); let any = false;
-      for (const E of g.edges) if (E.n === n && E.f.some(fi => drawn[fi])) { warpLine(E.v, E.w); any = true; }
+      for (const E of g.edges) if (E.n === n && (drawn[E.f[0]] || (E.f.length > 1 && drawn[E.f[1]]))) { warpLine(E.v, E.w); any = true; }
       if (!any) continue;
-      const one = [[n === 1 ? rgbOf(g.ocol) : colR, sa], [cyR, sa * frz], [rgbOf(COL.white), sa * g.rime]]; // rime whitens the edges (rimeK); the outline (n 1) in ocol
-      ctx.strokeStyle = blendFill(n === 1 ? one : one.concat(one)); ctx.stroke();
+      /* rime whitens the edges (rimeK); the outline (n 1) in ocol */
+      ctx.strokeStyle = blendFill3(n === 1 ? ocR : colR, sa, cyR, sa * frz, whR, sa * g.rime, n === 2); ctx.stroke();
     }
   }
   ctx.globalAlpha = 1;
