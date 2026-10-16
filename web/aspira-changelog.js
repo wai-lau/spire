@@ -40,6 +40,7 @@ const CHANGELOG = [
     "Carrier: one damage number a shot - the total of its 5 bolts.",
     "Gravity: black holes drift toward nearby ones and merge into one bigger hole - mass, life, size and radiation added together.",
     "Gravity: a nova that catches nothing still leaves a full-size black hole (was half).",
+    "Gravity: aims a little ahead of its target, where it will be when the nova collapses.",
     "Carrier: interceptors half the size, growing with Armament to full size at VI.",
     "Gravity's tagline: \"Massive intervention.\"",
     "Carrier's tagline: \"Carrier has arrived.\"",

@@ -61,8 +61,11 @@ const GRV_SHRINK_S = 0.8;
 const grvShrink = sp => (sp.lost > 0 ? Math.max(0, Math.min(1, sp.mass / (sp.lost * GRV_SHRINK_S))) : 1);
 
 // fire(): a nova on the target - the sphere is born where it stands
+// LEADS its target (owner, 2026-10-16: "grv should shoot slightly ahead of the enemy to account for explosion time"): the nova
+// lands where the enemy will be when it has collapsed, GRV_FRONT_T on along its lane at its pace now (slows and stuns counted)
 function novaAt(t, st, e) {
-  (t.spheres ||= []).push({ id: G.id++, x: e.x, y: e.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0, lost: 1 / GRV_LIFE });
+  const p0 = pathAt(e.pi, e.s, e.ang || 0), p1 = pathAt(e.pi, e.s + effSpeed(e) * GRV_FRONT_T, e.ang || 0);
+  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0, lost: 1 / GRV_LIFE });
   return true;
 }
 // one hit from a sphere: the damage it really dealt feeds its mass
