@@ -21,7 +21,7 @@ const CHANGELOG = [
     "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates; at most 3x the base aura.",
     "Gravity: a nova that catches nothing still leaves a full-size hole; novas land ahead of their target, so it walks into the opening hole.",
   ], u: [
-    "Carrier: interceptors fly smooth loops round their target, about 100 out and wobbling +-20%, steering round the core and towers.",
+    "Carrier: interceptors fly smooth loops round their target, about 150 out and wobbling +-20%, steering round the core and towers; bolts reach 390.",
     "Carrier: interceptors half size, growing with Armament to full at VI; a brighter cobalt blue that keeps its colour during boss waves.",
     "Carrier: bolts are short streaks that stretch as they fly; one damage number for every three hits of an interceptor (the strafing pass included), their sum.",
     "Carrier: with any Hangar, charged interceptors are stored circling the carrier while there is nothing to hit - each at its own distance, the smaller ones closer, carried along when you drag it - and leave one by one when a target comes.",
