@@ -48,16 +48,16 @@ const DESCRIBE = {
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
   car(sk) {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
-    return "Launches " + CAR_HANGAR[h] + " interceptors one by one. Each " + (l >= 6 ? "warps to" : l ? "races to" : "flies to") + " an enemy, fires " +
-      CAR_AMMO[a] + (a ? " hard" : "") + " volleys and " + (a >= 6 ? "bursts into pellets, rebuilt at home." : (l >= 6 ? "warps" : "flies") + " home to reload.");
+    return "Launches " + CAR_HANGAR[h] + " interceptors one by one" + (h ? ", storing " + Math.round(carHoldFrac(h) * 100) + "% of them circling it while there is nothing to hit" : "") + ". Each " + (l >= 6 ? "warps to" : "flies to") + " an enemy, fires " +
+      CAR_AMMO[a] + " volleys and " + (a >= 6 ? "bursts into pellets, rebuilt at home." : (l >= 6 ? "warps" : "flies") + " home to reload.");
   },
   // GRV (owner, 2026-10-15): Supernova a wider nova (Hypernova tears armor away); Void a harder slow (Event Horizon all but
   // stops it); Radiation more pellets (Hawking: a last burst)
   grv(sk) {
     const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0;
-    return (n >= 6 ? "A hypernova that tears armor away" : n ? "A wide nova" : "A nova") + " leaves a black sphere, its aura as big as the nova hit hard. The aura " +
-      (v >= 6 ? "holds what a full sphere's core catches almost still" : v ? "drags hard, its core harder" : "slows, its core hardest") + " and strips armor; the sphere grows with every hit. It radiates " +
-      (r >= 6 ? "a storm of pellets and bursts as it fades." : r ? "pellets, thick and hard." : "a few pellets.");
+    return (n >= 6 ? "A hypernova that tears armor away" : n ? "A wide nova" : "A nova") + " leaves a black hole" + (n >= 6 ? " twice as big as usual" : "") + ", its aura as big as the nova's hit. The aura " +
+      (v >= 6 ? "holds what a fully grown core catches almost still" : v ? "slows more, its core the most" : "slows, its core the most") + " and strips armor; the hole grows with every hit and nearby holes pull together and merge. It radiates " +
+      (r >= 6 ? "a storm of pellets and bursts as it fades." : r ? "more, stronger pellets." : "a few pellets.");
   },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows

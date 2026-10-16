@@ -57,10 +57,14 @@ SKILL_TREES.car = [
 ];
 SKILL_MOVE.car = { hangar: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]], launch: [[1, 1], [1.05, 1], [1.1, 1], [1.15, 1], [1.2, 1], [1.25, 1]], armament: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]] };
 
+// how much of the wing the Hangar can STORE in orbit, by tier (owner, 2026-10-16: "hanger tiers can store 25% 50% 75% 100% of interceptors
+// in orbit"); s.hold = that many interceptors (rounded up), 0 untaken
+const CAR_HOLD_FRAC = [0, 0.25, 0.5, 0.75, 1, 1, 1];
+const carHoldFrac = h => CAR_HOLD_FRAC[Math.min(h, CAR_HOLD_FRAC.length - 1)];
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   s.range = b.range * RANGE_BONUS; s.rate = b.rate * CAR_RATE_MUL[a]; s.dmg = b.dmg * CAR_SHOT_MUL[a] * CAR_SIDE_DMG[h] * CAR_SIDE_DMG[l]; s.targets = 1;
-  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.focus = CAR_FOCUS[h]; s.ram = b.dmg * CAR_RAM[l] * (l >= CAPSTONE_TIER ? CAR_WARP_V : CAR_SPEED[l]) / 700; /* 700 (was 400): the x1.75 speeds leave the ram as it was */ s.warp = l >= CAPSTONE_TIER; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = h >= 1; s.skill = true;
+  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.focus = CAR_FOCUS[h]; s.ram = b.dmg * CAR_RAM[l] * (l >= CAPSTONE_TIER ? CAR_WARP_V : CAR_SPEED[l]) / 700; /* 700 (was 400): the x1.75 speeds leave the ram as it was */ s.warp = l >= CAPSTONE_TIER; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]); s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -94,7 +98,7 @@ function stepCar(t, dt) {
 function stepIcp(i, t, st, dt) {
   if (i.state === "home") {
     i.reload = Math.max(0, i.reload - dt);
-    const held = st.hold && i.reload <= 0; // HELD: charged and orbiting the carrier (Hangar)
+    const held = st.hold > 0 && i.reload <= 0 && (i.hold || t.icp.reduce((n, o) => n + (o.hold ? 1 : 0), 0) < st.hold); // HELD: charged and orbiting the carrier, while the Hangar has room (st.hold of them)
     if (held) carHoldOrbit(i, t, dt); else { i.x = t.x; i.y = t.y; i.ho = undefined; }
     i.hold = held;
     if (i.reload > 0 || t.launchCd > 0) return; // held or not, ONE BY ONE on CAR_GAP (owner, 2026-10-16: "carrier should not spawn all waiting interceptors at once ... just that unused interceptors can be stored in orbit")
