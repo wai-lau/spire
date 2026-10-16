@@ -13,7 +13,13 @@ const CAR_HANGAR = [5, 7, 7, 11, 11, 13]; // interceptors: PRIMES by purchase (o
 // Launch TEMPO (faster there and back, a shorter reload - Warp: no flight at all), Armament DEPTH (a far harder hit, more of them)
 const CAR_SPEED = [1050, 1260, 1260, 1470, 1470, 1680]; /* x1.75 with the range 260 -> 460 (owner, 2026-10-16: "interceptor speed buff to make up for travel time"; was 600 .. 960) */ // Launch: an interceptor's speed (its reach is SKILL_MOVE) - x1.5 (owner, 2026-10-15: "increase launch speed")
 const CAR_RELOAD = [0.75, 0.55, 0.55, 0.4, 0.4, 0.275]; /* x0.5 with CAR_GAP 0.15 (2026-10-16) */ // Launch: s at home reloading (60% of a sortie was flying + reloading at wave 61)
-const CAR_AMMO = [8, 10, 10, 12, 12, 14]; // Armament: shots a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
+const CAR_AMMO = [4, 5, 5, 6, 6, 7]; /* halved, its bolts doubled into fewer, bigger VOLLEYS (CAR_VOLLEY_K, CAR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
+// ONE TARGET A VOLLEY (owner, 2026-10-16: "to make ATC worse vs swarms reduce ammo (number of volleys), increase bolts per volley to
+// match, then make it so that all bolts from a single volley need to target a single target, regardless of overkill, remaining bolts
+// just keep going for a little bit and may chance a hit on something else"): half the volleys, each CAR_VOLLEY_K x the hit in twice
+// the bolts at half the rate - the same stream and damage a sortie - and a volley's bolts all go at the enemy it began on; one that
+// died mid-volley is fired at anyway, the bolts flying on past it (stepCarBolts)
+const CAR_VOLLEY_K = 2;
 // the shot's HIT is SPREAD across the axes like ARC's (owner, 2026-10-15: "spread out armament damage like arc"): Armament half of
 // it (log), Hangar and Launch a quarter each (CAR_SIDE_DMG). STEEPER than ARC's: on ARC's tables a mid build (III on every
 // axis) dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899 - ARC chains, and an interceptor spends ~40% flying and reloading
@@ -21,7 +27,7 @@ const CAR_SHOT_MUL = [1, 2.6, 4.5, 7.5, 10, 12.5]; // Armament (VI 15)
 const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 4.6]; // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
-const CAR_BOLTS = 5; /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit
+const CAR_BOLTS = 10; /* 5 -> 10 with the volleys halved (2026-10-16) */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit
 const CAR_GAP = 0.15; /* 0.11 -> 0.15 with the reload x0.5 (owner, 2026-10-16: "reduce launch rate of interceptors, but reduce reload time to compensate"; countermx 61-69 spread 30/2/0/21 -> 25/0/0/15 - at 0.25 no reload made up for it: 70% of swarms leaked) */ /* x1/1.75 (owner, 2026-10-16: "interceptor spawn speed"; was 0.2) */ // s between launches (owner: "one by one")
 // Hangar's FOCUS FIRE (owner, 2026-10-15): every OTHER interceptor looping the same target adds this share to each shot on it -
 // width turns into depth when the wing outnumbers the targets (they spread first: carTarget prefers an unheld enemy)
@@ -104,13 +110,16 @@ function stepIcp(i, t, st, dt) {
     // the CLOTHESPIN (owner, 2026-10-15): straight out, loops its target firing until out of ammo, straight home. A target that
     // dies hands the loop to an enemy within CAR_HOP of the interceptor, else it goes home (ATC's swarm weakness: free to chain
     // kill to kill across reach it leaked 1% of swarms; one target a sortie, 85% - and 66% of fast, its own type)
-    if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
+    if (!i.e || ((i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) && !i.bk)) { /* (a volley under way finishes on its target first) */ i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3) return; // still on its way
     if (!i.orb) { i.orb = true; if (st.ram > 0) { const hp0 = e.hp; damage(e, st.ram, t, false, false, CAR_NO_NUM); onHit(e, t, st, st.ram); carNum(i, e, hp0 - Math.max(0, e.hp), st.ram, Math.cos(i.ang), Math.sin(i.ang)); } } // onto the circle - the STRAFING PASS
     i.cd -= dt;
-    while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / (st.rate * CAR_BOLTS); if (!i.bk) sfx("carshot"); carBolt(i, e, t, st); if (++i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; } } // the stream: a shot's bolts spread over its interval
+    while (i.cd <= 0 && i.ammo > 0) { // the stream: a volley's bolts spread over its interval
+      if (!i.bk) { if (e.dead) break; i.ve = e; sfx("carshot"); } // a volley starts only on a LIVE target...
+      i.cd += CAR_VOLLEY_K / (st.rate * CAR_BOLTS); carBolt(i, i.ve, t, st); if (++i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; } // ...and every bolt of it goes at that one, dead or not
+    }
     if (i.ammo <= 0) {
       if (st.autopilot) { carBurst(i, t, st); i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; } // rebuilt at home
       carHome(i, t, st);
@@ -191,7 +200,7 @@ function carBolt(i, e, t, st) {
   let n = 0;
   if (st.focus) for (const o of t.icp) if (o !== i && o.e === e && o.orb && o.state === "out") n++; // FOCUS FIRE: the others on it
   const a = Math.atan2(e.y - i.y, e.x - i.x);
-  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * (1 + st.focus * n) / CAR_BOLTS, icp: i });
+  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * CAR_VOLLEY_K * (1 + st.focus * n) / CAR_BOLTS, icp: i });
 }
 const CAR_ONE = [null];
 function stepCarBolts(t, st, dt) {
