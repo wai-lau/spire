@@ -456,7 +456,7 @@ spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**
 | before the first tower | the free slots flash, a white triangle bobs over the top-left one |
 
 Keys: 1-4 speeds (5 = 10x, owner), Space pause, M mute, U lock in the basket, Esc cancel;
-with a chooser open 1-4 pick the first four of its cards instead (an upgrade chooser has four; the build chooser shows all six, so the last two are tap only). No key opens the build chooser or builds without it (by choice).
+with a chooser open 1-4 pick the first four of its cards instead (the build chooser shows all six, so the last two are tap only). No key opens the build chooser or builds without it (by choice).
 
 ### 7.3 The tower card (pillar 5)
 
@@ -527,10 +527,11 @@ has a voice line.
 | Rule | Design |
 |---|---|
 | who posts | a **win**: three letters, lives left, the team, the wave; a **loss from wave 11 on**: lives 0 |
-| guards | shape checks and `ASC_MAX` posts an IP an hour (in memory); auto-move bars the form client-side; honour otherwise |
+| guards | `ASC_MAX` posts an IP an hour (in memory); auto-move bars the form client-side; honour otherwise. Entry validation (`clean_entry`): three-letter initials; `won` or a loss; lives 1..`MAX_LIVES` 100000 on a win (0..100000 on a loss); wave 11..1000 (`MIN_WAVE`, `MAX_WAVE`); a team of 1-5 ids, each one of the six kinds (`TOWER_KINDS`: arc frz sol acd grv car), stored in that order |
 | ranking | the Ascendants (wins, gold) by lives left; then everyone else (green) by wave, then lives; ties to the earlier; 10 rows shown, `SHOW_MAX` returned; rows render with `textContent` |
 | **never lose an entry** | an append-only fsynced journal (`spire_ascendants.jsonl`) is written FIRST, then the board JSON rewritten atomically from journal + old board; a missing or corrupt board is REBUILT from the journal; a torn tail cannot swallow the next line; nothing is trimmed |
-| the owner's games | hidden from guests before `OWNER_SHOWN_FROM` (2026-10-14; the `owner` flag + `spire_ascendants_owner.json`), shown after; `python spire_board.py mark-owner ...` / `hide ...` marks or hides without touching the journal |
+| the owner's games | hidden from guests before `OWNER_SHOWN_FROM` (2026-10-14; the `owner` flag + `spire_ascendants_owner.json`), shown after; `python spire_board.py mark-owner <keep...>` names the rest as the owner's without touching the journal |
+| hidden games | `spire_ascendants_hidden.json`, `[ts, initials]` pairs: games off the board for EVERYONE, the owner included; `python spire_board.py hide <initials...>` hides every game so far under those initials (later ones still show); the journal keeps them |
 | version | a post carries `ver` (the page's `.asp-ver`, kept when it is `N.N[.N]`); the board's faint last column. Rows from before 2026-10-16 got theirs through the corrections file: the version file at the post time, else that day's changelog version |
 | corrections | `spire_ascendants_fix.json`, `[ts, initials, {field: value}]` rows applied by `visible()`; `python spire_board.py fix <ts> <initials> lives=<n>` - e.g. JUU 84 -> 78 and SMD 49 -> 43 (2026-10-16): before 4.4.14 the Lovers' pair paid wave 50's +6 lives once a body |
 
