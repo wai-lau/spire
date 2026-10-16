@@ -1,8 +1,8 @@
 # THE SPIRE - game design
 
 Spiral tower defence at `wai-lau.net/spire`, phone first. The CURRENT design, verified
-against the code at 4.4.2 (2026-10-15). **The code holds the numbers.** The tuned values at
-this version (its §12), every superseded one, the measurements and the incidents behind the
+against the code at 5.1.32 (2026-10-16). **The code holds the numbers.** The tuned values at
+4.4.2 (its §12, with the later changes noted there), every superseded one, the measurements and the incidents behind the
 traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 `git show f00d730:ARCHITECTURE.md`.
 

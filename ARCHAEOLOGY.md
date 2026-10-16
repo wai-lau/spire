@@ -7,7 +7,7 @@ timeline; §12 the dated value snapshot; sub-numbers are local to this file). Cr
 submodule `apps/spire`); rewritten the same day when ARCHITECTURE.md became a current-state
 design document, and condensed to tables on 2026-10-15 (the dated notes it carried moved here).
 exec-fn's own ARCHAEOLOGY.md holds no /aspira history. Sources: this repo's
-`git log` (1,177 commits, 2026-10-01 first) and the dated owner-command log that
+`git log` (about 1,330 commits at 5.1.32, 2026-10-01 first) and the dated owner-command log that
 ARCHITECTURE.md used to be — **the verbatim old ARCHITECTURE.md is in git:
 `git show f00d730:ARCHITECTURE.md`** (every entry below was condensed from it; go there for
 the full wording). Values here are SUPERSEDED unless a line says "still". Owner quotes are
@@ -582,6 +582,9 @@ Every value ARCHITECTURE.md stopped carrying when it became a principles-only de
 as they stood at 4.4.2. **Superseded the moment a balance commit lands - the code is the truth**; this
 is the dated record. Columns `I (1) | II (3) | III (5) | IV (6)` are the four purchases with the table
 index they rest on (ARCHITECTURE §4.2). Range and leash are world units; x = multiplier.
+
+**Since 4.4.2** (this snapshot is NOT restamped: the four-kind tables below are the 4.4.2 values): GRV and ATC and their constants,
+§4.6b; the trio-scaled `dmg` (ACD 34.32, ATC 15, FRZ 16.68, SOL 61.54, GRV 24.38, ARC 24), §4.6d; `SKILL_STEP_COST` x1.6, §4.4.
 
 ### 12.1 Board and lanes
 
