@@ -292,7 +292,7 @@ Counter matrix 61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14 b
 
 | Constant | Value |
 |---|---|
-| tower `dmg` / `rate` / `range` / leash (`MOVE_BASE`) | 15 / 4 / 130 (launch only) / 240 |
+| tower `dmg` / `rate` / `range` / leash (`MOVE_BASE`) | 15 / 4 / 160 (launch only; 130 until 5.1.32) / 240 |
 | wing, `CAR_HANGAR` (primes from 5) | 5, 7, 11, 13 [17] |
 | speed, `CAR_SPEED` | 1050, 1260, 1470, 1680 |
 | reload, `CAR_RELOAD` | .75, .55, .4, .275 s; launch gap `CAR_GAP` .15 s |
@@ -306,7 +306,7 @@ Counter matrix 61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14 b
 | hop | `CAR_HOP` 30 u |
 | hold | `CAR_HOLD_FRAC` 0, .25, .5, .75, 1 of the wing; `CAR_HOLD_R` 80 u +- 25%, size +- 15% |
 | bolts | speed `CAR_BOLT_V` 900, fade `CAR_BOLT_REACH` 390, flies on `CAR_BOLT_ON` .08 s past a dead target |
-| slow / numbers | `CAR_SLOW` .2 for .6 s, one a tower; one number a `CAR_NUM_HITS` 3 hits |
+| slow / numbers | `CAR_SLOW` .2 for .6 s, one a tower; the PIN `CAR_PIN` .3 on what an interceptor circles (held the whole time); one number a `CAR_NUM_HITS` 3 hits |
 | Autopilot | `CAR_BURST_N` 10 pellets, `CAR_BURST_K` 1.5, speed 340, reach 90 |
 
 Superseded: the spec (2026-10-15) had reach 260 (then 460, 330, 240 and 130 as owner moved range and leash; the leash was 0, then
