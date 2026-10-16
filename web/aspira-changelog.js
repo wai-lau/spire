@@ -36,6 +36,7 @@ const CHANGELOG = [
     "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
     "Top players: a version column - the game version each score was played on; Carrier teams can post again; JUU and SMD 6 lives less (the Lovers once paid their lives twice).",
     "Perf: late in the game the upcoming-wave list rebuilds about 9x faster, damage numbers no longer each make a new text image as they shrink, the 3D star field draws twice as fast, Gravity's pellets and Carrier's bolts find targets faster, and enemies in formation move more cheaply.",
+    "Perf: less memory churn every step - enemy movement and Gravity / Carrier projectiles no longer make garbage (fewer GC hitches); low quality no longer draws Gravity's nova numbers (it already hid every other damage number).",
     "Sound: every sample levelled to the same loudness.",
     "Changelog: grouped by tower, enemy type, bosses and core.",
   ] },
