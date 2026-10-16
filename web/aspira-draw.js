@@ -50,8 +50,10 @@ function poly(x, y, r, n, rot, star) {
 // under the fill, so overlapping damage numbers stay separate and readable
 // outline: true = the background colour, or a palette key (the credits' white halo)
 const TEXT_BLUR_MIN = 30, TEXT_STROKE_MAX = 5; // (BLUR_MIN: only low quality reads it now - small text there goes unoutlined)
-function text(str, x, y, size, color, outline = false, bold = false) {
-  if (typeof textSprite === "function" && textSprite(str, x, y, size, color, outline, bold)) return; ctx.font = (bold ? "bold " : "") + size + "px " + CANVAS_FONT;
+// shrink: drawn this x smaller, from the stamp at `size` (a fading damage number's every step of shrink was a new stamp - aspira-textcache.js)
+function text(str, x, y, size, color, outline = false, bold = false, shrink = 1) {
+  if (typeof textSprite === "function" && textSprite(str, x, y, size, color, outline, bold, shrink)) return;
+  size *= shrink; ctx.font = (bold ? "bold " : "") + size + "px " + CANVAS_FONT;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   if (outline && !(lowQ && size < TEXT_BLUR_MIN)) { // low quality: small text unoutlined
     ctx.save();
@@ -386,7 +388,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
       const g = sh ? (f.t < DMG_HOLD ? 1 : Math.max(0, (f.life - f.t) / Math.max(0.01, f.life - DMG_HOLD))) : 1;
       if (sh) ctx.globalAlpha = g;
       ctx.globalAlpha *= f.alpha ?? 1;
-      at(f.x, f.y, () => text(f.text, f.x, f.y, f.size * g, dmgColor(f), f.outline)); // (armor-blunted: greyer with the share taken)
+      at(f.x, f.y, () => text(f.text, f.x, f.y, f.size, dmgColor(f), f.outline, false, g)); // (armor-blunted: greyer with the share taken; g: shrunk from ONE stamp)
     }
     };
     if (f.k === "beam" || f.k === "text" || !map) one(); else at(f.x ?? CX, f.y ?? CY, one, f);

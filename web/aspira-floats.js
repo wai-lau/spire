@@ -69,9 +69,10 @@ function drainTicks() {
 // damage numbers, which draw beneath everything but the background
 // a damage number's colour: its own, or white mixed toward the graticule's Silver by `grey` - resolved when DRAWN, so the
 // boss sky's inverted palette still applies
+const DMG_GREY_STEPS = 32; // the grey in 1/32 steps (~4 levels of each channel): a colour - a text stamp - per step, not per number (perf, 2026-10-16)
 function dmgColor(f) {
   if (!(f.grey > 0)) return f.color;
-  const a = (COL.white.match(/[\d.]+/g) || [255, 255, 255]).map(Number), b = (COL.grid.match(/[\d.]+/g) || [128, 128, 128]).map(Number), k = Math.min(1, f.grey);
+  const a = (COL.white.match(/[\d.]+/g) || [255, 255, 255]).map(Number), b = (COL.grid.match(/[\d.]+/g) || [128, 128, 128]).map(Number), k = Math.round(Math.min(1, f.grey) * DMG_GREY_STEPS) / DMG_GREY_STEPS;
   const mix = i => (a[i] ?? 1) + ((b[i] ?? 1) - (a[i] ?? 1)) * k; // [3]: the alpha (Silver is a dim one)
   return "rgba(" + [0, 1, 2].map(i => Math.round(mix(i))).join(",") + "," + mix(3).toFixed(3) + ")";
 }

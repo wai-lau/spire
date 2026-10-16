@@ -20,7 +20,7 @@ function textEvict(keep) { // keep: the one about to be drawn - never zeroed und
   }
 }
 let textCacheOn = true, textBuilding = false; // textBuilding: text() drawing a stamp - the old way, no recursion
-function textSprite(str, x, y, size, color, outline, bold) {
+function textSprite(str, x, y, size, color, outline, bold, shrink = 1) {
   if (!textCacheOn || textBuilding || !(size > 0) || (document.fonts && document.fonts.status !== "loaded") || !(ctx instanceof CanvasRenderingContext2D)) return false; // (not the GPU stand-in - aspira-glctx.js)
   const m = ctx.getTransform();
   if (Math.abs(m.b) > 1e-6 || Math.abs(m.c) > 1e-6 || m.a <= 0 || Math.abs(m.a - m.d) > 1e-6 * m.a) return false; // only a plain scale
@@ -33,7 +33,7 @@ function textSprite(str, x, y, size, color, outline, bold) {
     sp = textStamp(str, q, color, outline, bold, m.a, blur);
     textSprites.set(key, sp); textPx += sp.c.width * sp.c.height; textEvict(key);
   }
-  const k = dev / q, X = m.a * x + m.e, Y = m.d * y + m.f;
+  const k = dev / q * shrink, X = m.a * x + m.e, Y = m.d * y + m.f; // shrink: the same stamp, drawn smaller (perf, 2026-10-16: a fading number made a stamp per 0.5 px step - the cache sat full and thrashed)
   const st = CanvasRenderingContext2D.prototype.setTransform; // (the prototype's: the full-density layer's own would scale it - entCtx)
   st.call(ctx, 1, 0, 0, 1, 0, 0); // device px; only the transform changes, so it alone is put back (a save / restore a number was most of its cost)
   ctx.drawImage(sp.c, X - sp.ox * k, Y - sp.oy * k, sp.c.width * k, sp.c.height * k);
