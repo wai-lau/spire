@@ -174,8 +174,8 @@ function phoneRect3d() { // 3D: the view's pixels (call under viewCam) - the SAM
   return { x0: cam.ox + (CX - VIEW_SIDE) * k, y0: cam.oy + (CY - VIEW_UP) * k, x1: cam.ox + (CX + VIEW_SIDE) * k, y1: cam.oy + (CY + VIEW_DOWN) * k, r: PHONE_CORNER * k };
 }
 // is (x, y) on the phone, `inset` world units clear of its edge?
-function phoneInside(x, y, inset = 0) {
-  if (!phoneOn3d()) { const b = phoneBox(); return x >= b.x0 + inset && x <= b.x1 - inset && y >= b.y0 + inset && y <= b.y1 - inset; }
+function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once by a caller testing many points (legalSpot - perf)
+  if (!on3d) { const b = phoneBox(); return x >= b.x0 + inset && x <= b.x1 - inset && y >= b.y0 + inset && y <= b.y1 - inset; }
   return viewCam(() => {
     const b = phoneRect3d(), p = warpProject(x, y, 0), e = inset * cam.k;
     return p.s > 0 && p.x >= b.x0 + e && p.x <= b.x1 - e && p.y >= b.y0 + e && p.y <= b.y1 - e;

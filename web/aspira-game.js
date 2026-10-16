@@ -25,10 +25,8 @@ let G = newGame();
 // every spawn the same distance from the centre, whatever the screen shape or
 // lane rotation - a rotated copy crosses the circle at the same s).
 const SPAWN_R = 600;
-function entryS(pi) {
-  const p = PATHS[pi].pts.find(q => Math.hypot(q.x - CX, q.y - CY) <= SPAWN_R);
-  return p ? p.s : 0;
-}
+const ENTRY_S = new WeakMap(); // a lane's answer, kept with the lane (perf: the queued boss fleet asked every member, every step - 9% of a sim game)
+function entryS(pi) { const P = PATHS[pi]; let s = ENTRY_S.get(P); if (s === undefined) { const p = P.pts.find(q => Math.hypot(q.x - CX, q.y - CY) <= SPAWN_R); ENTRY_S.set(P, (s = p ? p.s : 0)); } return s; }
 
 // gentler late ramp (owner, 2026-10-02): HP x1.10 a wave (was 1.15, which
 // quadrupled every 10 waves and walled every build by ~70), armor with the
@@ -237,17 +235,18 @@ function addDebuff(map, src, v, dur, shape) {
   if (shape === "stack") { map[src + "#" + ++debuffSeq] = { v, t: Infinity }; return; }
   const d = map[src];
   if (shape === "once") { if (!d) map[src] = { v, t: Infinity }; return; }
-  map[src] = { v: d && d.t > 0 ? Math.max(d.v, v) : v, t: d && d.t === Infinity ? Infinity : dur };
+  if (d) { d.v = d.t > 0 ? Math.max(d.v, v) : v; d.t = d.t === Infinity ? Infinity : dur; } else map[src] = { v, t: dur }; // (refreshed IN PLACE: the aura refreshes every step - perf)
 }
 // A SHIELD HOLDS OFF EVERY SLOW (owner, 2026-10-12: "shielded units cannot be slowed while they have shields") - FRZ's
 // weakness to shields, by mechanics: no slow, so no chill (frzBite) and no brittle. Temporal Drive ("core:") still stops it
 function applySlow(e, f, dur, src = "x", shape = "refresh") {
-  if (e.shield > 0 && !String(src).startsWith("core:")) return false;
+  const core = typeof src === "string" && src.startsWith("core:"); // (a number - a tower's id - never is: no String() a call, perf)
+  if (e.shield > 0 && !core) return false;
   if (e.arcana) { f *= bossSlowMul(e); if (f <= 0) return true; } // Strength / Death (aspira-bosses.js)
   if (e.type === "fast") f *= FAST_SLOW_MUL;
   // only Temporal Drive ("core:") is a FULL stop: a tower's slow stays under 1, so it is always shaped by the cap (owner,
   // 2026-10-12, a recording: two fast enemies stopped dead - capstone Temp's 0.55 doubled on the fast made 1.1, read as a stop)
-  if (!String(src).startsWith("core:")) f = Math.min(f, TOWER_SLOW_MAX);
+  if (!core) f = Math.min(f, TOWER_SLOW_MAX);
   addDebuff(e.slows ||= {}, src, f, dur, shape);
   sumSlows(e);
   return true;

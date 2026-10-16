@@ -376,21 +376,22 @@ function legalSpot(t, p) {
   const away = (ox, oy, min) => { const d = Math.hypot(x - ox, y - oy) || 1e-6; if (d < min) { x = ox + (x - ox) * min / d; y = oy + (y - oy) * min / d; moved = true; } };
   // (2026-10-15, simulation speed: a pass that moves nothing ends the nudging - most spots are legal as asked, and paid 4 passes;
   // the core's hex is never wider than KEEP_MAX x coreKeepR, so a spot clear of that skips its angle maths)
-  const keepMax2 = (coreKeepR() * KEEP_MAX) ** 2;
+  const KR = coreKeepR(), keepMax2 = (KR * KEEP_MAX) ** 2, on3d = phoneOn3d(); // (asked once a call, not once a test - perf)
+  const keep = a => { const s = Math.PI / 3, f = ((a % s) + s) % s; return KR * Math.sqrt(3) / 2 / Math.cos(Math.min(f, s - f)); }; // coreKeep, KR fixed
   for (let i = 0; i < 4; i++) {
     moved = false;
     for (const o of G.towers) if (o !== t) away(o.x, o.y, gap);
-    if ((x - CX) ** 2 + (y - CY) ** 2 < keepMax2) away(CX, CY, coreKeep(Math.atan2(y - CY, x - CX)));
+    if ((x - CX) ** 2 + (y - CY) ** 2 < keepMax2) away(CX, CY, keep(Math.atan2(y - CY, x - CX)));
     const d = Math.hypot(x - c.x, y - c.y);
     if (d > L) { x = c.x + (x - c.x) * L / d; y = c.y + (y - c.y) * L / d; moved = true; }
-    if (!phoneInside(x, y, edge)) { // the phone's screen (aspira-camera.js): back toward the slot until it is on it
+    if (!phoneInside(x, y, edge, on3d)) { // the phone's screen (aspira-camera.js): back toward the slot until it is on it
       let lo = 0, hi = 1;
-      for (let j = 0; j < 14; j++) { const m = (lo + hi) / 2; if (phoneInside(c.x + (x - c.x) * m, c.y + (y - c.y) * m, edge)) lo = m; else hi = m; }
+      for (let j = 0; j < 14; j++) { const m = (lo + hi) / 2; if (phoneInside(c.x + (x - c.x) * m, c.y + (y - c.y) * m, edge, on3d)) lo = m; else hi = m; }
       x = c.x + (x - c.x) * lo; y = c.y + (y - c.y) * lo; moved = true;
     }
     if (!moved) break;
   }
-  const clear = G.towers.every(o => o === t || Math.hypot(x - o.x, y - o.y) >= gap - 0.5) && Math.hypot(x - CX, y - CY) >= coreKeep(Math.atan2(y - CY, x - CX)) - 0.5;
+  const clear = G.towers.every(o => o === t || Math.hypot(x - o.x, y - o.y) >= gap - 0.5) && Math.hypot(x - CX, y - CY) >= keep(Math.atan2(y - CY, x - CX)) - 0.5;
   return clear ? { x, y } : null;
 }
 function moveTower(t, p) { const s = legalSpot(t, p); if (s) { t.x = s.x; t.y = s.y; } return !!s; }
