@@ -189,12 +189,12 @@ function grvPellet(sp, t, st, reach, w = 1) {
   const a = Math.random() * 6.283;
   (t.pellets ||= []).push({ sp, x: sp.x, y: sp.y, vx: Math.cos(a) * GRV_PELLET_V, vy: Math.sin(a) * GRV_PELLET_V, left: reach / GRV_PELLET_V, dmg: st.dmg * st.pelletK * w });
 }
-// the ENEMY GRID (perf, owner 2026-10-16: "do some perf work on the new towers" - at wave 89 three GRVs' ~360 pellets each tested
+// the PROJECTILE GRID (perf, owner 2026-10-16: "do some perf work on the new towers" - at wave 89 three GRVs' ~360 pellets each tested
 // every enemy, every step: 3.2 ms a frame): each living enemy listed in every GRID_S cell its body (+ GRID_PAD) touches, built
 // once a step (G.clock) and shared - a projectile tests only its own cell's, in G.enemies order, so the FIRST it touches is the same
 const GRID_S = 64, GRID_PAD = 4, GRID_NONE = [];
 let egrid = null, egridAt = NaN;
-function enemyGrid() {
+function projGrid() { // (NOT enemyGrid: aspira-acid.js's pools have their own by that name, and a second global of it replaced theirs - its numeric keys left every pool and drip hitting NOTHING from 5.1.7; found 2026-10-16)
   if (egrid && egrid.G === G && egridAt === G.clock) return egrid;
   egrid = new Map(); egrid.G = G; egridAt = G.clock; // (no clock: NaN, never equal - rebuilt every call)
   for (const e of G.enemies) {
@@ -208,7 +208,7 @@ function enemyGrid() {
   }
   return egrid;
 }
-const enemiesNear = (x, y) => enemyGrid().get(Math.floor(x / GRID_S) * 65536 + Math.floor(y / GRID_S)) || GRID_NONE;
+const enemiesNear = (x, y) => projGrid().get(Math.floor(x / GRID_S) * 65536 + Math.floor(y / GRID_S)) || GRID_NONE;
 function stepPellets(t, st, dt) {
   if (!t.pellets || !t.pellets.length) return;
   for (const p of t.pellets) {
