@@ -37,6 +37,11 @@ OWNER_MARKS = "spire_ascendants_owner.json"
 # games taken off the board for EVERYONE, by (ts, initials) (owner, 2026-10-13: "remove wai ugh and boo from the board"; written by
 # `python spire_board.py hide <initials...>`) - like OWNER_MARKS, the journal stays append-only and keeps them
 HIDDEN = "spire_ascendants_hidden.json"
+# CORRECTIONS to a game's numbers, by (ts, initials): [[ts, initials, {field: value}], ...] (owner, 2026-10-16: "remember how some
+# bosses were giving out life rewards multiple times? Adjust JUU and SMD scores based on correct life giving" - before 4.4.14 a
+# two-body boss paid its drop once a body; written by `python spire_board.py fix <ts> <initials> lives=<n>`) - applied when the
+# board is shown, the journal untouched like OWNER_MARKS and HIDDEN
+FIXES = "spire_ascendants_fix.json"
 SHOW_MAX = 500  # the most the GET returns (display only - the store keeps every entry)
 MAX_LIVES = 100000
 MIN_WAVE, WIN_WAVE, MAX_WAVE = 11, 120, 1000  # (a win is wave 120 since the 12-wave boss cycle, 2026-10-12)
@@ -158,11 +163,28 @@ def _hidden(data_dir: Path) -> set:
 OWNER_SHOWN_FROM = 1791950400  # 2026-10-14 00:00 America/New_York
 
 
+def _fixes(data_dir: Path) -> dict:
+    try:
+        return {(int(ts), str(ini)): dict(f) for ts, ini, f in json.loads((data_dir / FIXES).read_text())}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def fix(data_dir: Path, ts: int, initials: str, fields: dict) -> bool:
+    """Correct one game's numbers (FIXES); False when no such game is on the board."""
+    if not any(r.get("ts") == ts and r.get("initials") == initials for r in load(data_dir)):
+        return False
+    fixes = _fixes(data_dir)
+    fixes[(ts, initials)] = {**fixes.get((ts, initials), {}), **fields}
+    _write_board(data_dir / FIXES, [[k[0], k[1], v] for k, v in sorted(fixes.items())])
+    return True
+
+
 def visible(data_dir: Path, rows: list, owner: bool) -> list:
-    """`rows` as this caller may see them: never a HIDDEN game; everything else for the owner; everyone else without the
-    owner's own games from before OWNER_SHOWN_FROM."""
-    gone = _hidden(data_dir)
-    rows = [r for r in rows if (r.get("ts"), r.get("initials")) not in gone]
+    """`rows` as this caller may see them, CORRECTED (FIXES): never a HIDDEN game; everything else for the owner; everyone
+    else without the owner's own games from before OWNER_SHOWN_FROM."""
+    gone, fixes = _hidden(data_dir), _fixes(data_dir)
+    rows = [{**r, **fixes.get((r.get("ts"), r.get("initials")), {})} for r in rows if (r.get("ts"), r.get("initials")) not in gone]
     if owner:
         return rows
     marks = _owner_marks(data_dir)
@@ -225,8 +247,12 @@ if __name__ == "__main__":  # docker compose exec api python spire_board.py mark
     if len(sys.argv) >= 2 and sys.argv[1] == "hide":  # docker compose exec api python spire_board.py hide WAI UGH BOO
         n = hide(Path(os.environ.get("DATA_DIR", "/app/data")), set(a.upper() for a in sys.argv[2:]))
         print(f"hid {n} games")
+    elif len(sys.argv) >= 5 and sys.argv[1] == "fix":  # docker compose exec api python spire_board.py fix 1791848892 JUU lives=78
+        fields = {k: int(v) for k, v in (a.split("=", 1) for a in sys.argv[4:])}
+        ok = fix(Path(os.environ.get("DATA_DIR", "/app/data")), int(sys.argv[2]), sys.argv[3].upper(), fields)
+        print("fixed" if ok else "no such game")
     elif len(sys.argv) >= 2 and sys.argv[1] == "mark-owner":
         n = mark_owner(Path(os.environ.get("DATA_DIR", "/app/data")), set(a.upper() for a in sys.argv[2:]))
         print(f"marked {n} games as the owner's")
     else:
-        print("usage: python spire_board.py mark-owner <initials to keep...> | hide <initials...>")
+        print("usage: python spire_board.py mark-owner <initials to keep...> | hide <initials...> | fix <ts> <initials> <field>=<n>...")
