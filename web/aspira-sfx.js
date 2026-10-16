@@ -98,6 +98,8 @@ const SFX = {
   car:     () => { tone({ type: "triangle", f0: 500, f1: 1400, dur: 0.09, vol: 0.05 }); },
   // an interceptor's SHOT (2026-10-16), once a shot's stream of bolts starts - a short falling zap
   carshot: () => tone({ type: "square", f0: 1800, f1: 900, dur: 0.04, vol: 0.03 }),
+  // the GRV aura opening, once the nova has collapsed (2026-10-16) - a low swell
+  grvaura: () => tone({ type: "sine", f0: 55, f1: 90, dur: 0.35, vol: 0.14 }),
   grv:     () => { tone({ type: "sine", f0: 70, f1: 140, dur: 0.3, vol: 0.22 }); noise({ dur: 0.12, vol: 0.12, freq: 2200, q: 1.5 }); },
   kill:    () => tone({ type: "triangle", f0: 520, f1: 1040, dur: 0.07, vol: 0.16 }),
   // the core is hit: a SHUTDOWN (owner) - a click, then the power sliding
@@ -170,7 +172,7 @@ function sampleNorm(buf, start, end) {
 // Each TOWER's sound plays at most 3 copies at once (owner, 2026-10-02),
 // sample or synth alike: playing[name] counts live copies and a 4th is
 // skipped. A sample copy is also quieter by how many are already sounding.
-const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, car: 3, carshot: 3 }, playing = {};
+const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, car: 3, carshot: 3 }, playing = {};
 let curSound = null; // the synth sound being built, so envelope() can count it
 // LOUDNESS (owner, 2026-10-02): the bosses' warnings and voices and every
 // upgrade/build sound stand well above the towers' shots - about 10 dB

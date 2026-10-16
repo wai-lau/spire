@@ -32,6 +32,7 @@ const CHANGELOG = [
     "Carrier: interceptors make a sound as they fire.",
     "Carrier: bolts are much shorter streaks.",
     "Sound: every sample is levelled to the same loudness.",
+    "Gravity: the aura has its own sound as it opens, apart from the nova's.",
     "Carrier's tagline: \"Carrier has arrived.\"",
   ] },
   { v: "4.5", day: "Oct 15", u: [

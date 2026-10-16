@@ -81,6 +81,7 @@ function stepGrv(t, dt) {
 }
 function stepSphere(sp, t, st, dt) {
   sp.age += dt;
+  if (!sp.auraSnd && sp.age >= GRV_NOVA_END) { sp.auraSnd = true; sfx("grvaura"); } // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
   // the NOVA: the yellow front sweeps out; each enemy it reaches takes the hit once
   if (sp.age <= GRV_FRONT_T + dt) {
     const r = grvNovaR(sp, st); // it IMPLODES: an enemy is hit as the front sweeps past it, inward (all within reach by the end)
