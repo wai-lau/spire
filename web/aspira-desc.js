@@ -55,8 +55,8 @@ const DESCRIBE = {
   // stops it); Radiation more pellets (Hawking: a last burst)
   grv(sk) {
     const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0;
-    return (n >= 6 ? "A hypernova that tears armor away" : n ? "A wide nova" : "A nova") + " leaves a black sphere. Its aura burns, " +
-      (v >= 6 ? "holds what a full sphere catches almost still" : v ? "drags hard" : "slows") + " and strips armor, and the sphere grows with every hit. It radiates " +
+    return (n >= 6 ? "A hypernova that tears armor away" : n ? "A wide nova" : "A nova") + " leaves a black sphere, its aura as big as the nova hit hard. The aura " +
+      (v >= 6 ? "holds what a full sphere's core catches almost still" : v ? "drags hard, its core harder" : "slows, its core hardest") + " and strips armor; the sphere grows with every hit. It radiates " +
       (r >= 6 ? "a storm of pellets and bursts as it fades." : r ? "pellets, thick and hard." : "a few pellets.");
   },
 };

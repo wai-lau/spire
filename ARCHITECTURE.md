@@ -254,6 +254,12 @@ pellet rate (capped at x3 the starting mass).
 Colours: violet (aura, outline) and yellow (nova) - new palette colours are allowed for /spire (owner, 2026-10-15).
 Numbers start as guesses and are fitted with the sims to "strong vs swarm and armor, weak vs fast and shield".
 
+**Aura rework (owner, 2026-10-15):** the aura deals NO damage - it slows (never the shielded) and strips positive armor
+(`GRV_AURA_K` x `GRV_STRIP` a second, x mass). Its SIZE comes from the nova: `st.auraR` x sqrt(the nova's damage in tower hits;
+a kill counts the whole hit, a hit a shield swallowed nothing), clamped `GRV_GROW_MIN`..`GRV_GROW_MAX`. The slow is two rings:
+the CORE (inner `GRV_CORE_FRAC`, the hot bands) slows `GRV_CORE_MUL` x the outer ring. Mass now grows from nova + pellets only.
+The nova's numbers fly into the sphere (`grvFloat`).
+
 ### 4.6c CAR (shown ATC), the carrier (2026-10-15, `web/aspira-car.js`)
 
 The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`, 225°): long reach (260), **strong vs fast + shield, weak to

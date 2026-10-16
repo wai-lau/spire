@@ -132,7 +132,7 @@ const STAT_SECTIONS = {
   frz: [["Freeze Aura", ["Aura slow", "Aura dmg", "Cold bite", "Brittle", "Shields", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
   sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Refraction", ["Refract"]], ["Breach", ["Breach", "Bleed", "Shrapnel"]]],
   car: [["Hangar", ["Interceptors", "Reload"]], ["Launch", ["Speed", "Range"]], ["Armament", ["Damage", "Rate", "Ammo", "Autopilot", "Shields"]]],
-  grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Aura size", "Aura slow", "Aura dmg", "Armor strip"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]]],
+  grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Aura size", "Aura slow", "Armor strip"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]]],
   acd: [["Jets", ["Corrode", "Builds", "Peak", "Jets", "Carry", "Jet slow", "Shields", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
 function cardStats(t, pv) {

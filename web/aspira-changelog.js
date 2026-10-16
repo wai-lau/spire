@@ -6,6 +6,7 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
   { v: "4.5", day: "Oct 15", u: [
+    "Gravity: nova damage numbers fly into the sphere.",
     "Carrier: interceptors fly a clothespin - straight out, loop their target firing, straight home.",
     "Carrier's short name is ATC.",
     "Carrier: interceptors are thin, long darts; each shot is a pair of light-blue bolts, and Autopilot's pellets are light blue.",
@@ -14,7 +15,11 @@ const CHANGELOG = [
     "Gravity: the nova explodes fully first, then the sphere and its aura appear.",
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
+  ], ne: [
+    "Gravity: the aura deals no damage.",
   ], bu: [
+    "Gravity: the aura's size grows with the damage its nova dealt.",
+    "Gravity: the aura slows in two rings - its core far harder.",
     "New tower: Carrier. Launches interceptors one by one; each flies to an enemy, fires its shots and flies home to reload. Good vs fast and shields.",
     "Gravity: nova and aura x1.7 wider.",
     "Gravity: x3 radiation pellets.",

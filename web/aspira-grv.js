@@ -13,11 +13,17 @@ const GRV_NOVA_R = [71, 85, 99, 112, 126, 139]; // Supernova: the nova's reach (
 const GRV_NOVA_MUL = [1, 1.3, 1.6, 2, 2.4, 2.8]; // Supernova: the nova's hit, x the tower's damage
 const GRV_PELLETS = [6, 7.8, 9.6, 11.4, 13.2, 15]; // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
 const GRV_PELLET_K = [0.25, 0.32, 0.4, 0.48, 0.56, 0.65]; // Radiation: a pellet's hit, x the tower's damage
-let GRV_AURA_K = 0.6; // (was 0.35 - solo.mjs; let: the simulator sweeps it) // the aura's damage a second on each enemy in it, x the tower's damage (x mass)
+let GRV_AURA_K = 0.6; // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
 const GRV_LIFE = 5; // s: an unfed sphere's life - it loses 1 / GRV_LIFE of its STARTING mass a second, linearly
 const GRV_MASS_MAX = 3, GRV_GAIN = 0.12; // mass gained per one tower-hit of damage dealt (nova, aura, pellets)
 const GRV_STRIP = 0.5; // armor stripped, x the aura's damage dealt - POSITIVE armor only (it stops at zero)
-const GRV_SLOW_MAX = 0.6, GRV_HORIZON_SLOW = 0.9; // Void VI (Event Horizon): a full-grown sphere's slow
+// the slow in TWO RINGS (owner, 2026-10-15: "two tiers, much bigger slow close to the center"): the CORE (inner GRV_CORE_FRAC of
+// the radius - the hot bands) slows GRV_CORE_MUL x the outer ring; each capped
+const GRV_SLOW_MAX = 0.45, GRV_CORE_FRAC = 0.47, GRV_CORE_MUL = 2.5, GRV_CORE_MAX = 0.8, GRV_HORIZON_SLOW = 0.9; // Void VI (Event Horizon): a full-grown core
+// the aura's SIZE comes from the NOVA's damage (owner, 2026-10-15: "make the max aura size depend on supernova damage"): x the
+// square root of what the nova really dealt, in tower hits (one enemy taking a bare nova = x1), between these (a nova the
+// shields swallowed leaves a small aura)
+const GRV_GROW_MIN = 0.5, GRV_GROW_MAX = 2.5;
 const GRV_HYPER_STRIP = 0.5, GRV_HYPER_MASS = 2; // Supernova VI (Hypernova): the nova takes half the positive armor; spheres start heavier
 const GRV_HAWKING_N = 12; // Radiation VI (Hawking): a spent sphere's last burst of pellets
 const GRV_TICK = 0.25, GRV_FRONT_T = 0.2; // the nova's collapse, s (0.12 outward, then inward: a touch longer to read)
@@ -25,7 +31,7 @@ const GRV_NOVA_END = GRV_FRONT_T; // the nova GONE (collapsed into its centre) -
 // the nova's front: from its reach INWARD, ACCELERATING (owner, 2026-10-15: "explode inwards instead of outwards, accelerating")
 const grvNovaR = (sp, st) => st.novaR * (1 - Math.min(1, sp.age / GRV_FRONT_T) ** 2); // s: the aura's tick; the yellow front's time to its reach
 const GRV_PELLET_REACH = 1.4, GRV_PELLET_V = 320, GRV_PELLET_HIT = 3; // a pellet flies this x the aura's radius, at V a second; touches an enemy within its size + HIT
-const GRV_AURA_ST = { noFx: true }; // an aura tick: no flash, no number (its own numbers drift INWARD - grvFloat)
+const GRV_AURA_ST = { noFx: true }; // a nova hit: no flash, no number (its numbers drift INWARD - grvFloat)
 
 SKILL_TREES.grv = [
   { id: "void", name: "Void", tiers: [{ name: "Well" }, { name: "Sink" }, { name: "Abyss" }, { name: "Maw" }, { name: "Void" }] },
@@ -44,7 +50,7 @@ function grvSkillStats(t, s, b) {
 
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
 const grvMassK = sp => Math.max(0, Math.min(GRV_MASS_MAX, sp.mass));
-const grvAuraR = (sp, st) => st.auraR * Math.sqrt(grvMassK(sp));
+const grvAuraR = (sp, st) => st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW_MIN, Math.sqrt((sp.novaDealt || 0) / Math.max(1e-6, st.dmg))));
 // the aura's reach right now: nothing until the nova has FULLY exploded (owner, 2026-10-15: "make the nova fully explode before
 // the aura and center"), then blown out from the centre at the nova front's speed until its size
 const grvAuraNow = (sp, st) => Math.min(grvAuraR(sp, st), st.novaR / GRV_FRONT_T * Math.max(0, sp.age - GRV_NOVA_END));
@@ -79,22 +85,26 @@ function stepSphere(sp, t, st, dt) {
       if (e.dead || sp.hit.has(e.id) || d2 > st.novaR * st.novaR || d2 < r * r) continue;
       sp.hit.add(e.id);
       if (st.hyper && e.armor > 0) e.armor -= e.armor * GRV_HYPER_STRIP; // Hypernova: half the real armor, at once
-      grvHit(sp, t, st, e, st.dmg * st.novaMul);
+      const amt = st.dmg * st.novaMul, dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
+      sp.novaDealt = (sp.novaDealt || 0) + (e.dead ? amt : dealt); // (sets the aura's size: a KILL counts the whole hit - overkill on a
+      // weak enemy is not a weak nova; a hit a shield swallowed counts nothing)
+      if (dealt > 0) grvFloat(sp, e, dealt); // the nova's numbers fly INTO the centre (owner, 2026-10-15)
     }
   }
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
-  // the AURA: burn, strip positive armor, slow the unshielded
+  // the AURA: NO damage (owner, 2026-10-15: "make the aura not do damage") - it strips positive armor and slows the unshielded,
+  // in two rings: the core far harder
   sp.tick += dt;
   while (sp.tick >= GRV_TICK) {
     sp.tick -= GRV_TICK;
-    const slow = st.horizon && k >= GRV_MASS_MAX ? GRV_HORIZON_SLOW : Math.min(GRV_SLOW_MAX, st.slow * k);
+    const outer = Math.min(GRV_SLOW_MAX, st.slow * k), core = st.horizon && k >= GRV_MASS_MAX ? GRV_HORIZON_SLOW : Math.min(GRV_CORE_MAX, outer * GRV_CORE_MUL);
     for (const e of G.enemies) {
-      if (e.dead || (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2 > ar * ar) continue;
-      const dealt = grvHit(sp, t, st, e, st.dmg * GRV_AURA_K * k * GRV_TICK, GRV_AURA_ST);
-      if (dealt > 0 && e.armor > 0) e.armor -= Math.min(e.armor, dealt * GRV_STRIP);
-      if (dealt > 0) grvFloat(sp, e, dealt);
+      const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
+      if (e.dead || d2 > ar * ar) continue;
+      if (e.armor > 0) e.armor -= Math.min(e.armor, st.dmg * GRV_AURA_K * k * GRV_TICK * GRV_STRIP);
+      const slow = d2 <= (ar * GRV_CORE_FRAC) ** 2 ? core : outer;
       // the shielded are never slowed (applySlow refuses them); a fast enemy NOT doubled like other slows - GRV is weak to fast
-      if (!e.dead) applySlow(e, e.type === "fast" ? slow / FAST_SLOW_MUL : slow, GRV_TICK * 1.5, "grv:" + t.id);
+      applySlow(e, e.type === "fast" ? slow / FAST_SLOW_MUL : slow, GRV_TICK * 1.5, "grv:" + t.id);
     }
   }
   // RADIATION: pellets, more the heavier the sphere
@@ -132,7 +142,7 @@ function drawGrvPellets() {
   for (const t of G.towers) for (const p of t.pellets || []) { ctx.beginPath(); ctx.moveTo(p.x - p.vx * GRV_PELLET_TAIL, p.y - p.vy * GRV_PELLET_TAIL); ctx.lineTo(p.x, p.y); ctx.stroke(); }
 }
 
-// ---------- the aura's damage numbers drift INWARD, toward the sphere (owner) ----------
+// ---------- the nova's damage numbers fly INWARD, toward the sphere (owner) ----------
 // the aura's BANDS, the sphere outward, in the black-hole image's colours and shares (owner, 2026-10-15): white-hot 2, yellow 6,
 // coral 13, pink 13, plum 18, deep purple 17 - each stop where its band starts, clear inside the first and past the last
 const GRV_BANDS = [[0.15, "bhwhite"], [0.19, "yellow"], [0.3, "bhcoral"], [0.47, "bhpink"], [0.66, "bhplum"], [0.86, "bhdeep"]];
