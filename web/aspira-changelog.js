@@ -17,7 +17,7 @@ const CHANGELOG = [
     "Carrier: range 260 -> 130, movement 200 -> 240; interceptors chase up to 960 away.",
     "Carrier: interceptors x1.75 faster, launched 0.15s apart (was 0.2s), reloading twice as fast.",
     "Gravity: x0.81 damage.",
-    "Gravity: black holes drift together and merge into one bigger hole once their centres touch - mass, size and radiation added.",
+    "Gravity: black holes pull on each other by mass - a light one falls into a heavy one - and merge into one bigger hole once their centres touch, mass, size and radiation added.",
     "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates; at most 3x the base aura.",
     "Gravity: a nova that catches nothing still leaves a full-size hole; novas aim a little ahead of their target.",
   ], u: [
@@ -27,6 +27,7 @@ const CHANGELOG = [
     "Carrier: launch and shot sounds; tagline \"Carrier has arrived.\"",
     "Gravity: dark purple (Sol bright pink); the black centre grows logarithmically and the hole shrinks away to nothing.",
     "Gravity: the aura has its own sound; tagline \"Massive intervention.\"",
+    "Gravity: touching black holes share one accretion disk, the dark of each over every ring.",
     "Gravity and Carrier: smoother with many pellets in the air - past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
     "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",
     "All towers: the six tower colours sit evenly round the colour wheel, as the eye sees it - Arc a touch yellower, Acid greener, Freeze tealer, Carrier deeper blue, Gravity more purple, Sol coral-pink.",
