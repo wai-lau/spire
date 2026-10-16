@@ -5,7 +5,8 @@
 // A new TOWER is the next MAJOR (owner, 2026-10-16: "adding grv and atc should be a new major version": their day, 4.5, became 5.0
 // and the next 4.6 5.1).
 // each day's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
-// smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
+// smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
+// 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
     "Acid: x1.31 damage.",
@@ -47,6 +48,7 @@ const CHANGELOG = [
     "Gravity: the black centre grows logarithmically with the hole, not in step with it.",
     "Gravity: a black hole radiates at its old rate, faster while it evaporates fast; its size is capped at 3x the base aura.",
     "Upgrade-ready chevrons and their flashing hex keep the tower's colour during a boss wave.",
+    "Changelog: grouped by tower, enemy type, bosses and core - no more Buffs / Nerfs.",
     "Cards: two rows (or two columns on a tall screen) where they fit, not one long row.",
     "Gravity and Carrier cards: paler text, as easy to read as the others.",
     "Carrier: interceptors half the size, growing with Armament to full size at VI.",
@@ -195,6 +197,19 @@ const CHANGELOG = [
   { v: "1.1", day: "Oct 2", bu: ["Acid tower; upgrade trees for all four towers; six build slots."], ne: ["Ten tarot bosses."] },
   { v: "1.0", day: "Oct 1", u: ["The Spire: spiral tower defence on a star chart."] },
 ];
+// what a line is ABOUT: its "Subject:" prefix if it names one, else the first subject it mentions, else Other (the order here is
+// the order shown)
+const LOG_SUBJECTS = [["Arc", /\barcs?\b/i], ["Freeze", /\bfreeze\b|\bfrz\b/i], ["Sol", /\bsol(ar)?\b/i], ["Acid", /\bacid\b|\bacd\b/i],
+  ["Carrier", /\bcarriers?\b|\batc\b|\binterceptors?\b/i], ["Gravity", /\bgravity\b|\bgrv\b|\bblack holes?\b/i],
+  ["Swarm", /\bswarms?\b/i], ["Fast", /\bfast\b/i], ["Armor", /\barmou?r(ed)?\b/i], ["Shield", /\bshield(s|ed)?\b/i],
+  ["Bosses", /\bboss(es)?\b|\bstar\b|\bempress\b|\btarot\b/i], ["Core", /\bcore\b/i], ["Other", /$^/]];
+function logSubject(line) {
+  const head = (line.match(/^([^:]{1,40}):/) || [])[1];
+  if (head) for (const [name, re] of LOG_SUBJECTS) if (re.test(head)) return name;
+  let best = "Other", at = Infinity;
+  for (const [name, re] of LOG_SUBJECTS) { const m = line.match(re); if (m && m.index < at) { at = m.index; best = name; } }
+  return best;
+}
 // the card: the game pauses while it is open and goes back as it was when it closes
 let logWasPaused = null;
 function openChangelog() {
@@ -202,12 +217,16 @@ function openChangelog() {
   if (!card) {
     card = document.createElement("div");
     card.id = "asp-log"; card.className = "asp-deck asp-log";
-    const list = (items, cls) => '<ul class="' + cls + '">' + items.map(i => "<li>" + i + "</li>").join("") + "</ul>"; // asp-log-ui: Perf/UI, a size smaller (aspira-changelog.css)
-    const group = (name, items, cls) => (items && items.length ? "<h4>" + name + "</h4>" + list(items, cls) : "");
-    // the Buffs / Nerfs / Perf/UI headings only where a version has more than one line (owner, 2026-10-14), and only over a group that has one
+    // a day's lines GROUPED BY WHAT THEY CHANGE (owner, 2026-10-16: "group differently, all ATC changes go together, all swarm changes
+    // go together / Drop the buff and nerf categories"): a tower, an enemy type, the bosses, the core, else Other - headings only
+    // where a day has more than one line (owner, 2026-10-14). bu / ne / u still hold the lines; u (Perf/UI) lines stay a size smaller
     const day = d => {
-      const all = [...(d.bu || []), ...(d.ne || []), ...(d.u || [])], one = d.u && d.u.length ? "asp-log-ui" : "";
-      return "<h3>" + d.v + " · " + d.day + "</h3>" + (all.length > 1 ? group("Buffs", d.bu, "") + group("Nerfs", d.ne, "") + group("Perf/UI", d.u, "asp-log-ui") : list(all, one));
+      const all = [...(d.bu || []), ...(d.ne || []), ...(d.u || [])], ui = new Set(d.u || []);
+      const li = i => "<li" + (ui.has(i) ? ' class="asp-log-ui"' : "") + ">" + i + "</li>";
+      if (all.length < 2) return "<h3>" + d.v + " · " + d.day + "</h3><ul>" + all.map(li).join("") + "</ul>";
+      const by = new Map(LOG_SUBJECTS.map(([name]) => [name, []]));
+      for (const i of all) by.get(logSubject(i)).push(i);
+      return "<h3>" + d.v + " · " + d.day + "</h3>" + [...by].filter(([, is]) => is.length).map(([name, is]) => "<h4>" + name + "</h4><ul>" + is.map(li).join("") + "</ul>").join("");
     };
     card.innerHTML = '<h2>changes</h2><div class="asp-log-list">' + CHANGELOG.map(day).join("") + "</div>";
     button(card, "asp-primary", "close", closeChangelog);
