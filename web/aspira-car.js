@@ -26,7 +26,7 @@ const CAR_VOLLEY_K = 2;
 const CAR_SHOT_MUL = [1, 2.6, 4.5, 7.5, 10, 12.5]; // Armament (VI 15)
 const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 4.6]; // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
-const CAR_PIN = 0; // the circled enemy's slow while an interceptor orbits it (0: none) - tried 2026-10-16 against ATC's fast leak
+const CAR_PIN = 0.3; // the circled enemy's slow while an interceptor orbits it (2026-10-16, against ATC's fast leak: 0 16% of fast leaked, 0.3 11%, 0.5 14%; a longer bolt slow 11% but swarm 32%)
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CAR_BOLT_PAIR = 2, CAR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 const CAR_BOLTS = Math.ceil(10 / CAR_BOLT_PAIR) * CAR_BOLT_PAIR; /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit
@@ -47,7 +47,7 @@ const CAR_ORBIT = 75 /* x0.5 (owner, 2026-10-16: "reduce enemy orbit distance to
 const CAR_ORBIT_JIT = 0.2, CAR_JIT_W = [1.2, 2.6]; // the radius's swing; its pace in rad/s, low .. high
 const carR = i => CAR_ORBIT * (1 + CAR_ORBIT_JIT * Math.sin(i.jp || 0));
 const CAR_TURN_R = 50; // the tightest turn, in u: turn rate = speed / this (twice the circle's, so the circle can be held)
-const CAR_LEASH = 7.4; /* the 960 chase at range 130 (owner, 2026-10-16: "Interceptor range should still be huge") */ /* 4: a 960 chase at range 240 (2026-10-16: 780, 960 and 1200 all leaked the same - the chase is not what binds) */ /* the same 780 chase at range 330 (2026-10-16) */ /* 3 at range 260: the same 780 chase now the range is 460 (2026-10-16) */ // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
+const CAR_LEASH = 7.4; /* ~1180 at range 160 (as simmed 2026-10-16) */ /* the 960 chase at range 130 (owner, 2026-10-16: "Interceptor range should still be huge") */ /* 4: a 960 chase at range 240 (2026-10-16: 780, 960 and 1200 all leaked the same - the chase is not what binds) */ /* the same 780 chase at range 330 (2026-10-16) */ /* 3 at range 260: the same 780 chase now the range is 460 (2026-10-16) */ // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
 // enemies left reach mid-sortie and ATC, built against fast, leaked them worst - counter matrix 2026-10-15)
 const CAR_BURST_N = 10, CAR_BURST_K = 1.5, CAR_PELLET_V = 340, CAR_PELLET_REACH = 90, CAR_PELLET_HIT = 3; // Autopilot's pellets
 

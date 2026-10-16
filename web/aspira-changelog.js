@@ -14,7 +14,7 @@ const CHANGELOG = [
     "Acid: x1.49 damage.",
     "Acid: pools and corrosion drips hit enemies again (broken since 5.1.7).",
     "Carrier: x1.67 damage, at half the rate; an interceptor fires half as many volleys of 10 homing bolts, two at a time side by side (each volley twice the hit), every bolt of a volley at the one enemy it began on - past a kill they fly on a little way and may hit something else.",
-    "Carrier: range 260 -> 130, movement 200 -> 240; interceptors chase up to 960 away.",
+    "Carrier: range 260 -> 160, movement 200 -> 240; interceptors reach about 1200 out, and what an interceptor circles is slowed the whole time.",
     "Carrier: interceptors x1.75 faster, launched 0.15s apart (was 0.2s), reloading twice as fast.",
     "Gravity: x0.81 damage.",
     "Gravity: black holes pull on each other by mass - a light one falls into a heavy one - and merge into one bigger hole once their centres touch, mass, size and radiation added.",
