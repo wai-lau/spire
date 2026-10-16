@@ -570,7 +570,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 |---|---|
 | data and state | `defs` (geometry, tables, `towerStats`), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows) |
 | waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
-| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `desc`, `capstone` (index 6 on every table), `chart`, `stats`, `sliders` (the card) |
+| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (ATC), `desc`, `capstone` (index 6 on every table), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (2D) | `quality` (`lowQ`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
 | draw (3D) | `warp`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
@@ -580,7 +580,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | Piece | Where |
 |---|---|
 | stylesheets | `aspira.css` (page, chart, cards), `aspira-endstats.css`, `aspira-ascend.css`, `aspira-changelog.css` |
-| colours | **never in JS**: hidden `.asp-sw` swatches in the template, styled from exec-fn's `chrome.css` tokens, read once by `resolveColors()` into `COL`; a new colour or alpha is exec-fn's palette lint's call |
+| colours | **never in JS**: hidden `.asp-sw` swatches in the template, styled from exec-fn's `chrome.css` tokens, read once by `resolveColors()` into `COL`; the tower hues are spire tokens in `aspira.css` (`--asp-arc-hsl`, `--asp-frz-hsl`, `--asp-acd-hsl`, `--asp-solar-hsl`, `--asp-violet-hsl`, `--asp-blue-hsl`, OKLCH 60 degrees apart); a new colour or alpha is exec-fn's palette lint's call |
 | python | `api/routes_aspira.py` (page, redirect, sfx, ascendants, perflog), `spire_board.py`, `spire_perflog.py` (stdlib-only), `templates/aspira.html` |
 | diagrams | `docs/arch/*.mmd` is the mermaid source, rendered to the `.svg` beside it by exec-fn's pre-commit (`scripts/render-mermaid.py`) whenever a `.mmd` is staged; `geometry`, `play-box`, `layout` are hand-written SVGs. The doc embeds the SVGs: the app's markdown viewer does not render a mermaid fence |
 
@@ -611,7 +611,7 @@ handler's guest prefixes, the router tier); `/spire` is in all three.
 
 ### 10.4 Simulator and balance tooling (`scripts/aspira-sim/`, README there)
 
-Runs the REAL game code (`sim.mjs` `FILES`: the logic scripts up to `core`) in a Node vm
+Runs the REAL game code (`sim.mjs` `FILES`: the logic scripts up to `core`, `grv` and `car` among them) in a Node vm
 with drawing, sound and input stubbed, every tick as fast as it can, with scripted players
 (opening, kind mix, upgrade appetite, interest reserve, axis per point, core use).
 `ASPIRA_WEB=<dir>` pins a run to a snapshot; a `patch` file changes numbers or redefines a
@@ -620,7 +620,9 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | Question | Script |
 |---|---|
 | the curve; real trio games per type and boss | `waverep`, `curve`, `rand`, `late` |
-| every trio / combo / solo kind | `trios`, `combos`, `solo`, `wave1`, `swap`, `eval`, `style` |
+| every trio / combo / solo kind | `trios` (three scripted styles; walks only the first four kinds), `combos`, `solo`, `wave1`, `swap`, `eval`, `style` |
+| the trio scale (§4.6d): all 20 trios of the six kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
+| the economy check behind the step price (§4.2) and the build card marks (§7.2) | `eco`, `marks.py` (from a `countermx` run) |
 | the counter matrix | `countermx` |
 | an axis tier's value; a buy's payoff | `isolation`, `tierfit`, `chartvalue`, `payoff` (each buy alone: gain, price, gain a credit), `buildlog` (purchases by wave) |
 | bosses and fleets | `bossbal`, `bossfleet`, `bossvs` |
@@ -633,7 +635,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 |---|---|
 | a lone L1 tower of any kind clears waves 1-11 | `solo`; `WAVE_COUNT_MUL` |
 | the Star (wave 12) needs two towers or an upgrade (SOL and ACD may solo it) | `wave1`, `waverep` |
-| every trio of kinds is winnable by the scripted styles (no kind required) | `trios` |
+| every trio of kinds is winnable except the designed deaths (§4.6d) (no kind required) | `trios`, `tribal` |
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |
 | players held to `MAX_TOWERS` (`strategy.towerCap` lifts it for test teams) | the simulator |
 
