@@ -15,13 +15,13 @@ import { isMainThread } from "node:worker_threads";
 import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
 
-const LEAK = Number(process.env.LEAK || 0.05), SPAN = 4, FLOOR_HPX = 0.001, TYPES = ["swarm", "fast", "shield", "armor"];
-const ALL = ["arc", "frz", "sol", "acd"];
-const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"] };
+const LEAK = Number(process.env.LEAK || 0.01) /* hold = no leak past lane coverage (owner's closest-approach rule: a leak is 0% power; 1% for noise) */, SPAN = 4, FLOOR_HPX = 0.001, TYPES = ["swarm", "fast", "shield", "armor"];
+const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car").split(","); // (grv: the gravity tower, 2026-10-15)
+const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"] , car: ["hangar", "launch", "armament"] };
 // every build: a trio, and per tower the axis it skips (null = buys all three)
 export const BUILDS = [];
-for (const out of ALL) {
-  const trio = ALL.filter(k => k !== out), opts = k => [null, ...AX[k]];
+for (let i = 0; i < ALL.length; i++) for (let j = i + 1; j < ALL.length; j++) for (let l = j + 1; l < ALL.length; l++) {
+  const trio = [ALL[i], ALL[j], ALL[l]], opts = k => [null, ...AX[k]]; // every trio of the kinds (10 with five)
   for (const a of opts(trio[0])) for (const b of opts(trio[1])) for (const c of opts(trio[2])) BUILDS.push({ trio, skip: { [trio[0]]: a, [trio[1]]: b, [trio[2]]: c } });
 }
 export const label = b => b.trio.map(k => k.toUpperCase() + (b.skip[k] ? "-" + b.skip[k].slice(0, 4) : "")).join(" ");
@@ -58,22 +58,25 @@ export default async function task(job) {
   }
   const { bi, type, credits, w, seed, hpx } = job;
   // the coverage FLOOR is lanes only: no shield charges either (they don't scale with HP - 2026-10-15, shields read x246)
-  const g = makeGame(seed, `for (const id in ENEMIES) ENEMIES[id].hp *= ${hpx};` + (job.floor ? " for (const id in ENEMIES) ENEMIES[id].shield = 0;" : "")); g.reset();
+  // enemy TOUGHNESS x hpx: HP and shield charges both (round 1: shields beat builds by charges, not HP)
+  const g = makeGame(seed, `for (const id in ENEMIES) { ENEMIES[id].hp *= ${hpx}; if (ENEMIES[id].shield) ENEMIES[id].shield = Math.max(1, Math.round(ENEMIES[id].shield * ${hpx})); }` + (job.floor ? " for (const id in ENEMIES) ENEMIES[id].shield = 0;" : "")); g.reset();
   g.run(`G.started = true; G.wave = ${w - 1}; G.lives = 1e6; OPEN_SLOTS = SLOT_ANGLES.slice(); G.opened ||= {}; CELLS.forEach((c, i) => { if (c.unlock) G.opened[i] = true; });`);
   buy(g, BUILDS[bi], credits);
   g.run(`for (let n = ${w}; n < ${w} + ${SPAN} + 2; n++) if (n % 12) WAVE_TYPE_FORCE[n] = "${type}";`); // the window: only this type
   g.run(`G.lastType = "${type === "swarm" ? "fast" : "swarm"}"; G.nextIn = 0;`);
   const end = w + SPAN + (Math.floor((w + SPAN) / 12) - Math.floor((w - 1) / 12)); // (a boss wave inside is skipped)
-  let leaked = 0, guard = 0; const seen = new Set();
+  let leaked = 0, guard = 0, far = 0; const seen = new Set(); // far: the furthest one of the type got, of its lane (a leak = 1)
   while (g.G.wave < end && guard++ < 600000) {
     if (g.G.wave % 12 === 0) g.run("for (const e of G.enemies) if (e.type === 'bonus' || e.bossKin) { e.dead = true; e.gone = true; } G.spawns = G.spawns.filter(x => !x.list.includes('bonus'));");
     const alive = g.G.enemies.filter(e => !e.dead);
     for (const e of alive) if (e.type === type && !e.bossKin) seen.add(e.id);
     g.step(0.05); g.clearFx();
     for (const e of alive) if (e.dead && e.gone && e.hp > 0 && seen.has(e.id)) leaked++;
+    for (const e of g.G.enemies) if (!e.dead && seen.has(e.id)) far = Math.max(far, e.s / g.PATHS[e.pi].len);
     g.run("G.lives = 1e6; G.over = false;");
   }
-  return { leaked, spawned: seen.size };
+  // POWER by CLOSEST APPROACH (owner, 2026-10-15: "a leak is 0% tower power, a spawnkill is 100%")
+  return { leaked, spawned: seen.size, power: leaked ? 0 : 1 - far };
 }
 
 if (isMainThread && process.argv[1] && process.argv[1].endsWith("powercurve.mjs")) {
