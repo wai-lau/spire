@@ -167,8 +167,7 @@ function carBolt(i, e, t, st) {
   let n = 0;
   if (st.focus) for (const o of t.icp) if (o !== i && o.e === e && o.orb && o.state === "out") n++; // FOCUS FIRE: the others on it
   const a = Math.atan2(e.y - i.y, e.x - i.x);
-  if (!i.bk || !i.salvo) i.salvo = { sum: 0, raw: 0, left: CAR_BOLTS, e: null }; // a shot's bolts share one damage number
-  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * (1 + st.focus * n) / CAR_BOLTS, salvo: i.salvo });
+  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * (1 + st.focus * n) / CAR_BOLTS, icp: i });
 }
 function stepCarBolts(t, st, dt) {
   if (!t.carBolts || !t.carBolts.length) return;
@@ -180,23 +179,15 @@ function stepCarBolts(t, st, dt) {
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_BOLT_HIT;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
-      const hp0 = e.hp; damage(e, b.dmg, t, false, false, CAR_NO_NUM); onHit(e, t, st, b.dmg);
-      if (e.hp < hp0) { b.salvo.sum += hp0 - e.hp; b.salvo.raw += b.dmg; b.salvo.e = e; }
+      damage(e, b.dmg, t, false, false, { from: { x: b.icp.x, y: b.icp.y } }); onHit(e, t, st, b.dmg); // its number flies AWAY from its interceptor, not the carrier (owner, 2026-10-16)
       if (!e.dead) applySlow(e, CAR_SLOW, CAR_SLOW_S, "car:" + t.id); // (doubled on fast, never the shielded - applySlow)
       b.left = 0; break;
     }
   }
-  for (const b of t.carBolts) if (b.left <= 0) carSalvoDone(b.salvo, t);
   t.carBolts = t.carBolts.filter(b => b.left > 0);
 }
-// ONE damage number a shot (owner, 2026-10-16: "for ATC, only show cumulative damage on the last shot"): each bolt's own number
-// is held (noNum, damage()), and the shot's total pops on the enemy its last landing bolt hit, once all CAR_BOLTS are spent -
-// greyed by how much armor took off the whole shot, as a single hit's is
-const CAR_NO_NUM = { noNum: true };
-function carSalvoDone(s, t) {
-  if (!s || --s.left > 0 || !s.e || s.sum <= 0) return;
-  if (!(typeof farFx === "function" && farFx(s.e))) dmgTick(s.e, s.sum, s.raw, "white", t, s.raw > s.sum ? 1 - s.sum / s.raw : 0, 0);
-}
+// a NUMBER A BOLT again (owner, 2026-10-16: "ATC damage, go back to number per pellet, however position of emission should be away
+// from interceptor, not tower"; a shot's total on its last bolt for an hour)
 const CAR_HOP = 30; /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
 function carHop(i, t, st) { // (i: where the last target was - the interceptor itself circles CAR_ORBIT out)
   let best = null, bd = CAR_HOP * CAR_HOP;

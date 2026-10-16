@@ -39,7 +39,7 @@ const CHANGELOG = [
     "Carrier: bolts are much shorter streaks.",
     "Sound: every sample is levelled to the same loudness.",
     "Gravity: the aura has its own sound as it opens, apart from the nova's.",
-    "Carrier: one damage number a shot - the total of its 5 bolts.",
+    "Carrier: a damage number for every bolt, flying away from its interceptor.",
     "Gravity: black holes drift toward nearby ones and merge into one bigger hole - mass, life, size and radiation added together.",
     "Gravity: a nova that catches nothing still leaves a full-size black hole (was half).",
     "Gravity: aims a little ahead of its target, where it will be when the nova collapses.",
