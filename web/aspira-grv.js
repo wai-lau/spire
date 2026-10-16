@@ -97,11 +97,11 @@ function stepGrv(t, dt) {
 // BLACK HOLES PULL AND MERGE (owner, 2026-10-16: "black holes should have a slow acceleration towards other nearby ones / when they
 // overlap enough, merge them into a bigger one with higher radiation (calculate bh size as the additive component of currently
 // linearly reducing parts)"): any two open spheres (any GRV's) within GRV_PULL_K x their summed auras accelerate toward each
-// other, the lighter faster; once their centres are within GRV_MERGE_K of the summed auras the bigger takes the other in - every
+// other, the lighter faster; once their black centres touch (grvCoreR) the bigger takes the other in - every
 // part that ADDS: mass, its cap, its linear loss a second (so it still dies when its parts would have, together), the nova damage
 // behind it, and the aura's AREA (radius = root of the summed squares). Its mass - its radiation, strip and slow - can pass
 // GRV_MASS_MAX: the cap is the parts' summed
-const GRV_PULL_A = 45, GRV_PULL_V = 110, GRV_PULL_K = 1.6, GRV_MERGE_K = 0.45, GRV_MERGE_S = 0.35; // u/s2; u/s at most; reach; overlap; s to ease out
+const GRV_PULL_A = 45, GRV_PULL_V = 110, GRV_PULL_K = 1.6, GRV_MERGE_S = 0.35; // u/s2; u/s at most; reach; s to ease out
 let grvAll = [];
 function grvPull(t, st, dt) {
   grvAll = [];
@@ -112,7 +112,8 @@ function grvPull(t, st, dt) {
       if (b === a || b.merged) continue;
       const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6, reach = a.ar + b.ar;
       if (d > reach * GRV_PULL_K) continue;
-      if (d < reach * GRV_MERGE_K) { grvMerge(a.ar >= b.ar ? a : b, a.ar >= b.ar ? b : a); if (a.merged) break; continue; }
+      /* merged once their black CENTRES touch (owner, 2026-10-16: "require black hole spheres to actually touch before merging"; was 0.45 x the summed auras) */
+      if (d <= grvCoreR(a.ar) + grvCoreR(b.ar)) { grvMerge(a.ar >= b.ar ? a : b, a.ar >= b.ar ? b : a); if (a.merged) break; continue; }
       const f = GRV_PULL_A * dt * 2 * b.mass / Math.max(1e-6, a.mass + b.mass);
       a.vx = (a.vx || 0) + dx / d * f; a.vy = (a.vy || 0) + dy / d * f;
     }
@@ -288,9 +289,10 @@ function drawSphere(sp, st) {
 // grows and shrinks with it). ABOVE the damage numbers (owner, 2026-10-15): in 2D the board draws them first; in 3D the pop-up
 // pass calls drawGrvCores after them, `at` placing each at its spot like a number
 const GRV_CORE_PX = 11.7, GRV_CORE_A = 34; // a base aura (68u) keeps its 13u centre; x2 the aura 19u (linear: 24), x4 26u (linear: 46)
+const grvCoreR = ar => GRV_CORE_PX * Math.log(1 + ar / GRV_CORE_A); // the black centre's radius for an aura's
 function drawGrvCore(sp, st) {
   if (sp.age < GRV_NOVA_END) return; // (the nova first - the centre appears once it is gone)
-  const r = GRV_CORE_PX * Math.log(1 + grvAuraNow(sp, st) / GRV_CORE_A); // LOGARITHMIC in its aura (owner, 2026-10-16: "make the center sphere of a bh increase logarithmically visually instead of linearly"; was 0.16 x the aura + 2 root mass); shrinks with its mass, to nothing
+  const r = grvCoreR(grvAuraNow(sp, st)); // LOGARITHMIC in its aura (owner, 2026-10-16: "make the center sphere of a bh increase logarithmically visually instead of linearly"; was 0.16 x the aura + 2 root mass); shrinks with its mass, to nothing
   if (r < 0.3) return;
   ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.strokeStyle = COL.yellow; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.fill(); ctx.stroke();

@@ -17,7 +17,7 @@ const CHANGELOG = [
     "Carrier: range 260 -> 130, movement 200 -> 240; interceptors chase up to 960 away.",
     "Carrier: interceptors x1.75 faster, launched 0.15s apart (was 0.2s), reloading twice as fast.",
     "Gravity: x0.81 damage.",
-    "Gravity: black holes drift together and merge into one bigger hole - mass, size and radiation added.",
+    "Gravity: black holes drift together and merge into one bigger hole once their centres touch - mass, size and radiation added.",
     "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates; at most 3x the base aura.",
     "Gravity: a nova that catches nothing still leaves a full-size hole; novas aim a little ahead of their target.",
   ], u: [
@@ -31,7 +31,7 @@ const CHANGELOG = [
     "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",
     "All towers: the six tower colours sit evenly round the colour wheel, as the eye sees it - Arc a touch yellower, Acid greener, Freeze tealer, Carrier deeper blue, Gravity more purple, Sol coral-pink.",
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
-    "Lanes: a lit lane fades out gradually as it reaches the core, glow and line alike.",
+    "Lanes: a lit lane's glow fades out gradually as it reaches the core; the line itself runs on in.",
     "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
     "Top players: a version column - the game version each score was played on; Carrier teams can post again; JUU and SMD 6 lives less (the Lovers once paid their lives twice).",
     "Perf: late in the game the upcoming-wave list rebuilds about 9x faster, damage numbers no longer each make a new text image as they shrink, the 3D star field draws twice as fast, Gravity's pellets and Carrier's bolts find targets faster, and enemies in formation move more cheaply.",
