@@ -142,8 +142,8 @@ function fxGlBeam(f, a) {
     const len = Math.hypot(x2 - x1, y2 - y1) || 1, px = -(y2 - y1) / len, py = (x2 - x1) / len;
     for (let i = 0; i < f.beams; i++) { const o = (i - (f.beams - 1) / 2) * 2 * TWIN_GAP; segs.push([x1 + px * o, y1 + py * o]); }
   } else segs.push([x1, y1]);
-  const cut = segs.map(([sx, sy]) => trimToTowers(sx, sy, x2, y2)).filter(Boolean); // (nothing of it inside a tower)
-  const line = (w, css, al) => { for (const [sx, sy, ex, ey] of cut) fxGlPush(sx, sy, ex, ey, w / 2, 0, css, al, css, 0); };
+  const cut = []; for (const sg of segs) { const c = trimToTowers(sg[0], sg[1], x2, y2); if (c) cut.push(c); } // (nothing of it inside a tower)
+  const line = (w, css, al) => { for (let i = 0; i < cut.length; i++) { const c = cut[i]; fxGlPush(c[0], c[1], c[2], c[3], w / 2, 0, css, al, css, 0); } };
   const core = (f.soft ? BEAM_MIN + (beamWidth(f.d || 0) - BEAM_MIN) * ARC_W_CORR : beamWidth(f.d || 0)) * (f.thin || 1), col = COL[f.color];
   if (f.m && !lowQ) {
     if (f.slim) for (let i = 4; i >= 1; i--) line(core * SOL_BEAM_W * (1 + i * 0.25), col, Math.min(1, a * SOL_GLOW_A * BEAM_BRIGHT));
@@ -164,13 +164,14 @@ function fxGlCone(f, a) {
 // hexagon rather than the middle"): a beam end inside a tower's hexagon (its footprint, CELL_S x TOWER_K, a vertex up) moves out to
 // where the beam crosses the edge; a beam wholly inside one is not drawn. World units; null: nothing left
 const HEX_IN = Math.cos(Math.PI / 6); // the apothem's share of the radius
+const HEX_NY = Math.sqrt(3) / 2; /* the hexagon's three side normals (0, 60, 120 deg): inside = under the apothem along all three */
 function inTowerHex(x, y) {
-  const R = CELL_S * TOWER_K;
+  const R = CELL_S * TOWER_K, A = R * HEX_IN;
   for (const t of G.towers) {
-    const c = CELLS[t.cell], tx = t.x ?? c.x, ty = t.y ?? c.y, dx = x - tx, dy = y - ty, d = Math.hypot(dx, dy);
-    if (d >= R) continue;
-    const ph = Math.atan2(dy, dx), dl = ph - Math.round(ph / (Math.PI / 3)) * (Math.PI / 3); // off the nearest side's normal (0, 60, 120..)
-    if (d * Math.cos(dl) < R * HEX_IN) return true;
+    const c = CELLS[t.cell], dx = x - (t.x ?? c.x), dy = y - (t.y ?? c.y);
+    if (dx >= A || dx <= -A) continue;
+    const u = HEX_NY * dy;
+    if (0.5 * dx + u < A && 0.5 * dx + u > -A && -0.5 * dx + u < A && -0.5 * dx + u > -A) return true;
   }
   return false;
 }
