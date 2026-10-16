@@ -100,7 +100,7 @@ function stepIcp(i, t, st, dt) {
     if (!i.orb && d > carR(i) * 1.3) return; // still on its way
     if (!i.orb) { i.orb = true; if (st.ram > 0) { damage(e, st.ram, t); onHit(e, t, st, st.ram); } } // onto the circle - the STRAFING PASS
     i.cd -= dt;
-    while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / (st.rate * CAR_BOLTS); carBolt(i, e, t, st); if (++i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; } } // the stream: a shot's bolts spread over its interval
+    while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / (st.rate * CAR_BOLTS); if (!i.bk) sfx("carshot"); carBolt(i, e, t, st); if (++i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; } } // the stream: a shot's bolts spread over its interval
     if (i.ammo <= 0) {
       if (st.autopilot) { carBurst(i, t, st); i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; } // rebuilt at home
       carHome(i, t, st);

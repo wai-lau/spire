@@ -29,6 +29,7 @@ const CHANGELOG = [
     "Carrier: brighter cobalt blue.",
     "Carrier: interceptors steer smoothly round the core and other towers.",
     "Carrier: each interceptor's circle wobbles +-20%, so a wing's loops spread out.",
+    "Carrier: interceptors make a sound as they fire.",
     "Carrier's tagline: \"Carrier has arrived.\"",
   ] },
   { v: "4.5", day: "Oct 15", u: [
