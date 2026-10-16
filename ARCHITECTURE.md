@@ -412,8 +412,8 @@ spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**
 | # | Step | Rule |
 |---|---|---|
 | 1 | charges | this hit sets off any charge on `e` (ARC Capacitance) |
-| 2 | **shield** | takes the whole hit, pops `st.shieldPop` charges (a quiet hit bounces off); nothing else applies |
-| 3 | bleed crit | inert |
+| 2 | **shield** | unless the hit ignores shields (`st.ignoreShield`), the shield takes the whole hit and pops `st.shieldPop` charges (a quiet hit bounces off); nothing else applies |
+| 3 | bleed crit | wired (a non-SOL tower may crit a bleeding enemy for x `BLEED_CRIT_MUL`), but `SOL_BREACH_CRIT` is 0 at every tier, so nothing bleeds crit-ably and the step is inert |
 | 4 | marks | damage-taken x `shredMul` |
 | 5 | **Brittle** | x while slowed |
 | 6 | **armor** | minus `trunc(armor - frost)`, never below 10% of the hit; **negative armor adds**; EVERY hit, quiet ones too; a boss's armor floors at minus its wave's reference |
@@ -428,7 +428,7 @@ spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**
 | full stop | only Temporal Drive; shields block all slows; Strength shrugs all of them |
 | armor loss | permanent, may go negative |
 | quiet hits | ticks, pools, splash: no flash; pool hits past `POOL_LOD` show one summed number an enemy |
-| numbers | crits marigold; sized by the hit before armor, greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from the tower (`DMG_FLY`) |
+| numbers | crits marigold; sized by the hit before armor, greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or an ATC bolt's interceptor); a GRV number flies INTO its hole (`grvFloat`) (`DMG_FLY`) |
 
 ## 7. Interface
 
