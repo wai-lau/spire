@@ -15,7 +15,7 @@ const CHANGELOG = [
     "Carrier: interceptors x1.75 faster, launched 0.11s apart (was 0.2s).",
     "Carrier: x1.33 damage, split into 5 bolts a shot.",
     "Carrier: interceptors reload twice as fast.",
-    "Carrier: moves again (130 - between Sol and Arc).",
+    "Carrier: moves again (240).",
     "Acid: x1.14 damage.",
     "Freeze: x1.08 damage.",
   ], ne: [
@@ -25,7 +25,7 @@ const CHANGELOG = [
     "Carrier: no longer moves (its interceptors do the travelling).",
     "Carrier: fires at half the rate - an interceptor circles its target at least once; x0.9 damage.",
     "Carrier: interceptors launch 0.15s apart (was 0.11s).",
-    "Carrier: range 460 -> 240; interceptors chase up to 960 from it.",
+    "Carrier: range 460 -> 130; interceptors chase up to 960 from it.",
   ], u: [
     "Carrier: interceptors x3 bigger.",
     "Gravity is dark purple, Sol bright pink - easier to tell apart.",
@@ -45,6 +45,8 @@ const CHANGELOG = [
     "Gravity: aims a little ahead of its target, where it will be when the nova collapses.",
     "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates (same pellets in total, sooner).",
     "Gravity: the black centre grows logarithmically with the hole, not in step with it.",
+    "Gravity: a black hole radiates at its old rate, faster while it evaporates fast; its size is capped at 3x the base aura.",
+    "Upgrade-ready chevrons and their flashing hex keep the tower's colour during a boss wave.",
     "Cards: two rows (or two columns on a tall screen) where they fit, not one long row.",
     "Gravity and Carrier cards: paler text, as easy to read as the others.",
     "Carrier: interceptors half the size, growing with Armament to full size at VI.",

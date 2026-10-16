@@ -355,7 +355,7 @@ function usePower(code) {
 // its slide tiers have room - about a third of the phone at base, all of it by tier V (and further at the capstone, VI). MOVE_BASE x the tier's slide
 // (SKILL_MOVE), up to SLIDE_MAX. (Was the old spoke's travel x MOVE_SPAN 3.375: ARC 434, FRZ 519, ACD 869 - most of the
 // phone before a tier, so the slide tiers bought nothing - and SLIDE_MAX 2 voided every tier past x2; SOL halved to 74 that day)
-const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74, grv: 200, car: 130 /* between SOL and ARC (owner, 2026-10-16: "give carrier some movement range actually, less than ARC, more than SOL, update range to match"); was 0 */ }, SLIDE_MAX = 3;
+const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74, grv: 200, car: 240 /* swapped with its range (owner, 2026-10-16: "Swap carrier mvmt range and range") */ /* 130: between SOL and ARC (owner, 2026-10-16: "give carrier some movement range actually, less than ARC, more than SOL, update range to match"); was 0 */ }, SLIDE_MAX = 3;
 const MOVE_EDGE = 12; // world units kept clear of the screen's edge
 const leashR = t => MOVE_BASE[t.kind] * Math.min(towerStats(t, true).slide, SLIDE_MAX);
 const slideSpan = t => Math.round(leashR(t)); // the card's Leash row
@@ -428,8 +428,10 @@ function drawUpPlus() { // over the towers (render, aspira-draw.js), so a tower 
   const now = performance.now() / 1000;
   for (const t of G.towers) {
     if (!upReady(t)) continue;
-    const c = CELLS[t.cell];
-    ctx.globalAlpha = 0.25 + 0.75 * upPulse(now); upArrow(c.x, c.y, UP_PLUS_PX, COL[TOWERS[t.kind].color]);
+    const c = CELLS[t.cell], col = COL[TOWERS[t.kind].color];
+    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = 0.2 + 0.7 * upPulse(now); // the hex FLASHES with the chevron, in more outlines the higher the tower (moved here from drawLeash, which turns over with the boss sky)
+    for (let i = 0; i < upRings(t); i++) { towerHex(c, TOWER_K * (1 + UP_RING_K * i)); ctx.stroke(); }
+    ctx.globalAlpha = 0.25 + 0.75 * upPulse(now); upArrow(c.x, c.y, UP_PLUS_PX, col);
   }
   ctx.globalAlpha = 1;
 }
@@ -441,9 +443,7 @@ function drawLeash() {
   for (const t of G.towers) {
     const c = CELLS[t.cell], col = COL[TOWERS[t.kind].color], held = towerHeld(t);
     ctx.strokeStyle = col;
-    const up = upReady(t), pulse = up ? upPulse(now) : 0;
-    if (Math.hypot(t.x - c.x, t.y - c.y) > 1 || up) { ctx.globalAlpha = up ? 0.2 + 0.7 * pulse : 0.35; towerHex(c, TOWER_K); ctx.stroke(); } // an upgrade ready: the hex FLASHES with the plus (drawUpPlus)
-    if (up) for (let i = 1; i < upRings(t); i++) { towerHex(c, TOWER_K * (1 + UP_RING_K * i)); ctx.stroke(); } // ...in more outlines the higher the tower
+    if (Math.hypot(t.x - c.x, t.y - c.y) > 1 && !upReady(t)) { ctx.globalAlpha = 0.35; towerHex(c, TOWER_K); ctx.stroke(); } // its origin hex (an upgrade ready: drawUpPlus flashes it, in the tower's own colour)
     // a TETHER from the hex it was built on to the tower while it is dragged (owner, 2026-10-12)
     if (held && Math.hypot(t.x - c.x, t.y - c.y) > 1) { ctx.globalAlpha = 0.6; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(t.x, t.y); ctx.stroke(); ctx.setLineDash([]); } // dashed like the leash ring
     const hint = t.leashHint > now ? Math.min(1, (t.leashHint - now) / LEASH_HINT_FADE_S) : 0;

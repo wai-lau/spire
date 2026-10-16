@@ -20,7 +20,8 @@ const GRV_LIFE = 5; // s: an unfed BASE sphere's life (one bare hit's aura, star
 // set as its aura opens), and it loses mass at GRV_EVAP x its radius in base auras a second - so it SHRINKS all its life, and a big
 // one (a fat nova, a merge) burns out faster. dm/dt = -E root(m) gives the base sphere 2 / E s: GRV_LIFE (was: a linear 1 / GRV_LIFE
 // of the starting mass a second, whatever its size, and a shrink only in its last 0.8 s)
-const GRV_EVAP = 2 / GRV_LIFE;
+const GRV_R_MAX = 3; // a hole's radius at most, in base auras (its MASS may go on: radiation, strip and slow scale by it)
+const GRV_EVAP = 2 / GRV_LIFE, GRV_RAD_LIFE = 1.6; /* x0.32 of the linear sphere's pace (countermx 61-69 spread: 5 0/0/0/0, 2 1/10/7/2, 1.25 2/19/8/20; 4.6.15 was 2/27/13/7) */ // RAD_LIFE: the pellets a unit of mass gives off stay the linear 5 s sphere's (radiation is not the life)
 const GRV_MASS_MAX = 3, GRV_GAIN = 0.12; // mass gained per one tower-hit of damage dealt (nova, aura, pellets)
 const GRV_STRIP = 1.5; // (x3, 2026-10-15: GRV leaked 16% of armor, its own type) armor stripped, x the aura's damage dealt - POSITIVE armor only (it stops at zero)
 // the slow in TWO RINGS (owner, 2026-10-15: "two tiers, much bigger slow close to the center"): the CORE (inner GRV_CORE_FRAC of
@@ -59,7 +60,7 @@ const grvMassK = sp => Math.max(0, Math.min(sp.cap || GRV_MASS_MAX, sp.mass));
 const grvAuraBase = (sp, st) => st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW_MIN, Math.sqrt((sp.novaDealt || 0) / Math.max(1e-6, st.dmg))));
 function grvAuraR(sp, st) {
   if (!sp.apm) return grvAuraBase(sp, st); // (the nova still sweeping: its size is still being decided)
-  const r = Math.sqrt(sp.apm * Math.max(0, sp.mass));
+  const r = Math.min(st.auraR * GRV_R_MAX, Math.sqrt(sp.apm * Math.max(0, sp.mass))); // capped (owner, 2026-10-16: "Perf issues as inversion circle gets very large / Limit size?" - merged areas added without end)
   return sp.mergeAt != null && sp.age - sp.mergeAt < GRV_MERGE_S ? sp.mergeFrom + (r - sp.mergeFrom) * (sp.age - sp.mergeAt) / GRV_MERGE_S : r; // a MERGE eases out to its summed area
 }
 // the aura's reach right now: nothing until the nova has FULLY exploded (owner, 2026-10-15: "make the nova fully explode before
@@ -166,12 +167,13 @@ function stepSphere(sp, t, st, dt) {
       applySlow(e, e.type === "fast" ? slow / FAST_SLOW_MUL : slow, GRV_TICK * 1.5, "grv:" + t.id);
     }
   }
-  // EVAPORATION, by its circumference - and RADIATION is the mass it gives off (owner, 2026-10-16: "make sure the pellet output is
-  // the same, just faster"): GRV_LIFE / 2 x the pellet rate a unit of mass lost, the total the linear-life sphere (rate x mass)
-  // radiated - a big one radiates it FASTER, burning out sooner (at mass 1 the old rate exactly)
+  // EVAPORATION, by its circumference - and RADIATION paced by it (owner, 2026-10-16: "make sure the pellet output is the same, just
+  // faster"): the old pellet rate x mass, x how much faster than the old linear life (1 / GRV_RAD_LIFE a second) it loses mass - a
+  // sphere gives off what the linear one did over its life, a big one sooner (radiating only what it lost - pellets x 2.5 a unit
+  // of mass - starved a FED sphere, which the old one kept near its cap: countermx 61-69 2/27/13/7 -> 48/89/87/76)
   const lost = Math.min(sp.mass, GRV_EVAP * grvAuraR(sp, st) / st.auraR * dt);
   sp.mass -= lost;
-  sp.pel += st.pellets * GRV_LIFE / 2 * lost;
+  sp.pel += st.pellets * k * GRV_RAD_LIFE * lost; // the OLD rate (x mass) sped up by how much faster than the old linear 1 / 5 s it loses mass
   while (sp.pel >= 1) { sp.pel -= 1; grvPellet(sp, t, st, grvAuraR(sp, st) * GRV_PELLET_REACH); }
   // Hawking: a last burst as it goes
   if (sp.mass <= 0 && st.hawking) for (let i = 0; i < GRV_HAWKING_N; i++) grvPellet(sp, t, st, st.auraR * GRV_PELLET_REACH * 1.5);
