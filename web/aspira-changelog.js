@@ -33,7 +33,7 @@ const CHANGELOG = [
     "Lanes: a lit lane's glow fades out under the core instead of ending square.",
     "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
     "Top players: a version column - the game version each score was played on; Carrier teams can post again; JUU and SMD 6 lives less (the Lovers once paid their lives twice).",
-    "Perf: late in the game the upcoming-wave list rebuilds about 9x faster, damage numbers no longer each make a new text image as they shrink, and the 3D star field draws twice as fast.",
+    "Perf: late in the game the upcoming-wave list rebuilds about 9x faster, damage numbers no longer each make a new text image as they shrink, the 3D star field draws twice as fast, Gravity's pellets and Carrier's bolts find targets faster, and enemies in formation move more cheaply.",
     "Sound: every sample levelled to the same loudness.",
     "Changelog: grouped by tower, enemy type, bosses and core.",
   ] },
