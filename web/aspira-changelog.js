@@ -27,6 +27,9 @@ const CHANGELOG = [
     "Carrier: interceptors fly smooth loops, circling their target about 100 away.",
     "Carrier: each shot is a stream of 4 homing bolts from under the interceptor, short at first and stretching as they fly; a bolt whose target dies flies on.",
     "Carrier: brighter cobalt blue.",
+    "Carrier: interceptors steer smoothly round the core and other towers.",
+    "Carrier: each interceptor's circle wobbles +-20%, so a wing's loops spread out.",
+    "Carrier's tagline: \"Carrier has arrived.\"",
   ] },
   { v: "4.5", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",

@@ -34,6 +34,10 @@ const CAR_RAM = [0, 2, 2, 4, 4, 7], CAR_WARP_V = 2800; /* x1.75 with the speeds 
 // target - out at its Launch speed, easing to CAR_ORBIT_V on the circle, a wide turn out of it and home (was a 30u loop at 5 rad/s
 // with straight legs and corners)
 const CAR_ORBIT = 100, CAR_ORBIT_V = 400; // a loop is 2 pi 100 / 400 = 1.57 s
+// ORBIT JITTER (owner, 2026-10-16: "add orbit jitter to the interceptors, like 20%"): each interceptor's circle breathes +-20%
+// on a slow wave of its own (a random phase and pace a sortie), so a wing's loops never stack into one ring
+const CAR_ORBIT_JIT = 0.2, CAR_JIT_W = [1.2, 2.6]; // the radius's swing; its pace in rad/s, low .. high
+const carR = i => CAR_ORBIT * (1 + CAR_ORBIT_JIT * Math.sin(i.jp || 0));
 const CAR_TURN_R = 50; // the tightest turn, in u: turn rate = speed / this (twice the circle's, so the circle can be held)
 const CAR_LEASH = 1.7; /* 3 at range 260: the same 780 chase now the range is 460 (2026-10-16) */ // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
 // enemies left reach mid-sortie and ATC, built against fast, leaked them worst - counter matrix 2026-10-15)
@@ -70,7 +74,7 @@ function carTarget(t, st) {
 function stepCar(t, dt) {
   const st = towerStats(t);
   carWing(t, st);
-  stepCarPellets(t, dt); stepCarBolts(t, st, dt);
+  stepCarPellets(t, dt); stepCarBolts(t, st, dt); carObstacles(t);
   t.launchCd = Math.max(0, (t.launchCd || 0) - dt);
   for (const i of t.icp) stepIcp(i, t, st, dt);
 }
@@ -81,8 +85,9 @@ function stepIcp(i, t, st, dt) {
     const e = carTarget(t, st);
     if (!e) return;
     i.e = e; i.ammo = st.ammo; i.bk = 0; i.state = "out"; i.cd = 0; i.orb = false; t.launchCd = CAR_GAP; sfx("car");
-    i.v = st.speed; i.ang = Math.atan2(e.y - t.y, e.x - t.x);
-    if (st.warp) { const a = Math.random() * 6.283; i.x = e.x + Math.cos(a) * CAR_ORBIT; i.y = e.y + Math.sin(a) * CAR_ORBIT; i.ang = a + Math.PI / 2; } // WARP: on the circle at once
+    i.v = st.speed; i.ang = Math.atan2(e.y - t.y, e.x - t.x); i.jp = Math.random() * 6.283; i.jw = CAR_JIT_W[0] + Math.random() * (CAR_JIT_W[1] - CAR_JIT_W[0]);
+    for (let k = 0; k < 4; k++) { const [ax, ay] = carAvoid(i, e.x - t.x, e.y - t.y, 1); i.ang = Math.atan2(ay, ax); } // leaves already bent round the core (a carrier by it has no room to turn)
+    if (st.warp) { const a = Math.random() * 6.283; i.x = e.x + Math.cos(a) * carR(i); i.y = e.y + Math.sin(a) * carR(i); i.ang = a + Math.PI / 2; } // WARP: on the circle at once
     return;
   }
   if (i.state === "out") {
@@ -92,7 +97,7 @@ function stepIcp(i, t, st, dt) {
     if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
-    if (!i.orb && d > CAR_ORBIT * 1.3) return; // still on its way
+    if (!i.orb && d > carR(i) * 1.3) return; // still on its way
     if (!i.orb) { i.orb = true; if (st.ram > 0) { damage(e, st.ram, t); onHit(e, t, st, st.ram); } } // onto the circle - the STRAFING PASS
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / (st.rate * CAR_BOLTS); carBolt(i, e, t, st); if (++i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; } } // the stream: a shot's bolts spread over its interval
@@ -105,23 +110,49 @@ function stepIcp(i, t, st, dt) {
   // back home
   const d = Math.sqrt(carDist2(i, t));
   if (st.warp || d <= Math.max(i.v, 1) * dt * 1.5) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; }
-  carSteer(i, t.x - i.x, t.y - i.y, st.speed, dt);
+  carSteer(i, t.x - i.x, t.y - i.y, st.speed, dt, Math.max(0, Math.min(1, (d - SLOT_R * 0.5) / SLOT_R))); // the avoidance lets go on the last approach home
 }
 // steer: speed eases toward v, the heading turns toward (dx, dy) at most speed / CAR_TURN_R a second, then a step along it
-function carSteer(i, dx, dy, v, dt) {
+function carSteer(i, dx, dy, v, dt, fade = 1) {
   i.v = (i.v || v) + (v - (i.v || v)) * Math.min(1, dt * 4);
+  [dx, dy] = carAvoid(i, dx, dy, fade);
   let da = Math.atan2(dy, dx) - i.ang;
   da = Math.atan2(Math.sin(da), Math.cos(da));
   const w = i.v / CAR_TURN_R * dt;
   i.ang += Math.max(-w, Math.min(w, da));
   i.x += Math.cos(i.ang) * i.v * dt; i.y += Math.sin(i.ang) * i.v * dt;
 }
+// AVOIDANCE (owner, 2026-10-16: "make it so that interceptors avoid hitting the core and other towers (smooth path)"): every
+// obstacle within CAR_AVOID_LOOK ahead bends the wanted heading round its near side (the heading's part across it), harder the
+// closer, and one it is already inside pushes it out - the capped turn rate keeps the bend a smooth arc. Its own carrier is not
+// one (it launches and lands there)
+const CAR_AVOID_PAD = 14, CAR_AVOID_LOOK = 110; // u kept clear of a hex; u ahead it starts to bend
+let carObs = [];
+function carObstacles(t) {
+  carObs = [{ core: true, x: CX, y: CY, r: (typeof coreOuterR === "function" ? coreOuterR() : CORE_R) + CAR_AVOID_PAD }];
+  for (const o of G.towers) if (o !== t) carObs.push({ x: o.x, y: o.y, r: CELL_S * TOWER_K + CAR_AVOID_PAD });
+}
+function carAvoid(i, dx, dy, fade) {
+  const g = Math.hypot(dx, dy) || 1, hx = Math.cos(i.ang), hy = Math.sin(i.ang);
+  let ux = dx / g, uy = dy / g;
+  for (const o of carObs) {
+    const ox = o.x - i.x, oy = o.y - i.y, d = Math.hypot(ox, oy) || 1, rx = ox / d, ry = oy / d, along = hx * rx + hy * ry;
+    const lat = Math.abs(hx * oy - hy * ox), inside = d < o.r, f = o.core ? 1 : fade; // the core is never let go
+    if (!inside && (d > o.r + CAR_AVOID_LOOK || along < 0 || lat > o.r * 1.6)) continue; // clear of it, behind it, or passing wide
+    let tx = hx - along * rx, ty = hy - along * ry, tl = Math.hypot(tx, ty);
+    if (tl < 1e-3) { tx = ry; ty = -rx; tl = 1; } // dead ahead: round it clockwise
+    const near = Math.min(1, (o.r + CAR_AVOID_LOOK - d) / CAR_AVOID_LOOK) ** 2, wide = inside ? 1 : Math.min(1, (o.r * 1.6 - lat) / (o.r * 0.6));
+    const w = f * 3 * near * wide, push = inside ? f * 2 * (o.r - d) / o.r : 0;
+    ux += w * tx / tl - (w * 0.5 + push) * rx; uy += w * ty / tl - (w * 0.5 + push) * ry;
+  }
+  return [ux, uy];
+}
 // the GUIDANCE FIELD round e (a Lyapunov vector field): far out it points nearly straight in, near the circle it turns
 // tangent, inside it pushes out - every path spirals smoothly onto the CAR_ORBIT circle, counter-clockwise
 function carOrbit(i, e, st, d, dt) {
   if (i.te === e) { i.x += e.x - i.tx; i.y += e.y - i.ty; } // the circle RIDES with its target (a fast enemy dragged a world-frame circle off it: 13% of fast leaked)
-  i.te = e; i.tx = e.x; i.ty = e.y;
-  const x = i.x - e.x, y = i.y - e.y, R = CAR_ORBIT, r = Math.max(d, 1), q = r * r - R * R, k = 2 * R * r;
+  i.te = e; i.tx = e.x; i.ty = e.y; i.jp = (i.jp || 0) + (i.jw || 0) * dt;
+  const x = i.x - e.x, y = i.y - e.y, R = carR(i), r = Math.max(d, 1), q = r * r - R * R, k = 2 * R * r;
   const f = Math.max(0, Math.min(1, (r - R * 1.2) / (R * 2))); // full Launch speed until 3 R out, easing to CAR_ORBIT_V by 1.2 R
   carSteer(i, -(x * q + y * k), -(y * q - x * k), CAR_ORBIT_V + (Math.max(st.speed, CAR_ORBIT_V) - CAR_ORBIT_V) * f, dt);
 }
