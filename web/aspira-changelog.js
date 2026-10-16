@@ -10,14 +10,19 @@ const CHANGELOG = [
     "Carrier: x1.39 damage.",
     "Freeze: x1.03 damage.",
     "Carrier: range 260 -> 460, making up for the movement it lost.",
+    "Carrier: interceptors x1.75 faster, launched 0.11s apart (was 0.2s).",
   ], ne: [
     "Gravity: x0.81 damage.",
     "Sol: x0.94 damage.",
     "Carrier: no longer moves (its interceptors do the travelling).",
+    "Carrier: fires at half the rate - an interceptor circles its target at least once; x0.9 damage.",
   ], u: [
     "Carrier: interceptors x3 bigger.",
     "Gravity is dark purple, Sol bright pink - easier to tell apart.",
     "Gravity: black holes shrink away to nothing instead of popping out.",
+    "Carrier: interceptors fly smooth loops, circling their target about 100 away.",
+    "Carrier: each shot is a stream of 4 homing bolts from under the interceptor, short at first and stretching as they fly; a bolt whose target dies flies on.",
+    "Carrier: brighter cobalt blue.",
   ] },
   { v: "4.5", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",

@@ -511,7 +511,7 @@
 /* GRV (2026-10-15; new /spire colours are allowed - owner): violet its aura and outline, yellow its nova */
 /* ...its look from a black-hole image (owner, 2026-10-15: "these colors (excl bg), in a similar ratio"): deep purple, plum, pink,
    coral, yellow, white-hot - the aura's bands; violet (its card and text) the plum, lifted to read on the board */
-#asp { --asp-blue-hsl: 225 95% 64%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 272 80% 46%; --asp-solar-hsl: 330 100% 76%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
+#asp { --asp-blue-hsl: 216 100% 58%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 272 80% 46%; --asp-solar-hsl: 330 100% 76%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
 .asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
 .asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
