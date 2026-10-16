@@ -243,10 +243,19 @@ function carNum(i, e, dealt, raw0, vx, vy) {
   if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgTick(e, sum, raw, "white", { x: e.x - vx, y: e.y - vy }, raw > sum ? 1 - sum / raw : 0, 0);
 }
 const CAR_HOP = 30; /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
+// the NEXT target after a kill: the nearest enemy within CAR_HOP that no other interceptor of this carrier is already on, else the
+// nearest at all (owner, 2026-10-16: "each interceptor should be able to target a different fast with their respective volley")
 function carHop(i, t, st) { // (i: where the last target was - the interceptor itself circles CAR_ORBIT out)
-  let best = null, bd = CAR_HOP * CAR_HOP;
-  for (const e of G.enemies) { if (e.dead) continue; const d = carDist2(e, i); if (d < bd) { bd = d; best = e; } }
-  return best;
+  const r2 = CAR_HOP * CAR_HOP;
+  let best = null, bd = r2, any = null, ad = r2;
+  for (const e of G.enemies) {
+    if (e.dead) continue;
+    const d = carDist2(e, i);
+    if (d >= r2) continue;
+    if (t.icp && t.icp.some(o => o !== i && o.e === e && o.state === "out")) { if (d < ad) { ad = d; any = e; } }
+    else if (d < bd) { bd = d; best = e; }
+  }
+  return best || any;
 }
 function carHome(i, t, st) { i.state = "back"; i.e = null; i.orb = false; i.v = Math.max(i.v || 0, CAR_ORBIT_V); if (st.warp) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; } }
 
