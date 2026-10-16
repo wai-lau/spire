@@ -92,12 +92,28 @@ function formSpawn(w, type) {
 // from stepEnemies: p (the lane at s) moved to this member's place in its formation - its offset from the CENTRE UNIT
 // (along the lane, and e.lat across it toward the lane's left) turned by the spin, the across part faded near the core.
 // s: where along the lane (the enemy itself by default; its tracer asks for points behind it - drawStarTrail)
+// pathAt (aspira-defs.js) WITHOUT a new object: the lane point written into `out` (perf, 2026-10-16: two fresh {x, y} - three with
+// a turned lane - an enemy a step were most of a late step's ~60-90 KB of garbage); the same arithmetic, so the same point
+function pathAtInto(pi, s, ang, out) {
+  const { pts, len } = PATHS[pi];
+  let x, y;
+  if (s <= 0) { x = pts[0].x; y = pts[0].y; } else if (s >= len) { x = pts[pts.length - 1].x; y = pts[pts.length - 1].y; } else {
+    let lo = 0, hi = pts.length - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (pts[m].s <= s) lo = m; else hi = m; }
+    const a = pts[lo], b = pts[hi], f = (s - a.s) / (b.s - a.s || 1);
+    x = a.x + (b.x - a.x) * f; y = a.y + (b.y - a.y) * f;
+  }
+  if (ang) { const c = Math.cos(ang), sn = Math.sin(ang), dx = x - CX, dy = y - CY; x = CX + dx * c - dy * sn; y = CY + dx * sn + dy * c; } // (rotAbout's)
+  out.x = x; out.y = y;
+  return out;
+}
+const FORM_B = { x: 0, y: 0 }, FORM_Q = { x: 0, y: 0 }, ENEMY_AT = { x: 0, y: 0 }; // scratch points - each read before the next call writes it
 function formOffset(e, p, s = e.s) {
   // (a boss's escorts never spin about it - bossKin)
   const spin = e.bossKin ? 0 : FORM_SPIN[e.type], c = s - (e.ahead || 0) + (e.aheadC || 0), phi = spin ? c / spin : 0; // c: the centre unit's place - one phase for all
   const a0 = (e.ahead || 0) - (e.aheadC || 0), cs = Math.cos(phi), sn = Math.sin(phi);
   const along = a0 * cs - e.lat * sn, across = a0 * sn + e.lat * cs;
-  const b = pathAt(e.pi, c + along, e.ang), q = pathAt(e.pi, c + along + 3, e.ang), tx = q.x - b.x, ty = q.y - b.y, L = Math.hypot(tx, ty) || 1;
+  const b = pathAtInto(e.pi, c + along, e.ang, FORM_B), q = pathAtInto(e.pi, c + along + 3, e.ang, FORM_Q), tx = q.x - b.x, ty = q.y - b.y, L = Math.hypot(tx, ty) || 1;
   const k = across * Math.min(1, Math.hypot(b.x - CX, b.y - CY) / FORM_FADE_R) / L;
   p.x = b.x - ty * k; p.y = b.y + tx * k;
 }

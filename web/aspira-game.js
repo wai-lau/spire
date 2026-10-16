@@ -397,12 +397,12 @@ function stepEnemies(dt) {
       if (e.dotT > 0) { e.dotT -= dt; damage(e, e.dotDps * dt, e.dotSrc, true); if (e.dead) continue; }
       e.s += effSpeed(e) * dt;
     }
-    const p = e.form ? { x: 0, y: 0 } : pathAt(e.pi, e.s, e.ang);
+    const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)
     if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js) - which sets p whole, so no pathAt first (perf)
     e.x = p.x; e.y = p.y;
     // no free spin: one corner points along the lane, nose first
     if (FACING) {
-      const ahead = pathAt(e.pi, e.s + 3, e.ang);
+      const ahead = pathAtInto(e.pi, e.s + 3, e.ang, FORM_Q); // (scratch: formOffset is done with it)
       if (ahead.x !== p.x || ahead.y !== p.y) e.rot = Math.atan2(ahead.y - p.y, ahead.x - p.x);
     }
     // wobble rate cut to 1/3 (owner) when the wander tripled, so it drifts, not buzzes
