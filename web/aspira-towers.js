@@ -197,7 +197,7 @@ function fireFrz(t, st) {
 let shattering = false;
 function shatterAt(e) {
   const { t, st } = e.shatter, r = st.shatter.r, d = st.dmg * st.shatter.mul;
-  ring(e.x, e.y, r, "cyan", 0.25, true); // gradient-filled (owner)
+  ring(e.x, e.y, r, "tfrz", 0.25, true); // gradient-filled (owner); FRZ's own hue
   shattering = true;
   for (const o of G.enemies) {
     if (o === e || o.dead || Math.hypot(o.x - e.x, o.y - e.y) > r) continue;

@@ -108,7 +108,7 @@ const belowFade = z => Math.max(1 - (WARP_FADE_BANDS - 0.5) / WARP_FADE_BANDS, M
 // everything of a die BELOW the floor in one go (warpBand clips it to z <= 0): each face at ONE fade, its clipped part's
 // mean depth's - the slices stepped a face 2-4 times; a face is small against WARP_FADE_Z, so it reads the same
 function warpSolidBelow(g) {
-  const col = g.col, frz = g.frz, bgR = rgbOf(COL.bg), colR = rgbOf(col), cyR = rgbOf(COL.cyan);
+  const col = g.col, frz = g.frz, bgR = rgbOf(COL.bg), colR = rgbOf(col), cyR = rgbOf(COL.tfrz);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineJoin = "round"; ctx.globalAlpha = 1;
   ctx.lineWidth = g.lw;
   for (const F of g.faces) {
@@ -153,7 +153,7 @@ function warpFlatDie(e) {
   const d = ENEMIES[e.type], n = d.sides, col = COL[d.color], fa = warpFade * Math.max(SOLID_FAR_MIN, Math.min(1, P.s / warp.p.z) ** 2);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath();
   for (let i = 0; i < n; i++) { const a = (e.rot || 0) + i * 6.283 / n; if (i) ctx.lineTo(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); else ctx.moveTo(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); }
-  ctx.closePath(); ctx.fillStyle = blendFill([[rgbOf(col), 0.35 * fa], [rgbOf(COL.cyan), 0.35 * fa * SOLID_FROZEN_A * frostK(e)]]); ctx.fill();
+  ctx.closePath(); ctx.fillStyle = blendFill([[rgbOf(col), 0.35 * fa], [rgbOf(COL.tfrz), 0.35 * fa * SOLID_FROZEN_A * frostK(e)]]); ctx.fill();
   ctx.strokeStyle = blendFill([[rgbOf(COL[ENEMIES[e.aug || e.type].color]), 0.9 * fa], [rgbOf(COL.white), 0.9 * fa * rimeK(e)]]); ctx.lineWidth = 1.2 * cam.k; ctx.stroke(); // (the augment's outline)
   return true;
 }
@@ -176,7 +176,7 @@ function warpSolidWhole(e) {
   if (band && band.hi === 0 && band.lo > -Infinity) { warpBand = { lo: -Infinity, hi: 0 }; try { warpSolidBelow(g); } finally { warpBand = band; } return; }
   const H = g.spike ? g.spike.b.z : g.size;
   if (band && (H < band.lo || -H > band.hi)) return; // nothing of it in this slice
-  const fa = warpFade * g.fa, col = g.col, frz = g.frz, bgR = rgbOf(COL.bg), colR = rgbOf(col), cyR = rgbOf(COL.cyan);
+  const fa = warpFade * g.fa, col = g.col, frz = g.frz, bgR = rgbOf(COL.bg), colR = rgbOf(col), cyR = rgbOf(COL.tfrz);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineJoin = "round";
   // the breach spike WHOLE, at full strength, in the pass above the floor: centred on the floor (owner, 2026-10-09: "SOL
   // breach effect should be centered on floor" - its lower half faded with the floor, so it read as rising from the die)

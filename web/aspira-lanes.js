@@ -15,7 +15,7 @@
 // fading to nothing just past the lanes' mouths
 // then ("lanes have sharp cutoff"): the fade reached nothing past the mouths, so a lane STARTED at 13% - now it is
 // nothing exactly AT the mouths (R0): full to LANE_FULL of the way, then a linear fade to none at R0
-const LANE_FADE_R = R0, LANE_FULL = 0.45, GLOW_FADE_R = 550, GLOW_END_IN = 0.5, GLOW_END_OUT = 2; // GLOW_END: its glow gone inside 0.5 core radii, whole from 2
+const LANE_FADE_R = R0, LANE_FULL = 0.45, GLOW_FADE_R = 550, LANE_END_IN = 0.5, LANE_END_OUT = 6; // LANE_END: a lit lane gone inside 0.5 core radii, whole from 6 (laneCoreFade)
 // the live lanes' GLOW, on its own layer so it can fade much faster outward:
 // its radial mask is applied GLOW_FALLOFF times (alpha ~ (1 - r/R)^n)
 const GLOW_FALLOFF = 5; // harder (owner; was 3)
@@ -47,11 +47,19 @@ function laneLayer(c, x, w, h) {
 // GLOW_FALLOFF times, turned the glow into a solid mass
 function laneMask(x, glow) {
   const g = x.createRadialGradient(CX, CY, 0, CX, CY, glow ? GLOW_FADE_R : LANE_FADE_R);
-  if (glow) { g.addColorStop(0, "transparent"); g.addColorStop(GLOW_END_IN * CORE_R / GLOW_FADE_R, "transparent"); g.addColorStop(GLOW_END_OUT * CORE_R / GLOW_FADE_R, COL.bg); } // the glow FADES OUT under the core (owner, 2026-10-16: "Fix the way that the lane ends (square cutoff on highlight)": its 32-wide butt end showed beside the core in 3D)
-  else g.addColorStop(0, COL.bg);
-  if (!glow) g.addColorStop(LANE_FULL, COL.bg); g.addColorStop(1, "transparent");
+  g.addColorStop(0, COL.bg); if (!glow) g.addColorStop(LANE_FULL, COL.bg); g.addColorStop(1, "transparent");
   x.globalCompositeOperation = "destination-in"; x.globalAlpha = 1; x.fillStyle = g;
   x.fillRect(CX - 4000, CY - 4000, 8000, 8000);
+}
+// the lit lanes FADE OUT toward the core (owner, 2026-10-16: "Fix the way that the lane ends (square cutoff on highlight)", then
+// "make the lane fade near the core more of a gradient, right now it is still very sharp"): one destination-out ramp on each mask,
+// ONCE (inside the glow's GLOW_FALLOFF passes it was raised to the 5th power - a 0.5 .. 2 core-radii ramp read as an edge) - gone
+// inside LANE_END_IN core radii, whole by LANE_END_OUT, straight in between; the glow and the lit line alike
+function laneCoreFade(x) {
+  const g = x.createRadialGradient(CX, CY, 0, CX, CY, LANE_END_OUT * CORE_R);
+  g.addColorStop(0, COL.bg); g.addColorStop(LANE_END_IN / LANE_END_OUT, COL.bg); g.addColorStop(1, "transparent");
+  x.globalCompositeOperation = "destination-out"; x.globalAlpha = 1; x.fillStyle = g;
+  x.fillRect(CX - LANE_END_OUT * CORE_R, CY - LANE_END_OUT * CORE_R, 2 * LANE_END_OUT * CORE_R, 2 * LANE_END_OUT * CORE_R);
 }
 // the masks are the SAME every frame for a given camera, so each is drawn once
 // into its own canvas (n passes for the glow) and applied with ONE drawImage -
@@ -71,6 +79,7 @@ function applyMask(x, n) {
     mx.setTransform(1, 0, 0, 1, 0, 0); mx.fillStyle = COL.bg; mx.fillRect(0, 0, m.width, m.height);
     mx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy);
     for (let i = 0; i < n; i++) laneMask(mx, n > 1);
+    laneCoreFade(mx);
     maskCvs[n] = m; // cached only once whole: a half-built mask erased or unmasked the lanes till the camera moved
   }
   x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = "destination-in"; x.globalAlpha = 1;

@@ -95,7 +95,7 @@ function drawEnemy(e, solid) {
   if (!solid) {
     ctx.strokeStyle = COL[ENEMIES[e.aug || e.type].color]; ctx.lineWidth = (e.armor ? 6.5 : 3) + (perma ? 3 : 0); ctx.stroke(); // an augmented enemy's outline in its augment's colour (owner, 2026-10-13)
     const k = frostK(e); // the FROST outline as strong as the slow (owner, 2026-10-11: "slow correlated to opacity of frost indicator")
-    if (k > 0) { const a = ctx.globalAlpha; ctx.strokeStyle = COL.cyan; ctx.globalAlpha = a * k; ctx.stroke(); ctx.globalAlpha = a; }
+    if (k > 0) { const a = ctx.globalAlpha; ctx.strokeStyle = COL.tfrz; ctx.globalAlpha = a * k; ctx.stroke(); ctx.globalAlpha = a; }
     const w = rimeK(e); // RIME whitens the outline: none at no rime, all white at full (owner, 2026-10-12)
     if (w > 0) { const a = ctx.globalAlpha; ctx.strokeStyle = COL.white; ctx.globalAlpha = a * w; ctx.stroke(); ctx.globalAlpha = a; }
     dieFacets(e, size);
@@ -151,7 +151,7 @@ function dieFacets(e, size) {
 function drawStatus(e, d, size, solid) {
   if (e.biteT > 0) {
     poly(e.x, e.y, size, d.sides, e.rot, d.pointy);
-    ctx.fillStyle = COL.cyan; ctx.globalAlpha = 0.45 * Math.min(1, e.biteT * 2); ctx.fill();
+    ctx.fillStyle = COL.tfrz; ctx.globalAlpha = 0.45 * Math.min(1, e.biteT * 2); ctx.fill();
   }
   if (e.brittle > 1 && e.slowT > 0) {
     const s = size * 0.7, c = Math.cos(e.rot), n = Math.sin(e.rot);
@@ -179,7 +179,7 @@ function drawStatus(e, d, size, solid) {
   }
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
-    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL.chatsubo; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
   }
   ctx.globalAlpha = 1;
 }

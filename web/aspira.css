@@ -290,10 +290,10 @@
 #asp .asp-spend button { width: 12ch; }
 
 /* the button wears the colour of the card it closes (owner) */
-.asp-spend[data-kind="arc"] { --green-hsl: var(--orange-hsl); }
-.asp-spend[data-kind="frz"] { --green-hsl: var(--cyan-hsl); }
+.asp-spend[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-spend[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
 .asp-spend[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
-.asp-spend[data-kind="acd"] { --green-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); }
+.asp-spend[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-spend[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
 .asp-spend[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
 .asp-spend[data-kind="core"] { --green-hsl: var(--white-hsl); }
@@ -403,10 +403,10 @@
 
 /* the card is coloured like the tower clicked (owner): every green inside it
    (tint, borders, labels, buttons) reads --green-hsl, so swap that one token */
-.asp-pop[data-kind="arc"] { --green-hsl: var(--orange-hsl); }
-.asp-pop[data-kind="frz"] { --green-hsl: var(--cyan-hsl); }
+.asp-pop[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-pop[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
 .asp-pop[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
-.asp-pop[data-kind="acd"] { --green-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); }
+.asp-pop[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-pop[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
 .asp-pop[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
 .asp-pop[data-kind="core"] { --green-hsl: var(--white-hsl); } /* the core's card is white, like the core */
@@ -508,10 +508,17 @@
 .asp-sw.glow { color: hsl(var(--orange-glow-hsl)); }
 .asp-sw.pink { color: hsl(var(--pink-hsl)); }
 .asp-sw.white { color: hsl(var(--white-hsl)); }
+/* THE SIX TOWER HUES, the same angle apart FOR THE EYE (owner, 2026-10-16: "adjust the hues so that they each sit at the same angle
+   (for humans) from each other"): OKLCH hues 73 / 133 / 193 / 253 / 313 / 13 (ARC ACD FRZ ATC GRV SOL, 60 apart - they were 69 146 214
+   259 300 350), each keeping its own OKLCH lightness and chroma (pulled in to stay in sRGB) - ARC / FRZ / ACD on tokens of their own
+   now, not the shared Marigold / Hack / Chatsubo */
+.asp-sw.tarc { color: hsl(var(--asp-arc-hsl)); }
+.asp-sw.tfrz { color: hsl(var(--asp-frz-hsl)); }
+.asp-sw.tacd { color: hsl(var(--asp-acd-hsl)); }
 /* GRV (2026-10-15; new /spire colours are allowed - owner): violet its aura and outline, yellow its nova */
 /* ...its look from a black-hole image (owner, 2026-10-15: "these colors (excl bg), in a similar ratio"): deep purple, plum, pink,
    coral, yellow, white-hot - the aura's bands; violet (its card and text) the plum, lifted to read on the board */
-#asp { --asp-blue-hsl: 216 100% 58%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 272 80% 46%; --asp-violet-ink-hsl: 272 80% 78%; --asp-blue-ink-hsl: 216 100% 74%; --asp-solar-hsl: 330 100% 76%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
+#asp { --asp-blue-hsl: 207 99% 48%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 285 99% 38%; --asp-violet-ink-hsl: 272 80% 78%; --asp-blue-ink-hsl: 216 100% 74%; --asp-solar-hsl: 353 100% 78%; --asp-arc-hsl: 35 96% 67%; --asp-frz-hsl: 179 98% 45%; --asp-acd-hsl: 94 55% 64%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
 .asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
 .asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
@@ -536,20 +543,20 @@
   color: hsl(var(--green-hsl));
   text-shadow: none;
 }
-.asp-chooser[data-kind="arc"] { --green-hsl: var(--orange-hsl); }
-.asp-chooser[data-kind="frz"] { --green-hsl: var(--cyan-hsl); }
+.asp-chooser[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-chooser[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
 .asp-chooser[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
-.asp-chooser[data-kind="acd"] { --green-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); }
+.asp-chooser[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-chooser[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
 .asp-chooser[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
 
 /* the BUILD cards each wear their own tower's colour (aspira-chooser.js) - GRV and ATC in a PALE ink of it (owner, 2026-10-16: "use a
    pale font if the card is dark", "maintain the same level of visibility"): lightness lifted to SOL's contrast on the dark card,
    9.4:1 (GRV 46% -> 78% was 2.9:1, ATC 58% -> 74% was 5.5:1; ARC/FRZ/ACD 12:1) */
-.asp-card[data-kind="arc"] { --green-hsl: var(--orange-hsl); }
-.asp-card[data-kind="frz"] { --green-hsl: var(--cyan-hsl); }
+.asp-card[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-card[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
 .asp-card[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
-.asp-card[data-kind="acd"] { --green-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); }
+.asp-card[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-card[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
 .asp-card[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
 

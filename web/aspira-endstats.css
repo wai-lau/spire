@@ -15,10 +15,10 @@
 
 .asp-end-towers td:first-child,
 .asp-end-towers th:first-child { text-align: left; }
-.asp-end-towers tr[data-kind="arc"] { color: hsl(var(--orange-hsl)); }
-.asp-end-towers tr[data-kind="frz"] { color: hsl(var(--cyan-hsl)); }
+.asp-end-towers tr[data-kind="arc"] { color: hsl(var(--asp-arc-hsl)); }
+.asp-end-towers tr[data-kind="frz"] { color: hsl(var(--asp-frz-hsl)); }
 .asp-end-towers tr[data-kind="sol"] { color: hsl(var(--asp-solar-hsl)); }
-.asp-end-towers tr[data-kind="acd"] { color: hsl(var(--cat-social-h) var(--cat-social-s) var(--cat-social-l)); }
+.asp-end-towers tr[data-kind="acd"] { color: hsl(var(--asp-acd-hsl)); }
 .asp-end-towers tr[data-kind="grv"] { color: hsl(var(--asp-violet-hsl)); }
 .asp-end-towers tr[data-kind="car"] { color: hsl(var(--asp-blue-hsl)); }
 

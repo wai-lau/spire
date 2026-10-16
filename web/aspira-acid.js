@@ -202,11 +202,11 @@ function stepDrips(dt) {
 const DRIP_DOT_R = 3.6, DRIP_HOLLOW = 0.35; // HOLLOW: the share drawn as a ring ("some hollow")
 function drawDrips() {
   if (!G.drips || !G.drips.length) return;
-  ctx.fillStyle = COL.chatsubo; ctx.strokeStyle = COL.bg; ctx.lineWidth = 1.2;
+  ctx.fillStyle = COL.tacd; ctx.strokeStyle = COL.bg; ctx.lineWidth = 1.2;
   for (const d of G.drips) {
     ctx.globalAlpha = Math.min(1, DRIP_LIFE - d.t);
     ctx.beginPath(); ctx.arc(d.x, d.y, DRIP_DOT_R * (d.sz || 1), 0, 6.283);
-    if (d.ring) { ctx.strokeStyle = COL.chatsubo; ctx.lineWidth = 1.6; ctx.stroke(); ctx.strokeStyle = COL.bg; ctx.lineWidth = 1.2; } else { ctx.fill(); ctx.stroke(); }
+    if (d.ring) { ctx.strokeStyle = COL.tacd; ctx.lineWidth = 1.6; ctx.stroke(); ctx.strokeStyle = COL.bg; ctx.lineWidth = 1.2; } else { ctx.fill(); ctx.stroke(); }
   }
   ctx.globalAlpha = 1;
 }
@@ -363,7 +363,7 @@ function poolDepth(pools) {
 }
 function drawPuddles(t) {
   const now = performance.now() / 1000;
-  ctx.strokeStyle = ctx.fillStyle = COL.chatsubo; ctx.lineWidth = 1.2;
+  ctx.strokeStyle = ctx.fillStyle = COL.tacd; ctx.lineWidth = 1.2;
   drawPools(t, now);
   if (lowQ) { for (const p of t.puddles || []) { ctx.globalAlpha = 0.5 * (1 - p.age / p.life); ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.6, 0, 6.283); ctx.stroke(); } ctx.globalAlpha = 1; return; } // low quality: one ring, no bubbles
   const n = (t.puddles || []).length, per = Math.min(q3d() ? 2 : PUDDLE_BUBBLES, n > POOL_LOD ? POOL_LOD * PUDDLE_BUBBLES / n : PUDDLE_BUBBLES); // bubbles a pool, on average (3D: 2 at most)

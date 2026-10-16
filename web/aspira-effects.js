@@ -39,7 +39,7 @@ function drawAims() {
 // ramps (a Residue line, out of range, at half strength); Plague's circle
 // round each target; Contagion has no lines - its range glows instead.
 function drawAcd() {
-  ctx.lineCap = "round"; ctx.strokeStyle = COL.chatsubo;
+  ctx.lineCap = "round"; ctx.strokeStyle = COL.tacd;
   for (const t of G.towers) {
     if (t.kind !== "acd") continue;
     drawPuddles(t); // the chart ACD's puddles, under its lines (aspira-skills.js)
@@ -65,7 +65,7 @@ function drawAcd() {
       ctx.globalAlpha = (0.6 + 0.4 * f) * k; ctx.lineWidth = bw; ctx.stroke();
       if (st.plagueR) {
         const pr = plagueRadius(l, st);
-        gradDisc(l.e.x, l.e.y, pr, COL.chatsubo, k);
+        gradDisc(l.e.x, l.e.y, pr, COL.tacd, k);
         ctx.globalAlpha = (0.15 + 0.25 * f) * k; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(l.e.x, l.e.y, pr, 0, 6.283); ctx.stroke();
       }
