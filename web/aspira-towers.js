@@ -355,7 +355,7 @@ function usePower(code) {
 // its slide tiers have room - about a third of the phone at base, all of it by tier V (and further at the capstone, VI). MOVE_BASE x the tier's slide
 // (SKILL_MOVE), up to SLIDE_MAX. (Was the old spoke's travel x MOVE_SPAN 3.375: ARC 434, FRZ 519, ACD 869 - most of the
 // phone before a tier, so the slide tiers bought nothing - and SLIDE_MAX 2 voided every tier past x2; SOL halved to 74 that day)
-const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74, grv: 200, car: 0 /* ATC never moves (owner, 2026-10-16: "ATC should have 0 movement range") - its interceptors do the travelling */ }, SLIDE_MAX = 3;
+const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74, grv: 200, car: 130 /* between SOL and ARC (owner, 2026-10-16: "give carrier some movement range actually, less than ARC, more than SOL, update range to match"); was 0 */ }, SLIDE_MAX = 3;
 const MOVE_EDGE = 12; // world units kept clear of the screen's edge
 const leashR = t => MOVE_BASE[t.kind] * Math.min(towerStats(t, true).slide, SLIDE_MAX);
 const slideSpan = t => Math.round(leashR(t)); // the card's Leash row

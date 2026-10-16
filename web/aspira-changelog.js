@@ -12,6 +12,8 @@ const CHANGELOG = [
     "Carrier: range 260 -> 460, making up for the movement it lost.",
     "Carrier: interceptors x1.75 faster, launched 0.11s apart (was 0.2s).",
     "Carrier: x1.33 damage, split into 5 bolts a shot.",
+    "Carrier: interceptors reload twice as fast.",
+    "Carrier: moves again (130 - between Sol and Arc).",
     "Acid: x1.14 damage.",
     "Freeze: x1.08 damage.",
   ], ne: [
@@ -20,6 +22,8 @@ const CHANGELOG = [
     "Sol: x0.90 damage.",
     "Carrier: no longer moves (its interceptors do the travelling).",
     "Carrier: fires at half the rate - an interceptor circles its target at least once; x0.9 damage.",
+    "Carrier: interceptors launch 0.15s apart (was 0.11s).",
+    "Carrier: range 460 -> 240; interceptors chase up to 960 from it.",
   ], u: [
     "Carrier: interceptors x3 bigger.",
     "Gravity is dark purple, Sol bright pink - easier to tell apart.",
@@ -33,6 +37,7 @@ const CHANGELOG = [
     "Carrier: bolts are much shorter streaks.",
     "Sound: every sample is levelled to the same loudness.",
     "Gravity: the aura has its own sound as it opens, apart from the nova's.",
+    "Carrier: one damage number a shot - the total of its 5 bolts.",
     "Gravity's tagline: \"Massive intervention.\"",
     "Carrier's tagline: \"Carrier has arrived.\"",
   ] },

@@ -59,7 +59,7 @@ const CAPSTONE_NUM = [
   // GRV: Void the widest, coldest aura (Event Horizon: a full sphere nearly stops what it holds); Supernova the biggest nova
   // (Hypernova: it tears half the armor away, spheres start heavy); Radiation the most pellets (Hawking: a last burst)
   // CAR: Hangar seventeen interceptors; Launch the fastest (Warp: they teleport); Armament the hardest, fastest, longest sorties (Autopilot)
-  [CAR_HANGAR, 17], [CAR_FOCUS, 0.7], [CAR_SPEED, 1890], [CAR_RAM, 10], [CAR_RELOAD, 0.3], [CAR_AMMO, 16], [CAR_SHOT_MUL, 15], [CAR_SIDE_DMG, 5.1], [CAR_RATE_MUL, 1],
+  [CAR_HANGAR, 17], [CAR_FOCUS, 0.7], [CAR_SPEED, 1890], [CAR_RAM, 10], [CAR_RELOAD, 0.15], [CAR_AMMO, 16], [CAR_SHOT_MUL, 15], [CAR_SIDE_DMG, 5.1], [CAR_RATE_MUL, 1],
   [GRV_AURA_R, 153], [GRV_SLOW, 0.3], [GRV_NOVA_R, 170], [GRV_NOVA_MUL, 3.5], [GRV_PELLETS, 18], [GRV_PELLET_K, 0.8],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
