@@ -2,10 +2,12 @@
 // changelog on a card ... only include changes that affect the player, like graphics and balance changes"). Newest first; one
 // short line a change, in the player's words - a FACT, no reason or explanation (owner, 2026-10-14). Add to the top day (or start a new one) with every change a player would notice.
 // THE VERSION (web/aspira-version.txt, major.minor.tiny): a new day here is the next minor (its v); every deploy after bumps tiny.
+// A new TOWER is the next MAJOR (owner, 2026-10-16: "adding grv and atc should be a new major version": their day, 4.5, became 5.0
+// and the next 4.6 5.1).
 // each day's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
-  { v: "4.6", day: "Oct 16", bu: [
+  { v: "5.1", day: "Oct 16", bu: [
     "Acid: x1.31 damage.",
     "Carrier: x1.39 damage.",
     "Freeze: x1.03 damage.",
@@ -47,7 +49,7 @@ const CHANGELOG = [
     "Gravity's tagline: \"Massive intervention.\"",
     "Carrier's tagline: \"Carrier has arrived.\"",
   ] },
-  { v: "4.5", day: "Oct 15", u: [
+  { v: "5.0", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",
     "Carrier: interceptors fly a clothespin - straight out, loop their target firing, straight home.",
     "Carrier's short name is ATC.",
