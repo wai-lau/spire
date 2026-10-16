@@ -27,7 +27,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | 5 | **Only behaviour is told** | card words change only when behaviour changes; a number moving changes the stat row | §7.3 |
 | 6 | **Counters, not a best tower** | each enemy type has two main counters and two helpers | §4.6 |
 | 7 | **3D is a view, never a rule** | ranges, hits and timing are 2D; 3D only draws the same game | §8.1 |
-| 8 | **Waves are fixed** | type, lane split and drops hash from the wave number; only crits, swarm jitter and speed jitter are random | §5 |
+| 8 | **Waves are fixed** | type, lane split and drops hash from the wave number; what stays random is crits, stun chance, swarm jitter (size, speed, wander) and the visuals (sparks, spin, number scatter) | §5 |
 | 9 | **Honour-system leaderboard** | a browser game proves nothing; TOP PLAYERS guards shape and rate only | §9.1 |
 
 ## 2. Board
