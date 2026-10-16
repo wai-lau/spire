@@ -79,8 +79,9 @@ function stepIcp(i, t, st, dt) {
   }
   if (i.state === "out") {
     // the CLOTHESPIN (owner, 2026-10-15): straight out, loops its target firing until out of ammo, straight home. A target that
-    // dies hands the loop to the enemy NEAREST the interceptor (in reach), so the loop stays where it is
-    if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carNearest(i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
+    // dies hands the loop to an enemy within CAR_HOP of the interceptor, else it goes home (ATC's swarm weakness: free to chain
+    // kill to kill across reach it leaked 1% of swarms; one target a sortie, 85% - and 66% of fast, its own type)
+    if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carHop(i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     if (!i.orb && d > CAR_ORBIT) { carFly(i, e, st.speed * dt, d); return; } // still on its way, straight
     if (!i.orb) { i.orb = true; i.ang = Math.atan2(i.y - e.y, i.x - e.x); if (st.ram > 0) { damage(e, st.ram, t); onHit(e, t, st, st.ram); } } // into the loop where it arrived (no snap) - the STRAFING PASS
@@ -109,13 +110,10 @@ function carTwin(i, e, t, st) {
   const a = Math.atan2(e.y - i.y, e.x - i.x), ox = -Math.sin(a) * CAR_TWIN, oy = Math.cos(a) * CAR_TWIN;
   for (const s of [1, -1]) (t.carBolts ||= []).push({ x0: i.x + ox * s, y0: i.y + oy * s, x1: e.x + ox * s, y1: e.y + oy * s, t: 0 });
 }
-function carNearest(i, t, st) {
-  let best = null, bd = Infinity;
-  for (const e of G.enemies) {
-    if (e.dead || carDist2(e, t) > st.range * st.range) continue;
-    const d = carDist2(e, i);
-    if (d < bd) { bd = d; best = e; }
-  }
+const CAR_HOP = 40; // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
+function carHop(i, t, st) {
+  let best = null, bd = CAR_HOP * CAR_HOP;
+  for (const e of G.enemies) { if (e.dead) continue; const d = carDist2(e, i); if (d < bd) { bd = d; best = e; } }
   return best;
 }
 function carHome(i, t, st) { i.state = "back"; i.e = null; i.orb = false; if (st.warp) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; } }

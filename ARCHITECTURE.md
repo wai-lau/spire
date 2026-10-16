@@ -285,6 +285,11 @@ speed/400 on arrival; Warp `CAR_WARP_V`) and the reload, Armament the hit + ammo
 committed to it. Counter matrix 61-69 (3 ATC, 8 pts, % leaked swarm/fast/shield/armor): spread 1/6/0/0, Launch 0/6/0/64,
 Armament 3/52/0/23.
 
+**Weakness pass (2026-10-15).** GRV pellets pass shielded enemies (only the nova pops charges) and the strip is x3
+(`GRV_STRIP` 1.5). ATC after a kill hops only to an enemy within `CAR_HOP` 40 of the interceptor, else home. Counter matrix
+61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14, ATC 41/29/0/4 (ATC's armor weakness grows later: armor 982 a
+bolt at wave 90 vs ~1750).
+
 The Orbital Relay triples the wing (`relayStats`). No new 3D primitives: darts are filled triangles, firing lines and pellets
 single strokes (the board's path context takes no gradient stroke - §11).
 

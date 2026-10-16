@@ -18,12 +18,15 @@ const CHANGELOG = [
   ], ne: [
     "Gravity: the aura deals no damage.",
     "Carrier: each of a shot's two bolts is half its hit (armor cuts both).",
+    "Gravity: pellets pass through shielded enemies - only the nova pops shields.",
+    "Carrier: after a kill an interceptor takes a new target only close by, else flies home.",
   ], bu: [
     "Gravity: the aura's size grows with the damage its nova dealt.",
     "Carrier: every axis raises the shot's hit - Armament the most (up to x15), Hangar and Launch up to x5.1 each.",
     "Carrier Hangar: focus fire - each wingmate looping the same target adds to every shot on it.",
     "Carrier Launch: a strafing pass - an interceptor rams its target as it arrives; also a shorter reload (1.5s, to 0.3s at Warp).",
     "Carrier: interceptors chase a target up to 3x the tower's reach, and send enough of themselves to kill it.",
+    "Gravity: the aura strips armor 3x faster.",
     "Carrier: fires twice as fast, with twice the ammo.",
     "Gravity: the aura slows in two rings - its core far harder.",
     "New tower: Carrier. Launches interceptors one by one; each flies to an enemy, fires its shots and flies home to reload. Good vs fast and shields.",
