@@ -167,7 +167,7 @@ function carBolt(i, e, t, st) {
   let n = 0;
   if (st.focus) for (const o of t.icp) if (o !== i && o.e === e && o.orb && o.state === "out") n++; // FOCUS FIRE: the others on it
   const a = Math.atan2(e.y - i.y, e.x - i.x);
-  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * (1 + st.focus * n) / CAR_BOLTS, icp: i });
+  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * (1 + st.focus * n) / CAR_BOLTS });
 }
 function stepCarBolts(t, st, dt) {
   if (!t.carBolts || !t.carBolts.length) return;
@@ -175,11 +175,11 @@ function stepCarBolts(t, st, dt) {
     if (b.e && b.e.dead) b.e = null; // its target gone: straight on
     if (b.e) { const dx = b.e.x - b.x, dy = b.e.y - b.y, d = Math.hypot(dx, dy) || 1; b.vx = dx / d * CAR_BOLT_V; b.vy = dy / d * CAR_BOLT_V; } // homing
     b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
-    for (const e of b.e ? [b.e] : G.enemies) {
+    for (const e of b.e ? [b.e] : enemiesNear(b.x, b.y)) { // (enemiesNear: the enemy grid, aspira-grv.js)
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_BOLT_HIT;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
-      damage(e, b.dmg, t, false, false, { from: { x: b.icp.x, y: b.icp.y } }); onHit(e, t, st, b.dmg); // its number flies AWAY from its interceptor, not the carrier (owner, 2026-10-16)
+      damage(e, b.dmg, t, false, false, { from: { x: e.x - b.vx, y: e.y - b.vy } }); onHit(e, t, st, b.dmg); // its number flies ON the way the bolt was going (owner, 2026-10-16: "ATC damage numbers should fly out in the direction that the beam was moving"; from its interceptor for an hour)
       if (!e.dead) applySlow(e, CAR_SLOW, CAR_SLOW_S, "car:" + t.id); // (doubled on fast, never the shielded - applySlow)
       b.left = 0; break;
     }
@@ -207,7 +207,7 @@ function stepCarPellets(t, dt) {
   if (!t.carPellets || !t.carPellets.length) return;
   for (const p of t.carPellets) {
     p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt;
-    for (const e of G.enemies) {
+    for (const e of enemiesNear(p.x, p.y)) {
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
@@ -241,12 +241,13 @@ function drawCar(darts) {
       continue;
     }
     ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CAR_PELLET_PX; ctx.globalAlpha = 1;
+    ctx.beginPath(); // bolts and pellets: ONE path, one stroke (perf)
     for (const b of t.carBolts || []) { // UNDER the darts: they leave from beneath. A DOT at the interceptor, stretching out as it flies (owner, 2026-10-16)
       const k = Math.min(CAR_BOLT_TAIL, (CAR_BOLT_REACH / CAR_BOLT_V - b.left) * CAR_BOLT_GROW);
-      ctx.beginPath(); ctx.moveTo(b.x - b.vx * k, b.y - b.vy * k); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.moveTo(b.x - b.vx * k, b.y - b.vy * k); ctx.lineTo(b.x, b.y);
     }
-    ctx.lineWidth = CAR_PELLET_PX;
-    for (const p of t.carPellets || []) { ctx.beginPath(); ctx.moveTo(p.x - p.vx * CAR_PELLET_TAIL, p.y - p.vy * CAR_PELLET_TAIL); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+    for (const p of t.carPellets || []) { ctx.moveTo(p.x - p.vx * CAR_PELLET_TAIL, p.y - p.vy * CAR_PELLET_TAIL); ctx.lineTo(p.x, p.y); }
+    ctx.stroke();
   }
   ctx.globalAlpha = 1;
 }

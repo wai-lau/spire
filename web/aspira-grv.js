@@ -174,21 +174,46 @@ function stepSphere(sp, t, st, dt) {
   const lost = Math.min(sp.mass, GRV_EVAP * grvAuraR(sp, st) / st.auraR * dt);
   sp.mass -= lost;
   sp.pel += st.pellets * k * GRV_RAD_LIFE * lost; // the OLD rate (x mass) sped up by how much faster than the old linear 1 / 5 s it loses mass
-  while (sp.pel >= 1) { sp.pel -= 1; grvPellet(sp, t, st, grvAuraR(sp, st) * GRV_PELLET_REACH); }
+  const w = Math.max(1, ((t.pellets ? t.pellets.length : 0) / GRV_PEL_SOFT) ** 2); // BUNDLED past GRV_PEL_SOFT in flight (perf): one pellet carrying w pellets' hit, w times fewer
+  while (sp.pel >= w) { sp.pel -= w; grvPellet(sp, t, st, grvAuraR(sp, st) * GRV_PELLET_REACH, w); }
   // Hawking: a last burst as it goes
   if (sp.mass <= 0 && st.hawking) for (let i = 0; i < GRV_HAWKING_N; i++) grvPellet(sp, t, st, st.auraR * GRV_PELLET_REACH * 1.5);
 }
 // a PELLET is a projectile (owner, 2026-10-15: "I want pellets to be able to miss, not beams"): out from the sphere in a random
 // direction at GRV_PELLET_V, hitting the FIRST enemy it touches - or nothing, fading at `reach`
-function grvPellet(sp, t, st, reach) {
+// past GRV_PEL_SOFT of a tower's in flight, pellets are BUNDLED (perf, 2026-10-16: two Radiation V GRVs at wave 95 had 2851 in the air,
+// 10 ms a frame to draw): each new one carries w pellets' hit and w times fewer are sent - every pellet hits or misses on its own
+// flight, so the damage EXPECTED is the same, only lumpier
+const GRV_PEL_SOFT = 80; // w = (in flight / this) squared past it: ~200 a tower at most (linear, 150: still ~500)
+function grvPellet(sp, t, st, reach, w = 1) {
   const a = Math.random() * 6.283;
-  (t.pellets ||= []).push({ sp, x: sp.x, y: sp.y, vx: Math.cos(a) * GRV_PELLET_V, vy: Math.sin(a) * GRV_PELLET_V, left: reach / GRV_PELLET_V, dmg: st.dmg * st.pelletK });
+  (t.pellets ||= []).push({ sp, x: sp.x, y: sp.y, vx: Math.cos(a) * GRV_PELLET_V, vy: Math.sin(a) * GRV_PELLET_V, left: reach / GRV_PELLET_V, dmg: st.dmg * st.pelletK * w });
 }
+// the ENEMY GRID (perf, owner 2026-10-16: "do some perf work on the new towers" - at wave 89 three GRVs' ~360 pellets each tested
+// every enemy, every step: 3.2 ms a frame): each living enemy listed in every GRID_S cell its body (+ GRID_PAD) touches, built
+// once a step (G.clock) and shared - a projectile tests only its own cell's, in G.enemies order, so the FIRST it touches is the same
+const GRID_S = 64, GRID_PAD = 4, GRID_NONE = [];
+let egrid = null, egridAt = NaN;
+function enemyGrid() {
+  if (egrid && egrid.G === G && egridAt === G.clock) return egrid;
+  egrid = new Map(); egrid.G = G; egridAt = G.clock; // (no clock: NaN, never equal - rebuilt every call)
+  for (const e of G.enemies) {
+    if (e.dead) continue;
+    const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRID_PAD;
+    for (let x = Math.floor((e.x - r) / GRID_S), x1 = Math.floor((e.x + r) / GRID_S); x <= x1; x++)
+      for (let y = Math.floor((e.y - r) / GRID_S), y1 = Math.floor((e.y + r) / GRID_S); y <= y1; y++) {
+        const k = x * 65536 + y, c = egrid.get(k);
+        if (c) c.push(e); else egrid.set(k, [e]);
+      }
+  }
+  return egrid;
+}
+const enemiesNear = (x, y) => enemyGrid().get(Math.floor(x / GRID_S) * 65536 + Math.floor(y / GRID_S)) || GRID_NONE;
 function stepPellets(t, st, dt) {
   if (!t.pellets || !t.pellets.length) return;
   for (const p of t.pellets) {
     p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt;
-    for (const e of G.enemies) {
+    for (const e of enemiesNear(p.x, p.y)) {
       if (e.dead) continue; // (a pellet POPS shield charges - owner, 2026-10-15; only the aura's slow skips the shielded)
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRV_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
@@ -203,7 +228,9 @@ function stepPellets(t, st, dt) {
 const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 2.2; // s of flight the streak spans; its width
 function drawGrvPellets() {
   ctx.strokeStyle = COL.violet; ctx.lineCap = "round"; ctx.lineWidth = GRV_PELLET_PX; /* GRV purple (owner, 2026-10-15) */ ctx.globalAlpha = 1;
-  for (const t of G.towers) for (const p of t.pellets || []) { ctx.beginPath(); ctx.moveTo(p.x - p.vx * GRV_PELLET_TAIL, p.y - p.vy * GRV_PELLET_TAIL); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+  ctx.beginPath(); // ONE path, one stroke for them all (perf: a stroke each was most of drawGrv's 4 ms a frame at wave 89)
+  for (const t of G.towers) for (const p of t.pellets || []) { ctx.moveTo(p.x - p.vx * GRV_PELLET_TAIL, p.y - p.vy * GRV_PELLET_TAIL); ctx.lineTo(p.x, p.y); }
+  ctx.stroke();
 }
 
 // ---------- the nova's damage numbers fly INWARD, toward the sphere (owner) ----------
