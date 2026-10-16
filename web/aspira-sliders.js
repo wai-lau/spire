@@ -131,7 +131,7 @@ const STAT_SECTIONS = {
   arc: [["Arc", ["Damage", "Rate", "Range", "Shields", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
   frz: [["Freeze Aura", ["Aura slow", "Aura dmg", "Cold bite", "Brittle", "Shields", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
   sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Refraction", ["Refract"]], ["Breach", ["Breach", "Bleed", "Shrapnel"]]],
-  car: [["Hangar", ["Interceptors", "Focus fire"]], ["Launch", ["Speed", "Reload", "Strafe", "Range"]], ["Armament", ["Damage", "Rate", "Ammo", "Autopilot", "Shields"]]],
+  car: [["Hangar", ["Interceptors", "Focus fire"]], ["Launch", ["Speed", "Reload", "Strafe", "Range"]], ["Armament", ["Damage", "Rate", "Ammo", "Autopilot", "Slow", "Shields"]]],
   grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Aura size", "Aura slow", "Armor strip"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]]],
   acd: [["Jets", ["Corrode", "Builds", "Peak", "Jets", "Carry", "Jet slow", "Shields", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };

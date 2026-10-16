@@ -30,6 +30,7 @@ const CHANGELOG = [
     "Gravity: the aura strips armor 3x faster.",
     "Carrier: fires twice as fast.",
     "Carrier: interceptors fly 1.5x faster.",
+    "Carrier: every shot slows its target (20%, double on fast enemies; never shielded ones).",
     "Gravity: the aura slows in two rings - its core far harder.",
     "New tower: Carrier. Launches interceptors one by one; each flies to an enemy, fires its shots and flies home to reload. Good vs fast and shields.",
     "Gravity: nova and aura x1.7 wider.",

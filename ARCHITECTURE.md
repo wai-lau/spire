@@ -280,7 +280,7 @@ CAR loses 2 lives on wave 9 and the Star; every CAR pair clean on 1-12).
 2192/s on fast at wave 61; ARC 17449, SOL 22899). Each axis's own mechanic: Hangar FOCUS FIRE (`CAR_FOCUS`: each other
 interceptor looping the same target adds that share to every shot), Launch the STRAFING PASS (`CAR_RAM` x base damage x
 speed/400 on arrival; Warp `CAR_WARP_V`) and the reload, Armament the hit + ammo. A shot is THREE bolts (`CAR_BOLTS`) of a third of the hit each
-(armor cuts each - ATC's armor weakness); rate 8, ammo 8..16, speed 600..1080 (owner: three bolts, less ammo, faster).
+(armor cuts each - ATC's armor weakness); every shot SLOWS (`CAR_SLOW` 0.2 for 0.6 s, one a tower; fast 30% -> 6% leaked); rate 8, ammo 8..16, speed 600..1080 (owner: three bolts, less ammo, faster).
 `CAR_LEASH` 3: a locked interceptor PURSUES. `carTarget` SENDS ENOUGH: the first enemy whose HP beats the ammo x hit already
 committed to it. Counter matrix 61-69 (3 ATC, 8 pts, % leaked swarm/fast/shield/armor): spread 1/6/0/0, Launch 0/6/0/64,
 Armament 3/52/0/23.
