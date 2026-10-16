@@ -244,7 +244,7 @@ function carNum(i, e, dealt, raw0, vx, vy) {
   i.numN = (i.numN || 0) + 1;
   if (i.numN < CAR_NUM_HITS) return;
   const sum = i.numSum, raw = i.numRaw; i.numSum = i.numRaw = i.numN = 0;
-  if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgTick(e, sum, raw, "white", { x: e.x - vx, y: e.y - vy }, raw > sum ? 1 - sum / raw : 0, 0);
+  if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgTick(e, sum, raw, TOWERS.car.color, { x: e.x - vx, y: e.y - vy }, raw > sum ? 1 - sum / raw : 0, 0);
 }
 const CAR_HOP = 30; /* back to 30 with CAR_FIRE_R 200 */ /* 30 -> 40 with a volley STOPPING when its target dies (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor: 30 39/13/0/18, 40 19/14/0/21, 50 9/13/0/21, 80 2/9/0/21) */ /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
 // the NEXT target after a kill: the nearest enemy within CAR_HOP that no other interceptor of this carrier is already on, else the

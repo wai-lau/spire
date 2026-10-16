@@ -34,6 +34,7 @@ const CHANGELOG = [
     "Gravity: the aura has its own sound; tagline \"Massive intervention.\"",
     "Gravity: touching black holes share one accretion disk, the dark of each over every ring.",
     "Gravity and Carrier: smoother with many pellets in the air - past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
+    "All towers: damage numbers in the colour of the tower that dealt them (crits white), greying with the armor that blunted them.",
     "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",
     "All towers: the six tower colours sit evenly round the colour wheel, as the eye sees it - Arc a touch yellower, Acid greener, Freeze tealer, Carrier deeper blue, Gravity more purple, Sol coral-pink.",
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",

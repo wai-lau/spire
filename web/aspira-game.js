@@ -178,7 +178,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
     // armor-blunted hits read GREYER the more armor took off them (owner, 2026-10-09: "greyness of damage popups should be
     // correlated to the percentage of damage mitigated by armor" - was all-or-nothing grey), white to the graticule's Silver
     // sized by the hit BEFORE armor (owner): a big hit blunted to little still reads big, in grey
-    if (!(st && st.noNum)) dmgTick(e, amt, raw, crit ? "orange" : "white", (st && st.from) || hitFrom || t, crit || !blunted ? 0 : 1 - amt / raw, t && (t.kind === "acd" || t.kind === "frz") && st ? st.rate : 0); // (aspira-floats.js)
+    if (!(st && st.noNum)) dmgTick(e, amt, raw, crit ? "white" : t ? TOWERS[t.kind].color : "white" /* its TOWER'S colour, a crit white (owner, 2026-10-16: "color the damage numbers based on the tower that dealt it") */, (st && st.from) || hitFrom || t, crit || !blunted ? 0 : 1 - amt / raw, t && (t.kind === "acd" || t.kind === "frz") && st ? st.rate : 0); // (aspira-floats.js)
   }
   if (e.hp <= 0) kill(e, t);
 }
