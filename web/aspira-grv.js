@@ -125,7 +125,7 @@ function stepPellets(t, st, dt) {
   for (const p of t.pellets) {
     p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt;
     for (const e of G.enemies) {
-      if (e.dead || e.shield > 0) continue; // shields deflect gravity: a pellet passes a shielded enemy (GRV's shield weakness - only the nova pops charges)
+      if (e.dead) continue; // (a pellet POPS shield charges - owner, 2026-10-15; only the aura's slow skips the shielded)
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRV_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
       if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg); else damage(e, p.dmg, t); // (its sphere gone: no mass to feed)

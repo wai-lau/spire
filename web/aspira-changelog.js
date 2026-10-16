@@ -19,7 +19,6 @@ const CHANGELOG = [
     "Gravity: the aura deals no damage.",
     "Carrier: a shot is three bolts, each a third of its hit (armor cuts each).",
     "Carrier: less ammo a sortie (8, to 16 at Autopilot; was 12 to 28).",
-    "Gravity: pellets pass through shielded enemies - only the nova pops shields.",
     "Carrier: after a kill an interceptor takes a new target only close by, else flies home.",
   ], bu: [
     "Gravity: the aura's size grows with the damage its nova dealt.",
