@@ -66,22 +66,26 @@ function solidGeom(e) {
   // the heading is its lane's tangent (a swarmer's wander does not turn it)
   const q = pathAt(e.pi, Math.max(0, e.s - 2), e.ang || 0), h = pathAt(e.pi, e.s || 0, e.ang || 0), hx = Math.atan2(h.y - q.y, h.x - q.x) || 0;
   const th = (e.s || 0) / (d.size * SOLID_ROLL) + (e.rot || 0), ct = Math.cos(th), st = Math.sin(th), ch = Math.cos(hx), sh = Math.sin(hx);
-  // roll about the nose (+x), then turn the nose to the heading
-  const rot = ([x, y, z]) => { const y1 = y * ct - z * st, z1 = y * st + z * ct; return [x * ch - y1 * sh, x * sh + y1 * ch, z1]; };
-  const S = SOLIDS[e.type], R = S.V.map(rot);
+  // roll about the nose (+x), then turn the nose to the heading (no arrays or closures per corner: a late wave builds ~100 of these a frame)
+  const S = SOLIDS[e.type], V = S.V, nv = V.length, R = new Array(nv);
+  for (let i = 0; i < nv; i++) { const v = V[i], x = v[0], y1 = v[1] * ct - v[2] * st; R[i] = [x * ch - y1 * sh, x * sh + y1 * ch, v[1] * st + v[2] * ct]; }
   // LIT FROM THE CORE (owner: "the light source should come from the core"): toward the core's top from this die
-  const L = unit([[CX - e.x, CY - e.y, (warp.lightZ || 1)]])[0];
+  const lx = CX - e.x, ly = CY - e.y, lz = warp.lightZ || 1, ll = Math.hypot(lx, ly, lz), L0 = lx / ll, L1 = ly / ll, L2 = lz / ll;
   // world offset (x, y on the floor, z up) to the screen, the die's CENTRE on the floor (owner: "their center is on the plane")
-  const scr = ([x, y, z]) => [P.x + k * x * size, P.y + k * (p.c * y * size - p.s * z * size)];
   const faces = [], slot = new Array(S.F.length).fill(-1); // slot: a face of S.F -> its index in faces (visible), or -1
-  const Q = R.map(v => { const [x, y] = scr(v); return { x, y, z: v[2] * size }; }); // every corner projected once
-  for (const [fi, face] of S.F.entries()) {
-    const n = [0, 1, 2].map(i => face.reduce((m, v) => m + R[v][i], 0) / face.length), nl = Math.hypot(...n);
-    if (n[1] * p.s + n[2] * p.c <= 0) continue; // turned away from the camera
-    const lit = Math.max(0, (n[0] * L[0] + n[1] * L[1] + n[2] * L[2]) / nl);
-    const poly3 = face.map(v => Q[v]);
+  const Q = new Array(nv); // every corner projected once
+  for (let i = 0; i < nv; i++) { const v = R[i]; Q[i] = { x: P.x + k * v[0] * size, y: P.y + k * (p.c * v[1] * size - p.s * v[2] * size), z: v[2] * size }; }
+  for (let fi = 0; fi < S.F.length; fi++) {
+    const face = S.F[fi], fl = face.length;
+    let n0 = 0, n1 = 0, n2 = 0;
+    for (let i = 0; i < fl; i++) { const r = R[face[i]]; n0 += r[0]; n1 += r[1]; n2 += r[2]; }
+    n0 /= fl; n1 /= fl; n2 /= fl;
+    if (n1 * p.s + n2 * p.c <= 0) continue; // turned away from the camera
+    const nl = Math.hypot(n0, n1, n2), lit = Math.max(0, (n0 * L0 + n1 * L1 + n2 * L2) / nl);
+    const poly3 = new Array(fl); let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < fl; i++) { const q = Q[face[i]]; poly3[i] = q; if (q.z < lo) lo = q.z; if (q.z > hi) hi = q.z; }
     slot[fi] = faces.length;
-    faces.push({ poly3, lo: Math.min(...poly3.map(v => v.z)), hi: Math.max(...poly3.map(v => v.z)), fA: (0.2 + 0.7 * lit) * (0.5 + 0.5 * f) });
+    faces.push({ poly3, lo, hi, fA: (0.2 + 0.7 * lit) * (0.5 + 0.5 * f) });
   }
   // BREACH in 3D (owner, 2026-10-09: "breach effect should look like vertical spoke going through the enemy center of
   // mass, increasing in size the more breach"): one upright spike through the die's centre, longer and thicker per stack
@@ -89,7 +93,7 @@ function solidGeom(e) {
   let spike = null;
   if (e.breachN > 0) {
     const n = Math.min(BREACH_SPOKES, Math.max(1, e.breachN || 1)), H = size * (1.3 + SOLID_BREACH_LEN * n);
-    const [x0, y0] = scr([0, 0, -H / size]), [x1, y1] = scr([0, 0, H / size]);
+    const scr = ([x, y, z]) => [P.x + k * x * size, P.y + k * (p.c * y * size - p.s * z * size)], [x0, y0] = scr([0, 0, -H / size]), [x1, y1] = scr([0, 0, H / size]);
     spike = { a: { x: x0, y: y0, z: -H }, b: { x: x1, y: y1, z: H }, w: (1.2 + SOLID_BREACH_W * n) * cam.k };
   }
   // FROZEN: its own colour with FRZ's cyan laid over at SOLID_FROZEN_A (owner, 2026-10-09: "FRZ color change should just be
@@ -97,9 +101,10 @@ function solidGeom(e) {
   // its EDGES once: each with how many visible faces share it (1: the outline, 2: an inner edge)
   // (the die's edge TOPOLOGY is fixed per kind - solidEdges - so only which faces show changes)
   const edges = [];
-  for (const [i, j, a, b] of solidEdges(e.type)) {
-    const f = [slot[a], slot[b]].filter(x => x >= 0);
-    if (f.length) edges.push({ v: Q[i], w: Q[j], n: f.length, f });
+  const se = solidEdges(e.type);
+  for (let i = 0; i < se.length; i++) {
+    const E = se[i], sa = slot[E[2]], sb = slot[E[3]];
+    if (sa >= 0 || sb >= 0) edges.push({ v: Q[E[0]], w: Q[E[1]], n: (sa >= 0) + (sb >= 0), f: sa < 0 ? [sb] : sb < 0 ? [sa] : [sa, sb] });
   }
   return { faces, edges, spike, size, fa, col: COL[d.color], ocol: COL[ENEMIES[e.aug || e.type].color], /* ocol: the OUTLINE's - an augmented enemy's in its augment's colour */ frz: SOLID_FROZEN_A * frostK(e), rime: rimeK(e), lw: (e.armor ? 2.2 : 1.2) * cam.k };
 }
