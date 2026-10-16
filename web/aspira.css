@@ -507,9 +507,16 @@
 .asp-sw.pink { color: hsl(var(--pink-hsl)); }
 .asp-sw.white { color: hsl(var(--white-hsl)); }
 /* GRV (2026-10-15; new /spire colours are allowed - owner): violet its aura and outline, yellow its nova */
-#asp { --asp-violet-hsl: 274 88% 68%; --asp-yellow-hsl: 50 100% 60%; }
+/* ...its look from a black-hole image (owner, 2026-10-15: "these colors (excl bg), in a similar ratio"): deep purple, plum, pink,
+   coral, yellow, white-hot - the aura's bands; violet (its card and text) the plum, lifted to read on the board */
+#asp { --asp-violet-hsl: 312 85% 58%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); }
 .asp-sw.yellow { color: hsl(var(--asp-yellow-hsl)); }
+.asp-sw.bhdeep { color: hsl(var(--asp-bh-deep-hsl)); }
+.asp-sw.bhplum { color: hsl(var(--asp-bh-plum-hsl)); }
+.asp-sw.bhpink { color: hsl(var(--asp-bh-pink-hsl)); }
+.asp-sw.bhcoral { color: hsl(var(--asp-bh-coral-hsl)); }
+.asp-sw.bhwhite { color: hsl(var(--asp-bh-white-hsl)); }
 
 /* the upgrade chooser (aspira-ui.js): 2-3 cards over the dimmed board, each
    coloured like the tower; nothing is charged until one is tapped */

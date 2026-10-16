@@ -102,11 +102,14 @@ function grvPellet(sp, t, st, reach) {
   const near = G.enemies.filter(e => !e.dead && (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2 <= reach * reach);
   if (!near.length) return;
   const e = near[Math.floor(Math.random() * near.length)];
-  beam({ x: sp.x, y: sp.y }, e, "violet", 0.08, 1.2, 0, true, false);
+  beam({ x: sp.x, y: sp.y }, e, "bhcoral", 0.08, 1.2, 0, true, false);
   grvHit(sp, t, st, e, st.dmg * st.pelletK);
 }
 
 // ---------- the aura's damage numbers drift INWARD, toward the sphere (owner) ----------
+// the aura's BANDS, the sphere outward, in the black-hole image's colours and shares (owner, 2026-10-15): white-hot 2, yellow 6,
+// coral 13, pink 13, plum 18, deep purple 17 - each stop where its band starts, clear inside the first and past the last
+const GRV_BANDS = [[0.15, "bhwhite"], [0.19, "yellow"], [0.3, "bhcoral"], [0.47, "bhpink"], [0.66, "bhplum"], [0.86, "bhdeep"]];
 const GRV_FLOAT_S = 0.6, GRV_FLOAT_MAX = 60, GRV_FLOAT_PX = 11, GRV_AURA_A = 0.3; // GRV_AURA_A: the band's peak, mid-radius (owner: "clear, 30%, clear")
 let grvFloats = [];
 function grvFloat(sp, e, amt) {
@@ -130,18 +133,19 @@ function drawSphere(sp, st) {
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
   if (ar > 1) { // the aura: clear at the sphere, 30% at mid-radius, clear at the edge
     const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, ar);
-    g.addColorStop(0, "transparent"); g.addColorStop(0.5, COL.violet); g.addColorStop(1, "transparent");
+    g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
     ctx.globalAlpha = GRV_AURA_A; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar, 0, 6.283); ctx.fill();
   }
   if (sp.age < GRV_FRONT_T * 1.6) { // the nova's yellow front, fading as it reaches its size
     const f = Math.min(1, sp.age / GRV_FRONT_T);
-    ctx.globalAlpha = Math.max(0, 1 - sp.age / (GRV_FRONT_T * 1.6)); ctx.strokeStyle = COL.yellow; ctx.lineWidth = 3;
+    ctx.globalAlpha = Math.max(0, 1 - sp.age / (GRV_FRONT_T * 1.6)); ctx.strokeStyle = COL.yellow; ctx.lineWidth = 3; // the image's yellow
     ctx.beginPath(); ctx.arc(sp.x, sp.y, st.novaR * f, 0, 6.283); ctx.stroke();
   }
-  // the sphere: black, a purple outline - as big as its aura is (it grows and shrinks with it)
+  // the sphere: black in a yellow ring and a thin pink rim (the image's core) - as big as its aura is (it grows and shrinks with it)
   const r = Math.max(2, ar * 0.16 + 2 * Math.sqrt(k));
-  ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.strokeStyle = COL.violet; ctx.lineWidth = 2;
+  ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.strokeStyle = COL.yellow; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(sp.x, sp.y, r + 2, 0, 6.283); ctx.stroke();
 }
 function drawGrvFloats(now) {
   const dt = drawGrvFloats.last ? Math.min(0.1, now - drawGrvFloats.last) : 0;
