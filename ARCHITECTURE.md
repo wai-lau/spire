@@ -254,7 +254,7 @@ pellet rate (capped at x3 the starting mass).
 Colours: violet (aura, outline) and yellow (nova) - new palette colours are allowed for /spire (owner, 2026-10-15).
 Numbers start as guesses and are fitted with the sims to "strong vs swarm and armor, weak vs fast and shield".
 
-### 4.6c CAR, the carrier (2026-10-15, `web/aspira-car.js`)
+### 4.6c CAR (shown ATC), the carrier (2026-10-15, `web/aspira-car.js`)
 
 The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`, 225°): long reach (260), **strong vs fast + shield, weak to
 swarm + armor** (`COUNTERS.main` fast `[frz, car]`, shield `[acd, car]`). It never fires itself. Its INTERCEPTORS launch
