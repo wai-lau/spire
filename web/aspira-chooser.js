@@ -78,14 +78,14 @@ const CARD_W = 380, CARD_MIN = 240, CARD_FLOOR = 180, CARD_GAP_PX = 16; // .asp-
 // Cards narrower than CARD_MIN are tried only once no wider grid fits (down to
 // CARD_FLOOR); if nothing fits at all, the grid with the most columns stands
 // (the shortest stack) and the overlay scrolls
-function layoutCards(el, row) {
+function layoutCards(el, row, cols2 = false) {
   const n = row.children.length, cs = getComputedStyle(el), landscape = el.clientWidth > el.clientHeight;
   const availW = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   const availH = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - el.firstElementChild.offsetHeight - CARD_GAP_PX;
   const width = cols => Math.min(CARD_W, (availW - CARD_GAP_PX * (cols - 1)) / cols);
   const apply = cols => { row.style.setProperty("--cols", cols); row.style.setProperty("--card-w", Math.floor(width(cols)) + "px"); };
   const tries = Array.from({ length: n }, (_, k) => (landscape ? n - k : k + 1)).filter(c => n % c === 0 || n % c === c - 1); // a last row at most ONE short (2026-10-15: five cards since GRV - 3 + 2, not one tall column) // FULL rows only (owner, 2026-10-13: four cards "1 by 4 or 4 by 1 or 2 by 2, never like this" - a 3 + 1)
-  const two = n < 2 ? 1 : landscape ? Math.ceil(n / 2) : 2; // TWO ROWS (landscape) or TWO COLUMNS (portrait) first, where they fit (owner, 2026-10-16: "Do a double row or double column when possible"; six cards were one long row)
+  const two = n < 2 ? 1 : landscape && !cols2 ? Math.ceil(n / 2) : 2; // (cols2: the BUILD cards - TWO COLUMNS whatever the screen, owner 2026-10-16: "Strongly prefer two columns of cards when building towers") // TWO ROWS (landscape) or TWO COLUMNS (portrait) first, where they fit (owner, 2026-10-16: "Do a double row or double column when possible"; six cards were one long row)
   if (tries.includes(two)) tries.unshift(...tries.splice(tries.indexOf(two), 1));
   for (const min of [CARD_MIN, CARD_FLOOR]) {
     for (const cols of tries) {
@@ -140,8 +140,23 @@ function buildCard(k, i) {
   return '<div class="name">' + (i + 1) + " · " + b.name + " · -" + cr(cost) + "</div>" + '<div class="asp-goodvs">good vs ' + GOOD_VS[k] + (HELPS_VS[k] ? " · helps vs " + HELPS_VS[k] : "") + "</div>" + // main counter first, then its helper roles (COUNTERS, aspira-defs.js)
     '<p class="asp-hint">' + b.blurb + "</p>"; // WHY it works, no stat dump (owner, 2026-10-07)
 }
+// the BUILD cards' ORDER: shuffled ONCE, kept for every build after (owner, 2026-10-16: "Shuffle them once and use that for build
+// placement for all future build choices") - in this browser's storage; a stored order that is not exactly the towers is reshuffled
+const BUILD_ORDER_KEY = "spire.buildOrder";
+let buildOrderMemo = null;
+function buildOrder() {
+  if (buildOrderMemo) return buildOrderMemo;
+  let o = null;
+  try { o = JSON.parse(localStorage.getItem(BUILD_ORDER_KEY) || "null"); } catch (e) { o = null; }
+  if (!Array.isArray(o) || o.length !== KINDS.length || !KINDS.every(k => o.includes(k))) {
+    o = KINDS.slice();
+    for (let i = o.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [o[i], o[j]] = [o[j], o[i]]; }
+    try { localStorage.setItem(BUILD_ORDER_KEY, JSON.stringify(o)); } catch (e) { /* private window: this page's order only */ }
+  }
+  return (buildOrderMemo = o);
+}
 function openBuildChooser(ci) {
-  const el = chooserEl(), kinds = Object.keys(TOWERS);
+  const el = chooserEl(), kinds = buildOrder();
   chooser.t = { build: true }; chooser.ci = ci; chooser.opts = kinds;
   chooser.wasPaused = ui.paused; ui.paused = true;
   el.dataset.kind = ""; el.classList.add("asp-building"); // (never inverted on a boss sky)
@@ -155,7 +170,7 @@ function openBuildChooser(ci) {
   el.hidden = false;
   el.style.paddingBottom = spendRoom() + "px";
   el.style.paddingTop = Math.max(8, document.querySelector(".asp-head").getBoundingClientRect().bottom - el.getBoundingClientRect().top + 8 + CRED_ROOM) + "px"; // room for the credits ABOVE the cards
-  layoutCards(el, row); // the grid by the screen's shape, measured once shown (a hidden element has no size)
+  layoutCards(el, row, true); // the grid by the screen's shape, measured once shown (a hidden element has no size) - two columns first
   $("asp").classList.add("asp-choosing"); placeCred(); // now the cards have their places
 }
 function chooseBuild(i) {

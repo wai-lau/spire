@@ -52,6 +52,7 @@ const CHANGELOG = [
     "Gravity and Carrier: faster with many pellets and bolts in the air; past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
     "Changelog: grouped by tower, enemy type, bosses and core - no more Buffs / Nerfs.",
     "Cards: two rows (or two columns on a tall screen) where they fit, not one long row.",
+    "Build cards: two columns, in an order shuffled once and kept.",
     "Gravity and Carrier cards: paler text, as easy to read as the others.",
     "Carrier: interceptors half the size, growing with Armament to full size at VI.",
     "Gravity's tagline: \"Massive intervention.\"",
