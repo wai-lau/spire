@@ -16,7 +16,8 @@ const CAR_RELOAD = [0.75, 0.55, 0.55, 0.4, 0.4, 0.275]; /* x0.5 with CAR_GAP 0.1
 const CAR_AMMO = [4, 5, 5, 6, 6, 7]; /* halved, its bolts doubled into fewer, bigger VOLLEYS (CAR_VOLLEY_K, CAR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
 // ONE TARGET A VOLLEY (owner, 2026-10-16: "to make ATC worse vs swarms reduce ammo (number of volleys), increase bolts per volley to
 // match, then make it so that all bolts from a single volley need to target a single target, regardless of overkill, remaining bolts
-// just keep going for a little bit and may chance a hit on something else"): half the volleys, each CAR_VOLLEY_K x the hit in twice
+// just keep going for a little bit and may chance a hit on something else"; then "don't shoot unshot parts of a volley if the enemy dies" - the rest of
+// the volley waits for the next target): half the volleys, each CAR_VOLLEY_K x the hit in twice
 // the bolts at half the rate - the same stream and damage a sortie - and a volley's bolts all go at the enemy it began on; one that
 // died mid-volley is fired at anyway, the bolts flying on past it (stepCarBolts)
 const CAR_VOLLEY_K = 2;
@@ -116,7 +117,7 @@ function stepIcp(i, t, st, dt) {
     // the CLOTHESPIN (owner, 2026-10-15): straight out, loops its target firing until out of ammo, straight home. A target that
     // dies hands the loop to an enemy within CAR_HOP of the interceptor, else it goes home (ATC's swarm weakness: free to chain
     // kill to kill across reach it leaked 1% of swarms; one target a sortie, 85% - and 66% of fast, its own type)
-    if (!i.e || ((i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) && !i.bk)) { /* (a volley under way finishes on its target first) */ i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
+    if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3) return; // still on its way
@@ -124,8 +125,8 @@ function stepIcp(i, t, st, dt) {
     if (CAR_PIN && !e.dead) applySlow(e, CAR_PIN, 0.15, "carpin:" + t.id); // the PIN: what an interceptor circles is held back the whole time, not only as a bolt lands (doubled on fast)
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0) { // the stream: a volley's bolts spread over its interval
-      if (!i.bk) { if (e.dead) break; i.ve = e; sfx("carshot"); } // a volley starts only on a LIVE target...
-      i.cd += CAR_VOLLEY_K * CAR_BOLT_PAIR / (st.rate * CAR_BOLTS); // ...and every bolt of it goes at that one, dead or not - CAR_BOLT_PAIR at a time, side by side
+      if (!i.bk || !i.ve || i.ve.dead) { if (e.dead) break; if (!i.bk) sfx("carshot"); i.ve = e; } // a volley starts only on a LIVE target - and its target dying STOPS it: the unshot bolts go at the next one (owner, 2026-10-16: "just don't shoot unshot parts of a volley if the enemy dies")
+      i.cd += CAR_VOLLEY_K * CAR_BOLT_PAIR / (st.rate * CAR_BOLTS); // ...its bolts at that one, CAR_BOLT_PAIR at a time, side by side
       for (let k = 0; k < CAR_BOLT_PAIR && i.bk < CAR_BOLTS; k++, i.bk++) carBolt(i, i.ve, t, st, (k - (CAR_BOLT_PAIR - 1) / 2) * CAR_BOLT_SIDE);
       if (i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; }
     }
@@ -244,7 +245,7 @@ function carNum(i, e, dealt, raw0, vx, vy) {
   const sum = i.numSum, raw = i.numRaw; i.numSum = i.numRaw = i.numN = 0;
   if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgTick(e, sum, raw, "white", { x: e.x - vx, y: e.y - vy }, raw > sum ? 1 - sum / raw : 0, 0);
 }
-const CAR_HOP = 30; /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
+const CAR_HOP = 40; /* 30 -> 40 with a volley STOPPING when its target dies (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor: 30 39/13/0/18, 40 19/14/0/21, 50 9/13/0/21, 80 2/9/0/21) */ /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
 // the NEXT target after a kill: the nearest enemy within CAR_HOP that no other interceptor of this carrier is already on, else the
 // nearest at all (owner, 2026-10-16: "each interceptor should be able to target a different fast with their respective volley")
 function carHop(i, t, st) { // (i: where the last target was - the interceptor itself circles CAR_ORBIT out)

@@ -13,7 +13,7 @@ const CHANGELOG = [
     "Sol: x0.85 damage.",
     "Acid: x1.49 damage.",
     "Acid: pools and corrosion drips hit enemies again (broken since 5.1.7).",
-    "Carrier: x1.67 damage, at half the rate; an interceptor fires half as many volleys of 10 homing bolts, two at a time side by side (each volley twice the hit), every bolt of a volley at the one enemy it began on - past a kill they fly on a little way and may hit something else.",
+    "Carrier: x1.67 damage, at half the rate; an interceptor fires half as many volleys of 10 homing bolts, two at a time side by side (each volley twice the hit), a volley's bolts all at one enemy - if it dies the rest of the volley goes at the next one, and bolts already flying go on a little way.",
     "Carrier: range 260 -> 160, movement 200 -> 240; interceptors reach about 1200 out, and what an interceptor circles is slowed the whole time.",
     "Carrier: interceptors x1.75 faster, launched 0.15s apart (was 0.2s), reloading twice as fast.",
     "Gravity: x0.81 damage.",
@@ -48,6 +48,7 @@ const CHANGELOG = [
     "Perf: less memory churn every step - enemy movement and Gravity / Carrier projectiles no longer make garbage (fewer GC hitches); low quality no longer draws Gravity's nova numbers (it already hid every other damage number).",
     "Battery: the sound engine sleeps while the tab is hidden or the game is muted.",
     "Sound: every sample levelled to the same loudness.",
+    "Sound: a shield's last charge breaking has its own sound; Sol has a new attack sound.",
     "Changelog: grouped by tower, enemy type, bosses and core, in smaller type.",
   ] },
   { v: "5.0", day: "Oct 15", u: [
