@@ -76,8 +76,10 @@ export function makeGame(seed, patch = "") {
     // the economy's own ledger (players.mjs): what interest paid in all
     var __sw = sendWave; sendWave = function () { const m = G.money; __sw(); G.interestTotal = (G.interestTotal || 0) + Math.max(0, G.money - m); };
     var __se = stepEnemies; stepEnemies = function (dt) {
-      const tracked = new Set((G.chains || []).map(p => p.node.e));
-      G.enemies = G.enemies.filter(e => !e.dead || tracked.has(e));
+      if (G.enemies.some(e => e.dead)) { // (no ghost: nothing to drop - no Set, no new list; most steps, perf 2026-10-16)
+        const tracked = new Set((G.chains || []).map(p => p.node.e));
+        G.enemies = G.enemies.filter(e => !e.dead || tracked.has(e));
+      }
       __se(dt);
     };`, ctx);
   vm.runInContext(`

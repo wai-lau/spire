@@ -94,6 +94,7 @@ function formSpawn(w, type) {
 // s: where along the lane (the enemy itself by default; its tracer asks for points behind it - drawStarTrail)
 // pathAt (aspira-defs.js) WITHOUT a new object: the lane point written into `out` (perf, 2026-10-16: two fresh {x, y} - three with
 // a turned lane - an enemy a step were most of a late step's ~60-90 KB of garbage); the same arithmetic, so the same point
+const ROT_TRIG = new Map();
 function pathAtInto(pi, s, ang, out) {
   const { pts, len } = PATHS[pi];
   let x, y;
@@ -103,7 +104,7 @@ function pathAtInto(pi, s, ang, out) {
     const a = pts[lo], b = pts[hi], f = (s - a.s) / (b.s - a.s || 1);
     x = a.x + (b.x - a.x) * f; y = a.y + (b.y - a.y) * f;
   }
-  if (ang) { const c = Math.cos(ang), sn = Math.sin(ang), dx = x - CX, dy = y - CY; x = CX + dx * c - dy * sn; y = CY + dx * sn + dy * c; } // (rotAbout's)
+  if (ang) { let T = ROT_TRIG.get(ang); if (!T) { if (ROT_TRIG.size > 256) ROT_TRIG.clear(); ROT_TRIG.set(ang, (T = [Math.cos(ang), Math.sin(ang)])); } const dx = x - CX, dy = y - CY; x = CX + dx * T[0] - dy * T[1]; y = CY + dx * T[1] + dy * T[0]; } // (rotAbout's - a lane copy's turn is one of a few angles: its cos / sin kept, as the simulator's rotAbout does)
   out.x = x; out.y = y;
   return out;
 }
