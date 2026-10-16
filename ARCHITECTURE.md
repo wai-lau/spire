@@ -293,13 +293,16 @@ The Orbital Relay triples the wing (`relayStats`).
 ### 4.6d Trio scale (2026-10-16)
 
 Owner, 2026-10-15: "scale all trios up and down for each winning group they are in for a factor of how much better/worse they
-are". Every trio played to wave 120 by the smart saver (perfect play, both powers, 2 seeds); a trio's score = 120 + lives left
-on a win, else the wave reached. A designed death (ARC+FRZ+ATC, SOL+ACD+ATC, ARC+ACD+GRV, FRZ+SOL+GRV) that DIES is neutral;
-one that wins counts like any other. A kind's factor = the geometric mean, over the trios it is in, of (mean score / trio
-score) - applied to `TOWERS[k].dmg`, squared to converge faster. Two rounds: ACD 23 -> 30.03, ATC 9 -> 12.5, FRZ 15 -> 15.52,
-SOL 73 -> 68.61, GRV 30 -> 24.38; ARC left at 24 (its factor was x0.99; 22.96 lost the Star with ARC+ARC). A third round was
-noise (2 seeds swing a trio a whole game). Left: ARC+ACD+ATC and FRZ+ACD+ATC lose every round - a coverage hole (swarm / armor),
-not tower power.
+are". Every trio is played to wave 120 by the smart saver (perfect play, both powers, a few seeds: `tribal.mjs`); a trio's score
+= 120 + lives left on a win, else the wave reached. A **designed death** (ARC+FRZ+ATC, SOL+ACD+ATC, ARC+ACD+GRV, FRZ+SOL+GRV:
+the trio has no answer to one enemy type, by the six-tower square) that DIES is neutral; one that wins counts like any other.
+A kind's factor = the geometric mean, over the trios it is in, of (mean score / trio score) (`triscale.py`), applied to
+`TOWERS[k].dmg` and squared to converge faster. **Every other trio is winnable; these four are the exception** (pillar 2).
+
+Round 3 shipped on 2026-10-16, after the ATC rework: `dmg` is now ACD 34.32, ATC 15, FRZ 16.68, SOL 61.54, GRV 24.38, ARC 24
+(`defs.js`). GRV was left alone in round 3 (x0.9 broke ARC+GRV and GRV+GRV on the Star) and so was ARC (its factor is about
+x0.99; 22.96 lost the Star with ARC+ARC). `triodiag.mjs` shows why a trio loses (per enemy type: lives lost and closest
+approach). The method scripts, the rounds and the numbers each moved from: ARCHAEOLOGY §4.6d; the tooling, §10.4.
 
 ### 4.7 The core and its two powers
 

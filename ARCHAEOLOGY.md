@@ -315,6 +315,22 @@ Star; every pair clean on 1-12. Counter matrix 61-69 spread (3 ATC, 8 points, % 
 Launch 0/6/0/64, Armament 3/52/0/23; with three bolts, less ammo, x1.5 speed 29/30/0/30 (armor 982 a bolt at wave 90 against
 ~1750); at range 130 with the 100 u circle 24/6/0/9; later 25/0/0/15 at gap .15. Every bolt slows: fast 30% -> 6% leaked.
 
+### 4.6d Trio scale, the rounds (2026-10-15..16)
+
+Scores per round (`dmg`, was -> now; the factor squared each time):
+
+| Round | Moves |
+|---|---|
+| 1-2 (before the ATC rework) | ACD 23 -> 30.03, ATC 9 -> 12.5, FRZ 15 -> 15.52, SOL 73 -> 68.61, GRV 30 -> 24.38; ARC left at 24 (factor x0.99; 22.96 lost the Star with ARC+ARC) |
+| 3 (2026-10-16, after the ATC rework: orbit, volleys, range 130 and a 240 leash) | ACD 30.03 -> 34.32, ATC 12.5 -> 15 (11.25 in between, x0.9 with the new flight), FRZ 15.52 -> 16.68, SOL 68.61 -> 61.54; GRV and ARC left (x0.9 on GRV broke ARC+GRV and GRV+GRV on the Star) |
+
+The first write-up called the third round "noise" (2 seeds swing a trio a whole game); it was run again with 3 seeds after the
+ATC rework changed the ground under every trio, and it shipped. At round 2, ARC+ACD+ATC and FRZ+ACD+ATC lost every round: a
+coverage hole (swarm and armor), not tower power. Scripts (this repo's `scripts/aspira-sim/`): `tribal.mjs` (all 20 trios), `triscale.py`
+(scores and factors), `triodiag.mjs` (why a trio dies), `eco.mjs` (the price check below). Economy check that set the x1.6
+`SKILL_STEP_COST` (2026-10-15, `eco.mjs`): the no-weakness trio ARC+FRZ+ACD owned 109-287% of a max build at x1.5 and 86-93% at x1.75,
+and the owner's rule is that the worst one just affords a full build with perfect play.
+
 ### 4.7 The core and its powers
 10-02: click the core, from wave 30 (`CORE_UNLOCK`), for Zen (a slow pulse) / Nullify -> Space (slots
 pushed out, range +100) / Sinter (+30% damage), L2 / L3 options, repeatables (Overclock, Amplifier, Lens),
