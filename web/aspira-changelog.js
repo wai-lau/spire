@@ -19,7 +19,7 @@ const CHANGELOG = [
     "Gravity: x0.81 damage.",
     "Gravity: black holes pull on each other by mass - a light one falls into a heavy one - and merge into one bigger hole once their centres touch, mass, size and radiation added.",
     "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates; at most 3x the base aura.",
-    "Gravity: a nova that catches nothing still leaves a full-size hole; novas aim a little ahead of their target.",
+    "Gravity: a nova that catches nothing still leaves a full-size hole; novas land ahead of their target, so it walks into the opening hole.",
   ], u: [
     "Carrier: interceptors fly smooth loops round their target, about 100 out and wobbling +-20%, steering round the core and towers.",
     "Carrier: interceptors half size, growing with Armament to full at VI; a brighter cobalt blue that keeps its colour during boss waves.",
