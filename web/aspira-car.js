@@ -11,15 +11,16 @@
 const CAR_HANGAR = [5, 7, 7, 11, 11, 13]; // interceptors: PRIMES by purchase (owner: "prime numbers starting at 5") - bare 5, then I 7 (stop 1), II 11 (3), III 13 (5), IV 17 (6)
 // each axis ITS OWN job (owner, 2026-10-15: "make sure each axis for each tower feels unique"): Hangar WIDTH (more interceptors),
 // Launch TEMPO (faster there and back, a shorter reload - Warp: no flight at all), Armament DEPTH (a far harder hit, more of them)
-const CAR_SPEED = [400, 480, 480, 560, 560, 640]; // Launch: an interceptor's speed (its reach is SKILL_MOVE)
+const CAR_SPEED = [600, 720, 720, 840, 840, 960]; // Launch: an interceptor's speed (its reach is SKILL_MOVE) - x1.5 (owner, 2026-10-15: "increase launch speed")
 const CAR_RELOAD = [1.5, 1.1, 1.1, 0.8, 0.8, 0.55]; // Launch: s at home reloading (60% of a sortie was flying + reloading at wave 61)
-const CAR_AMMO = [12, 16, 16, 20, 20, 24]; // Armament: shots a sortie (x2 with the rate, 2026-10-15)
+const CAR_AMMO = [8, 10, 10, 12, 12, 14]; // Armament: shots a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
 // the shot's HIT is SPREAD across the axes like ARC's (owner, 2026-10-15: "spread out armament damage like arc"): Armament half of
 // it (log), Hangar and Launch a quarter each (CAR_SIDE_DMG). STEEPER than ARC's: on ARC's tables a mid build (III on every
 // axis) dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899 - ARC chains, and an interceptor spends ~40% flying and reloading
 const CAR_SHOT_MUL = [1, 2.6, 4.5, 7.5, 10, 12.5]; // Armament (VI 15)
 const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 4.6]; // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
+const CAR_BOLTS = 3; // bolts a shot, each 1/CAR_BOLTS of the hit
 const CAR_GAP = 0.2; // s between launches (owner: "one by one")
 // Hangar's FOCUS FIRE (owner, 2026-10-15): every OTHER interceptor looping the same target adds this share to each shot on it -
 // width turns into depth when the wing outnumbers the targets (they spread first: carTarget prefers an unheld enemy)
@@ -99,16 +100,17 @@ function stepIcp(i, t, st, dt) {
   if (st.warp || d <= st.speed * dt) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; }
   carFly(i, t, st.speed * dt, d);
 }
-// a shot: TWO light-blue bolts side by side (owner: "two at a time"), each HALF the hit - armor takes its flat cut from both,
+// a shot: THREE light-blue bolts side by side (owner, 2026-10-15: "make the two shots into three"), each a THIRD of the hit -
+// armor takes its flat cut from each,
 // ATC's armor weakness (with the steep hit tables a single big hit shrugged armor off: 5% leaked vs armor, its best type)
 function carTwin(i, e, t, st) {
   let n = 0;
   if (st.focus) for (const o of t.icp) if (o !== i && o.e === e && o.orb && o.state === "out") n++; // FOCUS FIRE: the others on it
-  const d = st.dmg * (1 + st.focus * n) / 2;
-  for (let k = 0; k < 2 && !e.dead; k++) { damage(e, d, t); onHit(e, t, st, d); }
+  const d = st.dmg * (1 + st.focus * n) / CAR_BOLTS;
+  for (let k = 0; k < CAR_BOLTS && !e.dead; k++) { damage(e, d, t); onHit(e, t, st, d); }
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
   const a = Math.atan2(e.y - i.y, e.x - i.x), ox = -Math.sin(a) * CAR_TWIN, oy = Math.cos(a) * CAR_TWIN;
-  for (const s of [1, -1]) (t.carBolts ||= []).push({ x0: i.x + ox * s, y0: i.y + oy * s, x1: e.x + ox * s, y1: e.y + oy * s, t: 0 });
+  for (const s of [1, 0, -1]) (t.carBolts ||= []).push({ x0: i.x + ox * s, y0: i.y + oy * s, x1: e.x + ox * s, y1: e.y + oy * s, t: 0 });
 }
 const CAR_HOP = 40; // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
 function carHop(i, t, st) {

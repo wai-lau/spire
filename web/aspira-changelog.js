@@ -9,7 +9,7 @@ const CHANGELOG = [
     "Gravity: nova damage numbers fly into the sphere.",
     "Carrier: interceptors fly a clothespin - straight out, loop their target firing, straight home.",
     "Carrier's short name is ATC.",
-    "Carrier: interceptors are thin, long darts; each shot is a pair of light-blue bolts, and Autopilot's pellets are light blue.",
+    "Carrier: interceptors are thin, long darts; each shot is light-blue bolts side by side, and Autopilot's pellets are light blue.",
     "Gravity: a black-hole look - its aura bands white-hot, yellow, coral, pink, plum and deep purple; its colour a magenta.",
     "Gravity: the sphere and its rings draw over damage numbers.",
     "Gravity: the nova explodes fully first, then the sphere and its aura appear.",
@@ -17,7 +17,8 @@ const CHANGELOG = [
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], ne: [
     "Gravity: the aura deals no damage.",
-    "Carrier: each of a shot's two bolts is half its hit (armor cuts both).",
+    "Carrier: a shot is three bolts, each a third of its hit (armor cuts each).",
+    "Carrier: less ammo a sortie (8, to 16 at Autopilot; was 12 to 28).",
     "Gravity: pellets pass through shielded enemies - only the nova pops shields.",
     "Carrier: after a kill an interceptor takes a new target only close by, else flies home.",
   ], bu: [
@@ -27,7 +28,8 @@ const CHANGELOG = [
     "Carrier Launch: a strafing pass - an interceptor rams its target as it arrives; also a shorter reload (1.5s, to 0.3s at Warp).",
     "Carrier: interceptors chase a target up to 3x the tower's reach, and send enough of themselves to kill it.",
     "Gravity: the aura strips armor 3x faster.",
-    "Carrier: fires twice as fast, with twice the ammo.",
+    "Carrier: fires twice as fast.",
+    "Carrier: interceptors fly 1.5x faster.",
     "Gravity: the aura slows in two rings - its core far harder.",
     "New tower: Carrier. Launches interceptors one by one; each flies to an enemy, fires its shots and flies home to reload. Good vs fast and shields.",
     "Gravity: nova and aura x1.7 wider.",

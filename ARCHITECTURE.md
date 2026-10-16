@@ -279,15 +279,15 @@ CAR loses 2 lives on wave 9 and the Star; every CAR pair clean on 1-12).
 (VI x5.1 each) - steeper than ARC's because an interceptor spends ~40% flying and reloading (a mid build on ARC's tables dealt
 2192/s on fast at wave 61; ARC 17449, SOL 22899). Each axis's own mechanic: Hangar FOCUS FIRE (`CAR_FOCUS`: each other
 interceptor looping the same target adds that share to every shot), Launch the STRAFING PASS (`CAR_RAM` x base damage x
-speed/400 on arrival; Warp `CAR_WARP_V`) and the reload, Armament the hit + ammo. A shot is two bolts of HALF the hit each
-(armor cuts both - ATC's armor weakness); rate 8, ammo x2 (more small shots: fast 29% -> 6% leaked, armor stays a weakness).
+speed/400 on arrival; Warp `CAR_WARP_V`) and the reload, Armament the hit + ammo. A shot is THREE bolts (`CAR_BOLTS`) of a third of the hit each
+(armor cuts each - ATC's armor weakness); rate 8, ammo 8..16, speed 600..1080 (owner: three bolts, less ammo, faster).
 `CAR_LEASH` 3: a locked interceptor PURSUES. `carTarget` SENDS ENOUGH: the first enemy whose HP beats the ammo x hit already
 committed to it. Counter matrix 61-69 (3 ATC, 8 pts, % leaked swarm/fast/shield/armor): spread 1/6/0/0, Launch 0/6/0/64,
 Armament 3/52/0/23.
 
 **Weakness pass (2026-10-15).** GRV pellets pass shielded enemies (only the nova pops charges) and the strip is x3
 (`GRV_STRIP` 1.5). ATC after a kill hops only to an enemy within `CAR_HOP` 40 of the interceptor, else home. Counter matrix
-61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14, ATC 41/29/0/4 (ATC's armor weakness grows later: armor 982 a
+61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14, ATC 41/29/0/4, then with three bolts, less ammo, x1.5 speed 29/30/0/30 (ATC's armor weakness grows later: armor 982 a
 bolt at wave 90 vs ~1750).
 
 The Orbital Relay triples the wing (`relayStats`). No new 3D primitives: darts are filled triangles, firing lines and pellets
