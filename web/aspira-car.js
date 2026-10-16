@@ -66,8 +66,14 @@ const carDist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 // a target for an interceptor: SEND ENOUGH - the first enemy in reach (pickTargets: the tower's targeting) whose HP is more than
 // the damage already committed to it (the ammo x hit of the interceptors on it), else the first in reach. A tough enemy draws
 // several (and their FOCUS FIRE); a weak one, one (2026-10-15: one interceptor an enemy let single-file fast waves through)
+// the tower's RANGE only LAUNCHES (owner, 2026-10-16: "interceptor range should be huge, the tower range is just for launching"): an
+// enemy inside it sends the wing out, and each interceptor then takes its own target from everything within the interceptors'
+// reach (CAR_LEASH x the range, 960), in the tower's targeting order - a fast enemy further out is met early (diagnosis 2026-10-16:
+// every ATC trio bled fast enemies once the range was 130)
 function carTarget(t, st) {
-  const sent = new Map(), cand = pickTargets(t, st, st.wing);
+  if (!pickTargets(t, st, 1).length) return null;
+  if (!st.reachSt || st.reachSt.range !== st.range * CAR_LEASH) st.reachSt = Object.assign({}, st, { range: st.range * CAR_LEASH });
+  const sent = new Map(), cand = pickTargets(t, st.reachSt, st.wing);
   for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg);
   return cand.find(e => e.hp + (e.shield || 0) * st.dmg / 2 > (sent.get(e.id) || 0)) || cand[0] || null;
 }
@@ -84,11 +90,11 @@ function stepIcp(i, t, st, dt) {
     const held = st.hold && i.reload <= 0; // HELD: charged and orbiting the carrier (Hangar)
     if (held) carHoldOrbit(i, t, dt); else { i.x = t.x; i.y = t.y; i.ho = undefined; }
     i.hold = held;
-    if (i.reload > 0 || (t.launchCd > 0 && !held)) return; // the held ones go AT ONCE, no launch gap
+    if (i.reload > 0 || t.launchCd > 0) return; // held or not, ONE BY ONE on CAR_GAP (owner, 2026-10-16: "carrier should not spawn all waiting interceptors at once ... just that unused interceptors can be stored in orbit")
     const e = carTarget(t, st);
     if (!e) return;
     const fx = held ? i.x : t.x, fy = held ? i.y : t.y;
-    i.e = e; i.ammo = st.ammo; i.bk = 0; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; if (!held) t.launchCd = CAR_GAP; sfx("car");
+    i.e = e; i.ammo = st.ammo; i.bk = 0; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; t.launchCd = CAR_GAP; sfx("car");
     i.v = st.speed; i.ang = held ? i.ang : Math.atan2(e.y - fy, e.x - fx); i.jp = Math.random() * 6.283; i.jw = CAR_JIT_W[0] + Math.random() * (CAR_JIT_W[1] - CAR_JIT_W[0]); // (held: out along its orbit, turning in)
     for (let k = 0; k < 4 && !held; k++) { const [ax, ay] = carAvoid(i, e.x - fx, e.y - fy, 1); i.ang = Math.atan2(ay, ax); } // leaves already bent round the core (a carrier by it has no room to turn)
     if (st.warp) { const a = Math.random() * 6.283; i.x = e.x + Math.cos(a) * carR(i); i.y = e.y + Math.sin(a) * carR(i); i.ang = a + Math.PI / 2; } // WARP: on the circle at once
@@ -118,8 +124,8 @@ function stepIcp(i, t, st, dt) {
 }
 // THE HOLD (owner, 2026-10-16: "hangar upgrades should allow the atc tower to have charged interceptors orbit it (with orbit distance
 // jitter) when idle, so that they can be released at once"): with any Hangar, an interceptor reloaded and given nothing to hit
-// circles its carrier CAR_HOLD_R out (+- CAR_HOLD_JIT by its own oj, -1..1), easing onto it; a target comes, and every held one is
-// sent the same step (stepIcp: no CAR_GAP). Its SIZE goes with the same oj ("smaller interceptors fly closer": carDart)
+// circles its carrier CAR_HOLD_R out (+- CAR_HOLD_JIT by its own oj, -1..1), easing onto it - STORED there, it still leaves one by one
+// on CAR_GAP when a target comes (owner: "just that unused interceptors can be stored in orbit"), from where it circles. Its SIZE goes with the same oj ("smaller interceptors fly closer": carDart)
 const CAR_HOLD_R = 80 /* 48 -> 80 (owner, 2026-10-16: "circling interceptors should circle further away from tower") */, CAR_HOLD_JIT = 0.25, CAR_HOLD_V = 110, CAR_SIZE_JIT = 0.15; // u; +-; u/s round the carrier; +- size
 function carHoldOrbit(i, t, dt) {
   i.oj ??= Math.random() * 2 - 1;
