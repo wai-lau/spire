@@ -49,6 +49,7 @@ const CHANGELOG = [
     "Battery: the sound engine sleeps while the tab is hidden or the game is muted.",
     "Sound: every sample levelled to the same loudness.",
     "Sound: each enemy type has its own death sound; Sol has a new attack sound.",
+    "Sound: boss warnings, boss voices and build / upgrade voice lines about half as loud, nearer the rest.",
     "Changelog: grouped by tower, enemy type, bosses and core, in smaller type.",
   ] },
   { v: "5.0", day: "Oct 15", u: [

@@ -188,7 +188,7 @@ let curSound = null; // the synth sound being built, so envelope() can count it
 // LOUDNESS (owner, 2026-10-02): the bosses' warnings and voices and every
 // upgrade/build sound stand well above the towers' shots - about 10 dB
 // (TOWER_GAIN 0.6 vs LOUD_GAIN 2)
-const TOWER_GAIN = 0.6, LOUD_GAIN = 2;
+const TOWER_GAIN = 0.6, LOUD_GAIN = 1; /* 2 -> 1 (owner, 2026-10-16: "some audio (like the boss intro sounds and the carrier sounds) sound much louder than others"): the voice lines and build / upgrade / boss cues sat 10-15 dB over the towers' shots (measured: -11..-15 vs -23 dB), now 4-8 */
 const LOUD = /^(bosswarn|bossvoice|coreup|up|build)/;
 // per-sound trims (owner): the ship explosion on every kill was too loud
 const SOUND_GAIN = { kill: 0.4 };
