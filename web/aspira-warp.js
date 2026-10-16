@@ -235,10 +235,9 @@ function warpProjectV(px, py, hAt) {
 // that puts its world point on the projected one at the perspective's scale
 // a background star's spot on the screen, its size by the perspective there (drawStars, aspira-lanes.js)
 // cached per camera: the stars never move, and projecting all ~1100 every frame was most of their cost
-const starAt = { key: "", pts: [] };
-const warpStar = (x, y, i) => {
-  const key = [cam.k, cam.ox, cam.oy, warp.cv.width, warp.cv.height].join();
-  if (key !== starAt.key) { starAt.key = key; starAt.pts = []; }
+const starAt = { k: NaN, ox: 0, oy: 0, w: 0, h: 0, pts: [] };
+const warpStar = (x, y, i) => { // (the view compared field by field: a joined string key per star was 40% of drawing 1140 stars - perf, 2026-10-16)
+  if (cam.k !== starAt.k || cam.ox !== starAt.ox || cam.oy !== starAt.oy || warp.cv.width !== starAt.w || warp.cv.height !== starAt.h) Object.assign(starAt, { k: cam.k, ox: cam.ox, oy: cam.oy, w: warp.cv.width, h: warp.cv.height, pts: [] });
   return starAt.pts[i] ||= (P => ({ x: P.x, y: P.y, k: cam.k * P.s }))(warpProject(x, y, 0));
 };
 // a core shield piece IN FRONT of the core: the camera looks from +y
