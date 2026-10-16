@@ -55,9 +55,9 @@ const DESCRIBE = {
   // stops it); Radiation more pellets (Hawking: a last burst)
   grv(sk) {
     const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0;
-    return (n >= 6 ? "A hypernova that tears armor away" : n ? "A wide nova" : "A nova") + " leaves a black hole" + (n >= 6 ? " twice as big as usual" : "") + ", its aura as big as the nova's hit. The aura " +
-      (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : v ? "slows harder and strips armor" : "slows and strips armor") + ", more the closer they are; the hole grows with every hit and nearby holes pull together and merge. It radiates " +
-      (r >= 6 ? "a storm of pellets and bursts as it fades." : r ? "more, stronger pellets." : "a few pellets.");
+    return (n >= 6 ? "A hypernova that tears armor away" : "A nova") + " leaves a black hole" + (n >= 6 ? " twice as big as usual" : "") + ", its aura as big as the nova's hit. The aura " +
+      (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; the hole grows with every hit and nearby holes pull together and merge. It radiates " +
+      (r >= 6 ? "pellets and bursts as it fades." : "pellets.");
   },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
