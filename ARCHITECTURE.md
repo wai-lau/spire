@@ -254,6 +254,24 @@ pellet rate (capped at x3 the starting mass).
 Colours: violet (aura, outline) and yellow (nova) - new palette colours are allowed for /spire (owner, 2026-10-15).
 Numbers start as guesses and are fitted with the sims to "strong vs swarm and armor, weak vs fast and shield".
 
+### 4.6c CAR, the carrier (2026-10-15, `web/aspira-car.js`)
+
+The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`, 225°): long reach (260), **strong vs fast + shield, weak to
+swarm + armor** (`COUNTERS.main` fast `[frz, car]`, shield `[acd, car]`). It never fires itself. Its INTERCEPTORS launch
+ONE BY ONE (`CAR_GAP` 0.2 s), each to its own enemy (`carTarget`: one no other interceptor holds), circle it firing `ammo`
+shots at the tower's damage and rate (retargeting if it dies, letting go past `CAR_LEASH` x reach), fly home, reload
+(`CAR_RELOAD` 1.5 s) and go again. TOWERS dmg 9 / rate 4 are a SHOT and an interceptor's shots a second (solo.mjs: a lone
+CAR loses 2 lives on wave 9 and the Star; every CAR pair clean on 1-12).
+
+| Axis | Buys | Capstone (VI) |
+|---|---|---|
+| Hangar | interceptors, PRIMES from 5: bare 5, I 7, II 11, III 13 | Full Wing: 17 |
+| Launch | interceptor speed + reach | Warp: they teleport to the target and home |
+| Armament | harder, faster shots, more a sortie | Autopilot: out of ammo, an interceptor bursts into `CAR_BURST_N` pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
+
+The Orbital Relay triples the wing (`relayStats`). No new 3D primitives: darts are filled triangles, firing lines and pellets
+single strokes (the board's path context takes no gradient stroke - §11).
+
 ### 4.7 The core and its two powers
 
 The core is **free**: no price, no tiers. Bosses hand its powers out outright at full

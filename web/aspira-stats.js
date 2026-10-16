@@ -46,6 +46,9 @@ const SPEC = {
     // always the same rows ("—" with no puddles), so a pull from Contagion 0 lines up now -> next
     ["Pool burn", st.contagion ? Math.round(st.contagionHeat * 100) + "% of jet" : "—"], ["Drips every", st.contagion ? st.contagion.every + "s" : "—"],
     ["Pool size", st.contagion ? st.contagion.r : "—"], ["Pool lasts", st.contagion ? st.contagion.life + "s" : "—"], ["Carry", st.carry ? Math.round(st.carry * 100) + "%" : "—"], ["Jet slow", st.burnSlow ? Math.round(st.burnSlow * 100) + "%" : "—"]],
+  // CAR (aspira-car.js): Damage + Rate are a SHOT's and an interceptor's
+  car: st => [["Interceptors", st.wing], ["Ammo", st.ammo + " shots"], ["Speed", st.warp ? "warp" : st.speed], ["Reload", CAR_RELOAD + "s"],
+    ["Autopilot", st.autopilot ? CAR_BURST_N + " pellets × " + dmgUnits(st.dmg * CAR_BURST_K) : "—"], ["Shields", "−1 / shot"]],
   // GRV (aspira-grv.js): at STARTING mass - a sphere grows up to x GRV_MASS_MAX with the damage it deals
   grv: st => [["Nova hit", dmgUnits(st.dmg * st.novaMul)], ["Nova reach", st.novaR], ["Aura size", st.auraR],
     ["Aura slow", Math.round(st.slow * 100) + "%" + (st.horizon ? " · 90% full" : "")], ["Aura dmg", dmgUnits(st.dmg * GRV_AURA_K) + "/s"],

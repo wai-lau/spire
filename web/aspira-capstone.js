@@ -58,6 +58,8 @@ const CAPSTONE_NUM = [
   [ACD_CONTAGION, { every: 1, life: 40, r: 150 }], [ACD_PUDDLE_HEAT, 0.2],
   // GRV: Void the widest, coldest aura (Event Horizon: a full sphere nearly stops what it holds); Supernova the biggest nova
   // (Hypernova: it tears half the armor away, spheres start heavy); Radiation the most pellets (Hawking: a last burst)
+  // CAR: Hangar seventeen interceptors; Launch the fastest (Warp: they teleport); Armament the hardest, fastest, longest sorties (Autopilot)
+  [CAR_HANGAR, 17], [CAR_SPEED, 720], [CAR_AMMO, 14], [CAR_SHOT_MUL, 2.4], [CAR_RATE_MUL, 1.7],
   [GRV_AURA_R, 153], [GRV_SLOW, 0.3], [GRV_NOVA_R, 170], [GRV_NOVA_MUL, 3.5], [GRV_PELLETS, 18], [GRV_PELLET_K, 0.8],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
@@ -67,6 +69,7 @@ const CAPSTONE_MOVE = {
   frz: { temp: [1.7, 1], rime: [1, 3], moons: [1, 1] },
   sol: { focus: [2.3, 1], refraction: [1.7, 1], breach: [1, 3] },
   acd: { corrosion: [1, 1], spray: [1.5, 1] /* VI: range, not a hotter carry (owner, 2026-10-12; was 1.25) */, contagion: [1, 2.1] },
+  car: { hangar: [1, 1], launch: [1.4, 1], armament: [1, 1] },
   grv: { void: [1.15, 1], supernova: [1.25, 1], radiation: [1, 2.2] },
 };
 for (const [kind, axes] of Object.entries(CAPSTONE_MOVE)) {
@@ -93,6 +96,9 @@ const CAPSTONE_TIERS = {
   void: { name: "Event Horizon" },
   supernova: { name: "Hypernova" },
   radiation: { name: "Hawking" },
+  hangar: { name: "Full Wing" },
+  launch: { name: "Warp" },
+  armament: { name: "Autopilot" },
 };
 for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1 && CAPSTONE_TIERS[ax.id]) ax.tiers.push(CAPSTONE_TIERS[ax.id]);
 ARC_KEEP.push("over one and a half times") /* ARC_VOLTAGE_FALL VI 1.6 (read "twice" - 2026-10-14) */; ARC_RETURN.push("four times");

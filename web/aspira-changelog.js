@@ -12,6 +12,7 @@ const CHANGELOG = [
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], bu: [
+    "New tower: Carrier. Launches interceptors one by one; each flies to an enemy, fires its shots and flies home to reload. Good vs fast and shields.",
     "Gravity: nova and aura x1.7 wider.",
     "Gravity: x3 radiation pellets.",
     "New tower: Gravity. A nova leaves a black sphere whose aura burns, slows and strips armor, growing with every hit; it radiates pellets. Strong against swarm and armor, weak to fast and shields. Axes: Void, Supernova, Radiation.",

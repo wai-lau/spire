@@ -295,6 +295,7 @@
 .asp-spend[data-kind="sol"] { --green-hsl: var(--pink-hsl); }
 .asp-spend[data-kind="acd"] { --green-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); }
 .asp-spend[data-kind="grv"] { --green-hsl: var(--asp-violet-hsl); }
+.asp-spend[data-kind="car"] { --green-hsl: var(--asp-blue-hsl); }
 .asp-spend[data-kind="core"] { --green-hsl: var(--white-hsl); }
 
 /* the boss's haiku, above the title (owner; was on the board under the core) */
@@ -407,6 +408,7 @@
 .asp-pop[data-kind="sol"] { --green-hsl: var(--pink-hsl); }
 .asp-pop[data-kind="acd"] { --green-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); }
 .asp-pop[data-kind="grv"] { --green-hsl: var(--asp-violet-hsl); }
+.asp-pop[data-kind="car"] { --green-hsl: var(--asp-blue-hsl); }
 .asp-pop[data-kind="core"] { --green-hsl: var(--white-hsl); } /* the core's card is white, like the core */
 .asp-pop[data-kind] { color: hsl(var(--green-hsl)); }
 
@@ -509,8 +511,9 @@
 /* GRV (2026-10-15; new /spire colours are allowed - owner): violet its aura and outline, yellow its nova */
 /* ...its look from a black-hole image (owner, 2026-10-15: "these colors (excl bg), in a similar ratio"): deep purple, plum, pink,
    coral, yellow, white-hot - the aura's bands; violet (its card and text) the plum, lifted to read on the board */
-#asp { --asp-violet-hsl: 312 85% 58%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
+#asp { --asp-blue-hsl: 225 95% 64%; --asp-violet-hsl: 312 85% 58%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); }
+.asp-sw.blue { color: hsl(var(--asp-blue-hsl)); } /* CAR, the carrier (2026-10-15): electric blue */
 .asp-sw.yellow { color: hsl(var(--asp-yellow-hsl)); }
 .asp-sw.bhdeep { color: hsl(var(--asp-bh-deep-hsl)); }
 .asp-sw.bhplum { color: hsl(var(--asp-bh-plum-hsl)); }
@@ -536,6 +539,7 @@
 .asp-chooser[data-kind="sol"] { --green-hsl: var(--pink-hsl); }
 .asp-chooser[data-kind="acd"] { --green-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); }
 .asp-chooser[data-kind="grv"] { --green-hsl: var(--asp-violet-hsl); }
+.asp-chooser[data-kind="car"] { --green-hsl: var(--asp-blue-hsl); }
 
 /* the BUILD cards each wear their own tower's colour (aspira-chooser.js) */
 .asp-card[data-kind="arc"] { --green-hsl: var(--orange-hsl); }
@@ -543,6 +547,7 @@
 .asp-card[data-kind="sol"] { --green-hsl: var(--pink-hsl); }
 .asp-card[data-kind="acd"] { --green-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); }
 .asp-card[data-kind="grv"] { --green-hsl: var(--asp-violet-hsl); }
+.asp-card[data-kind="car"] { --green-hsl: var(--asp-blue-hsl); }
 
 /* ...unless the credits cannot cover it: faint Ember red, every kind alike (owner, 2026-10-07) */
 #asp .asp-card.poor, #asp .asp-tw.poor { --green-hsl: var(--orange-glow-hsl); color: hsl(var(--orange-glow-hsl)); }

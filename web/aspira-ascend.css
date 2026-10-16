@@ -41,3 +41,4 @@
 .asp-asc-k[data-kind="sol"] { color: hsl(var(--pink-hsl)); }
 .asp-asc-k[data-kind="acd"] { color: hsl(var(--cat-social-h) var(--cat-social-s) var(--cat-social-l)); }
 .asp-asc-k[data-kind="grv"] { color: hsl(var(--asp-violet-hsl)); }
+.asp-asc-k[data-kind="car"] { color: hsl(var(--asp-blue-hsl)); }
