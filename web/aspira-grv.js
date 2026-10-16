@@ -111,6 +111,8 @@ function grvPellet(sp, t, st, reach) {
 // the aura's BANDS, the sphere outward, in the black-hole image's colours and shares (owner, 2026-10-15): white-hot 2, yellow 6,
 // coral 13, pink 13, plum 18, deep purple 17 - each stop where its band starts, clear inside the first and past the last
 const GRV_BANDS = [[0.15, "bhwhite"], [0.19, "yellow"], [0.3, "bhcoral"], [0.47, "bhpink"], [0.66, "bhplum"], [0.86, "bhdeep"]];
+// the NOVA's bands, the centre outward (owner, 2026-10-15: "three colors for the nova, 70% red 20% orange 10% yellow")
+const GRV_NOVA_BANDS = [[0.1, "yellow"], [0.2, "orange"], [0.7, "novared"]], GRV_NOVA_A = 0.85;
 const GRV_FLOAT_S = 0.6, GRV_FLOAT_MAX = 60, GRV_FLOAT_PX = 11, GRV_AURA_A = 0.3; // GRV_AURA_A: the band's peak, mid-radius (owner: "clear, 30%, clear")
 let grvFloats = [];
 function grvFloat(sp, e, amt) {
@@ -137,10 +139,12 @@ function drawSphere(sp, st) {
     g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
     ctx.globalAlpha = GRV_AURA_A; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar, 0, 6.283); ctx.fill();
   }
-  if (sp.age < GRV_FRONT_T * 1.6) { // the nova's yellow front, fading as it reaches its size
-    const f = Math.min(1, sp.age / GRV_FRONT_T);
-    ctx.globalAlpha = Math.max(0, 1 - sp.age / (GRV_FRONT_T * 1.6)); ctx.strokeStyle = COL.yellow; ctx.lineWidth = 3; // the image's yellow
-    ctx.beginPath(); ctx.arc(sp.x, sp.y, st.novaR * f, 0, 6.283); ctx.stroke();
+  if (sp.age < GRV_FRONT_T * 1.6) { // the NOVA: a blast in three hard bands (GRV_NOVA_BANDS), growing with its front, fading as it ends
+    const f = Math.min(1, sp.age / GRV_FRONT_T), r = Math.max(1, st.novaR * f), g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, r);
+    let at = 0;
+    for (const [share, k] of GRV_NOVA_BANDS) { g.addColorStop(at, COL[k]); at = Math.min(1, at + share); g.addColorStop(at, COL[k]); }
+    ctx.globalAlpha = GRV_NOVA_A * Math.max(0, 1 - sp.age / (GRV_FRONT_T * 1.6)); ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.fill();
   }
   if (!(typeof q3d === "function" && q3d())) drawGrvCore(sp, st); // 3D: over the damage numbers instead (drawGrvCores, aspira-warp.js)
 }
