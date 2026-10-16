@@ -11,9 +11,13 @@ const CHANGELOG = [
     "Freeze: x1.03 damage.",
     "Carrier: range 260 -> 460, making up for the movement it lost.",
     "Carrier: interceptors x1.75 faster, launched 0.11s apart (was 0.2s).",
+    "Carrier: x1.33 damage, split into 5 bolts a shot.",
+    "Acid: x1.14 damage.",
+    "Freeze: x1.08 damage.",
   ], ne: [
     "Gravity: x0.81 damage.",
     "Sol: x0.94 damage.",
+    "Sol: x0.90 damage.",
     "Carrier: no longer moves (its interceptors do the travelling).",
     "Carrier: fires at half the rate - an interceptor circles its target at least once; x0.9 damage.",
   ], u: [
