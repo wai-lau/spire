@@ -228,11 +228,14 @@ function stepCarPellets(t, dt) {
 
 // ---------- the look: thin, long darts - a fast enemy's triangle, stretched - and LIGHT-BLUE bolts and pellets (StarCraft) ----------
 const CAR_DART = 33, CAR_DART_W = 7.8, /* x3 (owner, 2026-10-16: "make the interceptors like 3x bigger"; was 11, 2.6) */ CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_BOLT_TAIL = 0.007 /* owner, 2026-10-16: "change the 5 bolts to each be much shorter" (was 0.02, 18u) */, CAR_BOLT_GROW = 0.3; // a bolt streak: at most this many s of its flight behind it, growing by GROW s a s of flight (6u by 21u out)
-function carDart(i) {
-  const a = i.ang; // nose along its heading
-  const c = Math.cos(a), s = Math.sin(a), bx = i.x - c * CAR_DART * 0.5, by = i.y - s * CAR_DART * 0.5;
-  ctx.beginPath(); ctx.moveTo(i.x + c * CAR_DART * 0.5, i.y + s * CAR_DART * 0.5);
-  ctx.lineTo(bx - s * CAR_DART_W, by + c * CAR_DART_W); ctx.lineTo(bx + s * CAR_DART_W, by - c * CAR_DART_W); ctx.closePath();
+// its SIZE grows with Armament (owner, 2026-10-16: "halve interceptor size (grow this as armament increases)"): half the dart
+// above, untaken, + CAR_DART_GROW a tier - the full dart at VI
+const CAR_DART_K0 = 0.5, CAR_DART_GROW = 0.1;
+function carDart(i, z) {
+  const a = i.ang, L = CAR_DART * z, W = CAR_DART_W * z; // nose along its heading
+  const c = Math.cos(a), s = Math.sin(a), bx = i.x - c * L * 0.5, by = i.y - s * L * 0.5;
+  ctx.beginPath(); ctx.moveTo(i.x + c * L * 0.5, i.y + s * L * 0.5);
+  ctx.lineTo(bx - s * W, by + c * W); ctx.lineTo(bx + s * W, by - c * W); ctx.closePath();
   ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; ctx.stroke();
 }
 function drawCar() {
@@ -244,7 +247,8 @@ function drawCar() {
       ctx.beginPath(); ctx.moveTo(b.x - b.vx * k, b.y - b.vy * k); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
     ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round";
-    for (const i of t.icp) if (i.state !== "home") carDart(i);
+    const z = CAR_DART_K0 + CAR_DART_GROW * skillOf(t, "armament");
+    for (const i of t.icp) if (i.state !== "home") carDart(i, z);
     ctx.strokeStyle = COL.ltblue; ctx.lineWidth = CAR_PELLET_PX;
     for (const p of t.carPellets || []) { ctx.beginPath(); ctx.moveTo(p.x - p.vx * CAR_PELLET_TAIL, p.y - p.vy * CAR_PELLET_TAIL); ctx.lineTo(p.x, p.y); ctx.stroke(); }
   }

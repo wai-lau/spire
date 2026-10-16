@@ -23,7 +23,7 @@ const GRV_SLOW_MAX = 0.45, GRV_CORE_FRAC = 0.47, GRV_CORE_MUL = 2.5, GRV_CORE_MA
 // the aura's SIZE comes from the NOVA's damage (owner, 2026-10-15: "make the max aura size depend on supernova damage"): x the
 // square root of what the nova really dealt, in tower hits (one enemy taking a bare nova = x1), between these (a nova the
 // shields swallowed leaves a small aura)
-const GRV_GROW_MIN = 0.5, GRV_GROW_MAX = 2.5;
+const GRV_GROW_MIN = 1, GRV_GROW_MAX = 2.5; /* MIN 0.5 -> 1 (owner, 2026-10-16: "GRV should have a min default size, so even if nothing is caught by the nova, it should still have some mass"): an empty nova leaves the hole one bare hit would */
 const GRV_HYPER_STRIP = 0.5, GRV_HYPER_MASS = 2; // Supernova VI (Hypernova): the nova takes half the positive armor; spheres start heavier
 const GRV_HAWKING_N = 12; // Radiation VI (Hawking): a spent sphere's last burst of pellets
 const GRV_TICK = 0.25, GRV_FRONT_T = 0.2; // the nova's collapse, s (0.12 outward, then inward: a touch longer to read)
@@ -49,8 +49,9 @@ function grvSkillStats(t, s, b) {
 }
 
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
-const grvMassK = sp => Math.max(0, Math.min(GRV_MASS_MAX, sp.mass));
-const grvAuraR = (sp, st) => st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW_MIN, Math.sqrt((sp.novaDealt || 0) / Math.max(1e-6, st.dmg))));
+const grvMassK = sp => Math.max(0, Math.min(sp.cap || GRV_MASS_MAX, sp.mass));
+const grvAuraR = (sp, st) => sp.mergeR ? sp.mergeFrom + (sp.mergeR - sp.mergeFrom) * Math.min(1, (sp.age - sp.mergeAt) / GRV_MERGE_S) // a MERGED sphere eases out to its summed size
+  : st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW_MIN, Math.sqrt((sp.novaDealt || 0) / Math.max(1e-6, st.dmg))));
 // the aura's reach right now: nothing until the nova has FULLY exploded (owner, 2026-10-15: "make the nova fully explode before
 // the aura and center"), then blown out from the centre at the nova front's speed until its size
 const grvAuraNow = (sp, st) => Math.min(grvAuraR(sp, st), st.novaR / GRV_FRONT_T * Math.max(0, sp.age - GRV_NOVA_END));
@@ -61,7 +62,7 @@ const grvShrink = sp => (sp.lost > 0 ? Math.max(0, Math.min(1, sp.mass / (sp.los
 
 // fire(): a nova on the target - the sphere is born where it stands
 function novaAt(t, st, e) {
-  (t.spheres ||= []).push({ id: G.id++, x: e.x, y: e.y, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0, lost: 1 / GRV_LIFE });
+  (t.spheres ||= []).push({ id: G.id++, x: e.x, y: e.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0, lost: 1 / GRV_LIFE });
   return true;
 }
 // one hit from a sphere: the damage it really dealt feeds its mass
@@ -69,7 +70,7 @@ function grvHit(sp, t, st, e, amt, opt) {
   const hp0 = e.hp;
   damage(e, amt, t, false, false, opt);
   const dealt = Math.max(0, hp0 - Math.max(0, e.hp));
-  if (dealt > 0) sp.mass = Math.min(GRV_MASS_MAX, sp.mass + GRV_GAIN * dealt / Math.max(1e-6, st.dmg));
+  if (dealt > 0) sp.mass = Math.min(sp.cap || GRV_MASS_MAX, sp.mass + GRV_GAIN * dealt / Math.max(1e-6, st.dmg));
   return dealt;
 }
 function stepGrv(t, dt) {
@@ -77,9 +78,48 @@ function stepGrv(t, dt) {
   stepPellets(t, st, dt);
   if (!t.spheres || !t.spheres.length) return;
   for (const sp of t.spheres) stepSphere(sp, t, st, dt);
-  t.spheres = t.spheres.filter(sp => sp.mass > 0);
+  grvPull(t, st, dt);
+  t.spheres = t.spheres.filter(sp => sp.mass > 0 && !sp.merged);
+}
+// BLACK HOLES PULL AND MERGE (owner, 2026-10-16: "black holes should have a slow acceleration towards other nearby ones / when they
+// overlap enough, merge them into a bigger one with higher radiation (calculate bh size as the additive component of currently
+// linearly reducing parts)"): any two open spheres (any GRV's) within GRV_PULL_K x their summed auras accelerate toward each
+// other, the lighter faster; once their centres are within GRV_MERGE_K of the summed auras the bigger takes the other in - every
+// part that ADDS: mass, its cap, its linear loss a second (so it still dies when its parts would have, together), the nova damage
+// behind it, and the aura's AREA (radius = root of the summed squares). Its mass - its radiation, strip and slow - can pass
+// GRV_MASS_MAX: the cap is the parts' summed
+const GRV_PULL_A = 45, GRV_PULL_V = 110, GRV_PULL_K = 1.6, GRV_MERGE_K = 0.45, GRV_MERGE_S = 0.35; // u/s2; u/s at most; reach; overlap; s to ease out
+let grvAll = [];
+function grvPull(t, st, dt) {
+  grvAll = [];
+  for (const o of G.towers) if (o.kind === "grv" && o.spheres) for (const sp of o.spheres) if (!sp.merged && sp.mass > 0 && sp.open) grvAll.push(sp);
+  for (const a of t.spheres) {
+    if (a.merged || a.mass <= 0 || !a.open) continue;
+    for (const b of grvAll) {
+      if (b === a || b.merged) continue;
+      const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6, reach = a.ar + b.ar;
+      if (d > reach * GRV_PULL_K) continue;
+      if (d < reach * GRV_MERGE_K) { grvMerge(a.ar >= b.ar ? a : b, a.ar >= b.ar ? b : a); if (a.merged) break; continue; }
+      const f = GRV_PULL_A * dt * 2 * b.mass / Math.max(1e-6, a.mass + b.mass);
+      a.vx = (a.vx || 0) + dx / d * f; a.vy = (a.vy || 0) + dy / d * f;
+    }
+    const v = Math.hypot(a.vx || 0, a.vy || 0);
+    if (v > GRV_PULL_V) { a.vx *= GRV_PULL_V / v; a.vy *= GRV_PULL_V / v; }
+    a.x += (a.vx || 0) * dt; a.y += (a.vy || 0) * dt;
+  }
+}
+function grvMerge(big, small) {
+  const m = big.mass + small.mass, w = small.mass / Math.max(1e-6, m);
+  big.x += (small.x - big.x) * w; big.y += (small.y - big.y) * w; // to the pair's centre of mass, momentum kept
+  big.vx = (big.vx || 0) * (1 - w) + (small.vx || 0) * w; big.vy = (big.vy || 0) * (1 - w) + (small.vy || 0) * w;
+  big.mergeFrom = big.ar; big.mergeR = Math.hypot(big.ar, small.ar); big.mergeAt = big.age; big.ar = big.mergeFrom;
+  big.mass = m; big.cap = (big.cap || GRV_MASS_MAX) + (small.cap || GRV_MASS_MAX); big.lost += small.lost;
+  big.novaDealt = (big.novaDealt || 0) + (small.novaDealt || 0);
+  small.merged = true; small.mass = 0;
+  if (typeof sfx === "function") sfx("grvaura");
 }
 function stepSphere(sp, t, st, dt) {
+  if (sp.merged) return; // taken in by a bigger one (grvPull): no Hawking burst, nothing
   sp.age += dt;
   if (!sp.auraSnd && sp.age >= GRV_NOVA_END) { sp.auraSnd = true; sfx("grvaura"); } // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
   // the NOVA: the yellow front sweeps out; each enemy it reaches takes the hit once
@@ -97,6 +137,7 @@ function stepSphere(sp, t, st, dt) {
     }
   }
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
+  sp.ar = ar; sp.open ||= ar >= grvAuraR(sp, st) - 0.5; // (grvPull reads them: only a fully OPENED aura pulls or merges)
   // the AURA: NO damage (owner, 2026-10-15: "make the aura not do damage") - it strips positive armor and slows the unshielded,
   // in two rings: the core far harder
   sp.tick += dt;
