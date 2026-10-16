@@ -248,6 +248,73 @@ shields"; SOL weak to swarm. Levers added 10-11/12: shield pops per hit (ACD 3 -
 "frost cracks armor" (gone), armor scaled with `ENEMY_HP_MUL` (it had been left out of the x0.225 HP cut
 and ate 4.4x too much of each hit), armor scaling with HP (10-13).
 
+### 4.6b GRV and ATC: the numbers and how they got here (2026-10-15..16)
+
+Moved out of ARCHITECTURE §4.6b / §4.6c, which now describe the mechanics only. Values at 5.1.32 (the code is the truth).
+
+**GRV constants** (`aspira-grv.js`; tiers 0, I .. IV, then the capstone as the sixth):
+
+| Constant | Value |
+|---|---|
+| aura radius at starting mass, `GRV_AURA_R` (Void) | 68, 78, 88, 99, 109, 122 |
+| aura slow at starting mass, `GRV_SLOW` (Void) | .12 .15 .18 .21 .24 .27, to `GRV_SLOW_MAX` .45 |
+| nova reach, `GRV_NOVA_R` (Supernova) | 71, 85, 99, 112, 126, 139 |
+| nova hit x the tower's `dmg`, `GRV_NOVA_MUL` | 1, 1.3, 1.6, 2, 2.4, 2.8 |
+| pellets a second at starting mass, `GRV_PELLETS` (Radiation) | **6**, 7.8, 9.6, 11.4, 13.2, 15 |
+| pellet hit x `dmg`, `GRV_PELLET_K` | .25 .32 .4 .48 .56 .65 |
+| base unfed life `GRV_LIFE`; evaporation `GRV_EVAP` | 5 s; 2 / `GRV_LIFE` |
+| radiation pacing `GRV_RAD_LIFE` | 1.6 (x0.32 of the linear hole's pace) |
+| mass cap / gain a tower-hit of damage dealt | `GRV_MASS_MAX` 3 / `GRV_GAIN` 0.12; a merge adds the caps |
+| radius cap `GRV_R_MAX` | 3 base auras |
+| armor strip `GRV_STRIP` 1.5 x `GRV_AURA_K` 0.6 x mass a second, graded `GRV_STRIP_IN` 1.5 .. `GRV_STRIP_OUT` 0.5 | centre .. edge |
+| slow rings | core = inner `GRV_CORE_FRAC` .47 of the radius, `GRV_CORE_MUL` 2.5 x the rim, to `GRV_CORE_MAX` .8; Event Horizon `GRV_HORIZON_SLOW` .9 |
+| aura size from the nova | root of the nova's damage in tower hits, `GRV_GROW_MIN` 1 .. `GRV_GROW_MAX` 2.5 |
+| Hypernova / Hawking | `GRV_HYPER_STRIP` .5, `GRV_HYPER_MASS` 2 / `GRV_HAWKING_N` 12 |
+| timing | aura tick `GRV_TICK` .25 s, nova collapse `GRV_FRONT_T` .2 s, lead `GRV_LEAD_S` .5 s |
+| pellets | speed `GRV_PELLET_V` 320, reach 1.4 x the aura, bundling past `GRV_PEL_SOFT` 80 in flight |
+| pull and merge | `GRV_PULL_A` 45, `_D` 60, `_V` 110 (max speed), `_K` 1.6 (reach), merge ease `GRV_MERGE_S` .35 s |
+
+Superseded: the spec (2026-10-15) had the nova's yellow front EXPANDING over ~0.25 s (it now collapses inward over 0.2 s), the
+aura a damage-over-time (it deals none since the aura rework the same day), mass lost LINEARLY (a share of the starting mass a
+second, an unfed hole ~5 s), the radius from mass only (the nova now sets it), pellets "~2 a second" at starting mass (6 now:
+x3 once they could miss) and pellets that only hit; auras 40 .. 72 and novas 42 .. 82 (x1.7 when pellets could miss); the armor
+strip x1 (x3, when GRV leaked 16% of armor, its own type); `GRV_GROW_MIN` .5 (1 on 2026-10-16: an empty nova still leaves a
+hole); dmg 30 (24.38 from the trio scale, §4.6d). The first fit: rate 1.5 and dmg 30, the aura at .6, so a lone GRV
+clears waves 1-11 and every pair is clean on 1-12 (`solo.mjs`; 20 / 0.5 lost 26 lives alone). Pellets passed shielded enemies
+for one build (88% of shields leaked); fixed by letting them pop a charge, only the slow skips the shielded.
+Counter matrix 61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14 before that fix.
+
+**ATC (`car`) constants** (`aspira-car.js`; the capstone VI value in brackets where `aspira-capstone.js` adds one):
+
+| Constant | Value |
+|---|---|
+| tower `dmg` / `rate` / `range` / leash (`MOVE_BASE`) | 15 / 4 / 130 (launch only) / 240 |
+| wing, `CAR_HANGAR` (primes from 5) | 5, 7, 11, 13 [17] |
+| speed, `CAR_SPEED` | 1050, 1260, 1470, 1680 |
+| reload, `CAR_RELOAD` | .75, .55, .4, .275 s; launch gap `CAR_GAP` .15 s |
+| volleys a sortie, `CAR_AMMO` | 4, 5, 6, 7 |
+| bolts a volley / together / side gap | `CAR_BOLTS` 10 / `CAR_BOLT_PAIR` 2 / `CAR_BOLT_SIDE` 6 u; the volley hits `CAR_VOLLEY_K` 2 x |
+| hit spread | Armament `CAR_SHOT_MUL` 1, 2.6, 4.5, 7.5, 10, 12.5 [15]; Hangar and Launch each `CAR_SIDE_DMG` 1, 1.6, 2.4, 3.4, 4, 4.6 [5.1] |
+| focus fire, `CAR_FOCUS` | 0, .15, .3, .45 |
+| strafing pass, `CAR_RAM` | 0, 2, 4, 7 x base dmg x speed / 700; Warp `CAR_WARP_V` 2800 |
+| orbit | `CAR_ORBIT` 75 u at `CAR_ORBIT_V` 400, jitter `CAR_ORBIT_JIT` .2, turn radius `CAR_TURN_R` 50 |
+| interceptor reach | `CAR_LEASH` 7.4 x the range (about 960) |
+| hop | `CAR_HOP` 30 u |
+| hold | `CAR_HOLD_FRAC` 0, .25, .5, .75, 1 of the wing; `CAR_HOLD_R` 80 u +- 25%, size +- 15% |
+| bolts | speed `CAR_BOLT_V` 900, fade `CAR_BOLT_REACH` 390, flies on `CAR_BOLT_ON` .08 s past a dead target |
+| slow / numbers | `CAR_SLOW` .2 for .6 s, one a tower; one number a `CAR_NUM_HITS` 3 hits |
+| Autopilot | `CAR_BURST_N` 10 pellets, `CAR_BURST_K` 1.5, speed 340, reach 90 |
+
+Superseded: the spec (2026-10-15) had reach 260 (then 460, 330, 240 and 130 as owner moved range and leash; the leash was 0, then
+130, then swapped to 240), interceptors that circled in a 30 u loop and each shot ammo 8 .. 16 small shots (three bolts a shot, then 4, 5 and 10 a volley with the volleys
+halved; ammo 12 .. 28 before that) at speed 600 .. 1080 (x1.75 with the 460 range), `CAR_GAP` .2 (then .11, .25), `CAR_LEASH` 3
+(then 4: the pursuit was never what bound), hop 40 (then 90, 20, 35), the hit 9 per shot (11.25, 15 with the trio scale), the
+hit spread steeper than ARC's because an interceptor spends ~40% of a sortie flying and reloading (a mid build on ARC's tables
+dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899). Solo and pairs (`solo.mjs`): a lone ATC lost 2 lives on wave 9 and the
+Star; every pair clean on 1-12. Counter matrix 61-69 spread (3 ATC, 8 points, % leaked swarm/fast/shield/armor): spread 1/6/0/0,
+Launch 0/6/0/64, Armament 3/52/0/23; with three bolts, less ammo, x1.5 speed 29/30/0/30 (armor 982 a bolt at wave 90 against
+~1750); at range 130 with the 100 u circle 24/6/0/9; later 25/0/0/15 at gap .15. Every bolt slows: fast 30% -> 6% leaked.
+
 ### 4.7 The core and its powers
 10-02: click the core, from wave 30 (`CORE_UNLOCK`), for Zen (a slow pulse) / Nullify -> Space (slots
 pushed out, range +100) / Sinter (+30% damage), L2 / L3 options, repeatables (Overclock, Amplifier, Lens),

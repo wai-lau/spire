@@ -222,77 +222,73 @@ armor `[acd, frz]`, shield `[arc, sol]`). The build card derives from it: `GOOD_
 `BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run, so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
 measures it.
 
-### 4.6b GRV, the gravity tower (spec, 2026-10-15 - being built)
+### 4.6b GRV, the gravity tower (`web/aspira-grv.js`)
 
-The fifth tower (owner's design, 2026-10-15; one of the two new ones - PSY the other). In the six-tower square every tower
-is strong against a PAIR of enemy types and weak to the other two; GRV takes the diagonal **swarm + armor**, weak to
-**fast + shield**. Reach: **mid**, about ARC's.
+The fifth tower (owner's design, 2026-10-15). In the six-tower square every tower is strong against a PAIR of enemy types and
+weak to the other two; GRV takes **swarm + armor** and is weak to **fast + shield**. Reach: mid, about ARC's. Palette: a violet
+aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*` tokens). The constants and the numbers it started from are in
+ARCHAEOLOGY §4.6b.
 
-**The attack.** Every fire, a **nova** comes into being at the target enemy's spot - no projectile. Its **yellow front**
-expands quickly (~0.25 s to its radius); enemies take the nova's hit as the front reaches them. It leaves a **black sphere
-with a purple outline** at its centre, and a **purple aura** expands from it at the front's speed until the aura's size
-(it keeps going after the yellow front stops, or stops first if smaller) - it reads as blown out by the nova.
+**The attack.** Every fire puts a **nova** on the target; there is no projectile. It lands where the enemy will be a moment on
+(`GRV_LEAD_S`, along its lane at its pace now, slows and stuns counted), so the enemy walks into it. The yellow front collapses
+inward from the nova's reach, hitting each enemy it passes once. When it is gone a **black centre** with a purple outline is
+left, and a **purple aura** opens from it.
 
-**The sphere's MASS** drives everything: the sphere's drawn size, the aura's radius, the aura's slow, its damage, and the
-pellet rate (capped at x3 the starting mass).
-- **Gains** mass from the DAMAGE the sphere deals (nova, aura, pellets): a crowd feeds it fast (swarm); armor is stripped by
-  the aura (below), so damage - and growth - climbs on armor; SHIELDS soak hits (little damage, little growth); FAST pass
-  quickly (few ticks, little growth).
-- **Loses** a LINEAR share of its starting mass every second (an unfed sphere lasts ~5 s); gone at zero.
-- **The aura**: a DoT, a SLOW, and an ARMOR STRIP like Corrosion (a multiplier on damage dealt, biting only positive armor).
-  Shielded enemies are NOT slowed; the nova and every aura tick pop a shield charge. Drawn as a radial gradient band -
-  clear at the sphere, 30% at mid-radius, clear at the edge. Its damage numbers drift INWARD, toward the sphere.
-- **Radiation**: every sphere sprays PELLETS around it from the start, more the bigger it is; each pellet a small hit (and
-  one shield charge, like any hit - kept sparse, ~2 a second at starting mass, so GRV stays weak to shields).
+**A hole is its mass.**
+
+| Part | Rule |
+|---|---|
+| size | the aura's area is the hole's mass: its radius is the root of (area-per-mass x mass), capped at `GRV_R_MAX` base auras (the mass itself may go on past it). Area-per-mass is fixed as the aura opens, from the nova: the base radius x the root of the damage the nova really dealt in tower hits (a kill counts the whole hit, a hit a shield swallowed nothing), clamped to `GRV_GROW_MIN`..`GRV_GROW_MAX`, so even an empty nova leaves the hole one bare hit would |
+| gain | mass grows with the damage the hole deals (nova and pellets; the aura deals none), up to a cap. A crowd feeds it fast; shields soak hits and feed it little; fast enemies pass before it feeds |
+| loss | it evaporates in proportion to its radius (`dm/dt = -E x radius / base radius`), not linearly: an unfed base hole lasts about 5 s (`GRV_LIFE`), a big or merged one burns out sooner, and it shrinks all its life |
+| pull and merge | open holes (any GRV's) accelerate toward each other by the OTHER's mass over distance squared (`grvPull`, speed capped); when their black centres touch the bigger takes the other in (`grvMerge`): masses, caps, aura areas and nova damage all add, and the radius eases out to the summed area |
+
+**The aura** deals NO damage. It slows (never the shielded; a fast enemy's slow is not doubled, GRV being weak to it) in two
+rings, the core far harder than the rim, and strips POSITIVE armor like Corrosion, graded by distance (strongest at the
+centre, weakest at the edge: `GRV_STRIP_IN` / `GRV_STRIP_OUT`). It is drawn as a radial band, clear at the centre and the edge.
+
+**Radiation.** Every hole sprays **pellets**: projectiles that fly out in a random direction and hit the first enemy they
+touch, or nothing; each pops a shield charge like any hit, kept sparse so GRV stays weak to shields. The rate is the old
+pellet rate x mass, paced by how fast the hole evaporates (`GRV_RAD_LIFE`): a hole gives off what a linear one would over its
+life, as fast as it really loses mass. Past `GRV_PEL_SOFT` pellets in flight they **bundle** (one carries several pellets'
+hit, so the expected damage is unchanged; perf). Pellets find enemies through the shared `projGrid` / `enemiesNear` (not
+`enemyGrid`, which is `aspira-acid.js`'s: all `web/*.js` share one global scope).
+
+**Look.** The black centre's radius is logarithmic in the aura (`grvCoreR`), drawn in three passes so touching disks join; every
+GRV damage number flies into its hole (`grvFloat`); the aura opens only after the nova has fully collapsed.
 
 **Axes** (purchases I-IV, IV the capstone; one capstone a tower):
+
 | axis | buys | capstone (IV) |
 |---|---|---|
-| **Void** | a bigger aura, a stronger slow | **Event Horizon**: near-total slow (90%) in a full-grown sphere, unshielded only |
-| **Supernova** | a bigger nova - the swarm answer | **Hypernova**: the nova strips a chunk of armor at once - a sphere starts heavy |
-| **Radiation** | more pellets per mass, harder pellets | **Hawking**: a sphere whose mass runs out evaporates in a last burst of pellets |
+| **Void** | a bigger aura, a stronger slow | **Event Horizon**: near-total slow (90%) in the core of a full-grown hole, unshielded only |
+| **Supernova** | a bigger, harder nova - the swarm answer | **Hypernova**: the nova takes half the positive armor at once, and a hole starts heavy |
+| **Radiation** | more pellets per mass, harder pellets | **Hawking**: a hole that runs out of mass ends in a last burst of pellets (not one a merge swallowed) |
 
-Colours: violet (aura, outline) and yellow (nova) - new palette colours are allowed for /spire (owner, 2026-10-15).
-Numbers start as guesses and are fitted with the sims to "strong vs swarm and armor, weak vs fast and shield".
+### 4.6c ATC (id `car`), the carrier (`web/aspira-car.js`)
 
-**Aura rework (owner, 2026-10-15):** the aura deals NO damage - it slows (never the shielded) and strips positive armor
-(`GRV_AURA_K` x `GRV_STRIP` a second, x mass). Its SIZE comes from the nova: `st.auraR` x sqrt(the nova's damage in tower hits;
-a kill counts the whole hit, a hit a shield swallowed nothing), clamped `GRV_GROW_MIN`..`GRV_GROW_MAX`. The slow is two rings:
-the CORE (inner `GRV_CORE_FRAC`, the hot bands) slows `GRV_CORE_MUL` x the outer ring. Mass now grows from nova + pellets only.
-The nova's numbers fly into the sphere (`grvFloat`).
+The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`): **strong vs fast + shield, weak to swarm + armor**. It never
+fires itself; its **interceptors** do. The constants (wing sizes, speeds, volley counts, reloads) and every superseded number
+are in ARCHAEOLOGY §4.6c.
 
-### 4.6c CAR (shown ATC), the carrier (2026-10-15, `web/aspira-car.js`)
-
-The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`, 225°): long reach (260), **strong vs fast + shield, weak to
-swarm + armor** (`COUNTERS.main` fast `[frz, car]`, shield `[acd, car]`). It never fires itself. Its INTERCEPTORS launch
-ONE BY ONE (`CAR_GAP` 0.2 s), each to its own enemy (`carTarget`: one no other interceptor holds), circle it firing `ammo`
-shots at the tower's damage and rate (retargeting if it dies, letting go past `CAR_LEASH` x reach), fly home, reload
-(`CAR_RELOAD` by Launch tier, 1.5 s bare to 0.3 s at Warp) and go again. TOWERS dmg 9 / rate 4 are a SHOT and an interceptor's shots a second (solo.mjs: a lone
-CAR loses 2 lives on wave 9 and the Star; every CAR pair clean on 1-12).
+| Part | Rule |
+|---|---|
+| launch | the tower's range only LAUNCHES: an enemy inside it sends the wing out, one interceptor at a time on `CAR_GAP` |
+| target | each interceptor then picks its own from everything within the interceptors' reach (`CAR_LEASH` x the range, about 960), in the tower's targeting order. `carTarget` sends enough: the first enemy whose HP (and shield) outweighs the damage already committed to it by interceptors on it. The carrier itself moves inside a leash of 240 |
+| hold | with any Hangar tier, reloaded interceptors with nothing to hit are STORED in orbit round the carrier (a quarter, half, three quarters, all of the wing by tier; `CAR_HOLD_FRAC`), at a jittered distance and size, carried with the carrier as if fixed to it. They still launch one by one |
+| flight | a heading with a capped turn rate, steered onto an orbit circle round the target (`CAR_ORBIT`, each interceptor's radius breathing by `CAR_ORBIT_JIT`); it steers round the core and the towers (`carAvoid`) and leads nothing. On arrival it makes a strafing pass (the ram) |
+| volleys | `CAR_AMMO` volleys a sortie, each `CAR_BOLTS` bolts fired `CAR_BOLT_PAIR` at a time, side by side, as a steady stream, at `CAR_VOLLEY_K` x the hit between them. Armor cuts each small bolt (ATC's armor weakness). All the bolts of a volley go at the ONE enemy it began on, even if it dies; a bolt whose target is gone flies on only `CAR_BOLT_ON` s, hitting the first enemy it touches or nothing. Every bolt slows (one slow a tower) |
+| after a kill | the interceptor hops to the nearest enemy within `CAR_HOP` that no wingmate is on (`carHop`), else the nearest within it, else it flies home. Out of volleys it goes home and reloads |
+| numbers | one damage number per `CAR_NUM_HITS` hits per interceptor, their sum (`carNum`) |
+| look | hairline trails (`carTrails`); darts sized by Armament; drawn in `skyKeep` so a boss sky does not invert them. No new 3D primitives: darts are filled triangles, firing lines and pellets single strokes (the board's path context takes no gradient stroke, §11) |
 
 | Axis | Buys | Capstone (VI) |
 |---|---|---|
-| Hangar | interceptors, PRIMES from 5: bare 5, I 7, II 11, III 13 | Full Wing: 17 |
-| Launch | TEMPO: interceptor speed, reach and a shorter reload | Warp: they teleport to the target and home |
-| Armament | DEPTH: a far harder hit (`CAR_SHOT_MUL` to x11), more shots a sortie | Autopilot: out of ammo, an interceptor bursts into `CAR_BURST_N` pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
+| Hangar | WIDTH: more interceptors, more of them stored in orbit; **focus fire** (each other interceptor looping the same target adds a share to every shot on it); a share of the hit | Full Wing |
+| Launch | TEMPO: interceptor speed, a shorter reload, the strafing pass (`CAR_RAM`), the carrier's leash; a share of the hit | **Warp**: they teleport onto the target's circle and home |
+| Armament | DEPTH: a far harder hit, more volleys a sortie | **Autopilot**: out of volleys, an interceptor bursts into pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
 
-**Balance pass (2026-10-15).** The hit is SPREAD like ARC's: Armament `CAR_SHOT_MUL` (VI x15), Hangar + Launch `CAR_SIDE_DMG`
-(VI x5.1 each) - steeper than ARC's because an interceptor spends ~40% flying and reloading (a mid build on ARC's tables dealt
-2192/s on fast at wave 61; ARC 17449, SOL 22899). Each axis's own mechanic: Hangar FOCUS FIRE (`CAR_FOCUS`: each other
-interceptor looping the same target adds that share to every shot), Launch the STRAFING PASS (`CAR_RAM` x base damage x
-speed/400 on arrival; Warp `CAR_WARP_V`) and the reload, Armament the hit + ammo. A shot is THREE bolts (`CAR_BOLTS`) of a third of the hit each
-(armor cuts each - ATC's armor weakness); every shot SLOWS (`CAR_SLOW` 0.2 for 0.6 s, one a tower; fast 30% -> 6% leaked); rate 8, ammo 8..16, speed 600..1080 (owner: three bolts, less ammo, faster).
-`CAR_LEASH` 3: a locked interceptor PURSUES. `carTarget` SENDS ENOUGH: the first enemy whose HP beats the ammo x hit already
-committed to it. Counter matrix 61-69 (3 ATC, 8 pts, % leaked swarm/fast/shield/armor): spread 1/6/0/0, Launch 0/6/0/64,
-Armament 3/52/0/23.
-
-**Weakness pass (2026-10-15).** GRV pellets passed shielded enemies for one build (88% of shields leaked; owner: they pop shields, only the slow skips the shielded) and the strip is x3
-(`GRV_STRIP` 1.5). ATC after a kill hops only to an enemy within `CAR_HOP` 40 of the interceptor, else home. Counter matrix
-61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14, ATC 41/29/0/4, then with three bolts, less ammo, x1.5 speed 29/30/0/30 (ATC's armor weakness grows later: armor 982 a
-bolt at wave 90 vs ~1750).
-
-The Orbital Relay triples the wing (`relayStats`). No new 3D primitives: darts are filled triangles, firing lines and pellets
-single strokes (the board's path context takes no gradient stroke - §11).
+The Orbital Relay triples the wing (`relayStats`).
 
 ### 4.6d Trio scale (2026-10-16)
 
