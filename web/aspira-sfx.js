@@ -17,7 +17,7 @@ const lastAt = {};
 const MAX_VOICES = 24;
 
 function audioUnlock() {
-  if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+  if (AC) { if (AC.state === "suspended" && !muted && !document.hidden) { AC.resume(); audioSlept = false; } return; }
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)();
     master = AC.createGain();
@@ -34,13 +34,24 @@ function audioUnlock() {
     noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    audioSleep(); // (made while muted: asleep at once)
   } catch (_e) { AC = null; }
 }
 document.addEventListener("pointerdown", audioUnlock);
 document.addEventListener("keydown", audioUnlock);
+// the audio SLEEPS while nothing can be heard (battery, 2026-10-16): the tab hidden, or muted - a running context keeps the audio
+// thread (and a phone's audio hardware) awake, the limiter working on silence. Woken when neither holds, or by the next tap
+// (audioUnlock: iOS may refuse a resume outside a gesture); sfx() plays nothing while asleep, as it plays nothing muted
+let audioSlept = false;
+function audioSleep() {
+  if (!AC) return;
+  const sleep = document.hidden || muted;
+  if (sleep && AC.state === "running") { AC.suspend(); audioSlept = true; } else if (!sleep && audioSlept && AC.state === "suspended") { AC.resume(); audioSlept = false; }
+}
+document.addEventListener("visibilitychange", audioSleep);
 
 function setMuted(m) {
-  muted = m;
+  muted = m; audioSleep();
   try { localStorage.setItem("aspira.mute", m ? "1" : "0"); } catch (_e) {}
 }
 function setVolume(v) {
