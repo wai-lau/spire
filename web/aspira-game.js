@@ -406,7 +406,7 @@ function stepEnemies(dt) {
     }
     // wobble rate cut to 1/3 (owner) when the wander tripled, so it drifts, not buzzes
     if (e.jit) {
-      e.ph += dt * 2.2 * (e.phr || 1);
+      e.ph += dt * 2.2 * (e.phr || 1) * (e.stunT > 0 ? 0 : 1 - (e.slowT > 0 ? e.slowF : 0)); // at its current PACE: Temporal Drive's stop freezes the wander too (owner, 2026-10-16: "temporal drive should stop all enemy movement, even jitter")
       // the wander fades to nothing approaching the core (owner), so the swarm
       // funnels into a clean line instead of piling over the centre
       const j = e.jit * Math.min(1, Math.hypot(e.x - CX, e.y - CY) / JIT_FADE_R) ** 2; // squared: gone well before the core

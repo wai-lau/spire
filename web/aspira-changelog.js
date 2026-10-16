@@ -38,6 +38,7 @@ const CHANGELOG = [
     "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",
     "All towers: the six tower colours sit evenly round the colour wheel, as the eye sees it - Arc a touch yellower, Acid greener, Freeze tealer, Carrier deeper blue, Gravity more purple, Sol coral-pink.",
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
+    "Core: Temporal Drive freezes swarms completely - their wander too; any slow slows their wander as well.",
     "Tower card: targeting priority sits at the bottom of the card on a wide screen.",
     "Auto-move: a tower weighs how long it takes to glide somewhere, and goes round the core instead of stopping behind it.",
     "Gravity: a thin ring pulses out to the edge of each black hole's aura, like Freeze's Permafrost, showing its reach.",
