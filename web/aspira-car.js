@@ -216,7 +216,7 @@ function stepCarPellets(t, dt) {
 }
 
 // ---------- the look: thin, long darts - a fast enemy's triangle, stretched - and LIGHT-BLUE bolts and pellets (StarCraft) ----------
-const CAR_DART = 33, CAR_DART_W = 7.8, /* x3 (owner, 2026-10-16: "make the interceptors like 3x bigger"; was 11, 2.6) */ CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_BOLT_TAIL = 0.02, CAR_BOLT_GROW = 0.3; // a bolt streak: at most this many s of its flight behind it, growing by GROW s a s of flight (18u by 60u out)
+const CAR_DART = 33, CAR_DART_W = 7.8, /* x3 (owner, 2026-10-16: "make the interceptors like 3x bigger"; was 11, 2.6) */ CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_BOLT_TAIL = 0.007 /* owner, 2026-10-16: "change the 5 bolts to each be much shorter" (was 0.02, 18u) */, CAR_BOLT_GROW = 0.3; // a bolt streak: at most this many s of its flight behind it, growing by GROW s a s of flight (6u by 21u out)
 function carDart(i) {
   const a = i.ang; // nose along its heading
   const c = Math.cos(a), s = Math.sin(a), bx = i.x - c * CAR_DART * 0.5, by = i.y - s * CAR_DART * 0.5;
