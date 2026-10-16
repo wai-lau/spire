@@ -27,7 +27,8 @@ const CAR_SHOT_MUL = [1, 2.6, 4.5, 7.5, 10, 12.5]; // Armament (VI 15)
 const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 4.6]; // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
-const CAR_BOLTS = 10; /* 5 -> 10 with the volleys halved (2026-10-16) */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit
+const CAR_BOLT_PAIR = 2, CAR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
+const CAR_BOLTS = Math.ceil(10 / CAR_BOLT_PAIR) * CAR_BOLT_PAIR; /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit
 const CAR_GAP = 0.15; /* 0.11 -> 0.15 with the reload x0.5 (owner, 2026-10-16: "reduce launch rate of interceptors, but reduce reload time to compensate"; countermx 61-69 spread 30/2/0/21 -> 25/0/0/15 - at 0.25 no reload made up for it: 70% of swarms leaked) */ /* x1/1.75 (owner, 2026-10-16: "interceptor spawn speed"; was 0.2) */ // s between launches (owner: "one by one")
 // Hangar's FOCUS FIRE (owner, 2026-10-15): every OTHER interceptor looping the same target adds this share to each shot on it -
 // width turns into depth when the wing outnumbers the targets (they spread first: carTarget prefers an unheld enemy)
@@ -118,7 +119,9 @@ function stepIcp(i, t, st, dt) {
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0) { // the stream: a volley's bolts spread over its interval
       if (!i.bk) { if (e.dead) break; i.ve = e; sfx("carshot"); } // a volley starts only on a LIVE target...
-      i.cd += CAR_VOLLEY_K / (st.rate * CAR_BOLTS); carBolt(i, i.ve, t, st); if (++i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; } // ...and every bolt of it goes at that one, dead or not
+      i.cd += CAR_VOLLEY_K * CAR_BOLT_PAIR / (st.rate * CAR_BOLTS); // ...and every bolt of it goes at that one, dead or not - CAR_BOLT_PAIR at a time, side by side
+      for (let k = 0; k < CAR_BOLT_PAIR && i.bk < CAR_BOLTS; k++, i.bk++) carBolt(i, i.ve, t, st, (k - (CAR_BOLT_PAIR - 1) / 2) * CAR_BOLT_SIDE);
+      if (i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; }
     }
     if (i.ammo <= 0) {
       if (st.autopilot) { carBurst(i, t, st); i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; } // rebuilt at home
@@ -196,11 +199,11 @@ function carOrbit(i, e, st, d, dt) {
 // homes on its target; its target gone, it flies on straight and hits the first enemy it touches, or nothing (was: three at once,
 // side by side, landing the instant they were fired)
 const CAR_BOLT_V = 900, CAR_BOLT_REACH = 390 /* x1.5 with the orbit (was 260) */, CAR_BOLT_HIT = 3; // u/s; u flown before it fades; u added to the enemy's size
-function carBolt(i, e, t, st) {
+function carBolt(i, e, t, st, side = 0) { // side: u across its flight, left or right of the interceptor (a pair)
   let n = 0;
   if (st.focus) for (const o of t.icp) if (o !== i && o.e === e && o.orb && o.state === "out") n++; // FOCUS FIRE: the others on it
   const a = Math.atan2(e.y - i.y, e.x - i.x);
-  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * CAR_VOLLEY_K * (1 + st.focus * n) / CAR_BOLTS, icp: i });
+  (t.carBolts ||= []).push({ x: i.x - Math.sin(a) * side, y: i.y + Math.cos(a) * side, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * CAR_VOLLEY_K * (1 + st.focus * n) / CAR_BOLTS, icp: i });
 }
 const CAR_ONE = [null];
 function stepCarBolts(t, st, dt) {
