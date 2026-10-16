@@ -58,7 +58,7 @@ const CAPSTONE_NUM = [
   [ACD_CONTAGION, { every: 1, life: 40, r: 150 }], [ACD_PUDDLE_HEAT, 0.2],
   // GRV: Void the widest, coldest aura (Event Horizon: a full sphere nearly stops what it holds); Supernova the biggest nova
   // (Hypernova: it tears half the armor away, spheres start heavy); Radiation the most pellets (Hawking: a last burst)
-  [GRV_AURA_R, 153], [GRV_SLOW, 0.3], [GRV_NOVA_R, 170], [GRV_NOVA_MUL, 3.5], [GRV_PELLETS, 6], [GRV_PELLET_K, 0.8],
+  [GRV_AURA_R, 153], [GRV_SLOW, 0.3], [GRV_NOVA_R, 170], [GRV_NOVA_MUL, 3.5], [GRV_PELLETS, 18], [GRV_PELLET_K, 0.8],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)

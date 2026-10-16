@@ -10,9 +10,10 @@ const CHANGELOG = [
     "Gravity: the sphere and its rings draw over damage numbers.",
     "Gravity: the nova explodes fully first, then the sphere and its aura appear.",
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
-    "Gravity: radiation pellets fly out in every direction and can miss.",
+    "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], bu: [
     "Gravity: nova and aura x1.7 wider.",
+    "Gravity: x3 radiation pellets.",
     "New tower: Gravity. A nova leaves a black sphere whose aura burns, slows and strips armor, growing with every hit; it radiates pellets. Strong against swarm and armor, weak to fast and shields. Axes: Void, Supernova, Radiation.",
   ] },
   { v: "4.4", day: "Oct 15", ne: [

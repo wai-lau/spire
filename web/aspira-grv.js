@@ -11,7 +11,7 @@ const GRV_AURA_R = [68, 78, 88, 99, 109, 122]; // Void: the aura's radius at sta
 const GRV_SLOW = [0.12, 0.15, 0.18, 0.21, 0.24, 0.27]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
 const GRV_NOVA_R = [71, 85, 99, 112, 126, 139]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
 const GRV_NOVA_MUL = [1, 1.3, 1.6, 2, 2.4, 2.8]; // Supernova: the nova's hit, x the tower's damage
-const GRV_PELLETS = [2, 2.6, 3.2, 3.8, 4.4, 5]; // Radiation: pellets a second at starting mass (x mass) - few: a pellet pops a shield charge
+const GRV_PELLETS = [6, 7.8, 9.6, 11.4, 13.2, 15]; // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
 const GRV_PELLET_K = [0.25, 0.32, 0.4, 0.48, 0.56, 0.65]; // Radiation: a pellet's hit, x the tower's damage
 let GRV_AURA_K = 0.6; // (was 0.35 - solo.mjs; let: the simulator sweeps it) // the aura's damage a second on each enemy in it, x the tower's damage (x mass)
 const GRV_LIFE = 5; // s: an unfed sphere's life - it loses 1 / GRV_LIFE of its STARTING mass a second, linearly
@@ -128,7 +128,7 @@ function stepPellets(t, st, dt) {
 // ---------- the PELLETS, drawn: a short coral streak along each one's flight ----------
 const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 2.2; // s of flight the streak spans; its width
 function drawGrvPellets() {
-  ctx.strokeStyle = COL.bhcoral; ctx.lineCap = "round"; ctx.lineWidth = GRV_PELLET_PX; ctx.globalAlpha = 1;
+  ctx.strokeStyle = COL.violet; ctx.lineCap = "round"; ctx.lineWidth = GRV_PELLET_PX; /* GRV purple (owner, 2026-10-15) */ ctx.globalAlpha = 1;
   for (const t of G.towers) for (const p of t.pellets || []) { ctx.beginPath(); ctx.moveTo(p.x - p.vx * GRV_PELLET_TAIL, p.y - p.vy * GRV_PELLET_TAIL); ctx.lineTo(p.x, p.y); ctx.stroke(); }
 }
 
