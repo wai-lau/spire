@@ -202,6 +202,7 @@ function carOrbit(i, e, st, d, dt) {
 // salvo", "homing, and just keep going straight if the enemy dies"): one bolt every 1 / (rate x CAR_BOLTS) s, a projectile that
 // homes on its target; its target gone, it flies on straight and hits the first enemy it touches, or nothing (was: three at once,
 // side by side, landing the instant they were fired)
+const CAR_BOLT_ON = 0.08; // s a bolt flies on past a dead target (~70u)
 const CAR_BOLT_V = 900, CAR_BOLT_REACH = 390 /* x1.5 with the orbit (was 260) */, CAR_BOLT_HIT = 3; // u/s; u flown before it fades; u added to the enemy's size
 function carBolt(i, e, t, st, side = 0) { // side: u across its flight, left or right of the interceptor (a pair)
   let n = 0;
@@ -214,7 +215,7 @@ function stepCarBolts(t, st, dt) {
   if (!t.carBolts || !t.carBolts.length) return;
   const g = projGrid();
   for (const b of t.carBolts) {
-    if (b.e && b.e.dead) b.e = null; // its target gone: straight on
+    if (b.e && b.e.dead) { b.e = null; b.left = Math.min(b.left, CAR_BOLT_ON); } // its target gone: straight on, only a little way (owner: "remaining bolts just keep going for a little bit" - the full reach let a volley's overkill land on the rest of a swarm)
     if (b.e) { const dx = b.e.x - b.x, dy = b.e.y - b.y, d = Math.hypot(dx, dy) || 1; b.vx = dx / d * CAR_BOLT_V; b.vy = dy / d * CAR_BOLT_V; } // homing
     b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
     if (b.e) CAR_ONE[0] = b.e;

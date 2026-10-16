@@ -23,7 +23,7 @@ const GRV_LIFE = 5; // s: an unfed BASE sphere's life (one bare hit's aura, star
 const GRV_R_MAX = 3; // a hole's radius at most, in base auras (its MASS may go on: radiation, strip and slow scale by it)
 const GRV_EVAP = 2 / GRV_LIFE, GRV_RAD_LIFE = 1.6; /* x0.32 of the linear sphere's pace (countermx 61-69 spread: 5 0/0/0/0, 2 1/10/7/2, 1.25 2/19/8/20; 4.6.15 was 2/27/13/7) */ // RAD_LIFE: the pellets a unit of mass gives off stay the linear 5 s sphere's (radiation is not the life)
 const GRV_MASS_MAX = 3, GRV_GAIN = 0.12; // mass gained per one tower-hit of damage dealt (nova, aura, pellets)
-const GRV_STRIP = 1.5; // (x3, 2026-10-15: GRV leaked 16% of armor, its own type) armor stripped, x the aura's damage dealt - POSITIVE armor only (it stops at zero)
+const GRV_STRIP = 1.5, GRV_STRIP_IN = 1.5, GRV_STRIP_OUT = 0.5; // (x3, 2026-10-15: GRV leaked 16% of armor, its own type) armor stripped, x the aura's damage dealt - POSITIVE armor only (it stops at zero)
 // the slow in TWO RINGS (owner, 2026-10-15: "two tiers, much bigger slow close to the center"): the CORE (inner GRV_CORE_FRAC of
 // the radius - the hot bands) slows GRV_CORE_MUL x the outer ring; each capped
 const GRV_SLOW_MAX = 0.45, GRV_CORE_FRAC = 0.47, GRV_CORE_MUL = 2.5, GRV_CORE_MAX = 0.8, GRV_HORIZON_SLOW = 0.9; // Void VI (Event Horizon): a full-grown core
@@ -166,7 +166,7 @@ function stepSphere(sp, t, st, dt) {
     for (const e of G.enemies) {
       const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
       if (e.dead || d2 > ar * ar) continue;
-      if (e.armor > 0) e.armor -= Math.min(e.armor, st.dmg * GRV_AURA_K * k * GRV_TICK * GRV_STRIP);
+      if (e.armor > 0) e.armor -= Math.min(e.armor, st.dmg * GRV_AURA_K * k * GRV_TICK * GRV_STRIP * (GRV_STRIP_IN - (GRV_STRIP_IN - GRV_STRIP_OUT) * Math.sqrt(d2) / Math.max(1, ar))); // MORE the closer (owner, 2026-10-16: "The aura strip armor and slows more the closer they are"): x1.5 at the centre to x0.5 at the edge
       const slow = d2 <= (ar * GRV_CORE_FRAC) ** 2 ? core : outer;
       // the shielded are never slowed (applySlow refuses them); a fast enemy NOT doubled like other slows - GRV is weak to fast
       applySlow(e, e.type === "fast" ? slow / FAST_SLOW_MUL : slow, GRV_TICK * 1.5, "grv:" + t.id);
