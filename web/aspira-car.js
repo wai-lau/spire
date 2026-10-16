@@ -13,12 +13,23 @@ const CAR_HANGAR = [5, 7, 7, 11, 11, 13]; // interceptors: PRIMES by purchase (o
 // Launch TEMPO (faster there and back, a shorter reload - Warp: no flight at all), Armament DEPTH (a far harder hit, more of them)
 const CAR_SPEED = [400, 480, 480, 560, 560, 640]; // Launch: an interceptor's speed (its reach is SKILL_MOVE)
 const CAR_RELOAD = [1.5, 1.1, 1.1, 0.8, 0.8, 0.55]; // Launch: s at home reloading (60% of a sortie was flying + reloading at wave 61)
-const CAR_AMMO = [6, 8, 8, 10, 10, 12]; // Armament: shots a sortie
-const CAR_SHOT_MUL = [1, 2, 2, 3.8, 3.8, 6.5]; // Armament: a shot's hit, x the tower's damage (was to x2 - ATC leaked 88-100% at 61-69)
+const CAR_AMMO = [12, 16, 16, 20, 20, 24]; // Armament: shots a sortie (x2 with the rate, 2026-10-15)
+// the shot's HIT is SPREAD across the axes like ARC's (owner, 2026-10-15: "spread out armament damage like arc"): Armament half of
+// it (log), Hangar and Launch a quarter each (CAR_SIDE_DMG). STEEPER than ARC's: on ARC's tables a mid build (III on every
+// axis) dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899 - ARC chains, and an interceptor spends ~40% flying and reloading
+const CAR_SHOT_MUL = [1, 2.6, 4.5, 7.5, 10, 12.5]; // Armament (VI 15)
+const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 4.6]; // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
 const CAR_GAP = 0.2; // s between launches (owner: "one by one")
+// Hangar's FOCUS FIRE (owner, 2026-10-15): every OTHER interceptor looping the same target adds this share to each shot on it -
+// width turns into depth when the wing outnumbers the targets (they spread first: carTarget prefers an unheld enemy)
+const CAR_FOCUS = [0, 0.15, 0.15, 0.3, 0.3, 0.45];
+// Launch's STRAFING PASS (owner, 2026-10-15): an interceptor ARRIVING at a target rams it - this x the tower's base damage x its
+// speed / 400 (Warp arrives at CAR_WARP_V)
+const CAR_RAM = [0, 2, 2, 4, 4, 7], CAR_WARP_V = 1600;
 const CAR_ORBIT = 30, CAR_ORBIT_W = 5; // it circles its target at this radius, this many radians a second
-const CAR_LEASH = 1.2; // a target further than this x the reach from the carrier is let go
+const CAR_LEASH = 3; // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
+// enemies left reach mid-sortie and ATC, built against fast, leaked them worst - counter matrix 2026-10-15)
 const CAR_BURST_N = 10, CAR_BURST_K = 1.5, CAR_PELLET_V = 340, CAR_PELLET_REACH = 90, CAR_PELLET_HIT = 3; // Autopilot's pellets
 
 SKILL_TREES.car = [
@@ -30,8 +41,8 @@ SKILL_MOVE.car = { hangar: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]], lau
 
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
-  s.range = b.range * RANGE_BONUS; s.rate = b.rate * CAR_RATE_MUL[a]; s.dmg = b.dmg * CAR_SHOT_MUL[a]; s.targets = 1;
-  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.warp = l >= CAPSTONE_TIER; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.skill = true;
+  s.range = b.range * RANGE_BONUS; s.rate = b.rate * CAR_RATE_MUL[a]; s.dmg = b.dmg * CAR_SHOT_MUL[a] * CAR_SIDE_DMG[h] * CAR_SIDE_DMG[l]; s.targets = 1;
+  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.focus = CAR_FOCUS[h]; s.ram = b.dmg * CAR_RAM[l] * (l >= CAPSTONE_TIER ? CAR_WARP_V : CAR_SPEED[l]) / 400; s.warp = l >= CAPSTONE_TIER; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -41,10 +52,13 @@ function carWing(t, st) {
   if (t.icp.length > st.wing) t.icp.length = st.wing;
 }
 const carDist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
-// a target for an interceptor: one in reach no other interceptor holds, else any in reach (pickTargets: the tower's targeting)
+// a target for an interceptor: SEND ENOUGH - the first enemy in reach (pickTargets: the tower's targeting) whose HP is more than
+// the damage already committed to it (the ammo x hit of the interceptors on it), else the first in reach. A tough enemy draws
+// several (and their FOCUS FIRE); a weak one, one (2026-10-15: one interceptor an enemy let single-file fast waves through)
 function carTarget(t, st) {
-  const held = new Set(t.icp.filter(i => i.e && !i.e.dead).map(i => i.e.id)), cand = pickTargets(t, st, st.wing);
-  return cand.find(e => !held.has(e.id)) || cand[0] || null;
+  const sent = new Map(), cand = pickTargets(t, st, st.wing);
+  for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg);
+  return cand.find(e => e.hp + (e.shield || 0) * st.dmg / 2 > (sent.get(e.id) || 0)) || cand[0] || null;
 }
 function stepCar(t, dt) {
   const st = towerStats(t);
@@ -69,7 +83,7 @@ function stepIcp(i, t, st, dt) {
     if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carNearest(i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     if (!i.orb && d > CAR_ORBIT) { carFly(i, e, st.speed * dt, d); return; } // still on its way, straight
-    if (!i.orb) { i.orb = true; i.ang = Math.atan2(i.y - e.y, i.x - e.x); } // into the loop where it arrived (no snap)
+    if (!i.orb) { i.orb = true; i.ang = Math.atan2(i.y - e.y, i.x - e.x); if (st.ram > 0) { damage(e, st.ram, t); onHit(e, t, st, st.ram); } } // into the loop where it arrived (no snap) - the STRAFING PASS
     i.ang += CAR_ORBIT_W * dt; i.x = e.x + Math.cos(i.ang) * CAR_ORBIT; i.y = e.y + Math.sin(i.ang) * CAR_ORBIT; // circling it
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / st.rate; i.ammo--; carTwin(i, e, t, st); } // TWO bolts a shot (owner: "two at a time")
@@ -84,10 +98,13 @@ function stepIcp(i, t, st, dt) {
   if (st.warp || d <= st.speed * dt) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; }
   carFly(i, t, st.speed * dt, d);
 }
-// a shot: TWO light-blue bolts side by side (owner: "two at a time"), landing as ONE hit - split into two half hits, armor's
-// 10% floor ate each half and CAR+CAR leaked wave 9 (solo.mjs, 2026-10-15)
+// a shot: TWO light-blue bolts side by side (owner: "two at a time"), each HALF the hit - armor takes its flat cut from both,
+// ATC's armor weakness (with the steep hit tables a single big hit shrugged armor off: 5% leaked vs armor, its best type)
 function carTwin(i, e, t, st) {
-  damage(e, st.dmg, t); onHit(e, t, st, st.dmg);
+  let n = 0;
+  if (st.focus) for (const o of t.icp) if (o !== i && o.e === e && o.orb && o.state === "out") n++; // FOCUS FIRE: the others on it
+  const d = st.dmg * (1 + st.focus * n) / 2;
+  for (let k = 0; k < 2 && !e.dead; k++) { damage(e, d, t); onHit(e, t, st, d); }
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
   const a = Math.atan2(e.y - i.y, e.x - i.x), ox = -Math.sin(a) * CAR_TWIN, oy = Math.cos(a) * CAR_TWIN;
   for (const s of [1, -1]) (t.carBolts ||= []).push({ x0: i.x + ox * s, y0: i.y + oy * s, x1: e.x + ox * s, y1: e.y + oy * s, t: 0 });

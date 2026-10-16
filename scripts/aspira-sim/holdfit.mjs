@@ -28,8 +28,9 @@ const LEVERS = {
   void: { kind: "grv", get: k => `GRV_AURA_R[${k}]`, set: (k, v) => `GRV_AURA_R[${k}] = ${v};`, min: 10 },
   supernova: { kind: "grv", get: k => `GRV_NOVA_MUL[${k}]`, set: (k, v) => `GRV_NOVA_MUL[${k}] = ${v};`, min: 0.1 },
   radiation: { kind: "grv", get: k => `GRV_PELLETS[${k}]`, set: (k, v) => `GRV_PELLETS[${k}] = ${v};`, min: 0.1 },
+  hangar: { kind: "car", get: k => `CAR_FOCUS[${k}]`, set: (k, v) => `CAR_FOCUS[${k}] = ${v};`, min: 0.01 },
+  launch: { kind: "car", get: k => `CAR_RAM[${k}]`, set: (k, v) => `CAR_RAM[${k}] = ${v};`, min: 0.1 },
   armament: { kind: "car", get: k => `CAR_SHOT_MUL[${k}]`, set: (k, v) => `CAR_SHOT_MUL[${k}] = ${v};`, min: 0.1 },
-  launch: { kind: "car", get: k => `CAR_SPEED[${k}]`, set: (k, v) => `CAR_SPEED[${k}] = ${v};`, min: 50 },
   contagion: { kind: "acd", get: k => `ACD_PUDDLE_HEAT[${k}]`, set: (k, v) => `ACD_PUDDLE_HEAT[${k}] = ${v};`, min: 0.01 },
 };
 const AXES = process.env.AXES ? process.env.AXES.split(",") : Object.keys(LEVERS).filter(a => !LEVERS[a].axis); // (alternate levers only when named)

@@ -275,6 +275,16 @@ CAR loses 2 lives on wave 9 and the Star; every CAR pair clean on 1-12).
 | Launch | TEMPO: interceptor speed, reach and a shorter reload | Warp: they teleport to the target and home |
 | Armament | DEPTH: a far harder hit (`CAR_SHOT_MUL` to x11), more shots a sortie | Autopilot: out of ammo, an interceptor bursts into `CAR_BURST_N` pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
 
+**Balance pass (2026-10-15).** The hit is SPREAD like ARC's: Armament `CAR_SHOT_MUL` (VI x15), Hangar + Launch `CAR_SIDE_DMG`
+(VI x5.1 each) - steeper than ARC's because an interceptor spends ~40% flying and reloading (a mid build on ARC's tables dealt
+2192/s on fast at wave 61; ARC 17449, SOL 22899). Each axis's own mechanic: Hangar FOCUS FIRE (`CAR_FOCUS`: each other
+interceptor looping the same target adds that share to every shot), Launch the STRAFING PASS (`CAR_RAM` x base damage x
+speed/400 on arrival; Warp `CAR_WARP_V`) and the reload, Armament the hit + ammo. A shot is two bolts of HALF the hit each
+(armor cuts both - ATC's armor weakness); rate 8, ammo x2 (more small shots: fast 29% -> 6% leaked, armor stays a weakness).
+`CAR_LEASH` 3: a locked interceptor PURSUES. `carTarget` SENDS ENOUGH: the first enemy whose HP beats the ammo x hit already
+committed to it. Counter matrix 61-69 (3 ATC, 8 pts, % leaked swarm/fast/shield/armor): spread 1/6/0/0, Launch 0/6/0/64,
+Armament 3/52/0/23.
+
 The Orbital Relay triples the wing (`relayStats`). No new 3D primitives: darts are filled triangles, firing lines and pellets
 single strokes (the board's path context takes no gradient stroke - §11).
 
