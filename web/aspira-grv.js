@@ -317,6 +317,7 @@ function drawGrvFloats(now) {
   const dt = drawGrvFloats.last ? Math.min(0.1, now - drawGrvFloats.last) : 0;
   drawGrvFloats.last = now;
   drawGrvPellets();
+  if (lowQ) { for (const f of grvFloats) f.t += dt; grvFloats = grvFloats.filter(f => f.t < GRV_FLOAT_S); return; } // low quality: no damage numbers, like every tower's (drawFx skips them)
   for (const f of grvFloats) {
     f.t += dt;
     const p = Math.min(1, f.t / GRV_FLOAT_S), x = f.x + (f.sp.x - f.x) * p, y = f.y + (f.sp.y - f.y) * p;
