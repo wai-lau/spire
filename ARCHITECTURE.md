@@ -516,7 +516,7 @@ lane; beam width is log of the hit; the screen shakes on a core hit.
 Synthesised WebAudio through a limiter (`aspira-sfx.js`), created on the first gesture:
 voice-limited, per-sound gaps, **at most 3 copies of a tower's sound at once**, density kept
 at any speed. Mute and volume persist. Optional **Brood War samples** from the owner's own
-install live only in `api/data/aspira-sfx/` (gitignored: the repo is public), served to the
+install live only in this repo's `data/aspira-sfx/` (gitignored: the repo is public), served to the
 guest tier by `/aspira-sfx/{file}`, replacing the synth sound of the same name. Each boss
 has a voice line.
 

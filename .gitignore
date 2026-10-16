@@ -4,3 +4,5 @@ __pycache__/
 node_modules/
 # exec-fn tooling, pulled by scripts/pre-commit when cloned outside exec-fn
 /.exec-fn/
+# the Brood War sound samples (owner's own install, personal use) - never committed: the repo is public
+/data/

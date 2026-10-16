@@ -15,7 +15,8 @@ Nightfall Tower sprite traced to web/icons/tower.svg).
 
 The sound samples (Brood War) are served to the SAME guest tier from
 /aspira-sfx/ (owner: "it's guest but still personal use"); they live only in
-the gitignored api/data/aspira-sfx/, never in the public repo.
+this repo's gitignored data/aspira-sfx/ (moved from exec-fn's api/data/ on
+2026-10-16, owner: "they should be moved into aspira"), never in the public repo.
 See ARCHITECTURE.md (§9 meta: leaderboard and saves; §10 tech).
 """
 import hmac
@@ -32,11 +33,11 @@ from helpers import DATA_DIR
 from routers import guest_protected, protected, public
 from pages import _render_page, _tmpl
 
-SFX_DIR = (DATA_DIR / "aspira-sfx").resolve()
 # the game's own files, for its VERSION stamp: web/ is mounted at /app/static in
 # the container (a sibling of this file); the repo's web/ when run from a checkout
 _HERE = Path(__file__).resolve().parent
 _GAME_DIRS = [_HERE / "static", _HERE.parent / "web"]
+SFX_DIR = (_HERE.parent / "data" / "aspira-sfx").resolve()
 
 
 def spire_version() -> str:

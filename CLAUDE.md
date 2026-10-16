@@ -23,7 +23,8 @@ exec-fn's layout, so the parent finds each piece the way it finds its own
 
 The python imports exec-fn modules (`auth`, `helpers`, `routers`, `pages`):
 this repo runs only INSIDE exec-fn. Runtime data stays in exec-fn's
-`api/data/` (`spire_ascendants*`, `spire-perflog/`, `aspira-sfx/`).
+`api/data/` (`spire_ascendants*`, `spire-perflog/`); the Brood War sound samples
+are this repo's gitignored `data/aspira-sfx/`.
 
 ## Working here
 
