@@ -126,11 +126,11 @@
 
 /* an enemy's own shape (enemyIcon), in its colour, sized to the text */
 .asp-eicon { width: 1.2em; height: 1.2em; vertical-align: -0.25em; fill: currentcolor; fill-opacity: 0.45; stroke: currentcolor; stroke-width: 1.5; }
-.asp-wavenote .e-white { color: hsl(var(--white-hsl)); }
-.asp-wavenote .e-green { color: hsl(var(--green-hsl)); }
-.asp-wavenote .e-cyan { color: hsl(var(--cyan-hsl)); }
-.asp-wavenote .e-pink { color: hsl(var(--pink-hsl)); }
-.asp-wavenote .e-orange { color: hsl(var(--orange-hsl)); }
+.asp-wavenote .e-white, .asp-goodvs .e-white { color: hsl(var(--white-hsl)); }
+.asp-wavenote .e-green, .asp-goodvs .e-green { color: hsl(var(--green-hsl)); }
+.asp-wavenote .e-cyan, .asp-goodvs .e-cyan { color: hsl(var(--cyan-hsl)); }
+.asp-wavenote .e-pink, .asp-goodvs .e-pink { color: hsl(var(--pink-hsl)); }
+.asp-wavenote .e-orange, .asp-goodvs .e-orange { color: hsl(var(--orange-hsl)); }
 
 /* bottom: the build bar, with a one-line "placing" note above it only while
    a tower is being placed (no cards: owner) */
@@ -611,7 +611,10 @@
 .asp-card dd { margin: 0; white-space: normal; overflow-wrap: anywhere; } /* a long value wraps inside its row, never out of the card (owner) */
 .asp-card .asp-hint { max-width: none; } /* not the overlay's 36ch */
 
-.asp-goodvs { font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); }
+.asp-goodvs { font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: center; }
+.asp-goodvs .asp-vs { display: inline-flex; align-items: center; gap: var(--space-0-5); white-space: nowrap; } /* an enemy's symbol and its marks (aspira-chooser.js vsMarks) */
+.asp-goodvs .asp-vs-y { color: hsl(var(--asp-good-hsl)); font-weight: var(--fw-bold); }
+.asp-goodvs .asp-vs-n { color: hsl(var(--asp-bad-hsl)); font-weight: var(--fw-bold); }
 
 /* the BUILD cards are COMPACT so all four fit above the spend bar on a real
    phone (owner: they overlapped it in iOS Safari) - tighter padding, gaps and

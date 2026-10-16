@@ -133,11 +133,21 @@ function chooseUpgrade(i) {
 // does, its base stats) and a cancel, the same chooser as an upgrade's. Each
 // card wears its tower's colour. chooser.t is a stand-in while it is open (the
 // loop and the keys test it); chooser.ci is the slot.
+// GOOD AND BAD VS as SYMBOLS (owner, 2026-10-16: "instead of showing names show the symbol and a check or an x; each tower should
+// have the same number of checks and x's; an enemy type can have multiple; use sim stats"): from the counter matrix (countermx.mjs,
+// three towers of a kind, spread build, waves 61-69, % leaked; 5.1.23): 3 checks and 3 x's a tower, the checks to the types it lets
+// through less than its own average, split by how far under it, the x's likewise over (scratchpad marks.py)
+const VS_MARKS = { arc: { swarm: 1, fast: 1, shield: 1, armor: -3 }, frz: { swarm: 2, fast: 1, shield: -2, armor: -1 }, sol: { swarm: -3, fast: 1, shield: 1, armor: 1 }, acd: { swarm: 1, fast: -3, shield: 1, armor: 1 }, grv: { swarm: 1, fast: -3, shield: 1, armor: 1 }, car: { swarm: -2, fast: 1, shield: 2, armor: -1 } };
+const VS_ORDER = ["swarm", "fast", "shield", "armor"];
+const vsMarks = k => VS_ORDER.filter(e => (VS_MARKS[k] || {})[e]).map(e => {
+  const m = VS_MARKS[k][e];
+  return '<span class="asp-vs e-' + ENEMIES[e].color + '">' + enemyIcon(e) + '<b class="' + (m > 0 ? "asp-vs-y" : "asp-vs-n") + '">' + (m > 0 ? "\u2713" : "\u2717").repeat(Math.abs(m)) + "</b></span>";
+}).join("");
 function buildCard(k, i) {
   const b = TOWERS[k], cost = towerCost(k);
   // "good vs" right under the title (owner); the base stats on ONE line so all
   // four cards fit on a phone above the spend bar (owner: everything fits)
-  return '<div class="name">' + (i + 1) + " · " + b.name + " · -" + cr(cost) + "</div>" + '<div class="asp-goodvs">good vs ' + GOOD_VS[k] + (HELPS_VS[k] ? " · helps vs " + HELPS_VS[k] : "") + "</div>" + // main counter first, then its helper roles (COUNTERS, aspira-defs.js)
+  return '<div class="name">' + (i + 1) + " · " + b.name + " · -" + cr(cost) + "</div>" + '<div class="asp-goodvs">' + vsMarks(k) + "</div>" + // each enemy's symbol with its checks / x's (VS_MARKS)
     '<p class="asp-hint">' + b.blurb + "</p>"; // WHY it works, no stat dump (owner, 2026-10-07)
 }
 // the BUILD cards' ORDER: shuffled ONCE, kept for every build after (owner, 2026-10-16: "Shuffle them once and use that for build

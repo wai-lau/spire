@@ -36,6 +36,8 @@ const CHANGELOG = [
     "All towers: the six tower colours sit evenly round the colour wheel, as the eye sees it - Arc a touch yellower, Acid greener, Freeze tealer, Carrier deeper blue, Gravity more purple, Sol coral-pink.",
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
     "Lanes: a lit lane's glow fades out gradually as it reaches the core; the line itself runs on in.",
+    "Build cards: what each tower is good and bad against shown as the enemy symbols with checks and x's - three of each, from the simulator's numbers.",
+    "Carrier: a hairline trail follows each interceptor's path.",
     "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
     "Top players: a version column - the game version each score was played on; Carrier teams can post again; JUU and SMD 6 lives less (the Lovers once paid their lives twice).",
     "Perf: late in the game the upcoming-wave list rebuilds about 9x faster, damage numbers no longer each make a new text image as they shrink, the 3D star field draws twice as fast, Gravity's pellets and Carrier's bolts find targets faster, and enemies in formation move more cheaply.",

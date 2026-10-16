@@ -270,10 +270,34 @@ function carDart(i, z) {
 }
 // darts: the INTERCEPTORS alone, drawn in skyKeep - their colour is not inverted by a boss sky (owner, 2026-10-16: "Interceptor color
 // should also not be inverted"); else the bolts and pellets, which turn over with it like every tower's shots
+// THE TRAIL (owner, 2026-10-16: "add a super thin but long line along the paths travelled by interceptor"): each interceptor out of
+// the carrier keeps its last CAR_TRAIL_N points, one every CAR_TRAIL_STEP u flown (drawn only - the simulator never draws), and a
+// hairline runs back along them, fading out in CAR_TRAIL_BANDS steps; gone once it is back inside the carrier
+const CAR_TRAIL_N = 60, CAR_TRAIL_STEP = 6, CAR_TRAIL_W = 0.8, CAR_TRAIL_A = 0.45, CAR_TRAIL_BANDS = 4;
+function carTrails(t) {
+  ctx.strokeStyle = COL.blue; ctx.lineWidth = CAR_TRAIL_W; ctx.lineJoin = "round"; ctx.lineCap = "round";
+  for (const i of t.icp) {
+    if (i.state === "home" && !i.hold) { i.trail = null; continue; }
+    const tr = i.trail ||= [i.x, i.y], n = tr.length;
+    if ((tr[n - 2] - i.x) ** 2 + (tr[n - 1] - i.y) ** 2 >= CAR_TRAIL_STEP * CAR_TRAIL_STEP) { tr.push(i.x, i.y); if (tr.length > CAR_TRAIL_N * 2) tr.splice(0, 2); }
+  }
+  for (let b = 0; b < CAR_TRAIL_BANDS; b++) { // band b: the b-th quarter from the interceptor back, each fainter - one stroke a band for every trail
+    ctx.globalAlpha = CAR_TRAIL_A * (1 - b / CAR_TRAIL_BANDS); ctx.beginPath();
+    for (const i of t.icp) {
+      const tr = i.trail; if (!tr || tr.length < 4) continue;
+      const m = tr.length / 2, hi = Math.round(m * (1 - b / CAR_TRAIL_BANDS)), lo = Math.round(m * (1 - (b + 1) / CAR_TRAIL_BANDS));
+      if (b === 0) ctx.moveTo(i.x, i.y); else ctx.moveTo(tr[(hi - 1) * 2], tr[(hi - 1) * 2 + 1]);
+      for (let k = hi - 1; k >= Math.max(0, lo - 1); k--) ctx.lineTo(tr[k * 2], tr[k * 2 + 1]);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
 function drawCar(darts) {
   for (const t of G.towers) {
     if (t.kind !== "car" || !t.icp) continue;
     if (darts) {
+      carTrails(t);
       ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
       const z = CAR_DART_K0 + CAR_DART_GROW * skillOf(t, "armament");
       for (const i of t.icp) if (i.state !== "home" || i.hold) carDart(i, z * (1 + CAR_SIZE_JIT * (i.oj || 0))); // its own size: smaller ones hold closer
