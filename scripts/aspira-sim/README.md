@@ -28,6 +28,11 @@ caps it) and the single-threaded ones can run side by side.
 | `wavebal.mjs` / `typebal.mjs` / `bossbal.mjs` / `arcfit.mjs` | the fits (wave counts, type counts, boss HP, ARC tiers) - headers say how |
 | `buildsearch.mjs` | hill-climb the build plan that banks the most by wave 30 |
 | `stuck.mjs [toWave=60]` | STUCK TOWERS (2026-10-13, part of the battery): each trio to wave 60 with the gliding player - stalled glide steps, give-ups in a row, illegal spots and their longest run; prints STUCK and exits 1 when a tower stalls, gives up twice running or overlaps past 0.5 s |
+| `tribal.mjs [out.jsonl]` | EVERY TRIO of the six kinds (all 20), PERFECT play (the smart saver, both powers) to wave 120, over `SEEDS` (default 1,2): wins, wave reached, lives left, rewinds. The input of the trio-scale method (ARCHITECTURE.md 4.6d); env `KINDS`, `SEEDS`, `ASPIRA_PATCH`, `ASPIRA_WEB`. (`trios.mjs` above walks only the first four kinds.) |
+| `triscale.py out.jsonl` | scores a `tribal` run (a win = 120 + lives left, else the wave reached; a designed death that dies is neutral) and prints each kind's damage factor: the geometric mean over its trios of mean score / trio score |
+| `triodiag.mjs` | why a trio loses: its games to 120 with per-wave records over waves 60+, lives lost and closest approach per enemy type, and the killing wave's types. env `TRIOS` (`a.b.c,...`), `SEEDS`, `ASPIRA_WEB` |
+| `eco.mjs` | the no-weakness trios at wave 120: credits owned (spent + banked) against what maxing every tower costs; env `K` scales `SKILL_STEP_COST` (the x1.6 price came from it) |
+| `marks.py countermx.out` | turns a `countermx` run (spread build, waves 61-69) into the build card's check / x marks (`VS_MARKS`, aspira-chooser.js) |
 
 `ASPIRA_WEB=<dir>` pins a run to a snapshot of the game files (`cp web/aspira-*.js`
 somewhere first): every game re-reads them, so a balance commit landing mid-run

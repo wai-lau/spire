@@ -136,7 +136,7 @@ function chooseUpgrade(i) {
 // GOOD AND BAD VS as SYMBOLS (owner, 2026-10-16: "instead of showing names show the symbol and a check or an x; each tower should
 // have the same number of checks and x's; an enemy type can have multiple; use sim stats"): from the counter matrix (countermx.mjs,
 // three towers of a kind, spread build, waves 61-69, % leaked; 5.1.23): 3 checks and 3 x's a tower, the checks to the types it lets
-// through less than its own average, split by how far under it, the x's likewise over (scratchpad marks.py)
+// through less than its own average, split by how far under it, the x's likewise over (scripts/aspira-sim/marks.py)
 const VS_MARKS = { arc: { swarm: 1, fast: 1, shield: 1, armor: -3 }, frz: { swarm: 2, fast: 1, shield: -2, armor: -1 }, sol: { swarm: -3, fast: 1, shield: 1, armor: 1 }, acd: { swarm: 1, fast: -3, shield: 1, armor: 1 }, grv: { swarm: 1, fast: -3, shield: 1, armor: 1 }, car: { swarm: -2, fast: 1, shield: 2, armor: -1 } };
 const VS_ORDER = ["swarm", "fast", "shield", "armor"];
 const vsMarks = k => VS_ORDER.filter(e => (VS_MARKS[k] || {})[e]).map(e => {
