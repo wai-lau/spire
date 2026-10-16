@@ -8,7 +8,7 @@ const CHANGELOG = [
   { v: "4.5", day: "Oct 15", u: [
     "Carrier: interceptors fly a clothespin - straight out, loop their target firing, straight home.",
     "Carrier's short name is ATC.",
-    "Carrier: interceptors are thin, long darts; each shot is a tight pair of light-blue bolts, and Autopilot's pellets are light blue.",
+    "Carrier: interceptors are thin, long darts; each shot is a pair of light-blue bolts, and Autopilot's pellets are light blue.",
     "Gravity: a black-hole look - its aura bands white-hot, yellow, coral, pink, plum and deep purple; its colour a magenta.",
     "Gravity: the sphere and its rings draw over damage numbers.",
     "Gravity: the nova explodes fully first, then the sphere and its aura appear.",

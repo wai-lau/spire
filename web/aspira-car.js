@@ -123,7 +123,7 @@ function stepCarPellets(t, dt) {
 }
 
 // ---------- the look: thin, long darts - a fast enemy's triangle, stretched - and LIGHT-BLUE bolts and pellets (StarCraft) ----------
-const CAR_DART = 11, CAR_DART_W = 2.6, CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_TWIN = 1,  CAR_BOLT_S = 0.07, CAR_BOLT_LEN = 0.35;
+const CAR_DART = 11, CAR_DART_W = 2.6, CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_TWIN = 2.5, CAR_BOLT_S = 0.07, CAR_BOLT_LEN = 0.35;
 function carDart(i) {
   const a = i.state === "out" && i.orb ? i.ang + Math.PI / 2 : i.ang; // circling: nose along the orbit
   const c = Math.cos(a), s = Math.sin(a), bx = i.x - c * CAR_DART * 0.5, by = i.y - s * CAR_DART * 0.5;
