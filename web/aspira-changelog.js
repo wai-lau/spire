@@ -12,6 +12,7 @@ const CHANGELOG = [
     "Freeze: x1.11 damage.",
     "Sol: x0.85 damage.",
     "Acid: x1.49 damage.",
+    "Acid: pools and corrosion drips hit enemies again (broken since 5.1.7).",
     "Carrier: x1.67 damage, at half the rate; each shot is 5 homing bolts streamed from under the interceptor - a bolt whose target dies flies on.",
     "Carrier: range 260 -> 130, movement 200 -> 240; interceptors chase up to 960 away.",
     "Carrier: interceptors x1.75 faster, launched 0.15s apart (was 0.2s), reloading twice as fast.",
