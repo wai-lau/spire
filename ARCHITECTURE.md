@@ -342,6 +342,19 @@ Globals `ENEMY_HP_MUL` and `BOUNTY_MUL` scale the table (ARCHAEOLOGY §12). An e
 with its HP and grows with log HP; dead enemies become invisible **ghosts** that drift on
 so beams can follow them, removed at the core with no life lost.
 
+### 5.1b The suits (design, 2026-10-16)
+
+The bosses are the Major Arcana (§5.4); the four ordinary types are the four MINOR suits, read from Rachel Pollack's
+*78 Degrees of Wisdom* (exec-fn `api/tarot/book/suits/`). Not yet shown in the game - where they surface (wave names,
+the build-card symbols, the enemies' look) is open.
+
+| type | suit | element | why (Pollack) |
+|---|---|---|---|
+| armor | **Pentacles** | earth | "the body ... the slow real things", "the discipline of years", building what lasts: slow, solid, worn down only with patience; the pentagon echoes the pentacle |
+| shield | **Cups** | water | a vessel that holds, soaks and refills; conflicts "tender, slow, and inward", "soft erosions" - a shield eaten charge by charge |
+| fast | **Wands** | fire | "will, drive, vitality", "carried by force of personal energy", "which direction to throw oneself" - a charge at the core |
+| swarm | **Swords** | air | "struggle ... anxiety ... doubt", where "words and thoughts ... do their damage" - death by a thousand small cuts, too many thoughts at once |
+
 ### 5.2 Scaling (the curves)
 
 Most curves read a wave as its **10-cycle equivalent** `eqWave(n) = n x 10/12` (the boss
