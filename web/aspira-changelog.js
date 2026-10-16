@@ -23,7 +23,8 @@ const CHANGELOG = [
   ], u: [
     "Carrier: interceptors fly smooth loops round their target, about 100 out and wobbling +-20%, steering round the core and towers.",
     "Carrier: interceptors half size, growing with Armament to full at VI; a brighter cobalt blue that keeps its colour during boss waves.",
-    "Carrier: bolts are short streaks that stretch as they fly; one damage number for every two hits of an interceptor.",
+    "Carrier: bolts are short streaks that stretch as they fly; one damage number for every three hits of an interceptor (the strafing pass included), their sum.",
+    "Carrier: with any Hangar, charged interceptors circle the carrier while there is nothing to hit - each at its own distance, the smaller ones closer, carried along when you drag it - and all go at once when a target comes.",
     "Carrier: launch and shot sounds; tagline \"Carrier has arrived.\"",
     "Gravity: dark purple (Sol bright pink); the black centre grows logarithmically and the hole shrinks away to nothing.",
     "Gravity: every damage number it deals - nova and pellets - flies into its black hole.",
