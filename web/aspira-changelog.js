@@ -5,6 +5,14 @@
 // each day's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI
 const CHANGELOG = [
+  { v: "4.6", day: "Oct 16", bu: [
+    "Acid: x1.31 damage.",
+    "Carrier: x1.39 damage.",
+    "Freeze: x1.03 damage.",
+  ], ne: [
+    "Gravity: x0.81 damage.",
+    "Sol: x0.94 damage.",
+  ] },
   { v: "4.5", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",
     "Carrier: interceptors fly a clothespin - straight out, loop their target firing, straight home.",

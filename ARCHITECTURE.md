@@ -293,6 +293,17 @@ bolt at wave 90 vs ~1750).
 The Orbital Relay triples the wing (`relayStats`). No new 3D primitives: darts are filled triangles, firing lines and pellets
 single strokes (the board's path context takes no gradient stroke - §11).
 
+### 4.6d Trio scale (2026-10-16)
+
+Owner, 2026-10-15: "scale all trios up and down for each winning group they are in for a factor of how much better/worse they
+are". Every trio played to wave 120 by the smart saver (perfect play, both powers, 2 seeds); a trio's score = 120 + lives left
+on a win, else the wave reached. A designed death (ARC+FRZ+ATC, SOL+ACD+ATC, ARC+ACD+GRV, FRZ+SOL+GRV) that DIES is neutral;
+one that wins counts like any other. A kind's factor = the geometric mean, over the trios it is in, of (mean score / trio
+score) - applied to `TOWERS[k].dmg`, squared to converge faster. Two rounds: ACD 23 -> 30.03, ATC 9 -> 12.5, FRZ 15 -> 15.52,
+SOL 73 -> 68.61, GRV 30 -> 24.38; ARC left at 24 (its factor was x0.99; 22.96 lost the Star with ARC+ARC). A third round was
+noise (2 seeds swing a trio a whole game). Left: ARC+ACD+ATC and FRZ+ACD+ATC lose every round - a coverage hole (swarm / armor),
+not tower power.
+
 ### 4.7 The core and its two powers
 
 The core is **free**: no price, no tiers. Bosses hand its powers out outright at full

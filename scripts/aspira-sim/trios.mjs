@@ -7,7 +7,7 @@ import { play } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
 import { ALL } from "./corepower.mjs";
 
-const K = ["arc", "frz", "sol", "acd"];
+const K = (process.env.KINDS || "arc,frz,sol,acd,grv,car").split(","); // (grv + car: 2026-10-15)
 const STYLES = { greedy: { up: 0.8 }, balanced: { up: 0.5 }, saver: { up: 0.3, reserve: 10 } };
 export default async function task({ trio, style, seed }) {
   const r = play({ ...STYLES[style], maxTowers: 3, opening: trio, mix: Object.fromEntries(trio.map(k => [k, 1])), core: ALL, useCore: true }, seed, 100);
