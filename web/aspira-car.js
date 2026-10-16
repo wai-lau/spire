@@ -34,7 +34,7 @@ function carSkillStats(t, s, b) {
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
 function carWing(t, st) {
   t.icp ||= [];
-  while (t.icp.length < st.wing) t.icp.push({ x: t.x, y: t.y, state: "home", reload: 0, ammo: 0, e: null, cd: 0, ang: Math.random() * 6.283, flash: 0 });
+  while (t.icp.length < st.wing) t.icp.push({ x: t.x, y: t.y, state: "home", reload: 0, ammo: 0, e: null, cd: 0, ang: Math.random() * 6.283 });
   if (t.icp.length > st.wing) t.icp.length = st.wing;
 }
 const carDist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
@@ -51,7 +51,6 @@ function stepCar(t, dt) {
   for (const i of t.icp) stepIcp(i, t, st, dt);
 }
 function stepIcp(i, t, st, dt) {
-  i.flash = Math.max(0, i.flash - dt);
   if (i.state === "home") {
     i.x = t.x; i.y = t.y; i.reload = Math.max(0, i.reload - dt);
     if (i.reload > 0 || t.launchCd > 0) return;
@@ -67,7 +66,7 @@ function stepIcp(i, t, st, dt) {
     if (d > CAR_ORBIT * 1.5) { carFly(i, e, st.speed * dt, d); return; } // still on its way
     i.ang += CAR_ORBIT_W * dt; i.x = e.x + Math.cos(i.ang) * CAR_ORBIT; i.y = e.y + Math.sin(i.ang) * CAR_ORBIT; // circling it
     i.cd -= dt;
-    while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / st.rate; i.ammo--; i.flash = 0.06; damage(e, st.dmg, t); onHit(e, t, st, st.dmg); }
+    while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / st.rate; i.ammo--; carTwin(i, e, t, st); } // TWO bolts a shot (owner: "two at a time")
     if (i.ammo <= 0) {
       if (st.autopilot) { carBurst(i, t, st); i.state = "home"; i.reload = CAR_RELOAD; i.x = t.x; i.y = t.y; i.e = null; return; } // rebuilt at home
       carHome(i, t, st);
@@ -78,6 +77,14 @@ function stepIcp(i, t, st, dt) {
   const d = Math.sqrt(carDist2(i, t));
   if (st.warp || d <= st.speed * dt) { i.state = "home"; i.reload = CAR_RELOAD; i.x = t.x; i.y = t.y; i.e = null; return; }
   carFly(i, t, st.speed * dt, d);
+}
+// a shot: TWO light-blue bolts side by side (owner: "two at a time"), landing as ONE hit - split into two half hits, armor's
+// 10% floor ate each half and CAR+CAR leaked wave 9 (solo.mjs, 2026-10-15)
+function carTwin(i, e, t, st) {
+  damage(e, st.dmg, t); onHit(e, t, st, st.dmg);
+  if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
+  const a = Math.atan2(e.y - i.y, e.x - i.x), ox = -Math.sin(a) * CAR_TWIN, oy = Math.cos(a) * CAR_TWIN;
+  for (const s of [1, -1]) (t.carBolts ||= []).push({ x0: i.x + ox * s, y0: i.y + oy * s, x1: e.x + ox * s, y1: e.y + oy * s, t: 0 });
 }
 function carHome(i, t, st) { i.state = "back"; i.e = null; if (st.warp) { i.state = "home"; i.reload = CAR_RELOAD; i.x = t.x; i.y = t.y; } }
 function carFly(i, to, step, d) { i.ang = Math.atan2(to.y - i.y, to.x - i.x); i.x += (to.x - i.x) / d * step; i.y += (to.y - i.y) / d * step; }
@@ -103,22 +110,29 @@ function stepCarPellets(t, dt) {
   t.carPellets = t.carPellets.filter(p => p.left > 0);
 }
 
-// ---------- the look: small blue darts, a thin firing line when one shoots, the burst's pellets ----------
-const CAR_DART = 6, CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03;
+// ---------- the look: thin, long darts - a fast enemy's triangle, stretched - and LIGHT-BLUE bolts and pellets (StarCraft) ----------
+const CAR_DART = 11, CAR_DART_W = 2.6, CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_TWIN = 2.5, CAR_BOLT_S = 0.07, CAR_BOLT_LEN = 0.35;
+function carDart(i) {
+  const a = i.state === "out" && i.e && Math.sqrt(carDist2(i, i.e)) <= CAR_ORBIT * 1.5 ? i.ang + Math.PI / 2 : i.ang; // circling: nose along the orbit
+  const c = Math.cos(a), s = Math.sin(a), bx = i.x - c * CAR_DART * 0.5, by = i.y - s * CAR_DART * 0.5;
+  ctx.beginPath(); ctx.moveTo(i.x + c * CAR_DART * 0.5, i.y + s * CAR_DART * 0.5);
+  ctx.lineTo(bx - s * CAR_DART_W, by + c * CAR_DART_W); ctx.lineTo(bx + s * CAR_DART_W, by - c * CAR_DART_W); ctx.closePath();
+  ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; ctx.stroke();
+}
 function drawCar() {
+  const dt = drawCar.last ? Math.min(0.1, (performance.now() - drawCar.last) / 1000 * (ui.speed || 1)) : 0;
+  drawCar.last = performance.now();
   for (const t of G.towers) {
     if (t.kind !== "car" || !t.icp) continue;
-    for (const i of t.icp) {
-      if (i.state === "home") continue;
-      if (i.flash > 0 && i.e && !i.e.dead) { ctx.globalAlpha = 0.9; ctx.strokeStyle = COL.blue; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(i.x, i.y); ctx.lineTo(i.e.x, i.e.y); ctx.stroke(); }
-      const a = i.state === "out" && i.e && Math.sqrt(carDist2(i, i.e)) <= CAR_ORBIT * 1.5 ? i.ang + Math.PI / 2 : i.ang; // circling: nose along the orbit
-      ctx.globalAlpha = 1; ctx.fillStyle = COL.blue; ctx.beginPath();
-      ctx.moveTo(i.x + Math.cos(a) * CAR_DART, i.y + Math.sin(a) * CAR_DART);
-      ctx.lineTo(i.x + Math.cos(a + 2.5) * CAR_DART * 0.7, i.y + Math.sin(a + 2.5) * CAR_DART * 0.7);
-      ctx.lineTo(i.x + Math.cos(a - 2.5) * CAR_DART * 0.7, i.y + Math.sin(a - 2.5) * CAR_DART * 0.7);
-      ctx.closePath(); ctx.fill();
+    ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 1.3; ctx.lineJoin = "round";
+    for (const i of t.icp) if (i.state !== "home") carDart(i);
+    ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CAR_PELLET_PX; ctx.globalAlpha = 1;
+    for (const b of t.carBolts || []) {
+      b.t += dt;
+      const f = Math.min(1, b.t / CAR_BOLT_S), g = Math.max(0, f - CAR_BOLT_LEN);
+      ctx.beginPath(); ctx.moveTo(b.x0 + (b.x1 - b.x0) * g, b.y0 + (b.y1 - b.y0) * g); ctx.lineTo(b.x0 + (b.x1 - b.x0) * f, b.y0 + (b.y1 - b.y0) * f); ctx.stroke();
     }
-    ctx.strokeStyle = COL.blue; ctx.lineCap = "round"; ctx.lineWidth = CAR_PELLET_PX;
+    if (t.carBolts) t.carBolts = t.carBolts.filter(b => b.t < CAR_BOLT_S);
     for (const p of t.carPellets || []) { ctx.beginPath(); ctx.moveTo(p.x - p.vx * CAR_PELLET_TAIL, p.y - p.vy * CAR_PELLET_TAIL); ctx.lineTo(p.x, p.y); ctx.stroke(); }
   }
   ctx.globalAlpha = 1;
