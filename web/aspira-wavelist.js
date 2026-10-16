@@ -10,13 +10,19 @@ const WAVE_HEAD = { now: "warped in", next: "warping in..." }; // (owner: "repla
 // aspira-draw.js), as a small inline SVG in the type's colour
 // gap: px between this icon and the next (negative overlaps them); dy: a
 // vertical nudge (px); x, y: an absolute spot inside a lattice band (CSS lengths)
-function enemyIcon(type, px, gap, dy, x, y, dim) {
+// a type's polygon is the same every time: built once (perf, 2026-10-16: the list rebuilt ~1500 icons 4x a second, 8 ms a rebuild)
+const ICON_PTS = {};
+function iconPts(type) {
+  if (ICON_PTS[type]) return ICON_PTS[type];
   const d = ENEMIES[type], n = d.pointy ? d.sides * 2 : d.sides, pts = [];
   for (let i = 0; i < n; i++) {
     const a = -Math.PI / 2 + i * Math.PI * 2 / n, r = d.pointy && i % 2 ? 8 * (d.pointy === true ? 0.45 : d.pointy) : 8;
     pts.push((10 + Math.cos(a) * r).toFixed(1) + "," + (10 + Math.sin(a) * r).toFixed(1));
   }
-  return '<svg class="asp-eicon" viewBox="0 0 20 20"' + (px ? ' style="width:' + px.toFixed(2) + 'px;height:' + px.toFixed(2) + 'px;margin-right:' + (gap ?? 1).toFixed(2) + 'px' + (dy ? ';transform:translateY(' + dy.toFixed(2) + 'px)' : "") + (x != null ? ';position:absolute;left:' + x + ';top:' + y : "") + (dim ? ';opacity:' + WAVE_DEAD_A : "") + '"' : "") + ' aria-label="' + type + '"><polygon points="' + pts.join(" ") + '"/></svg>';
+  return (ICON_PTS[type] = pts.join(" "));
+}
+function enemyIcon(type, px, gap, dy, x, y, dim) {
+  return '<svg class="asp-eicon" viewBox="0 0 20 20"' + (px ? ' style="width:' + px.toFixed(2) + 'px;height:' + px.toFixed(2) + 'px;margin-right:' + (gap ?? 1).toFixed(2) + 'px' + (dy ? ';transform:translateY(' + dy.toFixed(2) + 'px)' : "") + (x != null ? ';position:absolute;left:' + x + ';top:' + y : "") + (dim ? ';opacity:' + WAVE_DEAD_A : "") + '"' : "") + ' aria-label="' + type + '"><polygon points="' + iconPts(type) + '"/></svg>';
 }
 
 // one wave-list row's icons, LEFT-ALIGNED in a band `span` x WAVE_ROW_H: one
@@ -27,7 +33,18 @@ function enemyIcon(type, px, gap, dy, x, y, dim) {
 // icons shrink only as far as the row's height and width force, down to
 // SWARM_MIN px, and columns squeeze (overlap) past that.
 const TESS_STEP = 0.72, WAVE_PACK_MAX = 5;
+// a band's HTML depends only on its arguments: kept (perf - most rows are the same from one rebuild to the next)
+const BAND_MEMO = new Map(), BAND_MEMO_MAX = 200;
 function waveBand(type, count, px, span, alive) {
+  const key = type + "|" + count + "|" + px + "|" + span + "|" + alive;
+  let html = BAND_MEMO.get(key);
+  if (html === undefined) {
+    if (BAND_MEMO.size >= BAND_MEMO_MAX) BAND_MEMO.clear();
+    BAND_MEMO.set(key, (html = waveBandHtml(type, count, px, span, alive)));
+  }
+  return html;
+}
+function waveBandHtml(type, count, px, span, alive) {
   // alive (a live wave): that many icons solid, the rest faded to WAVE_DEAD_A (owner)
   const H = WAVE_ROW_H, fade = k => alive != null && k >= alive;
   const place = (pts, b) => '<span class="asp-band" style="width:' + span + "px;height:" + H + 'px">' +
@@ -43,12 +60,12 @@ function waveBand(type, count, px, span, alive) {
     const st = cols > 1 ? Math.min(b * TESS_STEP, (span - b) / (cols - 1)) : 0, top = (H - (R - 1) * st - b) / 2, pts = [];
     if (R === 2) for (let k = 0; k < count; k++) pts.push([k * st, top + (k % 2) * st]);
     else { let left = count; for (let c = 0; left > 0; c++) for (let r = c % 2; r < R; r += 2) { if (left-- <= 0) break; pts.push([c * st, top + r * st]); } }
-    return { fits, html: place(pts, b), b };
+    return { fits, html: () => place(pts, b), b }; // (html built only for the layout picked)
   };
   // 2 rows whenever they fit the width, then 3, 4, up to WAVE_PACK_MAX (owner, 2026-10-13: "allow swarm to pack into up to 5 rows
   // instead of just 3"); past that the last one, squeezed
-  for (let R = 2; R < WAVE_PACK_MAX; R++) { const l = lattice(R); if (l.fits) return l.html; }
-  return lattice(WAVE_PACK_MAX).html;
+  for (let R = 2; R < WAVE_PACK_MAX; R++) { const l = lattice(R); if (l.fits) return l.html(); }
+  return lattice(WAVE_PACK_MAX).html();
 }
 
 // wave n -> how many of its enemies are still alive or yet to spawn (only waves with any)
