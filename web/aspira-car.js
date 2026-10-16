@@ -229,18 +229,23 @@ function carDart(i, z) {
   ctx.lineTo(bx - s * W, by + c * W); ctx.lineTo(bx + s * W, by - c * W); ctx.closePath();
   ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; ctx.stroke();
 }
-function drawCar() {
+// darts: the INTERCEPTORS alone, drawn in skyKeep - their colour is not inverted by a boss sky (owner, 2026-10-16: "Interceptor color
+// should also not be inverted"); else the bolts and pellets, which turn over with it like every tower's shots
+function drawCar(darts) {
   for (const t of G.towers) {
     if (t.kind !== "car" || !t.icp) continue;
+    if (darts) {
+      ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
+      const z = CAR_DART_K0 + CAR_DART_GROW * skillOf(t, "armament");
+      for (const i of t.icp) if (i.state !== "home") carDart(i, z);
+      continue;
+    }
     ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CAR_PELLET_PX; ctx.globalAlpha = 1;
     for (const b of t.carBolts || []) { // UNDER the darts: they leave from beneath. A DOT at the interceptor, stretching out as it flies (owner, 2026-10-16)
       const k = Math.min(CAR_BOLT_TAIL, (CAR_BOLT_REACH / CAR_BOLT_V - b.left) * CAR_BOLT_GROW);
       ctx.beginPath(); ctx.moveTo(b.x - b.vx * k, b.y - b.vy * k); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
-    ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round";
-    const z = CAR_DART_K0 + CAR_DART_GROW * skillOf(t, "armament");
-    for (const i of t.icp) if (i.state !== "home") carDart(i, z);
-    ctx.strokeStyle = COL.ltblue; ctx.lineWidth = CAR_PELLET_PX;
+    ctx.lineWidth = CAR_PELLET_PX;
     for (const p of t.carPellets || []) { ctx.beginPath(); ctx.moveTo(p.x - p.vx * CAR_PELLET_TAIL, p.y - p.vy * CAR_PELLET_TAIL); ctx.lineTo(p.x, p.y); ctx.stroke(); }
   }
   ctx.globalAlpha = 1;

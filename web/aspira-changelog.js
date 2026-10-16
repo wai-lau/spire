@@ -48,6 +48,7 @@ const CHANGELOG = [
     "Gravity: the black centre grows logarithmically with the hole, not in step with it.",
     "Gravity: a black hole radiates at its old rate, faster while it evaporates fast; its size is capped at 3x the base aura.",
     "Upgrade-ready chevrons and their flashing hex keep the tower's colour during a boss wave.",
+    "Carrier: interceptors keep their colour during a boss wave.",
     "Changelog: grouped by tower, enemy type, bosses and core - no more Buffs / Nerfs.",
     "Cards: two rows (or two columns on a tall screen) where they fit, not one long row.",
     "Gravity and Carrier cards: paler text, as easy to read as the others.",
