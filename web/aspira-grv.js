@@ -141,11 +141,23 @@ function drawSphere(sp, st) {
     ctx.globalAlpha = Math.max(0, 1 - sp.age / (GRV_FRONT_T * 1.6)); ctx.strokeStyle = COL.yellow; ctx.lineWidth = 3; // the image's yellow
     ctx.beginPath(); ctx.arc(sp.x, sp.y, st.novaR * f, 0, 6.283); ctx.stroke();
   }
-  // the sphere: black in a yellow ring and a thin pink rim (the image's core) - as big as its aura is (it grows and shrinks with it)
-  const r = Math.max(2, ar * 0.16 + 2 * Math.sqrt(k));
+  if (!(typeof q3d === "function" && q3d())) drawGrvCore(sp, st); // 3D: over the damage numbers instead (drawGrvCores, aspira-warp.js)
+}
+// the CENTRE and its ACCRETION DISK - black in a yellow ring and a thin pink rim (the image's core), as big as its aura is (it
+// grows and shrinks with it). ABOVE the damage numbers (owner, 2026-10-15): in 2D the board draws them first; in 3D the pop-up
+// pass calls drawGrvCores after them, `at` placing each at its spot like a number
+function drawGrvCore(sp, st) {
+  const r = Math.max(2, grvAuraNow(sp, st) * 0.16 + 2 * Math.sqrt(grvMassK(sp)));
   ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.strokeStyle = COL.yellow; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.fill(); ctx.stroke();
   ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(sp.x, sp.y, r + 2, 0, 6.283); ctx.stroke();
+}
+function drawGrvCores(at) {
+  for (const t of G.towers) {
+    if (t.kind !== "grv" || !t.spheres) continue;
+    const st = towerStats(t, true);
+    for (const sp of t.spheres) at(sp.x, sp.y, () => drawGrvCore(sp, st));
+  }
 }
 function drawGrvFloats(now) {
   const dt = drawGrvFloats.last ? Math.min(0.1, now - drawGrvFloats.last) : 0;

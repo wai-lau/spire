@@ -338,7 +338,7 @@ function warpEntities() {
     ctx = topCtx; warpBands(above => drawTop(above));
     warp.hulls = solids.filter(o => o.own && o.geo).map(o => [...o.geo.B, ...o.geo.T]); // the towers' outlines on screen: next frame's bell clears the beams under them (hullUniforms, aspira-fog.js)
     const pop = (x, y, fn, far) => { const P = warpProject(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); ctx.save(); fn(); ctx.restore(); };
-    drawFx("dmg", (x, y, fn) => pop(x, y, fn, true)); drawFx("text", pop);
+    drawFx("dmg", (x, y, fn) => pop(x, y, fn, true)); drawGrvCores((x, y, fn) => pop(x, y, fn, true)); drawFx("text", pop); // GRV's centres over the damage numbers (aspira-grv.js)
     if (bannerT > 0) pop(CX, 70, () => { ctx.globalAlpha = Math.min(1, bannerT); text(bannerText, CX, 70, 30, bannerCol, true); ctx.globalAlpha = 1; });
     pop(CX, CY, () => drawCredits("pop")); // (the interest pop-up too)
   };
