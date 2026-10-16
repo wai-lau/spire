@@ -38,6 +38,7 @@ function ascBoard(entries, mine) {
     ascTeamCell(tr.insertCell(), e.team);
     tr.insertCell().textContent = ascWon(e) ? e.lives + " lives" : "wave " + e.wave;
     tr.insertCell().textContent = ascDate(e.ts);
+    const v = tr.insertCell(); v.className = "asp-asc-ver"; v.textContent = e.ver ? "v" + e.ver : ""; // the VERSION it was played on (owner, 2026-10-16: "add a col for the version the scores were achieved")
   }
   board.append(table);
   const rows = table.rows;
@@ -55,7 +56,7 @@ async function ascSend(ev) {
   if (!/^[A-Z]{3}$/.test(initials)) { note.textContent = "Three letters."; return; }
   input.disabled = true;
   try {
-    const won = !!G.won, body = { initials, lives: Math.max(0, G.lives), team: ascTeam(), won, wave: won ? WIN_WAVE : G.wave };
+    const verEl = document.querySelector(".asp-ver span"), won = !!G.won, body = { initials, lives: Math.max(0, G.lives), team: ascTeam(), won, wave: won ? WIN_WAVE : G.wave, ver: verEl ? verEl.textContent.trim() : "" }; // ver: the version played (owner, 2026-10-16)
     const r = await fetch(ASC_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(r.status === 429 ? "Too many posts - try later." : "Could not save.");
     const res = await r.json();

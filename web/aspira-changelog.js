@@ -31,6 +31,8 @@ const CHANGELOG = [
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
     "Lanes: a lit lane's glow fades out under the core instead of ending square.",
     "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
+    "Top players: a version column - the game version each score was played on; Carrier teams can post again; JUU and SMD 6 lives less (the Lovers once paid their lives twice).",
+    "Perf: late in the game the upcoming-wave list rebuilds about 9x faster, damage numbers no longer each make a new text image as they shrink, and the 3D star field draws twice as fast.",
     "Sound: every sample levelled to the same loudness.",
     "Changelog: grouped by tower, enemy type, bosses and core.",
   ] },

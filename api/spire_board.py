@@ -45,8 +45,9 @@ FIXES = "spire_ascendants_fix.json"
 SHOW_MAX = 500  # the most the GET returns (display only - the store keeps every entry)
 MAX_LIVES = 100000
 MIN_WAVE, WIN_WAVE, MAX_WAVE = 11, 120, 1000  # (a win is wave 120 since the 12-wave boss cycle, 2026-10-12)
-TOWER_KINDS = ("arc", "frz", "sol", "acd", "grv")
+TOWER_KINDS = ("arc", "frz", "sol", "acd", "grv", "car")
 _INITIALS = re.compile(r"[A-Z]{3}")
+_VERSION = re.compile(r"\d{1,3}\.\d{1,3}(\.\d{1,4})?")  # the game version a score was played on (owner, 2026-10-16: "add a col for the version the scores were achieved")
 _LOCK = threading.Lock()
 
 
@@ -70,7 +71,11 @@ def clean_entry(body: dict) -> dict | None:
     team = body.get("team")
     if not isinstance(team, list) or not 1 <= len(team) <= 5 or any(k not in TOWER_KINDS for k in team):
         return None
-    return {"initials": initials, "lives": lives, "team": sorted(team, key=TOWER_KINDS.index), "ts": int(time.time()), "won": won, "wave": wave}
+    out = {"initials": initials, "lives": lives, "team": sorted(team, key=TOWER_KINDS.index), "ts": int(time.time()), "won": won, "wave": wave}
+    ver = str(body.get("ver", "")).strip()
+    if _VERSION.fullmatch(ver):
+        out["ver"] = ver
+    return out
 
 
 def ranked(rows: list) -> list:
@@ -248,7 +253,7 @@ if __name__ == "__main__":  # docker compose exec api python spire_board.py mark
         n = hide(Path(os.environ.get("DATA_DIR", "/app/data")), set(a.upper() for a in sys.argv[2:]))
         print(f"hid {n} games")
     elif len(sys.argv) >= 5 and sys.argv[1] == "fix":  # docker compose exec api python spire_board.py fix 1791848892 JUU lives=78
-        fields = {k: int(v) for k, v in (a.split("=", 1) for a in sys.argv[4:])}
+        fields = {k: int(v) if v.lstrip("-").isdigit() else v for k, v in (a.split("=", 1) for a in sys.argv[4:])}  # ver=4.1 stays a string
         ok = fix(Path(os.environ.get("DATA_DIR", "/app/data")), int(sys.argv[2]), sys.argv[3].upper(), fields)
         print("fixed" if ok else "no such game")
     elif len(sys.argv) >= 2 and sys.argv[1] == "mark-owner":

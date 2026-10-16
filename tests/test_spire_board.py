@@ -148,3 +148,10 @@ def test_fix_corrects_a_game_when_shown_and_keeps_the_journal(tmp_path):
     assert '"lives": 84' in (tmp_path / spire_board.JOURNAL_NAME).read_text()  # the journal untouched
     spire_board.add(tmp_path, {"initials": "NEW", "lives": 1, "team": ["arc"], "ts": 200, "won": True, "wave": 120})
     assert {r["initials"]: r["lives"] for r in spire_board.visible(tmp_path, spire_board.load(tmp_path), True)}["JUU"] == 78  # survives a later post
+
+
+def test_clean_entry_keeps_a_version_and_drops_junk():
+    base = {"initials": "ABC", "lives": 5, "team": ["arc", "car"], "won": True, "wave": 120}
+    assert spire_board.clean_entry({**base, "ver": "5.1.10"})["ver"] == "5.1.10"
+    assert "ver" not in spire_board.clean_entry({**base, "ver": "<script>"})
+    assert "ver" not in spire_board.clean_entry(base)
