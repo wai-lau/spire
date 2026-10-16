@@ -12,6 +12,7 @@ const CHANGELOG = [
   ], ne: [
     "Gravity: x0.81 damage.",
     "Sol: x0.94 damage.",
+    "Carrier: no longer moves (its interceptors do the travelling).",
   ] },
   { v: "4.5", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",

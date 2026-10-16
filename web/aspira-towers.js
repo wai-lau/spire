@@ -355,7 +355,7 @@ function usePower(code) {
 // its slide tiers have room - about a third of the phone at base, all of it by tier V (and further at the capstone, VI). MOVE_BASE x the tier's slide
 // (SKILL_MOVE), up to SLIDE_MAX. (Was the old spoke's travel x MOVE_SPAN 3.375: ARC 434, FRZ 519, ACD 869 - most of the
 // phone before a tier, so the slide tiers bought nothing - and SLIDE_MAX 2 voided every tier past x2; SOL halved to 74 that day)
-const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74, grv: 200, car: 200 }, SLIDE_MAX = 3;
+const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74, grv: 200, car: 0 /* ATC never moves (owner, 2026-10-16: "ATC should have 0 movement range") - its interceptors do the travelling */ }, SLIDE_MAX = 3;
 const MOVE_EDGE = 12; // world units kept clear of the screen's edge
 const leashR = t => MOVE_BASE[t.kind] * Math.min(towerStats(t, true).slide, SLIDE_MAX);
 const slideSpan = t => Math.round(leashR(t)); // the card's Leash row
@@ -447,7 +447,7 @@ function drawLeash() {
     // a TETHER from the hex it was built on to the tower while it is dragged (owner, 2026-10-12)
     if (held && Math.hypot(t.x - c.x, t.y - c.y) > 1) { ctx.globalAlpha = 0.6; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(t.x, t.y); ctx.stroke(); ctx.setLineDash([]); } // dashed like the leash ring
     const hint = t.leashHint > now ? Math.min(1, (t.leashHint - now) / LEASH_HINT_FADE_S) : 0;
-    if (t.id !== ui.sel && !held && !hint) continue;
+    if ((t.id !== ui.sel && !held && !hint) || leashR(t) < 1) continue; /* no leash (ATC): no ring, no arrows */
     ctx.globalAlpha = Math.max(held ? 0.8 : t.id === ui.sel ? 0.5 : 0, 0.8 * hint);
     // 3D: the RING goes on the screen layer (drawLeashRings3d, aspira-camera.js), its dashes even in screen px - on the floor
     // the warp drew them long and slanted toward the sides (owner, 2026-10-14: "the mvmt range indicators look weird on the sides")
