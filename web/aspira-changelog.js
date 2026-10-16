@@ -41,6 +41,8 @@ const CHANGELOG = [
     "Gravity: black holes drift toward nearby ones and merge into one bigger hole - mass, life, size and radiation added together.",
     "Gravity: a nova that catches nothing still leaves a full-size black hole (was half).",
     "Gravity: aims a little ahead of its target, where it will be when the nova collapses.",
+    "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates (same pellets in total, sooner).",
+    "Gravity: the black centre grows logarithmically with the hole, not in step with it.",
     "Carrier: interceptors half the size, growing with Armament to full size at VI.",
     "Gravity's tagline: \"Massive intervention.\"",
     "Carrier's tagline: \"Carrier has arrived.\"",

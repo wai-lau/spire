@@ -14,7 +14,13 @@ const GRV_NOVA_MUL = [1, 1.3, 1.6, 2, 2.4, 2.8]; // Supernova: the nova's hit, x
 const GRV_PELLETS = [6, 7.8, 9.6, 11.4, 13.2, 15]; // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
 const GRV_PELLET_K = [0.25, 0.32, 0.4, 0.48, 0.56, 0.65]; // Radiation: a pellet's hit, x the tower's damage
 let GRV_AURA_K = 0.6; // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
-const GRV_LIFE = 5; // s: an unfed sphere's life - it loses 1 / GRV_LIFE of its STARTING mass a second, linearly
+const GRV_LIFE = 5; // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1)
+// EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction
+// and evaporation rate based on circle curcumference"): a sphere's AREA is its mass (aura radius = root of mass x its area-per-mass,
+// set as its aura opens), and it loses mass at GRV_EVAP x its radius in base auras a second - so it SHRINKS all its life, and a big
+// one (a fat nova, a merge) burns out faster. dm/dt = -E root(m) gives the base sphere 2 / E s: GRV_LIFE (was: a linear 1 / GRV_LIFE
+// of the starting mass a second, whatever its size, and a shrink only in its last 0.8 s)
+const GRV_EVAP = 2 / GRV_LIFE;
 const GRV_MASS_MAX = 3, GRV_GAIN = 0.12; // mass gained per one tower-hit of damage dealt (nova, aura, pellets)
 const GRV_STRIP = 1.5; // (x3, 2026-10-15: GRV leaked 16% of armor, its own type) armor stripped, x the aura's damage dealt - POSITIVE armor only (it stops at zero)
 // the slow in TWO RINGS (owner, 2026-10-15: "two tiers, much bigger slow close to the center"): the CORE (inner GRV_CORE_FRAC of
@@ -50,22 +56,25 @@ function grvSkillStats(t, s, b) {
 
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
 const grvMassK = sp => Math.max(0, Math.min(sp.cap || GRV_MASS_MAX, sp.mass));
-const grvAuraR = (sp, st) => sp.mergeR ? sp.mergeFrom + (sp.mergeR - sp.mergeFrom) * Math.min(1, (sp.age - sp.mergeAt) / GRV_MERGE_S) // a MERGED sphere eases out to its summed size
-  : st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW_MIN, Math.sqrt((sp.novaDealt || 0) / Math.max(1e-6, st.dmg))));
+const grvAuraBase = (sp, st) => st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW_MIN, Math.sqrt((sp.novaDealt || 0) / Math.max(1e-6, st.dmg))));
+function grvAuraR(sp, st) {
+  if (!sp.apm) return grvAuraBase(sp, st); // (the nova still sweeping: its size is still being decided)
+  const r = Math.sqrt(sp.apm * Math.max(0, sp.mass));
+  return sp.mergeAt != null && sp.age - sp.mergeAt < GRV_MERGE_S ? sp.mergeFrom + (r - sp.mergeFrom) * (sp.age - sp.mergeAt) / GRV_MERGE_S : r; // a MERGE eases out to its summed area
+}
 // the aura's reach right now: nothing until the nova has FULLY exploded (owner, 2026-10-15: "make the nova fully explode before
 // the aura and center"), then blown out from the centre at the nova front's speed until its size
 const grvAuraNow = (sp, st) => Math.min(grvAuraR(sp, st), st.novaR / GRV_FRONT_T * Math.max(0, sp.age - GRV_NOVA_END));
-// the LOOK shrinks to nothing over its last GRV_SHRINK_S of life (owner, 2026-10-16: "black holes centers + aura from grv should
+// (the LOOK shrank to nothing over its last 0.8 s here - owner, 2026-10-16: "black holes centers + aura from grv should
 // shrink to 0 size to disappear"; they popped out at full size) - drawn only: the slow keeps its reach to the end
-const GRV_SHRINK_S = 0.8;
-const grvShrink = sp => (sp.lost > 0 ? Math.max(0, Math.min(1, sp.mass / (sp.lost * GRV_SHRINK_S))) : 1);
+// shrink to 0 size to disappear" - until its size became its mass, above, and it shrinks all its life)
 
 // fire(): a nova on the target - the sphere is born where it stands
 // LEADS its target (owner, 2026-10-16: "grv should shoot slightly ahead of the enemy to account for explosion time"): the nova
 // lands where the enemy will be when it has collapsed, GRV_FRONT_T on along its lane at its pace now (slows and stuns counted)
 function novaAt(t, st, e) {
   const p0 = pathAt(e.pi, e.s, e.ang || 0), p1 = pathAt(e.pi, e.s + effSpeed(e) * GRV_FRONT_T, e.ang || 0);
-  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0, lost: 1 / GRV_LIFE });
+  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0 });
   return true;
 }
 // one hit from a sphere: the damage it really dealt feeds its mass
@@ -115,8 +124,9 @@ function grvMerge(big, small) {
   const m = big.mass + small.mass, w = small.mass / Math.max(1e-6, m);
   big.x += (small.x - big.x) * w; big.y += (small.y - big.y) * w; // to the pair's centre of mass, momentum kept
   big.vx = (big.vx || 0) * (1 - w) + (small.vx || 0) * w; big.vy = (big.vy || 0) * (1 - w) + (small.vy || 0) * w;
-  big.mergeFrom = big.ar; big.mergeR = Math.hypot(big.ar, small.ar); big.mergeAt = big.age; big.ar = big.mergeFrom;
-  big.mass = m; big.cap = (big.cap || GRV_MASS_MAX) + (small.cap || GRV_MASS_MAX); big.lost += small.lost;
+  const area = big.apm * big.mass + small.apm * small.mass; // the AREAS add (each is its area-per-mass x its mass)
+  big.mergeFrom = big.ar; big.mergeAt = big.age;
+  big.mass = m; big.apm = area / Math.max(1e-6, m); big.cap = (big.cap || GRV_MASS_MAX) + (small.cap || GRV_MASS_MAX);
   big.novaDealt = (big.novaDealt || 0) + (small.novaDealt || 0);
   small.merged = true; small.mass = 0;
   if (typeof sfx === "function") sfx("grvaura");
@@ -124,7 +134,7 @@ function grvMerge(big, small) {
 function stepSphere(sp, t, st, dt) {
   if (sp.merged) return; // taken in by a bigger one (grvPull): no Hawking burst, nothing
   sp.age += dt;
-  if (!sp.auraSnd && sp.age >= GRV_NOVA_END) { sp.auraSnd = true; sfx("grvaura"); } // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
+  if (!sp.auraSnd && sp.age >= GRV_NOVA_END) { sp.auraSnd = true; sfx("grvaura"); sp.apm = grvAuraBase(sp, st) ** 2 / Math.max(1e-6, sp.mass); } // its AREA per mass, fixed as it opens // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
   // the NOVA: the yellow front sweeps out; each enemy it reaches takes the hit once
   if (sp.age <= GRV_FRONT_T + dt) {
     const r = grvNovaR(sp, st); // it IMPLODES: an enemy is hit as the front sweeps past it, inward (all within reach by the end)
@@ -156,11 +166,14 @@ function stepSphere(sp, t, st, dt) {
       applySlow(e, e.type === "fast" ? slow / FAST_SLOW_MUL : slow, GRV_TICK * 1.5, "grv:" + t.id);
     }
   }
-  // RADIATION: pellets, more the heavier the sphere
-  sp.pel += st.pellets * k * dt;
+  // EVAPORATION, by its circumference - and RADIATION is the mass it gives off (owner, 2026-10-16: "make sure the pellet output is
+  // the same, just faster"): GRV_LIFE / 2 x the pellet rate a unit of mass lost, the total the linear-life sphere (rate x mass)
+  // radiated - a big one radiates it FASTER, burning out sooner (at mass 1 the old rate exactly)
+  const lost = Math.min(sp.mass, GRV_EVAP * grvAuraR(sp, st) / st.auraR * dt);
+  sp.mass -= lost;
+  sp.pel += st.pellets * GRV_LIFE / 2 * lost;
   while (sp.pel >= 1) { sp.pel -= 1; grvPellet(sp, t, st, grvAuraR(sp, st) * GRV_PELLET_REACH); }
-  // the linear shrink; Hawking: a last burst as it goes
-  sp.mass -= sp.lost * dt;
+  // Hawking: a last burst as it goes
   if (sp.mass <= 0 && st.hawking) for (let i = 0; i < GRV_HAWKING_N; i++) grvPellet(sp, t, st, st.auraR * GRV_PELLET_REACH * 1.5);
 }
 // a PELLET is a projectile (owner, 2026-10-15: "I want pellets to be able to miss, not beams"): out from the sphere in a random
@@ -223,7 +236,7 @@ function drawGrv() {
   ctx.globalAlpha = 1;
 }
 function drawSphere(sp, st) {
-  const k = grvMassK(sp), ar = grvAuraNow(sp, st) * grvShrink(sp);
+  const k = grvMassK(sp), ar = grvAuraNow(sp, st);
   if (ar > 1) { // the aura: clear at the sphere, 30% at mid-radius, clear at the edge
     const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, ar);
     g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
@@ -243,13 +256,14 @@ function drawSphere(sp, st) {
 // the CENTRE and its ACCRETION DISK - black in a yellow ring and a thin pink rim (the image's core), as big as its aura is (it
 // grows and shrinks with it). ABOVE the damage numbers (owner, 2026-10-15): in 2D the board draws them first; in 3D the pop-up
 // pass calls drawGrvCores after them, `at` placing each at its spot like a number
+const GRV_CORE_PX = 11.7, GRV_CORE_A = 34; // a base aura (68u) keeps its 13u centre; x2 the aura 19u (linear: 24), x4 26u (linear: 46)
 function drawGrvCore(sp, st) {
   if (sp.age < GRV_NOVA_END) return; // (the nova first - the centre appears once it is gone)
-  const r = Math.max(2, grvAuraNow(sp, st) * 0.16 + 2 * Math.sqrt(grvMassK(sp))) * grvShrink(sp);
+  const r = GRV_CORE_PX * Math.log(1 + grvAuraNow(sp, st) / GRV_CORE_A); // LOGARITHMIC in its aura (owner, 2026-10-16: "make the center sphere of a bh increase logarithmically visually instead of linearly"; was 0.16 x the aura + 2 root mass); shrinks with its mass, to nothing
   if (r < 0.3) return;
   ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.strokeStyle = COL.yellow; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.fill(); ctx.stroke();
-  ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(sp.x, sp.y, r + 2 * grvShrink(sp), 0, 6.283); ctx.stroke();
+  ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(sp.x, sp.y, r + Math.min(2, r), 0, 6.283); ctx.stroke();
 }
 function drawGrvCores(at) {
   for (const t of G.towers) {
