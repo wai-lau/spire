@@ -26,6 +26,7 @@ const CHANGELOG = [
     "Carrier: bolts are short streaks that stretch as they fly; one damage number for every two hits of an interceptor.",
     "Carrier: launch and shot sounds; tagline \"Carrier has arrived.\"",
     "Gravity: dark purple (Sol bright pink); the black centre grows logarithmically and the hole shrinks away to nothing.",
+    "Gravity: every damage number it deals - nova and pellets - flies into its black hole.",
     "Gravity: the aura has its own sound; tagline \"Massive intervention.\"",
     "Gravity: touching black holes share one accretion disk, the dark of each over every ring.",
     "Gravity and Carrier: smoother with many pellets in the air - past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",

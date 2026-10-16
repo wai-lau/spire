@@ -38,6 +38,7 @@ const GRV_NOVA_END = GRV_FRONT_T; // the nova GONE (collapsed into its centre) -
 // the nova's front: from its reach INWARD, ACCELERATING (owner, 2026-10-15: "explode inwards instead of outwards, accelerating")
 const grvNovaR = (sp, st) => st.novaR * (1 - Math.min(1, sp.age / GRV_FRONT_T) ** 2); // s: the aura's tick; the yellow front's time to its reach
 const GRV_PELLET_REACH = 1.4, GRV_PELLET_V = 320, GRV_PELLET_HIT = 3; // a pellet flies this x the aura's radius, at V a second; touches an enemy within its size + HIT
+const GRV_PEL_ST = { noNum: true }; // a pellet hit: its flash, but its number goes to grvFloat (into the hole)
 const GRV_AURA_ST = { noFx: true }; // a nova hit: no flash, no number (its numbers drift INWARD - grvFloat)
 
 SKILL_TREES.grv = [
@@ -224,7 +225,9 @@ function stepPellets(t, st, dt) {
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRV_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
       const h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT; // the number on the pellet's way (HIT_AT, aspira-floats.js)
-      try { if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg); else damage(e, p.dmg, t); } finally { hitFrom = h0; } // (its sphere gone: no mass to feed)
+      const hp0 = e.hp;
+      try { if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg, GRV_PEL_ST); else damage(e, p.dmg, t, false, false, GRV_PEL_ST); } finally { hitFrom = h0; } // (its sphere gone: no mass to feed)
+      if (e.hp < hp0) grvFloat(p.sp, e, hp0 - Math.max(0, e.hp)); // its number flies INTO its hole, like the nova's (owner, 2026-10-16: "all damage numbers from bh should fly into the bh")
       p.left = 0; break;
     }
   }
