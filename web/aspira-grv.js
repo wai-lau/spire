@@ -197,24 +197,39 @@ function grvPellet(sp, t, st, reach, w = 1) {
 // the PROJECTILE GRID (perf, owner 2026-10-16: "do some perf work on the new towers" - at wave 89 three GRVs' ~360 pellets each tested
 // every enemy, every step: 3.2 ms a frame): each living enemy listed in every GRID_S cell its body (+ GRID_PAD) touches, built
 // once a step (G.clock) and shared - a projectile tests only its own cell's, in G.enemies order, so the FIRST it touches is the same
-const GRID_S = 64, GRID_PAD = 4, GRID_NONE = [];
+const GRID_S = 64, GRID_PAD = 4, GRID_NONE = [], GRID_OFF = 8, GRID_N = 32;
 let egrid = null, egridAt = NaN;
+/* perf (2026-10-16): the cells of the play field (and a margin round it) are a flat array of reused lists, not Map lookups; only a body or a projectile far outside the margin falls back to the Map */
 function projGrid() { // (NOT enemyGrid: aspira-acid.js's pools have their own by that name, and a second global of it replaced theirs - its numeric keys left every pool and drip hitting NOTHING from 5.1.7; found 2026-10-16)
   if (egrid && egrid.G === G && egridAt === G.clock) return egrid;
-  egrid = new Map(); egrid.G = G; egridAt = G.clock; // (no clock: NaN, never equal - rebuilt every call)
+  if (!egrid) egrid = { G: null, a: new Array(GRID_N * GRID_N).fill(null), used: [], m: new Map() };
+  for (const i of egrid.used) egrid.a[i].length = 0;
+  egrid.used.length = 0; egrid.m.clear(); egrid.G = G; egridAt = G.clock; // (no clock: NaN, never equal - rebuilt every call)
+  const A = egrid.a, used = egrid.used, M = egrid.m;
   for (const e of G.enemies) {
     if (e.dead) continue;
     const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRID_PAD;
     for (let x = Math.floor((e.x - r) / GRID_S), x1 = Math.floor((e.x + r) / GRID_S); x <= x1; x++)
       for (let y = Math.floor((e.y - r) / GRID_S), y1 = Math.floor((e.y + r) / GRID_S); y <= y1; y++) {
-        const k = x * 65536 + y, c = egrid.get(k);
-        if (c) c.push(e); else egrid.set(k, [e]);
+        const ix = x + GRID_OFF, iy = y + GRID_OFF;
+        if (ix >= 0 && ix < GRID_N && iy >= 0 && iy < GRID_N) {
+          const k = ix * GRID_N + iy; let c = A[k];
+          if (!c) c = A[k] = [];
+          if (!c.length) used.push(k);
+          c.push(e);
+        } else {
+          const k = x * 65536 + y, c = M.get(k);
+          if (c) c.push(e); else M.set(k, [e]);
+        }
       }
   }
   return egrid;
 }
-const enemiesNear = (x, y, g = projGrid()) => g.get( // g: the grid, fetched once by a loop of many (perf: its cache check a projectile was 0.6 ms a frame)
-  Math.floor(x / GRID_S) * 65536 + Math.floor(y / GRID_S)) || GRID_NONE;
+const enemiesNear = (x, y, g = projGrid()) => {
+  const cx = Math.floor(x / GRID_S), cy = Math.floor(y / GRID_S), ix = cx + GRID_OFF, iy = cy + GRID_OFF;
+  if (ix >= 0 && ix < GRID_N && iy >= 0 && iy < GRID_N) { const c = g.a[ix * GRID_N + iy]; return c && c.length ? c : GRID_NONE; }
+  return g.m.get(cx * 65536 + cy) || GRID_NONE;
+};
 function stepPellets(t, st, dt) {
   if (!t.pellets || !t.pellets.length) return;
   const g = projGrid();
@@ -255,6 +270,7 @@ function mixRgb(a, b, f) {
   const p = s => (String(s).match(/\d+(\.\d+)?/g) || [0, 0, 0]).map(Number), A = p(a), B = p(b);
   return "rgb(" + [0, 1, 2].map(i => Math.round(A[i] + (B[i] - A[i]) * f)).join(", ") + ")";
 }
+const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 const GRV_FLOAT_S = 0.6, GRV_FLOAT_MAX = 60, GRV_FLOAT_PX = 11, GRV_AURA_A = 0.3; // GRV_AURA_A: the band's peak, mid-radius (owner: "clear, 30%, clear")
 let grvFloats = [];
 function grvFloat(sp, e, amt) {
@@ -281,6 +297,11 @@ function drawSphere(sp, st) {
     const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, ar);
     g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
     ctx.globalAlpha = GRV_AURA_A; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar, 0, 6.283); ctx.fill();
+    // its REACH, shown like Permafrost's rings (owner, 2026-10-16: "for bh aura, show range of aura using a range indicator similar to
+    // permafrost"): a thin glowing ring out from the centre to the edge every GRV_RING_S, fading as it goes
+    const f = (sp.age % GRV_RING_S) / GRV_RING_S;
+    ctx.strokeStyle = COL.violet; ctx.lineWidth = 1.5; ctx.shadowColor = COL.violet; ctx.shadowBlur = 12 * cam.k;
+    ctx.globalAlpha = 0.45 * (1 - f * 0.6); ctx.beginPath(); ctx.arc(sp.x, sp.y, ar * f, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0;
   }
   if (sp.age < GRV_NOVA_END) { // the NOVA: a thick ring collapsing INWARD, accelerating, GRV purple slowly turning white (owner)
     const p = Math.min(1, sp.age / GRV_FRONT_T), r = grvNovaR(sp, st), w = Math.min(r, st.novaR * GRV_NOVA_W);

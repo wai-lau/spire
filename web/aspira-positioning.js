@@ -113,6 +113,19 @@ try { autoMove = localStorage.getItem("spire.automove") === "1"; } catch (e) { /
 const HUMAN_V = 450; // a phone's width (500 units) in about a game second (x1.5, owner 2026-10-14: "increase auto-move speed by 1.5x"; was 300, halved 2026-10-13 from 600)
 const GLIDE_TURNS = [0, 0.5, -0.5, 1, -1, 1.4, -1.4], GLIDE_GIVE_UP = 2; // radians off the straight line, tried in order
 const GLIDE_ESCAPE = 4; // a tower caught overlapping glides out this many times faster (at the halved HUMAN_V one sat overlapped 42 frames - stuck.mjs)
+// ROUND THE CORE (owner, 2026-10-16: a GRV left of the core never went for its target top right - "may have been stuck behind
+// core?"): every step had to bring it NEARER its goal, and going round the core means stepping sideways first, so it gave up.
+// When the straight line passes the core, it aims instead at a WAYPOINT on a circle round the core, GLIDE_ROUND radians further
+// round toward the goal's side, until the line is clear
+const GLIDE_ROUND = 0.6, GLIDE_CORE_PAD = 12;
+function glideAround(t, g) {
+  const kr = coreKeepR() + GLIDE_CORE_PAD, sx = g.x - t.x, sy = g.y - t.y, L2 = sx * sx + sy * sy || 1;
+  const u = Math.max(0, Math.min(1, ((CX - t.x) * sx + (CY - t.y) * sy) / L2));
+  if (Math.hypot(t.x + sx * u - CX, t.y + sy * u - CY) >= kr) return g; // a clear line: straight at it
+  const a = Math.atan2(t.y - CY, t.x - CX), da = Math.atan2(Math.sin(Math.atan2(g.y - CY, g.x - CX) - a), Math.cos(Math.atan2(g.y - CY, g.x - CX) - a));
+  const na = a + Math.sign(da || 1) * Math.min(Math.abs(da), GLIDE_ROUND), R = Math.max(kr, Math.hypot(t.x - CX, t.y - CY));
+  return { x: CX + Math.cos(na) * R, y: CY + Math.sin(na) * R };
+}
 function autoGlide(t, dt) {
   // two towers gliding at once can each step clear of where the other WAS and end up overlapping (stuck.mjs found one): a
   // tower that cannot stay where it stands heads home to its slot first
@@ -128,10 +141,10 @@ function autoGlide(t, dt) {
   // NEVER STUCK (owner, 2026-10-13: "ensure that the towers don't get stuck during simulations"): straight at it, else STEERED
   // round what is in the way (another tower, the core) - the first heading GLIDE_TURNS off the line that both moves it and
   // brings it nearer; none: the goal is dropped and the next plan waits GLIDE_GIVE_UP x POS_EVERY (a sim: 3-6% of steps stalled)
-  const a0 = Math.atan2(dy, dx);
+  const w = glideAround(t, t.goal), a0 = Math.atan2(w.y - t.y, w.x - t.x), dw = Math.hypot(w.x - t.x, w.y - t.y);
   for (const da of GLIDE_TURNS) {
     const s = legalSpot(t, { x: t.x + Math.cos(a0 + da) * step, y: t.y + Math.sin(a0 + da) * step });
-    if (s && Math.hypot(s.x - t.x, s.y - t.y) > step * 0.3 && Math.hypot(t.goal.x - s.x, t.goal.y - s.y) < d) { t.x = s.x; t.y = s.y; return; }
+    if (s && Math.hypot(s.x - t.x, s.y - t.y) > step * 0.3 && Math.hypot(w.x - s.x, w.y - s.y) < dw) { t.x = s.x; t.y = s.y; return; }
   }
   t.goal = null; t.posT = POS_EVERY * GLIDE_GIVE_UP;
 }
