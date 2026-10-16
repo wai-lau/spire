@@ -120,7 +120,7 @@ function stepIcp(i, t, st, dt) {
 // jitter) when idle, so that they can be released at once"): with any Hangar, an interceptor reloaded and given nothing to hit
 // circles its carrier CAR_HOLD_R out (+- CAR_HOLD_JIT by its own oj, -1..1), easing onto it; a target comes, and every held one is
 // sent the same step (stepIcp: no CAR_GAP). Its SIZE goes with the same oj ("smaller interceptors fly closer": carDart)
-const CAR_HOLD_R = 48, CAR_HOLD_JIT = 0.25, CAR_HOLD_V = 110, CAR_SIZE_JIT = 0.15; // u; +-; u/s round the carrier; +- size
+const CAR_HOLD_R = 80 /* 48 -> 80 (owner, 2026-10-16: "circling interceptors should circle further away from tower") */, CAR_HOLD_JIT = 0.25, CAR_HOLD_V = 110, CAR_SIZE_JIT = 0.15; // u; +-; u/s round the carrier; +- size
 function carHoldOrbit(i, t, dt) {
   i.oj ??= Math.random() * 2 - 1;
   const R = CAR_HOLD_R * (1 + CAR_HOLD_JIT * i.oj);
