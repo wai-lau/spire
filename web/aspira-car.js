@@ -171,11 +171,12 @@ function carBolt(i, e, t, st) {
 }
 function stepCarBolts(t, st, dt) {
   if (!t.carBolts || !t.carBolts.length) return;
+  const g = projGrid();
   for (const b of t.carBolts) {
     if (b.e && b.e.dead) b.e = null; // its target gone: straight on
     if (b.e) { const dx = b.e.x - b.x, dy = b.e.y - b.y, d = Math.hypot(dx, dy) || 1; b.vx = dx / d * CAR_BOLT_V; b.vy = dy / d * CAR_BOLT_V; } // homing
     b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
-    for (const e of b.e ? [b.e] : enemiesNear(b.x, b.y)) { // (enemiesNear: the enemy grid, aspira-grv.js)
+    for (const e of b.e ? [b.e] : enemiesNear(b.x, b.y, g)) { // (enemiesNear: the enemy grid, aspira-grv.js)
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_BOLT_HIT;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
@@ -216,9 +217,10 @@ function carBurst(i, t, st) {
 }
 function stepCarPellets(t, dt) {
   if (!t.carPellets || !t.carPellets.length) return;
+  const g = projGrid();
   for (const p of t.carPellets) {
     p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt;
-    for (const e of enemiesNear(p.x, p.y)) {
+    for (const e of enemiesNear(p.x, p.y, g)) {
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;

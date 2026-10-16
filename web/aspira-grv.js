@@ -208,12 +208,14 @@ function projGrid() { // (NOT enemyGrid: aspira-acid.js's pools have their own b
   }
   return egrid;
 }
-const enemiesNear = (x, y) => projGrid().get(Math.floor(x / GRID_S) * 65536 + Math.floor(y / GRID_S)) || GRID_NONE;
+const enemiesNear = (x, y, g = projGrid()) => g.get( // g: the grid, fetched once by a loop of many (perf: its cache check a projectile was 0.6 ms a frame)
+  Math.floor(x / GRID_S) * 65536 + Math.floor(y / GRID_S)) || GRID_NONE;
 function stepPellets(t, st, dt) {
   if (!t.pellets || !t.pellets.length) return;
+  const g = projGrid();
   for (const p of t.pellets) {
     p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt;
-    for (const e of enemiesNear(p.x, p.y)) {
+    for (const e of enemiesNear(p.x, p.y, g)) {
       if (e.dead) continue; // (a pellet POPS shield charges - owner, 2026-10-15; only the aura's slow skips the shielded)
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRV_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
