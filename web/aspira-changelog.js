@@ -19,6 +19,8 @@ const CHANGELOG = [
     "Gravity: the aura deals no damage.",
   ], bu: [
     "Gravity: the aura's size grows with the damage its nova dealt.",
+    "Carrier Launch: also shortens the reload (1.5s, to 0.3s at Warp).",
+    "Carrier Armament: shots hit far harder (up to x11 at Autopilot, was x2.4).",
     "Gravity: the aura slows in two rings - its core far harder.",
     "New tower: Carrier. Launches interceptors one by one; each flies to an enemy, fires its shots and flies home to reload. Good vs fast and shields.",
     "Gravity: nova and aura x1.7 wider.",
