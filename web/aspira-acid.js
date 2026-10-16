@@ -187,7 +187,7 @@ function stepDrips(dt) {
       if (dd <= rr * rr) { // picked up
         const take = DRIP_TAKE * d.v, by = G.towers.includes(d.by) ? d.by : null;
         o.armor = (o.armor || 0) - take; stripBy(o, by, take); o.corrodeT = 0.4;
-        damage(o, take, by); // and it BURNS as much as it strips (owner, 2026-10-13: "goo should also deal damage equal to the amount of armor it strips")
+        fromHit(d, () => damage(o, take, by)); // and it BURNS as much as it strips (owner, 2026-10-13: "goo should also deal damage equal to the amount of armor it strips")
         d.done = true; near = null; break;
       }
       if (dd < nd) { nd = dd; near = o; }
@@ -273,7 +273,7 @@ function stepPuddles(t, st, dt) {
       for (const e of poolNear(grid ||= enemyGrid(), p)) {
         if (e.dead || (e.x - p.x) ** 2 + (e.y - p.y) ** 2 > p.r * p.r) continue;
         const hp0 = e.hp;
-        damage(e, p.dps * every, t, false, false, hit); e.burnT = 0.4;
+        fromHit(p, () => damage(e, p.dps * every, t, false, false, hit)); e.burnT = 0.4; // away from the pool's centre
         if (st.spread && hp0 > 0 && e.hp <= 0 && t.puddles.length + born.length < ACD_SPREAD_MAX) born.push({ x: e.x, y: e.y, r: p.r * ACD_SPREAD_R, life: p.life * ACD_SPREAD_LIFE, age: 0, tick: 0, dps: p.dps, spread: true });
         if (hit && hp0 > e.hp) (t.poolAcc ||= new Map()).set(e, (t.poolAcc.get(e) || 0) + hp0 - Math.max(0, e.hp)); // a real hit: it pops one shield charge
       }

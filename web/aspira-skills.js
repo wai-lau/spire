@@ -288,7 +288,7 @@ function dischargeStatic(e) {
     ch.list.forEach(dmg => {
       for (const o of G.enemies) {
         if (o.dead || Math.hypot(o.x - e.x, o.y - e.y) > ARC_BURST_R) continue;
-        damage(o, dmg, ch.t, false, false, null);
+        fromHit(e, () => damage(o, dmg, ch.t, false, false, null)); // away from the discharging enemy
         if (ch.slow && !o.dead) applySlow(o, ch.slow, STAT_SLOW_T, ch.t.id + ":stat");
       }
     });
@@ -325,7 +325,7 @@ function skillHopTo(c, node, nxt, depth) {
   if (skillOf(c.t, "voltage")) fx[fx.length - 1].pierce = true; // Voltage's white-hot core
   const child = { e: nxt, fx: fx[fx.length - 1], up: node, kids: new Set() };
   keepLit(node, CHAIN_BEAM_LIFE);
-  skillHit(c, nxt, d);
+  fromHit(node.e, () => skillHit(c, nxt, d)); // its number flies on from the enemy the arc jumped from
   return child;
 }
 
@@ -450,6 +450,6 @@ function breachShrapnel(e) {
   if (typeof burst === "function") burst(e.x, e.y, TOWERS.sol.color, 6 + near.length);
   for (const o of near) {
     beam(e, o, TOWERS.sol.color, RAY_BEAM_LIFE, 1, 0, true, false);
-    damage(o, each, t, false, false, null);
+    fromHit(e, () => damage(o, each, t, false, false, null)); // away from the enemy that burst
   }
 }

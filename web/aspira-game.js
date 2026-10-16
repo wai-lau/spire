@@ -141,7 +141,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
     if (e.shield < SHIELD_BREAK_N && (!(st && st.noFx) || e.shield <= 0)) shieldBreak(e); // its last charges BREAK, loudly (aspira-floats.js) - a crowd of pools (noFx) only the LAST one (owner, 2026-10-14: ACD too much late)
     if (!(st && st.noFx)) hitFlash(e, 18, 1, "cyan", 0.07);
     // all of it soaked: a "0" in SHIELD blue, as BIG as the hit it swallowed (owner)
-    if (!(st && st.noFx)) dmgNumber(e, "0", amt, "cyan", (st && st.from) || t); // (from: where the number flies AWAY from - an ATC bolt's interceptor, aspira-car.js)
+    if (!(st && (st.noFx || st.noNum))) dmgNumber(e, "0", amt, "cyan", (st && st.from) || hitFrom || t); // (from: where the number flies AWAY from - an ATC bolt's interceptor, aspira-car.js)
     return;
   }
   // BLEED (SOL's Impale): every OTHER tower may crit a bleeding enemy too, for
@@ -180,7 +180,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
     // armor-blunted hits read GREYER the more armor took off them (owner, 2026-10-09: "greyness of damage popups should be
     // correlated to the percentage of damage mitigated by armor" - was all-or-nothing grey), white to the graticule's Silver
     // sized by the hit BEFORE armor (owner): a big hit blunted to little still reads big, in grey
-    dmgTick(e, amt, raw, crit ? "orange" : "white", (st && st.from) || t, crit || !blunted ? 0 : 1 - amt / raw, t && (t.kind === "acd" || t.kind === "frz") && st ? st.rate : 0); // (aspira-floats.js)
+    if (!(st && st.noNum)) dmgTick(e, amt, raw, crit ? "orange" : "white", (st && st.from) || hitFrom || t, crit || !blunted ? 0 : 1 - amt / raw, t && (t.kind === "acd" || t.kind === "frz") && st ? st.rate : 0); // (aspira-floats.js)
   }
   if (e.hp <= 0) kill(e, t);
 }

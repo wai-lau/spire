@@ -45,6 +45,11 @@ function dmgNumber(e, label, size, color, src, grey = 0) {
 const tickQ = [], TICK_SPLIT_MAX = 8, TICK_SHOW_S = 0.5;
 // the FIRST tick a tower lands on an enemy shows whole, at once; only the ones after are split (owner, 2026-10-13: "start ticking
 // asap", "only sample after first tick")
+// WHERE A HIT CAME FROM (owner, 2026-10-16: "Make all damage numbers go in the direction the beam/dmg was coming from, a lot of them
+// will still be same as tower"): a damage number flies away from this point while it is set (fromHit), else from its tower -
+// an ARC hop's last enemy, a SOL refraction's, the drip or pool that burned it, the shattered or discharging enemy, the pellet's way
+let hitFrom = null;
+function fromHit(p, fn) { const o = hitFrom; hitFrom = p; try { return fn(); } finally { hitFrom = o; } }
 function dmgTick(e, amt, raw, color, t, grey, rate) {
   const first = t && rate > 0 && !(e.ticked ||= new Set()).has(t.id);
   if (first) e.ticked.add(t.id);

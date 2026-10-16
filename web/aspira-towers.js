@@ -41,7 +41,7 @@ function fireChain(t, st, e, from = t, relay = false, seen = null) {
   beam(from, e, col, CHAIN_BEAM_LIFE, 1.5, dmg); const root = { e, fx: fx[fx.length - 1], up: null, kids: new Set() };
   if (st.ignoreShield) root.fx.pierce = true; // Ion: a white core - it pierces (owner)
   const c = { t, st, col, dmg: st.dmg * st.arcFall, seen: new Set([e.id]), relay };
-  chainHit(c, e, dmg);
+  fromHit(from, () => chainHit(c, e, dmg));
   branchFrom(c, root, 1);
 }
 // one ARC hit; Static charges the enemy (Marigold border) so its death fires a shot
@@ -120,7 +120,7 @@ function hopTo(c, node, nxt, depth) {
   if (up) { ring(nxt.x, nxt.y, 14 + 9 * up, col, 0.18 + 0.05 * up); burst(nxt.x, nxt.y, col, 3 * up); }
   const child = { e: nxt, fx: fx[fx.length - 1], up: node, kids: new Set() };
   keepLit(node, CHAIN_BEAM_LIFE); // the parent's beam outlasts this one
-  chainHit(c, nxt, d);
+  fromHit(node.e, () => chainHit(c, nxt, d)); // its number flies on from the enemy the arc jumped from
   return child;
 }
 
@@ -201,7 +201,7 @@ function shatterAt(e) {
   shattering = true;
   for (const o of G.enemies) {
     if (o === e || o.dead || Math.hypot(o.x - e.x, o.y - e.y) > r) continue;
-    damage(o, d, t);
+    fromHit(e, () => damage(o, d, t)); // away from the shattered enemy
     if (st.frostbite && !o.dead) { applySlow(o, st.slow, st.frostbite, t.id); o.biteT = st.frostbite; } // biteT: frost tint
   }
   shattering = false;
@@ -279,7 +279,7 @@ function rayHit(t, st, e, base, from) {
   beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, m > 1 ? 5 : 3, d, true);
   if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
   for (let i = 0; i < n && !e.dead; i++) {
-    damage(e, part, t, false, crit, st); onHit(e, t, st, part); bleed(e, st, t); // a crit shows as a PINK number (owner); st: its shieldPop
+    fromHit(from, () => damage(e, part, t, false, crit, st)); onHit(e, t, st, part); bleed(e, st, t); // a crit shows as a PINK number (owner); st: its shieldPop
   }
   if (e.dead && st.smash && !e.smashed) {
     // Nova / Supernova: the kill bursts (a filled blast that lingers, owner)

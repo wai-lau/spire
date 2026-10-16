@@ -217,7 +217,7 @@ function stepPellets(t, st, dt) {
       if (e.dead) continue; // (a pellet POPS shield charges - owner, 2026-10-15; only the aura's slow skips the shielded)
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRV_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
-      if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg); else damage(e, p.dmg, t); // (its sphere gone: no mass to feed)
+      fromHit({ x: e.x - p.vx, y: e.y - p.vy }, () => { if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg); else damage(e, p.dmg, t); }); // (its sphere gone: no mass to feed); the number on the pellet's way
       p.left = 0; break;
     }
   }

@@ -98,7 +98,7 @@ function stepIcp(i, t, st, dt) {
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3) return; // still on its way
-    if (!i.orb) { i.orb = true; if (st.ram > 0) { damage(e, st.ram, t); onHit(e, t, st, st.ram); } } // onto the circle - the STRAFING PASS
+    if (!i.orb) { i.orb = true; if (st.ram > 0) { fromHit(i, () => damage(e, st.ram, t)); onHit(e, t, st, st.ram); } } // onto the circle - the STRAFING PASS
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / (st.rate * CAR_BOLTS); if (!i.bk) sfx("carshot"); carBolt(i, e, t, st); if (++i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; } } // the stream: a shot's bolts spread over its interval
     if (i.ammo <= 0) {
@@ -167,7 +167,7 @@ function carBolt(i, e, t, st) {
   let n = 0;
   if (st.focus) for (const o of t.icp) if (o !== i && o.e === e && o.orb && o.state === "out") n++; // FOCUS FIRE: the others on it
   const a = Math.atan2(e.y - i.y, e.x - i.x);
-  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * (1 + st.focus * n) / CAR_BOLTS });
+  (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * (1 + st.focus * n) / CAR_BOLTS, icp: i });
 }
 function stepCarBolts(t, st, dt) {
   if (!t.carBolts || !t.carBolts.length) return;
@@ -179,15 +179,26 @@ function stepCarBolts(t, st, dt) {
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_BOLT_HIT;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
-      damage(e, b.dmg, t, false, false, { from: { x: e.x - b.vx, y: e.y - b.vy } }); onHit(e, t, st, b.dmg); // its number flies ON the way the bolt was going (owner, 2026-10-16: "ATC damage numbers should fly out in the direction that the beam was moving"; from its interceptor for an hour)
+      const hp0 = e.hp; damage(e, b.dmg, t, false, false, CAR_NO_NUM); onHit(e, t, st, b.dmg);
+      carNum(b, e, hp0 - Math.max(0, e.hp));
       if (!e.dead) applySlow(e, CAR_SLOW, CAR_SLOW_S, "car:" + t.id); // (doubled on fast, never the shielded - applySlow)
       b.left = 0; break;
     }
   }
   t.carBolts = t.carBolts.filter(b => b.left > 0);
 }
-// a NUMBER A BOLT again (owner, 2026-10-16: "ATC damage, go back to number per pellet, however position of emission should be away
-// from interceptor, not tower"; a shot's total on its last bolt for an hour)
+// ONE NUMBER PER CAR_NUM_HITS HITS of an interceptor (owner, 2026-10-16: "Interceptor damage output, change to 1 number per two hits
+// per interceptor"; a number a bolt before, a shot's total before that): its bolts' damage adds up on the interceptor and pops as one
+// number on the second hit's enemy, flying on the way that bolt was going, greyed by how much armor took off the pair
+const CAR_NUM_HITS = 2, CAR_NO_NUM = { noNum: true };
+function carNum(b, e, dealt) {
+  const i = b.icp;
+  i.numSum = (i.numSum || 0) + Math.max(0, dealt); i.numRaw = (i.numRaw || 0) + b.dmg;
+  i.numN = (i.numN || 0) + 1;
+  if (i.numN < CAR_NUM_HITS) return;
+  const sum = i.numSum, raw = i.numRaw; i.numSum = i.numRaw = i.numN = 0;
+  if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgTick(e, sum, raw, "white", { x: e.x - b.vx, y: e.y - b.vy }, raw > sum ? 1 - sum / raw : 0, 0);
+}
 const CAR_HOP = 30; /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
 function carHop(i, t, st) { // (i: where the last target was - the interceptor itself circles CAR_ORBIT out)
   let best = null, bd = CAR_HOP * CAR_HOP;
@@ -211,7 +222,7 @@ function stepCarPellets(t, dt) {
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
-      damage(e, p.dmg, t); p.left = 0; break;
+      fromHit({ x: e.x - p.vx, y: e.y - p.vy }, () => damage(e, p.dmg, t)); p.left = 0; break; // on the pellet's way
     }
   }
   t.carPellets = t.carPellets.filter(p => p.left > 0);

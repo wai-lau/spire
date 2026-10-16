@@ -9,54 +9,29 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
-    "Acid: x1.31 damage.",
-    "Carrier: x1.39 damage.",
-    "Freeze: x1.03 damage.",
-    "Carrier: range 260 -> 460, making up for the movement it lost.",
-    "Carrier: interceptors x1.75 faster, launched 0.11s apart (was 0.2s).",
-    "Carrier: x1.33 damage, split into 5 bolts a shot.",
-    "Carrier: interceptors reload twice as fast.",
-    "Carrier: moves again (240).",
-    "Acid: x1.14 damage.",
-    "Freeze: x1.08 damage.",
-  ], ne: [
+    "Freeze: x1.11 damage.",
+    "Sol: x0.85 damage.",
+    "Acid: x1.49 damage.",
+    "Carrier: x1.67 damage, at half the rate; each shot is 5 homing bolts streamed from under the interceptor - a bolt whose target dies flies on.",
+    "Carrier: range 260 -> 130, movement 200 -> 240; interceptors chase up to 960 away.",
+    "Carrier: interceptors x1.75 faster, launched 0.15s apart (was 0.2s), reloading twice as fast.",
     "Gravity: x0.81 damage.",
-    "Sol: x0.94 damage.",
-    "Sol: x0.90 damage.",
-    "Carrier: no longer moves (its interceptors do the travelling).",
-    "Carrier: fires at half the rate - an interceptor circles its target at least once; x0.9 damage.",
-    "Carrier: interceptors launch 0.15s apart (was 0.11s).",
-    "Carrier: range 460 -> 130; interceptors chase up to 960 from it.",
+    "Gravity: black holes drift together and merge into one bigger hole - mass, size and radiation added.",
+    "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates; at most 3x the base aura.",
+    "Gravity: a nova that catches nothing still leaves a full-size hole; novas aim a little ahead of their target.",
   ], u: [
-    "Carrier: interceptors x3 bigger.",
-    "Gravity is dark purple, Sol bright pink - easier to tell apart.",
-    "Gravity: black holes shrink away to nothing instead of popping out.",
-    "Carrier: interceptors fly smooth loops, circling their target about 100 away.",
-    "Carrier: each shot is a stream of 4 homing bolts from under the interceptor, short at first and stretching as they fly; a bolt whose target dies flies on.",
-    "Carrier: brighter cobalt blue.",
-    "Carrier: interceptors steer smoothly round the core and other towers.",
-    "Carrier: each interceptor's circle wobbles +-20%, so a wing's loops spread out.",
-    "Carrier: interceptors make a sound as they fire.",
-    "Carrier: bolts are much shorter streaks.",
-    "Sound: every sample is levelled to the same loudness.",
-    "Gravity: the aura has its own sound as it opens, apart from the nova's.",
-    "Carrier: a damage number for every bolt, flying on the way the bolt was going.",
-    "Gravity: black holes drift toward nearby ones and merge into one bigger hole - mass, life, size and radiation added together.",
-    "Gravity: a nova that catches nothing still leaves a full-size black hole (was half).",
-    "Gravity: aims a little ahead of its target, where it will be when the nova collapses.",
-    "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates (same pellets in total, sooner).",
-    "Gravity: the black centre grows logarithmically with the hole, not in step with it.",
-    "Gravity: a black hole radiates at its old rate, faster while it evaporates fast; its size is capped at 3x the base aura.",
-    "Upgrade-ready chevrons and their flashing hex keep the tower's colour during a boss wave.",
-    "Carrier: interceptors keep their colour during a boss wave.",
-    "Gravity and Carrier: faster with many pellets and bolts in the air; past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
-    "Changelog: grouped by tower, enemy type, bosses and core - no more Buffs / Nerfs.",
-    "Cards: two rows (or two columns on a tall screen) where they fit, not one long row.",
-    "Build cards: two columns, in an order shuffled once and kept.",
-    "Gravity and Carrier cards: paler text, as easy to read as the others.",
-    "Carrier: interceptors half the size, growing with Armament to full size at VI.",
-    "Gravity's tagline: \"Massive intervention.\"",
-    "Carrier's tagline: \"Carrier has arrived.\"",
+    "Carrier: interceptors fly smooth loops round their target, about 100 out and wobbling +-20%, steering round the core and towers.",
+    "Carrier: interceptors half size, growing with Armament to full at VI; a brighter cobalt blue that keeps its colour during boss waves.",
+    "Carrier: bolts are short streaks that stretch as they fly; one damage number for every two hits of an interceptor.",
+    "Carrier: launch and shot sounds; tagline \"Carrier has arrived.\"",
+    "Gravity: dark purple (Sol bright pink); the black centre grows logarithmically and the hole shrinks away to nothing.",
+    "Gravity: the aura has its own sound; tagline \"Massive intervention.\"",
+    "Gravity and Carrier: smoother with many pellets in the air - past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
+    "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",
+    "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
+    "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
+    "Sound: every sample levelled to the same loudness.",
+    "Changelog: grouped by tower, enemy type, bosses and core.",
   ] },
   { v: "5.0", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",
@@ -201,8 +176,9 @@ const CHANGELOG = [
   { v: "1.0", day: "Oct 1", u: ["The Spire: spiral tower defence on a star chart."] },
 ];
 // what a line is ABOUT: its "Subject:" prefix if it names one, else the first subject it mentions, else Other (the order here is
-// the order shown)
-const LOG_SUBJECTS = [["Arc", /\barcs?\b/i], ["Freeze", /\bfreeze\b|\bfrz\b/i], ["Sol", /\bsol(ar)?\b/i], ["Acid", /\bacid\b|\bacd\b/i],
+// the order shown). Keep ONE line per change a day: merge a later tweak into the line it changes (owner, 2026-10-16: "Merge
+// similar changes")
+const LOG_SUBJECTS = [["All towers", /^all towers\b/i], ["Arc", /\barcs?\b/i], ["Freeze", /\bfreeze\b|\bfrz\b/i], ["Sol", /\bsol(ar)?\b/i], ["Acid", /\bacid\b|\bacd\b/i],
   ["Carrier", /\bcarriers?\b|\batc\b|\binterceptors?\b/i], ["Gravity", /\bgravity\b|\bgrv\b|\bblack holes?\b/i],
   ["Swarm", /\bswarms?\b/i], ["Fast", /\bfast\b/i], ["Armor", /\barmou?r(ed)?\b/i], ["Shield", /\bshield(s|ed)?\b/i],
   ["Bosses", /\bboss(es)?\b|\bstar\b|\bempress\b|\btarot\b/i], ["Core", /\bcore\b/i], ["Other", /$^/]];
@@ -225,11 +201,11 @@ function openChangelog() {
     // where a day has more than one line (owner, 2026-10-14). bu / ne / u still hold the lines; u (Perf/UI) lines stay a size smaller
     const day = d => {
       const all = [...(d.bu || []), ...(d.ne || []), ...(d.u || [])], ui = new Set(d.u || []);
-      const li = i => "<li" + (ui.has(i) ? ' class="asp-log-ui"' : "") + ">" + i + "</li>";
-      if (all.length < 2) return "<h3>" + d.v + " · " + d.day + "</h3><ul>" + all.map(li).join("") + "</ul>";
+      const li = (i, name) => "<li" + (ui.has(i) ? ' class="asp-log-ui"' : "") + ">" + (name ? i.replace(new RegExp("^" + name + ":\\s*"), "") : i) + "</li>"; // under its heading, a line's own "Subject:" is dropped
+      if (all.length < 2) return "<h3>" + d.v + " · " + d.day + "</h3><ul>" + all.map(i => li(i)).join("") + "</ul>";
       const by = new Map(LOG_SUBJECTS.map(([name]) => [name, []]));
       for (const i of all) by.get(logSubject(i)).push(i);
-      return "<h3>" + d.v + " · " + d.day + "</h3>" + [...by].filter(([, is]) => is.length).map(([name, is]) => "<h4>" + name + "</h4><ul>" + is.map(li).join("") + "</ul>").join("");
+      return "<h3>" + d.v + " · " + d.day + "</h3>" + [...by].filter(([, is]) => is.length).map(([name, is]) => "<h4>" + name + "</h4><ul>" + is.map(i => li(i, name)).join("") + "</ul>").join("");
     };
     card.innerHTML = '<h2>changes</h2><div class="asp-log-list">' + CHANGELOG.map(day).join("") + "</div>";
     button(card, "asp-primary", "close", closeChangelog);
