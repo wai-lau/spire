@@ -87,7 +87,7 @@ function carTarget(t, st) {
   if (!pickTargets(t, st, 1).length) return null;
   if (!st.reachSt || st.reachSt.range !== st.range * CAR_LEASH) st.reachSt = Object.assign({}, st, { range: st.range * CAR_LEASH });
   const sent = new Map(), cand = pickTargets(t, st.reachSt, st.wing);
-  for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg);
+  for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg * CAR_VOLLEY_K); /* a volley is CAR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
   return cand.find(e => e.hp + (e.shield || 0) * st.dmg / 2 > (sent.get(e.id) || 0)) || cand[0] || null;
 }
 function stepCar(t, dt) {
