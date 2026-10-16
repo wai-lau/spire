@@ -8,6 +8,7 @@ const CHANGELOG = [
   { v: "4.5", day: "Oct 15", u: [
     "Gravity: a black-hole look - its aura bands white-hot, yellow, coral, pink, plum and deep purple; its colour a magenta.",
     "Gravity: the sphere and its rings draw over damage numbers.",
+    "Gravity: the nova explodes fully first, then the sphere and its aura appear.",
   ], bu: [
     "New tower: Gravity. A nova leaves a black sphere whose aura burns, slows and strips armor, growing with every hit; it radiates pellets. Strong against swarm and armor, weak to fast and shields. Axes: Void, Supernova, Radiation.",
   ] },

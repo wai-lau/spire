@@ -42,8 +42,9 @@ function grvSkillStats(t, s, b) {
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
 const grvMassK = sp => Math.max(0, Math.min(GRV_MASS_MAX, sp.mass));
 const grvAuraR = (sp, st) => st.auraR * Math.sqrt(grvMassK(sp));
-// the aura's reach right now: blown out at the nova front's speed until its size
-const grvAuraNow = (sp, st) => Math.min(grvAuraR(sp, st), st.novaR / GRV_FRONT_T * sp.age);
+// the aura's reach right now: nothing until the nova has FULLY exploded (owner, 2026-10-15: "make the nova fully explode before
+// the aura and center"), then blown out from the centre at the nova front's speed until its size
+const grvAuraNow = (sp, st) => Math.min(grvAuraR(sp, st), st.novaR / GRV_FRONT_T * Math.max(0, sp.age - GRV_FRONT_T));
 
 // fire(): a nova on the target - the sphere is born where it stands
 function novaAt(t, st, e) {
@@ -147,6 +148,7 @@ function drawSphere(sp, st) {
 // grows and shrinks with it). ABOVE the damage numbers (owner, 2026-10-15): in 2D the board draws them first; in 3D the pop-up
 // pass calls drawGrvCores after them, `at` placing each at its spot like a number
 function drawGrvCore(sp, st) {
+  if (sp.age < GRV_FRONT_T) return; // (the nova first - the centre appears as it ends)
   const r = Math.max(2, grvAuraNow(sp, st) * 0.16 + 2 * Math.sqrt(grvMassK(sp)));
   ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.strokeStyle = COL.yellow; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.fill(); ctx.stroke();
