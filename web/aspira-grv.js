@@ -20,8 +20,10 @@ const GRV_STRIP = 0.5; // armor stripped, x the aura's damage dealt - POSITIVE a
 const GRV_SLOW_MAX = 0.6, GRV_HORIZON_SLOW = 0.9; // Void VI (Event Horizon): a full-grown sphere's slow
 const GRV_HYPER_STRIP = 0.5, GRV_HYPER_MASS = 2; // Supernova VI (Hypernova): the nova takes half the positive armor; spheres start heavier
 const GRV_HAWKING_N = 12; // Radiation VI (Hawking): a spent sphere's last burst of pellets
-const GRV_TICK = 0.25, GRV_FRONT_T = 0.12; // (front: way faster - owner, 2026-10-15; was 0.25)
-const GRV_NOVA_END = GRV_FRONT_T * 1.6; // the nova GONE (grown, then faded) - only then the centre and aura (owner: "finish exploding before growing the circle") // s: the aura's tick; the yellow front's time to its reach
+const GRV_TICK = 0.25, GRV_FRONT_T = 0.2; // the nova's collapse, s (0.12 outward, then inward: a touch longer to read)
+const GRV_NOVA_END = GRV_FRONT_T; // the nova GONE (collapsed into its centre) - only then the centre and aura (owner: "finish exploding before growing the circle")
+// the nova's front: from its reach INWARD, ACCELERATING (owner, 2026-10-15: "explode inwards instead of outwards, accelerating")
+const grvNovaR = (sp, st) => st.novaR * (1 - Math.min(1, sp.age / GRV_FRONT_T) ** 2); // s: the aura's tick; the yellow front's time to its reach
 const GRV_PELLET_REACH = 1.4; // a pellet flies at enemies within this x the aura's radius
 const GRV_AURA_ST = { noFx: true }; // an aura tick: no flash, no number (its own numbers drift INWARD - grvFloat)
 
@@ -70,9 +72,10 @@ function stepSphere(sp, t, st, dt) {
   sp.age += dt;
   // the NOVA: the yellow front sweeps out; each enemy it reaches takes the hit once
   if (sp.age <= GRV_FRONT_T + dt) {
-    const r = st.novaR * Math.min(1, sp.age / GRV_FRONT_T);
+    const r = grvNovaR(sp, st); // it IMPLODES: an enemy is hit as the front sweeps past it, inward (all within reach by the end)
     for (const e of G.enemies) {
-      if (e.dead || sp.hit.has(e.id) || (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2 > r * r) continue;
+      const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
+      if (e.dead || sp.hit.has(e.id) || d2 > st.novaR * st.novaR || d2 < r * r) continue;
       sp.hit.add(e.id);
       if (st.hyper && e.armor > 0) e.armor -= e.armor * GRV_HYPER_STRIP; // Hypernova: half the real armor, at once
       grvHit(sp, t, st, e, st.dmg * st.novaMul);
@@ -112,10 +115,14 @@ function grvPellet(sp, t, st, reach) {
 // the aura's BANDS, the sphere outward, in the black-hole image's colours and shares (owner, 2026-10-15): white-hot 2, yellow 6,
 // coral 13, pink 13, plum 18, deep purple 17 - each stop where its band starts, clear inside the first and past the last
 const GRV_BANDS = [[0.15, "bhwhite"], [0.19, "yellow"], [0.3, "bhcoral"], [0.47, "bhpink"], [0.66, "bhplum"], [0.86, "bhdeep"]];
-// the NOVA's bands across its ring, trailing edge to leading (owner, 2026-10-15: "three colors for the nova, 70% red 20% orange
-// 10% yellow"; "an expanding ring ... just way faster and thicker"): red behind, then orange, the yellow front; GRV_NOVA_W its
-// thickness, x the nova's reach
-const GRV_NOVA_BANDS = [[0.7, "novared"], [0.2, "orange"], [0.1, "yellow"]], GRV_NOVA_A = 0.9, GRV_NOVA_W = 0.45;
+// the NOVA: a thick ring (GRV_NOVA_W of its reach), GRV purple turning white as it collapses (owner, 2026-10-15; it was a red /
+// orange / yellow ring going OUT for an hour)
+const GRV_NOVA_A = 0.9, GRV_NOVA_W = 0.45;
+// a colour between two "rgb(r, g, b)" palette strings, f 0..1
+function mixRgb(a, b, f) {
+  const p = s => (String(s).match(/\d+(\.\d+)?/g) || [0, 0, 0]).map(Number), A = p(a), B = p(b);
+  return "rgb(" + [0, 1, 2].map(i => Math.round(A[i] + (B[i] - A[i]) * f)).join(", ") + ")";
+}
 const GRV_FLOAT_S = 0.6, GRV_FLOAT_MAX = 60, GRV_FLOAT_PX = 11, GRV_AURA_A = 0.3; // GRV_AURA_A: the band's peak, mid-radius (owner: "clear, 30%, clear")
 let grvFloats = [];
 function grvFloat(sp, e, amt) {
@@ -142,12 +149,14 @@ function drawSphere(sp, st) {
     g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
     ctx.globalAlpha = GRV_AURA_A; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar, 0, 6.283); ctx.fill();
   }
-  if (sp.age < GRV_NOVA_END) { // the NOVA: a fast, THICK expanding ring - its bands side by side across it (GRV_NOVA_BANDS), fading as it ends
-    const f = Math.min(1, sp.age / GRV_FRONT_T), r = Math.max(1, st.novaR * f), w = Math.min(r, st.novaR * GRV_NOVA_W);
-    ctx.globalAlpha = GRV_NOVA_A * (sp.age < GRV_FRONT_T ? 1 : Math.max(0, 1 - (sp.age - GRV_FRONT_T) / (GRV_NOVA_END - GRV_FRONT_T))); // full while it grows, fading after
-    let at = r - w; // each band a SOLID stroke down its own middle (the 3D board's path context takes no gradient stroke - aspira-glctx.js)
-    for (const [share, k] of GRV_NOVA_BANDS) { const bw = share * w; ctx.strokeStyle = COL[k]; ctx.lineWidth = bw; ctx.beginPath(); ctx.arc(sp.x, sp.y, at + bw / 2, 0, 6.283); ctx.stroke(); at += bw; }
+  if (sp.age < GRV_NOVA_END) { // the NOVA: a thick ring collapsing INWARD, accelerating, GRV purple slowly turning white (owner)
+    const p = Math.min(1, sp.age / GRV_FRONT_T), r = grvNovaR(sp, st), w = Math.min(r, st.novaR * GRV_NOVA_W);
+    if (r > 0.5) {
+      ctx.globalAlpha = GRV_NOVA_A; ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, p ** 2); ctx.lineWidth = w; // (a solid stroke: the 3D board takes no gradient stroke)
+      ctx.beginPath(); ctx.arc(sp.x, sp.y, r - w / 2, 0, 6.283); ctx.stroke();
+    }
   }
+
 
   if (!(typeof q3d === "function" && q3d())) drawGrvCore(sp, st); // 3D: over the damage numbers instead (drawGrvCores, aspira-warp.js)
 }
