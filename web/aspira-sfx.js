@@ -124,8 +124,8 @@ const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08 };
 
 // returns whatever the sound returns (a stop() handle for long sounds), or null
 // Optional SAMPLES (owner, 2026-10-02: Brood War sounds) replace a synth
-// sound when present. They live in api/data/aspira-sfx/ - never committed
-// (api/data/ is gitignored; the repo is public) and served to the page's own
+// sound when present. They live in this repo's data/aspira-sfx/ - never committed
+// (data/ is gitignored; the repo is public) and served to the page's own
 // guest tier through /aspira-sfx/ - listed in its index.json as { "<sound name>": "file" | ["file", ...],
 // "_gain": 0.5 } (several files = one picked at random each time). Missing
 // folder, index or file: that sound stays synthesised.
@@ -152,10 +152,20 @@ function loadSamples() {
     for (const f of [].concat(files)) {
       const clip = typeof f === "string" ? { file: f } : f;
       fetch(SAMPLE_DIR + clip.file).then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(clip.file))))
-        .then(b => AC.decodeAudioData(b)).then(buf => SAMPLES[name].push({ buf, start: clip.start || 0, end: clip.end || buf.duration }))
+        .then(b => AC.decodeAudioData(b)).then(buf => { const start = clip.start || 0, end = clip.end || buf.duration; SAMPLES[name].push({ buf, start, end, norm: sampleNorm(buf, start, end) }); })
         .catch(() => {});
     }
   }
+}
+// VOLUME NORMALIZATION (owner, 2026-10-16: "add some kind of volume normalization"): each clip is measured once, decoded - its
+// LOUDEST 50ms window's RMS - and scaled to NORM_TARGET, within NORM_CLAMP (a near-silent clip is not blown up). The Brood War
+// set spans 0.20 (BUZZ) .. 0.50 (PPwrDown), about 8 dB; 0.37 is its median, so the mix as a whole stays where it was
+const NORM_TARGET = 0.37, NORM_CLAMP = [0.5, 2], NORM_WIN = 0.05;
+function sampleNorm(buf, start, end) {
+  const x = buf.getChannelData(0), sr = buf.sampleRate, a = Math.floor(start * sr), b = Math.min(x.length, Math.ceil(end * sr)), win = Math.max(1, Math.floor(sr * NORM_WIN));
+  let loud = 0;
+  for (let i = a; i < b; i += win >> 1) { let s = 0; const j = Math.min(b, i + win); for (let k = i; k < j; k++) s += x[k] * x[k]; loud = Math.max(loud, Math.sqrt(s / Math.max(1, j - i))); }
+  return loud > 0 ? Math.max(NORM_CLAMP[0], Math.min(NORM_CLAMP[1], NORM_TARGET / loud)) : 1;
 }
 // Each TOWER's sound plays at most 3 copies at once (owner, 2026-10-02),
 // sample or synth alike: playing[name] counts live copies and a 4th is
@@ -174,7 +184,7 @@ function playSample(name, at = 0) {
   const list = SAMPLES[name], n = playing[name] || 0;
   const src = AC.createBufferSource(), g = AC.createGain(), clip = list[Math.floor(Math.random() * list.length)];
   src.buffer = clip.buf;
-  g.gain.value = sampleGain * gainFor(name) / (SOUND_MAX[name] ? 1 + n : 1);
+  g.gain.value = sampleGain * (clip.norm || 1) * gainFor(name) / (SOUND_MAX[name] ? 1 + n : 1);
   src.connect(g).connect(master);
   voices++; playing[name] = n + 1;
   src.onended = () => { voices--; playing[name]--; };
