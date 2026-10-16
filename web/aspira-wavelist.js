@@ -14,6 +14,7 @@ const WAVE_HEAD = { now: "warped in", next: "warping in..." }; // (owner: "repla
 const ICON_PTS = {};
 function iconPts(type) {
   if (ICON_PTS[type]) return ICON_PTS[type];
+  if (type === "swarm") return (ICON_PTS[type] = "3.5,3.5 16.5,3.5 16.5,16.5 3.5,16.5"); // a SQUARE for the cube (owner, 2026-10-16: "use squares to represent cubes instead of hexagon") - its board silhouette is a hexagon
   const d = ENEMIES[type], n = d.pointy ? d.sides * 2 : d.sides, pts = [];
   for (let i = 0; i < n; i++) {
     const a = -Math.PI / 2 + i * Math.PI * 2 / n, r = d.pointy && i % 2 ? 8 * (d.pointy === true ? 0.45 : d.pointy) : 8;

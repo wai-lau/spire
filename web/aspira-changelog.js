@@ -37,6 +37,7 @@ const CHANGELOG = [
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
     "Lanes: a lit lane's glow fades out gradually as it reaches the core; the line itself runs on in.",
     "Build cards: what each tower is good and bad against shown as the enemy symbols with checks and x's - three of each, from the simulator's numbers.",
+    "Wave list and cards: the swarm's cube shows as a square, not a hexagon.",
     "Carrier: a hairline trail follows each interceptor's path.",
     "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
     "Top players: a version column - the game version each score was played on; Carrier teams can post again; JUU and SMD 6 lives less (the Lovers once paid their lives twice).",
