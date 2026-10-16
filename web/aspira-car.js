@@ -120,8 +120,8 @@ function stepIcp(i, t, st, dt) {
     if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
-    if (!i.orb && d > carR(i) * 1.3) return; // still on its way
-    if (!i.orb) { i.orb = true; if (st.ram > 0) { const hp0 = e.hp; damage(e, st.ram, t, false, false, CAR_NO_NUM); onHit(e, t, st, st.ram); carNum(i, e, hp0 - Math.max(0, e.hp), st.ram, Math.cos(i.ang), Math.sin(i.ang)); } } // onto the circle - the STRAFING PASS
+    if (!i.orb && d > carR(i) * 1.3 && d > CAR_FIRE_R) return; // still on its way - but FIRING once within CAR_FIRE_R, before it is round its target (a fast enemy outran its chaser: 12 of 37 leakers were picked and never shot at, probe 2026-10-16)
+    if (!i.orb && d <= carR(i) * 1.3) { i.orb = true; if (st.ram > 0) { const hp0 = e.hp; damage(e, st.ram, t, false, false, CAR_NO_NUM); onHit(e, t, st, st.ram); carNum(i, e, hp0 - Math.max(0, e.hp), st.ram, Math.cos(i.ang), Math.sin(i.ang)); } } // onto the circle - the STRAFING PASS
     if (CAR_PIN && !e.dead) applySlow(e, CAR_PIN, 0.15, "carpin:" + t.id); // the PIN: what an interceptor circles is held back the whole time, not only as a bolt lands (doubled on fast)
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0) { // the stream: a volley's bolts spread over its interval
@@ -205,6 +205,7 @@ function carOrbit(i, e, st, d, dt) {
 // salvo", "homing, and just keep going straight if the enemy dies"): one bolt every 1 / (rate x CAR_BOLTS) s, a projectile that
 // homes on its target; its target gone, it flies on straight and hits the first enemy it touches, or nothing (was: three at once,
 // side by side, landing the instant they were fired)
+const CAR_FIRE_R = 200; // u: an interceptor on its way fires once its target is this close (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor with CAR_HOP 30: 0 39/13/0/18, 200 19/5/0/23; 150 20/8/0/20)
 const CAR_BOLT_ON = 0.08; // s a bolt flies on past a dead target (~70u)
 const CAR_BOLT_V = 900, CAR_BOLT_REACH = 390 /* x1.5 with the orbit (was 260) */, CAR_BOLT_HIT = 3; // u/s; u flown before it fades; u added to the enemy's size
 function carBolt(i, e, t, st, side = 0) { // side: u across its flight, left or right of the interceptor (a pair)
@@ -245,7 +246,7 @@ function carNum(i, e, dealt, raw0, vx, vy) {
   const sum = i.numSum, raw = i.numRaw; i.numSum = i.numRaw = i.numN = 0;
   if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgTick(e, sum, raw, "white", { x: e.x - vx, y: e.y - vy }, raw > sum ? 1 - sum / raw : 0, 0);
 }
-const CAR_HOP = 40; /* 30 -> 40 with a volley STOPPING when its target dies (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor: 30 39/13/0/18, 40 19/14/0/21, 50 9/13/0/21, 80 2/9/0/21) */ /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
+const CAR_HOP = 30; /* back to 30 with CAR_FIRE_R 200 */ /* 30 -> 40 with a volley STOPPING when its target dies (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor: 30 39/13/0/18, 40 19/14/0/21, 50 9/13/0/21, 80 2/9/0/21) */ /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
 // the NEXT target after a kill: the nearest enemy within CAR_HOP that no other interceptor of this carrier is already on, else the
 // nearest at all (owner, 2026-10-16: "each interceptor should be able to target a different fast with their respective volley")
 function carHop(i, t, st) { // (i: where the last target was - the interceptor itself circles CAR_ORBIT out)
