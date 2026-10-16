@@ -69,7 +69,7 @@ function openChooser(t) {
   layoutCards(el, row); // the grid by the screen's shape, measured once shown (a hidden element has no size)
   $("asp").classList.add("asp-choosing"); placeCred(); // now the cards have their places // the board blurs and darkens beneath (aspira.css)
 }
-const CARD_W = 380, CARD_MIN = 240, CARD_FLOOR = 180, CARD_GAP_PX = 16; // .asp-card's full width, its comfortable and its hard minimum, the grid's gap (aspira.css)
+const CARD_W = 380, CARD_MIN = 240, CARD_FLOOR = 180, CARD_GAP_PX = 16, CARD_TWO_MIN = 140; // .asp-card's full width, its comfortable and its hard minimum, the grid's gap (aspira.css)
 // the cards' GRID by the screen's shape (owner, 2026-10-07: a wide screen stacked
 // the four build cards in one column and the last ran off the bottom): landscape
 // wants them side by side, portrait stacked, and every card AND the cancel under
@@ -87,6 +87,7 @@ function layoutCards(el, row, cols2 = false) {
   const tries = Array.from({ length: n }, (_, k) => (landscape ? n - k : k + 1)).filter(c => n % c === 0 || n % c === c - 1); // a last row at most ONE short (2026-10-15: five cards since GRV - 3 + 2, not one tall column) // FULL rows only (owner, 2026-10-13: four cards "1 by 4 or 4 by 1 or 2 by 2, never like this" - a 3 + 1)
   const two = n < 2 ? 1 : landscape && !cols2 ? Math.ceil(n / 2) : 2; // (cols2: the BUILD cards - TWO COLUMNS whatever the screen, owner 2026-10-16: "Strongly prefer two columns of cards when building towers") // TWO ROWS (landscape) or TWO COLUMNS (portrait) first, where they fit (owner, 2026-10-16: "Do a double row or double column when possible"; six cards were one long row)
   if (tries.includes(two)) tries.unshift(...tries.splice(tries.indexOf(two), 1));
+  if (cols2 && n > 1 && width(2) >= CARD_TWO_MIN) { apply(2); return; } // the BUILD cards: two columns whenever a card can be CARD_TWO_MIN wide - on a phone too, scrolling if taller than the screen (owner, 2026-10-16: "Thought we wanted 2 cols", a phone showing one)
   for (const min of [CARD_MIN, CARD_FLOOR]) {
     for (const cols of tries) {
       if (cols > 1 && width(cols) < min) continue;

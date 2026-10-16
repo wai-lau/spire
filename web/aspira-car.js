@@ -26,6 +26,7 @@ const CAR_VOLLEY_K = 2;
 const CAR_SHOT_MUL = [1, 2.6, 4.5, 7.5, 10, 12.5]; // Armament (VI 15)
 const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 4.6]; // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
+const CAR_PIN = 0; // the circled enemy's slow while an interceptor orbits it (0: none) - tried 2026-10-16 against ATC's fast leak
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CAR_BOLT_PAIR = 2, CAR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 const CAR_BOLTS = Math.ceil(10 / CAR_BOLT_PAIR) * CAR_BOLT_PAIR; /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit
@@ -120,6 +121,7 @@ function stepIcp(i, t, st, dt) {
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3) return; // still on its way
     if (!i.orb) { i.orb = true; if (st.ram > 0) { const hp0 = e.hp; damage(e, st.ram, t, false, false, CAR_NO_NUM); onHit(e, t, st, st.ram); carNum(i, e, hp0 - Math.max(0, e.hp), st.ram, Math.cos(i.ang), Math.sin(i.ang)); } } // onto the circle - the STRAFING PASS
+    if (CAR_PIN && !e.dead) applySlow(e, CAR_PIN, 0.15, "carpin:" + t.id); // the PIN: what an interceptor circles is held back the whole time, not only as a bolt lands (doubled on fast)
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0) { // the stream: a volley's bolts spread over its interval
       if (!i.bk) { if (e.dead) break; i.ve = e; sfx("carshot"); } // a volley starts only on a LIVE target...
