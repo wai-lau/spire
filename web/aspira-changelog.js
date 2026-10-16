@@ -45,6 +45,7 @@ const CHANGELOG = [
     "Gravity: aims a little ahead of its target, where it will be when the nova collapses.",
     "Gravity: a black hole's size is its mass - it shrinks all its life, and the bigger it is the faster it evaporates and radiates (same pellets in total, sooner).",
     "Gravity: the black centre grows logarithmically with the hole, not in step with it.",
+    "Cards: two rows (or two columns on a tall screen) where they fit, not one long row.",
     "Gravity and Carrier cards: paler text, as easy to read as the others.",
     "Carrier: interceptors half the size, growing with Armament to full size at VI.",
     "Gravity's tagline: \"Massive intervention.\"",
