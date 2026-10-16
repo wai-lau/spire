@@ -7,9 +7,9 @@
 // simulator too); towerStats calls grvSkillStats, the tower loop stepGrv, fire() novaAt, drawScene drawGrv.
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const GRV_AURA_R = [40, 46, 52, 58, 64, 72]; // Void: the aura's radius at starting mass
+const GRV_AURA_R = [68, 78, 88, 99, 109, 122]; // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
 const GRV_SLOW = [0.12, 0.15, 0.18, 0.21, 0.24, 0.27]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
-const GRV_NOVA_R = [42, 50, 58, 66, 74, 82]; // Supernova: the nova's reach
+const GRV_NOVA_R = [71, 85, 99, 112, 126, 139]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
 const GRV_NOVA_MUL = [1, 1.3, 1.6, 2, 2.4, 2.8]; // Supernova: the nova's hit, x the tower's damage
 const GRV_PELLETS = [2, 2.6, 3.2, 3.8, 4.4, 5]; // Radiation: pellets a second at starting mass (x mass) - few: a pellet pops a shield charge
 const GRV_PELLET_K = [0.25, 0.32, 0.4, 0.48, 0.56, 0.65]; // Radiation: a pellet's hit, x the tower's damage
@@ -24,7 +24,7 @@ const GRV_TICK = 0.25, GRV_FRONT_T = 0.2; // the nova's collapse, s (0.12 outwar
 const GRV_NOVA_END = GRV_FRONT_T; // the nova GONE (collapsed into its centre) - only then the centre and aura (owner: "finish exploding before growing the circle")
 // the nova's front: from its reach INWARD, ACCELERATING (owner, 2026-10-15: "explode inwards instead of outwards, accelerating")
 const grvNovaR = (sp, st) => st.novaR * (1 - Math.min(1, sp.age / GRV_FRONT_T) ** 2); // s: the aura's tick; the yellow front's time to its reach
-const GRV_PELLET_REACH = 1.4; // a pellet flies at enemies within this x the aura's radius
+const GRV_PELLET_REACH = 1.4, GRV_PELLET_V = 320, GRV_PELLET_HIT = 3; // a pellet flies this x the aura's radius, at V a second; touches an enemy within its size + HIT
 const GRV_AURA_ST = { noFx: true }; // an aura tick: no flash, no number (its own numbers drift INWARD - grvFloat)
 
 SKILL_TREES.grv = [
@@ -63,8 +63,9 @@ function grvHit(sp, t, st, e, amt, opt) {
   return dealt;
 }
 function stepGrv(t, dt) {
-  if (!t.spheres || !t.spheres.length) return;
   const st = towerStats(t);
+  stepPellets(t, st, dt);
+  if (!t.spheres || !t.spheres.length) return;
   for (const sp of t.spheres) stepSphere(sp, t, st, dt);
   t.spheres = t.spheres.filter(sp => sp.mass > 0);
 }
@@ -103,12 +104,32 @@ function stepSphere(sp, t, st, dt) {
   sp.mass -= sp.lost * dt;
   if (sp.mass <= 0 && st.hawking) for (let i = 0; i < GRV_HAWKING_N; i++) grvPellet(sp, t, st, st.auraR * GRV_PELLET_REACH * 1.5);
 }
+// a PELLET is a projectile (owner, 2026-10-15: "I want pellets to be able to miss, not beams"): out from the sphere in a random
+// direction at GRV_PELLET_V, hitting the FIRST enemy it touches - or nothing, fading at `reach`
 function grvPellet(sp, t, st, reach) {
-  const near = G.enemies.filter(e => !e.dead && (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2 <= reach * reach);
-  if (!near.length) return;
-  const e = near[Math.floor(Math.random() * near.length)];
-  beam({ x: sp.x, y: sp.y }, e, "bhcoral", 0.08, 1.2, 0, true, false);
-  grvHit(sp, t, st, e, st.dmg * st.pelletK);
+  const a = Math.random() * 6.283;
+  (t.pellets ||= []).push({ sp, x: sp.x, y: sp.y, vx: Math.cos(a) * GRV_PELLET_V, vy: Math.sin(a) * GRV_PELLET_V, left: reach / GRV_PELLET_V, dmg: st.dmg * st.pelletK });
+}
+function stepPellets(t, st, dt) {
+  if (!t.pellets || !t.pellets.length) return;
+  for (const p of t.pellets) {
+    p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt;
+    for (const e of G.enemies) {
+      if (e.dead) continue;
+      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRV_PELLET_HIT;
+      if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
+      if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg); else damage(e, p.dmg, t); // (its sphere gone: no mass to feed)
+      p.left = 0; break;
+    }
+  }
+  t.pellets = t.pellets.filter(p => p.left > 0);
+}
+
+// ---------- the PELLETS, drawn: a short coral streak along each one's flight ----------
+const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 2.2; // s of flight the streak spans; its width
+function drawGrvPellets() {
+  ctx.strokeStyle = COL.bhcoral; ctx.lineCap = "round"; ctx.lineWidth = GRV_PELLET_PX; ctx.globalAlpha = 1;
+  for (const t of G.towers) for (const p of t.pellets || []) { ctx.beginPath(); ctx.moveTo(p.x - p.vx * GRV_PELLET_TAIL, p.y - p.vy * GRV_PELLET_TAIL); ctx.lineTo(p.x, p.y); ctx.stroke(); }
 }
 
 // ---------- the aura's damage numbers drift INWARD, toward the sphere (owner) ----------
@@ -117,7 +138,7 @@ function grvPellet(sp, t, st, reach) {
 const GRV_BANDS = [[0.15, "bhwhite"], [0.19, "yellow"], [0.3, "bhcoral"], [0.47, "bhpink"], [0.66, "bhplum"], [0.86, "bhdeep"]];
 // the NOVA: a thick ring (GRV_NOVA_W of its reach), GRV purple turning white as it collapses (owner, 2026-10-15; it was a red /
 // orange / yellow ring going OUT for an hour)
-const GRV_NOVA_A = 0.9, GRV_NOVA_W = 0.45;
+const GRV_NOVA_A = 0.9, GRV_NOVA_W = 0.08, GRV_NOVA_WHITE = 0.2; // a THIN line, only 20% of the way to white (owner, 2026-10-15; was 0.45 thick, all the way)
 // a colour between two "rgb(r, g, b)" palette strings, f 0..1
 function mixRgb(a, b, f) {
   const p = s => (String(s).match(/\d+(\.\d+)?/g) || [0, 0, 0]).map(Number), A = p(a), B = p(b);
@@ -152,7 +173,7 @@ function drawSphere(sp, st) {
   if (sp.age < GRV_NOVA_END) { // the NOVA: a thick ring collapsing INWARD, accelerating, GRV purple slowly turning white (owner)
     const p = Math.min(1, sp.age / GRV_FRONT_T), r = grvNovaR(sp, st), w = Math.min(r, st.novaR * GRV_NOVA_W);
     if (r > 0.5) {
-      ctx.globalAlpha = GRV_NOVA_A; ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, p ** 2); ctx.lineWidth = w; // (a solid stroke: the 3D board takes no gradient stroke)
+      ctx.globalAlpha = GRV_NOVA_A; ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, GRV_NOVA_WHITE * p ** 2); ctx.lineWidth = w; // (a solid stroke: the 3D board takes no gradient stroke)
       ctx.beginPath(); ctx.arc(sp.x, sp.y, r - w / 2, 0, 6.283); ctx.stroke();
     }
   }
@@ -180,6 +201,7 @@ function drawGrvCores(at) {
 function drawGrvFloats(now) {
   const dt = drawGrvFloats.last ? Math.min(0.1, now - drawGrvFloats.last) : 0;
   drawGrvFloats.last = now;
+  drawGrvPellets();
   for (const f of grvFloats) {
     f.t += dt;
     const p = Math.min(1, f.t / GRV_FLOAT_S), x = f.x + (f.sp.x - f.x) * p, y = f.y + (f.sp.y - f.y) * p;
