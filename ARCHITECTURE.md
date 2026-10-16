@@ -554,9 +554,9 @@ be in the game's way.
 ### 9.4 Version and changelog
 
 `web/aspira-version.txt` is hand-kept `major.minor.tiny` (a new changelog day = the next
-minor; every deploy bumps tiny); `spire_build()` stamps the newest file mtime; both go into
+minor; every deploy bumps tiny; **a new tower is a new major**: GRV and ATC made 4.5 into 5.0 and 4.6 into 5.1); `spire_build()` stamps the newest file mtime; both go into
 the template and every slow log. The changelog card (`aspira-changelog.js`, tap the version)
-lists each day's player-visible changes as facts in three groups (Buffs, Nerfs, Perf/UI):
+lists each day's player-visible changes as facts, grouped by SUBJECT (`logSubject`: a tower, an enemy type, the core ... read from a leading "Subject:" or the first one a line names; Buffs and Nerfs are no longer headed, the lines keep their three kinds underneath, Perf/UI smaller):
 add a line with every change a player would notice.
 
 ## 10. Tech
