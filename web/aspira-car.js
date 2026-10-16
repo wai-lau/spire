@@ -14,7 +14,7 @@ const CAR_AMMO = [6, 7, 8, 9, 10, 12]; // Armament: shots a sortie
 const CAR_SHOT_MUL = [1, 1.2, 1.4, 1.6, 1.8, 2]; // Armament: a shot's hit, x the tower's damage
 const CAR_RATE_MUL = [1, 1.1, 1.2, 1.3, 1.4, 1.5]; // Armament: shots a second, x the tower's rate
 const CAR_RELOAD = 1.5, CAR_GAP = 0.2; // s: an interceptor's reload at home; between launches (owner: "one by one")
-const CAR_ORBIT = 22, CAR_ORBIT_W = 5; // it circles its target at this radius, this many radians a second
+const CAR_ORBIT = 30, CAR_ORBIT_W = 5; // it circles its target at this radius, this many radians a second
 const CAR_LEASH = 1.2; // a target further than this x the reach from the carrier is let go
 const CAR_BURST_N = 10, CAR_BURST_K = 1.5, CAR_PELLET_V = 340, CAR_PELLET_REACH = 90, CAR_PELLET_HIT = 3; // Autopilot's pellets
 
@@ -56,14 +56,17 @@ function stepIcp(i, t, st, dt) {
     if (i.reload > 0 || t.launchCd > 0) return;
     const e = carTarget(t, st);
     if (!e) return;
-    i.e = e; i.ammo = st.ammo; i.state = "out"; i.cd = 0; t.launchCd = CAR_GAP; sfx("car");
+    i.e = e; i.ammo = st.ammo; i.state = "out"; i.cd = 0; i.orb = false; t.launchCd = CAR_GAP; sfx("car");
     if (st.warp) { i.x = e.x; i.y = e.y; } // WARP: there at once
     return;
   }
   if (i.state === "out") {
-    if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carTarget(t, st); if (!i.e) { carHome(i, t, st); return; } }
+    // the CLOTHESPIN (owner, 2026-10-15): straight out, loops its target firing until out of ammo, straight home. A target that
+    // dies hands the loop to the enemy NEAREST the interceptor (in reach), so the loop stays where it is
+    if (!i.e || i.e.dead || carDist2(i.e, t) > (st.range * CAR_LEASH) ** 2) { i.e = carNearest(i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
-    if (d > CAR_ORBIT * 1.5) { carFly(i, e, st.speed * dt, d); return; } // still on its way
+    if (!i.orb && d > CAR_ORBIT) { carFly(i, e, st.speed * dt, d); return; } // still on its way, straight
+    if (!i.orb) { i.orb = true; i.ang = Math.atan2(i.y - e.y, i.x - e.x); } // into the loop where it arrived (no snap)
     i.ang += CAR_ORBIT_W * dt; i.x = e.x + Math.cos(i.ang) * CAR_ORBIT; i.y = e.y + Math.sin(i.ang) * CAR_ORBIT; // circling it
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0 && !e.dead) { i.cd += 1 / st.rate; i.ammo--; carTwin(i, e, t, st); } // TWO bolts a shot (owner: "two at a time")
@@ -86,7 +89,16 @@ function carTwin(i, e, t, st) {
   const a = Math.atan2(e.y - i.y, e.x - i.x), ox = -Math.sin(a) * CAR_TWIN, oy = Math.cos(a) * CAR_TWIN;
   for (const s of [1, -1]) (t.carBolts ||= []).push({ x0: i.x + ox * s, y0: i.y + oy * s, x1: e.x + ox * s, y1: e.y + oy * s, t: 0 });
 }
-function carHome(i, t, st) { i.state = "back"; i.e = null; if (st.warp) { i.state = "home"; i.reload = CAR_RELOAD; i.x = t.x; i.y = t.y; } }
+function carNearest(i, t, st) {
+  let best = null, bd = Infinity;
+  for (const e of G.enemies) {
+    if (e.dead || carDist2(e, t) > st.range * st.range) continue;
+    const d = carDist2(e, i);
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+function carHome(i, t, st) { i.state = "back"; i.e = null; i.orb = false; if (st.warp) { i.state = "home"; i.reload = CAR_RELOAD; i.x = t.x; i.y = t.y; } }
 function carFly(i, to, step, d) { i.ang = Math.atan2(to.y - i.y, to.x - i.x); i.x += (to.x - i.x) / d * step; i.y += (to.y - i.y) / d * step; }
 
 // AUTOPILOT: out of ammo, the interceptor bursts into pellets - projectiles that hit the first enemy they touch, or miss
@@ -113,7 +125,7 @@ function stepCarPellets(t, dt) {
 // ---------- the look: thin, long darts - a fast enemy's triangle, stretched - and LIGHT-BLUE bolts and pellets (StarCraft) ----------
 const CAR_DART = 11, CAR_DART_W = 2.6, CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_TWIN = 1,  CAR_BOLT_S = 0.07, CAR_BOLT_LEN = 0.35;
 function carDart(i) {
-  const a = i.state === "out" && i.e && Math.sqrt(carDist2(i, i.e)) <= CAR_ORBIT * 1.5 ? i.ang + Math.PI / 2 : i.ang; // circling: nose along the orbit
+  const a = i.state === "out" && i.orb ? i.ang + Math.PI / 2 : i.ang; // circling: nose along the orbit
   const c = Math.cos(a), s = Math.sin(a), bx = i.x - c * CAR_DART * 0.5, by = i.y - s * CAR_DART * 0.5;
   ctx.beginPath(); ctx.moveTo(i.x + c * CAR_DART * 0.5, i.y + s * CAR_DART * 0.5);
   ctx.lineTo(bx - s * CAR_DART_W, by + c * CAR_DART_W); ctx.lineTo(bx + s * CAR_DART_W, by - c * CAR_DART_W); ctx.closePath();
