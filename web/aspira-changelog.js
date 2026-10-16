@@ -29,6 +29,7 @@ const CHANGELOG = [
     "Gravity and Carrier: smoother with many pellets in the air - past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
     "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
+    "Lanes: a lit lane's glow fades out under the core instead of ending square.",
     "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
     "Sound: every sample levelled to the same loudness.",
     "Changelog: grouped by tower, enemy type, bosses and core.",

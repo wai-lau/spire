@@ -15,7 +15,7 @@
 // fading to nothing just past the lanes' mouths
 // then ("lanes have sharp cutoff"): the fade reached nothing past the mouths, so a lane STARTED at 13% - now it is
 // nothing exactly AT the mouths (R0): full to LANE_FULL of the way, then a linear fade to none at R0
-const LANE_FADE_R = R0, LANE_FULL = 0.45, GLOW_FADE_R = 550;
+const LANE_FADE_R = R0, LANE_FULL = 0.45, GLOW_FADE_R = 550, GLOW_END_IN = 0.5, GLOW_END_OUT = 2; // GLOW_END: its glow gone inside 0.5 core radii, whole from 2
 // the live lanes' GLOW, on its own layer so it can fade much faster outward:
 // its radial mask is applied GLOW_FALLOFF times (alpha ~ (1 - r/R)^n)
 const GLOW_FALLOFF = 5; // harder (owner; was 3)
@@ -47,7 +47,9 @@ function laneLayer(c, x, w, h) {
 // GLOW_FALLOFF times, turned the glow into a solid mass
 function laneMask(x, glow) {
   const g = x.createRadialGradient(CX, CY, 0, CX, CY, glow ? GLOW_FADE_R : LANE_FADE_R);
-  g.addColorStop(0, COL.bg); if (!glow) g.addColorStop(LANE_FULL, COL.bg); g.addColorStop(1, "transparent");
+  if (glow) { g.addColorStop(0, "transparent"); g.addColorStop(GLOW_END_IN * CORE_R / GLOW_FADE_R, "transparent"); g.addColorStop(GLOW_END_OUT * CORE_R / GLOW_FADE_R, COL.bg); } // the glow FADES OUT under the core (owner, 2026-10-16: "Fix the way that the lane ends (square cutoff on highlight)": its 32-wide butt end showed beside the core in 3D)
+  else g.addColorStop(0, COL.bg);
+  if (!glow) g.addColorStop(LANE_FULL, COL.bg); g.addColorStop(1, "transparent");
   x.globalCompositeOperation = "destination-in"; x.globalAlpha = 1; x.fillStyle = g;
   x.fillRect(CX - 4000, CY - 4000, 8000, 8000);
 }
