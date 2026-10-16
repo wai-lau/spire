@@ -30,7 +30,7 @@ const CAR_FOCUS = [0, 0.15, 0.15, 0.3, 0.3, 0.45];
 // speed / 400 (Warp arrives at CAR_WARP_V)
 const CAR_RAM = [0, 2, 2, 4, 4, 7], CAR_WARP_V = 1600;
 const CAR_ORBIT = 30, CAR_ORBIT_W = 5; // it circles its target at this radius, this many radians a second
-const CAR_LEASH = 3; // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
+const CAR_LEASH = 1.7; /* 3 at range 260: the same 780 chase now the range is 460 (2026-10-16) */ // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
 // enemies left reach mid-sortie and ATC, built against fast, leaked them worst - counter matrix 2026-10-15)
 const CAR_BURST_N = 10, CAR_BURST_K = 1.5, CAR_PELLET_V = 340, CAR_PELLET_REACH = 90, CAR_PELLET_HIT = 3; // Autopilot's pellets
 
@@ -145,7 +145,7 @@ function stepCarPellets(t, dt) {
 }
 
 // ---------- the look: thin, long darts - a fast enemy's triangle, stretched - and LIGHT-BLUE bolts and pellets (StarCraft) ----------
-const CAR_DART = 11, CAR_DART_W = 2.6, CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_TWIN = 2.5, CAR_BOLT_S = 0.07, CAR_BOLT_LEN = 0.35;
+const CAR_DART = 33, CAR_DART_W = 7.8, /* x3 (owner, 2026-10-16: "make the interceptors like 3x bigger"; was 11, 2.6) */ CAR_PELLET_PX = 2, CAR_PELLET_TAIL = 0.03, CAR_TWIN = 2.5, CAR_BOLT_S = 0.07, CAR_BOLT_LEN = 0.35;
 function carDart(i) {
   const a = i.state === "out" && i.orb ? i.ang + Math.PI / 2 : i.ang; // circling: nose along the orbit
   const c = Math.cos(a), s = Math.sin(a), bx = i.x - c * CAR_DART * 0.5, by = i.y - s * CAR_DART * 0.5;
@@ -158,7 +158,7 @@ function drawCar() {
   drawCar.last = performance.now();
   for (const t of G.towers) {
     if (t.kind !== "car" || !t.icp) continue;
-    ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 1.3; ctx.lineJoin = "round";
+    ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round";
     for (const i of t.icp) if (i.state !== "home") carDart(i);
     ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CAR_PELLET_PX; ctx.globalAlpha = 1;
     for (const b of t.carBolts || []) {

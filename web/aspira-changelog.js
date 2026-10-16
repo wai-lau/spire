@@ -9,10 +9,13 @@ const CHANGELOG = [
     "Acid: x1.31 damage.",
     "Carrier: x1.39 damage.",
     "Freeze: x1.03 damage.",
+    "Carrier: range 260 -> 460, making up for the movement it lost.",
   ], ne: [
     "Gravity: x0.81 damage.",
     "Sol: x0.94 damage.",
     "Carrier: no longer moves (its interceptors do the travelling).",
+  ], u: [
+    "Carrier: interceptors x3 bigger.",
   ] },
   { v: "4.5", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",
