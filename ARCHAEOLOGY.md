@@ -233,6 +233,10 @@ board triangle and the title show PURCHASES I-IV (internal 1 3 5 6; an old save'
 `payoff.mjs` (10-15) then priced each buy alone (gain, price, gain a credit) for the "fix dead buys and fix
 underpriced stuff" pass.
 
+**Chart price.** `SKILL_STEP_COST` x1.6 on 2026-10-15 (owner: the worst no-weakness trio should afford 100% of the upgrades with
+perfect play and interest; `eco.mjs` found ARC+FRZ+ACD owning 109-287% of a max build at x1.5): a full chart at 40c went
+~39,460c -> ~63,100c (17 steps, 4 .. 246.4 builds' worth).
+
 ### 4.5 Upgrading: UI history
 Two clicks (select, then confirm) -> the chooser (cards, one per option) -> chart axes DRAGGED on the
 card (10-07) -> three real RANGE SLIDERS stacked left of the chart (10-07) -> **+ / - steppers** (10-08;

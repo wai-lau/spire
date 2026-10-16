@@ -122,7 +122,7 @@ capstone) sold as **four purchases**:
   table keeps 0..6 and `aspira-capstone.js` appends index 6 to every one in one place
   (`CAPSTONE_NUM`).
 - Price: `SKILL_STEP_COST` x the build price, one ladder step a level (17 steps; a full chart
-  ~39,460c). The capstone costs "the same as increasing the level by 2".
+  about 63,100c at the 40c build price: the steps were scaled x1.6 on 2026-10-15, ARCHAEOLOGY §4.4). The capstone costs "the same as increasing the level by 2".
 - **One capstone a tower** (`axisCap`, `capstoneHolder`; the card says "One capstone per
   tower · X IV holds it"). A tower's shown level is its purchases (`shownLevel`).
 - **The basket**: a tap pulls an axis to its next (or last) stop, the card previews the
