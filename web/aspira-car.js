@@ -40,7 +40,7 @@ const CAR_RAM = [0, 2, 2, 4, 4, 7], CAR_WARP_V = 2800; /* x1.75 with the speeds 
 // away)"): a heading that turns at a capped rate, steered by a guidance field that spirals onto a CAR_ORBIT circle round the
 // target - out at its Launch speed, easing to CAR_ORBIT_V on the circle, a wide turn out of it and home (was a 30u loop at 5 rad/s
 // with straight legs and corners)
-const CAR_ORBIT = 150 /* x1.5 (owner, 2026-10-16: "1.5x interceptor enemy orbit distance and bolt range"; was 100) */, CAR_ORBIT_V = 400; // a loop is 2 pi 150 / 400 = 2.36 s
+const CAR_ORBIT = 75 /* x0.5 (owner, 2026-10-16: "reduce enemy orbit distance to 0.5 of what it is now"; was 150, before that 100) */, CAR_ORBIT_V = 400; // a loop is 2 pi 75 / 400 = 1.18 s
 // ORBIT JITTER (owner, 2026-10-16: "add orbit jitter to the interceptors, like 20%"): each interceptor's circle breathes +-20%
 // on a slow wave of its own (a random phase and pace a sortie), so a wing's loops never stack into one ring
 const CAR_ORBIT_JIT = 0.2, CAR_JIT_W = [1.2, 2.6]; // the radius's swing; its pace in rad/s, low .. high

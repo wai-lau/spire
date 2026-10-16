@@ -22,7 +22,7 @@ const CHANGELOG = [
     "Gravity: the aura strips armor harder the closer an enemy is to its centre (it already slowed harder there).",
     "Gravity: a nova that catches nothing still leaves a full-size hole; novas land ahead of their target, so it walks into the opening hole.",
   ], u: [
-    "Carrier: interceptors fly smooth loops round their target, about 150 out and wobbling +-20%, steering round the core and towers; bolts reach 390.",
+    "Carrier: interceptors fly smooth loops round their target, about 75 out and wobbling +-20%, steering round the core and towers; bolts reach 390.",
     "Carrier: interceptors half size, growing with Armament to full at VI; a brighter cobalt blue that keeps its colour during boss waves.",
     "Carrier: bolts are short streaks that stretch as they fly; one damage number for every three hits of an interceptor (the strafing pass included), their sum.",
     "Carrier: Hangar stores 25% / 50% / 75% / 100% of the interceptors (tiers I-IV) circling the carrier while there is nothing to hit.",
@@ -39,6 +39,7 @@ const CHANGELOG = [
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
     "Lanes: a lit lane's glow fades out gradually as it reaches the core; the line itself runs on in.",
     "Build cards: what each tower is good and bad against shown as the enemy symbols with checks and x's - three of each, from the simulator's numbers.",
+    "Tower cards: no \"Shields -1 / hit\" row where a hit just pops one shield, as every hit does.",
     "Wave list and cards: the swarm's cube shows as a square, not a hexagon.",
     "Carrier: a hairline trail follows each interceptor's path.",
     "Cards: build cards in two columns, in an order shuffled once and kept; Gravity and Carrier text paler, as readable as the rest.",
@@ -47,7 +48,7 @@ const CHANGELOG = [
     "Perf: less memory churn every step - enemy movement and Gravity / Carrier projectiles no longer make garbage (fewer GC hitches); low quality no longer draws Gravity's nova numbers (it already hid every other damage number).",
     "Battery: the sound engine sleeps while the tab is hidden or the game is muted.",
     "Sound: every sample levelled to the same loudness.",
-    "Changelog: grouped by tower, enemy type, bosses and core.",
+    "Changelog: grouped by tower, enemy type, bosses and core, in smaller type.",
   ] },
   { v: "5.0", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",

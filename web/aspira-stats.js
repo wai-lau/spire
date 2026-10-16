@@ -20,7 +20,7 @@ const SPEC = {
     const tree = [1]; for (let l = 1; l <= st.layers; l++) tree.push(st.branch ** l);
     return [["Hits", (st.targets > 1 ? st.targets + " × " : "") + tree.join("→")] /* × the STRIKES (Conductivity III+: "twin arcs") */, ["Arc dmg", dmgUnits(st.dmg * st.arcFall)],
       ["Charge", st.charge ? st.charge.n + " × " + Math.round(st.charge.frac * 100) + "% of hit · burst r" + ARC_BURST_R : "—"],
-      ["Re-strikes", st.revisit ? "up to " + st.revisit + "× an enemy" : "—"], ["Shields", "−1 / hit"],
+      ["Re-strikes", st.revisit ? "up to " + st.revisit + "× an enemy" : "—"],
       ["Burst slow", st.statSlow ? Math.round(st.statSlow * 100) + "% · " + STAT_SLOW_T + "s" : "—"], // the prose's "slowing all near" (ARC_STAT_SLOW)
       // a chart ARC: no reach from the tower - EACH JUMP its own, shrinking (owner)
       ...(st.skill ? [["Jumps", st.layers + (st.layers > 1 ? " jumps" : " jump") + " · first " + Math.round(st.arcRange)]] // (the first jump's reach LAST: it only rises, the card reads the last number)
@@ -30,7 +30,7 @@ const SPEC = {
   frz: st => st.skill ? [["Aura slow", Math.round(st.aura * 100) + "%"], ["Aura dmg", dmgUnits(st.dmg * st.rate) + "/s"], ["Brittle", st.brittle > 1 ? "+" + Math.round((st.brittle - 1) * 100) + "% taken" : "—"], ["Shields", "−1 / tick"],
     ["Permafrost", st.rime ? "every " + st.rimeEvery + "s, +" + Math.round(st.rime * 1000) / 10 + "% slow, stacking" /* names WHAT it adds (owner, 2026-10-14: "+22% ... but what +22%"); tenths, since halving made 3.5 and 8.5 */ : "—"], ["Frost armor", st.rimeCrack ? "−" + Math.round(st.rimeCrack * 100) + "% armor (−" + dmgUnits(st.rimeCrack * armorRefOf(G.wave || 1)) + " now)" : "—"] /* at FULL frost (less frost, that share): frostArmor x the wave's armor reference (an armored enemy's armor), and that in armor at THIS wave (damage()) */, ["Full frost", st.rime ? Math.round(FRZ_RIME_FULL * 100) + "% slow, then spreads" : "—"], ["Cold bite", "+" + FRZ_CHILL_K + "% dmg per 1% slow"] /* frzBite */ /* the prose's "seeps into their armor": frostArmor x an armored enemy's armor, by frost share (damage()) */, ["Moons", st.moonN ? st.moonN + " at " + Math.round(st.moonK * 100) + "%" + (st.subN ? " +" + st.subN + " small each" : "") : "—"]]
     : [["Slow", Math.round(st.slow * 100) + "%"], ["Lasts", st.permafrost ? "forever" : SLOW_TIME.toFixed(1) + "s"],
-    ["Targets", st.all ? "all" : st.targets], ["Shields", "−1 / pulse"],
+    ["Targets", st.all ? "all" : st.targets],
     ["Shatter", st.shatter ? dmgUnits(st.dmg * st.shatter.mul) + " r" + st.shatter.r : "—"],
     ["Extra", st.frostbite ? "blast slows " + st.frostbite + "s" : st.brittle ? "+" + Math.round((st.brittle - 1) * 100) + "% taken"
       : st.chillStop ? "95% for " + st.chillStop + "s" : "—"]],
@@ -53,7 +53,7 @@ const SPEC = {
   grv: st => [["Nova hit", dmgUnits(st.dmg * st.novaMul)], ["Nova reach", st.novaR], ["Aura size", st.auraR + " × nova dmg (×" + GRV_GROW_MIN + "–" + GRV_GROW_MAX + ")"],
     ["Aura slow", Math.round(Math.min(GRV_SLOW_MAX, st.slow) * 100) + "% · core " + (st.horizon ? "90% full" : Math.round(Math.min(GRV_CORE_MAX, Math.min(GRV_SLOW_MAX, st.slow) * GRV_CORE_MUL) * 100) + "%")],
     ["Armor strip", "−" + dmgUnits(st.dmg * GRV_AURA_K * GRV_STRIP) + "/s"], ["Pellets", +st.pellets.toFixed(1) + "/s" + (st.hawking ? " · last burst" : "")],
-    ["Pellet hit", dmgUnits(st.dmg * st.pelletK)], ["Black hole", "grows up to " + GRV_MASS_MAX + "× its size by hitting · lasts " + GRV_LIFE + "s if it hits nothing"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means") */, ["Shields", "−1 / hit"]],
+    ["Pellet hit", dmgUnits(st.dmg * st.pelletK)], ["Black hole", "grows up to " + GRV_MASS_MAX + "× its size by hitting · lasts " + GRV_LIFE + "s if it hits nothing"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means") */]  /* (no "Shields -1 / hit" row: every hit pops one - owner, 2026-10-16: "isn't this just default behaviour? maybe no need to list") */,
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
     ["Beams", st.beams || 1], ...(st.skill ? [["Shields", "−" + st.shieldPop + " / beam"]] : []) /* SOL_SHIELD_POP + SOL_REFRACT_POP */, ...(st.skill ? [["Refract", st.refraction ? (st.refraction === Infinity ? "all" : "+" + st.refraction) + " in a " + (st.cone || SOL_CONE) * 2 + "° cone" : "—"]] : []),
     // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)

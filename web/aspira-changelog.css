@@ -13,11 +13,11 @@
   line-height: var(--lh-snug);
 }
 .asp-log[hidden] { display: none; }
-.asp-log h2 { margin: 0; font-size: var(--fs-sm); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: hsl(var(--orange-hsl)); }
-.asp-log-list { overflow-y: auto; min-height: 0; font-size: var(--fs-2xs); line-height: var(--lh-tight); } /* tight (owner, 2026-10-14); Buffs and Nerfs at this size, Perf/UI a size down (.asp-log-ui) */
-.asp-log h3 { margin: var(--space-3) 0 var(--space-1); font-size: var(--fs-2xs); color: hsl(var(--green-hsl)); }
-.asp-log h4 { margin: var(--space-1) 0; font-size: var(--fs-2xs); font-weight: var(--fw-normal); color: hsl(var(--orange-hsl)); } /* Buffs / Nerfs / Perf/UI */
-.asp-log .asp-log-ui { font-size: calc(var(--fs-2xs) * 0.9); } /* Perf/UI: the smaller (both a step down - owner, 2026-10-15: "only bump down changelog") */
+.asp-log h2 { margin: 0; font-size: var(--fs-2xs); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: hsl(var(--orange-hsl)); }
+.asp-log-list { overflow-y: auto; min-height: 0; font-size: calc(var(--fs-2xs) * 0.9); line-height: var(--lh-tight); } /* tight (owner, 2026-10-14); Buffs and Nerfs at this size, Perf/UI a size down (.asp-log-ui) */
+.asp-log h3 { margin: var(--space-3) 0 var(--space-1); font-size: calc(var(--fs-2xs) * 0.9); color: hsl(var(--green-hsl)); }
+.asp-log h4 { margin: var(--space-1) 0; font-size: calc(var(--fs-2xs) * 0.9); font-weight: var(--fw-normal); color: hsl(var(--orange-hsl)); } /* Buffs / Nerfs / Perf/UI */
+.asp-log .asp-log-ui { font-size: calc(var(--fs-2xs) * 0.8); } /* Perf/UI: the smaller (everything a step down again - owner, 2026-10-16: "bump down all font sizes in changelog"; both a step down - owner, 2026-10-15: "only bump down changelog") */
 .asp-log ul { margin: 0; padding-left: var(--space-4); }
 .asp-log li { margin-bottom: var(--space-px); }
 .asp-log > button { align-self: center; }
