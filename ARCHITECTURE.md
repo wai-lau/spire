@@ -21,11 +21,11 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | # | Pillar (an owner rule) | What it fixes | Where |
 |---|---|---|---|
 | 1 | **Phone first** | one fixed play box every standard phone shares; no zoom, no pan; verify at 430x932 and 382x700 | §2.2, §7.1 |
-| 2 | **Three towers, four kinds** | `MAX_TOWERS` 3 on three open slots; every trio of kinds must be winnable ("for every combination of 3 towers, it is possible to win"), so no kind is required | §4, §10.4 |
+| 2 | **Three towers, six kinds** | `MAX_TOWERS` 3 on three open slots; every trio of kinds must be winnable except the designed deaths (§4.6d) ("for every combination of 3 towers, it is possible to win"), so no kind is required | §4, §10.4 |
 | 3 | **Towers move by hand** | drag any tower any time inside its leash, firing all the while; nothing moves itself except Auto-move (a win unlocks it; it disqualifies the game) | §4.3 |
 | 4 | **Every upgrade is a choice** | three axes a tower, four buys an axis, ONE capstone a tower; no tier lowers a stat | §4.2 |
 | 5 | **Only behaviour is told** | card words change only when behaviour changes; a number moving changes the stat row | §7.3 |
-| 6 | **Counters, not a best tower** | each enemy type has a main counter and two helpers | §4.6 |
+| 6 | **Counters, not a best tower** | each enemy type has two main counters and two helpers | §4.6 |
 | 7 | **3D is a view, never a rule** | ranges, hits and timing are 2D; 3D only draws the same game | §8.1 |
 | 8 | **Waves are fixed** | type, lane split and drops hash from the wave number; only crits, swarm jitter and speed jitter are random | §5 |
 | 9 | **Honour-system leaderboard** | a browser game proves nothing; TOP PLAYERS guards shape and rate only | §9.1 |
@@ -93,19 +93,19 @@ and a slower speed holds 1.5 s real before speeding up.
 
 ## 4. Towers
 
-### 4.1 The four kinds
+### 4.1 The six kinds
 
-| | ARC | FRZ | SOL | ACD |
-|---|---|---|---|---|
-| design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools |
-| colour | orange | cyan | pink | chatsubo green |
-| default targeting | Near | Fresh | Biggest | Biggest |
-| main counter of (`GOOD_VS`) | swarm | fast | armor, bosses | shield, bosses |
-| helps against (`HELPS_VS`) | fast, shields | swarms, armor | fast, shields | swarms, armor |
-| weak to | armor (grounds the arc) | shields (cannot be slowed) | swarms (one lock) | fast and shields (cold jets) |
-| leash | medium | long | short | longest |
+| | ARC | FRZ | SOL | ACD | GRV | ATC |
+|---|---|---|---|---|---|---|
+| design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools | a nova that leaves a black hole (§4.6b) | a carrier launching interceptors (§4.6c) |
+| colour | orange | cyan | pink | chatsubo green | violet | electric blue |
+| default targeting | Near | Fresh | Biggest | Biggest | Near | Near |
+| main counter of (`GOOD_VS`) | swarm | fast | armor, bosses | shield, bosses | swarm, armor | fast, shields |
+| helps against (`HELPS_VS`) | fast, shields | swarms, armor | fast, shields | swarms, armor | nothing | nothing |
+| weak to | armor (grounds the arc) | shields (cannot be slowed) | swarms (one lock) | fast and shields (cold jets) | fast and shields (the slow skips them; pellets pop few) | swarms and armor (one target a volley; small bolts) |
+| leash (`MOVE_BASE`) | medium (200) | long (240) | short (74) | longest (280) | medium (200) | long (240) |
 
-Ids `arc frz sol acd`; range x `RANGE_BONUS`. The legacy path/form tree
+Ids `arc frz sol acd grv car` (`KINDS`; `car` is shown as ATC); range x `RANGE_BONUS`. The legacy path/form tree
 (`aspira-upgrades.js`) is dormant: every kind `hasSkills`.
 
 ### 4.2 The chart (pillar 4)
@@ -209,16 +209,17 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 
 ### 4.6 The counter matrix (pillar 6)
 
-| enemy \ tower | ARC | FRZ | SOL | ACD | the lever |
-|---|---|---|---|---|---|
-| **swarm** | MAIN | help | weak (one lock) | help | branching hits; bursts |
-| **fast** | help | MAIN | help | weak (cold jets) | the chill bite doubles on fast |
-| **armor** | weak (grounds the arc) | help | MAIN | help | strip below zero = a flat bonus; armor scales with HP |
-| **shield** | help | weak (no slow) | help | MAIN | pops a hit: ACD one a tick, SOL by Focus |
+| enemy \ tower | ARC | FRZ | SOL | ACD | GRV | ATC | the lever |
+|---|---|---|---|---|---|---|---|
+| **swarm** | MAIN | help | weak (one lock) | help | MAIN | weak (one target a volley) | branching hits; bursts; a hole that feeds on a crowd |
+| **fast** | help | MAIN | help | weak (cold jets) | weak (no time to feed) | MAIN | the chill bite doubles on fast; interceptors outrun them |
+| **armor** | weak (grounds the arc) | help | MAIN | help | MAIN | weak (small bolts) | strip below zero = a flat bonus; armor scales with HP |
+| **shield** | help | weak (no slow) | help | MAIN | weak (the slow skips them) | MAIN | pops a hit: ACD one a tick, SOL by Focus, ATC one a bolt |
 
-The matrix is DATA: `COUNTERS` in `aspira-defs.js` (each type's `main` a LIST since GRV joined swarm and armor, 2026-10-15), from which the build card's "good vs"
-(main) and "helps vs" lines derive (`GOOD_VS`, `HELPS_VS`; SOL and ACD add bosses,
-`BOSS_KILLERS`), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
+The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds (swarm `[arc, grv]`,
+fast `[frz, car]`, armor `[sol, grv]`, shield `[acd, car]`) and a `help` list of two (swarm `[frz, acd]`, fast `[arc, sol]`,
+armor `[acd, frz]`, shield `[arc, sol]`). The build card derives from it: `GOOD_VS` / `HELPS_VS` (SOL and ACD add bosses,
+`BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run, so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
 measures it.
 
 ### 4.6b GRV, the gravity tower (spec, 2026-10-15 - being built)
