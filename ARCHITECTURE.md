@@ -644,7 +644,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | Area | Trap |
 |---|---|
 | code | **no mid-line `//` comment** in the game JS or in a GLSL expression line; use `/* */` (it swallows the rest of the line; `lint-swallowed.py` flags it) |
-| code | one global scope, ESLint `no-undef` off: a dropped `const` throws at run time; verify placement in a browser or the smoke after touching `placeTower` |
+| code | one global scope, ESLint `no-undef` off: a dropped `const` throws at run time; verify placement in a browser or the smoke after touching `placeTower`. A new top-level name must not collide with another file's (GRV's projectile grid is `projGrid` / `enemiesNear` because `aspira-acid.js` owns `enemyGrid`) |
 | code | UI-only code that logic reaches needs a `typeof X === "function"` guard; a new logic script goes in `sim.mjs` `FILES`; a browser global needs a `dom.mjs` stub |
 | code | every per-tier table has exactly 6 entries before `aspira-capstone.js` loads; a new table or axis needs a `CAPSTONE_NUM` entry and a `CAPSTONE_TIERS` name |
 | code | `fixedRand(wave, salt)`, never `Math.random`, for anything shaping a wave (a changed salt changes the sequence for everyone and every sim seed) |
@@ -674,6 +674,6 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | rules | score lives are paid only when the wave's last boss falls |
 | rules | Auto-move is for Ascendants only and disqualifies the game; arming needs a second tap |
 | rules | `FLEET_TO_BOSS` is live; keep it at 0.2 (above it lost trios to the wave-120 boss) |
-| repo | never commit the sound samples (public repo) or `graphify-out/` |
+| repo | never commit the sound samples (public repo) or `graphify-out/` (both gitignored here: `/data/`, `/graphify-out/`) |
 | process | the version and changelog are bumped by hand; `docs/spire-descriptions.md` is regenerated after any card text or number edit |
 | process | a balance claim needs a simulator run (`waverep` the curve, `trios` every trio, `countermx` the matrix); change one lever at a time and say what moved |
