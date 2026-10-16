@@ -37,6 +37,7 @@ const CHANGELOG = [
     "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",
     "All towers: the six tower colours sit evenly round the colour wheel, as the eye sees it - Arc a touch yellower, Acid greener, Freeze tealer, Carrier deeper blue, Gravity more purple, Sol coral-pink.",
     "Upgrade-ready chevrons keep the tower's colour during a boss wave.",
+    "Tower card: targeting priority sits at the bottom of the card on a wide screen.",
     "Lanes: a lit lane's glow fades out gradually as it reaches the core; the line itself runs on in.",
     "Build cards: what each tower is good and bad against shown as the enemy symbols with checks and x's - three of each, from the simulator's numbers.",
     "Tower cards: no \"Shields -1 / hit\" row where a hit just pops one shield, as every hit does.",

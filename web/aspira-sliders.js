@@ -241,9 +241,9 @@ function inspectTower(el, t) {
     // TARGETING PRIORITY (owner, 2026-10-06): a SLIDER that snaps to its stops,
     // labelled under it (the labels are tappable too); was three buttons
     // NONE on FRZ (owner, 2026-10-12: "remove targetting priority slider for FRZ"): its chill takes everything in reach
-    (t.kind === "frz" ? "" : '<div class="asp-prio"><b>Targeting priority:</b></div>' +
+    (t.kind === "frz" ? "" : '<div class="asp-prio-box"><div class="asp-prio"><b>Targeting priority:</b></div>' +
     '<input type="range" class="asp-prio-slider" id="asp-prio" min="0" max="' + (MODES.length - 1) + '" step="1" value="' + Math.max(0, MODES.findIndex(m => m[0] === t.mode)) + '">' +
-    '<div class="asp-prio-labels">' + MODES.map(([m, label], i) => '<span data-i="' + i + '"' + (t.mode === m ? ' class="on"' : "") + ">" + label + "</span>").join("") + "</div>") +
+    '<div class="asp-prio-labels">' + MODES.map(([m, label], i) => '<span data-i="' + i + '"' + (t.mode === m ? ' class="on"' : "") + ">" + label + "</span>").join("") + "</div></div>") +
     "</div>" +
     "</div>";
   const setMode = i => { t.mode = MODES[i][0]; refreshPanels(); };

@@ -716,6 +716,8 @@
 /* the BUILD cards keep their towers' own colours on a boss sky (owner) */
 #asp.asp-boss .asp-chooser.asp-building { filter: none; }
 
+/* the targeting priority at the FOOT of the info half - bottom right on a wide screen (owner, 2026-10-16: "for widescreen always have targetting prio bottom right side not halfway up page") */
+.asp-prio-box { margin-top: auto; padding-top: var(--space-4); }
 /* "Priority:" centred over the targeting row (owner) */
 .asp-prio { margin-bottom: calc(-1 * var(--space-2)); text-align: center; font-size: var(--fs-2xs); color: hsl(var(--green-hsl)); }
 
