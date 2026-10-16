@@ -397,8 +397,8 @@ function stepEnemies(dt) {
       if (e.dotT > 0) { e.dotT -= dt; damage(e, e.dotDps * dt, e.dotSrc, true); if (e.dead) continue; }
       e.s += effSpeed(e) * dt;
     }
-    const p = pathAt(e.pi, e.s, e.ang);
-    if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js)
+    const p = e.form ? { x: 0, y: 0 } : pathAt(e.pi, e.s, e.ang);
+    if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js) - which sets p whole, so no pathAt first (perf)
     e.x = p.x; e.y = p.y;
     // no free spin: one corner points along the lane, nose first
     if (FACING) {
