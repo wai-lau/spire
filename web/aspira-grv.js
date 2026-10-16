@@ -72,9 +72,12 @@ const grvAuraNow = (sp, st) => Math.min(grvAuraR(sp, st), st.novaR / GRV_FRONT_T
 
 // fire(): a nova on the target - the sphere is born where it stands
 // LEADS its target (owner, 2026-10-16: "grv should shoot slightly ahead of the enemy to account for explosion time"): the nova
-// lands where the enemy will be when it has collapsed, GRV_FRONT_T on along its lane at its pace now (slows and stuns counted)
+// lands where the enemy will be GRV_LEAD_S on along its lane at its pace now (slows and stuns counted) - past the collapse and the
+// aura's opening, so it WALKS INTO the hole (owner, 2026-10-16: "grv should be shooting slightly ahead of enemies": the collapse's
+// 0.2 s alone put it ~25u ahead, on the enemy to the eye); still well inside the nova's reach (71u+)
+const GRV_LEAD_S = 0.5;
 function novaAt(t, st, e) {
-  const p0 = pathAt(e.pi, e.s, e.ang || 0), p1 = pathAt(e.pi, e.s + effSpeed(e) * GRV_FRONT_T, e.ang || 0);
+  const p0 = pathAt(e.pi, e.s, e.ang || 0), p1 = pathAt(e.pi, e.s + effSpeed(e) * GRV_LEAD_S, e.ang || 0);
   (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0 });
   return true;
 }
@@ -220,11 +223,12 @@ function stepPellets(t, st, dt) {
       if (e.dead) continue; // (a pellet POPS shield charges - owner, 2026-10-15; only the aura's slow skips the shielded)
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + GRV_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
-      fromHit({ x: e.x - p.vx, y: e.y - p.vy }, () => { if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg); else damage(e, p.dmg, t); }); // (its sphere gone: no mass to feed); the number on the pellet's way
+      const h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT; // the number on the pellet's way (HIT_AT, aspira-floats.js)
+      try { if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg); else damage(e, p.dmg, t); } finally { hitFrom = h0; } // (its sphere gone: no mass to feed)
       p.left = 0; break;
     }
   }
-  t.pellets = t.pellets.filter(p => p.left > 0);
+  keepLive(t.pellets);
 }
 
 // ---------- the PELLETS, drawn: a short coral streak along each one's flight ----------

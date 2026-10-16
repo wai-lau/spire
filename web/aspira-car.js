@@ -169,6 +169,7 @@ function carBolt(i, e, t, st) {
   const a = Math.atan2(e.y - i.y, e.x - i.x);
   (t.carBolts ||= []).push({ x: i.x, y: i.y, e, vx: Math.cos(a) * CAR_BOLT_V, vy: Math.sin(a) * CAR_BOLT_V, left: CAR_BOLT_REACH / CAR_BOLT_V, dmg: st.dmg * (1 + st.focus * n) / CAR_BOLTS, icp: i });
 }
+const CAR_ONE = [null];
 function stepCarBolts(t, st, dt) {
   if (!t.carBolts || !t.carBolts.length) return;
   const g = projGrid();
@@ -176,7 +177,8 @@ function stepCarBolts(t, st, dt) {
     if (b.e && b.e.dead) b.e = null; // its target gone: straight on
     if (b.e) { const dx = b.e.x - b.x, dy = b.e.y - b.y, d = Math.hypot(dx, dy) || 1; b.vx = dx / d * CAR_BOLT_V; b.vy = dy / d * CAR_BOLT_V; } // homing
     b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
-    for (const e of b.e ? [b.e] : enemiesNear(b.x, b.y, g)) { // (enemiesNear: the enemy grid, aspira-grv.js)
+    if (b.e) CAR_ONE[0] = b.e;
+    for (const e of b.e ? CAR_ONE : enemiesNear(b.x, b.y, g)) { // (enemiesNear: the enemy grid, aspira-grv.js; CAR_ONE: its target, in a reused array)
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_BOLT_HIT;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
@@ -186,7 +188,7 @@ function stepCarBolts(t, st, dt) {
       b.left = 0; break;
     }
   }
-  t.carBolts = t.carBolts.filter(b => b.left > 0);
+  keepLive(t.carBolts);
 }
 // ONE NUMBER PER CAR_NUM_HITS HITS of an interceptor (owner, 2026-10-16: "Interceptor damage output, change to 1 number per two hits
 // per interceptor"; a number a bolt before, a shot's total before that): its bolts' damage adds up on the interceptor and pops as one
@@ -224,10 +226,11 @@ function stepCarPellets(t, dt) {
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
-      fromHit({ x: e.x - p.vx, y: e.y - p.vy }, () => damage(e, p.dmg, t)); p.left = 0; break; // on the pellet's way
+      const h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT; // on the pellet's way (HIT_AT, aspira-floats.js)
+      try { damage(e, p.dmg, t); } finally { hitFrom = h0; } p.left = 0; break;
     }
   }
-  t.carPellets = t.carPellets.filter(p => p.left > 0);
+  keepLive(t.carPellets);
 }
 
 // ---------- the look: thin, long darts - a fast enemy's triangle, stretched - and LIGHT-BLUE bolts and pellets (StarCraft) ----------

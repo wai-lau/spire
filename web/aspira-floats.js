@@ -50,6 +50,11 @@ const tickQ = [], TICK_SPLIT_MAX = 8, TICK_SHOW_S = 0.5;
 // an ARC hop's last enemy, a SOL refraction's, the drip or pool that burned it, the shattered or discharging enemy, the pellet's way
 let hitFrom = null;
 function fromHit(p, fn) { const o = hitFrom; hitFrom = p; try { return fn(); } finally { hitFrom = o; } }
+// (perf, 2026-10-16) a projectile's hit sets hitFrom to this ONE reused point (callers save and restore hitFrom round it), not a
+// fresh {x, y} and a closure a hit - safe only where no number is held for later (a split tick keeps its source: ACD / FRZ)
+const HIT_AT = { x: 0, y: 0 };
+// a projectile list, the spent ones dropped IN PLACE and in order (perf: .filter made a new array a list a step)
+function keepLive(list) { let j = 0; for (let i = 0; i < list.length; i++) if (list[i].left > 0) list[j++] = list[i]; list.length = j; return list; }
 function dmgTick(e, amt, raw, color, t, grey, rate) {
   const first = t && rate > 0 && !(e.ticked ||= new Set()).has(t.id);
   if (first) e.ticked.add(t.id);
