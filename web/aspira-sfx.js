@@ -108,8 +108,6 @@ const SFX = {
   // CAR (2026-10-15): an interceptor launching - a short rising whine
   car:     () => { tone({ type: "triangle", f0: 500, f1: 1400, dur: 0.09, vol: 0.05 }); },
   // an interceptor's SHOT (2026-10-16), once a shot's stream of bolts starts - a short falling zap
-  // a shield's last charge broken (2026-10-16) - a bright falling zap
-  shielddie: () => tone({ type: "triangle", f0: 1600, f1: 500, dur: 0.12, vol: 0.06 }),
   carshot: () => tone({ type: "square", f0: 1800, f1: 900, dur: 0.04, vol: 0.03 }),
   // the GRV aura opening, once the nova has collapsed (2026-10-16) - a low swell
   grvaura: () => tone({ type: "sine", f0: 55, f1: 90, dur: 0.35, vol: 0.14 }),
@@ -135,7 +133,7 @@ const SFX = {
   powerrelay: () => notes([330, 494], 0.09, { type: "square", dur: 0.12, vol: 0.12 }),
 };
 // minimum seconds between two plays of the same sound
-const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08, shielddie: 0.06 };
+const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08 };
 
 // returns whatever the sound returns (a stop() handle for long sounds), or null
 // Optional SAMPLES (owner, 2026-10-02: Brood War sounds) replace a synth
@@ -194,7 +192,7 @@ const TOWER_GAIN = 0.6, LOUD_GAIN = 2;
 const LOUD = /^(bosswarn|bossvoice|coreup|up|build)/;
 // per-sound trims (owner): the ship explosion on every kill was too loud
 const SOUND_GAIN = { kill: 0.4 };
-const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? 1);
+const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? SOUND_GAIN[name.split(".")[0]] ?? 1); // ("kill.fast" trimmed as "kill")
 function playSample(name, at = 0) {
   const list = SAMPLES[name], n = playing[name] || 0;
   const src = AC.createBufferSource(), g = AC.createGain(), clip = list[Math.floor(Math.random() * list.length)];
@@ -233,7 +231,7 @@ function sfx(name, ...args) {
   const sample = SAMPLES[name] && SAMPLES[name].length;
   if (muted || !AC || AC.state !== "running" || voices > MAX_VOICES || !(SFX[name] || sample)) return null;
   const now = AC.currentTime;
-  if (now - (lastAt[name] ?? -1) < (GAP[name] ?? 0.03)) return null;
+  if (now - (lastAt[name] ?? -1) < (GAP[name] ?? GAP[name.split(".")[0]] ?? 0.03)) return null;
   if (SOUND_MAX[name] && (playing[name] || 0) >= SOUND_MAX[name]) return null;
   // sounds keep their 1x DENSITY whatever the game speed (owner): at k x only
   // about 1 in k triggers of a name plays; loud cues (bosses, upgrades) always do

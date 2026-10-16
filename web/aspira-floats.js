@@ -102,7 +102,7 @@ function shieldBreak(e) {
   if (e.breakRing) e.breakRing.t = e.breakRing.life;
   ring(e.x, e.y, r * (2 + 3 * k), "cyan", 0.2 + 0.3 * k, true); const br = fx[fx.length - 1]; e.breakRing = br && br.k === "ring" ? br : null; // (the simulator stubs ring out)
   burst(e.x, e.y, "cyan", Math.round(8 + 22 * k));
-  if (e.shield <= 0) { ring(e.x, e.y, r * 7, "white", 0.45, true); burst(e.x, e.y, "white", 24); sfx("shielddie"); } // its own sound as the LAST charge goes (owner, 2026-10-16: "when shield die, play this")
+  if (e.shield <= 0) { ring(e.x, e.y, r * 7, "white", 0.45, true); burst(e.x, e.y, "white", 24); }
 }
 // SPARKS ON A BUDGET (perf, 2026-10-13: a late swarm wave kept ~2,300 alive - shield breaks and kills each throw 14-54 - and
 // they were most of a 3D frame's board picture): at most SPARK_MAX alive, a burst past it throws only what is left

@@ -48,7 +48,7 @@ const CHANGELOG = [
     "Perf: less memory churn every step - enemy movement and Gravity / Carrier projectiles no longer make garbage (fewer GC hitches); low quality no longer draws Gravity's nova numbers (it already hid every other damage number).",
     "Battery: the sound engine sleeps while the tab is hidden or the game is muted.",
     "Sound: every sample levelled to the same loudness.",
-    "Sound: a shield's last charge breaking has its own sound; Sol has a new attack sound.",
+    "Sound: each enemy type has its own death sound; Sol has a new attack sound.",
     "Changelog: grouped by tower, enemy type, bosses and core, in smaller type.",
   ] },
   { v: "5.0", day: "Oct 15", u: [

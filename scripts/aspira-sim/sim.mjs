@@ -27,7 +27,7 @@ export function makeGame(seed, patch = "") {
     innerWidth: 390, innerHeight: 844, // (only a cache key for REAL_LANES - laneTurnScores scores against the fixed phone box)
     window: {}, localStorage: { getItem: () => null, setItem: () => {} },
     ui: { speed: 1, paused: false, sel: null, build: null },
-    sfx: () => null, sfxSeq: () => null, bossVoice: () => "", shakeScreen: () => {}, showOverlay: () => {}, cam: { k: 1, ox: 0, oy: 0 }, cv: { width: 1000, height: 1000 },
+    sfx: () => null, sfxFor: () => null, sfxSeq: () => null, bossVoice: () => "", shakeScreen: () => {}, showOverlay: () => {}, cam: { k: 1, ox: 0, oy: 0 }, cv: { width: 1000, height: 1000 },
   };
   vm.createContext(ctx);
   for (const f of FILES) vm.runInContext(fs.readFileSync(WEB + f, "utf8"), ctx, { filename: f });

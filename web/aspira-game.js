@@ -295,7 +295,7 @@ function kill(e, t) {
   if (t) t.kills = (t.kills || 0) + 1;
   const mul = (e.markT > 0 ? e.markMul : 1) * (G.power.MNY > 0 ? 2 : 1) * (e.slowT > 0 && e.siphon ? e.siphon : 1);
   const b = e.bounty * mul;
-  sfx("kill");
+  sfxFor("kill", e.type); // each enemy type its own death sound where one is mapped ("kill.fast" ..., owner 2026-10-16), else the shared one
   creditDot(e.x, e.y, b); // the credits FLY to the core and land there (aspira-floats.js)
   addScore(Math.round(b * 10));
   G.charge = Math.min(POWER_FULL, G.charge + 1);
