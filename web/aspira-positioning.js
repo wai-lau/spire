@@ -71,13 +71,18 @@ function bestSpot(t, range) {
   // (a range covering the whole board scores every spot the same)
   // CULLED (2026-10-15, simulation speed): every spot lies within the leash of the slot (or where the tower stands), so a
   // predicted point farther than that + range can count for none of them - dropped once, the rest scored from flat arrays
-  const c0 = CELLS[t.cell], reach = Math.max(leashR(t), Math.hypot(t.x - c0.x, t.y - c0.y)) + range + 1, xs = [], ys = [], ws = [], is = [];
-  pred.forEach(({ pts }, i) => { for (const p of pts) if ((p.x - c0.x) ** 2 + (p.y - c0.y) ** 2 <= reach * reach) { xs.push(p.x); ys.push(p.y); ws.push(p.w); is.push(i); } });
+  const c0 = CELLS[t.cell], reach = Math.max(leashR(t), Math.hypot(t.x - c0.x, t.y - c0.y)) + range + 1, xs = [], ys = [], ws = [], is = [], tsA = [];
+  pred.forEach(({ pts }, i) => { for (const p of pts) if ((p.x - c0.x) ** 2 + (p.y - c0.y) ** 2 <= reach * reach) { xs.push(p.x); ys.push(p.y); ws.push(p.w); is.push(i); tsA.push(p.t); } });
   let wf = null, wfOf = null; // each point's weight x its enemy's targeting factor, made once a pass (f changes between passes)
+  // GLIDE TIME (owner, 2026-10-16: "it also treats a move as instant (it was written when towers jumped) ... fix this"): a gliding
+  // tower (auto-move, or the simulator's POS_GLIDE) reaches a spot only after its distance / HUMAN_V, so a hit predicted before
+  // that counts for nothing there - a far spot pays only for what it catches once the tower has arrived
+  const glide = POS_GLIDE || !AUTO_POS;
   const score = s => {
     if (wfOf !== f) { wfOf = f; wf = ws.map((w, k) => w * f[is[k]]); }
+    const arrive = glide ? Math.hypot(s.x - t.x, s.y - t.y) / HUMAN_V : 0;
     let n = 0;
-    for (let k = 0; k < xs.length; k++) if ((xs[k] - s.x) ** 2 + (ys[k] - s.y) ** 2 <= r2) n += wf[k];
+    for (let k = 0; k < xs.length; k++) if (tsA[k] >= arrive && (xs[k] - s.x) ** 2 + (ys[k] - s.y) ** 2 <= r2) n += wf[k];
     return n;
   };
   // NEAR only for a TIE (rare): the square roots it costs were paid for every spot (2026-10-15, simulation speed)
