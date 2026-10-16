@@ -17,6 +17,7 @@ const CHANGELOG = [
   ], u: [
     "Carrier: interceptors x3 bigger.",
     "Gravity is dark purple, Sol bright pink - easier to tell apart.",
+    "Gravity: black holes shrink away to nothing instead of popping out.",
   ] },
   { v: "4.5", day: "Oct 15", u: [
     "Gravity: nova damage numbers fly into the sphere.",

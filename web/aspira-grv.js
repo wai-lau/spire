@@ -54,6 +54,10 @@ const grvAuraR = (sp, st) => st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW
 // the aura's reach right now: nothing until the nova has FULLY exploded (owner, 2026-10-15: "make the nova fully explode before
 // the aura and center"), then blown out from the centre at the nova front's speed until its size
 const grvAuraNow = (sp, st) => Math.min(grvAuraR(sp, st), st.novaR / GRV_FRONT_T * Math.max(0, sp.age - GRV_NOVA_END));
+// the LOOK shrinks to nothing over its last GRV_SHRINK_S of life (owner, 2026-10-16: "black holes centers + aura from grv should
+// shrink to 0 size to disappear"; they popped out at full size) - drawn only: the slow keeps its reach to the end
+const GRV_SHRINK_S = 0.8;
+const grvShrink = sp => (sp.lost > 0 ? Math.max(0, Math.min(1, sp.mass / (sp.lost * GRV_SHRINK_S))) : 1);
 
 // fire(): a nova on the target - the sphere is born where it stands
 function novaAt(t, st, e) {
@@ -174,7 +178,7 @@ function drawGrv() {
   ctx.globalAlpha = 1;
 }
 function drawSphere(sp, st) {
-  const k = grvMassK(sp), ar = grvAuraNow(sp, st);
+  const k = grvMassK(sp), ar = grvAuraNow(sp, st) * grvShrink(sp);
   if (ar > 1) { // the aura: clear at the sphere, 30% at mid-radius, clear at the edge
     const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, ar);
     g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
@@ -196,10 +200,11 @@ function drawSphere(sp, st) {
 // pass calls drawGrvCores after them, `at` placing each at its spot like a number
 function drawGrvCore(sp, st) {
   if (sp.age < GRV_NOVA_END) return; // (the nova first - the centre appears once it is gone)
-  const r = Math.max(2, grvAuraNow(sp, st) * 0.16 + 2 * Math.sqrt(grvMassK(sp)));
+  const r = Math.max(2, grvAuraNow(sp, st) * 0.16 + 2 * Math.sqrt(grvMassK(sp))) * grvShrink(sp);
+  if (r < 0.3) return;
   ctx.globalAlpha = 1; ctx.fillStyle = "#000"; ctx.strokeStyle = COL.yellow; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.fill(); ctx.stroke();
-  ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(sp.x, sp.y, r + 2, 0, 6.283); ctx.stroke();
+  ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(sp.x, sp.y, r + 2 * grvShrink(sp), 0, 6.283); ctx.stroke();
 }
 function drawGrvCores(at) {
   for (const t of G.towers) {
