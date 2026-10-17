@@ -228,6 +228,15 @@ function warpProject(x, y, hAt) { // hAt: a height of your own (canvas px) inste
   const r = Math.hypot(wx, wy), m = r ? warpView(p, r) / r : p.hc;
   return warpProjectV(wx * m, wy * m, hAt);
 }
+// warpProject into a scratch { x, y, s } (the same arithmetic, no object a call): read it before the next call (popRun)
+const POP_P = { x: 0, y: 0, s: 0 };
+function warpProjectScratch(x, y) {
+  const p = warp.p, wx = cam.ox + x * cam.k - p.core[0], wy = cam.oy + y * cam.k - p.core[1];
+  const r = Math.hypot(wx, wy), m = r ? warpView(p, r) / r : p.hc, px = wx * m, py = wy * m;
+  const h = warpHeight(p, Math.hypot(px, py)), qy = -p.c * py + p.s * h, qz = p.s * py + p.c * h, w = p.f - qz;
+  POP_P.x = p.core[0] + p.z * p.f * px / w; POP_P.y = p.core[1] + p.oy - p.z * p.f * qy / w; POP_P.s = p.z * p.f / w;
+  return POP_P;
+}
 // the same from a VIEW spot (canvas px from the core, after warpView)
 function warpProjectV(px, py, hAt) {
   const p = warp.p, h = hAt ?? warpHeight(p, Math.hypot(px, py)), qy = -p.c * py + p.s * h, qz = p.s * py + p.c * h, w = p.f - qz;
@@ -340,7 +349,10 @@ function warpEntities() {
     ctx = topCtx; warpBands(above => drawTop(above));
     warp.hulls = solids.filter(o => o.own && o.geo).map(o => [...o.geo.B, ...o.geo.T]); // the towers' outlines on screen: next frame's bell clears the beams under them (hullUniforms, aspira-fog.js)
     const pop = (x, y, fn, far) => { const P = warpProject(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); ctx.save(); fn(); ctx.restore(); };
-    drawFx("dmg", (x, y, fn) => pop(x, y, fn, true)); drawGrvCores((x, y, fn) => pop(x, y, fn, true)); drawFx("text", pop); // GRV's centres over the damage numbers (aspira-grv.js)
+    /* the numbers (hundreds a frame) go through popRun: no save / restore each (the whole pass has one) and no point object each - every text sets its own font, fill and alpha (perf) */
+    const popRun = (x, y, fn, far) => { const P = warpProjectScratch(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); fn(); };
+    const pass = f => { ctx.save(); try { f(popRun); } finally { ctx.restore(); } };
+    pass(pp => drawFx("dmg", (x, y, fn) => pp(x, y, fn, true))); pass(pp => drawGrvCores((x, y, fn) => pp(x, y, fn, true))); pass(pp => drawFx("text", pp)); // GRV's centres over the damage numbers (aspira-grv.js)
     if (bannerT > 0) pop(CX, 70, () => { ctx.globalAlpha = Math.min(1, bannerT); text(bannerText, CX, 70, 30, bannerCol, true); ctx.globalAlpha = 1; });
     pop(CX, CY, () => drawCredits("pop")); // (the interest pop-up too)
   };
