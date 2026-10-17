@@ -484,7 +484,7 @@ const upCost = t => Math.round(TOWERS[t.kind].cost * (hasSkills(t) ? SKILL_STEP_
 // starts its tree on whatever is nearest the core, FRZ slows what nothing has
 // touched yet (Fresh), SOL saves its big hit for the most HP, ACD holds its
 // ramping burn on the longest-lived (Biggest)
-const DEFAULT_MODE = { arc: "close", frz: "fresh", sol: "biggest", acd: "biggest", grv: "close", car: "close" };
+const DEFAULT_MODE = { arc: "close", frz: "close", sol: "close", acd: "close", grv: "close", car: "close" }; // every tower NEAR by default (owner, 2026-10-16: "by default, every tower should target near"; FRZ was Fresh, SOL + ACD Biggest)
 // each new tower costs 1.5x the last (owner, 2026-10-04; was 2x): 40, 60, 90, 135, 203, 304
 const towerCost = k => Math.round(TOWERS[k].cost * Math.pow(1.5, G.towers.length));
 const sellValue = t => Math.floor(t.spent * 0.95); // 95% back (owner, 2026-10-13; was 70%)
