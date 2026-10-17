@@ -108,7 +108,7 @@ function autoQuality(dt) {
   const ms = picked ? AUTO_Q_PICK_MS : AUTO_Q_MS, hold = picked ? AUTO_Q_PICK_HOLD : AUTO_Q_HOLD; /* (the REAL frame interval, not our timed ms) */
   autoQ.slow = autoQ.ema > ms ? autoQ.slow + dt : 0;
   if (autoQ.slow < hold) return;
-  const to = qMode === "3d" ? "high" : "low";
+  const to = "low"; /* 3D steps straight to low (2026-10-16: high is the most fill-expensive mode now, so stepping through it could make a slow frame worse); a player can still pick high by hand */
   qMode = to; lowQ = to === "low"; autoQ = { ema: 16, slow: 0 }; autoQSteps++; // (set directly: setQuality would STORE it as a choice - the pick stays what the player chose; this never steps UP)
   if (typeof towerSprites !== "undefined") towerSprites.clear();
   if (typeof resize === "function") { resize(); if (typeof fitK !== "undefined") fitK = cam.fit; }
