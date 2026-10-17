@@ -67,7 +67,19 @@ function warpLayersBind(gl, u) {
     for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
   }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, warp.tex);
-  if (warp.statNew || warp.statUp !== warp.tex) {
+  if (warp.bmp) { /* the snapshot resolved off the frame: only this upload is left, from decoded pixels */
+    const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.bmp); const ms = performance.now() - t0;
+    warp.bmp.close(); warp.bmp = null;
+    if (typeof perfBoardUp === "function") perfBoardUp("bmp", ms);
+  }
+  /* a stalling device (an Apple GPU blocks ~40-50 ms in texImage2D(canvas)) snapshots the board with createImageBitmap, which resolves off the frame, and uploads it a frame or so later; the bell shows the old board till then */
+  const bmpOk = warpUpSlow >= 3 && warp.statUp === warp.tex && typeof createImageBitmap === "function";
+  if (bmpOk) {
+    if (warp.statNew && !warp.bmpP) {
+      warp.bmpP = performance.now(); warp.statNew = false;
+      createImageBitmap(cv).then(b => { if (typeof perfBoardUp === "function") perfBoardUp("bmpWait", performance.now() - warp.bmpP); warp.bmpP = 0; warp.bmp = b; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
+    }
+  } else if (warp.statNew || warp.statUp !== warp.tex) {
     const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); const ms = performance.now() - t0; warp.statNew = false; warp.statUp = warp.tex;
     if (typeof perfBoardUp === "function") perfBoardUp(warp.statWhy || "first", ms);
     /* an Apple GPU blocks ~40 ms in this call (slow logs, iPhone: 98% of the frames after one were over 40 ms): such a device (3 uploads over 20 ms) redraws and resends the board a quarter as often */
