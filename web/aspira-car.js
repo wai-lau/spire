@@ -35,9 +35,7 @@ const CAR_GAP = 0.15; /* 0.11 -> 0.15 with the reload x0.5 (owner, 2026-10-16: "
 // Hangar's FOCUS FIRE (owner, 2026-10-15): every OTHER interceptor looping the same target adds this share to each shot on it -
 // width turns into depth when the wing outnumbers the targets (they spread first: carTarget prefers an unheld enemy)
 const CAR_FOCUS = [0, 0.15, 0.15, 0.3, 0.3, 0.45];
-// Launch's STRAFING PASS (owner, 2026-10-15): an interceptor ARRIVING at a target rams it - this x the tower's base damage x its
-// speed / 700 (Warp arrives at CAR_WARP_V)
-const CAR_RAM = [0, 2, 2, 4, 4, 7], CAR_WARP_V = 2800; /* x1.75 with the speeds (was 1600) */
+// (Launch's STRAFING PASS - a ram on arrival - was removed: owner, 2026-10-17, "I dont like the strafe idea")
 // THE FLIGHT (owner, 2026-10-16: "a much smoother almost elliptical path, with a circle going around the enemy (stay about 100u
 // away)"): a heading that turns at a capped rate, steered by a guidance field that spirals onto a CAR_ORBIT circle round the
 // target - out at its Launch speed, easing to CAR_ORBIT_V on the circle, a wide turn out of it and home (was a 30u loop at 5 rad/s
@@ -66,7 +64,7 @@ const carHoldFrac = h => CAR_HOLD_FRAC[Math.min(h, CAR_HOLD_FRAC.length - 1)];
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   s.range = b.range * RANGE_BONUS; s.rate = b.rate * CAR_RATE_MUL[a]; s.dmg = b.dmg * CAR_SHOT_MUL[a] * CAR_SIDE_DMG[h] * CAR_SIDE_DMG[l]; s.targets = 1;
-  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.focus = CAR_FOCUS[h]; s.ram = b.dmg * CAR_RAM[l] * (l >= CAPSTONE_TIER ? CAR_WARP_V : CAR_SPEED[l]) / 700; /* 700 (was 400): the x1.75 speeds leave the ram as it was */ s.warp = l >= CAPSTONE_TIER; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]); s.skill = true;
+  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.focus = CAR_FOCUS[h]; s.warp = l >= CAPSTONE_TIER; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]); s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -134,7 +132,7 @@ function stepIcp(i, t, st, dt) {
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3 && d > CAR_FIRE_R) return; // still on its way - but FIRING once within CAR_FIRE_R, before it is round its target (a fast enemy outran its chaser: 12 of 37 leakers were picked and never shot at, probe 2026-10-16)
-    if (!i.orb && d <= carR(i) * 1.3) { i.orb = true; if (st.ram > 0) { const hp0 = e.hp; damage(e, st.ram, t, false, false, CAR_NO_NUM); onHit(e, t, st, st.ram); carNum(i, e, hp0 - e.hp, st.ram, Math.cos(i.ang), Math.sin(i.ang)); } } // onto the circle - the STRAFING PASS
+    if (!i.orb && d <= carR(i) * 1.3) i.orb = true; // onto the circle round its target
     if (CAR_PIN && !e.dead) applySlow(e, CAR_PIN, 0.15, "carpin:" + t.id); // the PIN: what an interceptor circles is held back the whole time, not only as a bolt lands (doubled on fast)
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0) { // the stream: a volley's bolts spread over its interval

@@ -78,6 +78,7 @@ const CHANGELOG = [
     "Perf: the next wave's lane labels are prepared ahead of the wave start instead of in its first frame.",
     "Perf: on phones whose GPU stalls on uploads, the board image is prepared off the frame and swapped in a frame later.",
     "Perf: on phones whose GPU stalls on uploads, a lane that empties mid-wave stays lit until the whole wave is done, instead of costing a redraw.",
+    "Carrier: the Strafe hit (an interceptor ramming its target on arrival) is gone.",
     "Shields are drawn about 20 units further out from the enemy they protect.",
     "Damage numbers on a killing blow show the whole hit, not just the health that was left (Carrier, Acid pools, Gravity).",
     "Waves: the game now opens with a fast wave; the first swarm comes at wave 4 instead.",
