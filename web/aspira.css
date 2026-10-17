@@ -527,7 +527,9 @@
 .asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
 .asp-sw.ltblue { color: hsl(var(--asp-ltblue-hsl)); } /* CAR's bolts and pellets (StarCraft light blue) */ /* CAR, the carrier (2026-10-15): electric blue */
 .asp-sw.yellow { color: hsl(var(--asp-yellow-hsl)); }
-.asp-sw.threat { color: hsl(var(--asp-threat-hsl)); } /* the threat marks (aspira-threat.js) */
+.asp-sw.threat { color: hsl(var(--asp-threat-hsl)); }
+.asp-sw.violetink { color: hsl(var(--asp-violet-ink-hsl)); } /* GRV's card text (and its damage numbers) */
+.asp-sw.blueink { color: hsl(var(--asp-blue-ink-hsl)); } /* ATC's card text (and its damage numbers) */ /* the threat marks (aspira-threat.js) */
 .asp-sw.bhdeep { color: hsl(var(--asp-bh-deep-hsl)); }
 .asp-sw.bhplum { color: hsl(var(--asp-bh-plum-hsl)); }
 .asp-sw.bhpink { color: hsl(var(--asp-bh-pink-hsl)); }

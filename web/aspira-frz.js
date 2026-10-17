@@ -103,7 +103,7 @@ function frzStep(t, dt) {
       if (e.shield > 0) { damage(e, st.dmg * s.k, t, false, false, FRZ_TICK_HIT); continue; } // a tick POPS a shield (owner, 2026-10-12: "shields should not absorb ticks")
       const hp = e.hp;
       damage(e, st.dmg * s.k * frzBite(e), t, true); // quiet, but armor still bites it (damage())
-      if (hp - e.hp > 0) dmgTick(e, hp - e.hp, hp - e.hp, "white", t, 0, st.rate); // (slow motion splits it - aspira-floats.js)
+      if (hp - e.hp > 0) dmgTick(e, hp - e.hp, hp - e.hp, dmgInk("frz"), t, 0, st.rate); // (slow motion splits it - aspira-floats.js)
     }
   }
   if (ticked) sfx("frz"); // a tick that touched anything is HEARD (owner, 2026-10-07; was silent)

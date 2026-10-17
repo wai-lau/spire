@@ -278,7 +278,7 @@ const GRV_NUM_GAP = 9;
 const GRV_AURA_A = 0.3; // the aura band's peak, mid-radius (owner: "clear, 30%, clear")
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
-  dmgNumber({ x: sp.x, y: sp.y - (sp.coreR || 0) - GRV_NUM_GAP + 14 }, String(dmgUnits(amt)), amt, "violet", sp); /* +14: dmgNumber sets it 14 up */
+  dmgNumber({ x: sp.x, y: sp.y - (sp.coreR || 0) - GRV_NUM_GAP + 14 }, String(dmgUnits(amt)), amt, dmgInk("grv"), sp); /* +14: dmgNumber sets it 14 up */
 }
 
 // ---------- the look: yellow front, the aura's gradient band, the black sphere, the inward numbers ----------

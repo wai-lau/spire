@@ -75,6 +75,10 @@ function drainTicks() {
 // a damage number's colour: its own, or white mixed toward the graticule's Silver by `grey` - resolved when DRAWN, so the
 // boss sky's inverted palette still applies
 const DMG_GREY_STEPS = 32; // the grey in 1/32 steps (~4 levels of each channel): a colour - a text stamp - per step, not per number (perf, 2026-10-16)
+// a tower's DAMAGE NUMBER colour: its build card's text colour (owner, 2026-10-16: "use these font colors for damage numbers, with
+// a black outline") - the pale inks for GRV and ATC, each tower's own swatch for the rest
+const DMG_INK = { grv: "violetink", car: "blueink" };
+const dmgInk = kind => DMG_INK[kind] || (TOWERS[kind] ? TOWERS[kind].color : "white");
 function dmgColor(f) {
   if (!(f.grey > 0)) return f.color;
   const a = ((COL[f.color] || COL.white).match(/[\d.]+/g) || [255, 255, 255]).map(Number), /* from the number's OWN colour (its tower's) toward Silver */ b = (COL.grid.match(/[\d.]+/g) || [128, 128, 128]).map(Number), k = Math.round(Math.min(1, f.grey) * DMG_GREY_STEPS) / DMG_GREY_STEPS;
