@@ -30,7 +30,7 @@ const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: 
 // it SLOWS that enemy (the old Pin, which needs Tether now, and harder) and PULSES every CAR_TETHER_PULSE s for CAR_TETHER_K x the shot,
 // a real hit that pops a shield charge; both grow with the tier. Capstone (Chain): the beam runs on to the nearest other enemy within
 // the interceptor's circling range of its target, slowing and pulsing it too. Index 0 = untaken; capstone.js pushes VI
-const CAR_TETHER_SLOW = [0, 0.45, 0.5, 0.55, 0.6, 0.65], CAR_TETHER_K = [0, 1, 1.5, 2, 4, 6], CAR_TETHER_PULSE = 0.5, CAR_TETHER_ST = { noFx: true };
+const CAR_TETHER_SLOW = [0, 0.45, 0.5, 0.55, 0.6, 0.65], CAR_TETHER_K = [0, 2, 3, 4, 12, 24] /* V 6 -> 24 (x4), VI 10 -> 40: Tether as impactful as Launch was (countermx 61-69 launch V: 32/47/39/55 -> 12/12/7/0 % leaked swarm/fast/shield/armor; 2026-10-17) */, CAR_TETHER_PULSE = 0.5, CAR_TETHER_ST = { noFx: true };
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CAR_BOLT_PAIR = 2, CAR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 const CAR_BOLTS = Math.ceil(10 / CAR_BOLT_PAIR) * CAR_BOLT_PAIR; /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit
@@ -111,6 +111,9 @@ function stepCar(t, dt) {
   t.launchCd = Math.max(0, (t.launchCd || 0) - dt);
   for (const i of t.icp) stepIcp(i, t, st, dt);
 }
+// a SALVO: interceptors sent at once, then CAR_GAP - one more per Hangar level (owner, 2026-10-17: "each level of hangar should increase the
+// number of interceptors deployed at once"), times the relay's RELAY_MUL
+const carSalvo = t => (1 + skillOf(t, "hangar")) * relayMul(t);
 function stepIcp(i, t, st, dt) {
   if (i.state === "home") {
     i.reload = Math.max(0, i.reload - dt);
@@ -121,7 +124,7 @@ function stepIcp(i, t, st, dt) {
     const e = carTarget(t, st);
     if (!e) return;
     const fx = held ? i.x : t.x, fy = held ? i.y : t.y;
-    i.e = e; i.ammo = st.ammo; i.bk = 0; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; t.launchN = (t.launchN || 0) + 1; if (t.launchN >= relayMul(t)) { t.launchN = 0; t.launchCd = CAR_GAP; } sfx("car"); /* RELAYED: RELAY_MUL leave per CAR_GAP slot, not one (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1") */
+    i.e = e; i.ammo = st.ammo; i.bk = 0; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; t.launchN = (t.launchN || 0) + 1; if (t.launchN >= carSalvo(t)) { t.launchN = 0; t.launchCd = CAR_GAP; } sfx("car"); /* RELAYED: RELAY_MUL leave per CAR_GAP slot, not one (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1") */
     i.v = st.speed; i.ang = held ? i.ang : Math.atan2(e.y - fy, e.x - fx); i.jp = Math.random() * 6.283; i.jw = CAR_JIT_W[0] + Math.random() * (CAR_JIT_W[1] - CAR_JIT_W[0]); // (held: out along its orbit, turning in)
     for (let k = 0; k < 4 && !held; k++) { const [ax, ay] = carAvoid(i, e.x - fx, e.y - fy, 1); i.ang = Math.atan2(ay, ax); } // leaves already bent round the core (a carrier by it has no room to turn)
     return;

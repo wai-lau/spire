@@ -48,7 +48,7 @@ const DESCRIBE = {
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
   car(sk) {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
-    return "Launches " + CAR_HANGAR[h] + " interceptors one by one" + (h ? ", storing " + Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]) + " of them circling it while there is nothing to hit" /* the COUNT, not a % (owner, 2026-10-16) */ : "") + ". Each flies to an enemy, fires " +
+    return "Launches " + CAR_HANGAR[h] + " interceptors " + (h ? (h + 1) + " at a time" : "one by one") + (h ? ", storing " + Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]) + " of them circling it while there is nothing to hit" /* the COUNT, not a % (owner, 2026-10-16) */ : "") + ". Each flies to an enemy, fires " +
       CAR_AMMO[a] + " volleys" + (l ? ", tethered to its target by a beam that slows it and pulses damage" + (l >= 6 ? ", running on to one more enemy nearby" : "") : "") + ", then " + (a >= 6 ? "bursts into pellets, rebuilt at home." : "flies home to reload.");
   },
   // GRV (owner, 2026-10-15): Supernova a wider nova (Hypernova tears armor away); Void a harder slow (Event Horizon all but
