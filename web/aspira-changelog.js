@@ -36,6 +36,7 @@ const CHANGELOG = [
     "Gravity and Carrier: smoother with many pellets in the air - past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
     "Threat marks are bright red, on a boss sky too.",
     "Perf: 3D view does less per-frame GPU setup work.",
+    "Perf: damage numbers and floating texts in the 3D view draw a little faster.",
     "Autosave: a checkpoint after every boss, once the field is clear - resume starts between waves, never mid-fight.",
     "Slow frames now lower the quality even if you picked it yourself (it tells you, and never raises it again).",
     "Build cards: each enemy symbol keeps its own colour - fast no longer took the tower's colour.",
