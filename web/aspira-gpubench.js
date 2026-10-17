@@ -2,7 +2,7 @@
 // our JS. Each case below builds the layer stack of the 3D view in a different way and times the real frame interval
 // (requestAnimationFrame to requestAnimationFrame) for 3 s: the one that jumps is the culprit. Sizes follow the window at the
 // device pixel ratio capped at 2, like the game's canvases.
-const out = document.getElementById("out"), stage = document.getElementById("stage");
+const out = document.getElementById("out"), hzEl = document.getElementById("hz"), stage = document.getElementById("stage");
 const dpr = Math.min(window.devicePixelRatio || 1, 2), W = Math.round(stage.clientWidth * dpr), H = Math.round(stage.clientHeight * dpr);
 const W2 = Math.round(W * 0.75), H2 = Math.round(H * 0.75);
 const log = s => { out.textContent += s + "\n"; };
@@ -45,6 +45,8 @@ document.getElementById("go").onclick = async () => {
   out.textContent = ""; log("window " + innerWidth + "x" + innerHeight + " dpr " + devicePixelRatio + " -> canvas " + W + "x" + H + " (overlay " + W2 + "x" + H2 + ")");
   const c = document.createElement("canvas"), gl = c.getContext("webgl"), x = gl && gl.getExtension("WEBGL_debug_renderer_info"); log("gpu " + (x ? gl.getParameter(x.UNMASKED_RENDERER_WEBGL) : "unknown"));
   log("case | median ms | p90 ms | js ms/frame | frames");
-  for (const [name, def] of CASES) { try { const r = await run(def, 3000); log(name + " | " + r.med.toFixed(1) + " | " + r.p90.toFixed(1) + " | " + r.cpu.toFixed(2) + " | " + r.n); } catch (e) { log(name + " | failed: " + e); } }
+  for (const [name, def] of CASES) { try { const r = await run(def, 3000);
+    if (name.startsWith("empty")) { const hz = 1000 / r.med; hzEl.textContent = "DISPLAY REFRESH: about " + hz.toFixed(0) + " Hz (an empty page's frame interval is " + r.med.toFixed(1) + " ms)" + (hz < 45 ? " - a SLOW screen: frames near " + (1000 / hz).toFixed(0) + " ms are the display, not the game" : ""); log(hzEl.textContent); }
+    log(name + " | " + r.med.toFixed(1) + " | " + r.p90.toFixed(1) + " | " + r.cpu.toFixed(2) + " | " + r.n); } catch (e) { log(name + " | failed: " + e); } }
   stage.replaceChildren(); log("done");
 };
