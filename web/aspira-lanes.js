@@ -317,3 +317,22 @@ function drawStars(at) {
   });
   ctx.globalAlpha = 1;
 }
+/* 2D (perf, 2026-10-16): the graticule and the lanes drawn together ONCE into one layer, and one blit a frame while what they show is the same - the same signature the 3D board layer redraws by (warpBoardSig). Screen shake or any doubt: drawn as before. 3D draws the board its own way (aspira-warplayers.js) */
+const boardCs = {}; /* one layer per palette (the boss sky draws the board inverted too) */
+let boardCacheOn = true;
+function drawBoardLayers() {
+  const m = ctx.getTransform();
+  if (!boardCacheOn || q3d() || typeof warpBoardSig !== "function" || !(ctx instanceof CanvasRenderingContext2D) || Math.abs(m.e - cam.ox) > 0.01 || Math.abs(m.f - cam.oy) > 0.01 || Math.abs(m.a - cam.k) > 1e-4 || m.b || m.c /* (the context keeps float32: equal to a hundredth of a pixel) */) { drawGraticule(); drawLanes(); return; }
+  const boardC = (boardCs[COL.bg] ||= { cv: null, x: null, key: "" });
+  const key = [cv.width, cv.height, cam.k, cam.ox, cam.oy, lowQ ? 1 : 0].join() + "|" + warpBoardSig(performance.now());
+  if (!boardC.cv || key !== boardC.key) {
+    if (!boardC.cv) { boardC.cv = document.createElement("canvas"); boardC.x = boardC.cv.getContext("2d"); }
+    if (boardC.cv.width !== cv.width || boardC.cv.height !== cv.height) { boardC.cv.width = cv.width; boardC.cv.height = cv.height; }
+    const main = ctx, x = boardC.x;
+    x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, cv.width, cv.height); x.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy);
+    ctx = x;
+    try { drawGraticule(); drawLanes(); } finally { ctx = main; }
+    boardC.key = key;
+  }
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(boardC.cv, 0, 0); ctx.restore();
+}

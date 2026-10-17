@@ -130,8 +130,7 @@ function drawGraticuleLive() {
 // the lanes (strokes, labels, fades) are drawn by aspira-lanes.js
 
 function drawBoard() {
-  drawGraticule();
-  drawLanes();
+  drawBoardLayers();
   if (!q3d()) { drawCells(); if (!G.towers.length && !ui.build) drawSlotArrow(); } // slot outlines (3D: flat, warpEntities) (owner); before the first tower an arrow points at one (aspira-chooser.js)
 }
 
