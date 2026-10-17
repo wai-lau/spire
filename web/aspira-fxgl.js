@@ -6,7 +6,7 @@
 // WARP_DYN_K of it); each still blends on its own, so stacked hits brighten exactly as they did. The bell's shader lays
 // this texture over the moving layer (WARP_FS `fxt`). 2D draws them as before. Loaded after aspira-warplayers.js.
 const fxGl = { on: false, n: 0, inst: new Float32Array(22 * 4096), rgb: new Map() };
-const FXGL_IN = 22; // per shape (one GPU instance): p0, p1 (world), radius, line width, shape, fill rgba, stroke rgba, the two joint planes, a dash
+const FXGL_IN = 26; // per shape (one GPU instance): p0, p1 (world), radius, line width, shape, fill rgba, stroke rgba, the two joint planes, a dash
 // this frame's shots pass gathers for the GPU: 3D, with WebGL up (warpRender draws the moving layer just before warpDraw)
 function fxGlTake() { fxGl.on = !fxGl.broken && typeof q3d === "function" && q3d() && !!(typeof warp !== "undefined" && warp.gl); if (!fxGl.on) fxGl.n = 0; return fxGl.on; } // (broken: the 2D way)
 // a palette colour as 0..1 rgb, read once per colour string through a 1 px canvas
@@ -45,14 +45,14 @@ function fxGlPush(x0, y0, x1, y1, r, lw, fillCss, fillA, strokeCss, strokeA, sha
   const D = fxGl.inst, f = fxGlRgb(fillCss), c = strokeCss === fillCss ? f : fxGlRgb(strokeCss);
   let o = fxGl.n++ * FXGL_IN; const base = o;
   D[o++] = x0; D[o++] = y0; D[o++] = x1; D[o++] = y1; D[o++] = r; D[o++] = lw; D[o++] = shape === true ? 1 : shape || 0;
-  D[o++] = f[0]; D[o++] = f[1]; D[o++] = f[2]; D[o++] = fillA * f[3]; D[o++] = c[0]; D[o++] = c[1]; D[o++] = c[2]; D[o++] = strokeA * c[3]; D[o++] = b0x; D[o++] = b0y; D[o++] = b1x; D[o++] = b1y; D[o++] = dOn; D[o++] = dOff; D[o] = dAt;
+  D[o++] = f[0]; D[o++] = f[1]; D[o++] = f[2]; D[o++] = fillA * f[3]; D[o++] = c[0]; D[o++] = c[1]; D[o++] = c[2]; D[o++] = strokeA * c[3]; D[o++] = b0x; D[o++] = b0y; D[o++] = b1x; D[o++] = b1y; D[o++] = dOn; D[o++] = dOff; D[o++] = dAt; const k = fxGl.clipC; if (k) { D[o++] = k[0]; D[o++] = k[1]; D[o++] = k[2]; D[o] = k[3]; } else { D[o++] = 0; D[o++] = 0; D[o++] = 0; D[o] = 0; } /* the sky's circle clip (aspira-glctx.js g.clip): centre and radius in world units, mode 1 inside / 2 outside, 0 none */
   return base;
 }
 const fxGlDisc = (x, y, r, lw, css, fillA, strokeA, square) => fxGlPush(x, y, x, y, r, lw, css, fillA, css, strokeA, square);
 // tcam: the board picture's camera (ox, oy px, k px a world unit); the colours premultiplied here
 const FXGL_VS = `
-attribute vec2 corner, p0, p1; attribute vec3 rws, dashA; attribute vec4 fillC, strokeC, clipB;
-uniform vec2 S; uniform vec3 tcam; varying vec2 loc; varying vec4 v, fc, sc, cb; varying vec3 dsh;
+attribute vec2 corner, p0, p1; attribute vec3 rws, dashA; attribute vec4 fillC, strokeC, clipB, skyC;
+uniform vec2 S; uniform vec3 tcam; varying vec2 loc; varying vec4 v, fc, sc, cb, sky; varying vec3 dsh; varying vec2 ppos;
 void main() {
   vec2 a = tcam.xy + p0 * tcam.z, b = tcam.xy + p1 * tcam.z;
   vec2 d = b - a; float len = length(d); vec2 u = len > 0.001 ? d / len : vec2(1.0, 0.0), nrm = vec2(-u.y, u.x);
@@ -66,6 +66,7 @@ void main() {
   vec2 mid = rws.z > 5.5 ? cen : rws.z > 3.5 ? a : (a + b) * 0.5;
   fc = vec4(fillC.rgb * fillC.a, fillC.a); sc = vec4(strokeC.rgb * strokeC.a, strokeC.a);
   vec2 p = mid + u * loc.x + nrm * loc.y;
+  ppos = p; sky = vec4(tcam.xy + skyC.xy * tcam.z, skyC.z * tcam.z, skyC.w);
   gl_Position = vec4(p.x / S.x * 2.0 - 1.0, p.y / S.y * 2.0 - 1.0, 0.0, 1.0);
 }`;
 const FXGL_FS = `
@@ -74,7 +75,7 @@ precision highp float; /* a phone's mediump is 16-bit: a 1000 px ring's edge or 
 #else
 precision mediump float;
 #endif
-varying vec2 loc; varying vec4 v, fc, sc, cb; varying vec3 dsh; uniform sampler2D lut;
+varying vec2 loc; varying vec4 v, fc, sc, cb, sky; varying vec3 dsh; varying vec2 ppos; uniform sampler2D lut;
 void main() {
   float sh = floor(v.z + 0.5);
   if (sh < 5.5 && ((dot(cb.xy, cb.xy) > 0.0 && dot(loc + vec2(v.w, 0.0), cb.xy) < 0.0) || (dot(cb.zw, cb.zw) > 0.0 && dot(loc - vec2(v.w, 0.0), cb.zw) > 0.0))) discard;
@@ -99,6 +100,7 @@ void main() {
     float m = min(ph, dsh.x - ph); sa *= smoothstep(-0.5, 0.5, m); fa *= smoothstep(-0.5, 0.5, m); }
   vec4 s = sc * sa, f = vec4(fc.rgb * g * g, fc.a * g) * fa;
   if (sh == 3.0 && sc.r > 0.5) { vec4 L = texture2D(lut, vec2((g * 255.0 + 0.5) / 256.0, (sc.r - 0.5) / 16.0)); f = L * fc.a * fa; } /* a many-stop radial gradient (the GRV aura): its colours read from a row of the LUT, sc.r the row + 1 */
+  if (sky.w > 0.5) { float ins = 1.0 - smoothstep(sky.z - 0.5, sky.z + 0.5, length(ppos - sky.xy)), kk = sky.w < 1.5 ? ins : 1.0 - ins; s *= kk; f *= kk; } /* the sky's circle clip: inside only (1) or outside only (2), a pixel soft */
   gl_FragColor = s + f * (1.0 - s.a);
 }`;
 function fxGlInit(gl) {
@@ -110,7 +112,7 @@ function fxGlInit(gl) {
   const ext = gl.getExtension("ANGLE_instanced_arrays"), pr = gl.createProgram();
   gl.attachShader(pr, sh(gl.VERTEX_SHADER, FXGL_VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FXGL_FS)); gl.linkProgram(pr);
   if (!ext || !gl.getProgramParameter(pr, gl.LINK_STATUS)) { fxGl.broken = true; return null; } // (no instancing: the 2D way)
-  const loc = {}; for (const n of ["corner", "p0", "p1", "rws", "fillC", "strokeC", "clipB", "dashA"]) loc[n] = gl.getAttribLocation(pr, n);
+  const loc = {}; for (const n of ["corner", "p0", "p1", "rws", "fillC", "strokeC", "clipB", "dashA", "skyC"]) loc[n] = gl.getAttribLocation(pr, n);
   const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
   const lutTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, lutTex);
   for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
@@ -138,9 +140,9 @@ function fxGlRender(gl) {
     gl.bindBuffer(gl.ARRAY_BUFFER, fxGl.quad); gl.enableVertexAttribArray(L.corner); gl.vertexAttribPointer(L.corner, 2, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, fxGl.buf); gl.bufferData(gl.ARRAY_BUFFER, fxGl.inst.subarray(0, n * FXGL_IN), gl.STREAM_DRAW);
     const st = FXGL_IN * 4, at = (name, size, off) => { const l = L[name]; gl.enableVertexAttribArray(l); gl.vertexAttribPointer(l, size, gl.FLOAT, false, st, off * 4); X.vertexAttribDivisorANGLE(l, 1); };
-    at("p0", 2, 0); at("p1", 2, 2); at("rws", 3, 4); at("fillC", 4, 7); at("strokeC", 4, 11); at("clipB", 4, 15); at("dashA", 3, 19);
+    at("p0", 2, 0); at("p1", 2, 2); at("rws", 3, 4); at("fillC", 4, 7); at("strokeC", 4, 11); at("clipB", 4, 15); at("dashA", 3, 19); at("skyC", 4, 22);
     X.drawArraysInstancedANGLE(gl.TRIANGLES, 0, 6, n);
-    for (const name of ["corner", "p0", "p1", "rws", "fillC", "strokeC", "clipB", "dashA"]) { X.vertexAttribDivisorANGLE(L[name], 0); gl.disableVertexAttribArray(L[name]); } // (the bell's program shares the attribute slots)
+    for (const name of ["corner", "p0", "p1", "rws", "fillC", "strokeC", "clipB", "dashA", "skyC"]) { X.vertexAttribDivisorANGLE(L[name], 0); gl.disableVertexAttribArray(L[name]); } // (the bell's program shares the attribute slots)
   }
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   fxGl.n = 0;

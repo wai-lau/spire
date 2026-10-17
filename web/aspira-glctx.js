@@ -10,8 +10,8 @@ const GLCTX_PASS = ["globalAlpha", "fillStyle", "strokeStyle", "lineWidth", "lin
   "shadowBlur", "shadowColor", "font", "textAlign", "textBaseline", "lineDashOffset", "miterLimit", "filter", "imageSmoothingEnabled", "shadowOffsetX", "shadowOffsetY"];
 const GLCTX_TAU = 6.283;
 function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world units (the camera the layer was drawn under)
-  if (real.__glc) return Object.assign(real.__glc, { used: false, dash: false, m: [1, 0, 0, 1, 0, 0], stack: [], w2: toWorld }); // one a canvas, made once
-  const g = real.__glc = { real, used: false, dash: false, m: [1, 0, 0, 1, 0, 0], stack: [], w2: toWorld };
+  if (real.__glc) { fxGl.clipC = null; return Object.assign(real.__glc, { used: false, dash: false, m: [1, 0, 0, 1, 0, 0], stack: [], w2: toWorld, clipC: null }); } // one a canvas, made once
+  const g = real.__glc = { real, used: false, dash: false, m: [1, 0, 0, 1, 0, 0], stack: [], w2: toWorld, clipC: null }; fxGl.clipC = null;
   for (const k of GLCTX_PASS) Object.defineProperty(g, k, { get: () => real[k], set: v => { real[k] = v; } });
   g.canvas = real.canvas;
   const T = (x, y) => [g.m[0] * x + g.m[2] * y + g.m[4], g.m[1] * x + g.m[3] * y + g.m[5]];
@@ -45,12 +45,12 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
     cur = { pts: [], closed: true }; parts.push(cur);
     for (let i = 0; i < n; i++) { const t = i / n * GLCTX_TAU, ex = rx * Math.cos(t), ey = ry * Math.sin(t); cur.pts.push(T(x + ex * c - ey * sn, y + ex * sn + ey * c)); }
   };
-  const replay = why => { // the path onto the real context, each op under its own transform
-    glcWhy(why);
+  const replay = (why, quiet) => { // the path onto the real context, each op under its own transform (quiet: the moving layer is not marked as drawn on)
+    if (!quiet) glcWhy(why);
     const m0 = real.getTransform();
     real.beginPath();
     for (const [name, a, m] of ops) { real.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]); real[name](...a); }
-    real.setTransform(m0); g.used = true;
+    real.setTransform(m0); if (!quiet) g.used = true;
   };
   const plain = s => typeof s === "string";
   g.fill = (...a) => {
@@ -75,8 +75,8 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
   g.scale = (x, y) => g.transform(x, 0, 0, y, 0, 0);
   g.rotate = a => g.transform(Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0);
   g.resetTransform = () => g.setTransform(1, 0, 0, 1, 0, 0);
-  g.save = () => { g.stack.push([g.m.slice(), g.dash]); real.save(); };
-  g.restore = () => { const s = g.stack.pop(); if (s) [g.m, g.dash] = s; real.restore(); };
+  g.save = () => { g.stack.push([g.m.slice(), g.dash, g.clipC]); real.save(); };
+  g.restore = () => { const s = g.stack.pop(); if (s) { [g.m, g.dash, g.clipC] = s; fxGl.clipC = g.clipC; } real.restore(); };
   // a radial gradient from clear at its centre to one colour at the rim (gradDisc) is drawn by the batch; any other by the canvas
   g.createRadialGradient = (x0, y0, r0, x1, y1, r1) => {
     const gr = real.createRadialGradient(x0, y0, r0, x1, y1, r1), add = gr.addColorStop.bind(gr), stops = [];
@@ -86,13 +86,21 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
   // everything else straight to the canvas (and the layer is then sent up this frame)
   for (const name of ["fillText", "strokeText", "drawImage", "fillRect", "strokeRect", "putImageData"]) g[name] = (...a) => { g.used = true; glcWhy(name); return real[name](...a); };
   g.clearRect = (...a) => real.clearRect(...a);
-  g.clip = (...a) => { replay("clip"); real.clip(...a); };
+  /* the boss sky's two passes (skyKeep, aspira-bosses.js) clip to the sky's circle - inside it, or everything OUTSIDE it (an even-odd circle + a huge rect): the batch clips its shapes to that circle itself (mode 1 / 2 in the instance), so the moving layer is not sent up for them */
+  g.clip = (...a) => {
+    const c0 = parts.length === 1 && parts[0].circle, evenodd = a[0] === "evenodd";
+    if (glcClipOn && c0 && !g.clipC && (evenodd ? odd === "rect" : !odd)) {
+      const [cx, cy] = g.w2(c0[0], c0[1]); g.clipC = fxGl.clipC = [cx, cy, c0[2] / g.w2.k, evenodd ? 2 : 1];
+      replay("clip", true); real.clip(...a); return; // (the real canvas is clipped too, for anything it must still draw)
+    }
+    replay("clip"); real.clip(...a);
+  };
   for (const name of ["measureText", "createLinearGradient", "createPattern", "isPointInPath", "getImageData", "createImageData", "createConicGradient"]) g[name] = (...a) => real[name](...a);
   return g;
 }
 // the batch's fills: whole circles (a plain colour or the gradDisc) and REGULAR POLYGONS (FRZ's moons, poly() - the canvas
 // fallback sent the whole moving layer up every frame on a phone, 2026-10-14); false: something else, the canvas draws it
-let glcMultiOn = true; // (a switch for comparing)
+let glcMultiOn = true, glcClipOn = true; // (switches for comparing)
 const glcMulti = stops => { const row = fxGlLutRow(stops); return row >= 0 ? { row } : null; };
 function glcFill(g, parts, st, grad) {
   const shapes = parts.map(p => p.circle ? null : glcRegular(p, g.w2) || glcTri(p, g.w2));
