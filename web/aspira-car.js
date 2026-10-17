@@ -83,12 +83,14 @@ const carDist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 // enemy inside it sends the wing out, and each interceptor then takes its own target from everything within the interceptors'
 // reach (CAR_LEASH x the range, 960), in the tower's targeting order - a fast enemy further out is met early (diagnosis 2026-10-16:
 // every ATC trio bled fast enemies once the range was 130)
+// LAUNCHES only at what is IN RANGE (owner, 2026-10-16: "ATC should only launch when something comes into range, but the
+// interceptors themselves can keep the range"): the wing's first target is inside the tower's range; once out, an interceptor
+// hops on to anything within its reach (carHop, CAR_LEASH) - an in-range enemy already covered launches nothing more
 function carTarget(t, st) {
-  if (!pickTargets(t, st, 1).length) return null;
-  if (!st.reachSt || st.reachSt.range !== st.range * CAR_LEASH) st.reachSt = Object.assign({}, st, { range: st.range * CAR_LEASH });
-  const sent = new Map(), cand = pickTargets(t, st.reachSt, st.wing);
+  const sent = new Map(), cand = pickTargets(t, st, st.wing);
+  if (!cand.length) return null;
   for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg * CAR_VOLLEY_K); /* a volley is CAR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
-  return cand.find(e => e.hp + (e.shield || 0) * st.dmg / 2 > (sent.get(e.id) || 0)) || cand[0] || null;
+  return cand.find(e => e.hp + (e.shield || 0) * st.dmg / 2 > (sent.get(e.id) || 0)) || null;
 }
 function stepCar(t, dt) {
   const st = towerStats(t);
