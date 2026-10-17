@@ -41,6 +41,7 @@ const CHANGELOG = [
     "Perf: the 3D view spends less CPU per frame on stars, tower charts and beams.",
     "Perf: 3D towers, the core and all numbers and text now draw on the same layer as the enemies - one less full-screen layer for the GPU (they are a touch softer).",
     "Perf: the 3D overlay is laid down in one pass instead of clear-then-draw.",
+    "Perf: the lane brightening is done in the 3D shader.",
     "Build cards: the checks and x's are spaced apart.",
     "ATC: moving the carrier no longer leaves streaks from the interceptors orbiting it.",
     "Every tower now starts on Near targeting (Freeze was Fresh, Sol and Acid were Biggest).",
