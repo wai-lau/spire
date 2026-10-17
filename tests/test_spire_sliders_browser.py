@@ -152,4 +152,4 @@ def test_build_cards_fit_landscape_and_portrait(guest_page):
     page.wait_for_selector(".asp-build-cards .asp-card")
     fit = _cards_fit(page)
     assert fit["n"] == page.evaluate("KINDS.length") and fit["cardsIn"] and fit["btnIn"], fit
-    assert fit["cols"] == 1, fit  # portrait: one column
+    assert fit["cols"] == 2, fit  # portrait too: two columns (owner, 2026-10-16: "Thought we wanted 2 cols" on a phone; CARD_TWO_MIN)
