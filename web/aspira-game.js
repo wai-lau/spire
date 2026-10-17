@@ -114,7 +114,7 @@ const MODE_KEY = {
 function pickTargets(t, st, count) {
   const r2 = st.range * st.range, c = [];
   for (const e of G.enemies) {
-    if (e.dead) continue;
+    if (e.dead || !e.seen) continue;
     const d = (e.x - t.x) ** 2 + (e.y - t.y) ** 2;
     if (d <= r2) c.push({ e, d });
   }
@@ -129,7 +129,7 @@ function pickTargets(t, st, count) {
 // st (optional): the hitting tower's stats - st.ignoreShield, st.shieldPop
 const BLEED_CRIT_MUL = 2;
 function damage(e, amt, t, quiet = false, crit = false, st = null) {
-  if (e.dead) return;
+  if (e.dead || !e.seen) return; // OFF-SCREEN: untouchable (enemySeen)
   if (e.charge && !staticQuiet && t) dischargeStatic(e); // ARC Static: ANY tower's hit sets the charges off, the charging ARC's too (aspira-skills.js)
   // a shield eats one whole HIT, whatever its size (poison/splash just bounce) -
   // SOL's included (owner: stripping shields is ACD's job, its ticks pop them)
@@ -196,7 +196,7 @@ function onHit(e, t, st, amt) {
     // a FILLED blast that lingers 0.3s, so the splash actually reads (owner)
     fx.push({ k: "blast", x: e.x, y: e.y, r: st.splash.r, color: TOWERS[t.kind].color, t: 0, life: 0.3 });
     for (const o of G.enemies) {
-      if (o === e || o.dead) continue;
+      if (o === e || o.dead || !o.seen) continue;
       if (Math.hypot(o.x - e.x, o.y - e.y) <= st.splash.r) damage(o, amt * st.splash.frac, t, true);
     }
   }
@@ -240,6 +240,7 @@ function addDebuff(map, src, v, dur, shape) {
 // A SHIELD HOLDS OFF EVERY SLOW (owner, 2026-10-12: "shielded units cannot be slowed while they have shields") - FRZ's
 // weakness to shields, by mechanics: no slow, so no chill (frzBite) and no brittle. Temporal Drive ("core:") still stops it
 function applySlow(e, f, dur, src = "x", shape = "refresh") {
+  if (!e.seen) return false; // (off-screen: immune - enemySeen)
   const core = typeof src === "string" && src.startsWith("core:"); // (a number - a tower's id - never is: no String() a call, perf)
   if (e.shield > 0 && !core) return false;
   if (e.arcana) { f *= bossSlowMul(e); if (f <= 0) return true; } // Strength / Death (aspira-bosses.js)
@@ -379,7 +380,7 @@ const JIT_FADE_R = 400; // swarm wander is full beyond this radius, 0 at the cor
 let FACING = true;
 function stepEnemies(dt) {
   for (const e of G.enemies) {
-    if (e.gone) continue;
+    if (e.gone) continue; if (!e.seen && enemySeen(e)) e.seen = true; // (off-screen: untouchable - enemySeen, aspira-positioning.js)
     if (e.dead) {
       // a GHOST (owner): the dead keep drifting in at their plain pace,
       // untargetable and harmless, and are removed at the core with no life lost

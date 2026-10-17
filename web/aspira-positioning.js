@@ -191,6 +191,9 @@ function phoneRect3d() { // 3D: the view's pixels (call under viewCam) - the SAM
   const k = cam.k;
   return { x0: cam.ox + (CX - VIEW_SIDE) * k, y0: cam.oy + (CY - VIEW_UP) * k, x1: cam.ox + (CX + VIEW_SIDE) * k, y1: cam.oy + (CY + VIEW_DOWN) * k, r: PHONE_CORNER * k };
 }
+// OFF-SCREEN = UNTOUCHABLE (owner, 2026-10-17: "untargetable and completely immune to effects or damage until they are within the screen
+// area"): e.seen latches on the phone's screen (phoneInside); every enemy loop, damage and applySlow test it
+const enemySeen = e => typeof phoneInside !== "function" || phoneInside(e.x, e.y);
 // is (x, y) on the phone, `inset` world units clear of its edge?
 function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once by a caller testing many points (legalSpot - perf)
   if (!on3d) { const b = phoneBox(); return x >= b.x0 + inset && x <= b.x1 - inset && y >= b.y0 + inset && y <= b.y1 - inset; }

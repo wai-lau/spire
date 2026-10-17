@@ -87,6 +87,7 @@ const CHANGELOG = [
     "Bosses: twice as fast (back to full speed) on a boss lane twice as long - the same time to reach the core, over a longer winding road.",
     "Auto-move's confirm now reads NO LEADERBOARD (tap again to confirm).",
     "Death gives no rewards: no credits, score, lives or interest from its wave, and the score's owed lives are not paid at the end.",
+    "Enemies can't be targeted, hit, slowed or affected until they come onto the screen.",
     "The tower building spots sit 100 u further from the core.",
     "Auto-move starts off in every new game (a resumed game keeps its own setting).",
     "The Challenge button shows 1 s sooner after a boss and no longer dims as far while it pulses.",

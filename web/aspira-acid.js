@@ -30,7 +30,7 @@ function acdLines(t, st) {
   let lines = (t.lines || []).filter(l => !l.e.dead);
   if (st.allInRange) {
     const had = new Map(lines.map(l => [l.e, l]));
-    return G.enemies.filter(inRange).map(e => had.get(e) || { e, held: 0, tick: acdFirstTick(st) }); // a new line BURNS ACD_FIRST_S in (acdFirstTick)
+    return G.enemies.filter(e => e.seen && inRange(e)).map(e => had.get(e) || { e, held: 0, tick: acdFirstTick(st) }); // a new line BURNS ACD_FIRST_S in (acdFirstTick)
   }
   // a line whose enemy left range lives on for st.residue seconds (Residue)
   lines = lines.filter(l => {
@@ -55,7 +55,7 @@ function rainChain(t, st, from) {
   while (out.length < st.rainChain) {
     let nxt = null, nd = RAIN_HOP * RAIN_HOP;
     for (const o of G.enemies) {
-      if (o.dead || seen.has(o) || (o.x - t.x) ** 2 + (o.y - t.y) ** 2 > r2) continue;
+      if (o.dead || !o.seen || seen.has(o) || (o.x - t.x) ** 2 + (o.y - t.y) ** 2 > r2) continue;
       const d = (o.x - at.x) ** 2 + (o.y - at.y) ** 2;
       if (d < nd) { nd = d; nxt = o; }
     }
@@ -75,7 +75,7 @@ function acdTick(t, st, l, every) {
   const R = st.plagueR ? plagueRadius(l, st) : 0, center = l.e;
   burn(center);
   if (st.rainChain) l.chain = rainChain(t, st, center).filter(o => { burn(o); return true; });
-  if (R) for (const o of G.enemies) if (o !== center && !o.dead && Math.hypot(o.x - center.x, o.y - center.y) <= R) burn(o);
+  if (R) for (const o of G.enemies) if (o !== center && !o.dead && o.seen && Math.hypot(o.x - center.x, o.y - center.y) <= R) burn(o);
 }
 function stepAcd(t, dt) {
   const st = towerStats(t), every = 1 / st.rate, r2 = st.range ** 2;
@@ -298,7 +298,7 @@ const POOL_QUIET = { noFx: true }, POOL_SUM_S = 0.5;
 function enemyGrid() {
   const g = new Map();
   for (const e of G.enemies) {
-    if (e.dead) continue;
+    if (e.dead || !e.seen) continue;
     const k = Math.floor(e.x / POOL_CELL) + "," + Math.floor(e.y / POOL_CELL);
     const b = g.get(k); if (b) b.push(e); else g.set(k, [e]);
   }

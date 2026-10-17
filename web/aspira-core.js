@@ -129,7 +129,7 @@ function stepCore(dt) {
     // EVERY enemy stops at once, and any that arrives while it lasts, until it ends (owner, 2026-10-08:
     // "just freeze enemies, dont wait for contact with rings"; the rings are only the look)
     if (left > 0) for (const e of G.enemies) {
-      if (e.dead || f.hit.has(e.id)) continue;
+      if (e.dead || !e.seen || f.hit.has(e.id)) continue;
       f.hit.add(e.id); applySlow(e, 1, left, "core:time"); // a 100% slow: stopped dead (bosses' own rules still apply)
     }
     // ...and it ENDS once nothing is left on the board (owner, 2026-10-14: "end temporal drive when there are no enemies left"):

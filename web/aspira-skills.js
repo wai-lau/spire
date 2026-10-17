@@ -287,7 +287,7 @@ function dischargeStatic(e) {
     ring(e.x, e.y, ARC_BURST_R, TOWERS.arc.color, 0.18, false); const rf = fx[fx.length - 1]; if (rf && rf.k === "ring") Object.assign(rf, { a: ARC_BURST_A, w: 1.2 }); // (the simulator stubs ring out)
     ch.list.forEach(dmg => {
       for (const o of G.enemies) {
-        if (o.dead || Math.hypot(o.x - e.x, o.y - e.y) > ARC_BURST_R) continue;
+        if (o.dead || !o.seen || Math.hypot(o.x - e.x, o.y - e.y) > ARC_BURST_R) continue;
         fromHit(e, () => damage(o, dmg, ch.t, false, false, null)); // away from the discharging enemy
         if (ch.slow && !o.dead) applySlow(o, ch.slow, STAT_SLOW_T, ch.t.id + ":stat");
       }
@@ -303,7 +303,7 @@ function chainPick(t, from, r2, skip) {
   const key = MODE_KEY[t.mode] || MODE_KEY.close;
   let best = null, bk = Infinity, bd = Infinity;
   for (const o of G.enemies) {
-    if (o.dead || skip(o)) continue;
+    if (o.dead || !o.seen || skip(o)) continue;
     const d = (o.x - from.x) ** 2 + (o.y - from.y) ** 2;
     if (d > r2) continue;
     const k = key({ e: o, d });
@@ -378,7 +378,7 @@ function solSkillStats(t, s, b) {
 // left: 3-4 hops of 10-13, soldiag.mjs); SOL's targeting picks among what the cone holds (chainPick)
 const angOff = (a, b) => Math.abs(((a - b + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
 function solConeDir(t, st, e, half) {
-  const others = G.enemies.filter(o => !o.dead && o !== e), ang = others.map(o => Math.atan2(o.y - e.y, o.x - e.x));
+  const others = G.enemies.filter(o => !o.dead && o.seen && o !== e), ang = others.map(o => Math.atan2(o.y - e.y, o.x - e.x));
   let dir = Math.atan2(e.y - t.y, e.x - t.x), best = 0; // nothing round it: on along the shot
   for (const a of ang) { let n = 0; for (const b of ang) if (angOff(a, b) <= half) n++; n = Math.min(n, st.refraction); if (n > best) { best = n; dir = a; } }
   return dir;
@@ -442,7 +442,7 @@ function drawCone(f, k) {
 const SHRAP_MUL = 1, SHRAP_N = 8, SHRAP_R = 90;
 function breachShrapnel(e) {
   const t = e.breachBy && G.towers.includes(e.breachBy) ? e.breachBy : null;
-  const near = G.enemies.filter(o => !o.dead && o !== e && Math.hypot(o.x - e.x, o.y - e.y) <= SHRAP_R)
+  const near = G.enemies.filter(o => !o.dead && o.seen && o !== e && Math.hypot(o.x - e.x, o.y - e.y) <= SHRAP_R)
     .sort((a, b) => Math.hypot(a.x - e.x, a.y - e.y) - Math.hypot(b.x - e.x, b.y - e.y)).slice(0, SHRAP_N);
   const each = SHRAP_MUL * Math.max(0, (e.armor0 || 0) - (e.armor || 0));
   if (!near.length || !each) return;

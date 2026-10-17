@@ -57,7 +57,7 @@ function staticDischarge(e) {
   const st = towerStats(t);
   let nxt = null, nd = st.range * st.range;
   for (const o of G.enemies) {
-    if (o.dead || o === e) continue;
+    if (o.dead || !o.seen || o === e) continue;
     const d = (o.x - e.x) ** 2 + (o.y - e.y) ** 2;
     if (d < nd) { nd = d; nxt = o; }
   }
@@ -99,7 +99,7 @@ function nextHop(c, node) {
   for (let n = node; n; n = n.up) anc.add(n.e.id);
   let nxt = null, nd = c.st.arcRange * c.st.arcRange;
   for (const o of G.enemies) {
-    if (o.dead || anc.has(o.id) || node.kids.has(o.id)) continue;
+    if (o.dead || !o.seen || anc.has(o.id) || node.kids.has(o.id)) continue;
     if (c.st.noRevisit && c.seen.has(o.id)) continue; // Ion: a line runs ON, never back
     if ((o.x - c.t.x) ** 2 + (o.y - c.t.y) ** 2 > leash) continue;
     const d = (o.x - from.x) ** 2 + (o.y - from.y) ** 2;
@@ -200,7 +200,7 @@ function shatterAt(e) {
   ring(e.x, e.y, r, "tfrz", 0.25, true); // gradient-filled (owner); FRZ's own hue
   shattering = true;
   for (const o of G.enemies) {
-    if (o === e || o.dead || Math.hypot(o.x - e.x, o.y - e.y) > r) continue;
+    if (o === e || o.dead || !o.seen || Math.hypot(o.x - e.x, o.y - e.y) > r) continue;
     fromHit(e, () => damage(o, d, t)); // away from the shattered enemy
     if (st.frostbite && !o.dead) { applySlow(o, st.slow, st.frostbite, t.id); o.biteT = st.frostbite; } // biteT: frost tint
   }
@@ -286,7 +286,7 @@ function rayHit(t, st, e, base, from) {
     e.smashed = true;
     fx.push({ k: "blast", x: e.x, y: e.y, r: st.smash.r, color: TOWERS[t.kind].color, t: 0, life: 0.35 });
     for (const o of G.enemies) {
-      if (o !== e && !o.dead && Math.hypot(o.x - e.x, o.y - e.y) <= st.smash.r) damage(o, d * st.smash.frac, t, true);
+      if (o !== e && (!o.dead && o.seen) && Math.hypot(o.x - e.x, o.y - e.y) <= st.smash.r) damage(o, d * st.smash.frac, t, true);
     }
   }
 }
@@ -300,7 +300,7 @@ function fireRay(t, st, e) {
   for (let k = 0; k < st.ricochet; k++) {
     let nxt = null, nd = BOUNCE_R * BOUNCE_R;
     for (const o of G.enemies) {
-      if (o.dead || hit.has(o)) continue;
+      if (o.dead || !o.seen || hit.has(o)) continue;
       const dd = (o.x - prev.x) ** 2 + (o.y - prev.y) ** 2;
       if (dd < nd) { nd = dd; nxt = o; }
     }
@@ -332,7 +332,7 @@ function usePower(code) {
   if (G.charge < POWER_FULL || G.over) return;
   G.charge = 0;
   if (code === "FRZ") {
-    for (const e of G.enemies) e.stunT = Math.max(e.stunT, 4 / 3);
+    for (const e of G.enemies) if (e.seen) e.stunT = Math.max(e.stunT, 4 / 3);
     banner("freeze");
   } else if (code === "BOM") {
     for (const e of G.enemies) { burst(e.x, e.y, "orange", 6); damage(e, e.max * 0.45, null); }

@@ -160,7 +160,7 @@ function stepIcp(i, t, st, dt) {
 // the TETHER's work a frame (see CAR_TETHER_SLOW): slow its target (and the capstone's chained one), pulse both every CAR_TETHER_PULSE s
 function carTether(i, t, st, dt) {
   const e = i.ve, r2 = (CAR_ORBIT * 1.2) ** 2;
-  if (st.tChain && (!i.tc || i.tc.dead || i.tc === e || carDist2(i.tc, e) > r2)) { i.tc = null; let bd = r2; for (const o of G.enemies) { if (o.dead || o === e) continue; const d = carDist2(o, e); if (d < bd) { bd = d; i.tc = o; } } }
+  if (st.tChain && (!i.tc || i.tc.dead || i.tc === e || carDist2(i.tc, e) > r2)) { i.tc = null; let bd = r2; for (const o of G.enemies) { if (o.dead || !o.seen || o === e) continue; const d = carDist2(o, e); if (d < bd) { bd = d; i.tc = o; } } }
   applySlow(e, st.tSlow, 0.15, "tether:" + t.id); if (i.tc) applySlow(i.tc, st.tSlow, 0.15, "tether:" + t.id); // (doubled on fast, never the shielded - applySlow)
   i.tp = (i.tp || 0) + dt;
   if (i.tp < CAR_TETHER_PULSE) return;
@@ -279,7 +279,7 @@ function carHop(i, t, st) { // (i: where the last target was - the interceptor i
   const r2 = CAR_HOP * CAR_HOP;
   let best = null, bd = r2, any = null, ad = r2;
   for (const e of G.enemies) {
-    if (e.dead) continue;
+    if (e.dead || !e.seen) continue;
     const d = carDist2(e, i);
     if (d >= r2) continue;
     if (t.icp && t.icp.some(o => o !== i && o.e === e && o.state === "out")) { if (d < ad) { ad = d; any = e; } }

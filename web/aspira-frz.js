@@ -75,7 +75,7 @@ const rimeFull = e => 1 - (e.rimeKeep ?? 1) >= FRZ_RIME_FULL;
 function rimeSpread(e) {
   let best = null, bd = Infinity;
   for (const o of G.enemies) {
-    if (o.dead || o === e || rimeFull(o)) continue;
+    if (o.dead || !o.seen || o === e || rimeFull(o)) continue;
     const d = (o.x - e.x) ** 2 + (o.y - e.y) ** 2;
     if (d < bd) { bd = d; best = o; }
   }
@@ -90,7 +90,7 @@ function frzStep(t, dt) {
   for (const s of srcs) {
     const r2 = (st.range * s.k) ** 2;
     for (const e of G.enemies) {
-      if (e.dead || (e.x - s.x) ** 2 + (e.y - s.y) ** 2 > r2) continue;
+      if (e.dead || !e.seen || (e.x - s.x) ** 2 + (e.y - s.y) ** 2 > r2) continue;
       applySlow(e, st.aura * s.k, FRZ_AURA_HOLD, s.id);
       // BRITTLE: x this from EVERY tower while slowed (damage()) - back to that (owner, 2026-10-12: "brittle should increase damage
       // like before, not reduce armor"; it took armor for an hour). A shield takes no slow, so it holds Brittle off
@@ -119,7 +119,7 @@ function frzStep(t, dt) {
       p.age += dt;
       const r = p.R * Math.min(1, p.age / FRZ_RIME_GROW);
       for (const e of G.enemies) {
-        if (e.dead || p.hit.has(e.id) || (e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
+        if (e.dead || !e.seen || p.hit.has(e.id) || (e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
         p.hit.add(e.id);
         // (Rime shattered shields until 2026-10-12 - owner: "rime should not strip shield")
         const to = rimeFull(e) ? rimeSpread(e) : e;
