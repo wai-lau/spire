@@ -11,8 +11,7 @@
 const CAR_HANGAR = [3, 5, 7, 11, 11, 13]; // interceptors: PRIMES by purchase (owner: "prime numbers starting at 5") - bare 5, then I 7 (stop 1), II 11 (3), III 13 (5), IV 17 (6)
 // each axis ITS OWN job (owner, 2026-10-15: "make sure each axis for each tower feels unique"): Hangar WIDTH (more interceptors),
 // Launch TEMPO (faster there and back, a shorter reload ) - (Warp, a teleport, was removed: owner, 2026-10-17), Armament DEPTH (a far harder hit, more of them)
-const CAR_SPEED = [1050, 1260, 1260, 1470, 1470, 2200]; /* x1.75 with the range 260 -> 460 (owner, 2026-10-16: "interceptor speed buff to make up for travel time"; was 600 .. 960) */ // Launch: an interceptor's speed (its reach is SKILL_MOVE) - x1.5 (owner, 2026-10-15: "increase launch speed")
-const CAR_RELOAD = [0.75, 0.55, 0.55, 0.4, 0.2709, 0.1417]; /* x0.5 with CAR_GAP 0.15 (2026-10-16) */ // Launch: s at home reloading (60% of a sortie was flying + reloading at wave 61)
+const CAR_SPEED_V = 1470, CAR_RELOAD_S = 0.4; // an interceptor's speed and its reload at home - FIXED since Tether replaced Launch (owner, 2026-10-17)
 const CAR_AMMO = [4, 5, 5, 6, 6, 14]; /* halved, its bolts doubled into fewer, bigger VOLLEYS (CAR_VOLLEY_K, CAR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
 // ONE TARGET A VOLLEY (owner, 2026-10-16: "to make ATC worse vs swarms reduce ammo (number of volleys), increase bolts per volley to
 // match, then make it so that all bolts from a single volley need to target a single target, regardless of overkill, remaining bolts
@@ -27,7 +26,11 @@ const CAR_VOLLEY_K = 2;
 const CAR_SHOT_MUL = [0.6, 2, 4.5, 7.5, 145.7, 283.8]; /* V x9, VI x36 (steeper late tiers) */ // Armament (VI 15)
 const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 11.31, 19.22]; /* V x3, VI x6 (steeper late tiers) */ // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
-const CAR_PIN = 0.3; // the circled enemy's slow while an interceptor orbits it (2026-10-16, against ATC's fast leak: 0 16% of fast leaked, 0.3 11%, 0.5 14%; a longer bolt slow 11% but swarm 32%)
+// TETHER (owner, 2026-10-17: "replace Launch with Tether"): once an interceptor fires at an enemy a BEAM joins them while it keeps at it;
+// it SLOWS that enemy (the old Pin, which needs Tether now, and harder) and PULSES every CAR_TETHER_PULSE s for CAR_TETHER_K x the shot,
+// a real hit that pops a shield charge; both grow with the tier. Capstone (Chain): the beam runs on to the nearest other enemy within
+// the interceptor's circling range of its target, slowing and pulsing it too. Index 0 = untaken; capstone.js pushes VI
+const CAR_TETHER_SLOW = [0, 0.45, 0.5, 0.55, 0.6, 0.65], CAR_TETHER_K = [0, 1, 1.5, 2, 4, 6], CAR_TETHER_PULSE = 0.5, CAR_TETHER_ST = { noFx: true };
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CAR_BOLT_PAIR = 2, CAR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 const CAR_BOLTS = Math.ceil(10 / CAR_BOLT_PAIR) * CAR_BOLT_PAIR; /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit
@@ -52,10 +55,10 @@ const CAR_BURST_N = 10, CAR_BURST_K = 1.5, CAR_PELLET_V = 340, CAR_PELLET_REACH 
 
 SKILL_TREES.car = [
   { id: "hangar", name: "Hangar", tiers: [{ name: "Bay" }, { name: "Deck" }, { name: "Hold" }, { name: "Wing" }, { name: "Fleet" }] },
-  { id: "launch", name: "Launch", tiers: [{ name: "Catapult" }, { name: "Thrust" }, { name: "Afterburn" }, { name: "Slipstream" }, { name: "Hyperdrive" }] },
+  { id: "launch" /* id kept (saves); shown as TETHER */, name: "Tether", tiers: [{ name: "Leash" }, { name: "Line" }, { name: "Cable" }, { name: "Hawser" }, { name: "Anchor" }] },
   { id: "armament", name: "Armament", tiers: [{ name: "Pulse" }, { name: "Burst" }, { name: "Strafe" }, { name: "Barrage" }, { name: "Salvo" }] },
 ];
-SKILL_MOVE.car = { hangar: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]], launch: [[1, 1], [1.05, 1], [1.1, 1], [1.15, 1], [1.2, 1], [1.25, 1]], armament: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]] };
+SKILL_MOVE.car = { hangar: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]], launch: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]], armament: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]] };
 
 // how much of the wing the Hangar can STORE in orbit, by tier (owner, 2026-10-16: "hanger tiers can store 25% 50% 75% 100% of interceptors
 // in orbit"); s.hold = that many interceptors (rounded up), 0 untaken
@@ -63,8 +66,8 @@ const CAR_HOLD_FRAC = [0, 0.25, 0.5, 0.75, 1, 1, 1];
 const carHoldFrac = h => CAR_HOLD_FRAC[Math.min(h, CAR_HOLD_FRAC.length - 1)];
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
-  s.range = b.range * RANGE_BONUS; s.rate = b.rate * CAR_RATE_MUL[a]; s.dmg = b.dmg * CAR_SHOT_MUL[a] * CAR_SIDE_DMG[h] * CAR_SIDE_DMG[l]; s.targets = 1;
-  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.focus = CAR_FOCUS[h]; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]); s.skill = true;
+  s.range = b.range * RANGE_BONUS; s.rate = b.rate * CAR_RATE_MUL[a]; s.dmg = b.dmg * CAR_SHOT_MUL[a] * CAR_SIDE_DMG[h]; s.targets = 1;
+  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED_V; s.reload = CAR_RELOAD_S; s.tSlow = CAR_TETHER_SLOW[l]; s.tK = CAR_TETHER_K[l]; s.tChain = l >= CAPSTONE_TIER; s.focus = CAR_FOCUS[h]; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]); s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -132,7 +135,6 @@ function stepIcp(i, t, st, dt) {
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3 && d > CAR_FIRE_R) return; // still on its way - but FIRING once within CAR_FIRE_R, before it is round its target (a fast enemy outran its chaser: 12 of 37 leakers were picked and never shot at, probe 2026-10-16)
     if (!i.orb && d <= carR(i) * 1.3) i.orb = true; // onto the circle round its target
-    if (CAR_PIN && !e.dead) applySlow(e, CAR_PIN, 0.15, "carpin:" + t.id); // the PIN: what an interceptor circles is held back the whole time, not only as a bolt lands (doubled on fast)
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0) { // the stream: a volley's bolts spread over its interval
       if (!i.bk || !i.ve || i.ve.dead) { if (e.dead) break; if (!i.bk) sfx("carshot"); i.ve = e; } // a volley starts only on a LIVE target - and its target dying STOPS it: the unshot bolts go at the next one (owner, 2026-10-16: "just don't shoot unshot parts of a volley if the enemy dies")
@@ -140,6 +142,7 @@ function stepIcp(i, t, st, dt) {
       for (let k = 0; k < CAR_BOLT_PAIR && i.bk < CAR_BOLTS; k++, i.bk++) carBolt(i, i.ve, t, st, (k - (CAR_BOLT_PAIR - 1) / 2) * CAR_BOLT_SIDE);
       if (i.bk >= CAR_BOLTS) { i.bk = 0; i.ammo--; }
     }
+    if (st.tSlow > 0 && i.ve && !i.ve.dead) carTether(i, t, st, dt); else i.tc = null; // the TETHER, once it has fired at its target
     if (i.ammo <= 0) {
       if (st.autopilot) { carBurst(i, t, st); i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; } // rebuilt at home
       carHome(i, t, st);
@@ -150,6 +153,16 @@ function stepIcp(i, t, st, dt) {
   const d = Math.sqrt(carDist2(i, t));
   if (d <= Math.max(i.v, 1) * dt * 1.5) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; }
   carSteer(i, t.x - i.x, t.y - i.y, st.speed, dt, Math.max(0, Math.min(1, (d - SLOT_R * 0.5) / SLOT_R))); // the avoidance lets go on the last approach home
+}
+// the TETHER's work a frame (see CAR_TETHER_SLOW): slow its target (and the capstone's chained one), pulse both every CAR_TETHER_PULSE s
+function carTether(i, t, st, dt) {
+  const e = i.ve, r2 = (CAR_ORBIT * 1.2) ** 2;
+  if (st.tChain && (!i.tc || i.tc.dead || i.tc === e || carDist2(i.tc, e) > r2)) { i.tc = null; let bd = r2; for (const o of G.enemies) { if (o.dead || o === e) continue; const d = carDist2(o, e); if (d < bd) { bd = d; i.tc = o; } } }
+  applySlow(e, st.tSlow, 0.15, "tether:" + t.id); if (i.tc) applySlow(i.tc, st.tSlow, 0.15, "tether:" + t.id); // (doubled on fast, never the shielded - applySlow)
+  i.tp = (i.tp || 0) + dt;
+  if (i.tp < CAR_TETHER_PULSE) return;
+  i.tp -= CAR_TETHER_PULSE; i.tf = 1; // (the beam's flash - drawCar)
+  for (const o of [e, i.tc]) if (o && !o.dead) { damage(o, st.dmg * st.tK, t, false, false, CAR_TETHER_ST); onHit(o, t, st, st.dmg * st.tK); }
 }
 // THE HOLD (owner, 2026-10-16: "hangar upgrades should allow the atc tower to have charged interceptors orbit it (with orbit distance
 // jitter) when idle, so that they can be released at once"): with any Hangar, an interceptor reloaded and given nothing to hit
@@ -342,6 +355,14 @@ function drawCar(darts) {
     if (t.kind !== "car" || !t.icp) continue;
     if (darts) {
       carTrails(t);
+      if (skillOf(t, "launch") > 0) { // the TETHER beams: interceptor -> target (-> the chained one), brighter on a pulse
+        ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round";
+        for (const i of t.icp) {
+          if (i.state !== "out" || !i.ve || i.ve.dead) continue;
+          i.tf = Math.max(0, (i.tf || 0) - 0.08); ctx.globalAlpha = 0.45 + 0.55 * i.tf; ctx.lineWidth = 1.2 + 1.8 * i.tf;
+          ctx.beginPath(); ctx.moveTo(i.x, i.y); ctx.lineTo(i.ve.x, i.ve.y); if (i.tc && !i.tc.dead) ctx.lineTo(i.tc.x, i.tc.y); ctx.stroke();
+        }
+      }
       ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
       const z = CAR_DART_K0 + CAR_DART_GROW * skillOf(t, "armament");
       for (const i of t.icp) if (i.state !== "home" || i.hold) carDart(i, z * (1 + CAR_SIZE_JIT * (i.oj || 0))); // its own size: smaller ones hold closer

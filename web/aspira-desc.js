@@ -44,12 +44,12 @@ const DESCRIBE = {
     const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0; // pools from the start (owner, 2026-10-12)
     return ACD_JETS[f] + (f ? " slowing" : "") + " jets of " + "acid" + (k >= 6 ? " that dissolves armor" : k ? " that corrodes armor" : "") + ", dripping " + (c >= 6 ? "massive" : c >= 3 ? "huge" : c ? "larger" : "large") + " pools; each kill leaves one more. " + (c ? "What dies in a pool leaves one of its own. " : "") /* Contagion spreads (aspira-acid.js) */ + (k ? "Eaten armor drops a corrosive goo. " : "") /* the drip (aspira-acid.js) */ + (f ? "A jet keeps its flow on its next enemy." : "A jet starts cold on each new enemy.");
   },
-  // CAR (owner, 2026-10-15): Hangar more interceptors (primes); Launch faster (Overdrive: the fastest); Armament harder, faster,
+  // CAR (owner, 2026-10-15): Hangar more interceptors (primes); Tether a slowing, pulsing beam to what it fires at (Chain: on to one more enemy); Armament harder, faster,
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
   car(sk) {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
     return "Launches " + CAR_HANGAR[h] + " interceptors one by one" + (h ? ", storing " + Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]) + " of them circling it while there is nothing to hit" /* the COUNT, not a % (owner, 2026-10-16) */ : "") + ". Each flies to an enemy, fires " +
-      CAR_AMMO[a] + " volleys and " + (a >= 6 ? "bursts into pellets, rebuilt at home." : "flies home to reload.");
+      CAR_AMMO[a] + " volleys" + (l ? ", tethered to its target by a beam that slows it and pulses damage" + (l >= 6 ? ", running on to one more enemy nearby" : "") : "") + ", then " + (a >= 6 ? "bursts into pellets, rebuilt at home." : "flies home to reload.");
   },
   // GRV (owner, 2026-10-15): Supernova a wider nova (Hypernova tears armor away); Void a harder slow (Event Horizon all but
   // stops it); Radiation more pellets (Hawking: a last burst)
