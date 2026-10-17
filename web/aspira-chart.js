@@ -15,6 +15,10 @@ function boardChart(t, x, y, alpha, c0) {
   // axis i points where the CARD's chart puts it (owner: same orientation - the
   // first axis up, then clockwise every 120 deg), snapped to the nearest hex corner
   const corner = i => {
+    const ck = axes.length * 8 + i, cc = (c0.cornerOf ||= []); /* a cell's corners never move (CELLS is built once): each axis's snapped corner, found once (perf) */
+    return cc[ck] ||= cornerFor(i);
+  };
+  const cornerFor = i => {
     const want = -Math.PI / 2 + i * 2 * Math.PI / axes.length;
     let best = c0.pts[0], bd = 9;
     for (const p of c0.pts) {
