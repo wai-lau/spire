@@ -144,7 +144,7 @@ function fxGlBeam(f, a) {
   } else segs.push([x1, y1]);
   const cut = []; for (const sg of segs) { const c = trimToTowers(sg[0], sg[1], x2, y2); if (c) cut.push(c); } // (nothing of it inside a tower)
   const line = (w, css, al) => { for (let i = 0; i < cut.length; i++) { const c = cut[i]; fxGlPush(c[0], c[1], c[2], c[3], w / 2, 0, css, al, css, 0); } };
-  const core = (f.soft ? BEAM_MIN + (beamWidth(f.d || 0) - BEAM_MIN) * ARC_W_CORR : beamWidth(f.d || 0)) * (f.thin || 1), col = COL[f.color];
+  const core = (f.soft ? BEAM_MIN + ((f.bw ??= beamWidth(f.d || 0)) - BEAM_MIN) * ARC_W_CORR : (f.bw ??= beamWidth(f.d || 0))) * (f.thin || 1), col = COL[f.color];
   if (f.m && !lowQ) {
     if (f.slim) for (let i = 4; i >= 1; i--) line(core * SOL_BEAM_W * (1 + i * 0.25), col, Math.min(1, a * SOL_GLOW_A * BEAM_BRIGHT));
     else line(core * (f.soft ? ARC_GLOW_W : 3), col, Math.min(1, a * (f.soft ? ARC_GLOW_A : 0.22) * BEAM_BRIGHT));
