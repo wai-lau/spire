@@ -54,7 +54,7 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
   };
   const plain = s => typeof s === "string";
   g.fill = (...a) => {
-    const st = real.fillStyle, grad = st && st.__disc;
+    const st = real.fillStyle, grad = st && (st.__disc || (glcMultiOn && st.__multi && fxGl.lutRows && glcMulti(st.__multi)));
     const why = odd ? "fill:" + odd : a.length ? "fill:rule" : real.globalCompositeOperation !== "source-over" ? "fill:" + real.globalCompositeOperation : real.shadowBlur > 0 ? "fill:shadow" : (real.filter || "none") !== "none" ? "fill:filter" : !plain(st) && !grad ? "fill:style" : !glcFill(g, parts, st, grad) ? "fill:shape" + parts.map(p => (p.circle ? "o" : p.pts.length)).join("") : null;
     if (why) { replay(why); real.fill(...a); }
   };
@@ -80,7 +80,7 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
   // a radial gradient from clear at its centre to one colour at the rim (gradDisc) is drawn by the batch; any other by the canvas
   g.createRadialGradient = (x0, y0, r0, x1, y1, r1) => {
     const gr = real.createRadialGradient(x0, y0, r0, x1, y1, r1), add = gr.addColorStop.bind(gr), stops = [];
-    gr.addColorStop = (o, c) => { stops.push([o, c]); add(o, c); gr.__disc = r0 === 0 && x0 === x1 && y0 === y1 && stops.length === 2 && stops[0][0] === 0 && stops[0][1] === "transparent" && stops[1][0] === 1 ? { col: stops[1][1] } : null; };
+    gr.addColorStop = (o, c) => { stops.push([o, c]); add(o, c); gr.__disc = r0 === 0 && x0 === x1 && y0 === y1 && stops.length === 2 && stops[0][0] === 0 && stops[0][1] === "transparent" && stops[1][0] === 1 ? { col: stops[1][1] } : null; gr.__multi = r0 === 0 && x0 === x1 && y0 === y1 && stops.length >= 3 ? stops : null; };
     return gr;
   };
   // everything else straight to the canvas (and the layer is then sent up this frame)
@@ -92,6 +92,8 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
 }
 // the batch's fills: whole circles (a plain colour or the gradDisc) and REGULAR POLYGONS (FRZ's moons, poly() - the canvas
 // fallback sent the whole moving layer up every frame on a phone, 2026-10-14); false: something else, the canvas draws it
+let glcMultiOn = true; // (a switch for comparing)
+const glcMulti = stops => { const row = fxGlLutRow(stops); return row >= 0 ? { row } : null; };
 function glcFill(g, parts, st, grad) {
   const shapes = parts.map(p => p.circle ? null : glcRegular(p, g.w2) || glcTri(p, g.w2));
   if (parts.some((p, i) => !p.circle && !shapes[i]) || (grad && shapes.some(Boolean))) return false;
@@ -100,7 +102,8 @@ function glcFill(g, parts, st, grad) {
     if (shapes[i] && shapes[i].tri) { const [[ax, ay], [bx, by], [cx, cy]] = shapes[i].tri; fxGlPush(ax, ay, bx, by, 1, 0, st, A, st, 0, 6, cx, cy); return; } // (shape 6: the third corner in the joint slot)
     if (shapes[i]) { const q = shapes[i]; fxGlPush(q.x, q.y, q.x + Math.cos(q.rot) * q.n, q.y + Math.sin(q.rot) * q.n, q.r, 0, st, A, st, 0, 5); return; } // (shape 5: p1 - p0 its direction, its length the sides)
     const [x, y] = g.w2(p.circle[0], p.circle[1]), r = p.circle[2] / g.w2.k;
-    if (grad) fxGlPush(x, y, x, y, r, 0, grad.col, A, grad.col, 0, 3); // the gradDisc: clear at the centre to its colour at the rim
+    if (grad && grad.row !== undefined) { const b = fxGlPush(x, y, x, y, r, 0, COL.white, A, COL.white, 1, 3); fxGl.inst[b + 11] = grad.row + 1; } // the GRV aura: many stops, from the LUT (fxGlLutRow)
+    else if (grad) fxGlPush(x, y, x, y, r, 0, grad.col, A, grad.col, 0, 3); // the gradDisc: clear at the centre to its colour at the rim
     else fxGlPush(x, y, x, y, r, 0, st, A, st, 0);
   });
   return true;

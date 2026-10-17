@@ -20,6 +20,18 @@ function fxGlRgb(css) {
   c = [d[0] / 255, d[1] / 255, d[2] / 255, d[3] / 255]; fxGl.rgb.set(css, c); // (a colour with its own alpha keeps it)
   return c;
 }
+// a many-stop radial gradient's row in the LUT (256 colours across its radius, interpolated by the canvas itself): -1 when the table is full
+function fxGlLutRow(stops) {
+  const key = stops.map(q => q[0] + ":" + q[1]).join("|");
+  let row = fxGl.lutRows.indexOf(key);
+  if (row >= 0) return row;
+  if (fxGl.lutRows.length >= 16) return -1;
+  const c = fxGl.lutCv ||= Object.assign(document.createElement("canvas"), { width: 256, height: 16 }), x = c.getContext("2d");
+  row = fxGl.lutRows.push(key) - 1;
+  const g = x.createLinearGradient(0, 0, 256, 0); for (const [o, col] of stops) g.addColorStop(o, col);
+  x.fillStyle = g; x.fillRect(0, row, 256, 1); fxGl.lutDirty = true;
+  return row;
+}
 // one shape (world units): the round-ended segment x0,y0 - x1,y1 (a disc when they meet) r round it, filled at fillA in
 // fillCss and outlined lw wide at strokeA in strokeCss; shape: 0 round, 1 (or true) a fillRect's square, 2 a butt-ended
 // segment (lineCap "butt"), 3 a disc clear at its centre to its colour at the rim (gradDisc), 4 a light cone (fxGlCone).
@@ -31,9 +43,10 @@ function fxGlPush(x0, y0, x1, y1, r, lw, fillCss, fillA, strokeCss, strokeA, sha
   if (fxGl.n >= 1e6) return; // (a runaway: never in play)
   if ((fxGl.n + 1) * FXGL_IN > fxGl.inst.length) { const g = new Float32Array(fxGl.inst.length * 2); g.set(fxGl.inst); fxGl.inst = g; }
   const D = fxGl.inst, f = fxGlRgb(fillCss), c = strokeCss === fillCss ? f : fxGlRgb(strokeCss);
-  let o = fxGl.n++ * FXGL_IN;
+  let o = fxGl.n++ * FXGL_IN; const base = o;
   D[o++] = x0; D[o++] = y0; D[o++] = x1; D[o++] = y1; D[o++] = r; D[o++] = lw; D[o++] = shape === true ? 1 : shape || 0;
   D[o++] = f[0]; D[o++] = f[1]; D[o++] = f[2]; D[o++] = fillA * f[3]; D[o++] = c[0]; D[o++] = c[1]; D[o++] = c[2]; D[o++] = strokeA * c[3]; D[o++] = b0x; D[o++] = b0y; D[o++] = b1x; D[o++] = b1y; D[o++] = dOn; D[o++] = dOff; D[o] = dAt;
+  return base;
 }
 const fxGlDisc = (x, y, r, lw, css, fillA, strokeA, square) => fxGlPush(x, y, x, y, r, lw, css, fillA, css, strokeA, square);
 // tcam: the board picture's camera (ox, oy px, k px a world unit); the colours premultiplied here
@@ -61,7 +74,7 @@ precision highp float; /* a phone's mediump is 16-bit: a 1000 px ring's edge or 
 #else
 precision mediump float;
 #endif
-varying vec2 loc; varying vec4 v, fc, sc, cb; varying vec3 dsh;
+varying vec2 loc; varying vec4 v, fc, sc, cb; varying vec3 dsh; uniform sampler2D lut;
 void main() {
   float sh = floor(v.z + 0.5);
   if (sh < 5.5 && ((dot(cb.xy, cb.xy) > 0.0 && dot(loc + vec2(v.w, 0.0), cb.xy) < 0.0) || (dot(cb.zw, cb.zw) > 0.0 && dot(loc - vec2(v.w, 0.0), cb.zw) > 0.0))) discard;
@@ -85,6 +98,7 @@ void main() {
     float at = v.w > 0.0 ? loc.x + v.w : mod(atan(loc.y, loc.x), 6.2831853) * v.x, ph = mod(at + dsh.z, dsh.x + dsh.y);
     float m = min(ph, dsh.x - ph); sa *= smoothstep(-0.5, 0.5, m); fa *= smoothstep(-0.5, 0.5, m); }
   vec4 s = sc * sa, f = vec4(fc.rgb * g * g, fc.a * g) * fa;
+  if (sh == 3.0 && sc.r > 0.5) { vec4 L = texture2D(lut, vec2((g * 255.0 + 0.5) / 256.0, (sc.r - 0.5) / 16.0)); f = L * fc.a * fa; } /* a many-stop radial gradient (the GRV aura): its colours read from a row of the LUT, sc.r the row + 1 */
   gl_FragColor = s + f * (1.0 - s.a);
 }`;
 function fxGlInit(gl) {
@@ -98,7 +112,10 @@ function fxGlInit(gl) {
   if (!ext || !gl.getProgramParameter(pr, gl.LINK_STATUS)) { fxGl.broken = true; return null; } // (no instancing: the 2D way)
   const loc = {}; for (const n of ["corner", "p0", "p1", "rws", "fillC", "strokeC", "clipB", "dashA"]) loc[n] = gl.getAttribLocation(pr, n);
   const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
-  Object.assign(fxGl, { gl, pr, ext, tex, quad, fb: gl.createFramebuffer(), buf: gl.createBuffer(), loc, S: 1, u: { S: gl.getUniformLocation(pr, "S"), tcam: gl.getUniformLocation(pr, "tcam") } });
+  const lutTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, lutTex);
+  for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)); fxGl.lutTex = lutTex; fxGl.lutRows = []; fxGl.lutDirty = false;
+  Object.assign(fxGl, { gl, pr, ext, tex, quad, fb: gl.createFramebuffer(), buf: gl.createBuffer(), loc, S: 1, u: { S: gl.getUniformLocation(pr, "S"), tcam: gl.getUniformLocation(pr, "tcam"), lut: gl.getUniformLocation(pr, "lut") } });
   return fxGl;
 }
 // the gathered effects into fxGl.tex (S px a side, the board picture's camera - warp.texCam), before the bell is drawn
@@ -114,6 +131,9 @@ function fxGlRender(gl) {
   if (n) {
     gl.useProgram(fxGl.pr);
     gl.uniform2f(fxGl.u.S, S, S); gl.uniform3f(fxGl.u.tcam, tc.ox, tc.oy, tc.k);
+    gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, fxGl.lutTex);
+    if (fxGl.lutDirty) { gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fxGl.lutCv); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); fxGl.lutDirty = false; }
+    gl.uniform1i(fxGl.u.lut, 3); gl.activeTexture(gl.TEXTURE0);
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.bindBuffer(gl.ARRAY_BUFFER, fxGl.quad); gl.enableVertexAttribArray(L.corner); gl.vertexAttribPointer(L.corner, 2, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, fxGl.buf); gl.bufferData(gl.ARRAY_BUFFER, fxGl.inst.subarray(0, n * FXGL_IN), gl.STREAM_DRAW);
