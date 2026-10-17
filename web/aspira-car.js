@@ -155,7 +155,7 @@ function stepIcp(i, t, st, dt) {
   // back home
   const d = Math.sqrt(carDist2(i, t));
   if (d <= Math.max(i.v, 1) * dt * 1.5) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; }
-  carSteer(i, t.x - i.x, t.y - i.y, st.speed, dt, Math.max(0, Math.min(1, (d - SLOT_R * 0.5) / SLOT_R))); // the avoidance lets go on the last approach home
+  carSteer(i, t.x - i.x, t.y - i.y, st.speed, dt, Math.max(0, Math.min(1, (d - 39) / 78))); /* (78: the old SLOT_R - the last approach home, not the slots' distance) */ // the avoidance lets go on the last approach home
 }
 // the TETHER's work a frame (see CAR_TETHER_SLOW): slow its target (and the capstone's chained one), pulse both every CAR_TETHER_PULSE s
 function carTether(i, t, st, dt) {
