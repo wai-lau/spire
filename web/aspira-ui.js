@@ -466,6 +466,7 @@ function tickFps(now) {
 const freezing = () => timeStopped();
 let last = performance.now();
 function frame(now) {
+  const cb0 = performance.now();
   autoQuality((now - last) / 1000); if (typeof perfTick === "function") perfTick((now - last) / 1000); // quality step-down, slow logs (aspira-quality.js, aspira-perflog.js)
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
@@ -486,6 +487,7 @@ function frame(now) {
   // while a boss lives the board draws inverted (render, bossSkyStep); the HTML over it
   // flips too once the inversion fills the screen, so it stays readable
   $("asp").classList.toggle("asp-boss", bossInv.full);
+  if (typeof perfCb === "function") perfCb(now, cb0);
   requestAnimationFrame(frame);
 }
 
