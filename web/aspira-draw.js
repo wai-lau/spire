@@ -446,7 +446,7 @@ function drawScene([sx, sy], clipR) {
 // the BOARD under everything - in 3D its own layer, redrawn only every WARP_STAT_MS (aspira-warplayers.js)
 function drawSceneBase() {
   ctx.fillStyle = COL.bg; ctx.globalAlpha = 1; ctx.fillRect(CX - 4000, CY - 4000, 8000, 8000);
-  if (!q3d()) drawFx("dmg"); // (3D: flat, warpEntities) damage numbers just above the background, under all else (the cooldown dial moved to buttons above the title - aspira-powers.js)
+  if (!q3d()) skyKeep(() => drawFx("dmg")); /* the damage numbers keep their own colours on a boss sky (owner, 2026-10-17: "damage numbers should not get inverted") */ // (3D: flat, warpEntities) damage numbers just above the background, under all else (the cooldown dial moved to buttons above the title - aspira-powers.js)
   drawBoard();
 }
 // everything that MOVES, over the board - in 3D its own layer, every frame

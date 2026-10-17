@@ -80,6 +80,7 @@ const CHANGELOG = [
     "Perf: on phones whose GPU stalls on uploads, a lane that empties mid-wave stays lit until the whole wave is done, instead of costing a redraw.",
     "Carrier: the Strafe hit (an interceptor ramming its target on arrival) is gone.",
     "A tower's upgrade card now opens only from its home slot (its origin), not by tapping the tower itself.",
+    "Damage numbers keep their own colours on a boss's inverted sky.",
     "Shields (enemies and bosses): the last layer is drawn thicker, shrinks to a smaller polygon as it breaks instead of showing a gap, and only breaks once every outer layer is gone.",
     "Bosses: twice as fast (back to full speed) on a boss lane twice as long - the same time to reach the core, over a longer winding road.",
     "Auto-move's confirm now reads NO LEADERBOARD (tap again to confirm).",
