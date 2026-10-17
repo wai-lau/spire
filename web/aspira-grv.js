@@ -13,8 +13,8 @@ const GRV_RATE_MUL = [1, 1, 1, 1, 2, 3]; /* Supernova: the nova's fire rate, x b
 const GRV_SLOW = [0.04, 0.10, 0.18, 0.21, 0.24, 0.35]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
 const GRV_NOVA_R = [71, 85, 99, 112, 126, 185]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
 const GRV_NOVA_MUL = [0.8, 2, 3.2, 4, 34.27, 64.55]; /* V x9, VI x36 (steeper late tiers) */ /* x2 (owner, 2026-10-16: "double the nova damage"; was [1, 1.3, 1.6, 2, 2.4, 2.8]) */ // Supernova: the nova's hit, x the tower's damage
-const GRV_PELLETS = [6, 7.8, 9.6, 11.4, 13.2, 15]; // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
-const GRV_PELLET_K = [0.1, 0.2, 0.4, 0.48, 3.986, 7.492]; /* V x9, VI x36 (steeper late tiers) */ // Radiation: a pellet's hit, x the tower's damage
+const GRV_PELLETS = [3, 3.9, 4.8, 5.7, 6.6, 7.5]; /* HALF the pellets at TWICE the hit (owner, 2026-10-17: "halve bh pellet count but double damage"; was 6 .. 15) */ // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
+const GRV_PELLET_K = [0.2, 0.4, 0.8, 0.96, 7.972, 14.984]; /* x2 with the halved count (owner, 2026-10-17) */ /* V x9, VI x36 (steeper late tiers) */ // Radiation: a pellet's hit, x the tower's damage
 let GRV_AURA_K = 0.6; // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
 const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1) - x2 faster (owner, 2026-10-16: "some bh taking too long to evaporate if merged with too many / increase bh evaporation speed significantly"; was 5)
 // EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction
