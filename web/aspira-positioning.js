@@ -108,8 +108,8 @@ function bestSpot(t, range) {
 // AUTO-MOVE (owner, 2026-10-13: "add an auto-move checkbox that uses the simulator movement, but limit the movement speed to
 // something a human can process, i.e. avoid teleporting"): the simulator's choice of spot (bestSpot, every POS_EVERY s of
 // game time), but the tower GLIDES there at up to HUMAN_V world units a game second (at 1x, so the eye can follow it). The checkbox: aspira-ui.js
-let autoMove = false;
-try { autoMove = localStorage.getItem("spire.automove") === "1"; } catch (e) { /* not remembered */ }
+let autoMove = false; // OFF on every new game (owner, 2026-10-17: "auto mode should default to off when starting a new game"; was remembered in
+// localStorage) - kept on the game itself (G.autoMove), so a resumed run comes back as it was (runResume, aspira-autosave.js)
 const HUMAN_V = 450; // a phone's width (500 units) in about a game second (x1.5, owner 2026-10-14: "increase auto-move speed by 1.5x"; was 300, halved 2026-10-13 from 600)
 const GLIDE_TURNS = [0, 0.5, -0.5, 1, -1, 1.4, -1.4], GLIDE_GIVE_UP = 2; // radians off the straight line, tried in order
 const GLIDE_ESCAPE = 4; // a tower caught overlapping glides out this many times faster (at the halved HUMAN_V one sat overlapped 42 frames - stuck.mjs)

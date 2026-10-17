@@ -156,8 +156,7 @@ const autoWaiting = () => {
   // (owner, 2026-10-13: "require confirmation to activate"); off is one tap
   const mvb = button(row, "asp-check", "", () => {
     if (!autoMove && !mvb.dataset.armed) { mvb.dataset.armed = "1"; setTimeout(() => { delete mvb.dataset.armed; }, SELL_ARM_MS); return; }
-    delete mvb.dataset.armed; autoMove = !autoMove;
-    try { localStorage.setItem("spire.automove", autoMove ? "1" : "0"); } catch (e) { /* not remembered */ }
+    delete mvb.dataset.armed; autoMove = !autoMove; G.autoMove = autoMove; // (this game only: aspira-positioning.js)
   }, "asp-automove");
   mvb.setAttribute("role", "checkbox");
   updateQuality(); /* the board's 3D layers show (aspira-quality.js) */
@@ -429,7 +428,7 @@ function showOverlay(title, body, btn) {
 }
 $("asp-spend-btn").onclick = () => { if (spend.onClose) spend.onClose(); }; // the spend bar's cancel / close (aspira-chooser.js)
 $("asp-ov-btn").onclick = () => {
-  if (G.over) { G = newGame(); fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null; refreshPanels(); }
+  if (G.over) { G = newGame(); autoMove = false; fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null; refreshPanels(); }
   // no intro (owner): the overlay is only the game-over card; the first tower starts wave 1
   $("asp-ov").hidden = true;
 };

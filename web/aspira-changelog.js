@@ -87,6 +87,7 @@ const CHANGELOG = [
     "Bosses: twice as fast (back to full speed) on a boss lane twice as long - the same time to reach the core, over a longer winding road.",
     "Auto-move's confirm now reads NO LEADERBOARD (tap again to confirm).",
     "Death gives no rewards: no credits, score, lives or interest from its wave, and the score's owed lives are not paid at the end.",
+    "Auto-move starts off in every new game (a resumed game keeps its own setting).",
     "The Challenge button shows 1 s sooner after a boss and no longer dims as far while it pulses.",
     "Gravity: with the slower Supernova novas, each black hole lasts longer so as many are out at once to merge with, and the holes keep their old pellets, burn and armor strip.",
     "Gravity: Supernova's fire-rate gains are halved (x1.5 / x2 / x2.8 instead of x2 / x3 / x4.6) and each nova hits harder to keep the same damage.",

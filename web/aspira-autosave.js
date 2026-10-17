@@ -44,12 +44,12 @@ function runOffer(saved) {
 }
 function runResume(saved) {
   try {
-    G = saved.G; runSavedAt = G.wave;
+    G = saved.G; runSavedAt = G.wave; autoMove = !!G.autoMove; // (auto-move is the game's own)
     for (const t of G.towers) delete t.leashHint; // page-clock stamps (performance.now) mean nothing after a reload: a saved one kept the movement rings on for hours (owner, 2026-10-16)
     fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null;
     if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 });
     refreshPanels();
     return true;
-  } catch (e) { G = newGame(); refreshPanels(); return false; } // a save the game can no longer read: a fresh one
+  } catch (e) { G = newGame(); autoMove = false; refreshPanels(); return false; } // a save the game can no longer read: a fresh one
 }
 runDo("readonly", s => s.get(RUN_KEY)).then(saved => { if (saved && saved.G && !saved.G.over && G.wave === 0 && !G.towers.length) runOffer(saved); });
