@@ -97,3 +97,20 @@ function drawTimeStop(c) {
   }
   ctx.globalAlpha = 1; ctx.lineJoin = "round";
 }
+// 3D: each Relayed tower's hexagon PROJECTED ONTO THE FLOOR on the overlay, drawn just BEFORE the towers so each tower hides its
+// own back edge (owner, 2026-10-16: "the front of the orbital relay display is broken" - drawn in the effects layer it was cut by
+// the towers' hull mask); like drawLeashRings3d (aspira-camera.js)
+function drawRelayHex3d() {
+  if (!G.core || !warp.ent) return;
+  const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes();
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.strokeStyle = COL.white; g.lineWidth = 3 * px; g.lineJoin = "round";
+  g.shadowColor = COL.white; g.shadowBlur = 10 * px; g.globalAlpha = 0.5 + 0.5 * blinkWave();
+  for (const t of G.towers) {
+    if ((t.relayUntil || 0) - (G.clock || 0) <= 0) continue;
+    const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
+    g.beginPath();
+    c0.pts.forEach((q, i) => { const p = warpProject(x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT, y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT, 0); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); });
+    g.closePath(); g.stroke();
+  }
+  g.restore();
+}

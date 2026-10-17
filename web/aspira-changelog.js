@@ -61,6 +61,7 @@ const CHANGELOG = [
     "Gravity: the inner aura is now the size of the black centre - it burns what it touches (feeding the hole) and slows the most.",
     "Gravity: big black holes evaporate exponentially faster, and steeply - a merged giant burns off quickly.",
     "Gravity: its damage numbers (radiation and nova) fly off the enemy that was hit, like every other tower's.",
+    "Orbital Relay: its hexagon is whole again in 3D (its front edge was cut off).",
     "Orbital Relay: its hexagon sits just outside the tower's base, so it shows (it was hidden under the tower).",
     "Bosses feel heavier: every boss and its fleet move at half speed with twice the health.",
     "Damage numbers use each tower's build-card text colour (paler for Gravity and Carrier), with a black outline - Freeze's chill and Acid's pools too.",
