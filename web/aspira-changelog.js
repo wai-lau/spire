@@ -34,6 +34,7 @@ const CHANGELOG = [
     "Gravity: the aura has its own sound; tagline \"Massive intervention.\"",
     "Gravity: touching black holes share one accretion disk, the dark of each over every ring.",
     "Gravity and Carrier: smoother with many pellets in the air - past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
+    "Threat marks are bright red, on a boss sky too.",
     "Build cards: each enemy symbol keeps its own colour - fast no longer took the tower's colour.",
     "All towers: damage numbers in the colour of the tower that dealt them (crits white), greying with the armor that blunted them.",
     "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",

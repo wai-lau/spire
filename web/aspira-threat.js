@@ -6,6 +6,7 @@ const THREAT_A_MIN = 0.1, THREAT_A_MAX = 0.75, THREAT_W_MAX = 6; // (W_MAX: a le
 // LATER and SHARPER (owner, 2026-10-12: "make threat ring appear later and fade in faster"; "increase threat ring visibility
 // when thickness increases, maybe add white ring inside amber"): from THREAT_FROM s out (was auto-wait's 6), fully in after
 // THREAT_FADE s, and a WHITE core inside the ember that grows with the width, THREAT_CORE of it, as strong as k
+// BRIGHT RED (owner, 2026-10-16: "threat indicator should be bright red"; was the amber glow), kept red on a boss sky (skyKeep, aspira-draw.js)
 const THREAT_FROM = 4, THREAT_FADE = 0.4, THREAT_CORE = 0.4;
 const THREAT_N = 3; // the closest 3 only (owner, 2026-10-12)
 // ...and when one REACHES the core its ring BOUNCES back out (owner, 2026-10-12: "bounce that threat indicator back outwards at
@@ -17,7 +18,7 @@ function threatBounce(e) {
 }
 // the ember line at alpha a, width w, and its white core at alpha core (the current path)
 function threatStroke(a, w, core) {
-  ctx.strokeStyle = COL.glow; ctx.globalAlpha = Math.min(1, a); ctx.lineWidth = w; ctx.stroke();
+  ctx.strokeStyle = COL.threat; ctx.globalAlpha = Math.min(1, a); ctx.lineWidth = w; ctx.stroke();
   if (core > 0.02) { ctx.strokeStyle = COL.white; ctx.globalAlpha = Math.min(1, core); ctx.lineWidth = w * THREAT_CORE; ctx.stroke(); }
 }
 function drawThreatBounces() {
@@ -65,7 +66,7 @@ function drawThreat() {
     if (t <= AUTO_WAIT3_S) { ctx.beginPath(); ctx.arc(e.x, e.y, R, 0, 6.283); threatStroke(al, w, core); threatCoreRing(e, e.x + Math.cos(a) * (d + s / 2), e.y + Math.sin(a) * (d + s / 2), al, w, core); } // the circle only when TOO close: auto-wait's LAST stage, 1 s out ("much later than the triangles", owner 2026-10-13; was its second, 2 s)
     for (const side of [1, -1]) {
       threatTri(e.x + Math.cos(a) * d * side, e.y + Math.sin(a) * d * side, a + (side > 0 ? Math.PI : 0), s);
-      ctx.fillStyle = COL.glow; ctx.globalAlpha = Math.min(1, al * 1.3); ctx.fill();
+      ctx.fillStyle = COL.threat; ctx.globalAlpha = Math.min(1, al * 1.3); ctx.fill();
       if (core > 0.02) { ctx.strokeStyle = COL.white; ctx.globalAlpha = Math.min(1, core); ctx.lineWidth = 1; ctx.stroke(); }
     }
   }

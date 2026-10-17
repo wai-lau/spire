@@ -521,12 +521,13 @@
 /* the ENEMY colours, pinned at the root: a tower's card redefines --green-hsl as its own colour, which turned fast's icon
    (green) the tower's colour in the build chooser (owner, 2026-10-16: "the enemies need to be colored correctly") */
 #asp { --asp-e-white-hsl: var(--white-hsl); --asp-e-green-hsl: var(--green-hsl); --asp-e-cyan-hsl: var(--cyan-hsl); --asp-e-pink-hsl: var(--pink-hsl); --asp-e-orange-hsl: var(--orange-hsl); }
-#asp { --asp-blue-hsl: 207 99% 48%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 285 99% 38%; --asp-violet-ink-hsl: 272 80% 78%; --asp-blue-ink-hsl: 216 100% 74%; --asp-solar-hsl: 353 100% 78%; --asp-arc-hsl: 35 96% 67%; --asp-frz-hsl: 179 98% 45%; --asp-acd-hsl: 94 55% 64%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
+#asp { --asp-blue-hsl: 207 99% 48%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 285 99% 38%; --asp-violet-ink-hsl: 272 80% 78%; --asp-blue-ink-hsl: 216 100% 74%; --asp-solar-hsl: 353 100% 78%; --asp-arc-hsl: 35 96% 67%; --asp-frz-hsl: 179 98% 45%; --asp-acd-hsl: 94 55% 64%; --asp-yellow-hsl: 54 100% 62%; --asp-threat-hsl: 0 100% 55%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
 .asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
 .asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
 .asp-sw.ltblue { color: hsl(var(--asp-ltblue-hsl)); } /* CAR's bolts and pellets (StarCraft light blue) */ /* CAR, the carrier (2026-10-15): electric blue */
 .asp-sw.yellow { color: hsl(var(--asp-yellow-hsl)); }
+.asp-sw.threat { color: hsl(var(--asp-threat-hsl)); } /* the threat marks (aspira-threat.js) */
 .asp-sw.bhdeep { color: hsl(var(--asp-bh-deep-hsl)); }
 .asp-sw.bhplum { color: hsl(var(--asp-bh-plum-hsl)); }
 .asp-sw.bhpink { color: hsl(var(--asp-bh-pink-hsl)); }
