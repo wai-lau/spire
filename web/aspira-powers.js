@@ -24,16 +24,15 @@ function setRelayArm(on) {
   else if (!on && ui.relayArm) ui.paused = relayPause.was;
   ui.relayArm = on;
 }
-// while the Relay is armed, a flashing white ring round every tower says "tap one" - on the
-// same 0.7s beat as the online buttons (aspira.css asp-flash); drawScene calls it after the towers
-const RELAY_RING_K = 1.3;
+// while the Relay is armed, a flashing white HEXAGON round every tower's base says "tap one" - on the
+// same 0.7s beat as the online buttons (aspira.css asp-flash); the flat board only (3D: drawRelayHex3d)
 function drawRelayArm() {
-  if (!ui.relayArm) return;
+  if (!ui.relayArm || q3d()) return; // (3D: drawRelayHex3d, the same base hexagon on the floor - aspira-core-fx.js)
   const a = 0.3 + 0.7 * blinkWave(); // the one blink, a touch softer (was 0.15 + 0.85)
   ctx.strokeStyle = COL.white; ctx.lineWidth = 3; ctx.shadowColor = COL.white; ctx.shadowBlur = 14 * cam.k * a;
   for (const t of G.towers) {
-    const c0 = CELLS[t.cell], r = Math.hypot(c0.pts[0].x - c0.x, c0.pts[0].y - c0.y) * TOWER_K * RELAY_RING_K;
-    ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(t.x ?? c0.x, t.y ?? c0.y, r, 0, 6.283); ctx.stroke();
+    const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y; // the tower's base HEXAGON, like a Relayed one (owner, 2026-10-16: "the orbital relay target selector flashing should get the same treatment")
+    ctx.globalAlpha = a; ctx.beginPath(); c0.pts.forEach((q, i) => { const px = x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT, py = y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.closePath(); ctx.stroke();
   }
   ctx.shadowBlur = 0; ctx.globalAlpha = 1;
 }

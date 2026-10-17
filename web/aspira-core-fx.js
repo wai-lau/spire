@@ -101,12 +101,13 @@ function drawTimeStop(c) {
 // own back edge (owner, 2026-10-16: "the front of the orbital relay display is broken" - drawn in the effects layer it was cut by
 // the towers' hull mask); like drawLeashRings3d (aspira-camera.js)
 function drawRelayHex3d() {
-  if (!G.core || !warp.ent) return;
+  const arm = typeof ui !== "undefined" && ui.relayArm; // ARMED: every tower flashes its hexagon, "tap one" (drawRelayArm's look, in 3D)
+  if ((!G.core && !arm) || !warp.ent) return;
   const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes();
   g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.strokeStyle = COL.white; g.lineWidth = 3 * px; g.lineJoin = "round";
-  g.shadowColor = COL.white; g.shadowBlur = 10 * px; g.globalAlpha = 0.5 + 0.5 * blinkWave();
+  g.shadowColor = COL.white; g.shadowBlur = 10 * px; g.globalAlpha = arm ? 0.3 + 0.7 * blinkWave() : 0.5 + 0.5 * blinkWave();
   for (const t of G.towers) {
-    if ((t.relayUntil || 0) - (G.clock || 0) <= 0) continue;
+    if (!arm && (t.relayUntil || 0) - (G.clock || 0) <= 0) continue;
     const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
     g.beginPath();
     c0.pts.forEach((q, i) => { const p = warpProject(x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT, y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT, 0); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); });
