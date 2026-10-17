@@ -37,6 +37,7 @@ const CHANGELOG = [
     "Threat marks are bright red, on a boss sky too.",
     "Perf: 3D view does less per-frame GPU setup work.",
     "Perf: damage numbers and floating texts in the 3D view draw a little faster.",
+    "Orbital Relay: the glow traces the tower's own base hexagon on the floor instead of a circle - the tower hides the part behind it.",
     "ATC: launches only at enemies inside its range; once out, interceptors still chase anything within their long reach.",
     "Autosave: a checkpoint after every boss, once the field is clear - resume starts between waves, never mid-fight.",
     "Slow frames now lower the quality even if you picked it yourself (it tells you, and never raises it again).",
