@@ -261,6 +261,12 @@ function skyOwn(o, fn) {
   if (skyPal()) { o.col = invertColor(col); try { ownColours(fn); } finally { o.col = col; } return; }
   withPalette(() => { inverted = false; o.col = invertColor(col); try { fn(); } finally { inverted = true; o.col = col; } });
 }
+/* a 2D context's drawing state as a fresh canvas has it (what a layer of its own began each frame with) */
+function ctxDefaults(x) {
+  x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.lineWidth = 1; x.lineCap = "butt"; x.lineJoin = "miter"; x.miterLimit = 10;
+  x.shadowBlur = 0; x.shadowOffsetX = 0; x.shadowOffsetY = 0; x.shadowColor = "transparent"; x.setLineDash([]); x.lineDashOffset = 0;
+  x.textAlign = "start"; x.textBaseline = "alphabetic"; x.font = "10px sans-serif"; x.fillStyle = COL.bg; x.strokeStyle = COL.bg; x.imageSmoothingEnabled = true;
+}
 function warpEntities() {
   if (!warp.ent) {
     const c = document.createElement("canvas");
@@ -274,14 +280,8 @@ function warpEntities() {
   if (c.width !== sc.w || c.height !== sc.h) { c.width = sc.w; c.height = sc.h; }
   ctx = c.getContext("2d");
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c.width, c.height);
-  // the TOWERS and the CORE on a layer of their own over it, at the screen's FULL density (owner, 2026-10-12: "make the towers
-  // and core exempt from the pixel limitation ... make them another, non 3d layer"): its drawing still speaks the overlay's
-  // pixels - every transform and blur scaled up by entScale on the way in (entCtx); the pop-up texts ride on it too, over all
-  if (!warp.top) { const t = document.createElement("canvas"); t.id = "asp-top"; t.setAttribute("aria-hidden", "true"); c.after(t); warp.top = t; }
-  const top = warp.top, full = warpScreenFull();
-  if (top.width !== full.w || top.height !== full.h) { top.width = full.w; top.height = full.h; }
-  warp.entScale = full.w / Math.max(1, sc.w);
-  const topCtx = entCtx(top); topCtx.setTransform(1, 0, 0, 1, 0, 0); topCtx.clearRect(0, 0, top.width, top.height);
+  /* (2026-10-16, owner: "merge top into ent ... slightly softer"): the towers, core, numbers and text are drawn on THIS layer, after everything else - what the separate full-density #asp-top layer used to carry; warp.entScale stays 1 */
+  warp.entScale = 1;
   // FACING UP (owner: "render towers and enemies as if facing up, not toward the camera"), and ONE SHAPE
   // everywhere ("towers should not change shape based on distance from core"): the camera's lean squashes
   // every sprite alike (cos tilt) and only its size follows the perspective - no per-spot skew
@@ -346,7 +346,8 @@ function warpEntities() {
     // the sky spreads, each is drawn straight in its flipped colours instead - a tower its own, the rest the inverted palette
     const spreading = skyOn() && !skyPal();
     const drawTop = tops => { for (const o of solids) if (spreading && inSky(o) && !o.own) withPalette(() => drawSolid(o, tops)); else if (spreading) drawSolid(o, tops); else if (o.own && inSky(o)) skyOwn(o, () => drawSolid(o, tops)); else drawSolid(o, tops); };
-    ctx = topCtx; warpBands(above => drawTop(above));
+    return () => { /* part B: the towers, the core and every pop-up text - drawn after the phone frame, the leash rings and the sky's difference, as the top layer was composited over them */
+    warpBands(above => drawTop(above));
     warp.hulls = solids.filter(o => o.own && o.geo).map(o => [...o.geo.B, ...o.geo.T]); // the towers' outlines on screen: next frame's bell clears the beams under them (hullUniforms, aspira-fog.js)
     const pop = (x, y, fn, far) => { const P = warpProject(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); ctx.save(); fn(); ctx.restore(); };
     /* the numbers (hundreds a frame) go through popRun: no save / restore each (the whole pass has one) and no point object each - every text sets its own font, fill and alpha (perf) */
@@ -355,6 +356,7 @@ function warpEntities() {
     pass(pp => drawFx("dmg", (x, y, fn) => pp(x, y, fn, true))); pass(pp => drawGrvCores((x, y, fn) => pp(x, y, fn, true))); pass(pp => drawFx("text", pp)); // GRV's centres over the damage numbers (aspira-grv.js)
     if (bannerT > 0) pop(CX, 70, () => { ctx.globalAlpha = Math.min(1, bannerT); text(bannerText, CX, 70, 30, bannerCol, true); ctx.globalAlpha = 1; });
     pop(CX, CY, () => drawCredits("pop")); // (the interest pop-up too)
+    };
   };
   // the BOSS SKY's inversion is the TOP LAYER (owner: "color inversion is broken, have it as the top layer"): this canvas
   // carries the bell's picture under everything it draws, and the sky's circle - projected onto the floor, the whole
@@ -363,7 +365,8 @@ function warpEntities() {
   const entCtx2d = ctx;
   try {
     ctx.drawImage(warp.cv, 0, 0); // (the full sky: already turned over, in GL - warpFlip)
-    if (skyPal()) withPalette(all); else all();
+    let partB = null;
+    if (skyPal()) withPalette(() => { partB = all(); }); else partB = all();
     if (skyPal()) withPalette(drawPhoneFrame3d); else drawPhoneFrame3d(); drawLeashRings3d(); /* the leash rings, square to the screen (aspira-camera.js) */ /* the phone's screen, turned over with the sky (owner, 2026-10-13; aspira-camera.js) */
     // the sky's DIFFERENCE over the overlay (the towers' layer draws its own flip, above)
     if (skyOn() && !skyPal()) for (const [x, cnv] of [[entCtx2d, c]]) {
@@ -378,6 +381,8 @@ function warpEntities() {
       ctx.fill();
       ctx.globalCompositeOperation = "source-over";
     }
+    ctx = entCtx2d; ctx.setTransform(1, 0, 0, 1, 0, 0); ctxDefaults(ctx); /* (the state the separate top layer began each frame with) */
+    if (skyPal()) withPalette(partB); else partB();
   } finally { ctx = main; }
 }
 // a tower's height: as TALL as its level (owner: "make towers shorter, but make their height proportional to their level"):
