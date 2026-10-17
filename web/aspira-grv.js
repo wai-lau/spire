@@ -85,10 +85,11 @@ function novaAt(t, st, e) {
   return true;
 }
 // one hit from a sphere: the damage it really dealt feeds its mass
+let grvLastHit = 0;
 function grvHit(sp, t, st, e, amt, opt) {
   const hp0 = e.hp;
   damage(e, amt, t, false, false, opt);
-  const dealt = Math.max(0, hp0 - Math.max(0, e.hp));
+  const dealt = Math.max(0, hp0 - Math.max(0, e.hp)); grvLastHit = Math.max(0, hp0 - e.hp); // dealt: what fed the hole (to zero); grvLastHit: the WHOLE hit, overkill too - its NUMBER (owner, 2026-10-17: "On overkill, show damage that would have been dealt")
   if (dealt > 0) sp.mass = Math.min(sp.cap || GRV_MASS_MAX, sp.mass + GRV_GAIN * dealt / Math.max(1e-6, st.dmg));
   return dealt;
 }
@@ -170,7 +171,7 @@ function stepSphere(sp, t, st, dt) {
       const amt = st.dmg * st.novaMul, dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
       sp.novaDealt = (sp.novaDealt || 0) + (e.dead ? amt : dealt); // (sets the aura's size: a KILL counts the whole hit - overkill on a
       // weak enemy is not a weak nova; a hit a shield swallowed counts nothing)
-      if (dealt > 0) grvFloat(sp, e, dealt); // the nova's numbers rise from above the centre (grvFloat)
+      if (dealt > 0) grvFloat(sp, e, grvLastHit); // the nova's number: the WHOLE hit, overkill too (grvLastHit)
     }
   }
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
@@ -187,7 +188,7 @@ function stepSphere(sp, t, st, dt) {
       if (e.dead || d2 > ar * ar) continue;
       if (e.armor > 0) e.armor -= Math.min(e.armor, st.dmg * GRV_AURA_K * (st.stripMul || 1) * k * GRV_TICK * GRV_STRIP * (GRV_STRIP_IN - (GRV_STRIP_IN - GRV_STRIP_OUT) * Math.sqrt(d2) / Math.max(1, ar))); // MORE the closer (owner, 2026-10-16: "The aura strip armor and slows more the closer they are"): x1.5 at the centre to x0.5 at the edge
       const inIn = d2 <= inner * inner, slow = inIn ? core : outer;
-      if (inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.dmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + d); if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
+      if (inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.dmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy NOT doubled like other slows - GRV is weak to fast
       applySlow(e, e.type === "fast" ? slow / FAST_SLOW_MUL : slow, GRV_TICK * 1.5, "grv:" + t.id);
     }
@@ -263,7 +264,7 @@ function stepPellets(t, st, dt) {
       const h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT; // the number on the pellet's way (HIT_AT, aspira-floats.js)
       const hp0 = e.hp;
       try { damage(e, p.dmg, t, false, false, GRV_PEL_ST); } finally { hitFrom = h0; } // RADIATION NEVER FEEDS its hole (owner, 2026-10-16: "things killed by the aura and rads should not add to the black hole" - a lone hole kept growing on its own radiation); only the nova does (grvHit)
-      if (e.hp < hp0) grvFloat(p.sp, e, hp0 - Math.max(0, e.hp)); // its number flies off the enemy hit (grvFloat)
+      if (e.hp < hp0) grvFloat(p.sp, e, hp0 - e.hp); // its number flies off the enemy hit (grvFloat) - the WHOLE hit, overkill too
       p.left = 0; break;
     }
   }

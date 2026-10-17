@@ -275,7 +275,7 @@ function stepPuddles(t, st, dt) {
         const hp0 = e.hp;
         fromHit(p, () => damage(e, p.dps * every, t, false, false, hit)); e.burnT = 0.4; // away from the pool's centre
         if (st.spread && hp0 > 0 && e.hp <= 0 && t.puddles.length + born.length < ACD_SPREAD_MAX) born.push({ x: e.x, y: e.y, r: p.r * ACD_SPREAD_R, life: p.life * ACD_SPREAD_LIFE, age: 0, tick: 0, dps: p.dps, spread: true });
-        if (hit && hp0 > e.hp) (t.poolAcc ||= new Map()).set(e, (t.poolAcc.get(e) || 0) + hp0 - Math.max(0, e.hp)); // a real hit: it pops one shield charge
+        if (hit && hp0 > e.hp) (t.poolAcc ||= new Map()).set(e, (t.poolAcc.get(e) || 0) + hp0 - e.hp); /* the WHOLE hit, overkill too (owner, 2026-10-17) */ // a real hit: it pops one shield charge
       }
     }
   }

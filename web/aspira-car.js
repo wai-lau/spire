@@ -134,7 +134,7 @@ function stepIcp(i, t, st, dt) {
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3 && d > CAR_FIRE_R) return; // still on its way - but FIRING once within CAR_FIRE_R, before it is round its target (a fast enemy outran its chaser: 12 of 37 leakers were picked and never shot at, probe 2026-10-16)
-    if (!i.orb && d <= carR(i) * 1.3) { i.orb = true; if (st.ram > 0) { const hp0 = e.hp; damage(e, st.ram, t, false, false, CAR_NO_NUM); onHit(e, t, st, st.ram); carNum(i, e, hp0 - Math.max(0, e.hp), st.ram, Math.cos(i.ang), Math.sin(i.ang)); } } // onto the circle - the STRAFING PASS
+    if (!i.orb && d <= carR(i) * 1.3) { i.orb = true; if (st.ram > 0) { const hp0 = e.hp; damage(e, st.ram, t, false, false, CAR_NO_NUM); onHit(e, t, st, st.ram); carNum(i, e, hp0 - e.hp, st.ram, Math.cos(i.ang), Math.sin(i.ang)); } } // onto the circle - the STRAFING PASS
     if (CAR_PIN && !e.dead) applySlow(e, CAR_PIN, 0.15, "carpin:" + t.id); // the PIN: what an interceptor circles is held back the whole time, not only as a bolt lands (doubled on fast)
     i.cd -= dt;
     while (i.cd <= 0 && i.ammo > 0) { // the stream: a volley's bolts spread over its interval
@@ -241,7 +241,7 @@ function stepCarBolts(t, st, dt) {
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + CAR_BOLT_HIT;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
       const hp0 = e.hp; damage(e, b.dmg, t, false, false, CAR_NO_NUM); onHit(e, t, st, b.dmg);
-      carNum(b.icp, e, hp0 - Math.max(0, e.hp), b.dmg, b.vx, b.vy);
+      carNum(b.icp, e, hp0 - e.hp, b.dmg, b.vx, b.vy);
       if (!e.dead) applySlow(e, CAR_SLOW, CAR_SLOW_S, "car:" + t.id); // (doubled on fast, never the shielded - applySlow)
       b.left = 0; break;
     }
