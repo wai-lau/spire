@@ -67,7 +67,7 @@ function warpLayersBind(gl, u) {
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, warp.tex);
   if (warp.statNew || warp.statUp !== warp.tex) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); warp.statNew = false; warp.statUp = warp.tex; }
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, warp.dynTex);
-  if (warp.dynUp !== false || warp.dynSize !== warp.dynCv.width) { // only when the canvas held something (warpRender)
+  if (!DIAG.includes("nodyn") && (warp.dynUp !== false || warp.dynSize !== warp.dynCv.width)) { // only when the canvas held something (warpRender); diag nodyn: never sent (the moving layer then shows nothing) to see what its uploads cost
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); // premultiplied, so its soft edges filter without a dark fringe
     const dk = warp.dynCv.width + "x" + warp.dynCv.height; /* same size as the texture's storage: overwrite it, don't reallocate it (perf) */
     if (warp.dynAlloc === dk && warp.dynTexOf === warp.dynTex) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, warp.dynCv);
