@@ -142,7 +142,7 @@ const VS_MARKS = { arc: { swarm: 1, fast: 1, shield: 1, armor: -3 }, frz: { swar
 const VS_ORDER = ["swarm", "fast", "shield", "armor"];
 const vsMarks = k => VS_ORDER.filter(e => (VS_MARKS[k] || {})[e]).map(e => {
   const m = VS_MARKS[k][e];
-  return '<span class="asp-vs e-' + ENEMIES[e].color + '">' + enemyIcon(e) + '<b class="' + (m > 0 ? "asp-vs-y" : "asp-vs-n") + '">' + (m > 0 ? "\u2713" : "\u2717").repeat(Math.abs(m)) + "</b></span>";
+  return '<span class="asp-vs e-' + ENEMIES[e].color + '">' + enemyIcon(e) + '<b class="' + (m > 0 ? "asp-vs-y" : "asp-vs-n") + '">' + Array(Math.abs(m)).fill(m > 0 ? "\u2713" : "\u2717").join(" ") /* a space between marks (owner, 2026-10-16) */ + "</b></span>";
 }).join("");
 function buildCard(k, i) {
   const b = TOWERS[k], cost = towerCost(k);
