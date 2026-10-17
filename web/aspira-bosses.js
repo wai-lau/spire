@@ -85,7 +85,7 @@ const isA = (e, id) => e.arcana === id;
 // BOSSES WEIGHTIER (owner, 2026-10-16: "make the bosses feel more significant, halve the movement speed of them and their fleet,
 // but double their hp and their fleet's hp"): every boss and every escort at BOSS_PACE of its speed and BOSS_HEFT x its HP (the
 // fleet keeps the boss's pace through m.spd = e.spd x ..., so halving the boss halves it)
-const BOSS_PACE = 0.5, BOSS_HEFT = 2;
+const BOSS_PACE = 1 /* x2 (owner, 2026-10-17: "double movement speed of all bosses" - with their lane twice as long; was 0.5) */, BOSS_HEFT = 2;
 // from spawnEnemy: name the boss for its wave, and pair up the two of a pair
 function bossSpawn(e, n) {
   e.arcana = arcanaOf(n).id;
