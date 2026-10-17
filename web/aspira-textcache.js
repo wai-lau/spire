@@ -36,9 +36,7 @@ function textSprite(str, x, y, size, color, outline, bold, shrink = 1) {
   const k = dev / q * shrink, X = m.a * x + m.e, Y = m.d * y + m.f; // shrink: the same stamp, drawn smaller (perf, 2026-10-16: a fading number made a stamp per 0.5 px step - the cache sat full and thrashed)
   const st = CanvasRenderingContext2D.prototype.setTransform; // (the prototype's: the full-density layer's own would scale it - entCtx)
   st.call(ctx, 1, 0, 0, 1, 0, 0); // device px; only the transform changes, so it alone is put back (a save / restore a number was most of its cost)
-  /* a stamp at (nearly) its own size on a WHOLE device pixel takes the browser's fast copy path - 3x cheaper than any scaled or fractional draw (measured, perf 2026-10-16); within 2% of its size it is drawn as it is */
-  if (k > 0.98 && k < 1.02) ctx.drawImage(sp.c, Math.round(X - sp.ox), Math.round(Y - sp.oy));
-  else ctx.drawImage(sp.c, X - sp.ox * k, Y - sp.oy * k, sp.c.width * k, sp.c.height * k);
+  ctx.drawImage(sp.c, X - sp.ox * k, Y - sp.oy * k, sp.c.width * k, sp.c.height * k);
   st.call(ctx, m);
   return true;
 }
