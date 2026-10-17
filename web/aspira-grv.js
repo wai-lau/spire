@@ -282,6 +282,7 @@ function mixRgb(a, b, f) {
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // a sphere's numbers are ORDINARY damage numbers, FLYING OFF THE ENEMY hit, away from the hole (owner, 2026-10-16: "damage
 // numbers coming from rads should be shown flying off of the enemy (all damage numbers should) instead of coming out of the bh")
+const GRV_AURA_A = 0.3; // the aura band's peak, mid-radius (owner: "clear, 30%, clear")
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
   dmgNumber(e, String(dmgUnits(amt)), amt, dmgInk("grv"), sp);

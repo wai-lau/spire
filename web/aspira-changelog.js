@@ -55,6 +55,7 @@ const CHANGELOG = [
     "Gravity: black holes evaporate 2.5x as fast (by their real size, so a big merged hole no longer lingers), and the tower fires faster with bigger auras to make up for it.",
     "Gravity: black holes drift together and merge only when their centres meet, not as soon as they touch.",
     "Gravity: a black hole can grow three times bigger on screen.",
+    "Fixed: the game froze as soon as a black hole appeared (5.1.82).",
     "Gravity: big black holes evaporate exponentially faster, and steeply - a merged giant burns off quickly.",
     "Gravity: its damage numbers (radiation and nova) fly off the enemy that was hit, like every other tower's.",
     "Orbital Relay: its hexagon sits just outside the tower's base, so it shows (it was hidden under the tower).",
