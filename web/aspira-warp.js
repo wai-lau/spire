@@ -284,7 +284,9 @@ function warpEntities() {
   const sc = warpScreen();
   if (c.width !== sc.w || c.height !== sc.h) { c.width = sc.w; c.height = sc.h; }
   ctx = c.getContext("2d");
-  ctx.setTransform(1, 0, 0, 1, 0, 0); /* (no clear: the picture below is laid down with 'copy', which replaces every pixel, transparency too - same result as clear + draw, one pass less; checked pixel for pixel) */
+  ctx.setTransform(1, 0, 0, 1, 0, 0); /* the GL picture is copied into this layer ONLY while a boss sky needs it under the difference blend; otherwise the GL canvas shows under a transparent overlay - no WebGL -> 2D copy a frame (perf, 2026-10-16: the GPU stalls on a Radeon / ANGLE D3D11 look like that sync) */
+  const needPic = skyOn() || skyPal(); if (warp.picHid !== needPic) { warp.picHid = needPic; warp.cv.style.visibility = needPic ? "hidden" : ""; c.style.background = needPic ? "hsl(var(--bg-hsl))" : ""; }
+  if (!needPic) ctx.clearRect(0, 0, c.width, c.height);
   /* (2026-10-16, owner: "merge top into ent ... slightly softer"): the towers, core, numbers and text are drawn on THIS layer, after everything else - what the separate full-density #asp-top layer used to carry; warp.entScale stays 1 */
   warp.entScale = 1;
   // FACING UP (owner: "render towers and enemies as if facing up, not toward the camera"), and ONE SHAPE
@@ -369,7 +371,7 @@ function warpEntities() {
   // inverted palette any more, and the bell's own picture is plain (the shader turns the 2D sky back)
   const entCtx2d = ctx;
   try {
-    ctx.globalCompositeOperation = "copy"; ctx.drawImage(warp.cv, 0, 0); ctx.globalCompositeOperation = "source-over"; // (the full sky: already turned over, in GL - warpFlip)
+    if (needPic) { ctx.globalCompositeOperation = "copy"; ctx.drawImage(warp.cv, 0, 0); ctx.globalCompositeOperation = "source-over"; } // (the full sky: already turned over, in GL - warpFlip)
     let partB = null;
     if (skyPal()) withPalette(() => { partB = all(); }); else partB = all();
     if (skyPal()) withPalette(drawPhoneFrame3d); else drawPhoneFrame3d(); drawLeashRings3d(); /* the leash rings, square to the screen (aspira-camera.js) */ /* the phone's screen, turned over with the sky (owner, 2026-10-13; aspira-camera.js) */
