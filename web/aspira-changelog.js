@@ -47,6 +47,7 @@ const CHANGELOG = [
     "Perf: the 3D view no longer re-sends its moving layer to the GPU every frame while a GRV black hole is alive.",
     "Perf: the boss sky's spread no longer re-sends the moving layer to the GPU every frame.",
     "Perf: light cones in the 3D view cost the GPU about a quarter of what they did.",
+    "Perf: the 3D bell shader does less per-pixel work.",
     "If the game runs slowly it now drops straight from 3D to low quality (it used to pass through high).",
     "Damage numbers use each tower's build-card text colour (paler for Gravity and Carrier), with a black outline - Freeze's chill and Acid's pools too.",
     "ATC: its description says how many interceptors it can store in orbit, not a percentage.",
