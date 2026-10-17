@@ -152,7 +152,7 @@ function stepSphere(sp, t, st, dt) {
       const amt = st.dmg * st.novaMul, dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
       sp.novaDealt = (sp.novaDealt || 0) + (e.dead ? amt : dealt); // (sets the aura's size: a KILL counts the whole hit - overkill on a
       // weak enemy is not a weak nova; a hit a shield swallowed counts nothing)
-      if (dealt > 0) grvFloat(sp, e, dealt); // the nova's numbers fly INTO the centre (owner, 2026-10-15)
+      if (dealt > 0) grvFloat(sp, e, dealt); // the nova's numbers rise from above the centre (grvFloat)
     }
   }
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
@@ -242,7 +242,7 @@ function stepPellets(t, st, dt) {
       const h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT; // the number on the pellet's way (HIT_AT, aspira-floats.js)
       const hp0 = e.hp;
       try { if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg, GRV_PEL_ST); else damage(e, p.dmg, t, false, false, GRV_PEL_ST); } finally { hitFrom = h0; } // (its sphere gone: no mass to feed)
-      if (e.hp < hp0) grvFloat(p.sp, e, hp0 - Math.max(0, e.hp)); // its number flies INTO its hole, like the nova's (owner, 2026-10-16: "all damage numbers from bh should fly into the bh")
+      if (e.hp < hp0) grvFloat(p.sp, e, hp0 - Math.max(0, e.hp)); // its number rises from above its hole, like the nova's (owner, 2026-10-16: "all damage numbers from bh should fly into the bh")
       p.left = 0; break;
     }
   }
@@ -271,12 +271,14 @@ function mixRgb(a, b, f) {
   return "rgb(" + [0, 1, 2].map(i => Math.round(A[i] + (B[i] - A[i]) * f)).join(", ") + ")";
 }
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
-const GRV_FLOAT_S = 0.8 /* (was 0.6: time to read it above the hole) */, GRV_FLOAT_MAX = 60, GRV_FLOAT_PX = 13 /* (was 11) */, GRV_AURA_A = 0.3; // GRV_AURA_A: the band's peak, mid-radius (owner: "clear, 30%, clear")
-let grvFloats = [];
+// a sphere's numbers are ORDINARY damage numbers (owner, 2026-10-16: "they should appear above the hole" ... "just use the same
+// sizing and fading mechanisms as the other damage numbers"): dmgNumber's size and fade, placed just above the black centre and
+// rising off it - clear of the disk, so the centre (drawn over the numbers) never hides them
+const GRV_NUM_GAP = 9;
+const GRV_AURA_A = 0.3; // the aura band's peak, mid-radius (owner: "clear, 30%, clear")
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
-  if (grvFloats.length >= GRV_FLOAT_MAX) grvFloats.shift();
-  grvFloats.push({ x: e.x, y: e.y, sp, t: 0, text: String(dmgUnits(amt)) });
+  dmgNumber({ x: sp.x, y: sp.y - (sp.coreR || 0) - GRV_NUM_GAP + 14 }, String(dmgUnits(amt)), amt, "violet", sp); /* +14: dmgNumber sets it 14 up */
 }
 
 // ---------- the look: yellow front, the aura's gradient band, the black sphere, the inward numbers ----------
@@ -287,8 +289,8 @@ function drawGrv() {
     const st = towerStats(t, true);
     for (const sp of t.spheres) drawSphere(sp, st);
   }
-  if (!(typeof q3d === "function" && q3d())) { drawGrvCores((x, y, fn) => fn()); drawGrvNums((x, y, fn) => fn()); } // the centres, then their numbers over them, over every aura (3D: over the damage numbers instead - drawGrvCores, aspira-warp.js)
-  drawGrvFloats(now);
+  if (!(typeof q3d === "function" && q3d())) drawGrvCores((x, y, fn) => fn()); // the centres, over every aura (3D: over the damage numbers instead - drawGrvCores, aspira-warp.js), over every aura (3D: over the damage numbers instead - drawGrvCores, aspira-warp.js)
+  drawGrvPellets();
   ctx.globalAlpha = 1;
 }
 function drawSphere(sp, st) {
@@ -324,7 +326,7 @@ const grvCoreR = ar => GRV_CORE_PX * Math.log(1 + ar / GRV_CORE_A); // the black
 function drawGrvCore(sp, st, pass) {
   if (sp.age < GRV_NOVA_END) return; // (the nova first - the centre appears once it is gone)
   const r = grvCoreR(grvAuraNow(sp, st)); // LOGARITHMIC in its aura (owner, 2026-10-16: "make the center sphere of a bh increase logarithmically visually instead of linearly"; was 0.16 x the aura + 2 root mass); shrinks with its mass, to nothing
-  sp.coreR = r; // (its numbers gather just above it - drawGrvNums)
+  sp.coreR = r; // (its numbers rise from just above it - grvFloat)
   if (r < 0.3) return;
   ctx.globalAlpha = 1; ctx.beginPath();
   if (pass === 0) { ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.arc(sp.x, sp.y, r + Math.min(2, r), 0, 6.283); ctx.stroke(); }
@@ -337,23 +339,4 @@ function drawGrvCores(at) {
     const st = towerStats(t, true);
     for (const sp of t.spheres) at(sp.x, sp.y, () => drawGrvCore(sp, st, pass));
   }
-}
-function drawGrvFloats(now) {
-  const dt = drawGrvFloats.last ? Math.min(0.1, now - drawGrvFloats.last) : 0;
-  drawGrvFloats.last = now;
-  drawGrvPellets();
-  for (const f of grvFloats) f.t += dt;
-  grvFloats = grvFloats.filter(f => f.t < GRV_FLOAT_S);
-}
-// the pellet numbers, OVER the hole (owner, 2026-10-16: "I can never see the GRV damage numbers, they should appear above the
-// hole"): each flies from its enemy to just above the black centre and fades only at the end; drawn after the centres, `at`
-// placing it like the cores (3D: aspira-warp.js's pass; 2D: in place)
-const GRV_NUM_GAP = 9, GRV_NUM_FADE = 0.35;
-function drawGrvNums(at) {
-  for (const f of grvFloats) {
-    const p = Math.min(1, f.t / GRV_FLOAT_S), tx = f.sp.x, ty = f.sp.y - (f.sp.coreR || 0) - GRV_NUM_GAP;
-    const x = f.x + (tx - f.x) * p, y = f.y + (ty - f.y) * p;
-    at(x, y, () => { ctx.globalAlpha = p < 1 - GRV_NUM_FADE ? 1 : (1 - p) / GRV_NUM_FADE; text(f.text, x, y, GRV_FLOAT_PX, "violet", true, true); });
-  }
-  ctx.globalAlpha = 1;
 }
