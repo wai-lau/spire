@@ -279,6 +279,14 @@ function drawLanes() {
   });
   placeLabels(items);
   ctx.globalAlpha = 1;
+  laneLblA = ctx.getTransform().a;
+}
+/* the NEXT wave's twelve idle labels (WAVE:LANE), one stamp a frame while the board is quiet: a new wave used to build all twelve in the frame it started (a canvas, a measure and a fill each - a slow frame on a phone) */
+let laneLblA = 0;
+function laneTextWarm() {
+  if (!laneLblA || typeof textWarm !== "function") return;
+  const w = roman(Math.max(1, G.wave) + 1);
+  for (let i = 0; i < PATHS.length; i++) if (textWarm(w + ":" + roman(i + 1), LANE_IDLE_PX, "cyan", laneLblA)) return;
 }
 
 // the chart's RULER (owner: show how long X units are, on the flat line left

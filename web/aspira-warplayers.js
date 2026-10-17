@@ -16,6 +16,7 @@ function warpRender() {
   // (capped at WARP_TEX_MAX px), not the screen-sized canvas squeezed to fit the board - that was ~3x coarser than the view
   const S = Math.min(WARP_TEX_MAX, Math.round(warpTexCap / 64) * 64, Math.ceil(2 * WARP_TEX_R * cam.k)); // warpTexCap follows the frame rate (aspira-quality.js), stepped by 64 so it is not resized every frame
   const view = { ...cam }, main = ctx, now = performance.now();
+  if (typeof laneTextWarm === "function") laneTextWarm(); // (the next wave's lane labels, a stamp a frame)
   try {
     warpTexCamFor(S);
     bossSkyStep(); // the sky's state: phase, radius, full (aspira-bosses.js) - render()'s first step in 2D

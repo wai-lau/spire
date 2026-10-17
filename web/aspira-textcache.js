@@ -40,6 +40,15 @@ function textSprite(str, x, y, size, color, outline, bold, shrink = 1) {
   st.call(ctx, m);
   return true;
 }
+// a stamp built AHEAD of the frame that needs it (the next wave's lane labels, aspira-lanes.js laneTextWarm): the same key and the same stamp text() would make, `a` the scale of the layer it will be drawn on; true when it built one
+function textWarm(str, size, color, a) {
+  if (!textCacheOn || textBuilding || !(size > 0) || !(a > 0) || (document.fonts && document.fonts.status !== "loaded")) return false;
+  const q = Math.max(TEXT_Q, Math.round(size * a / TEXT_Q) * TEXT_Q), key = str + "|" + (COL[color] || color) + "||0|" + q + "|0.0";
+  if (textSprites.has(key)) return false;
+  const sp = textStamp(str, q, color, false, false, a, 0);
+  textSprites.set(key, sp); textPx += sp.c.width * sp.c.height; textEvict(key);
+  return true;
+}
 // draw the text the old way (text(), aspira-draw.js) at q device px onto a canvas just big enough: its outline, its glow
 function textStamp(str, q, color, outline, bold, sc, blur) {
   const c = document.createElement("canvas"), x = c.getContext("2d"), main = ctx;
