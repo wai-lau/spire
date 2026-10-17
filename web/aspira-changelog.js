@@ -43,6 +43,7 @@ const CHANGELOG = [
     "Perf: the 3D overlay is laid down in one pass instead of clear-then-draw.",
     "Perf: the lane brightening is done in the 3D shader.",
     "Perf: high and low quality draw the board's grid and lanes from one cached layer.",
+    "Perf: the 3D view no longer copies its WebGL picture into the 2D overlay every frame.",
     "If the game runs slowly it now drops straight from 3D to low quality (it used to pass through high).",
     "Gravity: its aura strips armor faster (x2.5, was x1.5).",
     "Death has less health, so every team that can win can beat it.",
