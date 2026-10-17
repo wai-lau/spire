@@ -69,6 +69,7 @@ const CHANGELOG = [
     "Gravity: the nova hits twice as hard.",
     "Gravity: the inner aura is now the size of the black centre - it burns what it touches (feeding the hole) and slows the most.",
     "Damage numbers draw over Gravity's black holes and auras.",
+    "Perf: on phones whose GPU stalls on uploads, a lane that empties mid-wave stays lit until the whole wave is done, instead of costing a redraw.",
     "Damage numbers on a killing blow show the whole hit, not just the health that was left (Carrier, Acid pools, Gravity).",
     "Waves: the game now opens with a fast wave; the first swarm comes at wave 4 instead.",
     "Top players: every row fits on one line (shrunk to fit on a phone), and so does each build card's enemy checks and x's.",
