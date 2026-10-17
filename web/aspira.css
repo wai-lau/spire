@@ -617,7 +617,7 @@
 .asp-card dd { margin: 0; white-space: normal; overflow-wrap: anywhere; } /* a long value wraps inside its row, never out of the card (owner) */
 .asp-card .asp-hint { max-width: none; } /* not the overlay's 36ch */
 
-.asp-goodvs { font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: center; }
+.asp-goodvs { font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); display: flex; flex-wrap: nowrap; white-space: nowrap; gap: 0 0.9em; align-items: center; overflow: hidden; } /* ONE line, shrunk to fit by fitOneLine (owner, 2026-10-17); em gap so it shrinks with it */
 .asp-goodvs .asp-vs { display: inline-flex; align-items: center; gap: var(--space-0-5); white-space: nowrap; } /* an enemy's symbol and its marks (aspira-chooser.js vsMarks) */
 .asp-goodvs .asp-vs-y { color: hsl(var(--cat-social-h) var(--cat-social-s) var(--cat-social-l)); font-weight: var(--fw-bold); } /* the SAME green and orange on every card (owner, 2026-10-16: "always show the checks and x in the same color") - not --asp-good/bad, which ARC and ACD retint */
 .asp-goodvs .asp-vs-n { color: hsl(var(--orange-glow-hsl)); font-weight: var(--fw-bold); }

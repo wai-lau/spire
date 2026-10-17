@@ -181,7 +181,7 @@ function openBuildChooser(ci) {
   el.hidden = false;
   el.style.paddingBottom = spendRoom() + "px";
   el.style.paddingTop = Math.max(8, document.querySelector(".asp-head").getBoundingClientRect().bottom - el.getBoundingClientRect().top + 8 + CRED_ROOM) + "px"; // room for the credits ABOVE the cards
-  layoutCards(el, row, true); // the grid by the screen's shape, measured once shown (a hidden element has no size) - two columns first
+  layoutCards(el, row, true); for (const v of row.querySelectorAll(".asp-goodvs")) fitOneLine(v, v.clientWidth); // the grid by the screen's shape, measured once shown (a hidden element has no size) - two columns first
   $("asp").classList.add("asp-choosing"); placeCred(); // now the cards have their places
 }
 function chooseBuild(i) {
@@ -240,4 +240,13 @@ function updateSpend() {
   placeCred();
   $("asp-spend-cred").innerHTML = cr(Math.floor(G.money).toLocaleString("en-US")) +
     (spend.cost != null ? ' <span class="asp-spend-cost' + (spend.cost <= G.money ? " asp-cost-ok" : "") + '">(−' + cr(spend.cost) + ")</span>" : ""); // affordable: just bold, no colour (owner) // white credits, the cost in red brackets (owner)
+}
+
+// ONE LINE, shrunk to fit (owner, 2026-10-17: "Make each top player fit on one line (zoom if necessary)" / "The counter info should
+// fit on one line as well"): el is white-space nowrap; if its content is wider than `room` px, its font (and everything sized
+// in em under it) is scaled down to fit
+function fitOneLine(el, room) {
+  el.style.fontSize = "";
+  const w = el.scrollWidth;
+  if (room > 0 && w > room) el.style.fontSize = (parseFloat(getComputedStyle(el).fontSize) * room / w * 0.98).toFixed(2) + "px";
 }

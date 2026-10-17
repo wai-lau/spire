@@ -41,6 +41,7 @@ function ascBoard(entries, mine) {
     const v = tr.insertCell(); v.className = "asp-asc-ver"; v.textContent = e.ver ? "v" + e.ver : ""; // the VERSION it was played on (owner, 2026-10-16: "add a col for the version the scores were achieved")
   }
   board.append(table);
+  fitOneLine(table, Math.min(document.documentElement.clientWidth - 24, $("asp-asc").parentElement.clientWidth || 1e9)); // every row on ONE line, the table shrunk to fit (aspira-chooser.js)
   const rows = table.rows;
   board.style.maxHeight = rows.length > ASC_SHOW ? rows[ASC_SHOW].offsetTop - rows[0].offsetTop + "px" : "";
   const me = table.querySelector(".asp-asc-mine");

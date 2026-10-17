@@ -69,6 +69,7 @@ const CHANGELOG = [
     "Gravity: the nova hits twice as hard.",
     "Gravity: the inner aura is now the size of the black centre - it burns what it touches (feeding the hole) and slows the most.",
     "Damage numbers draw over Gravity's black holes and auras.",
+    "Top players: every row fits on one line (shrunk to fit on a phone), and so does each build card's enemy checks and x's.",
     "Gravity: the black centre burns twice as hard, and shows one number a second per enemy (the sum) instead of a stream of small ones.",
     "Gravity: big black holes evaporate exponentially faster, and steeply - a merged giant burns off quickly.",
     "Gravity: its damage numbers (radiation and nova) fly off the enemy that was hit, like every other tower's.",
