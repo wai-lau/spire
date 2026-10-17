@@ -30,6 +30,7 @@ const CHANGELOG = [
     "Gravity: the aura strips armor harder the closer an enemy is to its centre (it already slowed harder there).",
     "Gravity: a nova that catches nothing still leaves a full-size hole; novas land ahead of their target, so it walks into the opening hole.",
   ], u: [
+    "Bosses: the Star has x1.8 health, the Empress x1.5, Strength x1.3, the Chariot x3, the Lovers x2, Temperance x2 and the Devil x1.5.",
     "Carrier: interceptors fly smooth loops round their target, about 75 out and wobbling +-20%, steering round the core and towers; bolts reach 390.",
     "Carrier: interceptors half size, growing with Armament to full at VI; a brighter cobalt blue that keeps its colour during boss waves.",
     "Carrier: bolts are short streaks that stretch as they fly; one damage number for every three hits of an interceptor (the strafing pass included), their sum.",
