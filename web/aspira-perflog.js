@@ -7,7 +7,7 @@
 const PERF_SEND_S = 180, PERF_BUCKETS = [16.7, 33, 50, 100, Infinity];
 const perfSid = Math.random().toString(36).slice(2, 10);
 let perf = null;
-const perfReset = () => { perf = { secs: 0, frames: 0, sum: 0, buckets: PERF_BUCKETS.map(() => 0), worst: [], maxEnemies: 0, sfxCalls: 0, sfxPlayed: 0, simMs: 0, drawMs: 0, warpMs: 0, glMs: 0, entMs: 0, speed: 0, picMs: 0, fxMs: 0, bindMs: 0, fxN: 0, fxMax: 0, upBoard: 0, upDyn: 0, cbMs: 0, lagMs: 0, up: 0, upPx: 0, read: 0, glCopy: 0, lastUp: 0, fUp: 0, sUp: 0, fNo: 0, sNo: 0, opFill: 0, opStroke: 0, opRect: 0, opImage: 0, opText: 0, opState: 0, opFrames: 0, bu: { n: 0, sum: 0, max: 0, why: {} }, rframes: 0, rsecs: 0, act: {}, actSecs: 0, clicks: 0, keys: 0, wMin: 1e9, wMax: 0 }; if (typeof glcWhyN !== "undefined") for (const k in glcWhyN) delete glcWhyN[k]; };
+const perfReset = () => { perf = { secs: 0, frames: 0, sum: 0, buckets: PERF_BUCKETS.map(() => 0), worst: [], maxEnemies: 0, sfxCalls: 0, sfxPlayed: 0, simMs: 0, drawMs: 0, warpMs: 0, glMs: 0, entMs: 0, speed: 0, picMs: 0, fxMs: 0, bindMs: 0, fxN: 0, fxMax: 0, upBoard: 0, upDyn: 0, cbMs: 0, lagMs: 0, up: 0, upPx: 0, read: 0, glCopy: 0, lastUp: 0, fUp: 0, sUp: 0, fNo: 0, sNo: 0, opFill: 0, opStroke: 0, opRect: 0, opImage: 0, opText: 0, opState: 0, opFrames: 0, bu: { n: 0, sum: 0, max: 0, why: {} }, rframes: 0, rsecs: 0, slow: { n: 0, tags: {}, phase: {}, first: 0 }, mk: new Set(), pv: [0, 0, 0, 0, 0, 0, 0], act: {}, actSecs: 0, clicks: 0, keys: 0, wMin: 1e9, wMax: 0 }; if (typeof glcWhyN !== "undefined") for (const k in glcWhyN) delete glcWhyN[k]; };
 perfReset();
 // the sound calls counted on their way through (sfx is a global function: every caller looks it up by name)
 if (typeof sfx === "function") { const sfx0 = sfx; sfx = function (...a) { perf.sfxCalls++; const r = sfx0.apply(this, a); if (r) perf.sfxPlayed++; return r; }; }
@@ -74,6 +74,22 @@ function perfActive(dt) {
   perf.actSecs += dt; perf.wMin = Math.min(perf.wMin, G.wave); perf.wMax = Math.max(perf.wMax, G.wave);
 }
 const perfActOut = () => { const o = {}; for (const k in perf.act) { const a = perf.act[k]; o[k] = [Math.round(a[0]), a[1] ? +(a[2] / a[1]).toFixed(1) : 0, a[3]]; } return { states: o, clicks: perf.clicks, keys: perf.keys, waves: [perf.wMin === 1e9 ? 0 : perf.wMin, perf.wMax] }; };
+/* WHAT A SLOW FRAME COINCIDED WITH (coordinator, 2026-10-17: 29 slow iPhone frames in 106 s with no upload near them): events mark the frame they happen in; a frame over 40 ms counts each mark it carried, and the phase that took most of it (step / 2D picture / GL draw / entity layer / the rest = outside our code: the browser's compositor, GC, the GPU) */
+const perfMark = t => perf.mk.add(t);
+for (const [fn, tag] of [["sendWave", "wave"], ["openChooser", "chooser"], ["placeTower", "place"], ["buildTower", "place"], ["upgradeTower", "upgrade"], ["spawnBoss", "boss"]]) if (typeof window[fn] === "function") { const f0 = window[fn]; window[fn] = function (...a) { perfMark(tag); return f0.apply(this, a); }; }
+{ const ce = document.createElement; document.createElement = function (n, ...a) { if (String(n).toLowerCase() === "canvas") perfMark("newCanvas"); return ce.call(this, n, ...a); }; }
+let perfPrevE = 0, perfPrevT = 0, perfPrevSfx = 0, perfPrevCoin = 0;
+function perfSlow(ms) {
+  const e = G.enemies.length, t = G.towers ? G.towers.length : 0, sf = perf.sfxPlayed - perfPrevSfx;
+  if (perfPrevE - e >= 3) perfMark("kills"); if (e - perfPrevE >= 3) perfMark("spawns"); if (t > perfPrevT) perfMark("towerAdd"); if (sf >= 4) perfMark("sfx" + (sf >= 8 ? "8+" : "4+")); else if (sf) perfMark("sfx");
+  perfPrevE = e; perfPrevT = t; perfPrevSfx = perf.sfxPlayed;
+  const cur = [perf.simMs, perf.drawMs, perf.glMs, perf.entMs, perf.fxMs, perf.bindMs], d = cur.map((v, i) => v - perf.pv[i]); perf.pv = cur.concat(0);
+  if (ms <= 40) { perf.mk.clear(); return; }
+  const s = perf.slow; s.n++;
+  const tags = perf.mk.size ? [...perf.mk] : ["none"]; for (const k of tags) s.tags[k] = (s.tags[k] || 0) + 1; perf.mk.clear();
+  const own = d[0] + d[1] + d[2], names = ["step", "picture", "glDraw"], big = d.indexOf(Math.max(d[0], d[1], d[2]));
+  const ph = own < ms * 0.4 ? "outside" : names[big]; s.phase[ph] = (s.phase[ph] || 0) + 1;
+}
 function perfTick(dt) {
   if (!(dt > 0) || dt > 1 || document.hidden) return; // a stall or a tab switch is not a frame
   perfActive(dt);
@@ -85,6 +101,7 @@ function perfTick(dt) {
   perf.secs += dt; perf.frames++; perf.sum += ms;
   perf.buckets[PERF_BUCKETS.findIndex(b => ms < b)]++;
   /* does a slow frame (over 40 ms) line up with a canvas -> texture upload in the frame before it (perf.up is counted as it happens)? */
+  perfSlow(ms);
   { const had = perf.up > perf.lastUp; perf.lastUp = perf.up; if (had) { perf.fUp++; if (ms > 40) perf.sUp++; } else { perf.fNo++; if (ms > 40) perf.sNo++; } }
   if (perf.worst.length < 5 || ms > perf.worst[4]) { perf.worst.push(Math.round(ms)); perf.worst.sort((a, b) => b - a); perf.worst.length = Math.min(5, perf.worst.length); }
   perf.maxEnemies = Math.max(perf.maxEnemies, G.enemies.length); perf.speed += typeof speedX === "function" ? speedX() : 1;
@@ -123,7 +140,7 @@ function perfSend() {
     buckets: Object.fromEntries(PERF_BUCKETS.map((b, i) => ["<" + b, perf.buckets[i]])), worst: perf.worst, maxEnemies: perf.maxEnemies,
     gpuSplit: perfSplit(), perFrame: { simMs: +(perf.simMs / Math.max(1, perf.rframes)).toFixed(1), drawMs: +(perf.drawMs / Math.max(1, perf.rframes)).toFixed(1), warpMs: +(perf.warpMs / Math.max(1, perf.rframes)).toFixed(1), glMs: +(perf.glMs / Math.max(1, perf.rframes)).toFixed(1), entMs: +(perf.entMs / Math.max(1, perf.rframes)).toFixed(1), speed: +(perf.speed / Math.max(1, perf.frames)).toFixed(2), cbMs: +(perf.cbMs / Math.max(1, perf.rframes)).toFixed(1), lagMs: +(perf.lagMs / Math.max(1, perf.rframes)).toFixed(1), dpr: typeof canvasDpr === "function" ? +canvasDpr().toFixed(2) : null }, // (3D: drawMs is inside warpMs; cbMs: the whole frame callback, lagMs: the browser's delay handing it the frame - an avgMs far above both is the compositor / GPU, outside our code)
     detailR: typeof detailFarR !== "undefined" ? Math.round(detailFarR) : null, texCap: typeof warpTexCap !== "undefined" ? Math.round(warpTexCap) : null, warpRes: typeof WARP_RES !== "undefined" ? +WARP_RES.toFixed(2) : null, // 3D's full-detail radius at send time
-    act: perfActOut(), boardUp: { n: perf.bu.n, avgMs: perf.bu.n ? +(perf.bu.sum / perf.bu.n).toFixed(1) : 0, maxMs: Math.round(perf.bu.max), why: perf.bu.why, gapMs: typeof WARP_STAT_MS !== "undefined" ? WARP_STAT_MS : null }, sync: perfSync(), ops: perfOps(), diag: typeof DIAG !== "undefined" ? DIAG : "", quality: qMode, wave: G.wave, brave: !!navigator.brave,
+    act: perfActOut(), boardUp: { n: perf.bu.n, avgMs: perf.bu.n ? +(perf.bu.sum / perf.bu.n).toFixed(1) : 0, maxMs: Math.round(perf.bu.max), why: perf.bu.why, gapMs: typeof WARP_STAT_MS !== "undefined" ? WARP_STAT_MS : null }, sync: perfSync(), slowWhy: perf.slow, ops: perfOps(), diag: typeof DIAG !== "undefined" ? DIAG : "", quality: qMode, wave: G.wave, brave: !!navigator.brave,
     screen: [innerWidth, innerHeight, devicePixelRatio], canvas: [cv.width, cv.height],
     gpu: perfGpu(), // the WebGL renderer ("SwiftShader" / "llvmpipe" = software, no GPU)
     audio: { ac: typeof AC !== "undefined" && AC ? AC.state : null, samples: typeof SAMPLES !== "undefined" ? Object.values(SAMPLES).filter(s => s.length).length : null, calls: perf.sfxCalls, played: perf.sfxPlayed, muted: typeof muted !== "undefined" ? muted : null, volume: typeof volume !== "undefined" ? volume : null },
