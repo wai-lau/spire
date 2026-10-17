@@ -53,7 +53,7 @@ function warpRender() {
 function warpBoardSig(now) {
   const live = typeof litLanes === "function" ? litLanes() : [];
   let fading = false;
-  const lanes = live.map(u => {
+  const lanes = laneHold(live).map(u => {
     const t0 = laneSeen.get(u.pi + ":" + u.ang);
     if (!u.star && laneFadeMs() && (t0 === undefined || now - t0 < laneFadeMs())) fading = true;
     return u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + u.n + ":" + litLevel(u.a);
