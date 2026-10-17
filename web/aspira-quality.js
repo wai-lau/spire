@@ -92,6 +92,10 @@ const farFx = e => q3d() && (e.x - CX) ** 2 + (e.y - CY) ** 2 > detailFarR * det
 // AUTO STEP-DOWN (owner, 2026-10-12: "extremely laggy on my partner's brave browser" - 3D is the default now): while the
 // player has NOT chosen a quality (nothing stored), a frame time averaging over AUTO_Q_MS for AUTO_Q_HOLD real seconds
 // drops 3D to high, then high to low, with a float that says so. A choice on the slider is never overridden
+/* DIAGNOSTICS (2026-10-16: an empty board cost a Brave laptop ~38 ms a frame - is it the canvases or the page's own layers?): localStorage "spire.diag" holds a comma list read once at load:
+   nocanvas = the board is not drawn at all (the frame loop still runs), nohud = the HUD panels are hidden (visibility). The slow log reports it, so a run's avgMs can be read against it */
+const DIAG = (() => { try { return localStorage.getItem("spire.diag") || ""; } catch (e) { return ""; } })();
+if (DIAG.includes("nohud")) document.documentElement.classList.add("asp-diag-nohud");
 const AUTO_Q_MS = 34, AUTO_Q_HOLD = 3; // 34 (slow logs, 2026-10-12: a Brave averaged 36-40 ms in 3D and never stepped at 40)
 let autoQ = { ema: 16, slow: 0 }, autoQSteps = 0; // autoQSteps: how many step-downs this session (the slow log reads it)
 const AUTO_Q_PICK_MS = 40, AUTO_Q_PICK_HOLD = 10; /* a PICKED quality yields only to a long, clearly slow stretch (owner, 2026-10-16) */

@@ -892,3 +892,6 @@
 #asp .asp-power.ready { animation: asp-flash var(--asp-blink) ease-in-out infinite; border-color: currentcolor; }
 #asp .asp-power.wait { opacity: 0.45; } /* the other power is running (aspira-powers.js) */
 #asp .asp-power.run, #asp .asp-power.armed { border-color: currentcolor; background: hsl(var(--white-hsl) / 0.12); }
+
+/* diagnostics (aspira-quality.js DIAG): localStorage spire.diag = nohud hides the HUD panels, to see what the page's own layers cost */
+.asp-diag-nohud #asp .asp-head, .asp-diag-nohud #asp .asp-left, .asp-diag-nohud #asp .asp-bottom, .asp-diag-nohud #asp .asp-foot { visibility: hidden; }
