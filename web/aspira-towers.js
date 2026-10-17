@@ -444,7 +444,7 @@ function drawLeash() {
   for (const t of G.towers) {
     const c = CELLS[t.cell], col = COL[TOWERS[t.kind].color], held = towerHeld(t);
     ctx.strokeStyle = col;
-    if (Math.hypot(t.x - c.x, t.y - c.y) > 1 && !upReady(t)) { ctx.globalAlpha = 0.35; towerHex(c, TOWER_K); ctx.stroke(); } // its origin hex (an upgrade ready: drawUpPlus flashes it, in the tower's own colour)
+    // its origin hex shows ONLY with an upgrade ready - drawUpPlus flashes it (owner, 2026-10-17: "don't show upgrade tiles unless you can buy an upgrade"; was a faint hex always)
     // a TETHER from the hex it was built on to the tower while it is dragged (owner, 2026-10-12)
     if (held && Math.hypot(t.x - c.x, t.y - c.y) > 1) { ctx.globalAlpha = 0.6; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(t.x, t.y); ctx.stroke(); ctx.setLineDash([]); } // dashed like the leash ring
     const hint = t.leashHint > now ? Math.min(1, (t.leashHint - now) / LEASH_HINT_FADE_S) : 0;

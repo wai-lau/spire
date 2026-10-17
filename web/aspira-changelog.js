@@ -88,6 +88,7 @@ const CHANGELOG = [
     "Bosses: twice as fast (back to full speed) on a boss lane twice as long - the same time to reach the core, over a longer winding road.",
     "Auto-move's confirm now reads NO LEADERBOARD (tap again to confirm).",
     "Death gives no rewards: no credits, score, lives or interest from its wave, and the score's owed lives are not paid at the end.",
+    "A tower's home slot shows only when an upgrade can be bought; the build spots sit 30 u closer to the core.",
     "Enemies can't be targeted, hit, slowed or affected until they come onto the screen.",
     "The tower building spots sit 100 u further from the core.",
     "Auto-move starts off in every new game (a resumed game keeps its own setting).",

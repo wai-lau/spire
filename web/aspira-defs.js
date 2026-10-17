@@ -31,7 +31,7 @@ let OPEN_SLOTS = [-120, 0, 120];
 // PHONE_ZOOM: CSS px per world unit on a phone (owner, 2026-10-11: "increase zoom a bit", "zoom in" - was 0.5, then 0.6) - the
 // scale the play box is measured at (PHONES, aspira-positioning.js); every screen now zooms to fit that box (resize, aspira-draw.js)
 const PHONE_ZOOM = 0.72;
-const CELL_S = 32, SLOT_R = 178 /* 100 u further out (owner, 2026-10-17: "move the tower building spots 100u away from the core"; was 78, out from 65.5 to fit the bigger core and towers 2026-10-11) */, CELL_PITCH = SLOT_R / (Math.sqrt(3) * CELL_S);
+const CELL_S = 32, SLOT_R = 148 /* 30 u back in (owner, 2026-10-17: "move initial locations 30u closer to core"); 100 u further out before that (owner, 2026-10-17: "move the tower building spots 100u away from the core"; was 78, out from 65.5 to fit the bigger core and towers 2026-10-11) */, CELL_PITCH = SLOT_R / (Math.sqrt(3) * CELL_S);
 // the corner slots: [angle (deg, screen: -90 = up), wave it opens]. Their
 // INNER LIMIT is CORNER_IN from the core (owner: with every tower at max level
 // slid fully in, a gap still shows between all of them): 171 leaves the same
