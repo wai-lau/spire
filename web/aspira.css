@@ -126,11 +126,11 @@
 
 /* an enemy's own shape (enemyIcon), in its colour, sized to the text */
 .asp-eicon { width: 1.2em; height: 1.2em; vertical-align: -0.25em; fill: currentcolor; fill-opacity: 0.45; stroke: currentcolor; stroke-width: 1.5; }
-.asp-wavenote .e-white, .asp-goodvs .e-white { color: hsl(var(--white-hsl)); }
-.asp-wavenote .e-green, .asp-goodvs .e-green { color: hsl(var(--green-hsl)); }
-.asp-wavenote .e-cyan, .asp-goodvs .e-cyan { color: hsl(var(--cyan-hsl)); }
-.asp-wavenote .e-pink, .asp-goodvs .e-pink { color: hsl(var(--pink-hsl)); }
-.asp-wavenote .e-orange, .asp-goodvs .e-orange { color: hsl(var(--orange-hsl)); }
+.asp-wavenote .e-white, .asp-goodvs .e-white { color: hsl(var(--asp-e-white-hsl)); }
+.asp-wavenote .e-green, .asp-goodvs .e-green { color: hsl(var(--asp-e-green-hsl)); }
+.asp-wavenote .e-cyan, .asp-goodvs .e-cyan { color: hsl(var(--asp-e-cyan-hsl)); }
+.asp-wavenote .e-pink, .asp-goodvs .e-pink { color: hsl(var(--asp-e-pink-hsl)); }
+.asp-wavenote .e-orange, .asp-goodvs .e-orange { color: hsl(var(--asp-e-orange-hsl)); }
 
 /* bottom: the build bar, with a one-line "placing" note above it only while
    a tower is being placed (no cards: owner) */
@@ -518,6 +518,9 @@
 /* GRV (2026-10-15; new /spire colours are allowed - owner): violet its aura and outline, yellow its nova */
 /* ...its look from a black-hole image (owner, 2026-10-15: "these colors (excl bg), in a similar ratio"): deep purple, plum, pink,
    coral, yellow, white-hot - the aura's bands; violet (its card and text) the plum, lifted to read on the board */
+/* the ENEMY colours, pinned at the root: a tower's card redefines --green-hsl as its own colour, which turned fast's icon
+   (green) the tower's colour in the build chooser (owner, 2026-10-16: "the enemies need to be colored correctly") */
+#asp { --asp-e-white-hsl: var(--white-hsl); --asp-e-green-hsl: var(--green-hsl); --asp-e-cyan-hsl: var(--cyan-hsl); --asp-e-pink-hsl: var(--pink-hsl); --asp-e-orange-hsl: var(--orange-hsl); }
 #asp { --asp-blue-hsl: 207 99% 48%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 285 99% 38%; --asp-violet-ink-hsl: 272 80% 78%; --asp-blue-ink-hsl: 216 100% 74%; --asp-solar-hsl: 353 100% 78%; --asp-arc-hsl: 35 96% 67%; --asp-frz-hsl: 179 98% 45%; --asp-acd-hsl: 94 55% 64%; --asp-yellow-hsl: 54 100% 62%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
 .asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
