@@ -45,6 +45,7 @@ function runOffer(saved) {
 function runResume(saved) {
   try {
     G = saved.G; runSavedAt = G.wave;
+    for (const t of G.towers) delete t.leashHint; // page-clock stamps (performance.now) mean nothing after a reload: a saved one kept the movement rings on for hours (owner, 2026-10-16)
     fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null;
     if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 });
     refreshPanels();
