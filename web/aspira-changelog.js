@@ -45,6 +45,7 @@ const CHANGELOG = [
     "Perf: high and low quality draw the board's grid and lanes from one cached layer.",
     "Perf: the 3D view no longer copies its WebGL picture into the 2D overlay every frame.",
     "If the game runs slowly it now drops straight from 3D to low quality (it used to pass through high).",
+    "Gravity: its pellet damage numbers gather just above the black hole, drawn over it, instead of vanishing into it.",
     "Gravity: its aura strips armor faster (x2.5, was x1.5).",
     "Death has less health, so every team that can win can beat it.",
     "Build cards: the checks and x's are spaced apart.",

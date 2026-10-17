@@ -271,7 +271,7 @@ function mixRgb(a, b, f) {
   return "rgb(" + [0, 1, 2].map(i => Math.round(A[i] + (B[i] - A[i]) * f)).join(", ") + ")";
 }
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
-const GRV_FLOAT_S = 0.6, GRV_FLOAT_MAX = 60, GRV_FLOAT_PX = 11, GRV_AURA_A = 0.3; // GRV_AURA_A: the band's peak, mid-radius (owner: "clear, 30%, clear")
+const GRV_FLOAT_S = 0.8 /* (was 0.6: time to read it above the hole) */, GRV_FLOAT_MAX = 60, GRV_FLOAT_PX = 13 /* (was 11) */, GRV_AURA_A = 0.3; // GRV_AURA_A: the band's peak, mid-radius (owner: "clear, 30%, clear")
 let grvFloats = [];
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
@@ -287,7 +287,7 @@ function drawGrv() {
     const st = towerStats(t, true);
     for (const sp of t.spheres) drawSphere(sp, st);
   }
-  if (!(typeof q3d === "function" && q3d())) drawGrvCores((x, y, fn) => fn()); // the centres, over every aura (3D: over the damage numbers instead - drawGrvCores, aspira-warp.js)
+  if (!(typeof q3d === "function" && q3d())) { drawGrvCores((x, y, fn) => fn()); drawGrvNums((x, y, fn) => fn()); } // the centres, then their numbers over them, over every aura (3D: over the damage numbers instead - drawGrvCores, aspira-warp.js)
   drawGrvFloats(now);
   ctx.globalAlpha = 1;
 }
@@ -324,6 +324,7 @@ const grvCoreR = ar => GRV_CORE_PX * Math.log(1 + ar / GRV_CORE_A); // the black
 function drawGrvCore(sp, st, pass) {
   if (sp.age < GRV_NOVA_END) return; // (the nova first - the centre appears once it is gone)
   const r = grvCoreR(grvAuraNow(sp, st)); // LOGARITHMIC in its aura (owner, 2026-10-16: "make the center sphere of a bh increase logarithmically visually instead of linearly"; was 0.16 x the aura + 2 root mass); shrinks with its mass, to nothing
+  sp.coreR = r; // (its numbers gather just above it - drawGrvNums)
   if (r < 0.3) return;
   ctx.globalAlpha = 1; ctx.beginPath();
   if (pass === 0) { ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.arc(sp.x, sp.y, r + Math.min(2, r), 0, 6.283); ctx.stroke(); }
@@ -341,10 +342,18 @@ function drawGrvFloats(now) {
   const dt = drawGrvFloats.last ? Math.min(0.1, now - drawGrvFloats.last) : 0;
   drawGrvFloats.last = now;
   drawGrvPellets();
-  for (const f of grvFloats) {
-    f.t += dt;
-    const p = Math.min(1, f.t / GRV_FLOAT_S), x = f.x + (f.sp.x - f.x) * p, y = f.y + (f.sp.y - f.y) * p;
-    ctx.globalAlpha = 1 - p; text(f.text, x, y, GRV_FLOAT_PX, "violet", true, true);
-  }
+  for (const f of grvFloats) f.t += dt;
   grvFloats = grvFloats.filter(f => f.t < GRV_FLOAT_S);
+}
+// the pellet numbers, OVER the hole (owner, 2026-10-16: "I can never see the GRV damage numbers, they should appear above the
+// hole"): each flies from its enemy to just above the black centre and fades only at the end; drawn after the centres, `at`
+// placing it like the cores (3D: aspira-warp.js's pass; 2D: in place)
+const GRV_NUM_GAP = 9, GRV_NUM_FADE = 0.35;
+function drawGrvNums(at) {
+  for (const f of grvFloats) {
+    const p = Math.min(1, f.t / GRV_FLOAT_S), tx = f.sp.x, ty = f.sp.y - (f.sp.coreR || 0) - GRV_NUM_GAP;
+    const x = f.x + (tx - f.x) * p, y = f.y + (ty - f.y) * p;
+    at(x, y, () => { ctx.globalAlpha = p < 1 - GRV_NUM_FADE ? 1 : (1 - p) / GRV_NUM_FADE; text(f.text, x, y, GRV_FLOAT_PX, "violet", true, true); });
+  }
+  ctx.globalAlpha = 1;
 }
