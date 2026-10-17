@@ -37,6 +37,7 @@ const CHANGELOG = [
     "Threat marks are bright red, on a boss sky too.",
     "Perf: 3D view does less per-frame GPU setup work.",
     "Perf: damage numbers and floating texts in the 3D view draw a little faster.",
+    "Perf: the 3D view skips compositing a full-screen layer that was hidden underneath another.",
     "Every tower now starts on Near targeting (Freeze was Fresh, Sol and Acid were Biggest).",
     "Orbital Relay: the glow traces the tower's own base hexagon on the floor instead of a circle - the tower hides the part behind it.",
     "ATC: launches only at enemies inside its range; once out, interceptors still chase anything within their long reach.",
