@@ -180,6 +180,9 @@ export function cellScores(g, kind) {
 // object - runTo(wave) plays until that wave is sent (or the game ends),
 // snapshot() / restore() branch the game (G, the seeded RNG, the player's own
 // state and the strategy's live knobs), result() is play()'s return value.
+// the counter matrix by AXIS (countermx.mjs, spread vs each axis maxed; % leaked by type) for the adaptive spend (adaptAxis)
+const AXIS_VS = (() => { try { return JSON.parse(fs.readFileSync(new URL("./axis-vs.json", import.meta.url), "utf8")); } catch (e) { return {}; } })();
+const ADAPT_WAVES = 6, ADAPT_DECAY = 0.8, ADAPT_NEAR = 300, ADAPT_LIFE = 0.5;
 export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = "") {
   // EVERY sim player is the smart saver unless it says otherwise (owner, 2026-10-12: "all sims should use smart saver from
   // now on"); econ: "spend" is the old spend-as-you-go player
@@ -219,6 +222,27 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     else if (!full) next = { kind: pick() };
     else next = null;
   };
+  // THE AXIS FOR WHAT GETS CLOSE (owner, 2026-10-16: "make sure that the sims pick appropriate axes to level up depending on what
+  // gets close"): with no fixed spend order, a point goes to the open axis whose maxing cuts the leaks of the THREATENING types
+  // most - threat: each type's closeness and lives lost over the last ADAPT_WAVES waves, recent ones weighing more; benefit: the
+  // counter matrix's spread-minus-axis leak for that tower and type (axis-vs.json, countermx.mjs). No table or no threat yet:
+  // the lowest open axis, as before (an even spread)
+  const adaptAxis = t => {
+    const vs = AXIS_VS[t.kind]; if (!vs || strategy.adapt === false) return null;
+    const G = g.G, threat = {};
+    for (let n = Math.max(1, G.wave - ADAPT_WAVES); n < G.wave; n++) {
+      const w = (S.waveStats || {})[n]; if (!w) continue;
+      const k = ADAPT_DECAY ** (G.wave - 1 - n), close = Number.isFinite(w.near) ? Math.max(0, 1 - w.near / ADAPT_NEAR) ** 2 : 0;
+      for (const ty of Object.keys(w.types)) if (ty !== "bonus") threat[ty] = (threat[ty] || 0) + k * (close + ADAPT_LIFE * w.lost);
+    }
+    let best = null, bs = 0;
+    for (const id of Object.keys(vs)) {
+      if (id === "spread" || ((t.skills || {})[id] || 0) >= g.axisCap(t, id)) continue;
+      let sc = 0; for (const ty in threat) sc += threat[ty] * ((vs.spread[ty] ?? 0) - (vs[id][ty] ?? 0));
+      if (sc > bs) { bs = sc; best = id; }
+    }
+    return best;
+  };
   // floor: what the player keeps in the bank (the reserve, or the smart saver's interest bank)
   const act = (floor = (strategy.reserve || 0) * g.G.wave) => {
     const G = g.G;
@@ -229,7 +253,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
         const t = next.up, [p, f] = (strategy.paths || {})[t.kind] || [0, 0];
         if (G.money - g.upCost(t) < floor) return;
         const need = g.pendingChoice(t);
-        const axis = need === "skill" ? ((strategy.skills || {})[t.kind] || []).find(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)) : null;
+        const axis = need === "skill" ? (strategy.skills && strategy.skills[t.kind] ? strategy.skills[t.kind].find(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)) : adaptAxis(t)) : null;
         const had = { ...(t.skills || {}) };
         if (g.upgrade(t, axis || (need === "path" ? p : f))) S.buys.push({ w: G.wave, k: t.kind, id: t.id, a: Object.keys(t.skills || {}).find(x => (t.skills[x] || 0) > (had[x] || 0)) || "lvl", to: (t.skills || {})[Object.keys(t.skills || {}).find(x => (t.skills[x] || 0) > (had[x] || 0))] }); // the purchase log (buildlog.mjs)
         S.used[t.kind] = 1; next = null; S.buysLeft--; continue;
