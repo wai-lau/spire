@@ -173,7 +173,7 @@ function updateAutoWait() {
   const btn = $("asp-autowait"), html = (autoWait ? ICON_CHECKED : ICON_UNCHECKED) + "<span>auto-wait</span>"; // the box bigger than the words (owner)
   if (btn.dataset.html !== html) { btn.dataset.html = html; btn.innerHTML = html; btn.setAttribute("aria-checked", String(autoWait)); }
   btn.classList.toggle("on", autoWaiting()); // lit while it is holding the game at 1/2x
-  const mv = $("asp-automove"), mh = (autoMove ? ICON_CHECKED : ICON_UNCHECKED) + "<span>" + (mv.dataset.armed ? "tap again" : "auto-move") + "</span>" +
+  const mv = $("asp-automove"), mh = (autoMove ? ICON_CHECKED : ICON_UNCHECKED) + "<span>" + (mv.dataset.armed ? "NO LEADERBOARD (tap again to confirm)" : "auto-move") /* (owner, 2026-10-17; was "tap again") */ + "</span>" +
     (autoBarred() || mv.dataset.armed ? '<span class="asp-amt">(DQ)</span>' : ""); // used this game: (DQ) beside it; armed: what a second tap costs (owner, 2026-10-13)
   mv.hidden = !best.ascended; // ASCENDANTS only (owner, 2026-10-13: "non-ascendants do not get that checkbox")
   if (mv.dataset.html !== mh) { mv.dataset.html = mh; mv.innerHTML = mh; mv.setAttribute("aria-checked", String(autoMove)); }
