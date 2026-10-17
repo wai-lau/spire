@@ -104,7 +104,7 @@ function drawEnemy(e, solid) {
   if (e.shield > 0 || e.shSegs) {
     e.shSegs = syncSegs(e.shSegs || [], shieldShown(e, d.sides), d.sides);
     ctx.lineWidth = 1.4;
-    if (!solid) drawSegs(e.x, e.y, e.shSegs, d.sides, e.rot, size, 2.5); // (3D: walls round the die, aspira-walls.js) // layers tight (owner: much thinner gap; was 5)
+    if (!solid) drawSegs(e.x, e.y, e.shSegs, d.sides, e.rot, size + SHIELD_OUT, 2.5); // (3D: walls round the die, aspira-walls.js) // layers tight (owner: much thinner gap; was 5)
   }
   ctx.globalAlpha = 1;
   if (e.charged || e.charge) { // ARC's Static charge: a border in ARC's colour just outside the outline (owner) - ONE PER CHARGE held (Capacitance, 2026-10-08)
@@ -216,6 +216,7 @@ function drawBossEye(e, size) {
 // SHIELDS DRAWN ON AT MOST SHIELD_RINGS RINGS (owner, 2026-10-12: late shields grew a halo of 6+ rings and enemies looked
 // bigger every wave): past what those rings hold, each segment stands for a share of the charges and breaks as its share goes
 const SHIELD_RINGS = 2;
+const SHIELD_OUT = 20; // the shield rings sit this many u further out from the body (owner, 2026-10-17: "draw the shields about 20u further away from the shielded unit") - 2D and the 3D walls
 const shieldShown = (e, sides) => { const cap = sides * SHIELD_RINGS * (SHIELD_RINGS + 1) / 2, s = Math.max(0, e.shield); return (e.shieldMax || 0) > cap ? Math.ceil(s * cap / e.shieldMax) : s; };
 function syncSegs(segs, n, sides, flashes) {
   let have = segs.reduce((a, v) => a + (v ? 1 : 0), 0);

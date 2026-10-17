@@ -68,5 +68,5 @@ function coreWallPieces() {
 function enemyWallPieces(e) {
   if (!e.shSegs || e.dead) return [];
   const d = ENEMIES[e.type];
-  return segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, solidSize(e), 2.5);
+  return segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, solidSize(e) + SHIELD_OUT, 2.5); // SHIELD_OUT: aspira-enemies.js
 }
