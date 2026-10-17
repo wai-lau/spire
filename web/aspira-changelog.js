@@ -82,7 +82,7 @@ const CHANGELOG = [
     "A tower's upgrade card now opens only from its home slot (its origin), not by tapping the tower itself.",
     "Gravity: black holes give off half as many radiation pellets, each hitting twice as hard.",
     "Gravity: the nova's ring is much thinner and grows brighter and whiter as it collapses into the centre.",
-    "Carrier: under Orbital Relay it launches 3 interceptors at a time instead of 1.",
+    "Orbital Relay: a relayed tower now acts as five, not three (and a relayed Carrier launches 5 interceptors at a time).",
     "Carrier: Launch is replaced by TETHER - once an interceptor fires at an enemy, a beam joins them that slows it and pulses damage (popping shields); more Tether, a stronger slow and pulse. Capstone (Anchor): the beam runs on to one more enemy nearby. Interceptors now fly and reload at a fixed pace, and the old pin slow needs Tether.",
     "Shields are drawn about 20 units further out from the enemy they protect.",
     "Damage numbers on a killing blow show the whole hit, not just the health that was left (Carrier, Acid pools, Gravity).",
