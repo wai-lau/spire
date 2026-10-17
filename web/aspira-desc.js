@@ -56,7 +56,7 @@ const DESCRIBE = {
   grv(sk) {
     const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0;
     return (n >= 6 ? "A hypernova that tears armor away" : "A nova") + " leaves a black hole" + (n >= 6 ? " twice as big as usual" : "") + ", its aura as big as the nova's hit. The aura " +
-      (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; the hole grows with every hit and nearby holes pull together and merge. It radiates " +
+      (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; its black centre burns whatever it touches, and the hole grows with the nova's hit and that burn. Nearby holes pull together and merge. It radiates " +
       (r >= 6 ? "pellets and bursts as it fades." : "pellets.");
   },
 };
