@@ -46,7 +46,7 @@ void main() {
 const WARP_FS = `
 precision mediump float;
 uniform sampler2D tex, dyn, fxt; /* dyn: the moving layer, premultiplied, over the board (aspira-warplayers.js); fxt: the hits over both (aspira-fxgl.js) */ uniform vec2 edge; uniform vec3 gridCol; uniform vec4 grid; // grid: ring, spoke angle, far, alpha
-uniform float towers, onBoard, op, neck, bgA, invR, fold; uniform vec3 bgCol, shape; // shape: the funnel's head rim, foot (world units), power // op: the whole bell SEMI-TRANSPARENT, nothing occluded (owner)
+uniform float towers, onBoard, op, neck, bgA, invR, fold, hskip; uniform vec3 bgCol, shape; // shape: the funnel's head rim, foot (world units), power // op: the whole bell SEMI-TRANSPARENT, nothing occluded (owner)
 varying vec2 uv; varying float sh, rr, th;
 float line(float d, float wd) { return 1.0 - smoothstep(wd * 0.5, wd * 1.5, d); }
 ${HULL_GLSL}
@@ -66,7 +66,7 @@ void main() {
   // up to the core (the spokes fade where they crowd it), half as strong over the head
   float gk = max(ring, spoke * smoothstep(20.0, 60.0, rr)) * grid.w * (0.5 + 0.5 * smoothstep(towers, towers + 30.0, rr)) * (1.0 - smoothstep(grid.z * 0.7, grid.z, rr));
   gk *= 1.0 - board * (1.0 - onBoard); // faint over the board itself: the lanes stay readable
-  vec4 dv = texture2D(dyn, uv), fv = texture2D(fxt, uv) * (1.0 - hullCover(gl_FragCoord.xy)); vec3 raw = (texture2D(tex, uv).rgb * (1.0 - dv.a) + dv.rgb) * (1.0 - fv.a) + fv.rgb;
+  vec4 dv = texture2D(dyn, uv), fv = texture2D(fxt, uv); if (hskip < 0.5 || fv.a + fv.r + fv.g + fv.b > 0.0) fv *= 1.0 - hullCover(gl_FragCoord.xy); /* the towers' outline test only where the effects layer has something (a loop of 36 edges a pixel otherwise) */ vec3 raw = (texture2D(tex, uv).rgb * (1.0 - dv.a) + dv.rgb) * (1.0 - fv.a) + fv.rgb;
   // a BOSS SKY inverts the board (white ground, dark ink): back to the plain palette here, or its white reads as ink
   // and the bell turns into a grey slab (owner, 2026-10-09)
   // only INSIDE the sky's circle round the core (invR, world units; the 2D view inverts exactly there): a guess by colour
@@ -217,7 +217,7 @@ function warpDraw() {
   gl.uniform2f(u("edge"), WARP.edge[0], WARP.edge[1]);
   gl.uniform3fv(u("gridCol"), warpGridRgb()); gl.uniform3fv(u("bgCol"), warpGridRgb("bg"));
   gl.uniform4f(u("grid"), WARP.grid.ring, Math.PI * 2 / WARP.grid.spokes, WARP.grid.far, WARP.grid.a);
-  gl.uniform1f(u("fold"), warp.noFold ? 0 : 1); gl.uniform1f(u("towers"), WARP_TOWERS); gl.uniform1f(u("onBoard"), WARP.grid.onBoard); gl.uniform1f(u("op"), WARP.alpha); gl.uniform1f(u("neck"), WARP.grid.neck); gl.uniform1f(u("bgA"), WARP.bgA); gl.uniform1f(u("invR"), -1); /* the picture is no longer drawn inverted in 3D (skyFlip): nothing to turn back */ gl.uniform3f(u("shape"), WARP_TOWERS, R0, WARP.pow);
+  gl.uniform1f(u("fold"), warp.noFold ? 0 : 1); gl.uniform1f(u("hskip"), warp.noHullSkip ? 0 : 1); gl.uniform1f(u("towers"), WARP_TOWERS); gl.uniform1f(u("onBoard"), WARP.grid.onBoard); gl.uniform1f(u("op"), WARP.alpha); gl.uniform1f(u("neck"), WARP.grid.neck); gl.uniform1f(u("bgA"), WARP.bgA); gl.uniform1f(u("invR"), -1); /* the picture is no longer drawn inverted in 3D (skyFlip): nothing to turn back */ gl.uniform3f(u("shape"), WARP_TOWERS, R0, WARP.pow);
   if (warp.attrProg !== pr) { warp.attrProg = pr; warp.attrLoc = gl.getAttribLocation(pr, "a"); }
   const loc = warp.attrLoc;
   gl.bindBuffer(gl.ARRAY_BUFFER, warp.buf);
