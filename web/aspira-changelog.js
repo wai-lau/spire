@@ -57,6 +57,7 @@ const CHANGELOG = [
     "Perf: the 3D bell shader skips grid and texture work where it cannot show.",
     "Perf: wave starts no longer hitch (the lane turns are worked out ahead of time).",
     "Perf: the first tower and the first boss sky no longer hitch (the game warms up its drawing at load).",
+    "Perf: on phones whose GPU stalls on uploads, the board is re-sent a third as often (new lanes light up at once there instead of fading in).",
     "If the game runs slowly it now drops straight from 3D to low quality (it used to pass through high).",
     "Gravity: black holes evaporate 2.5x as fast (by their real size, so a big merged hole no longer lingers), and the tower fires faster with bigger auras to make up for it.",
     "Gravity: black holes drift together and merge only when their centres meet, not as soon as they touch.",
