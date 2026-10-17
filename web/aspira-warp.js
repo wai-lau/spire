@@ -53,6 +53,7 @@ ${HULL_GLSL}
 void main() {
   vec2 inUv = step(vec2(0.0), uv) * step(uv, vec2(1.0));
   float board = inUv.x * inUv.y * (1.0 - smoothstep(edge.x, edge.y, rr));
+  float gk = 0.0, fade = 1.0 - smoothstep(grid.z * 0.7, grid.z, rr); if (fade > 0.0) { /* past the grid's far rim there is none: its maths is skipped (perf) */
   float wd = 0.8 + rr * 0.0025;
   float out2 = 1.0 + step(edge.y, rr), rs = grid.x * out2, as = grid.y * out2; // half as many lines outside the board
   float ring = line(abs(fract(rr / rs + 0.5) - 0.5) * rs, wd);
@@ -64,15 +65,14 @@ void main() {
   if (neck > 0.0 && rr < shape.x) ring = line(abs(fract(rr / hs + 0.5) - 0.5) * hs, wd);
   float spoke = line(abs(fract(th / as + 0.5) - 0.5) * as * rr, wd);
   // up to the core (the spokes fade where they crowd it), half as strong over the head
-  float gk = max(ring, spoke * smoothstep(20.0, 60.0, rr)) * grid.w * (0.5 + 0.5 * smoothstep(towers, towers + 30.0, rr)) * (1.0 - smoothstep(grid.z * 0.7, grid.z, rr));
+  gk = max(ring, spoke * smoothstep(20.0, 60.0, rr)) * grid.w * (0.5 + 0.5 * smoothstep(towers, towers + 30.0, rr)) * fade; }
   gk *= 1.0 - board * (1.0 - onBoard); // faint over the board itself: the lanes stay readable
+  vec3 col = vec3(0.0); if (board > 0.0) { /* the three layers are read only where the board is (elsewhere col is 0 whatever they hold - perf) */
   vec4 dv = texture2D(dyn, uv), fv = texture2D(fxt, uv); if (hskip < 0.5 || fv.a + fv.r + fv.g + fv.b > 0.0) fv *= 1.0 - hullCover(gl_FragCoord.xy); /* the towers' outline test only where the effects layer has something (a loop of 36 edges a pixel otherwise) */ vec3 raw = (texture2D(tex, uv).rgb * (1.0 - dv.a) + dv.rgb) * (1.0 - fv.a) + fv.rgb;
-  // a BOSS SKY inverts the board (white ground, dark ink): back to the plain palette here, or its white reads as ink
-  // and the bell turns into a grey slab (owner, 2026-10-09)
-  // only INSIDE the sky's circle round the core (invR, world units; the 2D view inverts exactly there): a guess by colour
-  // flipped every white beam and orange ring
+  // a BOSS SKY inverts the board (white ground, dark ink): back to the plain palette here, or its white reads as ink and the bell turns into a grey
+  // slab (owner, 2026-10-09) - only INSIDE the sky's circle round the core (invR, world units; the 2D view inverts exactly there): a guess by colour flipped every white beam and orange ring
   if (rr < invR) raw = 1.0 - raw;
-  vec3 col = raw * sh * board;
+  col = raw * sh * board; }
   vec3 ink = max(col - bgCol * sh * board, 0.0); // what is DRAWN on the board, over its background
   float lit = clamp(max(max(ink.r, ink.g), ink.b) * 3.0, 0.0, 1.0); // the background itself is see-through: seen from above, the wall stacks a hundred layers of it over the top
   float A = max(lit, bgA * board); // the board's background TRANSLUCENT, not clear (owner): it dims what lies behind it
