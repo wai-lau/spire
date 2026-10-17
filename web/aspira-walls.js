@@ -34,7 +34,7 @@ function warpShieldLines(pieces, col, a0, at) {
   const byRing = new Map();
   for (const p of pieces) (byRing.get(p.r) || byRing.set(p.r, []).get(p.r)).push(p);
   for (const [r, ps] of byRing) {
-    ctx.globalAlpha = a0 * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (r - 1)); ctx.beginPath();
+    ctx.globalAlpha = a0 * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (r - 1)); ctx.lineWidth = (ps[0].thick ? SHIELD_LAST_W : 1) * 1.4 * cam.k; ctx.beginPath(); /* thick: an enemy's last layer */
     for (const p of ps) { const A = pt(p.a[0], p.a[1]), B = pt(p.b[0], p.b[1]); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); }
     ctx.stroke();
   }
@@ -68,5 +68,8 @@ function coreWallPieces() {
 function enemyWallPieces(e) {
   if (!e.shSegs || e.dead) return [];
   const d = ENEMIES[e.type];
-  return segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, solidSize(e) + SHIELD_OUT, 2.5); // SHIELD_OUT: aspira-enemies.js
+  const ps = segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, solidSize(e) + SHIELD_OUT, 2.5).filter(p => p.r !== 1); // SHIELD_OUT: aspira-enemies.js
+  const k = e.shSegs.slice(0, d.sides).filter(Boolean).length; // the LAST layer: a regular k-gon, thick (shieldPoly, aspira-enemies.js)
+  if (k) { const c = shieldPoly(e.x, e.y, (solidSize(e) + SHIELD_OUT + 2.5) * shieldPulse(), k, d.sides, e.rot), m = k >= 3 ? c.length : 1; for (let i = 0; i < m; i++) ps.push({ a: c[i], b: c[(i + 1) % c.length], r: 1, thick: true }); }
+  return ps;
 }

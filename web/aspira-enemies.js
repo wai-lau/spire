@@ -102,9 +102,9 @@ function drawEnemy(e, solid) {
   }
   // shield = SEGMENTS (owner): one per charge, on rings of its own shape
   if (e.shield > 0 || e.shSegs) {
-    e.shSegs = syncSegs(e.shSegs || [], shieldShown(e, d.sides), d.sides);
+    e.shSegs = syncSegs(e.shSegs || [], shieldShown(e, d.sides), d.sides, undefined, true);
     ctx.lineWidth = 1.4;
-    if (!solid) drawSegs(e.x, e.y, e.shSegs, d.sides, e.rot, size + SHIELD_OUT, 2.5); // (3D: walls round the die, aspira-walls.js) // layers tight (owner: much thinner gap; was 5)
+    if (!solid) drawSegs(e.x, e.y, e.shSegs, d.sides, e.rot, size + SHIELD_OUT, 2.5, undefined, true); // (3D: walls round the die, aspira-walls.js) // layers tight (owner: much thinner gap; was 5)
   }
   ctx.globalAlpha = 1;
   if (e.charged || e.charge) { // ARC's Static charge: a border in ARC's colour just outside the outline (owner) - ONE PER CHARGE held (Capacitance, 2026-10-08)
@@ -218,10 +218,11 @@ function drawBossEye(e, size) {
 const SHIELD_RINGS = 2;
 const SHIELD_OUT = 20; // the shield rings sit this many u further out from the body (owner, 2026-10-17: "draw the shields about 20u further away from the shielded unit") - 2D and the 3D walls
 const shieldShown = (e, sides) => { const cap = sides * SHIELD_RINGS * (SHIELD_RINGS + 1) / 2, s = Math.max(0, e.shield); return (e.shieldMax || 0) > cap ? Math.ceil(s * cap / e.shieldMax) : s; };
-function syncSegs(segs, n, sides, flashes) {
+function syncSegs(segs, n, sides, flashes, keepInner) {
   let have = segs.reduce((a, v) => a + (v ? 1 : 0), 0);
   while (have > n) {
-    const live = []; segs.forEach((v, i) => { if (v) live.push(i); });
+    let live = []; segs.forEach((v, i) => { if (v) live.push(i); });
+    if (keepInner) { const outer = live.filter(i => i >= sides); if (outer.length) live = outer; } // an ENEMY's LAST layer (ring 1) breaks only once nothing else is left (owner, 2026-10-17)
     const i = live[Math.floor(Math.random() * live.length)];
     segs[i] = false; have--;
     if (flashes) flashes.push({ i, t: performance.now() / 1000 });
@@ -243,10 +244,19 @@ function ringOf(i, sides) {
   while (ringStart(r + 1, sides) <= i) r++;
   return { r, pos: i - ringStart(r, sides) };
 }
+// an enemy shield's LAST layer (owner, 2026-10-17: "for the last outline of shield rendering ... it should become an (n-1)gon instead of
+// an ngon with 1 missing side"; "make the last layer thicker than the rest"): k chips left of its n draw a regular k-gon (k >= 3; 2 a bar,
+// 1 a short one) at its radius, SHIELD_LAST_W x the line - shieldPoly gives the corners
+const SHIELD_LAST_W = 2;
+function shieldPoly(x, y, r, k, n, rot) {
+  if (k >= 3) return Array.from({ length: k }, (_, i) => { const a = rot + i * Math.PI * 2 / k; return [x + Math.cos(a) * r, y + Math.sin(a) * r]; });
+  const a = rot, L = k === 2 ? r : r * 0.5; // (2: a bar across; 1: a shorter one)
+  return [[x + Math.cos(a) * L, y + Math.sin(a) * L], [x - Math.cos(a) * L, y - Math.sin(a) * L]];
+}
 const shieldPulse = () => 1 + 0.04 * Math.sin(performance.now() / 300); // the core's own breath
 // ring r (0 = inner) has radius base + gap * (r + 1); slot i is side i % sides of ring floor(i / sides)
 const SHIELD_RING_FADE = 0.7, SHIELD_RING_MIN = 0.2;
-function drawSegs(x, y, segs, sides, rot, base, gap, flashes) {
+function drawSegs(x, y, segs, sides, rot, base, gap, flashes, lastRing) {
   const k = shieldPulse();
   const side = i => {
     const { r: ring, pos } = ringOf(i, sides), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
@@ -262,6 +272,11 @@ function drawSegs(x, y, segs, sides, rot, base, gap, flashes) {
   segs.forEach((on, i) => { if (on) { const r = ringOf(i, sides).r; (byRing.get(r) || byRing.set(r, []).get(r)).push(i); } });
   for (const [r, ids] of byRing) {
     ctx.globalAlpha = a0 * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (r - 1));
+    if (lastRing && r === 1) { // an ENEMY's LAST layer: THICKER, and as it thins a smaller REGULAR polygon, never a gap (shieldPoly)
+      const lw = ctx.lineWidth; ctx.lineWidth = lw * SHIELD_LAST_W; ctx.beginPath();
+      shieldPoly(x, y, (base + gap) * k, ids.length, sides, rot).forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+      ctx.closePath(); ctx.stroke(); ctx.lineWidth = lw; continue;
+    }
     ctx.beginPath(); ids.forEach(side); ctx.stroke();
   }
   ctx.globalAlpha = a0;
