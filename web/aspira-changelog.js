@@ -55,6 +55,7 @@ const CHANGELOG = [
     "Gravity: black holes evaporate 2.5x as fast (by their real size, so a big merged hole no longer lingers), and the tower fires faster with bigger auras to make up for it.",
     "Gravity: black holes drift together and merge only when their centres meet, not as soon as they touch.",
     "Gravity: a black hole can grow three times bigger on screen.",
+    "Gravity: a black hole always dies - it feeds on the damage it deals less and less over about 6 seconds, and merging no longer stacks how big it can feed to.",
     "Orbital Relay: its hexagon sits just outside the tower's base, so it shows (it was hidden under the tower).",
     "Bosses feel heavier: every boss and its fleet move at half speed with twice the health.",
     "Damage numbers use each tower's build-card text colour (paler for Gravity and Carrier), with a black outline - Freeze's chill and Acid's pools too.",

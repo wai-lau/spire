@@ -87,7 +87,8 @@ function grvHit(sp, t, st, e, amt, opt) {
   const hp0 = e.hp;
   damage(e, amt, t, false, false, opt);
   const dealt = Math.max(0, hp0 - Math.max(0, e.hp));
-  if (dealt > 0) sp.mass = Math.min(sp.cap || GRV_MASS_MAX, sp.mass + GRV_GAIN * dealt / Math.max(1e-6, st.dmg));
+  const cap = sp.cap || GRV_MASS_MAX, feed = Math.max(0, 1 - (sp.feedAge || 0) / GRV_FEED_S); // FEEDING FADES over its life (below)
+  if (dealt > 0 && sp.mass < cap) sp.mass = Math.min(cap, sp.mass + GRV_GAIN * feed * dealt / Math.max(1e-6, st.dmg));
   return dealt;
 }
 function stepGrv(t, dt) {
@@ -130,19 +131,24 @@ function grvPull(t, st, dt) {
     a.x += (a.vx || 0) * dt; a.y += (a.vy || 0) * dt;
   }
 }
+// A HOLE ALWAYS DIES (owner, 2026-10-16: "this bh seems to just stay on screen forever emitting crazy rads"): fed by the damage it
+// deals, a big merged hole in a thick wave gained as fast as it evaporated - and its radiation follows its mass. Its feeding now
+// fades to nothing over GRV_FEED_S s of its life (a merge keeps the OLDER clock), and a merge no longer adds the two caps
+const GRV_FEED_S = 6;
 function grvMerge(big, small) {
   const m = big.mass + small.mass, w = small.mass / Math.max(1e-6, m);
   big.x += (small.x - big.x) * w; big.y += (small.y - big.y) * w; // to the pair's centre of mass, momentum kept
   big.vx = (big.vx || 0) * (1 - w) + (small.vx || 0) * w; big.vy = (big.vy || 0) * (1 - w) + (small.vy || 0) * w;
   const area = big.apm * big.mass + small.apm * small.mass; // the AREAS add (each is its area-per-mass x its mass)
   big.mergeFrom = big.ar; big.mergeAt = big.age;
-  big.mass = m; big.apm = area / Math.max(1e-6, m); big.cap = (big.cap || GRV_MASS_MAX) + (small.cap || GRV_MASS_MAX);
+  big.mass = m; big.apm = area / Math.max(1e-6, m); big.cap = Math.max(big.cap || GRV_MASS_MAX, small.cap || GRV_MASS_MAX); big.feedAge = Math.max(big.feedAge || 0, small.feedAge || 0);
   big.novaDealt = (big.novaDealt || 0) + (small.novaDealt || 0);
   small.merged = true; small.mass = 0;
   if (typeof sfx === "function") sfx("grvaura");
 }
 function stepSphere(sp, t, st, dt) {
   if (sp.merged) return; // taken in by a bigger one (grvPull): no Hawking burst, nothing
+  sp.feedAge = (sp.feedAge || 0) + dt;
   sp.age += dt;
   if (!sp.auraSnd && sp.age >= GRV_NOVA_END) { sp.auraSnd = true; sfx("grvaura"); sp.apm = grvAuraBase(sp, st) ** 2 / Math.max(1e-6, sp.mass); } // its AREA per mass, fixed as it opens // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
   // the NOVA: the yellow front sweeps out; each enemy it reaches takes the hit once
