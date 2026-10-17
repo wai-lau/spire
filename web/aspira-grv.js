@@ -133,7 +133,7 @@ function grvPull(t, st, dt) {
 // A HOLE ALWAYS DIES (owner, 2026-10-16: "this bh seems to just stay on screen forever emitting crazy rads" ... "the evaporation
 // should be exponential with size"): fed by the damage it deals, a big merged hole in a thick wave gained as fast as it lost; its
 // evaporation now grows EXPONENTIALLY with its size (stepSphere), so a giant burns off whatever it eats
-const GRV_EVAP_EXP = 0.25; // evaporation x e^(0.25 (R - 1)) for a hole R base auras across: R 3 ~x1.6, R 5 ~x2.7, R 9 ~x7.4 its old pace
+const GRV_EVAP_EXP = 0.5; /* steeper (owner, 2026-10-16; was 0.25) */ // evaporation x e^(0.5 (R - 1)) for a hole R base auras across: R 3 ~x2.7, R 5 ~x7.4, R 9 ~x55 its old pace
 function grvMerge(big, small) {
   const m = big.mass + small.mass, w = small.mass / Math.max(1e-6, m);
   big.x += (small.x - big.x) * w; big.y += (small.y - big.y) * w; // to the pair's centre of mass, momentum kept
@@ -280,14 +280,11 @@ function mixRgb(a, b, f) {
   return "rgb(" + [0, 1, 2].map(i => Math.round(A[i] + (B[i] - A[i]) * f)).join(", ") + ")";
 }
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
-// a sphere's numbers are ORDINARY damage numbers (owner, 2026-10-16: "they should appear above the hole" ... "just use the same
-// sizing and fading mechanisms as the other damage numbers"): dmgNumber's size and fade, placed just above the black centre and
-// rising off it - clear of the disk, so the centre (drawn over the numbers) never hides them
-const GRV_NUM_GAP = 9;
-const GRV_AURA_A = 0.3; // the aura band's peak, mid-radius (owner: "clear, 30%, clear")
+// a sphere's numbers are ORDINARY damage numbers, FLYING OFF THE ENEMY hit, away from the hole (owner, 2026-10-16: "damage
+// numbers coming from rads should be shown flying off of the enemy (all damage numbers should) instead of coming out of the bh")
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
-  dmgNumber({ x: sp.x, y: sp.y - (sp.coreR || 0) - GRV_NUM_GAP + 14 }, String(dmgUnits(amt)), amt, dmgInk("grv"), sp); /* +14: dmgNumber sets it 14 up */
+  dmgNumber(e, String(dmgUnits(amt)), amt, dmgInk("grv"), sp);
 }
 
 // ---------- the look: yellow front, the aura's gradient band, the black sphere, the inward numbers ----------
@@ -335,7 +332,6 @@ const grvCoreR = ar => GRV_CORE_PX * Math.log(1 + ar / GRV_CORE_A); // the black
 function drawGrvCore(sp, st, pass) {
   if (sp.age < GRV_NOVA_END) return; // (the nova first - the centre appears once it is gone)
   const r = grvCoreR(grvAuraNow(sp, st)); // LOGARITHMIC in its aura (owner, 2026-10-16: "make the center sphere of a bh increase logarithmically visually instead of linearly"; was 0.16 x the aura + 2 root mass); shrinks with its mass, to nothing
-  sp.coreR = r; // (its numbers rise from just above it - grvFloat)
   if (r < 0.3) return;
   ctx.globalAlpha = 1; ctx.beginPath();
   if (pass === 0) { ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.arc(sp.x, sp.y, r + Math.min(2, r), 0, 6.283); ctx.stroke(); }
