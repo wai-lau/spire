@@ -8,6 +8,7 @@
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const GRV_AURA_R = [85, 98, 110, 124, 136, 153]; /* x1.25 with the faster evaporation (owner, 2026-10-16: "raise bh fire rate and bh size to compensate"; was 68 .. 122) */ // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
+const GRV_STRIP_MUL = [1, 1, 1, 1, 1, 1]; /* Void: the aura's armor strip, x by tier (late tiers steepened, 2026-10-16) */
 const GRV_SLOW = [0.12, 0.15, 0.18, 0.21, 0.24, 0.27]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
 const GRV_NOVA_R = [71, 85, 99, 112, 126, 139]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
 const GRV_NOVA_MUL = [2, 2.6, 3.2, 4, 4.8, 5.6]; /* x2 (owner, 2026-10-16: "double the nova damage"; was [1, 1.3, 1.6, 2, 2.4, 2.8]) */ // Supernova: the nova's hit, x the tower's damage
@@ -40,7 +41,7 @@ const grvNovaR = (sp, st) => st.novaR * (1 - Math.min(1, sp.age / GRV_FRONT_T) *
 const GRV_PELLET_REACH = 1.4, GRV_PELLET_V = 320, GRV_PELLET_HIT = 3; // a pellet flies this x the aura's radius, at V a second; touches an enemy within its size + HIT
 const GRV_PEL_ST = { noNum: true }; // a pellet hit: its flash, but its number goes to grvFloat (into the hole)
 const GRV_AURA_ST = { noFx: true, noNum: true }; /* noNum: its number is grvFloat's alone (it showed twice once grvFloat became a plain dmgNumber) */
-const GRV_INNER_K = 3, GRV_INNER_ST = { noFx: true }; // the INNER AURA's damage a second, x the tower's damage x mass (owner, 2026-10-16: "the inner aura should do damage and feed the bh"); a hit there shows its own number // a nova hit: no flash, no number (its numbers drift INWARD - grvFloat)
+const GRV_INNER_K = 6 /* x2 (owner, 2026-10-16: "seems too small?"; was 3) */, GRV_INNER_SHOW = 1, GRV_INNER_ST = { noFx: true, noNum: true }; // SHOW: its burn's number once a second an enemy, the sum (the FRZ aura's treatment - owner: "so it doesn't emit as many numbers") // the INNER AURA's damage a second, x the tower's damage x mass (owner, 2026-10-16: "the inner aura should do damage and feed the bh"); a hit there shows its own number // a nova hit: no flash, no number (its numbers drift INWARD - grvFloat)
 
 SKILL_TREES.grv = [
   { id: "void", name: "Void", tiers: [{ name: "Well" }, { name: "Sink" }, { name: "Abyss" }, { name: "Maw" }, { name: "Void" }] },
@@ -52,7 +53,7 @@ SKILL_MOVE.grv = { void: [[1, 1], [1.02, 1], [1.04, 1], [1.06, 1], [1.08, 1], [1
 function grvSkillStats(t, s, b) {
   const v = skillOf(t, "void"), n = skillOf(t, "supernova"), r = skillOf(t, "radiation");
   s.dmg = b.dmg; s.range = b.range * RANGE_BONUS; s.rate = b.rate; s.targets = 1;
-  s.auraR = GRV_AURA_R[v]; s.slow = GRV_SLOW[v]; s.horizon = v >= CAPSTONE_TIER;
+  s.auraR = GRV_AURA_R[v]; s.slow = GRV_SLOW[v]; s.stripMul = GRV_STRIP_MUL[v]; s.horizon = v >= CAPSTONE_TIER;
   s.novaR = GRV_NOVA_R[n]; s.novaMul = GRV_NOVA_MUL[n]; s.hyper = n >= CAPSTONE_TIER;
   s.pellets = GRV_PELLETS[r]; s.pelletK = GRV_PELLET_K[r]; s.hawking = r >= CAPSTONE_TIER; s.skill = true;
 }
@@ -91,11 +92,19 @@ function grvHit(sp, t, st, e, amt, opt) {
   if (dealt > 0) sp.mass = Math.min(sp.cap || GRV_MASS_MAX, sp.mass + GRV_GAIN * dealt / Math.max(1e-6, st.dmg));
   return dealt;
 }
+// the burn's numbers: each enemy's sum, once GRV_INNER_SHOW s, or as soon as it leaves the centre or dies (sp.burn)
+function grvBurnNums(sp, dt) {
+  if (!sp.burn || !sp.burn.size) return;
+  sp.burnT = (sp.burnT || 0) + dt;
+  const all = sp.burnT >= GRV_INNER_SHOW || sp.mass <= 0 || sp.merged, r = grvCoreR(sp.ar || 0); // (a hole going: its last sums out)
+  for (const [e, d] of sp.burn) if (all || e.dead || (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2 > r * r) { grvFloat(sp, e, d); sp.burn.delete(e); }
+  if (all) sp.burnT = 0;
+}
 function stepGrv(t, dt) {
   const st = towerStats(t);
   stepPellets(t, st, dt);
   if (!t.spheres || !t.spheres.length) return;
-  for (const sp of t.spheres) stepSphere(sp, t, st, dt);
+  for (const sp of t.spheres) { stepSphere(sp, t, st, dt); grvBurnNums(sp, dt); }
   grvPull(t, st, dt);
   t.spheres = t.spheres.filter(sp => sp.mass > 0 && !sp.merged);
 }
@@ -176,9 +185,9 @@ function stepSphere(sp, t, st, dt) {
     for (const e of G.enemies) {
       const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
       if (e.dead || d2 > ar * ar) continue;
-      if (e.armor > 0) e.armor -= Math.min(e.armor, st.dmg * GRV_AURA_K * k * GRV_TICK * GRV_STRIP * (GRV_STRIP_IN - (GRV_STRIP_IN - GRV_STRIP_OUT) * Math.sqrt(d2) / Math.max(1, ar))); // MORE the closer (owner, 2026-10-16: "The aura strip armor and slows more the closer they are"): x1.5 at the centre to x0.5 at the edge
+      if (e.armor > 0) e.armor -= Math.min(e.armor, st.dmg * GRV_AURA_K * (st.stripMul || 1) * k * GRV_TICK * GRV_STRIP * (GRV_STRIP_IN - (GRV_STRIP_IN - GRV_STRIP_OUT) * Math.sqrt(d2) / Math.max(1, ar))); // MORE the closer (owner, 2026-10-16: "The aura strip armor and slows more the closer they are"): x1.5 at the centre to x0.5 at the edge
       const inIn = d2 <= inner * inner, slow = inIn ? core : outer;
-      if (inIn && sp.age >= GRV_NOVA_END) { grvHit(sp, t, st, e, st.dmg * GRV_INNER_K * k * GRV_TICK, GRV_INNER_ST); if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit)
+      if (inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.dmg * GRV_INNER_K * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + d); if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy NOT doubled like other slows - GRV is weak to fast
       applySlow(e, e.type === "fast" ? slow / FAST_SLOW_MUL : slow, GRV_TICK * 1.5, "grv:" + t.id);
     }
