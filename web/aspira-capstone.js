@@ -51,8 +51,8 @@ const CAPSTONE_NUM = [
   [FRZ_TEMP_SLOW, 0.75], [FRZ_TEMP_TICK, 0.0333], [FRZ_BRITTLE, 50], [FRZ_RIME, 0.9], [FRZ_RIME_PERIOD, 0.35] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 1.2],
   [FRZ_MOON_COUNT, 4], [FRZ_MOON_BY, 1], [FRZ_SUBMOON_N, 4],
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
-  [SOL_BEAMS, 8], [SOL_FOCUS_DMG, 1.3], [SOL_SHIELD_POP, 8], [SOL_REFRACTION, Infinity], [SOL_REFRACTION_DMG, 4],
-  [SOL_CONE_BY, 40], [SOL_HOP, 1], [SOL_CRITMUL, 12], [SOL_BREACH_ARMOR, 1500], [SOL_REFRACT_POP, 4], [SOL_BREACH_CRIT, 0],
+  [SOL_BEAMS, 12], [SOL_FOCUS_DMG, 1.3], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, Infinity], [SOL_REFRACTION_DMG, 4],
+  [SOL_CONE_BY, 40], [SOL_HOP, 1], [SOL_CRITMUL, 12], [SOL_BREACH_ARMOR, 1500], [SOL_REFRACT_POP, 0], [SOL_BREACH_CRIT, 0],
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
   [ACD_CORROSION_DMG, 36], [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9], [ACD_FLOW_SLOW, 0.2], [ACD_SPRAY_MUL, 36],
   [ACD_CONTAGION, { every: 1, life: 40, r: 150 }], [ACD_PUDDLE_HEAT, 7.2],
@@ -104,6 +104,6 @@ for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tie
 ARC_KEEP.push("over one and a half times") /* ARC_VOLTAGE_FALL VI 1.6 (read "twice" - 2026-10-14) */; ARC_RETURN.push("four times");
 ARC_CHARGES.push("six charges", "seven charges", "eight charges"); // indexed by the charge COUNT (ARC_CAPACITANCE[z].n)
 FRZ_MOONS.push(" Four moons copy it, each with four moonlets.");
-SOL_RAYS.push("Eight rays");
+SOL_RAYS.push("Twelve rays");
 SOL_REFRACT.push("refracting through every enemy in two opposite cones");
 ACD_JETS.push("Eleven");

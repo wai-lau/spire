@@ -12,7 +12,7 @@ const ARC_STRIKES = ["", "", "twin", "three", "four"]; // by STRIKE COUNT (ARC_C
 // hits, a colder or wider aura, faster pulses, a stronger acid, more or bigger puddles -
 // changes no words; the card's stat rows show that change (now -> next)
 const FRZ_MOONS = ["", " A moon copies it.", " Two moons copy it.", " Three moons copy it.", " Three moons copy it, each with a moonlet.", " Three moons copy it, each with three moonlets."];
-const SOL_RAYS = ["A ray", "Two rays", "Three rays", "Four rays", "Five rays", "Six rays"];
+const SOL_RAYS = ["A ray", "Two rays", "Three rays", "Four rays", "Five rays", "Eight rays"];
 const SOL_REFRACT = ["refracting on to one more enemy", "refracting on to three more enemies", "refracting on to six more enemies", "refracting on to ten more enemies", "refracting on to thirteen more enemies", "refracting through every enemy ahead"];
 const ACD_JETS = ["Two", "Three", "Four", "Six", "Seven", "Eight"]; // acidic terms, never heat (owner)
 const DESCRIBE = {

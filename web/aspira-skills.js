@@ -335,8 +335,8 @@ function skillHopTo(c, node, nxt, depth) {
 // Breach stacks per hit (owner: "each beam permanently weakens the target's armor" - Breach is what strips it; the base SOL strips nothing)
 // Refraction from the start (owner, 2026-10-08): one hop in a 40-degree cone at tier 0; every tier one more hop than before
 // (were 0 / 2 / 5 / 9 / 12 / 15); V has NO limit - every enemy ahead in the cone, then on out of sight (solRefraction)
-const SOL_SHIELD_POP = [1, 2, 3, 4, 5, 6] /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */, SOL_REFRACT_POP = [0, 1, 1, 2, 2, 3] /* Refraction breaks shields too (owner, 2026-10-12) */; // 2026-10-11: a concentrated beam punches through more than one shield
-const SOL_BEAMS = [1, 2, 3, 4, 5, 6], SOL_REFRACTION = [1, 3, 6, 10, 13, Infinity];
+const SOL_SHIELD_POP = [1, 1, 1, 1, 1, 1] /* one charge a beam, however deep the Focus (owner, 2026-10-16: "SOL should only pop based on the number of beams"); was 1 2 3 4 5 6, */ /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */, SOL_REFRACT_POP = [0, 0, 0, 0, 0, 0] /* a refracted ray pops nothing extra (owner, 2026-10-16); was 0 1 1 2 2 3 */ /* Refraction breaks shields too (owner, 2026-10-12) */; // 2026-10-11: a concentrated beam punches through more than one shield
+const SOL_BEAMS = [1, 2, 3, 4, 5, 8] /* V 6 -> 8, VI 8 -> 12 (a beam is the one shield charge it pops now: SOL_SHIELD_POP) */, SOL_REFRACTION = [1, 3, 6, 10, 13, Infinity];
 // BREACH IS SOL'S OWN, from the start (owner, 2026-10-08): every hit strips SOL_BREACH_ARMOR armor for good
 // (below zero too: a flat bonus on every later hit from every tower); the Breach axis massively
 // increases the strip and adds crit chance for every tower, SOL_BREACH_CRIT a hit (none at base)

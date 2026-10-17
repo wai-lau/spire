@@ -9,6 +9,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Sol: Focus fires 8 beams at the fourth purchase and 12 at the capstone (was 6 and 8).",
     "Acid: Corrosion, Spray and Contagion hit x9 harder at the fourth purchase and x36 at the capstone.",
     "Carrier: Armament hits x9 harder at the fourth purchase and x36 at the capstone; Hangar and Launch x3 and x6.",
     "Gravity: nova, pellets and armor strip x9 at the fourth purchase and x36 at the capstone.",
@@ -121,6 +122,7 @@ const CHANGELOG = [
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], ne: [
+    "Sol: each beam breaks one shield charge - no more extra from Focus or Refraction.",
     "Gravity: the aura deals no damage.",
     "Carrier: a shot is three bolts, each a third of its hit (armor cuts each).",
     "Carrier: less ammo a sortie (8, to 16 at Autopilot; was 12 to 28).",
