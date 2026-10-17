@@ -92,6 +92,17 @@ function carTarget(t, st) {
   for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg * CAR_VOLLEY_K); /* a volley is CAR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
   return cand.find(e => e.hp + (e.shield || 0) * st.dmg / 2 > (sent.get(e.id) || 0)) || null;
 }
+// A WAIT CUT SHORT (owner, 2026-10-16: "if a wave is spawned from the previous wave being completely cleared, ATC should spawn
+// interceptors (rounded down) based on the time that was cut short"): the cut seconds / the reload, rounded down, of the
+// interceptors still reloading at home are made ready at once - the ones nearest ready first
+function carCutShort(cut) {
+  for (const t of G.towers) {
+    if (t.kind !== "car" || !t.icp) continue;
+    const st = towerStats(t);
+    let k = Math.floor(cut / Math.max(0.01, st.reload));
+    for (const i of t.icp.filter(o => o.state === "home" && o.reload > 0).sort((a, b) => a.reload - b.reload)) { if (k-- <= 0) break; i.reload = 0; }
+  }
+}
 function stepCar(t, dt) {
   const st = towerStats(t);
   carWing(t, st);

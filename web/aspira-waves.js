@@ -131,6 +131,7 @@ const BOUNTY_BASE = 2, BOUNTY_SLOPE = 0.35, BOUNTY_KNEE = 30 /* (owner, 2026-10-
 const bountyBase = n => (BOUNTY_BASE + BOUNTY_SLOPE * Math.min(n, BOUNTY_KNEE) + BOUNTY_SLOPE_LATE * Math.max(0, n - BOUNTY_KNEE)) * (1 + (BOUNTY_EARLY - 1) * Math.min(1, Math.max(0, (BOUNTY_EARLY_TO - n) / 10))); // full to wave 20, easing off by 30 (no drop at 31)
 function sendWave() {
   if (G.over) return;
+  if (G.nextIn > 0 && waveClear() && typeof carCutShort === "function") carCutShort(G.nextIn); // a cleared field cut the wait short: ATC still gets that time's interceptors (aspira-car.js)
   // the payout is CAPPED at INTEREST_PER_WAVE x the wave being sent (owner, 2026-10-06, "late money is way
   // too much"): the core's 9 powers cost up to 20000, so a saver's 5-8% was out-earning the whole field
   const gain = Math.floor(G.money * G.interest); // NO CAP (owner, 2026-10-12: "no interest cap pls"; INTEREST_PER_WAVE x the wave until then)
