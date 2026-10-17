@@ -12,8 +12,8 @@ const CAR_HANGAR = [3, 5, 7, 11, 11, 13]; // interceptors: PRIMES by purchase (o
 // each axis ITS OWN job (owner, 2026-10-15: "make sure each axis for each tower feels unique"): Hangar WIDTH (more interceptors),
 // Launch TEMPO (faster there and back, a shorter reload - Warp: no flight at all), Armament DEPTH (a far harder hit, more of them)
 const CAR_SPEED = [1050, 1260, 1260, 1470, 1470, 2200]; /* x1.75 with the range 260 -> 460 (owner, 2026-10-16: "interceptor speed buff to make up for travel time"; was 600 .. 960) */ // Launch: an interceptor's speed (its reach is SKILL_MOVE) - x1.5 (owner, 2026-10-15: "increase launch speed")
-const CAR_RELOAD = [0.75, 0.55, 0.55, 0.4, 0.4, 0.275]; /* x0.5 with CAR_GAP 0.15 (2026-10-16) */ // Launch: s at home reloading (60% of a sortie was flying + reloading at wave 61)
-const CAR_AMMO = [4, 5, 5, 6, 6, 7]; /* halved, its bolts doubled into fewer, bigger VOLLEYS (CAR_VOLLEY_K, CAR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
+const CAR_RELOAD = [0.75, 0.55, 0.55, 0.4, 0.2709, 0.1417]; /* x0.5 with CAR_GAP 0.15 (2026-10-16) */ // Launch: s at home reloading (60% of a sortie was flying + reloading at wave 61)
+const CAR_AMMO = [4, 5, 5, 6, 6, 14]; /* halved, its bolts doubled into fewer, bigger VOLLEYS (CAR_VOLLEY_K, CAR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
 // ONE TARGET A VOLLEY (owner, 2026-10-16: "to make ATC worse vs swarms reduce ammo (number of volleys), increase bolts per volley to
 // match, then make it so that all bolts from a single volley need to target a single target, regardless of overkill, remaining bolts
 // just keep going for a little bit and may chance a hit on something else"; then "don't shoot unshot parts of a volley if the enemy dies" - the rest of
@@ -24,8 +24,8 @@ const CAR_VOLLEY_K = 2;
 // the shot's HIT is SPREAD across the axes like ARC's (owner, 2026-10-15: "spread out armament damage like arc"): Armament half of
 // it (log), Hangar and Launch a quarter each (CAR_SIDE_DMG). STEEPER than ARC's: on ARC's tables a mid build (III on every
 // axis) dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899 - ARC chains, and an interceptor spends ~40% flying and reloading
-const CAR_SHOT_MUL = [0.6, 2, 4.5, 7.5, 10, 112.5]; /* V x9, VI x36 (steeper late tiers) */ // Armament (VI 15)
-const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 13.8]; /* V x3, VI x6 (steeper late tiers) */ // Hangar's and Launch's share (VI 5.1)
+const CAR_SHOT_MUL = [0.6, 2, 4.5, 7.5, 145.7, 283.8]; /* V x9, VI x36 (steeper late tiers) */ // Armament (VI 15)
+const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 11.31, 19.22]; /* V x3, VI x6 (steeper late tiers) */ // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
 const CAR_PIN = 0.3; // the circled enemy's slow while an interceptor orbits it (2026-10-16, against ATC's fast leak: 0 16% of fast leaked, 0.3 11%, 0.5 14%; a longer bolt slow 11% but swarm 32%)
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed

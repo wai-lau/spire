@@ -9,6 +9,11 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Sol: Focus fires 14 beams at the third purchase and 21 at the capstone (was 8 and 12); Refraction, crits and Breach hit harder late.",
+    "Gravity: the nova fires 3 times as often at the third purchase and 4.6 times at the capstone; nova, pellets and armor strip hit harder late.",
+    "Carrier: interceptors reload faster and fire more volleys late (14 and 16 volleys, was 7 and 8); hits are stronger late.",
+    "Acid: Corrosion, Spray and pool burn hit harder late.",
+    "Freeze: Brittle x8 and x20, Temp ticks faster late.",
     "Gravity: the fourth purchase and the capstone reach further (aura 190 and 215, nova 185 and 230) and slow more (0.35 and 0.4).",
     "Carrier: interceptors fly faster at the fourth purchase and the capstone (2200 and 2600).",
     "Build cards: the check and x marks against each enemy type are refreshed (Gravity: better vs swarm, worse vs shield; Sol: worse vs shield).",
@@ -134,6 +139,7 @@ const CHANGELOG = [
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], ne: [
+    "Arc: late tiers trimmed - Voltage and the spread hit lower, Conductivity forks and strikes and Capacitance charges fewer at the capstone.",
     "Gravity: an untaken Gravity tower is weaker (aura 45, slow 0.04, nova x0.8, pellets 0.1, burn x3); first purchase aura 80, slow 0.10, nova x2.",
     "Carrier: an untaken Carrier launches 3 interceptors at x0.6 the hit (first purchase 5 at x2).",
     "Freeze: late tiers eased from the last version - Brittle 5.5 and 13.8, Rime 0.30 and 0.44, Temp tick 0.13 and 0.07 s, slow 0.53 and 0.67.",
