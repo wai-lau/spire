@@ -76,7 +76,12 @@
 .asp-wavelabel { font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: var(--tracking-wide); opacity: 0.6; }
 
 /* after a boss: "challenge <next boss>" starts the next wave (aspira-waves.js), UNDER THE CORE (placeChallenge, aspira-wavelist.js) */
-#asp #asp-challenge { position: absolute; z-index: var(--z-overlay); transform: translateX(-50%); white-space: nowrap; animation: asp-flash 2.4s ease-in-out infinite; }
+#asp #asp-challenge { position: absolute; z-index: var(--z-overlay); transform: translateX(-50%); white-space: nowrap; animation: asp-chal-flash 2.4s ease-in-out infinite; }
+/* its own pulse, never fading out (owner, 2026-10-17: "the challenge the X button should never fade to 0 opacity"; asp-flash dips to 0.3) */
+@keyframes asp-chal-flash {
+  0%, 100% { opacity: 1; filter: brightness(1.4) drop-shadow(0 0 var(--blur-sm) currentcolor); }
+  50% { opacity: 0.7; filter: none; }
+}
 #asp #asp-challenge[hidden] { display: none; }
 #asp .asp-wavenote > span.asp-wavesub { grid-column: 1 / -1; justify-content: flex-start; text-align: left; padding-top: var(--space-3); color: hsl(var(--green-hsl)); } /* "upcoming waves", under the live waves' box (aspira-wavelist.js) */
 

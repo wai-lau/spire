@@ -156,7 +156,7 @@ function updateWaveList() {
 const CHALLENGE_BELOW = 16; // world units under the life rings / the lowest slot
 // it shows CHALLENGE_DELAY s after the sky has turned back (owner, 2026-10-13: "challenge the X should only appear 2 seconds after
 // the inversion effect finishes"; bossInv.offAt, aspira-bosses.js)
-const CHALLENGE_DELAY = 2;
+const CHALLENGE_DELAY = 1; /* 1 s sooner (owner, 2026-10-17: "the initial fade in should happen 1s faster"; was 2) */
 function placeChallenge() {
   const btn = $("asp-challenge");
   if (btn.hidden) return;
