@@ -69,7 +69,9 @@ function warpLayersBind(gl, u) {
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, warp.dynTex);
   if (warp.dynUp !== false || warp.dynSize !== warp.dynCv.width) { // only when the canvas held something (warpRender)
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); // premultiplied, so its soft edges filter without a dark fringe
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.dynCv);
+    const dk = warp.dynCv.width + "x" + warp.dynCv.height; /* same size as the texture's storage: overwrite it, don't reallocate it (perf) */
+    if (warp.dynAlloc === dk && warp.dynTexOf === warp.dynTex) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, warp.dynCv);
+    else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.dynCv); warp.dynAlloc = dk; warp.dynTexOf = warp.dynTex; }
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); warp.dynSize = warp.dynCv.width;
   }
   gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, typeof fxGl !== "undefined" && fxGl.tex ? fxGl.tex : warp.dynTex); // the hits (aspira-fxgl.js)

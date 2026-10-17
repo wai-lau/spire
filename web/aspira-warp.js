@@ -202,7 +202,9 @@ function warpDraw() {
   gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // no depth: the far side shows through the near (owner: "should not occlude")
   gl.useProgram(pr);
-  const u = n => gl.getUniformLocation(pr, n);
+  /* the uniform spots looked up once a program, not ~32 times a frame (perf; a location is fixed for a linked program) */
+  if (warp.ulocProg !== pr) { warp.ulocProg = pr; warp.uloc = new Map(); }
+  const u = n => { let l = warp.uloc.get(n); if (l === undefined) { l = gl.getUniformLocation(pr, n); warp.uloc.set(n, l); } return l; };
   warpLayersBind(gl, u); // the board and the moving layer, each sent up only when redrawn (aspira-warplayers.js)
   gl.uniform2f(u("core"), p.core[0], p.core[1]); gl.uniform2f(u("size"), sc.w, sc.h); gl.uniform2f(u("texSize"), cv.width, cv.height);
   const tc = warp.texCam || cam, [shx, shy] = warp.shake || [0, 0]; gl.uniform3f(u("texCam"), tc.ox + CX * tc.k + shx, tc.oy + CY * tc.k + shy, tc.k); // (shake: the whole picture, both layers)
@@ -211,7 +213,8 @@ function warpDraw() {
   gl.uniform3fv(u("gridCol"), warpGridRgb()); gl.uniform3fv(u("bgCol"), warpGridRgb("bg"));
   gl.uniform4f(u("grid"), WARP.grid.ring, Math.PI * 2 / WARP.grid.spokes, WARP.grid.far, WARP.grid.a);
   gl.uniform1f(u("towers"), WARP_TOWERS); gl.uniform1f(u("onBoard"), WARP.grid.onBoard); gl.uniform1f(u("op"), WARP.alpha); gl.uniform1f(u("neck"), WARP.grid.neck); gl.uniform1f(u("bgA"), WARP.bgA); gl.uniform1f(u("invR"), -1); /* the picture is no longer drawn inverted in 3D (skyFlip): nothing to turn back */ gl.uniform3f(u("shape"), WARP_TOWERS, R0, WARP.pow);
-  const loc = gl.getAttribLocation(pr, "a");
+  if (warp.attrProg !== pr) { warp.attrProg = pr; warp.attrLoc = gl.getAttribLocation(pr, "a"); }
+  const loc = warp.attrLoc;
   gl.bindBuffer(gl.ARRAY_BUFFER, warp.buf);
   gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   gl.drawArrays(gl.TRIANGLES, 0, warp.n);
