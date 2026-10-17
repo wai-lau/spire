@@ -9,6 +9,8 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Gravity: the fourth purchase and the capstone reach further (aura 190 and 215, nova 185 and 230) and slow more (0.35 and 0.4).",
+    "Carrier: interceptors fly faster at the fourth purchase and the capstone (2200 and 2600).",
     "Build cards: the check and x marks against each enemy type are refreshed (Gravity: better vs swarm, worse vs shield; Sol: worse vs shield).",
     "Sol: Focus fires 8 beams at the fourth purchase and 12 at the capstone (was 6 and 8).",
     "Acid: Corrosion, Spray and Contagion hit x9 harder at the fourth purchase and x36 at the capstone.",
@@ -124,6 +126,9 @@ const CHANGELOG = [
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], ne: [
+    "Gravity: an untaken Gravity tower is weaker (aura 45, slow 0.04, nova x0.8, pellets 0.1, burn x3); first purchase aura 80, slow 0.10, nova x2.",
+    "Carrier: an untaken Carrier launches 3 interceptors at x0.6 the hit (first purchase 5 at x2).",
+    "Freeze: late tiers eased from the last version - Brittle 5.5 and 13.8, Rime 0.30 and 0.44, Temp tick 0.13 and 0.07 s, slow 0.53 and 0.67.",
     "Sol: each beam breaks one shield charge - no more extra from Focus or Refraction.",
     "Gravity: the aura deals no damage.",
     "Carrier: a shot is three bolts, each a third of its hit (armor cuts each).",

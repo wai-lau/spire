@@ -158,6 +158,7 @@ export function cellScores(g, kind) {
 //                                 point (absent, or all full = the lowest open axis, so builds spread evenly)
 //   upPrio: [kinds]               which kind's towers to upgrade FIRST (then the cheapest); absent = cheapest
 //   relayKind: kind               fire the Orbital Relay on the hottest tower of THIS kind (corepower.mjs)
+//   randomAxis: true              a point goes to a RANDOM open axis (the random player of the difficulty band)
 //   econ: "smart"                 the interest-aware saver (players.mjs, 2026-10-07): hold what earns the
 //                                 capped interest (INTEREST_PER_WAVE x (wave+1) / rate) and spend only the
 //                                 surplus - unless THREATENED (an enemy within `threat` of the core, a life
@@ -243,6 +244,8 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     }
     return best;
   };
+  // RANDOM AXIS (owner, 2026-10-17: the ceiling of the difficulty band is the random player): a point goes to a random open axis
+  const randomOpenAxis = t => { const open = g.run(`SKILL_TREES[${JSON.stringify(t.kind)}].map(a => a.id)`).filter(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)); return open.length ? open[Math.floor(rnd() * open.length)] : null; };
   // floor: what the player keeps in the bank (the reserve, or the smart saver's interest bank)
   const act = (floor = (strategy.reserve || 0) * g.G.wave) => {
     const G = g.G;
@@ -253,7 +256,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
         const t = next.up, [p, f] = (strategy.paths || {})[t.kind] || [0, 0];
         if (G.money - g.upCost(t) < floor) return;
         const need = g.pendingChoice(t);
-        const axis = need === "skill" ? (strategy.skills && strategy.skills[t.kind] ? strategy.skills[t.kind].find(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)) : adaptAxis(t)) : null;
+        const axis = need === "skill" ? (strategy.randomAxis ? randomOpenAxis(t) : strategy.skills && strategy.skills[t.kind] ? strategy.skills[t.kind].find(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)) : adaptAxis(t)) : null;
         const had = { ...(t.skills || {}) };
         if (g.upgrade(t, axis || (need === "path" ? p : f))) S.buys.push({ w: G.wave, k: t.kind, id: t.id, a: Object.keys(t.skills || {}).find(x => (t.skills[x] || 0) > (had[x] || 0)) || "lvl", to: (t.skills || {})[Object.keys(t.skills || {}).find(x => (t.skills[x] || 0) > (had[x] || 0))] }); // the purchase log (buildlog.mjs)
         S.used[t.kind] = 1; next = null; S.buysLeft--; continue;
