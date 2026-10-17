@@ -268,8 +268,9 @@ function drawCredits(part) {
 // nearest the wave's usual turn, so the waves still come round from new directions. Scores cached per lane, split and screen.
 // The simulator (no screen) keeps laneTurn
 const LANE_TURNS = 24, LANE_TURN_SLACK = 0.02, laneTurnCache = new Map();
+const laneTurnKey = (pi, k) => pi + "|" + k + "|" + innerWidth + "x" + innerHeight + "|" + (typeof q3d === "function" && q3d() ? 3 : 2);
 function laneTurnScores(pi, k) {
-  const pts = PATHS[pi].pts, key = pi + "|" + k + "|" + innerWidth + "x" + innerHeight + "|" + (typeof q3d === "function" && q3d() ? 3 : 2);
+  const pts = PATHS[pi].pts, key = laneTurnKey(pi, k);
   let sc = laneTurnCache.get(key);
   if (sc) return sc;
   sc = [];
@@ -285,6 +286,21 @@ function laneTurnScores(pi, k) {
   laneTurnCache.set(key, sc);
   return sc;
 }
+/* PRE-WARMED (perf, 2026-10-16: each of the first waves scored 3-6 new lane / split pairs on the spot, ~10 ms each - a 60 ms hitch as a wave starts; 12 lanes x 6 splits in all): once the 3D view is up, a quiet timer scores the missing pairs a few ms at a time (the same pure scores, only earlier; it re-checks after a resize) */
+(function laneTurnWarm() {
+  if (typeof setTimeout !== "function" || typeof document === "undefined" || (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS)) return;
+  const tick = () => {
+    if (typeof warp === "undefined" || !warp.p || document.hidden || typeof phoneInside !== "function") return setTimeout(tick, 1000); /* (warp: a later script's - looked up when the timer runs) */
+    const t0 = performance.now();
+    for (let pi = 0; pi < PATHS.length; pi++) for (let k = 1; k <= 6; k++) {
+      if (laneTurnCache.has(laneTurnKey(pi, k))) continue;
+      laneTurnScores(pi, k);
+      if (performance.now() - t0 > 4) return setTimeout(tick, 150);
+    }
+    setTimeout(tick, 2000);
+  };
+  setTimeout(tick, 2000);
+})();
 function laneBestTurn(pi, k, n) {
   const base = laneTurn(n);
   if ((typeof AUTO_POS !== "undefined" && AUTO_POS && !(typeof SIM_REAL_LANES !== "undefined" && SIM_REAL_LANES)) || typeof phoneInside !== "function" || !PATHS[pi]) return base; // (SIM_REAL_LANES: the simulator turns them as the game does - REAL_LANES=1)
