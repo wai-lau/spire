@@ -365,7 +365,6 @@ function drawPuddles(t) {
   const now = performance.now() / 1000;
   ctx.strokeStyle = ctx.fillStyle = COL.tacd; ctx.lineWidth = 1.2;
   drawPools(t, now);
-  if (lowQ) { for (const p of t.puddles || []) { ctx.globalAlpha = 0.5 * (1 - p.age / p.life); ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.6, 0, 6.283); ctx.stroke(); } ctx.globalAlpha = 1; return; } // low quality: one ring, no bubbles
   const n = (t.puddles || []).length, per = Math.min(q3d() ? 2 : PUDDLE_BUBBLES, n > POOL_LOD ? POOL_LOD * PUDDLE_BUBBLES / n : PUDDLE_BUBBLES); // bubbles a pool, on average (3D: 2 at most)
   (t.puddles || []).forEach((p, j) => {
     const I = puddleGlow(p), fade = Math.min(1, (1 - p.age / p.life) * I), seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);

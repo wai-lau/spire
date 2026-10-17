@@ -50,18 +50,12 @@ const env = boot();
 const { run } = env;
 check("boots: every script loads, the frame loop is queued", () => (env.dom.rafQueue() ? "" : "no requestAnimationFrame"));
 check("frame loop runs 60 frames", () => { frames(env, 60); });
-check("2D board draws (rings, lanes, core)", () => {
-  run('setQuality("high")');
+check("no WebGL: the frame loop falls back to the flat board once, and it draws (rings, lanes, core)", () => {
+  frames(env, 2);
+  if (run("q3d()")) return "still in 3D with no WebGL context";
   const r = drawn(env, () => frames(env, 1));
   return r.n > 50 ? "" : "only " + r.n + " canvas calls in a frame";
 });
-check("low quality draws", () => {
-  run('setQuality("low")');
-  const r = drawn(env, () => frames(env, 1));
-  run('setQuality("high")');
-  return r.n > 50 ? "" : "only " + r.n + " canvas calls";
-});
-check("3D falls back cleanly without WebGL", () => { run('setQuality("3d")'); frames(env, 3); run('setQuality("high")'); });
 
 // a tower of each kind: build through placeTower (the real click path), then draw
 for (const kind of ["arc", "frz", "sol", "acd", "grv", "car"]) {

@@ -155,7 +155,7 @@ function drawLaneStrokes(live) {
     lctx.strokeStyle = gctx.strokeStyle = COL[u.color];
     // a wide GLOW that grows in intensity toward the core (owner), on its own
     // layer with a much steeper fade outward (owner: "stronger gradient")
-    if (!lowQ) { gctx.globalAlpha = Math.min(1, (u.star ? 0.22 * k : LIT_GLOW_A) * u.a); gctx.lineWidth = 32 * w; gctx.lineCap = "butt"; gctx.stroke(PATHS[u.pi].glow2d); gctx.lineCap = "round"; } // butt: a round end was a disc by the core // thicker at the core (owner; was 0.18, 20)
+    { gctx.globalAlpha = Math.min(1, (u.star ? 0.22 * k : LIT_GLOW_A) * u.a); gctx.lineWidth = 32 * w; gctx.lineCap = "butt"; gctx.stroke(PATHS[u.pi].glow2d); gctx.lineCap = "round"; } // butt: a round end was a disc by the core // thicker at the core (owner; was 0.18, 20)
     gctx.restore();
     lctx.globalAlpha = (u.star ? 0.03 * k : LIT_HAZE_A) * u.a; lctx.lineWidth = 6 * w; lctx.stroke(PATHS[u.pi].lit2d);
     // a boss lane's halo: one wide faint stroke, not a shadowBlur along the whole (doubled) lane - with the Devil's six
@@ -164,7 +164,7 @@ function drawLaneStrokes(live) {
     lctx.globalAlpha = (u.star ? 0.3 * k : LIT_LINE_A) * u.a; lctx.lineWidth = u.star ? 1.4 * w : LIT_LINE_W; lctx.stroke(PATHS[u.pi].lit2d);
     lctx.restore();
   }
-  if (!lowQ) applyMask(gctx, GLOW_FALLOFF);
+  applyMask(gctx, GLOW_FALLOFF);
   applyMask(lctx, 1);
   S.litKey = sig; S.litCam = camSig; S.litAt = now;
   S.comboKey = ""; blitLanes(S);
@@ -172,7 +172,7 @@ function drawLaneStrokes(live) {
 // the faint base, the glow and the lit lines laid onto ONE cached layer whenever any of them changes, and that blitted:
 // one full-canvas draw a frame instead of three (perf, 2026-10-09; source-over is associative, so the same picture)
 function blitLanes(S) {
-  const key = S.baseKey + "|" + S.litKey + "|" + lowQ;
+  const key = S.baseKey + "|" + S.litKey;
   if (key !== S.comboKey) {
     S.comboKey = key;
     S.comboCv ||= document.createElement("canvas");
@@ -180,7 +180,7 @@ function blitLanes(S) {
     if (!x) { S.comboKey = ""; throw new Error("lane combo: no 2d context"); }
     if (c.width !== cv.width || c.height !== cv.height) { c.width = cv.width; c.height = cv.height; }
     x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, c.width, c.height);
-    x.drawImage(S.baseCv, 0, 0); if (!lowQ) x.drawImage(S.glowCv, 0, 0); x.drawImage(S.laneCv, 0, 0); // low quality: no glow layer
+    x.drawImage(S.baseCv, 0, 0); x.drawImage(S.glowCv, 0, 0); x.drawImage(S.laneCv, 0, 0);
   }
   blit(S.comboCv);
 }
@@ -324,7 +324,7 @@ function drawBoardLayers() {
   const m = ctx.getTransform();
   if (!boardCacheOn || q3d() || typeof warpBoardSig !== "function" || !(ctx instanceof CanvasRenderingContext2D) || Math.abs(m.e - cam.ox) > 0.01 || Math.abs(m.f - cam.oy) > 0.01 || Math.abs(m.a - cam.k) > 1e-4 || m.b || m.c /* (the context keeps float32: equal to a hundredth of a pixel) */) { drawGraticule(); drawLanes(); return; }
   const boardC = (boardCs[COL.bg] ||= { cv: null, x: null, key: "" });
-  const key = [cv.width, cv.height, cam.k, cam.ox, cam.oy, lowQ ? 1 : 0].join() + "|" + warpBoardSig(performance.now());
+  const key = [cv.width, cv.height, cam.k, cam.ox, cam.oy].join() + "|" + warpBoardSig(performance.now());
   if (!boardC.cv || key !== boardC.key) {
     if (!boardC.cv) { boardC.cv = document.createElement("canvas"); boardC.x = boardC.cv.getContext("2d"); }
     if (boardC.cv.width !== cv.width || boardC.cv.height !== cv.height) { boardC.cv.width = cv.width; boardC.cv.height = cv.height; }

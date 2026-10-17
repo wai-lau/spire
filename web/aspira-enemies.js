@@ -73,7 +73,7 @@ function drawEnemy(e, solid) {
   // a ghost (dead enemy) is INVISIBLE: it only carries the beams that follow it
   if (e.dead) return;
   const d = ENEMIES[e.type], f = Math.max(0, e.hp / e.max), size = d.size * hpShrink(e, f) * (e.sizeMul || 1) * (DRAW_SIZE[e.type] || 1);
-  if (TRAIL[e.type] && !lowQ && !(solid && farFx(e))) { // low quality: no tracers; 3D: none in the far ring
+  if (TRAIL[e.type] && !(solid && farFx(e))) { // 3D: no tracers in the far ring
     drawStarTrail(e, size);
     // the body is see-through, so blank its shape first: the tracer must not
     // show through the enemy it trails (owner)

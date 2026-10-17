@@ -358,7 +358,7 @@ function drawBossBar() {
 // `difference` fill of white - the same colours the inverted palette gave (inverting a blend = blending the inverted
 // colours), where the old way drew the whole scene twice while the sky spread and kept a second set of lane layers
 const skyOn = () => bossInv.phase !== "off" && (bossInv.full || bossInv.r > 1);
-const skyAll = () => bossInv.full || lowQ; // low quality: the sky snaps
+const skyAll = () => bossInv.full;
 // once the sky covers it all, NO flip of any kind (owner, 2026-10-11: "invert has huge cost" - a full-canvas `difference`
 // fill made the GPU copy the whole canvas, ~5 ms a frame, and the CSS invert that replaced it in 2D was a full-screen
 // filter pass every frame): the frame is simply DRAWN in the inverted palette (render, warpEntities), towers in their own

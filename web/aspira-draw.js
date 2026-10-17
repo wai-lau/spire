@@ -18,7 +18,7 @@ const cam = { k: 1, ox: 0, oy: 0, fit: 1 };
 // more perf"): a phone at 3x drew 3.4 million pixels a frame; 2x is 2.25x fewer
 // for a barely softer line. EVERY dpr use in the game reads canvasDpr().
 const RES_CAP = 2; let RES_CAP_3D = 2; // 3D: full until frames run slow, then down to 1.25 (stepDetail, aspira-quality.js)
-const canvasDpr = () => Math.min(window.devicePixelRatio || 1, q3d() ? RES_CAP_3D : RES_CAP) * (lowQ ? LOW_RES : 1); // 3D: 1.5 (slow log, 2026-10-12: a 2.25x Brave averaged 56 ms a frame) // low quality: far fewer pixels (aspira-quality.js)
+const canvasDpr = () => Math.min(window.devicePixelRatio || 1, q3d() ? RES_CAP_3D : RES_CAP); // (3D: RES_CAP_3D)
 function resize() {
   const r = cv.getBoundingClientRect(), dpr = canvasDpr();
   cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
@@ -49,13 +49,13 @@ function poly(x, y, r, n, rot, star) {
 // outline: a thick black stroke wrapped in a soft dark glow (shadow blur)
 // under the fill, so overlapping damage numbers stay separate and readable
 // outline: true = the background colour, or a palette key (the credits' white halo)
-const TEXT_BLUR_MIN = 30, TEXT_STROKE_MAX = 5; // (BLUR_MIN: only low quality reads it now - small text there goes unoutlined)
+const TEXT_STROKE_MAX = 5;
 // shrink: drawn this x smaller, from the stamp at `size` (a fading damage number's every step of shrink was a new stamp - aspira-textcache.js)
 function text(str, x, y, size, color, outline = false, bold = false, shrink = 1) {
   if (typeof textSprite === "function" && textSprite(str, x, y, size, color, outline, bold, shrink)) return;
   size *= shrink; ctx.font = (bold ? "bold " : "") + size + "px " + CANVAS_FONT;
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  if (outline && !(lowQ && size < TEXT_BLUR_MIN)) { // low quality: small text unoutlined
+  if (outline) {
     ctx.save();
     const oc = COL[outline === true ? "bg" : outline];
     // AN OUTLINE ONLY, no glow on any text (owner, 2026-10-14: "remove all glow on numbers, just use an outline"; big text had a
@@ -257,7 +257,6 @@ function drawBlocked(x, y, r) {
 // Every tower's reach is always drawn faintly; the selected tower (and the
 // build ghost) draws at full strength. dim = the faint pass.
 function drawRange(x, y, r, color, dim = false) {
-  if (dim && lowQ) return; // low quality: no faint rings
   ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283);
   // only the SELECTED tower's disc is filled: a dim one's 2.5% fill was all
   // but invisible, and nine big discs (three a moon tower) were the costliest
@@ -275,7 +274,7 @@ function drawTowerRange(t, dim, colKey) {
   if (st.moons) { for (const m of moonSpots(t, st)) drawRange(m.x, m.y, r, col, dim); return; }
   drawRange(t.x, t.y, r, col, dim);
   // a chart FRZ's moon ORBIT, drawn like its range (owner, 2026-10-08): faint always, bright when selected
-  if (st.moonN && !(dim && lowQ)) { const o = moonOrbit(t, st.moonN); ctx.beginPath(); ctx.ellipse(o.x, o.y, o.a, o.b, o.phi, 0, 6.283); ctx.strokeStyle = COL[col]; ctx.globalAlpha = (dim ? 0.35 : 0.75) * MOON_FX; ctx.lineWidth = dim ? 2 : 3.5; ctx.stroke(); ctx.globalAlpha = 1; }
+  if (st.moonN) { const o = moonOrbit(t, st.moonN); ctx.beginPath(); ctx.ellipse(o.x, o.y, o.a, o.b, o.phi, 0, 6.283); ctx.strokeStyle = COL[col]; ctx.globalAlpha = (dim ? 0.35 : 0.75) * MOON_FX; ctx.lineWidth = dim ? 2 : 3.5; ctx.stroke(); ctx.globalAlpha = 1; }
   if (t.kind !== "arc") return;
   if (st.skill) return; // a chart ARC has no reach from the tower: each jump reaches from its own enemy (owner)
   ctx.beginPath(); ctx.arc(t.x, t.y, chainReach(st), 0, 6.283);
@@ -288,7 +287,6 @@ function drawTowerRange(t, dim, colKey) {
 // to GRAD_EDGE (10%) at the outline - Plague/Bloom, Contagion, Whiteout, Shatter, Supernova
 const GRAD_EDGE = 0.1; // owner: 50% -> 10%
 function gradDisc(x, y, r, col, a = 1) {
-  if (lowQ) return; // low quality: no gradient discs
   const g = ctx.createRadialGradient(x, y, 0, x, y, r);
   g.addColorStop(0, "transparent"); g.addColorStop(1, col);
   ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283);
@@ -306,7 +304,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
   const glFx = pass === "shots" && typeof fxGlTake === "function" && fxGlTake(); // 3D: hits, sparks, flashes and rings go to the GPU in one batch (aspira-fxgl.js)
   for (const f of fx) {
     const kind = f.k !== "text" ? "shots" : f.under ? "dmg" : "text";
-    if (kind !== pass || f.t >= f.life || (lowQ && (kind === "dmg" || LOW_SKIP_FX[f.k]))) continue; // a retired damage number (dmgNumber) is not drawn; low quality skips the decoration
+    if (kind !== pass || f.t >= f.life) continue; // a retired damage number (dmgNumber) is not drawn
     // full strength for the first half of the effect's life, then fade out
     const k = 1 - f.t / f.life;
     if (glFx && fxGlFx(f, k, Math.min(1, k * 2))) continue; // (before the canvas's alpha is touched: thousands a frame)
@@ -333,7 +331,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
       // the core's width is the DAMAGE of this hit (owner: every tower) - a
       // multi-beam shot's beams each carry the whole hit (rayHit)
       const core = (f.soft ? BEAM_MIN + ((f.bw ??= beamWidth(f.d || 0)) - BEAM_MIN) * ARC_W_CORR : (f.bw ??= beamWidth(f.d || 0))) * (f.thin || 1) * ws; // (soft: a chart ARC's, flatter with damage - aspira-skills.js; thin: its leaps)
-      if (f.m && !lowQ) { // low quality: the beam's core only, no glow passes
+      if (f.m) {
         const a = ctx.globalAlpha;
         if (f.slim) {
           // RPR (owner): a super-bright WHITE core in a pink glow that is a
@@ -458,7 +456,7 @@ function drawSceneTop() {
   const ranges = k => () => { for (const t of G.towers) if (t !== sel) drawTowerRange(t, !k, k); if (sel) drawTowerRange(sel, false, k); }; // (sky: every one at full strength - "range should be visible during boss waves") // tower colours survive the boss sky (2026-10-11) - but RANGES go white, unkept, so the inversion turns them BLACK (owner, 2026-10-12)
   if (skyOn()) ranges("white")(); else skyKeep(ranges());
   // stars go on top of lanes and range fills, which would otherwise tint them
-  if (!lowQ && !q3d()) drawStars(); // low quality: no star field; 3D: round, on the overlay (warpEntities)
+  if (!q3d()) drawStars(); // (3D: round, on the overlay - warpEntities)
   // BEAMS turn over with the boss sky (owner, 2026-10-11: "inversion should invert tower movement indicators and tower
   // beams"; they kept their colours since earlier that day) - only the towers and their ranges keep theirs
   drawTethers(); drawAcd(); drawGrv(); drawCar(); skyKeep(() => drawCar(true)); drawAims(); drawFx("shots"); // on the board in 3D too (owner: "beams and tower effects can appear on the plane")

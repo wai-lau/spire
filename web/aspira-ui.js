@@ -159,7 +159,7 @@ const autoWaiting = () => {
     try { localStorage.setItem("spire.automove", autoMove ? "1" : "0"); } catch (e) { /* not remembered */ }
   }, "asp-automove");
   mvb.setAttribute("role", "checkbox");
-  qualityBox(row); // the visual quality toggle beside it (aspira-quality.js)
+  updateQuality(); /* the board's 3D layers show (aspira-quality.js) */
 })();
 // the checkbox as an SVG, not a font glyph (owner: the glyph sat off-centre
 // from its label); centred against the words by the button's flex row
@@ -467,7 +467,7 @@ const freezing = () => timeStopped();
 let last = performance.now();
 function frame(now) {
   const cb0 = performance.now();
-  autoQuality((now - last) / 1000); if (typeof perfTick === "function") perfTick((now - last) / 1000); // quality step-down, slow logs (aspira-quality.js, aspira-perflog.js)
+  stepDetail((now - last) / 1000); if (typeof perfTick === "function") perfTick((now - last) / 1000); // the 3D detail radius, slow logs (aspira-quality.js, aspira-perflog.js)
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   if (!ui.paused) {
@@ -480,6 +480,7 @@ function frame(now) {
   }
   // while the upgrade cards are up the board is paused AND frozen: no redraw,
   // so its CSS blur (aspira.css .asp-choosing) is computed once, not per frame
+  if (q3d() && !warpInit()) flatFallback(); /* no WebGL: the flat picture instead (aspira-quality.js) */
   if (!chooser.t && !DIAG.includes("nocanvas")) { if (q3d()) warp3d(); else render(); } // 3D lays the frame, drawn to fit the whole board, on the spire (aspira-warp.js)
   // the HUD's text and buttons 10x a second, not every frame (perf, 2026-10-05)
   if (!(now < hudAt)) { hudAt = now + 100; updateHud(); syncBlinks(); }

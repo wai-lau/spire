@@ -751,10 +751,6 @@
   50% { opacity: 0.3; filter: none; }
 }
 
-/* the quality SLIDER (owner, 2026-10-09: "change quality to a slider: low, high, 3D") - three stops, its value named after it */
-#asp .asp-quality { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-2xs); cursor: pointer; } /* the rest of the line (owner, 2026-10-14) */
-#asp .asp-quality input { flex: 1 1 0; min-width: 4.5em; width: 0; accent-color: hsl(var(--green-hsl)); cursor: pointer; }
-#asp .asp-quality b { min-width: 2.5em; font-weight: var(--fw-normal); }
 
 /* 3D (aspira-warp.js): the 2D canvas still draws and takes every touch, unseen; the spire is drawn over it and lets touches through */
 #asp.asp-3d #asp-cv { opacity: 0; }

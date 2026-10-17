@@ -426,7 +426,6 @@ const SOL_CONE_LIFE = 0.6; // game seconds (1x runs 2 game s a real s): long eno
 // tower - full at the source, gone by SOL_CONE_FADE of its length (owner)
 const SOL_CONE_FADE = 0.8;
 function drawCone(f, k) {
-  if (lowQ) return; // low quality: no light cones (aspira-quality.js)
   if (typeof fxGlCone === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { fxGlCone(f, 0.5 * k * k * k); return; } // 3D: by the GPU (aspira-glctx.js)
   const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.len * SOL_CONE_FADE);
   g.addColorStop(0, COL[f.color]); g.addColorStop(1, "transparent");
