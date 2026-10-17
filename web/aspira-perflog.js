@@ -7,7 +7,7 @@
 const PERF_SEND_S = 180, PERF_BUCKETS = [16.7, 33, 50, 100, Infinity];
 const perfSid = Math.random().toString(36).slice(2, 10);
 let perf = null;
-const perfReset = () => { perf = { secs: 0, frames: 0, sum: 0, buckets: PERF_BUCKETS.map(() => 0), worst: [], maxEnemies: 0, sfxCalls: 0, sfxPlayed: 0, simMs: 0, drawMs: 0, warpMs: 0, glMs: 0, entMs: 0, speed: 0, picMs: 0, fxMs: 0, bindMs: 0, fxN: 0, fxMax: 0, upBoard: 0, upDyn: 0, cbMs: 0, lagMs: 0, up: 0, upPx: 0, read: 0, glCopy: 0 }; if (typeof glcWhyN !== "undefined") for (const k in glcWhyN) delete glcWhyN[k]; };
+const perfReset = () => { perf = { secs: 0, frames: 0, sum: 0, buckets: PERF_BUCKETS.map(() => 0), worst: [], maxEnemies: 0, sfxCalls: 0, sfxPlayed: 0, simMs: 0, drawMs: 0, warpMs: 0, glMs: 0, entMs: 0, speed: 0, picMs: 0, fxMs: 0, bindMs: 0, fxN: 0, fxMax: 0, upBoard: 0, upDyn: 0, cbMs: 0, lagMs: 0, up: 0, upPx: 0, read: 0, glCopy: 0, opFill: 0, opStroke: 0, opRect: 0, opImage: 0, opText: 0, opState: 0 }; if (typeof glcWhyN !== "undefined") for (const k in glcWhyN) delete glcWhyN[k]; };
 perfReset();
 // the sound calls counted on their way through (sfx is a global function: every caller looks it up by name)
 if (typeof sfx === "function") { const sfx0 = sfx; sfx = function (...a) { perf.sfxCalls++; const r = sfx0.apply(this, a); if (r) perf.sfxPlayed++; return r; }; }
@@ -36,6 +36,16 @@ function perfCb(now, t0) { if (document.hidden || ui.paused) return; const t1 = 
   wrap(window.CanvasRenderingContext2D, "getImageData", () => { perf.read++; });
   wrap(window.HTMLCanvasElement, "toDataURL", () => { perf.read++; }); wrap(window.HTMLCanvasElement, "toBlob", () => { perf.read++; });
 })();
+/* 2D OPS a frame (2026-10-16: the Radeon laptop ran every layer case at the display rate yet the game at ~55 ms - cost per DRAW CALL is the suspect): the drawing calls and the state changes between them, counted on their way through */
+(function () {
+  const P = window.CanvasRenderingContext2D && window.CanvasRenderingContext2D.prototype; if (!P) return;
+  const count = (nm, key) => { const f = P[nm]; if (!f) return; P[nm] = function () { perf[key]++; return f.apply(this, arguments); }; };
+  for (const nm of ["fill", "stroke"]) count(nm, nm === "fill" ? "opFill" : "opStroke");
+  for (const nm of ["fillRect", "strokeRect", "clearRect"]) count(nm, "opRect");
+  count("drawImage", "opImage"); count("fillText", "opText"); count("strokeText", "opText");
+  for (const nm of ["save", "restore", "setTransform"]) count(nm, "opState");
+})();
+const perfOps = () => { const n = Math.max(1, perf.frames), r = v => Math.round(v / n); return { draw: r(perf.opFill + perf.opStroke + perf.opRect + perf.opImage + perf.opText), fill: r(perf.opFill), stroke: r(perf.opStroke), rect: r(perf.opRect), image: r(perf.opImage), text: r(perf.opText), state: r(perf.opState) }; };
 const perfSync = () => { const s = Math.max(1, perf.secs); return { upPerSec: +(perf.up / s).toFixed(1), upMpxPerSec: +(perf.upPx / s / 1e6).toFixed(2), readPerSec: +(perf.read / s).toFixed(2), glCopyPerSec: +(perf.glCopy / s).toFixed(2) }; };
 function perfTick(dt) {
   if (!(dt > 0) || dt > 1 || ui.paused || document.hidden) return; // a stall or a tab switch is not a frame
@@ -78,7 +88,7 @@ function perfSend() {
     buckets: Object.fromEntries(PERF_BUCKETS.map((b, i) => ["<" + b, perf.buckets[i]])), worst: perf.worst, maxEnemies: perf.maxEnemies,
     gpuSplit: perfSplit(), perFrame: { simMs: +(perf.simMs / Math.max(1, perf.frames)).toFixed(1), drawMs: +(perf.drawMs / Math.max(1, perf.frames)).toFixed(1), warpMs: +(perf.warpMs / Math.max(1, perf.frames)).toFixed(1), glMs: +(perf.glMs / Math.max(1, perf.frames)).toFixed(1), entMs: +(perf.entMs / Math.max(1, perf.frames)).toFixed(1), speed: +(perf.speed / Math.max(1, perf.frames)).toFixed(2), cbMs: +(perf.cbMs / Math.max(1, perf.frames)).toFixed(1), lagMs: +(perf.lagMs / Math.max(1, perf.frames)).toFixed(1), dpr: typeof canvasDpr === "function" ? +canvasDpr().toFixed(2) : null }, // (3D: drawMs is inside warpMs; cbMs: the whole frame callback, lagMs: the browser's delay handing it the frame - an avgMs far above both is the compositor / GPU, outside our code)
     detailR: typeof detailFarR !== "undefined" ? Math.round(detailFarR) : null, texCap: typeof warpTexCap !== "undefined" ? Math.round(warpTexCap) : null, warpRes: typeof WARP_RES !== "undefined" ? +WARP_RES.toFixed(2) : null, // 3D's full-detail radius at send time
-    sync: perfSync(), diag: typeof DIAG !== "undefined" ? DIAG : "", quality: qMode, autoQ: typeof autoQ !== "undefined" ? Math.round(autoQ.ema) : null, qpick: (() => { try { return localStorage.getItem("spire.qpick"); } catch (e) { return "?"; } })(), stepped: typeof autoQSteps !== "undefined" ? autoQSteps : null, wave: G.wave, brave: !!navigator.brave,
+    sync: perfSync(), ops: perfOps(), diag: typeof DIAG !== "undefined" ? DIAG : "", quality: qMode, autoQ: typeof autoQ !== "undefined" ? Math.round(autoQ.ema) : null, qpick: (() => { try { return localStorage.getItem("spire.qpick"); } catch (e) { return "?"; } })(), stepped: typeof autoQSteps !== "undefined" ? autoQSteps : null, wave: G.wave, brave: !!navigator.brave,
     screen: [innerWidth, innerHeight, devicePixelRatio], canvas: [cv.width, cv.height],
     gpu: perfGpu(), // the WebGL renderer ("SwiftShader" / "llvmpipe" = software, no GPU)
     audio: { ac: typeof AC !== "undefined" && AC ? AC.state : null, samples: typeof SAMPLES !== "undefined" ? Object.values(SAMPLES).filter(s => s.length).length : null, calls: perf.sfxCalls, played: perf.sfxPlayed, muted: typeof muted !== "undefined" ? muted : null, volume: typeof volume !== "undefined" ? volume : null },
