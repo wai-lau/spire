@@ -24,8 +24,8 @@ const CAR_VOLLEY_K = 2;
 // the shot's HIT is SPREAD across the axes like ARC's (owner, 2026-10-15: "spread out armament damage like arc"): Armament half of
 // it (log), Hangar and Launch a quarter each (CAR_SIDE_DMG). STEEPER than ARC's: on ARC's tables a mid build (III on every
 // axis) dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899 - ARC chains, and an interceptor spends ~40% flying and reloading
-const CAR_SHOT_MUL = [1, 2.6, 4.5, 7.5, 10, 12.5]; // Armament (VI 15)
-const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 4.6]; // Hangar's and Launch's share (VI 5.1)
+const CAR_SHOT_MUL = [1, 2.6, 4.5, 7.5, 10, 112.5]; /* V x9, VI x36 (steeper late tiers) */ // Armament (VI 15)
+const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 4, 13.8]; /* V x3, VI x6 (steeper late tiers) */ // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
 const CAR_PIN = 0.3; // the circled enemy's slow while an interceptor orbits it (2026-10-16, against ATC's fast leak: 0 16% of fast leaked, 0.3 11%, 0.5 14%; a longer bolt slow 11% but swarm 32%)
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed

@@ -8,12 +8,12 @@
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const GRV_AURA_R = [85, 98, 110, 124, 136, 153]; /* x1.25 with the faster evaporation (owner, 2026-10-16: "raise bh fire rate and bh size to compensate"; was 68 .. 122) */ // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
-const GRV_STRIP_MUL = [1, 1, 1, 1, 1, 1]; /* Void: the aura's armor strip, x by tier (late tiers steepened, 2026-10-16) */
+const GRV_STRIP_MUL = [1, 1, 1, 1, 1, 9]; /* Void: the aura's armor strip, x by tier (late tiers steepened, 2026-10-16) */
 const GRV_SLOW = [0.12, 0.15, 0.18, 0.21, 0.24, 0.27]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
 const GRV_NOVA_R = [71, 85, 99, 112, 126, 139]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
-const GRV_NOVA_MUL = [2, 2.6, 3.2, 4, 4.8, 5.6]; /* x2 (owner, 2026-10-16: "double the nova damage"; was [1, 1.3, 1.6, 2, 2.4, 2.8]) */ // Supernova: the nova's hit, x the tower's damage
+const GRV_NOVA_MUL = [2, 2.6, 3.2, 4, 4.8, 50.4]; /* V x9, VI x36 (steeper late tiers) */ /* x2 (owner, 2026-10-16: "double the nova damage"; was [1, 1.3, 1.6, 2, 2.4, 2.8]) */ // Supernova: the nova's hit, x the tower's damage
 const GRV_PELLETS = [6, 7.8, 9.6, 11.4, 13.2, 15]; // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
-const GRV_PELLET_K = [0.25, 0.32, 0.4, 0.48, 0.56, 0.65]; // Radiation: a pellet's hit, x the tower's damage
+const GRV_PELLET_K = [0.25, 0.32, 0.4, 0.48, 0.56, 5.85]; /* V x9, VI x36 (steeper late tiers) */ // Radiation: a pellet's hit, x the tower's damage
 let GRV_AURA_K = 0.6; // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
 const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1) - x2 faster (owner, 2026-10-16: "some bh taking too long to evaporate if merged with too many / increase bh evaporation speed significantly"; was 5)
 // EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction

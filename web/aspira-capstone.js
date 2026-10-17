@@ -48,19 +48,19 @@ const CAPSTONE_NUM = [
   [ARC_VOLTAGE_DMG, 8.36 /* the spread hit (aspira-skills.js ARC_SIDE_DMG; was 69.9) */], [ARC_VOLTAGE_FALL, 1.6], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
   [ARC_CONDUCTIVITY, { s: 4 /* was 6 - the ARC nerf, 2026-10-11 */, j: 3, f: 3, r: 2.4, d: 1, v: 4 }], [ARC_CAPACITANCE, { n: 8, frac: 0.2 /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
   // FRZ: Temp a far deeper chill; Rime the fastest, deepest rings; Moons FOUR moons, each with four small moons
-  [FRZ_TEMP_SLOW, 0.55], [FRZ_TEMP_TICK, 0.2], [FRZ_BRITTLE, 2], [FRZ_RIME, 0.15], [FRZ_RIME_PERIOD, 0.35] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 1.2],
+  [FRZ_TEMP_SLOW, 0.75], [FRZ_TEMP_TICK, 0.0333], [FRZ_BRITTLE, 50], [FRZ_RIME, 0.9], [FRZ_RIME_PERIOD, 0.35] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 1.2],
   [FRZ_MOON_COUNT, 4], [FRZ_MOON_BY, 1], [FRZ_SUBMOON_N, 4],
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
   [SOL_BEAMS, 8], [SOL_FOCUS_DMG, 1.3], [SOL_SHIELD_POP, 8], [SOL_REFRACTION, Infinity], [SOL_REFRACTION_DMG, 4],
   [SOL_CONE_BY, 40], [SOL_HOP, 1], [SOL_CRITMUL, 12], [SOL_BREACH_ARMOR, 1500], [SOL_REFRACT_POP, 4], [SOL_BREACH_CRIT, 0],
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
-  [ACD_CORROSION_DMG, 1], [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9], [ACD_FLOW_SLOW, 0.2], [ACD_SPRAY_MUL, 1],
-  [ACD_CONTAGION, { every: 1, life: 40, r: 150 }], [ACD_PUDDLE_HEAT, 0.2],
+  [ACD_CORROSION_DMG, 36], [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9], [ACD_FLOW_SLOW, 0.2], [ACD_SPRAY_MUL, 36],
+  [ACD_CONTAGION, { every: 1, life: 40, r: 150 }], [ACD_PUDDLE_HEAT, 7.2],
   // GRV: Void the widest, coldest aura (Event Horizon: a full sphere nearly stops what it holds); Supernova the biggest nova
   // (Hypernova: it tears half the armor away, spheres start heavy); Radiation the most pellets (Hawking: a last burst)
   // CAR: Hangar seventeen interceptors; Launch the fastest (Warp: they teleport); Armament the hardest, fastest, longest sorties (Autopilot)
-  [CAR_HANGAR, 17], [CAR_FOCUS, 0.7], [CAR_SPEED, 1890], [CAR_RAM, 10], [CAR_RELOAD, 0.15], [CAR_AMMO, 8], [CAR_SHOT_MUL, 15], [CAR_SIDE_DMG, 5.1], [CAR_RATE_MUL, 1],
-  [GRV_AURA_R, 153], [GRV_SLOW, 0.3], [GRV_NOVA_R, 170], [GRV_NOVA_MUL, 3.5], [GRV_PELLETS, 18], [GRV_PELLET_K, 0.8],
+  [CAR_HANGAR, 17], [CAR_FOCUS, 0.7], [CAR_SPEED, 1890], [CAR_RAM, 10], [CAR_RELOAD, 0.15], [CAR_AMMO, 8], [CAR_SHOT_MUL, 540], [CAR_SIDE_DMG, 30.6], [CAR_RATE_MUL, 1],
+  [GRV_AURA_R, 153], [GRV_STRIP_MUL, 36], [GRV_SLOW, 0.3], [GRV_NOVA_R, 170], [GRV_NOVA_MUL, 126], [GRV_PELLETS, 18], [GRV_PELLET_K, 28.8],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)

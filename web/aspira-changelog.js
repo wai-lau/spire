@@ -9,6 +9,10 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Acid: Corrosion, Spray and Contagion hit x9 harder at the fourth purchase and x36 at the capstone.",
+    "Carrier: Armament hits x9 harder at the fourth purchase and x36 at the capstone; Hangar and Launch x3 and x6.",
+    "Gravity: nova, pellets and armor strip x9 at the fourth purchase and x36 at the capstone.",
+    "Freeze: Brittle x6.8 and x25, Rime x5.5 and x6, Temp ticks 3 and 6 times as often and slows 0.14 and 0.2 more (fourth purchase and capstone).",
     "Freeze: x1.11 damage.",
     "Sol: x0.85 damage.",
     "Acid: x1.49 damage.",
