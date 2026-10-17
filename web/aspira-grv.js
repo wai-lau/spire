@@ -135,6 +135,7 @@ function grvPull(t, st, dt) {
 // deals, a big merged hole in a thick wave gained as fast as it evaporated - and its radiation follows its mass. Its feeding now
 // fades to nothing over GRV_FEED_S s of its life (a merge keeps the OLDER clock), and a merge no longer adds the two caps
 const GRV_FEED_S = 6;
+const GRV_EVAP_EXP = 0.25; // evaporation x e^(0.25 (R - 1)) for a hole R base auras across: R 3 ~x1.6, R 5 ~x2.7, R 9 ~x7.4 its old pace
 function grvMerge(big, small) {
   const m = big.mass + small.mass, w = small.mass / Math.max(1e-6, m);
   big.x += (small.x - big.x) * w; big.y += (small.y - big.y) * w; // to the pair's centre of mass, momentum kept
@@ -186,7 +187,8 @@ function stepSphere(sp, t, st, dt) {
   // faster"): the old pellet rate x mass, x how much faster than the old linear life (1 / GRV_RAD_LIFE a second) it loses mass - a
   // sphere gives off what the linear one did over its life, a big one sooner (radiating only what it lost - pellets x 2.5 a unit
   // of mass - starved a FED sphere, which the old one kept near its cap: countermx 61-69 2/27/13/7 -> 48/89/87/76)
-  const lost = Math.min(sp.mass, GRV_EVAP * (sp.apm ? Math.sqrt(sp.apm * Math.max(0, sp.mass)) : grvAuraR(sp, st)) / st.auraR * dt); // by its UNCAPPED radius: a merge of many (its drawn size capped at GRV_R_MAX, its mass not) burnt out at the cap's pace and lingered
+  const R = (sp.apm ? Math.sqrt(sp.apm * Math.max(0, sp.mass)) : grvAuraR(sp, st)) / st.auraR; // its UNCAPPED radius, in base auras
+  const lost = Math.min(sp.mass, GRV_EVAP * R * Math.exp(Math.max(0, R - 1) * GRV_EVAP_EXP) * dt); // EXPONENTIAL in its size (owner, 2026-10-16: "the evaporation should be exponential with size"): a base hole as before, xe^(0.25) a base radius more // by its UNCAPPED radius: a merge of many (its drawn size capped at GRV_R_MAX, its mass not) burnt out at the cap's pace and lingered
   sp.mass -= lost;
   sp.pel += st.pellets * k * GRV_RAD_LIFE * lost; // the OLD rate (x mass) sped up by how much faster than the old linear 1 / 5 s it loses mass
   const w = Math.max(1, ((t.pellets ? t.pellets.length : 0) / GRV_PEL_SOFT) ** 2); // BUNDLED past GRV_PEL_SOFT in flight (perf): one pellet carrying w pellets' hit, w times fewer
