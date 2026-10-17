@@ -9,6 +9,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Build cards: the check and x marks against each enemy type are refreshed (Gravity: better vs swarm, worse vs shield; Sol: worse vs shield).",
     "Sol: Focus fires 8 beams at the fourth purchase and 12 at the capstone (was 6 and 8).",
     "Acid: Corrosion, Spray and Contagion hit x9 harder at the fourth purchase and x36 at the capstone.",
     "Carrier: Armament hits x9 harder at the fourth purchase and x36 at the capstone; Hangar and Launch x3 and x6.",
