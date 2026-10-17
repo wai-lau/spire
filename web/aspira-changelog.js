@@ -59,6 +59,7 @@ const CHANGELOG = [
     "Gravity: a black hole no longer grows on its own radiation - only the nova's hit and its burning centre feed it.",
     "Gravity: the nova hits twice as hard.",
     "Gravity: the inner aura is now the size of the black centre - it burns what it touches (feeding the hole) and slows the most.",
+    "Damage numbers draw over Gravity's black holes and auras.",
     "Gravity: the black centre burns twice as hard, and shows one number a second per enemy (the sum) instead of a stream of small ones.",
     "Gravity: big black holes evaporate exponentially faster, and steeply - a merged giant burns off quickly.",
     "Gravity: its damage numbers (radiation and nova) fly off the enemy that was hit, like every other tower's.",
