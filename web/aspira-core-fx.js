@@ -57,7 +57,7 @@ function drawRelayHalos(label) {
     const left = (t.relayUntil || 0) - (G.clock || 0);
     if (left <= 0) continue;
     ctx.strokeStyle = COL.white; glow(COL.white, 20); ctx.lineWidth = 6;
-    ctx.globalAlpha = 0.5 + 0.5 * blinkWave(); // softer (was 0.4 + 0.6) // the one blink (2026-10-08; was its own 2.5s sine)
+    ctx.globalAlpha = 1; // 100% OPAQUE (owner, 2026-10-16; was the 0.5-1 blink)
     // the tower's own FOOTPRINT, not a circle (owner, 2026-10-16: "instead of circle, do that effect on the hexagon, defined by
     // the intersection between the tower and the floor, make sure that the part of the hexagon that is behind the tower is
     // occluded"): the 3D prism's base (aspira-warp.js solids), on the floor, so the prism standing on it hides its far edges
@@ -105,7 +105,7 @@ function drawRelayHex3d() {
   if ((!G.core && !arm) || !warp.ent) return;
   const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes();
   g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.strokeStyle = COL.white; g.lineWidth = 3 * px; g.lineJoin = "round";
-  g.shadowColor = COL.white; g.shadowBlur = 10 * px; g.globalAlpha = arm ? 0.3 + 0.7 * blinkWave() : 0.5 + 0.5 * blinkWave();
+  g.shadowColor = COL.white; g.shadowBlur = 10 * px; g.globalAlpha = arm ? 0.3 + 0.7 * blinkWave() : 1; // a Relayed tower's ring 100% OPAQUE (owner, 2026-10-16); only the armed "tap one" flash blinks
   for (const t of G.towers) {
     if (!arm && (t.relayUntil || 0) - (G.clock || 0) <= 0) continue;
     const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
