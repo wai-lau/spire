@@ -4,7 +4,7 @@
 // most every WARP_STAT_MS. What MOVES (beams, shots, ranges, coins, goo, threats - drawSceneTop) is drawn every frame
 // on a layer of its own at WARP_DYN_K of the picture's size a side, and the bell's shader lays it over the board
 // (WARP_FS). The screen shake rides on the shader's texCam (warpDraw), so both layers shake together.
-const WARP_STAT_MS = 150;
+let WARP_STAT_MS = 150, warpUpSlow = 0; // WARP_STAT_MS: the least time between two board redraws - 4x longer on a device whose board upload stalls (below)
 let WARP_DYN_K = 0.5; // let: the moving layer's share of the picture's size, a side (a quarter of the pixels to send)
 // the picture's camera for a square of S px: the whole board (WARP_TEX_R world units round the core) in it
 function warpTexCamFor(S) {
@@ -26,6 +26,8 @@ function warpRender() {
     // lanes, their brightness, the wave's labels - warpBoardSig), at most every WARP_STAT_MS (a still board is never resent)
     const sig = warpBoardSig(now);
     if (key !== warp.statKey || (sig !== warp.statSig && now - (warp.statAt || 0) >= WARP_STAT_MS)) {
+      /* why this redraw (logged with the upload): the size or palette, the wave, the boss sky, the lit lanes, or only a lane fading in */
+      { const p = (warp.statSig || "").split("|"), c = sig.split("|"); warp.statWhy = key !== warp.statKey ? "key" : p[0] !== c[0] ? "wave" : p[1] !== c[1] ? "sky" : p[2] !== c[2] ? "lanes" : "fade"; }
       warp.statKey = key; warp.statSig = sig; warp.statAt = now; warp.statNew = true;
       ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); ctx.save(); drawSceneBase(); ctx.restore();
     }
@@ -53,7 +55,7 @@ function warpBoardSig(now) {
   let fading = false;
   const lanes = live.map(u => {
     const t0 = laneSeen.get(u.pi + ":" + u.ang);
-    if (!u.star && (t0 === undefined || now - t0 < LANE_FADE_IN_MS)) fading = true;
+    if (!u.star && (t0 === undefined || now - t0 < laneFadeMs())) fading = true;
     return u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + u.n + ":" + Math.round(u.a * LIT_STEPS);
   }).join(",");
   return G.wave + "|" + bossInv.phase + "|" + lanes + (fading ? "|" + Math.floor(now / WARP_STAT_MS) : "");
@@ -65,7 +67,12 @@ function warpLayersBind(gl, u) {
     for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
   }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, warp.tex);
-  if (warp.statNew || warp.statUp !== warp.tex) { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); warp.statNew = false; warp.statUp = warp.tex; }
+  if (warp.statNew || warp.statUp !== warp.tex) {
+    const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); const ms = performance.now() - t0; warp.statNew = false; warp.statUp = warp.tex;
+    if (typeof perfBoardUp === "function") perfBoardUp(warp.statWhy || "first", ms);
+    /* an Apple GPU blocks ~40 ms in this call (slow logs, iPhone: 98% of the frames after one were over 40 ms): such a device (3 uploads over 20 ms) redraws and resends the board a quarter as often */
+    if (ms > 20 && ++warpUpSlow >= 3) WARP_STAT_MS = 600;
+  }
   gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, warp.dynTex);
   if (!DIAG.includes("nodyn") && (warp.dynUp !== false || warp.dynSize !== warp.dynCv.width)) { // only when the canvas held something (warpRender); diag nodyn: never sent (the moving layer then shows nothing) to see what its uploads cost
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); // premultiplied, so its soft edges filter without a dark fringe

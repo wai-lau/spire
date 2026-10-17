@@ -100,6 +100,8 @@ function laneFail(err) {
 }
 function blit(c) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(c, 0, 0); ctx.restore(); }
 const laneSeen = new Map(), LANE_FADE_IN_MS = 2000;
+/* a device whose board upload stalls (warpUpSlow, aspira-warplayers.js) gets its lanes at full brightness at once: the fade-in was most of its board resends (14 of 19 a wave) */
+const laneFadeMs = () => (typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 0 : LANE_FADE_IN_MS);
 const LIT_MIN_MS = 200;
 const LIT_STEPS = 16;
 // an ordinary lit lane, MUCH more apparent (owner, 2026-10-12: "make the non boss lanes much more apparent"; was
@@ -127,7 +129,7 @@ function drawLaneStrokes(live) {
     // a lane FADES IN over LANE_FADE_IN_MS of REAL time, whatever the game speed (owner)
     const key = u.pi + ":" + u.ang;
     if (!laneSeen.has(key)) laneSeen.set(key, now);
-    u.a *= Math.min(1, (now - laneSeen.get(key)) / LANE_FADE_IN_MS);
+    { const fm = laneFadeMs(); if (fm) u.a *= Math.min(1, (now - laneSeen.get(key)) / fm); }
   }
   // the lit layers are REBUILT only when what they show changes - which lanes,
   // their colours, their brightness to 1/LIT_STEPS, the camera; otherwise last
