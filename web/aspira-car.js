@@ -10,7 +10,7 @@
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const CAR_HANGAR = [3, 5, 7, 11, 11, 13]; // interceptors: PRIMES by purchase (owner: "prime numbers starting at 5") - bare 5, then I 7 (stop 1), II 11 (3), III 13 (5), IV 17 (6)
 // each axis ITS OWN job (owner, 2026-10-15: "make sure each axis for each tower feels unique"): Hangar WIDTH (more interceptors),
-// Launch TEMPO (faster there and back, a shorter reload - Warp: no flight at all), Armament DEPTH (a far harder hit, more of them)
+// Launch TEMPO (faster there and back, a shorter reload ) - (Warp, a teleport, was removed: owner, 2026-10-17), Armament DEPTH (a far harder hit, more of them)
 const CAR_SPEED = [1050, 1260, 1260, 1470, 1470, 2200]; /* x1.75 with the range 260 -> 460 (owner, 2026-10-16: "interceptor speed buff to make up for travel time"; was 600 .. 960) */ // Launch: an interceptor's speed (its reach is SKILL_MOVE) - x1.5 (owner, 2026-10-15: "increase launch speed")
 const CAR_RELOAD = [0.75, 0.55, 0.55, 0.4, 0.2709, 0.1417]; /* x0.5 with CAR_GAP 0.15 (2026-10-16) */ // Launch: s at home reloading (60% of a sortie was flying + reloading at wave 61)
 const CAR_AMMO = [4, 5, 5, 6, 6, 14]; /* halved, its bolts doubled into fewer, bigger VOLLEYS (CAR_VOLLEY_K, CAR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
@@ -64,7 +64,7 @@ const carHoldFrac = h => CAR_HOLD_FRAC[Math.min(h, CAR_HOLD_FRAC.length - 1)];
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   s.range = b.range * RANGE_BONUS; s.rate = b.rate * CAR_RATE_MUL[a]; s.dmg = b.dmg * CAR_SHOT_MUL[a] * CAR_SIDE_DMG[h] * CAR_SIDE_DMG[l]; s.targets = 1;
-  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.focus = CAR_FOCUS[h]; s.warp = l >= CAPSTONE_TIER; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]); s.skill = true;
+  s.wing = CAR_HANGAR[h]; s.speed = CAR_SPEED[l]; s.reload = CAR_RELOAD[l]; s.focus = CAR_FOCUS[h]; s.ammo = CAR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CAR_HANGAR[h]); s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -121,7 +121,6 @@ function stepIcp(i, t, st, dt) {
     i.e = e; i.ammo = st.ammo; i.bk = 0; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; t.launchCd = CAR_GAP; sfx("car");
     i.v = st.speed; i.ang = held ? i.ang : Math.atan2(e.y - fy, e.x - fx); i.jp = Math.random() * 6.283; i.jw = CAR_JIT_W[0] + Math.random() * (CAR_JIT_W[1] - CAR_JIT_W[0]); // (held: out along its orbit, turning in)
     for (let k = 0; k < 4 && !held; k++) { const [ax, ay] = carAvoid(i, e.x - fx, e.y - fy, 1); i.ang = Math.atan2(ay, ax); } // leaves already bent round the core (a carrier by it has no room to turn)
-    if (st.warp) { const a = Math.random() * 6.283; i.x = e.x + Math.cos(a) * carR(i); i.y = e.y + Math.sin(a) * carR(i); i.ang = a + Math.PI / 2; } // WARP: on the circle at once
     return;
   }
   if (i.state === "out") {
@@ -149,7 +148,7 @@ function stepIcp(i, t, st, dt) {
   }
   // back home
   const d = Math.sqrt(carDist2(i, t));
-  if (st.warp || d <= Math.max(i.v, 1) * dt * 1.5) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; }
+  if (d <= Math.max(i.v, 1) * dt * 1.5) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; }
   carSteer(i, t.x - i.x, t.y - i.y, st.speed, dt, Math.max(0, Math.min(1, (d - SLOT_R * 0.5) / SLOT_R))); // the avoidance lets go on the last approach home
 }
 // THE HOLD (owner, 2026-10-16: "hangar upgrades should allow the atc tower to have charged interceptors orbit it (with orbit distance
@@ -272,7 +271,7 @@ function carHop(i, t, st) { // (i: where the last target was - the interceptor i
   }
   return best || any;
 }
-function carHome(i, t, st) { i.state = "back"; i.e = null; i.orb = false; i.v = Math.max(i.v || 0, CAR_ORBIT_V); if (st.warp) { i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; } }
+function carHome(i, t, st) { i.state = "back"; i.e = null; i.orb = false; i.v = Math.max(i.v || 0, CAR_ORBIT_V); }
 
 // AUTOPILOT: out of ammo, the interceptor bursts into pellets - projectiles that hit the first enemy they touch, or miss
 function carBurst(i, t, st) {
