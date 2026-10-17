@@ -51,19 +51,20 @@ function drawCoreHud() {
 // with no label (owner, 2026-10-09: "relay circle should be on plane, also no need for text")
 // a step OUTSIDE the footprint (owner, 2026-10-16: "the ring is invisible?" - on the base itself the prism standing on it hid it
 // all): a hexagon round the tower's base on the floor, the tower still hiding the part behind it
-const RELAY_HEX_OUT = 1.3;
+const RELAY_HEX_OUT = 1.3, RELAY_HEX_OUT2 = 1.6; // OUT2: the thinner second ring (owner, 2026-10-16)
 function drawRelayHalos(label) {
   for (const t of G.towers) {
     const left = (t.relayUntil || 0) - (G.clock || 0);
     if (left <= 0) continue;
-    ctx.strokeStyle = COL.white; glow(COL.white, 20); ctx.lineWidth = 6;
+    ctx.strokeStyle = COL.white; glow(COL.white, 20 * blinkWave()); ctx.lineWidth = 6; // its GLOW fades in and out (owner, 2026-10-16)
     ctx.globalAlpha = 1; // 100% OPAQUE (owner, 2026-10-16; was the 0.5-1 blink)
     // the tower's own FOOTPRINT, not a circle (owner, 2026-10-16: "instead of circle, do that effect on the hexagon, defined by
     // the intersection between the tower and the floor, make sure that the part of the hexagon that is behind the tower is
     // occluded"): the 3D prism's base (aspira-warp.js solids), on the floor, so the prism standing on it hides its far edges
     const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
     ctx.beginPath(); c0.pts.forEach((q, i) => { const px = x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT, py = y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.closePath(); ctx.stroke();
-    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0; ctx.lineWidth = 2; ctx.beginPath(); c0.pts.forEach((q, i) => { const px = x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT2, py = y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT2; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.closePath(); ctx.stroke(); // the thinner second ring
+    ctx.globalAlpha = 1;
     if (label) text("RELAY ×" + RELAY_MUL + " · " + Math.ceil(left) + "s", t.x, t.y - CELL_S * 2.4, RELAY_TEXT, "white", true, true);
   }
   ctx.globalAlpha = 1; ctx.shadowBlur = 0;
@@ -103,15 +104,15 @@ function drawTimeStop(c) {
 function drawRelayHex3d() {
   const arm = typeof ui !== "undefined" && ui.relayArm; // ARMED: every tower flashes its hexagon, "tap one" (drawRelayArm's look, in 3D)
   if ((!G.core && !arm) || !warp.ent) return;
-  const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes();
-  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.strokeStyle = COL.white; g.lineWidth = 3 * px; g.lineJoin = "round";
-  g.shadowColor = COL.white; g.shadowBlur = 10 * px; g.globalAlpha = arm ? 0.3 + 0.7 * blinkWave() : 1; // a Relayed tower's ring 100% OPAQUE (owner, 2026-10-16); only the armed "tap one" flash blinks
+  const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes(), b = blinkWave();
+  const hex = (t, k) => { const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y; g.beginPath(); c0.pts.forEach((q, i) => { const p = warpProject(x + (q.x - c0.x) * TOWER_K * k, y + (q.y - c0.y) * TOWER_K * k, 0); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); }); g.closePath(); g.stroke(); };
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.strokeStyle = COL.white; g.lineJoin = "round"; g.shadowColor = COL.white;
   for (const t of G.towers) {
-    if (!arm && (t.relayUntil || 0) - (G.clock || 0) <= 0) continue;
-    const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
-    g.beginPath();
-    c0.pts.forEach((q, i) => { const p = warpProject(x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT, y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT, 0); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); });
-    g.closePath(); g.stroke();
+    if (arm) { g.globalAlpha = 0.3 + 0.7 * b; g.lineWidth = 3 * px; g.shadowBlur = 10 * px; hex(t, RELAY_HEX_OUT); continue; }
+    if ((t.relayUntil || 0) - (G.clock || 0) <= 0) continue;
+    // a Relayed tower: its ring SOLID with its GLOW fading in and out, and a THINNER second ring outside it (owner, 2026-10-16)
+    g.globalAlpha = 1; g.lineWidth = 3 * px; g.shadowBlur = 14 * px * b; hex(t, RELAY_HEX_OUT);
+    g.shadowBlur = 0; g.lineWidth = 1.2 * px; hex(t, RELAY_HEX_OUT2);
   }
   g.restore();
 }
