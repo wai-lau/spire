@@ -94,17 +94,20 @@ const farFx = e => q3d() && (e.x - CX) ** 2 + (e.y - CY) ** 2 > detailFarR * det
 // drops 3D to high, then high to low, with a float that says so. A choice on the slider is never overridden
 const AUTO_Q_MS = 34, AUTO_Q_HOLD = 3; // 34 (slow logs, 2026-10-12: a Brave averaged 36-40 ms in 3D and never stepped at 40)
 let autoQ = { ema: 16, slow: 0 }, autoQSteps = 0; // autoQSteps: how many step-downs this session (the slow log reads it)
+const AUTO_Q_PICK_MS = 40, AUTO_Q_PICK_HOLD = 10; /* a PICKED quality yields only to a long, clearly slow stretch (owner, 2026-10-16) */
 function autoQuality(dt) {
   stepDetail(dt); // the 3D detail radius follows the frame rate, chosen quality or not
-  try { if (localStorage.getItem("spire.qpick")) return; } catch (e) { /* no storage: still step down */ } // only a slider PICK stops it - a quality merely remembered from before does not (slow log, 2026-10-12)
+  let picked = false;
+  try { picked = !!localStorage.getItem("spire.qpick"); } catch (e) { /* no storage: still step down */ } // a slider PICK is stepped down only by the slower rule below - a quality merely remembered from before is not a pick (slow log, 2026-10-12)
   if (qMode === "low" || !(dt > 0) || dt > 0.5) return; // (a stall, a tab switch: not a frame time)
   autoQ.ema += (dt * 1000 - autoQ.ema) * 0.05;
-  autoQ.slow = autoQ.ema > AUTO_Q_MS ? autoQ.slow + dt : 0;
-  if (autoQ.slow < AUTO_Q_HOLD) return;
+  const ms = picked ? AUTO_Q_PICK_MS : AUTO_Q_MS, hold = picked ? AUTO_Q_PICK_HOLD : AUTO_Q_HOLD; /* (the REAL frame interval, not our timed ms) */
+  autoQ.slow = autoQ.ema > ms ? autoQ.slow + dt : 0;
+  if (autoQ.slow < hold) return;
   const to = qMode === "3d" ? "high" : "low";
-  qMode = to; lowQ = to === "low"; autoQ = { ema: 16, slow: 0 }; autoQSteps++; // (set directly: setQuality would STORE it as a choice)
+  qMode = to; lowQ = to === "low"; autoQ = { ema: 16, slow: 0 }; autoQSteps++; // (set directly: setQuality would STORE it as a choice - the pick stays what the player chose; this never steps UP)
   if (typeof towerSprites !== "undefined") towerSprites.clear();
   if (typeof resize === "function") { resize(); if (typeof fitK !== "undefined") fitK = cam.fit; }
   updateQuality();
-  if (typeof float === "function") float(CX, CY - 120, "quality lowered for speed", "white", 18, 3, 1, 3);
+  if (typeof float === "function") float(CX, CY - 120, (picked ? "quality lowered for speed (slow frames)" : "quality lowered for speed"), "white", 18, 3, 1, 3);
 }
