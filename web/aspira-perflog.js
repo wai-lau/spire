@@ -114,6 +114,7 @@ function perfSplit() {
   return { picMs: r(perf.picMs), fxMs: r(perf.fxMs), bindMs: r(perf.bindMs), fxN: Math.round(perf.fxN / n), fxMax: perf.fxMax, upBoard: +(perf.upBoard / n).toFixed(2), upDyn: +(perf.upDyn / n).toFixed(2), textPx: typeof textPx !== "undefined" ? Math.round(textPx / 1e3) : null, canvasK: perfCanvasK(), textN: typeof textSprites !== "undefined" ? textSprites.size : null, why: typeof glcWhyN !== "undefined" ? Object.fromEntries(Object.entries(glcWhyN).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, v]) => [k, +(v / n).toFixed(2)])) : null, tex: typeof cv !== "undefined" ? cv.width : null, fxTex: typeof fxGl !== "undefined" && fxGl.S ? fxGl.S : null };
 }
 function perfSend() {
+  { const pl = perf.act.playing, wt = perf.act.waiting; if (!((pl && pl[0] >= 1) || (wt && wt[0] >= 1))) { perfReset(); return; } } /* a window with no play or waiting time (paused, menu, idle, hidden, over only) carries nothing: not sent, so an idle tab cannot push real logs out of the server's 400 files */
   const ver = document.querySelector(".asp-ver span");
   const body = {
     sid: perfSid, v: ver ? ver.textContent + "+" + (ver.parentNode.dataset.build || "?") : "?", /* the version + the files' stamp (a cached phone shows an old one) */ secs: Math.round(perf.secs), frames: perf.frames, avgMs: +(perf.sum / Math.max(1, perf.frames)).toFixed(1),
