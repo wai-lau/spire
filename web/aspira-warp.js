@@ -46,7 +46,7 @@ void main() {
 const WARP_FS = `
 precision mediump float;
 uniform sampler2D tex, dyn, fxt; /* dyn: the moving layer, premultiplied, over the board (aspira-warplayers.js); fxt: the hits over both (aspira-fxgl.js) */ uniform vec2 edge; uniform vec3 gridCol; uniform vec4 grid; // grid: ring, spoke angle, far, alpha
-uniform float towers, onBoard, op, neck, bgA, invR; uniform vec3 bgCol, shape; // shape: the funnel's head rim, foot (world units), power // op: the whole bell SEMI-TRANSPARENT, nothing occluded (owner)
+uniform float towers, onBoard, op, neck, bgA, invR, fold; uniform vec3 bgCol, shape; // shape: the funnel's head rim, foot (world units), power // op: the whole bell SEMI-TRANSPARENT, nothing occluded (owner)
 varying vec2 uv; varying float sh, rr, th;
 float line(float d, float wd) { return 1.0 - smoothstep(wd * 0.5, wd * 1.5, d); }
 ${HULL_GLSL}
@@ -77,7 +77,12 @@ void main() {
   float lit = clamp(max(max(ink.r, ink.g), ink.b) * 3.0, 0.0, 1.0); // the background itself is see-through: seen from above, the wall stacks a hundred layers of it over the top
   float A = max(lit, bgA * board); // the board's background TRANSLUCENT, not clear (owner): it dims what lies behind it
   vec3 c = col * lit + bgCol * sh * (A - lit); // premultiplied: the ink over a translucent fill of the plain background
-  gl_FragColor = vec4(mix(c, gridCol * sh, gk), max(A, gk)) * op;
+  vec4 g = vec4(mix(c, gridCol * sh, gk), max(A, gk)) * op;
+  if (fold > 0.5) { /* the lanes' SCREEN brightening (aspira-fog.js warpLanesOver, a 2D pass over the whole layer): the picture screened over itself at WARP_LANES_A, here in the one pass that makes it (perf) */
+    float a = g.a, ls = ${WARP_LANES_A.toFixed(3)} * a; vec3 C = a > 0.0 ? g.rgb / a : vec3(0.0);
+    g = vec4((1.0 - ls) * g.rgb + (1.0 - a) * ls * C + ls * a * (2.0 * C - C * C), ls + a * (1.0 - ls));
+  }
+  gl_FragColor = g;
 }`;
 
 // the FULL boss sky in 3D (owner, 2026-10-11: "invert has huge cost"): the bell's picture turned over INSIDE GL by one
@@ -212,7 +217,7 @@ function warpDraw() {
   gl.uniform2f(u("edge"), WARP.edge[0], WARP.edge[1]);
   gl.uniform3fv(u("gridCol"), warpGridRgb()); gl.uniform3fv(u("bgCol"), warpGridRgb("bg"));
   gl.uniform4f(u("grid"), WARP.grid.ring, Math.PI * 2 / WARP.grid.spokes, WARP.grid.far, WARP.grid.a);
-  gl.uniform1f(u("towers"), WARP_TOWERS); gl.uniform1f(u("onBoard"), WARP.grid.onBoard); gl.uniform1f(u("op"), WARP.alpha); gl.uniform1f(u("neck"), WARP.grid.neck); gl.uniform1f(u("bgA"), WARP.bgA); gl.uniform1f(u("invR"), -1); /* the picture is no longer drawn inverted in 3D (skyFlip): nothing to turn back */ gl.uniform3f(u("shape"), WARP_TOWERS, R0, WARP.pow);
+  gl.uniform1f(u("fold"), warp.noFold ? 0 : 1); gl.uniform1f(u("towers"), WARP_TOWERS); gl.uniform1f(u("onBoard"), WARP.grid.onBoard); gl.uniform1f(u("op"), WARP.alpha); gl.uniform1f(u("neck"), WARP.grid.neck); gl.uniform1f(u("bgA"), WARP.bgA); gl.uniform1f(u("invR"), -1); /* the picture is no longer drawn inverted in 3D (skyFlip): nothing to turn back */ gl.uniform3f(u("shape"), WARP_TOWERS, R0, WARP.pow);
   if (warp.attrProg !== pr) { warp.attrProg = pr; warp.attrLoc = gl.getAttribLocation(pr, "a"); }
   const loc = warp.attrLoc;
   gl.bindBuffer(gl.ARRAY_BUFFER, warp.buf);
@@ -335,7 +340,7 @@ function warpEntities() {
     // BELOW the floor, fading slice by slice, then the tracers and marks on it, then ABOVE (aspira-fog.js; owner: "geometry
     // should just start losing opacity in a gradient when lower than the floor")
     warp.coreWalls = coreWallPieces(); // once a frame (it keeps the life segments in step)
-    warpBands(above => { if (above) for (const e of G.enemies) up(e.x, e.y, () => drawEnemy(e, true)); drawDice(); }, () => { warpLanesOver(); if (!lowQ) { ctx.setTransform(1, 0, 0, 1, 0, 0); drawStars(warpStar); } warpShieldLines(warp.coreWalls.filter(p => !coreFront(p)), COL.white, 1, [CX, CY]); for (const { e, w, col } of dice) if (w.length) warpShieldLines(w, col, 0.8, [e.x, e.y]); }); // the shields: lines on the floor, with the lanes // (the tracers and marks: flat on the floor, through the die's centre)
+    warpBands(above => { if (above) for (const e of G.enemies) up(e.x, e.y, () => drawEnemy(e, true)); drawDice(); }, () => { if (warp.noFold) warpLanesOver(); if (!lowQ) { ctx.setTransform(1, 0, 0, 1, 0, 0); drawStars(warpStar); } warpShieldLines(warp.coreWalls.filter(p => !coreFront(p)), COL.white, 1, [CX, CY]); for (const { e, w, col } of dice) if (w.length) warpShieldLines(w, col, 0.8, [e.x, e.y]); }); // the shields: lines on the floor, with the lanes // (the tracers and marks: flat on the floor, through the die's centre)
     // every POP-UP text over all of it (owner: "make sure all pop up text, like interest, is above the rendering"),
     // facing the camera (at) so it stays readable: damage numbers, the floating texts, the banner and the boss's title
     // and with NO perspective (owner: "no perspective effects on that"): at its spot, the board's plain scale
