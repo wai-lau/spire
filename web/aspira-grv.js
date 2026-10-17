@@ -7,20 +7,20 @@
 // simulator too); towerStats calls grvSkillStats, the tower loop stepGrv, fire() novaAt, drawScene drawGrv.
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const GRV_AURA_R = [68, 78, 88, 99, 109, 122]; // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
+const GRV_AURA_R = [85, 98, 110, 124, 136, 153]; /* x1.25 with the faster evaporation (owner, 2026-10-16: "raise bh fire rate and bh size to compensate"; was 68 .. 122) */ // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
 const GRV_SLOW = [0.12, 0.15, 0.18, 0.21, 0.24, 0.27]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
 const GRV_NOVA_R = [71, 85, 99, 112, 126, 139]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
 const GRV_NOVA_MUL = [1, 1.3, 1.6, 2, 2.4, 2.8]; // Supernova: the nova's hit, x the tower's damage
 const GRV_PELLETS = [6, 7.8, 9.6, 11.4, 13.2, 15]; // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
 const GRV_PELLET_K = [0.25, 0.32, 0.4, 0.48, 0.56, 0.65]; // Radiation: a pellet's hit, x the tower's damage
 let GRV_AURA_K = 0.6; // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
-const GRV_LIFE = 5; // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1)
+const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1) - x2 faster (owner, 2026-10-16: "some bh taking too long to evaporate if merged with too many / increase bh evaporation speed significantly"; was 5)
 // EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction
 // and evaporation rate based on circle curcumference"): a sphere's AREA is its mass (aura radius = root of mass x its area-per-mass,
 // set as its aura opens), and it loses mass at GRV_EVAP x its radius in base auras a second - so it SHRINKS all its life, and a big
 // one (a fat nova, a merge) burns out faster. dm/dt = -E root(m) gives the base sphere 2 / E s: GRV_LIFE (was: a linear 1 / GRV_LIFE
 // of the starting mass a second, whatever its size, and a shrink only in its last 0.8 s)
-const GRV_R_MAX = 3; // a hole's radius at most, in base auras (its MASS may go on: radiation, strip and slow scale by it)
+const GRV_R_MAX = 9; /* x3 (owner, 2026-10-16: "triple black hole visual max size"; was 3) */ //  // a hole's radius at most, in base auras (its MASS may go on: radiation, strip and slow scale by it)
 const GRV_EVAP = 2 / GRV_LIFE, GRV_RAD_LIFE = 1.6; /* x0.32 of the linear sphere's pace (countermx 61-69 spread: 5 0/0/0/0, 2 1/10/7/2, 1.25 2/19/8/20; 4.6.15 was 2/27/13/7) */ // RAD_LIFE: the pellets a unit of mass gives off stay the linear 5 s sphere's (radiation is not the life)
 const GRV_MASS_MAX = 3, GRV_GAIN = 0.12; // mass gained per one tower-hit of damage dealt (nova, aura, pellets)
 const GRV_STRIP = 2.5 /* (was 1.5) swap test 2026-10-16: ARC+FRZ+GRV bled 106 lives to armor, GRV its only armor answer */, GRV_STRIP_IN = 1.5, GRV_STRIP_OUT = 0.5; // (x3, 2026-10-15: GRV leaked 16% of armor, its own type) armor stripped, x the aura's damage dealt - POSITIVE armor only (it stops at zero)
@@ -105,7 +105,7 @@ function stepGrv(t, dt) {
 // part that ADDS: mass, its cap, its linear loss a second (so it still dies when its parts would have, together), the nova damage
 // behind it, and the aura's AREA (radius = root of the summed squares). Its mass - its radiation, strip and slow - can pass
 // GRV_MASS_MAX: the cap is the parts' summed
-const GRV_PULL_A = 45, GRV_PULL_D = 60, GRV_PULL_V = 110, GRV_PULL_K = 1.6, GRV_MERGE_S = 0.35; // u/s2 a unit of the other's mass at GRV_PULL_D u or closer (1 / d2 past it); u/s at most; reach; s to ease out
+const GRV_PULL_A = 45, GRV_PULL_D = 60, GRV_PULL_V = 110, GRV_PULL_K = 1.6, GRV_MERGE_S = 0.35, GRV_MERGE_D = 2; // u/s2 a unit of the other's mass at GRV_PULL_D u or closer (1 / d2 past it); u/s at most; reach; s to ease out
 let grvAll = [];
 function grvPull(t, st, dt) {
   grvAll = [];
@@ -117,7 +117,11 @@ function grvPull(t, st, dt) {
       const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6, reach = a.ar + b.ar;
       if (d > reach * GRV_PULL_K) continue;
       /* merged once their black CENTRES touch (owner, 2026-10-16: "require black hole spheres to actually touch before merging"; was 0.45 x the summed auras) */
-      if (d <= grvCoreR(a.ar) + grvCoreR(b.ar)) { grvMerge(a.ar >= b.ar ? a : b, a.ar >= b.ar ? b : a); if (a.merged) break; continue; }
+      /* ... and now only when their CENTRES meet (owner, 2026-10-16: "dont instamerge when they touch, only when their centers are aligned"): under GRV_MERGE_D u, or the step carries them past each other (the closest approach of this step's relative motion), so a pair cannot overshoot and orbit; touching cores just keep pulling, damped near the end so they settle */
+      const rvx = (b.vx || 0) - (a.vx || 0), rvy = (b.vy || 0) - (a.vy || 0), rv2 = rvx * rvx + rvy * rvy;
+      const tc = rv2 > 1e-9 ? Math.min(dt, Math.max(0, -(dx * rvx + dy * rvy) / rv2)) : 0, cd = Math.hypot(dx + rvx * tc, dy + rvy * tc);
+      if (d <= GRV_MERGE_D || cd <= GRV_MERGE_D) { grvMerge(a.ar >= b.ar ? a : b, a.ar >= b.ar ? b : a); if (a.merged) break; continue; }
+      if (d <= grvCoreR(a.ar) + grvCoreR(b.ar)) { a.vx = (a.vx || 0) * (1 - 3 * dt); a.vy = (a.vy || 0) * (1 - 3 * dt); } /* cores touching: settle */
       const f = GRV_PULL_A * dt * Math.max(0, b.mass) * (GRV_PULL_D / Math.max(d, GRV_PULL_D)) ** 2; // a's pull toward b: b's MASS over the distance squared (owner, 2026-10-16: "bh acceleration should be dependent on mass"; was a fixed 45 shared by mass)
       a.vx = (a.vx || 0) + dx / d * f; a.vy = (a.vy || 0) + dy / d * f;
     }
@@ -176,7 +180,7 @@ function stepSphere(sp, t, st, dt) {
   // faster"): the old pellet rate x mass, x how much faster than the old linear life (1 / GRV_RAD_LIFE a second) it loses mass - a
   // sphere gives off what the linear one did over its life, a big one sooner (radiating only what it lost - pellets x 2.5 a unit
   // of mass - starved a FED sphere, which the old one kept near its cap: countermx 61-69 2/27/13/7 -> 48/89/87/76)
-  const lost = Math.min(sp.mass, GRV_EVAP * grvAuraR(sp, st) / st.auraR * dt);
+  const lost = Math.min(sp.mass, GRV_EVAP * (sp.apm ? Math.sqrt(sp.apm * Math.max(0, sp.mass)) : grvAuraR(sp, st)) / st.auraR * dt); // by its UNCAPPED radius: a merge of many (its drawn size capped at GRV_R_MAX, its mass not) burnt out at the cap's pace and lingered
   sp.mass -= lost;
   sp.pel += st.pellets * k * GRV_RAD_LIFE * lost; // the OLD rate (x mass) sped up by how much faster than the old linear 1 / 5 s it loses mass
   const w = Math.max(1, ((t.pellets ? t.pellets.length : 0) / GRV_PEL_SOFT) ** 2); // BUNDLED past GRV_PEL_SOFT in flight (perf): one pellet carrying w pellets' hit, w times fewer
