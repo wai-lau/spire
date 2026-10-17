@@ -371,7 +371,7 @@ function warpEntities() {
   // inverted palette any more, and the bell's own picture is plain (the shader turns the 2D sky back)
   const entCtx2d = ctx;
   try {
-    if (needPic) { ctx.globalCompositeOperation = "copy"; ctx.drawImage(warp.cv, 0, 0); ctx.globalCompositeOperation = "source-over"; } // (the full sky: already turned over, in GL - warpFlip)
+    if (needPic) { ctx.globalCompositeOperation = "copy"; ctx.drawImage(warp.cv, 0, 0); ctx.globalCompositeOperation = "source-over"; if (typeof perf !== "undefined") perf.glCopy++; } // (the full sky: already turned over, in GL - warpFlip)
     let partB = null;
     if (skyPal()) withPalette(() => { partB = all(); }); else partB = all();
     if (skyPal()) withPalette(drawPhoneFrame3d); else drawPhoneFrame3d(); drawLeashRings3d(); /* the leash rings, square to the screen (aspira-camera.js) */ /* the phone's screen, turned over with the sky (owner, 2026-10-13; aspira-camera.js) */

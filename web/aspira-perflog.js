@@ -7,7 +7,7 @@
 const PERF_SEND_S = 180, PERF_BUCKETS = [16.7, 33, 50, 100, Infinity];
 const perfSid = Math.random().toString(36).slice(2, 10);
 let perf = null;
-const perfReset = () => { perf = { secs: 0, frames: 0, sum: 0, buckets: PERF_BUCKETS.map(() => 0), worst: [], maxEnemies: 0, sfxCalls: 0, sfxPlayed: 0, simMs: 0, drawMs: 0, warpMs: 0, glMs: 0, entMs: 0, speed: 0, picMs: 0, fxMs: 0, bindMs: 0, fxN: 0, fxMax: 0, upBoard: 0, upDyn: 0, cbMs: 0, lagMs: 0 }; if (typeof glcWhyN !== "undefined") for (const k in glcWhyN) delete glcWhyN[k]; };
+const perfReset = () => { perf = { secs: 0, frames: 0, sum: 0, buckets: PERF_BUCKETS.map(() => 0), worst: [], maxEnemies: 0, sfxCalls: 0, sfxPlayed: 0, simMs: 0, drawMs: 0, warpMs: 0, glMs: 0, entMs: 0, speed: 0, picMs: 0, fxMs: 0, bindMs: 0, fxN: 0, fxMax: 0, upBoard: 0, upDyn: 0, cbMs: 0, lagMs: 0, up: 0, upPx: 0, read: 0, glCopy: 0 }; if (typeof glcWhyN !== "undefined") for (const k in glcWhyN) delete glcWhyN[k]; };
 perfReset();
 // the sound calls counted on their way through (sfx is a global function: every caller looks it up by name)
 if (typeof sfx === "function") { const sfx0 = sfx; sfx = function (...a) { perf.sfxCalls++; const r = sfx0.apply(this, a); if (r) perf.sfxPlayed++; return r; }; }
@@ -26,6 +26,17 @@ if (typeof fxGlRender === "function") { const f0 = fxGlRender; fxGlRender = func
 if (typeof warpLayersBind === "function") { const b0 = warpLayersBind; warpLayersBind = function (...a) { if (typeof warp !== "undefined") { if (warp.statNew) perf.upBoard++; if (warp.dynUp) perf.upDyn++; } return b0.apply(this, a); }; }
 /* the whole frame callback's own time, and how late the browser called it (2026-10-16: a Brave averaged 48 ms a frame with ~10 ms of timed JS - this says whether the rest is the page or the browser) */
 function perfCb(now, t0) { if (document.hidden || ui.paused) return; const t1 = performance.now(); perf.cbMs += t1 - t0; perf.lagMs += Math.max(0, Math.min(100, t0 - now)); }
+/* CPU <-> GPU SYNCS, counted (2026-10-16: a Radeon / ANGLE D3D11 laptop's GPU process stalled ~25 ms a frame with ~3 ms of our JS): canvas -> WebGL texture uploads (and their pixels), readbacks (getImageData, readPixels, toDataURL, toBlob), and WebGL -> 2D copies (warp.js) */
+(function () {
+  const wrap = (C, nm, fn) => { if (!C || !C.prototype[nm]) return; const f = C.prototype[nm]; C.prototype[nm] = function (...a) { try { fn(a); } catch (e) { /* never in the way */ } return f.apply(this, a); }; };
+  for (const C of [window.WebGLRenderingContext, window.WebGL2RenderingContext]) {
+    for (const nm of ["texImage2D", "texSubImage2D"]) wrap(C, nm, a => { const s = a[a.length - 1]; if (s && s.tagName === "CANVAS") { perf.up++; perf.upPx += s.width * s.height; } });
+    wrap(C, "readPixels", () => { perf.read++; });
+  }
+  wrap(window.CanvasRenderingContext2D, "getImageData", () => { perf.read++; });
+  wrap(window.HTMLCanvasElement, "toDataURL", () => { perf.read++; }); wrap(window.HTMLCanvasElement, "toBlob", () => { perf.read++; });
+})();
+const perfSync = () => { const s = Math.max(1, perf.secs); return { upPerSec: +(perf.up / s).toFixed(1), upMpxPerSec: +(perf.upPx / s / 1e6).toFixed(2), readPerSec: +(perf.read / s).toFixed(2), glCopyPerSec: +(perf.glCopy / s).toFixed(2) }; };
 function perfTick(dt) {
   if (!(dt > 0) || dt > 1 || ui.paused || document.hidden) return; // a stall or a tab switch is not a frame
   const ms = dt * 1000;
@@ -67,7 +78,7 @@ function perfSend() {
     buckets: Object.fromEntries(PERF_BUCKETS.map((b, i) => ["<" + b, perf.buckets[i]])), worst: perf.worst, maxEnemies: perf.maxEnemies,
     gpuSplit: perfSplit(), perFrame: { simMs: +(perf.simMs / Math.max(1, perf.frames)).toFixed(1), drawMs: +(perf.drawMs / Math.max(1, perf.frames)).toFixed(1), warpMs: +(perf.warpMs / Math.max(1, perf.frames)).toFixed(1), glMs: +(perf.glMs / Math.max(1, perf.frames)).toFixed(1), entMs: +(perf.entMs / Math.max(1, perf.frames)).toFixed(1), speed: +(perf.speed / Math.max(1, perf.frames)).toFixed(2), cbMs: +(perf.cbMs / Math.max(1, perf.frames)).toFixed(1), lagMs: +(perf.lagMs / Math.max(1, perf.frames)).toFixed(1), dpr: typeof canvasDpr === "function" ? +canvasDpr().toFixed(2) : null }, // (3D: drawMs is inside warpMs; cbMs: the whole frame callback, lagMs: the browser's delay handing it the frame - an avgMs far above both is the compositor / GPU, outside our code)
     detailR: typeof detailFarR !== "undefined" ? Math.round(detailFarR) : null, texCap: typeof warpTexCap !== "undefined" ? Math.round(warpTexCap) : null, warpRes: typeof WARP_RES !== "undefined" ? +WARP_RES.toFixed(2) : null, // 3D's full-detail radius at send time
-    diag: typeof DIAG !== "undefined" ? DIAG : "", quality: qMode, autoQ: typeof autoQ !== "undefined" ? Math.round(autoQ.ema) : null, qpick: (() => { try { return localStorage.getItem("spire.qpick"); } catch (e) { return "?"; } })(), stepped: typeof autoQSteps !== "undefined" ? autoQSteps : null, wave: G.wave, brave: !!navigator.brave,
+    sync: perfSync(), diag: typeof DIAG !== "undefined" ? DIAG : "", quality: qMode, autoQ: typeof autoQ !== "undefined" ? Math.round(autoQ.ema) : null, qpick: (() => { try { return localStorage.getItem("spire.qpick"); } catch (e) { return "?"; } })(), stepped: typeof autoQSteps !== "undefined" ? autoQSteps : null, wave: G.wave, brave: !!navigator.brave,
     screen: [innerWidth, innerHeight, devicePixelRatio], canvas: [cv.width, cv.height],
     gpu: perfGpu(), // the WebGL renderer ("SwiftShader" / "llvmpipe" = software, no GPU)
     audio: { ac: typeof AC !== "undefined" && AC ? AC.state : null, samples: typeof SAMPLES !== "undefined" ? Object.values(SAMPLES).filter(s => s.length).length : null, calls: perf.sfxCalls, played: perf.sfxPlayed, muted: typeof muted !== "undefined" ? muted : null, volume: typeof volume !== "undefined" ? volume : null },
