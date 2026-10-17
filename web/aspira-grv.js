@@ -53,7 +53,11 @@ SKILL_MOVE.grv = { void: [[1, 1], [1.02, 1], [1.04, 1], [1.06, 1], [1.08, 1], [1
 
 function grvSkillStats(t, s, b) {
   const v = skillOf(t, "void"), n = skillOf(t, "supernova"), r = skillOf(t, "radiation");
-  s.dmg = b.dmg; s.range = b.range * RANGE_BONUS; s.rate = b.rate * GRV_RATE_MUL[n]; s.targets = 1;
+  // HALF the fire-rate GAIN, the damage making up the rest (owner, 2026-10-17: "halve the increases in fire rate from any upgrades ...
+  // keep damage the same and keep the min fire rate at level 0 rate"): a tier's rate x(1 + (m - 1) / 2), its damage x m / that - the
+  // same damage a second from fewer, harder novas (and their holes' pellets and burn, which scale by st.dmg)
+  const rm = GRV_RATE_MUL[n], rh = 1 + (rm - 1) / 2;
+  s.dmg = b.dmg * rm / rh; s.range = b.range * RANGE_BONUS; s.rate = b.rate * rh; s.targets = 1;
   s.auraR = GRV_AURA_R[v]; s.slow = GRV_SLOW[v]; s.stripMul = GRV_STRIP_MUL[v]; s.innerK = GRV_INNER_T[v]; s.horizon = v >= CAPSTONE_TIER;
   s.novaR = GRV_NOVA_R[n]; s.novaMul = GRV_NOVA_MUL[n]; s.hyper = n >= CAPSTONE_TIER;
   s.pellets = GRV_PELLETS[r]; s.pelletK = GRV_PELLET_K[r]; s.hawking = r >= CAPSTONE_TIER; s.skill = true;

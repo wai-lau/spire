@@ -80,6 +80,7 @@ const CHANGELOG = [
     "Perf: on phones whose GPU stalls on uploads, a lane that empties mid-wave stays lit until the whole wave is done, instead of costing a redraw.",
     "Carrier: the Strafe hit (an interceptor ramming its target on arrival) is gone.",
     "A tower's upgrade card now opens only from its home slot (its origin), not by tapping the tower itself.",
+    "Gravity: Supernova's fire-rate gains are halved (x1.5 / x2 / x2.8 instead of x2 / x3 / x4.6) and each nova hits harder to keep the same damage.",
     "Gravity: black holes give off half as many radiation pellets, each hitting twice as hard.",
     "Gravity: the nova's ring is much thinner and grows brighter and whiter as it collapses into the centre.",
     "Orbital Relay: a relayed tower now acts as five, not three (and a relayed Carrier launches 5 interceptors at a time).",
