@@ -52,7 +52,7 @@ const fxGlDisc = (x, y, r, lw, css, fillA, strokeA, square) => fxGlPush(x, y, x,
 // tcam: the board picture's camera (ox, oy px, k px a world unit); the colours premultiplied here
 const FXGL_VS = `
 attribute vec2 corner, p0, p1; attribute vec3 rws, dashA; attribute vec4 fillC, strokeC, clipB, skyC;
-uniform vec2 S; uniform vec3 tcam; varying vec2 loc; varying vec4 v, fc, sc, cb, sky; varying vec3 dsh; varying vec2 ppos;
+uniform vec2 S; uniform vec3 tcam; uniform float tight; varying vec2 loc; varying vec4 v, fc, sc, cb, sky; varying vec3 dsh; varying vec2 ppos;
 void main() {
   vec2 a = tcam.xy + p0 * tcam.z, b = tcam.xy + p1 * tcam.z;
   vec2 d = b - a; float len = length(d); vec2 u = len > 0.001 ? d / len : vec2(1.0, 0.0), nrm = vec2(-u.y, u.x);
@@ -60,7 +60,8 @@ void main() {
   loc = vec2(corner.x * (hl + ext), corner.y * ext); v = vec4(r, h, rws.z, hl);
   cb = vec4(dot(clipB.xy, u), dot(clipB.xy, nrm), dot(clipB.zw, u), dot(clipB.zw, nrm)); /* the joint planes, in the segment's own frame */
   dsh = dashA * tcam.z;
-  if (rws.z > 3.5) { u = normalize(d); nrm = vec2(-u.y, u.x); loc = corner * (r + (rws.z > 4.5 ? h : 0.0) + 1.5); v.w = len / tcam.z; } /* 4, a cone: round its tip, p1 - p0 its direction, its length the half angle; 5, a regular polygon: p1 - p0 its first corner's direction, its length the sides */
+  if (rws.z > 3.5) { u = normalize(d); nrm = vec2(-u.y, u.x); loc = corner * (r + (rws.z > 4.5 ? h : 0.0) + 1.5); v.w = len / tcam.z; }
+  if (tight > 0.5 && rws.z < 4.5 && rws.z > 3.5) { float th = len / tcam.z, hw = th < 1.5 ? r * sin(th) + 2.0 : r + 2.0; loc = vec2(mix(-1.5, r + 1.5, corner.x * 0.5 + 0.5), corner.y * hw); } /* a cone: its quad is the sector's box (along its direction, as wide as its edge), not the square round the whole disc - ~20x less overdraw */ /* 4, a cone: round its tip, p1 - p0 its direction, its length the half angle; 5, a regular polygon: p1 - p0 its first corner's direction, its length the sides */
   vec2 C = tcam.xy + clipB.xy * tcam.z, cen = (a + b + C) / 3.0; /* 6, a triangle: p0, p1 and clipB.xy its corners, sent on (from its middle, px) in cb and dsh */
   if (rws.z > 5.5) { u = vec2(1.0, 0.0); nrm = vec2(0.0, 1.0); loc = corner * (max(length(a - cen), max(length(b - cen), length(C - cen))) + h + 1.5); cb = vec4(a - cen, b - cen); dsh = vec3(C - cen, 0.0); }
   vec2 mid = rws.z > 5.5 ? cen : rws.z > 3.5 ? a : (a + b) * 0.5;
@@ -117,7 +118,7 @@ function fxGlInit(gl) {
   const lutTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, lutTex);
   for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)); fxGl.lutTex = lutTex; fxGl.lutRows = []; fxGl.lutDirty = false;
-  Object.assign(fxGl, { gl, pr, ext, tex, quad, fb: gl.createFramebuffer(), buf: gl.createBuffer(), loc, S: 1, u: { S: gl.getUniformLocation(pr, "S"), tcam: gl.getUniformLocation(pr, "tcam"), lut: gl.getUniformLocation(pr, "lut") } });
+  Object.assign(fxGl, { gl, pr, ext, tex, quad, fb: gl.createFramebuffer(), buf: gl.createBuffer(), loc, S: 1, u: { S: gl.getUniformLocation(pr, "S"), tcam: gl.getUniformLocation(pr, "tcam"), lut: gl.getUniformLocation(pr, "lut"), tight: gl.getUniformLocation(pr, "tight") } });
   return fxGl;
 }
 // the gathered effects into fxGl.tex (S px a side, the board picture's camera - warp.texCam), before the bell is drawn
@@ -135,7 +136,7 @@ function fxGlRender(gl) {
     gl.uniform2f(fxGl.u.S, S, S); gl.uniform3f(fxGl.u.tcam, tc.ox, tc.oy, tc.k);
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, fxGl.lutTex);
     if (fxGl.lutDirty) { gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fxGl.lutCv); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); fxGl.lutDirty = false; }
-    gl.uniform1i(fxGl.u.lut, 3); gl.activeTexture(gl.TEXTURE0);
+    gl.uniform1i(fxGl.u.lut, 3); gl.activeTexture(gl.TEXTURE0); gl.uniform1f(fxGl.u.tight, fxGl.noTight ? 0 : 1);
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.bindBuffer(gl.ARRAY_BUFFER, fxGl.quad); gl.enableVertexAttribArray(L.corner); gl.vertexAttribPointer(L.corner, 2, gl.FLOAT, false, 0, 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, fxGl.buf); gl.bufferData(gl.ARRAY_BUFFER, fxGl.inst.subarray(0, n * FXGL_IN), gl.STREAM_DRAW);
