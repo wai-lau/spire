@@ -97,7 +97,7 @@ const CAPSTONE_TIERS = {
   supernova: { name: "Hypernova" },
   radiation: { name: "Hawking" },
   hangar: { name: "Full Wing" },
-  launch: { name: "Chain" },
+  launch: { name: "Anchor" } /* (owner, 2026-10-17: "have Anchor as the final level") - its beam chains on to one more enemy */,
   armament: { name: "Autopilot" },
 };
 for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1 && CAPSTONE_TIERS[ax.id]) ax.tiers.push(CAPSTONE_TIERS[ax.id]);
