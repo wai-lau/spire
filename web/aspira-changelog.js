@@ -45,6 +45,7 @@ const CHANGELOG = [
     "Perf: high and low quality draw the board's grid and lanes from one cached layer.",
     "Perf: the 3D view no longer copies its WebGL picture into the 2D overlay every frame.",
     "Perf: the 3D view no longer re-sends its moving layer to the GPU every frame while a GRV black hole is alive.",
+    "Perf: the boss sky's spread no longer re-sends the moving layer to the GPU every frame.",
     "If the game runs slowly it now drops straight from 3D to low quality (it used to pass through high).",
     "Damage numbers use each tower's build-card text colour (paler for Gravity and Carrier), with a black outline - Freeze's chill and Acid's pools too.",
     "ATC: its description says how many interceptors it can store in orbit, not a percentage.",
