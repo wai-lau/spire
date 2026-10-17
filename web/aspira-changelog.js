@@ -36,6 +36,8 @@ const CHANGELOG = [
     "Gravity and Carrier: smoother with many pellets in the air - past ~80 a Gravity's pellets merge into fewer, harder ones (same damage on average).",
     "Threat marks are bright red, on a boss sky too.",
     "Perf: 3D view does less per-frame GPU setup work.",
+    "Autosave: a checkpoint after every boss, once the field is clear - resume starts between waves, never mid-fight.",
+    "Slow frames now lower the quality even if you picked it yourself (it tells you, and never raises it again).",
     "Build cards: each enemy symbol keeps its own colour - fast no longer took the tower's colour.",
     "All towers: damage numbers in the colour of the tower that dealt them (crits white), greying with the armor that blunted them.",
     "All towers: damage numbers fly away from where the hit came from - the tower, the bolt's or pellet's way, the enemy an arc jumped from, the pool or blast.",

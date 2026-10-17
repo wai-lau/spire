@@ -19,9 +19,14 @@ async function runDo(mode, fn) {
 // the clone is taken the moment put() is called: the state as this wave starts
 const runSave = () => { if (G.started && !G.over) runDo("readwrite", s => s.put({ G, wave: G.wave, lives: G.lives, at: Date.now() }, RUN_KEY)); };
 const runClear = () => runDo("readwrite", s => s.delete(RUN_KEY));
-// every wave sent saves; every end (a loss, a win) clears - the globals are looked up by name, so wrapping them reaches every caller
+// a CHECKPOINT AT EVERY BOSS, on a CLEAR board (owner, 2026-10-16: "save to last wave not mid wave", "actually, save every boss"):
+// once a boss wave is beaten and nothing is left on the field or still to spawn (waveClear, aspira-waves.js), that state is
+// saved - a resume starts between waves, the boss behind it. Was: every wave as it was SENT, mid-fight. Every end (a loss, a
+// win) clears; the globals are looked up by name, so wrapping them reaches every caller
+let runSavedAt = 0;
+const runCheckpoint = () => { if (G.started && !G.over && G.wave > runSavedAt && G.wave % STAR_EVERY === 0 && waveClear()) { runSavedAt = G.wave; runSave(); } };
 if (typeof indexedDB !== "undefined") {
-  const send0 = sendWave; sendWave = function (...a) { const r = send0.apply(this, a); runSave(); return r; };
+  setInterval(runCheckpoint, 500);
   const over0 = gameOver; gameOver = function (...a) { runClear(); return over0.apply(this, a); };
   const win0 = winGame; winGame = function (...a) { runClear(); return win0.apply(this, a); };
 }
@@ -29,17 +34,17 @@ if (typeof indexedDB !== "undefined") {
 function runOffer(saved) {
   const card = document.createElement("div");
   card.id = "asp-resume"; card.className = "asp-deck asp-log";
-  card.innerHTML = '<h2>resume?</h2><p>Your game at wave ' + saved.wave + " (" + saved.lives + " lives) was saved.</p>";
+  card.innerHTML = '<h2>resume?</h2><p>Your game after wave ' + saved.wave + " (" + saved.lives + " lives) was saved.</p>";
   const row = document.createElement("div"); row.className = "asp-row asp-resume-row"; card.appendChild(row);
   const done = () => { card.remove(); ui.paused = false; };
-  button(row, "asp-primary", "resume wave " + saved.wave, () => { if (!runResume(saved)) runClear(); done(); });
+  button(row, "asp-primary", "resume after wave " + saved.wave, () => { if (!runResume(saved)) runClear(); done(); });
   button(row, "", "new game", () => { runClear(); done(); });
   document.querySelector(".asp-board").appendChild(card);
   ui.paused = true;
 }
 function runResume(saved) {
   try {
-    G = saved.G;
+    G = saved.G; runSavedAt = G.wave;
     fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null;
     if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 });
     refreshPanels();
