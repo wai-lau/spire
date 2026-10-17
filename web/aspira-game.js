@@ -294,13 +294,13 @@ function kill(e, t) {
   e.dead = true; if (e.breached && typeof breachShrapnel === "function") breachShrapnel(e); if (e.drip > 0) dripFlush(e); // a breached enemy bursts (aspira-skills.js); its last goo falls (aspira-acid.js)
   if (t) t.kills = (t.kills || 0) + 1;
   const mul = (e.markT > 0 ? e.markMul : 1) * (G.power.MNY > 0 ? 2 : 1) * (e.slowT > 0 && e.siphon ? e.siphon : 1);
-  const b = e.bounty * mul;
+  const b = e.wave >= WIN_WAVE ? 0 : e.bounty * mul; // DEATH's wave PAYS NOTHING - no credits, score or drop (owner, 2026-10-17: "death should not give any rewards")
   sfxFor("kill", e.type); // each enemy type its own death sound where one is mapped ("kill.fast" ..., owner 2026-10-16), else the shared one
   creditDot(e.x, e.y, b); // the credits FLY to the core and land there (aspira-floats.js)
-  addScore(Math.round(b * 10));
+  if (b > 0) addScore(Math.round(b * 10));
   G.charge = Math.min(POWER_FULL, G.charge + 1);
   burst(e.x, e.y, ENEMIES[e.type].color, 14);
-  if (e.type === "bonus") { if (bossPays(e)) bonusDrop(e); bossKilled(e); } // the last Devil pays; a Lover's mate enrages (aspira-bosses.js)
+  if (e.type === "bonus") { if (bossPays(e) && e.wave < WIN_WAVE) bonusDrop(e); bossKilled(e); } // the last Devil pays; a Lover's mate enrages (aspira-bosses.js)
   if (e.shatter && e.slowT > 0 && !shattering) shatterAt(e); // FRZ's Shatter
   if (e.charged) staticDischarge(e); // ARC's Static (the old path)
   // the chart ARC's Static: a charged enemy that DIES lets its charges go too
