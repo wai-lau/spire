@@ -49,6 +49,9 @@ function drawCoreHud() {
 }
 // a Relayed tower's HALO (its base hexagon); label: with "RELAY x3 . 5s" over it. In 3D it lies ON THE FLOOR, in the board's picture,
 // with no label (owner, 2026-10-09: "relay circle should be on plane, also no need for text")
+// a step OUTSIDE the footprint (owner, 2026-10-16: "the ring is invisible?" - on the base itself the prism standing on it hid it
+// all): a hexagon round the tower's base on the floor, the tower still hiding the part behind it
+const RELAY_HEX_OUT = 1.3;
 function drawRelayHalos(label) {
   for (const t of G.towers) {
     const left = (t.relayUntil || 0) - (G.clock || 0);
@@ -59,7 +62,7 @@ function drawRelayHalos(label) {
     // the intersection between the tower and the floor, make sure that the part of the hexagon that is behind the tower is
     // occluded"): the 3D prism's base (aspira-warp.js solids), on the floor, so the prism standing on it hides its far edges
     const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
-    ctx.beginPath(); c0.pts.forEach((q, i) => { const px = x + (q.x - c0.x) * TOWER_K, py = y + (q.y - c0.y) * TOWER_K; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.closePath(); ctx.stroke();
+    ctx.beginPath(); c0.pts.forEach((q, i) => { const px = x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT, py = y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.closePath(); ctx.stroke();
     ctx.shadowBlur = 0; ctx.globalAlpha = 1;
     if (label) text("RELAY ×" + RELAY_MUL + " · " + Math.ceil(left) + "s", t.x, t.y - CELL_S * 2.4, RELAY_TEXT, "white", true, true);
   }
