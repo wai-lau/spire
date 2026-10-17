@@ -308,8 +308,12 @@ function carDart(i, z) {
 const CAR_TRAIL_N = 60, CAR_TRAIL_STEP = 6, CAR_TRAIL_W = 0.8, CAR_TRAIL_A = 0.45, CAR_TRAIL_BANDS = 4;
 function carTrails(t) {
   ctx.strokeStyle = COL.blue; ctx.lineWidth = CAR_TRAIL_W; ctx.lineJoin = "round"; ctx.lineCap = "round";
+  // a DRAGGED carrier carries its held interceptors' trails with it (owner, 2026-10-16: "don't show atc interceptor streaks
+  // caused by dragging"): the tower's move since the last draw shifts them whole, so only their own orbit draws
+  const mx = t.x - (t.trX ?? t.x), my = t.y - (t.trY ?? t.y); t.trX = t.x; t.trY = t.y;
   for (const i of t.icp) {
     if (i.state === "home" && !i.hold) { i.trail = null; continue; }
+    if ((mx || my) && i.state === "home" && i.trail) for (let k = 0; k < i.trail.length; k += 2) { i.trail[k] += mx; i.trail[k + 1] += my; }
     const tr = i.trail ||= [i.x, i.y], n = tr.length;
     if ((tr[n - 2] - i.x) ** 2 + (tr[n - 1] - i.y) ** 2 >= CAR_TRAIL_STEP * CAR_TRAIL_STEP) { tr.push(i.x, i.y); if (tr.length > CAR_TRAIL_N * 2) tr.splice(0, 2); }
   }

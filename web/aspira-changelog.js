@@ -39,6 +39,7 @@ const CHANGELOG = [
     "Perf: damage numbers and floating texts in the 3D view draw a little faster.",
     "Perf: the 3D view skips compositing a full-screen layer that was hidden underneath another.",
     "Perf: damage numbers and floating texts draw faster on the GPU (whole-pixel placement).",
+    "ATC: moving the carrier no longer leaves streaks from the interceptors orbiting it.",
     "Every tower now starts on Near targeting (Freeze was Fresh, Sol and Acid were Biggest).",
     "Orbital Relay: the glow traces the tower's own base hexagon on the floor instead of a circle - the tower hides the part behind it.",
     "ATC: launches only at enemies inside its range; once out, interceptors still chase anything within their long reach.",
