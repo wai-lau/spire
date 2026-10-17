@@ -250,8 +250,8 @@ function stepPellets(t, st, dt) {
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
       const h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT; // the number on the pellet's way (HIT_AT, aspira-floats.js)
       const hp0 = e.hp;
-      try { if (p.sp.mass > 0) grvHit(p.sp, t, st, e, p.dmg, GRV_PEL_ST); else damage(e, p.dmg, t, false, false, GRV_PEL_ST); } finally { hitFrom = h0; } // (its sphere gone: no mass to feed)
-      if (e.hp < hp0) grvFloat(p.sp, e, hp0 - Math.max(0, e.hp)); // its number rises from above its hole, like the nova's (owner, 2026-10-16: "all damage numbers from bh should fly into the bh")
+      try { damage(e, p.dmg, t, false, false, GRV_PEL_ST); } finally { hitFrom = h0; } // RADIATION NEVER FEEDS its hole (owner, 2026-10-16: "things killed by the aura and rads should not add to the black hole" - a lone hole kept growing on its own radiation); only the nova does (grvHit)
+      if (e.hp < hp0) grvFloat(p.sp, e, hp0 - Math.max(0, e.hp)); // its number flies off the enemy hit (grvFloat)
       p.left = 0; break;
     }
   }
