@@ -82,10 +82,14 @@ const bossCount = n => (arcanaOf(n).id === "devil" ? 1 + DEVIL_COPIES : arcanaOf
 const bossSplit = n => (arcanaOf(n).id === "devil" ? 1 + DEVIL_COPIES : arcanaOf(n).id === "lovers" ? 2 : 1); // the Lovers on TWO lanes, opposite (owner, 2026-10-12; they shared one)
 const isA = (e, id) => e.arcana === id;
 
+// BOSSES WEIGHTIER (owner, 2026-10-16: "make the bosses feel more significant, halve the movement speed of them and their fleet,
+// but double their hp and their fleet's hp"): every boss and every escort at BOSS_PACE of its speed and BOSS_HEFT x its HP (the
+// fleet keeps the boss's pace through m.spd = e.spd x ..., so halving the boss halves it)
+const BOSS_PACE = 0.5, BOSS_HEFT = 2;
 // from spawnEnemy: name the boss for its wave, and pair up the two of a pair
 function bossSpawn(e, n) {
   e.arcana = arcanaOf(n).id;
-  e.spd = (e.spd || 1) * (BOSS_SPEED[e.arcana] || 1);
+  e.spd = (e.spd || 1) * (BOSS_SPEED[e.arcana] || 1) * BOSS_PACE;
   const grow = hpPow(eqWave(n)) + eqWave(n) * 4 / 18; // the armored enemy's armor curve (spawnEnemy)
   e.armor = e.armor0 = Math.floor((BOSS_ARMOR[e.arcana] || 0) * Math.pow(grow, ARMOR_EXP));
   e.baseSpd = e.spd; e.broodAt = 0.8; e.sprintT = CHARIOT_EVERY;
@@ -95,7 +99,7 @@ function bossSpawn(e, n) {
   // ...and by the DISTANCE its lane makes it travel (owner): a long lane keeps
   // it under fire longer, so it gets proportionally more HP (x0.5 .. x1.6, the
   // average lane x1)
-  e.max = Math.floor(e.max * BOSS_LANE_HP); e.hp = e.max; // whole HP
+  e.max = Math.floor(e.max * BOSS_LANE_HP * BOSS_HEFT); e.hp = e.max; // whole HP (BOSS_HEFT: see there)
   // each boss a size bigger than the last (owner): Star x1.1 ... Death x2
   e.sizeMul = 1 + 0.1 * (ARCANA.findIndex(a => a.id === e.arcana) + 1);
   const mate = bossCount(n) === 2 && G.enemies.find(o => o !== e && !o.dead && o.arcana === e.arcana && o.n === n && !o.mate);
@@ -169,6 +173,7 @@ function bossFleet(e, n) {
       for (let c = 0; c < count; c++, i++) {
         spawnEnemy(k, n, e.pi, ang);
         const m = G.enemies[G.enemies.length - 1], r = ENEMIES[k].size;
+        m.max = Math.floor(m.max * BOSS_HEFT); m.hp = m.max; // an escort twice as tough too (BOSS_HEFT)
         if (slots) { // its place in the formation: across the lane, and ahead (+) or behind (-) the boss's spot
           m.form = true; m.lat = slots[c][0]; m.s = e.s + slots[c][1]; m.ahead = slots[c][1]; m.aheadC = 0;
           reach[0] = Math.max(reach[0], slots[c][1] + r); reach[1] = Math.max(reach[1], -slots[c][1] + r);

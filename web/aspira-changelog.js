@@ -52,6 +52,7 @@ const CHANGELOG = [
     "Perf: wave starts no longer hitch (the lane turns are worked out ahead of time).",
     "Perf: the first tower and the first boss sky no longer hitch (the game warms up its drawing at load).",
     "If the game runs slowly it now drops straight from 3D to low quality (it used to pass through high).",
+    "Bosses feel heavier: every boss and its fleet move at half speed with twice the health.",
     "Damage numbers use each tower's build-card text colour (paler for Gravity and Carrier), with a black outline - Freeze's chill and Acid's pools too.",
     "ATC: its description says how many interceptors it can store in orbit, not a percentage.",
     "ATC: when a cleared field sends the next wave early, the carrier still readies the interceptors that skipped wait would have reloaded.",
