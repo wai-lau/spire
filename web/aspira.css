@@ -543,7 +543,7 @@
 
 /* the upgrade chooser (aspira-ui.js): 2-3 cards over the dimmed board, each
    coloured like the tower; nothing is charged until one is tapped */
-.asp-chooser { z-index: var(--z-bubble); overflow-y: auto; justify-content: flex-start; } /* the cards above everything (owner) */
+.asp-chooser { z-index: var(--z-bubble); overflow-y: auto; justify-content: flex-start; background: none; } /* NO scrim: the board stays as it is behind the cards (owner, 2026-10-18: the greyed-out board read as weird) */ /* the cards above everything (owner) */
 .asp-chooser > :first-child { margin-top: auto; }
 .asp-chooser > :last-child { margin-bottom: auto; } /* CENTRED vertically (owner, 2026-10-07; was at the bottom) */ /* sits at the BOTTOM, where the tower card is (owner); its lift is set by aspira-ui.js */
 .asp-chooser .asp-chooser-cost {
