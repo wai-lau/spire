@@ -105,14 +105,14 @@ const laneFadeMs = () => (typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ?
 const LIT_MIN_MS = 200;
 const LIT_STEPS = 16;
 /* the lane brightness a board redraw is keyed on: 16 steps; on a device whose board upload stalls just lit or not (the lane then keeps the brightness it had when it lit - one redraw as a wave starts, one as it ends) */
-const litLevel = a => (typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? (a > 0.02 ? 1 : 0) : Math.round(a * LIT_STEPS));
+const litLevel = (a, star) => (!star && typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? (a > 0.02 ? 1 : 0) : Math.round(a * LIT_STEPS)); /* a BOSS lane keeps its steps even there (owner, 2026-10-18: the boss lane froze at the faint brightness it lit at and seemed to vanish) */
 /* ...and such a device does not redraw the board when a lane goes DARK mid-wave (they end one by one - 31 of its 38 board uploads): the lit set it keys on only grows, until every lane is dark */
 const laneHeld = new Map();
 function laneHold(live) {
   if (!(typeof warpUpSlow !== "undefined" && warpUpSlow >= 3)) return live;
   if (!live.length) { laneHeld.clear(); return live; }
-  for (const u of live) laneHeld.set(u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + (u.star ? 1 : 0), u);
-  return [...laneHeld.values()];
+  for (const u of live) if (!u.star) laneHeld.set(u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":0", u);
+  return [...laneHeld.values(), ...live.filter(u => u.star)]; /* (a boss lane is never held: it fades with its sky) */
 }
 // an ordinary lit lane, MUCH more apparent (owner, 2026-10-12: "make the non boss lanes much more apparent"; was
 // line 0.3 x1.4, haze 0.03, glow 0.22) - a boss lane keeps the old numbers, scaled by BOSS_LANE_K / BOSS_LANE_W
@@ -150,7 +150,7 @@ function drawLaneStrokes(live) {
   // move still rebuilds at once, or the layers would sit misaligned)
   const camSig = [cv.width, cv.height, cam.k, cam.ox, cam.oy].join();
   const sig = camSig + "|" +
-    laneHold(live).map(u => u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + (u.star ? 1 : 0) + ":" + litLevel(u.a)).join(",");
+    laneHold(live).map(u => u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + (u.star ? 1 : 0) + ":" + litLevel(u.a, u.star)).join(",");
   if (sig === S.litKey || (camSig === S.litCam && now - S.litAt < LIT_MIN_MS)) { blitLanes(S); return; }
   S.litKey = ""; // until the layers are whole (laneFail)
   // each lane IN USE lit in its rider's colour - drawn rotated when a split
@@ -247,7 +247,7 @@ function bossLaneRise(live) {
     u.a = Math.min(u.a, p ? p.a + Math.min(0.1, now - p.t) / BOSS_LANE_FADE : 0);
     bossLaneA.set(key, { a: u.a, t: now }); seen.add(key);
   }
-  for (const key of bossLaneA.keys()) if (!seen.has(key)) bossLaneA.delete(key);
+  for (const [key, p] of bossLaneA) if (!seen.has(key) && now - p.t > 1.5) bossLaneA.delete(key); // kept 1.5 s unseen: a gap of a frame or two no longer restarts its fade from dark (owner, 2026-10-18: "disappears randomly")
 }
 function drawLanes() {
   const live = litLanes();

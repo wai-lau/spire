@@ -57,7 +57,7 @@ function warpBoardSig(now) {
   const lanes = laneHold(live).map(u => {
     const t0 = laneSeen.get(u.pi + ":" + u.ang);
     if (!u.star && laneFadeMs() && (t0 === undefined || now - t0 < laneFadeMs())) fading = true;
-    return u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + u.n + ":" + litLevel(u.a);
+    return u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + u.n + ":" + litLevel(u.a, u.star);
   }).join(",");
   return G.wave + "|" + bossInv.phase + "|" + lanes + (fading ? "|" + Math.floor(now / WARP_STAT_MS) : "");
 }

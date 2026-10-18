@@ -98,6 +98,7 @@ const CHANGELOG = [
     "Auto-move's confirm now reads NO LEADERBOARD (tap again to confirm).",
     "Death gives no rewards: no credits, score, lives or interest from its wave, and the score's owed lives are not paid at the end.",
     "The Carrier's short name is now CRR.",
+    "Boss lanes: on phones that hold the board still, the boss lane now fades in fully instead of freezing faint, and a brief gap no longer makes it vanish and fade in again.",
     "The Lovers walk in step - slow one and both slow - so they arrive together.",
     "An Ascendant's best wave counts the win: a loss no longer says 'your best' below it.",
     "Tap the core to fire Temporal Drive when it is ready (otherwise the tap opens the core's card).",
