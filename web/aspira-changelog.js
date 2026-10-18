@@ -9,6 +9,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Gravity: the nova fires 3.6 times as often at the third purchase and 5.5 times at the capstone (was 3 and 4.6).",
     "Carrier: Tether pulses hit harder - 2, 3 and 4 times the shot at the first three purchases, 24 at the fourth, 40 at the capstone.",
     "Sol: Focus fires 14 beams at the third purchase and 21 at the capstone (was 8 and 12); Refraction, crits and Breach hit harder late.",
     "Gravity: the nova fires 3 times as often at the third purchase and 4.6 times at the capstone; nova, pellets and armor strip hit harder late.",

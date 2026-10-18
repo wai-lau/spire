@@ -9,7 +9,7 @@
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const GRV_AURA_R = [45, 80, 110, 124, 136, 190]; /* x1.25 with the faster evaporation (owner, 2026-10-16: "raise bh fire rate and bh size to compensate"; was 68 .. 122) */ // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
 const GRV_STRIP_MUL = [1, 1, 1, 1, 6.263, 11.53]; /* Void: the aura's armor strip, x by tier (late tiers steepened, 2026-10-16) */
-const GRV_RATE_MUL = [1, 1, 1, 1, 2, 3]; /* Supernova: the nova's fire rate, x by tier */
+const GRV_RATE_MUL = [1, 1, 1, 1, 2, 3.6]; /* Supernova: the nova's fire rate, x by tier */
 const GRV_SLOW = [0.04, 0.10, 0.18, 0.21, 0.24, 0.35]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
 const GRV_NOVA_R = [71, 85, 99, 112, 126, 185]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
 const GRV_NOVA_MUL = [0.8, 2, 3.2, 4, 34.27, 64.55]; /* V x9, VI x36 (steeper late tiers) */ /* x2 (owner, 2026-10-16: "double the nova damage"; was [1, 1.3, 1.6, 2, 2.4, 2.8]) */ // Supernova: the nova's hit, x the tower's damage
