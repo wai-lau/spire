@@ -7,7 +7,7 @@
 // loaded, or with the cache off, it draws the old way. Loaded after aspira-draw.js.
 /* a desktop (a fine pointer) holds 3x the stamps: the slow logs showed the cache pinned at 899 of 900 on an RTX in late waves, every miss a new canvas (perf, 2026-10-17); phones keep the small budget */
 const TEXT_BIG = (() => { try { return matchMedia("(pointer: fine)").matches && !/iPhone|iPad|Android/.test(navigator.userAgent); } catch (e) { return false; } })();
-const TEXT_Q = 0.5, TEXT_CACHE_MAX = TEXT_BIG ? 2700 : 900;
+const TEXT_Q = 0.5, TEXT_CACHE_MAX = TEXT_BIG ? 2700 : 2200; /* (phones: the 6M px budget below is the memory bound; 900 stamps held only ~2.3M px and churned 27 builds a second in a wave-73-80 phone log) */
 // ...on a MEMORY budget too (2026-10-14: an iPhone died at wave 62-70 again and again - late damage numbers are big, glowing
 // and drawn at 3x density, up to ~1 MB a stamp, and 900 of them run past iOS Safari's total canvas memory): at most
 // TEXT_CACHE_PX pixels (~24 MB) held, the least recently used dropped first, each one's canvas zeroed so iOS frees it at once
