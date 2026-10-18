@@ -75,7 +75,7 @@ function onTap(ev) {
   if (relayArmTap(home || (pk && pk.t))) { refreshPanels(); return; } // an armed Relay: this tower takes it, anything else disarms (aspira-powers.js)
   const hit = home || (pk && pk.t);
   if (hit) { ui.sel = hit.id; ui.build = null; }
-  else if (!ui.build && pk && pk.core) { ui.sel = "core"; } // the core's card (aspira-core.js)
+  else if (!ui.build && pk && pk.core) { if (typeof temporalFreeze !== "function" || !temporalFreeze()) ui.sel = "core"; } // a tap on the core FIRES Temporal Drive when it can (owner, 2026-10-18), else its card (aspira-core.js)
   else if (ui.build) placeTower(p);
   else if (ci >= 0 && canPlace(ci)) { ui.sel = null; openBuildChooser(ci); } // a free slot: the tower cards (aspira-chooser.js)
   else ui.sel = null;
