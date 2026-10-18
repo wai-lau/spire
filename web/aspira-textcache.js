@@ -5,11 +5,13 @@
 // on: one image a number, still at its exact pixel size, so it is as sharp as before. Sizes are kept in TEXT_Q px steps
 // (a 1-2% scale at most). text() (aspira-draw.js) asks here first; under a skewed or rotated transform, before the font has
 // loaded, or with the cache off, it draws the old way. Loaded after aspira-draw.js.
-const TEXT_Q = 0.5, TEXT_CACHE_MAX = 900;
+/* a desktop (a fine pointer) holds 3x the stamps: the slow logs showed the cache pinned at 899 of 900 on an RTX in late waves, every miss a new canvas (perf, 2026-10-17); phones keep the small budget */
+const TEXT_BIG = (() => { try { return matchMedia("(pointer: fine)").matches && !/iPhone|iPad|Android/.test(navigator.userAgent); } catch (e) { return false; } })();
+const TEXT_Q = 0.5, TEXT_CACHE_MAX = TEXT_BIG ? 2700 : 900;
 // ...on a MEMORY budget too (2026-10-14: an iPhone died at wave 62-70 again and again - late damage numbers are big, glowing
 // and drawn at 3x density, up to ~1 MB a stamp, and 900 of them run past iOS Safari's total canvas memory): at most
 // TEXT_CACHE_PX pixels (~24 MB) held, the least recently used dropped first, each one's canvas zeroed so iOS frees it at once
-const TEXT_CACHE_PX = 6e6;
+const TEXT_CACHE_PX = TEXT_BIG ? 18e6 : 6e6;
 const textSprites = new Map();
 let textPx = 0;
 function textEvict(keep) { // keep: the one about to be drawn - never zeroed under its own draw
