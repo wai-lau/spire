@@ -131,7 +131,7 @@ export function makeGame(seed, patch = "") {
 // rotations, inside the rim) lies within its range - weighted toward the core
 export function cellScores(g, kind) {
   const st = g.towerStats({ kind, lvl: 1, x: 0, y: 0 }, true), r2 = st.range * st.range;
-  const file = path.join(os.tmpdir(), "aspira-sim-cells-" + Math.round(st.range) + "-" + g.CELLS.length + ".json"); // cache
+  const file = path.join(os.tmpdir(), "aspira-sim-cells-" + Math.round(st.range) + "-" + g.CELLS.length + "-" + Math.round(g.CELLS.reduce((a, c, i) => a + (c.x * 31 + c.y * 17) * (i + 1), 0)) + "-" + Math.round(g.RIM_R) + ".json"); // cache (keyed by the cells' GEOMETRY too: SLOT_R 78 -> 178 -> 148 reused stale scores, 2026-10-17)
   try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch (_e) { /* compute */ }
   const pts = [];
   for (const p of g.PATHS) p.pts.forEach((q, i) => {
@@ -191,7 +191,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
   const g = makeGame(seed, patch);
   g.reset();
   const scores = {}, order = {};
-  for (const k of Object.keys(g.TOWERS)) { scores[k] = cellScores(g, k); order[k] = scores[k].map((v, i) => i).sort((a, b) => scores[k][b] - scores[k][a]); }
+  for (const k of Object.keys(g.TOWERS)) { scores[k] = cellScores(g, k); order[k] = scores[k].map((v, i) => i).sort((a, b) => scores[k][b] - scores[k][a]);  }
   // the smart saver's bank: what earns SMART_INTEREST x (wave + 1) a wave - its own number now (2026-10-12): it read the game's
   // INTEREST_PER_WAVE, and when that cap went 4 -> 20 (then away) the "smart" saver became a 5x hoarder and lost 18 of 19
   const interestPerWave = SMART_INTEREST;
@@ -341,6 +341,15 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
   return {
     g, strategy, S, game, look: () => observe(false),
     // the smart saver's BUY BEFORE THE WAVE: up to n purchases at once, from what it holds; returns how many it made
+    // the smart saver's RELOCATION (owner, 2026-10-17: the perfect player may move its towers before a wave it would lose): every tower
+    // takes the `shift`-th next-best free open cell of its kind (the static cell score is only a guess at a new slot geometry)
+    relocate(shift) {
+      for (const t of g.G.towers) {
+        const free = order[t.kind].filter(ci => g.cellOpen(ci) && (t.cell === ci || !g.run("occupied(" + ci + ")")));
+        const ci = free[Math.min(shift, free.length - 1)]; if (ci == null) continue;
+        t.cell = ci; t.x = g.CELLS[ci].x; t.y = g.CELLS[ci].y;
+      }
+    },
     buy(n) { S.buysLeft = n; act(0); const made = n - S.buysLeft; S.buysLeft = 0; return made; },
     // through wave `w`: play until that wave is sent (at 100 the 10th boss is fought and the game can be WON)
     runTo(w) { // the smart saver plays a wave at a time, rewinding a leaked one (smartWave); everyone else straight through
@@ -377,6 +386,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
 // THE SMART SAVER (owner, 2026-10-12): it plays wave by wave from a snapshot, SAVING everything; a wave that costs a
 // life is played again from that snapshot with 1, 2, 3... upgrades bought before it starts - "allowed to go back to a snapshot and
 // spend money if the wave it held back on leaked". strategy.rewind false turns the replay off
+const RELOCATE_TRIES = 6; // cell shifts the smart saver tries after the purchase ladder fails
 const SMART_INTEREST = 4, HOARD_X = 4; // HOARD_X: a hoarder's bank over the smart saver's // game seconds the replayed wave spends freely
 // one wave of the smart saver: from a snapshot, played saving; on a lost life, again with 1, 2, 3... purchases made BEFORE it
 // (owner, 2026-10-12: "if leak, rewind and buy 1 upgrade before wave starts; if still leak, rewind and buy 2") - nothing
@@ -387,13 +397,18 @@ function smartWave(p, playWave) {
   // the powers and 1, 2, 3... upgrades
   const snap = p.snapshot(), lives = p.g.G.lives, ready = p.strategy.useCore && p.g.run("CORE_POWERS.some(c => powerLvl(c.id) && cooldownLeft(c.id) <= 0)");
   const tries = ready ? [[false, 0], [true, 0]] : [[false, 0]];
-  for (let i = 0; ; i++) {
-    const [pw, n] = tries[i] || [ready, i - tries.length + 1];
-    if (i) { p.restore(snap); p.rewinds = (p.rewinds || 0) + 1; } // (rewinds on p, not S: a restore would roll S back)
-    p.S.powersOk = pw;
-    const made = p.buy(n);
-    playWave();
-    if ((p.g.G.lives >= lives && !p.g.G.over) || made < n) break; // a BOSS breach (game over) is rewound like any leak
+  // RELOCATION (owner, 2026-10-17): when no ladder of purchases holds the wave, the towers are moved to other cells (shift 1, 2, 3...)
+  // and the ladder is tried again from the same snapshot - a wave that falls to the placement, not the build, is not a loss
+  for (let shift = 0; shift <= RELOCATE_TRIES; shift++) {
+    for (let i = 0; ; i++) {
+      const [pw, n] = tries[i] || [ready, i - tries.length + 1];
+      if (i || shift) { p.restore(snap); p.rewinds = (p.rewinds || 0) + 1; if (shift) p.relocate(shift); } // (rewinds on p, not S: a restore would roll S back)
+      p.S.powersOk = pw;
+      const made = p.buy(n);
+      playWave();
+      if ((p.g.G.lives >= lives && !p.g.G.over) || made < n) break; // a BOSS breach (game over) is rewound like any leak
+    }
+    if (p.g.G.lives >= lives && !p.g.G.over) break;
   }
   p.S.powersOk = false;
 }
