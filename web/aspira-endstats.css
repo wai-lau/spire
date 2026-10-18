@@ -35,3 +35,10 @@
 .asp-end-waves th { color: hsl(var(--white-hsl)); font-weight: var(--fw-normal); }
 
 .asp-end-leak { color: hsl(var(--pink-hsl)); }
+/* the END SCREEN SCROLLS (owner, 2026-10-18: "on score screen leaks and leaderboard should be scrollable"): the overlay scrolls as a
+   whole once it outgrows the screen (centred by auto margins - justify-content: center cut its top off), and the leak list is
+   capped at a third of the screen and scrolls on its own, like the board (aspira-ascend.css) */
+#asp-ov { overflow-y: auto; justify-content: flex-start; overscroll-behavior: contain; touch-action: pan-y; }
+#asp-ov > :first-child { margin-top: auto; }
+#asp-ov > :last-child { margin-bottom: auto; }
+#asp-ov-leaks { max-height: 33vh; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; pointer-events: auto; flex-shrink: 0; }
