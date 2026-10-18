@@ -267,7 +267,7 @@ function drawCredits(part) {
 // with it), those keeping within LANE_TURN_SLACK of the most lane on the screen (phoneInside: 2D or 3D) - and of those, the
 // nearest the wave's usual turn, so the waves still come round from new directions. Scores cached per lane, split and screen.
 // The simulator (no screen) keeps laneTurn
-const LANE_TURNS = 24, LANE_TURN_SLACK = 0.02, laneTurnCache = new Map();
+const LANE_TURNS = 72, LANE_TURN_SLACK = 0.005, laneTurnCache = new Map(); /* finer (owner, 2026-10-18: "the lanes are rotated about the core such that as much of it is visible as possible"): 5-degree turns, within 0.5% of the best (was 24 turns, 2%) */
 const laneTurnKey = (pi, k) => pi + "|" + k + "|" + innerWidth + "x" + innerHeight + "|" + (typeof q3d === "function" && q3d() ? 3 : 2);
 function laneTurnScores(pi, k) {
   const pts = PATHS[pi].pts, key = laneTurnKey(pi, k);
