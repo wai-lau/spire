@@ -246,13 +246,13 @@ function ringOf(i, sides) {
   return { r, pos: i - ringStart(r, sides) };
 }
 // an enemy shield's LAST layer (owner, 2026-10-17: "for the last outline of shield rendering ... it should become an (n-1)gon instead of
-// an ngon with 1 missing side"; "make the last layer thicker than the rest"): k chips left of its n draw a regular k-gon (k >= 3; 2 a bar,
-// 1 a short one) at its radius, SHIELD_LAST_W x the line - shieldPoly gives the corners
+// an ngon with 1 missing side"; "make the last layer thicker than the rest"): k chips left of its n draw a regular k-gon at its radius,
+// SHIELD_LAST_W x the line - shieldPoly gives the corners. A TRIANGLE at the least (owner, 2026-10-18: "last shield should be the
+// triangle"; 2 and 1 chips were a bar)
 const SHIELD_LAST_W = 2;
 function shieldPoly(x, y, r, k, n, rot) {
-  if (k >= 3) return Array.from({ length: k }, (_, i) => { const a = rot + i * Math.PI * 2 / k; return [x + Math.cos(a) * r, y + Math.sin(a) * r]; });
-  const a = rot, L = k === 2 ? r : r * 0.5; // (2: a bar across; 1: a shorter one)
-  return [[x + Math.cos(a) * L, y + Math.sin(a) * L], [x - Math.cos(a) * L, y - Math.sin(a) * L]];
+  const m = Math.max(3, k);
+  return Array.from({ length: m }, (_, i) => { const a = rot + i * Math.PI * 2 / m; return [x + Math.cos(a) * r, y + Math.sin(a) * r]; });
 }
 const shieldPulse = () => 1 + 0.04 * Math.sin(performance.now() / 300); // the core's own breath
 // ring r (0 = inner) has radius base + gap * (r + 1); slot i is side i % sides of ring floor(i / sides)

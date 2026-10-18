@@ -70,6 +70,6 @@ function enemyWallPieces(e) {
   const d = ENEMIES[e.type];
   const ps = segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, solidSize(e) + SHIELD_OUT, 2.5).filter(p => p.r !== 1); // SHIELD_OUT: aspira-enemies.js
   const k = e.shSegs.slice(0, d.sides).filter(Boolean).length; // the LAST layer: a regular k-gon, thick (shieldPoly, aspira-enemies.js)
-  if (k) { const c = shieldPoly(e.x, e.y, (solidSize(e) + SHIELD_OUT + 2.5) * shieldPulse(), k, d.sides, e.rot), m = k >= 3 ? c.length : 1; for (let i = 0; i < m; i++) ps.push({ a: c[i], b: c[(i + 1) % c.length], r: 1, thick: true }); }
+  if (k) { const c = shieldPoly(e.x, e.y, (solidSize(e) + SHIELD_OUT + 2.5) * shieldPulse(), k, d.sides, e.rot), m = c.length; for (let i = 0; i < m; i++) ps.push({ a: c[i], b: c[(i + 1) % c.length], r: 1, thick: true }); }
   return ps;
 }
