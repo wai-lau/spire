@@ -217,12 +217,12 @@ function drawBossEye(e, size) {
 // bigger every wave): past what those rings hold, each segment stands for a share of the charges and breaks as its share goes
 const SHIELD_RINGS = 2;
 const SHIELD_OUT = 20; // the shield rings sit this many u further out from the body (owner, 2026-10-17: "draw the shields about 20u further away from the shielded unit") - 2D and the 3D walls
-const shieldShown = (e, sides) => { const cap = sides * SHIELD_RINGS * (SHIELD_RINGS + 1) / 2, s = Math.max(0, e.shield); return (e.shieldMax || 0) > cap ? Math.ceil(s * cap / e.shieldMax) : s; };
+const shieldShown = (e, sides) => { const cap = sides * SHIELD_RINGS * (SHIELD_RINGS + 1) / 2 - SHIELD_IN_OFF, s = Math.max(0, e.shield); return (e.shieldMax || 0) > cap ? Math.ceil(s * cap / e.shieldMax) : s; };
 function syncSegs(segs, n, sides, flashes, keepInner) {
   let have = segs.reduce((a, v) => a + (v ? 1 : 0), 0);
   while (have > n) {
     let live = []; segs.forEach((v, i) => { if (v) live.push(i); });
-    if (keepInner) { const outer = live.filter(i => i >= sides); if (outer.length) live = outer; } // an ENEMY's LAST layer (ring 1) breaks only once nothing else is left (owner, 2026-10-17)
+    if (keepInner) { const outer = live.filter(i => i >= sides - SHIELD_IN_OFF); if (outer.length) live = outer; } // an ENEMY's LAST layer (ring 1) breaks only once nothing else is left (owner, 2026-10-17)
     const i = live[Math.floor(Math.random() * live.length)];
     segs[i] = false; have--;
     if (flashes) flashes.push({ i, t: performance.now() / 1000 });
@@ -230,7 +230,7 @@ function syncSegs(segs, n, sides, flashes, keepInner) {
   while (have < n) { segs.unshift(true); have++; if (flashes) for (const f of flashes) f.i++; }
   // drop the outermost ring while it is wholly empty
   while (segs.length) {
-    const start = ringStart(ringOf(segs.length - 1, sides).r, sides);
+    const off = keepInner ? SHIELD_IN_OFF : 0, start = ringStart(ringOf(segs.length - 1, sides, off).r, sides, off);
     if (!segs.slice(start).every(v => !v)) break;
     segs.length = start;
   }
@@ -238,8 +238,12 @@ function syncSegs(segs, n, sides, flashes, keepInner) {
 }
 // rings SUBDIVIDE outward (owner): ring r (1 = inner) has `sides` x r segments,
 // each side cut in r; slot i -> its ring r and its place in that ring
-const ringStart = (r, sides) => sides * (r - 1) * r / 2;
-function ringOf(i, sides) {
+// an ENEMY's last layer holds SHIELD_IN_OFF fewer (off): its n-gon loses a side a hit down to a triangle, the last shield (owner,
+// 2026-10-18: "the triangle counts for 1 shield, after triangle, 1hit no shields") - n - 2 chips; the core's lives keep off 0
+const SHIELD_IN_OFF = 2;
+const ringStart = (r, sides, off = 0) => r <= 1 ? 0 : sides * (r - 1) * r / 2 - off;
+function ringOf(i, sides, off = 0) {
+  if (off) { if (i < sides - off) return { r: 1, pos: i }; const o = ringOf(i + off, sides); return { r: o.r, pos: o.pos }; }
   let r = Math.floor((-1 + Math.sqrt(1 + 8 * (i / sides))) / 2) + 1; /* closed form (perf, 2026-10-17); the two nudges guard float rounding */
   while (r > 1 && ringStart(r, sides) > i) r--;
   while (ringStart(r + 1, sides) <= i) r++;
@@ -260,7 +264,7 @@ const SHIELD_RING_FADE = 0.7, SHIELD_RING_MIN = 0.2;
 function drawSegs(x, y, segs, sides, rot, base, gap, flashes, lastRing) {
   const k = shieldPulse();
   const side = i => {
-    const { r: ring, pos } = ringOf(i, sides), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
+    const { r: ring, pos } = ringOf(i, sides, lastRing ? SHIELD_IN_OFF : 0), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
     const a0 = rot + s * Math.PI * 2 / sides, a1 = rot + (s + 1) * Math.PI * 2 / sides;
     const x0 = x + Math.cos(a0) * r, y0 = y + Math.sin(a0) * r, x1 = x + Math.cos(a1) * r, y1 = y + Math.sin(a1) * r;
     // piece j of the side's `ring` pieces
@@ -270,12 +274,12 @@ function drawSegs(x, y, segs, sides, rot, base, gap, flashes, lastRing) {
   // each ring OUT is fainter (owner, 2026-10-08: "shields lose opacity as you get more layers out"):
   // ring r at SHIELD_RING_FADE^(r-1) of the alpha it was drawn with, never under SHIELD_RING_MIN
   const a0 = ctx.globalAlpha, byRing = new Map();
-  segs.forEach((on, i) => { if (on) { const r = ringOf(i, sides).r; (byRing.get(r) || byRing.set(r, []).get(r)).push(i); } });
+  segs.forEach((on, i) => { if (on) { const r = ringOf(i, sides, lastRing ? SHIELD_IN_OFF : 0).r; (byRing.get(r) || byRing.set(r, []).get(r)).push(i); } });
   for (const [r, ids] of byRing) {
     ctx.globalAlpha = a0 * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (r - 1));
     if (lastRing && r === 1) { // an ENEMY's LAST layer: THICKER, and as it thins a smaller REGULAR polygon, never a gap (shieldPoly)
       const lw = ctx.lineWidth; ctx.lineWidth = lw * SHIELD_LAST_W; ctx.beginPath();
-      shieldPoly(x, y, (base + gap) * k, ids.length, sides, rot).forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+      shieldPoly(x, y, (base + gap) * k, ids.length + SHIELD_IN_OFF, sides, rot).forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
       ctx.closePath(); ctx.stroke(); ctx.lineWidth = lw; continue;
     }
     ctx.beginPath(); ids.forEach(side); ctx.stroke();

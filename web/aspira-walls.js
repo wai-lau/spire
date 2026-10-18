@@ -7,11 +7,11 @@
 const WALL_H = { core: 3, enemy: 2 }; // half heights, world units
 
 // the live segments of a shield (drawSegs's geometry): each { a: [x, y], b: [x, y], r: its ring }
-function segPieces(x, y, segs, sides, rot, base, gap) {
+function segPieces(x, y, segs, sides, rot, base, gap, off = 0) {
   const k = shieldPulse(), out = [];
   segs.forEach((on, i) => {
     if (!on) return;
-    const { r: ring, pos } = ringOf(i, sides), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
+    const { r: ring, pos } = ringOf(i, sides, off), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
     const a0 = rot + s * Math.PI * 2 / sides, a1 = rot + (s + 1) * Math.PI * 2 / sides;
     const x0 = x + Math.cos(a0) * r, y0 = y + Math.sin(a0) * r, x1 = x + Math.cos(a1) * r, y1 = y + Math.sin(a1) * r;
     out.push({ a: [x0 + (x1 - x0) * j / ring, y0 + (y1 - y0) * j / ring], b: [x0 + (x1 - x0) * (j + 1) / ring, y0 + (y1 - y0) * (j + 1) / ring], r: ring });
@@ -68,8 +68,8 @@ function coreWallPieces() {
 function enemyWallPieces(e) {
   if (!e.shSegs || e.dead) return [];
   const d = ENEMIES[e.type];
-  const ps = segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, solidSize(e) + SHIELD_OUT, 2.5).filter(p => p.r !== 1); // SHIELD_OUT: aspira-enemies.js
-  const k = e.shSegs.slice(0, d.sides).filter(Boolean).length; // the LAST layer: a regular k-gon, thick (shieldPoly, aspira-enemies.js)
-  if (k) { const c = shieldPoly(e.x, e.y, (solidSize(e) + SHIELD_OUT + 2.5) * shieldPulse(), k, d.sides, e.rot), m = c.length; for (let i = 0; i < m; i++) ps.push({ a: c[i], b: c[(i + 1) % c.length], r: 1, thick: true }); }
+  const ps = segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, solidSize(e) + SHIELD_OUT, 2.5, SHIELD_IN_OFF).filter(p => p.r !== 1); // SHIELD_OUT: aspira-enemies.js
+  const k = e.shSegs.slice(0, d.sides - SHIELD_IN_OFF).filter(Boolean).length; // the LAST layer: a regular k-gon, thick (shieldPoly, aspira-enemies.js)
+  if (k) { const c = shieldPoly(e.x, e.y, (solidSize(e) + SHIELD_OUT + 2.5) * shieldPulse(), k + SHIELD_IN_OFF, d.sides, e.rot), m = c.length; for (let i = 0; i < m; i++) ps.push({ a: c[i], b: c[(i + 1) % c.length], r: 1, thick: true }); }
   return ps;
 }

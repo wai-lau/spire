@@ -94,7 +94,7 @@ const CHANGELOG = [
     "Death gives no rewards: no credits, score, lives or interest from its wave, and the score's owed lives are not paid at the end.",
     "Lanes turn in finer steps to keep as much of each one on screen as possible.",
     "The build and upgrade cards no longer grey out the board behind them.",
-    "Shields: the last layer's final chips draw as a triangle, never a bar.",
+    "Shields: an enemy's last layer loses one side a hit, down to a triangle, which is its last shield - the next hit leaves it unshielded.",
     "A tower's home slot shows only when an upgrade can be bought; the build spots sit 30 u closer to the core.",
     "Enemies can't be targeted, hit, slowed or affected until they come onto the screen.",
     "The tower building spots sit 100 u further from the core.",
