@@ -96,7 +96,7 @@ function spawnEnemy(type, n, pi, ang = 0) {
 // by it too, so enemies stay the same DISTANCE apart on the lane — that
 // spacing is a balance lever for chain reach.
 let ENEMY_SPEED = 1.125; // 2026-10-11: the short lanes (owner: "reduce speed also"; was 1.5, briefly 1.875) // let: the simulator sweeps it
-const effSpeed = e => ENEMIES[e.type].speed * ENEMY_SPEED * (e.spd || 1) * PATHS[e.pi].pace * (e.stunT > 0 ? 0 : 1 - (e.slowT > 0 ? e.slowF : 0));
+const OFF_SCREEN_SPEED = 3, effSpeed = e => ENEMIES[e.type].speed * ENEMY_SPEED * (e.spd || 1) * PATHS[e.pi].pace * (e.stunT > 0 ? 0 : 1 - (e.slowT > 0 ? e.slowF : 0));
 
 // FRESH (owner): an enemy carrying NO debuff - slowed, stunned, bleeding,
 // burning, corroded, frostbitten, shredded, poisoned or charged
@@ -395,7 +395,7 @@ function stepEnemies(dt) {
       if (e.burnT > 0) e.burnT -= dt; // under an ACD burn (Fresh targeting)
       if (e.marks) sumMarks(e, dt);
       if (e.dotT > 0) { e.dotT -= dt; damage(e, e.dotDps * dt, e.dotSrc, true); if (e.dead) continue; }
-      e.s += (e.mate && !e.mate.dead && !e.enraged ? Math.min(effSpeed(e), effSpeed(e.mate)) : effSpeed(e)) * dt; /* the LOVERS walk in step, at the slower one's pace, so they arrive together (owner, 2026-10-18) */
+      { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; e.s += (m ? Math.min(effSpeed(e), effSpeed(m)) : effSpeed(e)) * (e.seen || (m && m.seen) ? 1 : OFF_SCREEN_SPEED) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") */
     }
     const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)
     if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js) - which sets p whole, so no pathAt first (perf)

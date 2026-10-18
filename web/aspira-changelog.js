@@ -188,6 +188,7 @@ const CHANGELOG = [
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], ne: [
+    "Enemies move three times as fast until they come onto the screen.",
     "Enemies grow 2% a wave faster than before from wave 80 (bosses unchanged).",
     "Arc: Capacitance holds fewer charges late (5 and 6, was 6 and 8) and Voltage hits 1.3 times harder late.",
     "Freeze: Brittle x4.2 and x10.6 late (was x8 and x20).",
