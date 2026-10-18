@@ -9,7 +9,6 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
-    "The wave list names hybrid waves by both traits: swarm+shield, fast+armor.",
     "Freeze: Rime rings bite - each ring that reaches an enemy hits it for 4 to 60 times a tick.",
     "Gravity: the nova fires 5.6 times as often at the third purchase and 8.5 times at the capstone; pellets and nova hit harder late; Void slows more.",
     "Sol: 17 beams at the third purchase and 25 at the capstone; Refraction, crits and Breach hit harder late.",
@@ -51,6 +50,7 @@ const CHANGELOG = [
     "Gravity: the aura strips armor harder the closer an enemy is to its centre (it already slowed harder there).",
     "Gravity: a nova that catches nothing still leaves a full-size hole; novas land ahead of their target, so it walks into the opening hole.",
   ], u: [
+    "The wave list names hybrid waves by both traits: swarm+shield, fast+armor.",
     "Bosses: the Star has x1.8 health, the Empress x1.5, Strength x1.3, the Chariot x3, the Lovers x2, Temperance x2 and the Devil x1.5.",
     "Carrier: interceptors fly smooth loops round their target, about 75 out and wobbling +-20%, steering round the core and towers; bolts reach 390.",
     "Carrier: interceptors half size, growing with Armament to full at VI; a brighter cobalt blue that keeps its colour during boss waves.",
