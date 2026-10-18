@@ -9,6 +9,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Bosses: the Empress has 10% less health; the Chariot x2, the Lovers x2.5, Temperance x1.5, the Devil x2, Justice x2, Judgement x1.6 and Death x1.5 as much.",
     "Smoother late waves: shield rings are found by a formula instead of a loop, and damage-number stamps reuse their canvases instead of making new ones.",
     "Smoother late waves on desktop: the damage-number cache holds three times as many stamps, so numbers stop being redrawn from scratch.",
     "Gravity: the nova fires 3.6 times as often at the third purchase and 5.5 times at the capstone (was 3 and 4.6).",
