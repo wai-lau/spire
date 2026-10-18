@@ -77,6 +77,10 @@ function liveWaves() {
   return m;
 }
 
+// a HYBRID wave named with both its traits (owner, 2026-10-18: "for the waves that have multiple features, label them as such in the next
+// wave indicator"): from HYBRID_FROM swarms carry shields and fast carry armor (spawnEnemy's aug)
+const WAVE_AUG = { swarm: "shield", fast: "armor" };
+const waveName = (type, n) => (n >= HYBRID_FROM && WAVE_AUG[type] ? type + "+" + WAVE_AUG[type] : type);
 function updateWaveList() {
   // the waves still alive and the next ones, one per row (owner; waves are fixed, so they are
   // known): its Roman number : its enemies, ONE ICON EACH, sized by HP : name.
@@ -142,7 +146,7 @@ function updateWaveList() {
     // countdown moved to the heading, the ":" column is empty
     note += "<span></span><span></span>" +
       '<span class="asp-dots e-' + ENEMIES[w.type].color + (boss ? " e-boss" : "") + '" style="width:' + span + 'px">' + icons + "</span>" +
-      "<span>" + (boss ? "<b>" + arcanaOf(n).name + "</b>" : w.type) + "</span>"; // boss names BOLD (owner)
+      "<span>" + (boss ? "<b>" + arcanaOf(n).name + "</b>" : waveName(w.type, n)) + "</span>"; // boss names BOLD (owner)
   }
   // the waves still ALIVE (and the current one) sit at the top: ONE rounded green box round them all
   // (owner, 2026-10-09: "replace the current wave highlight with a single rounded green rectangle";
