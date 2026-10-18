@@ -23,7 +23,7 @@ const DMG_SIZE_EXP = 0.7, DMG_PX_MIN = 10, DMG_PX_SPAN = 28, DMG_FLY = 90; // DM
 // grey: the share of the hit armor took (0..1) - the number is drawn that far from white toward Silver (dmgColor)
 function dmgNumber(e, label, size, color, src, grey = 0) {
   G.dmgAcc = (G.dmgAcc || 0) + size; // (into the running damage a second: stepFx)
-  const rel = Math.min(1, size / Math.max(1, G.dps || 0) / DMG_DPS_K) ** DMG_SIZE_EXP;
+  const rel = label === "0" && color === "cyan" ? 1 : Math.min(1, size / Math.max(1, G.dps || 0) / DMG_DPS_K) ** DMG_SIZE_EXP; // a SHIELD POP's 0 always full size (owner, 2026-10-18)
   if (dmgLive.length >= DMG_MAX) {
     dmgLive = dmgLive.filter(f => f.t < f.life);
     if (dmgLive.length >= DMG_MAX) {
@@ -105,9 +105,7 @@ function hitFlash(e, r, m, color, life) {
 const SHIELD_BREAK_N = 5;
 function shieldBreak(e) {
   const k = 1 - e.shield / SHIELD_BREAK_N, r = ENEMIES[e.type].size * (e.sizeMul || 1) * (DRAW_SIZE[e.type] || 1); // k: 0.2 at 4 left .. 1 at none
-  // ...one shockwave an enemy at a time (owner, 2026-10-14: ACD's pools pop five charges in a breath, five rings stacked): the newest replaces the last
-  if (e.breakRing) e.breakRing.t = e.breakRing.life;
-  ring(e.x, e.y, r * (2 + 3 * k), "cyan", 0.2 + 0.3 * k, true); const br = fx[fx.length - 1]; e.breakRing = br && br.k === "ring" ? br : null; // (the simulator stubs ring out)
+  // (no blue shockwave ring any more - owner, 2026-10-18: "get rid of the blue circle that appears when shield pops")
   burst(e.x, e.y, "cyan", Math.round(8 + 22 * k));
   if (e.shield <= 0) { ring(e.x, e.y, r * 7, "white", 0.45, true); burst(e.x, e.y, "white", 24); }
 }
