@@ -345,12 +345,23 @@ const BOSS_BAR_R = 400, BOSS_BAR_W = 21, BOSS_BAR_TRACK = 0.3; // 3x thicker (ow
 // the live boss's haiku for the HTML above the title (updateHud), or ""
 const bossHint = () => { const b = G.enemies.find(e => e.arcana && !e.dead); return b ? arcanaOf(b.n).hint.join("\n") : ""; };
 // (the boss's NAME is the page title while it is out now - updateHud, aspira-ui.js; drawBossTitle drew it on the board)
+// the bar ENDS INSIDE the phone's screen, BOSS_BAR_EDGE clear of its sides (owner, 2026-10-18: "boss hp bar should end before the mobile
+// edges"): BOSS_BAR_R at most, else the widest half that still lies on the screen (phoneInside: 2D box or 3D view), by halving
+const BOSS_BAR_EDGE = 24;
+function bossBarR() {
+  if (typeof phoneInside !== "function") return BOSS_BAR_R;
+  const on = r => phoneInside(CX - r, CY, BOSS_BAR_EDGE) && phoneInside(CX + r, CY, BOSS_BAR_EDGE);
+  if (on(BOSS_BAR_R)) return BOSS_BAR_R;
+  let lo = 0, hi = BOSS_BAR_R;
+  for (let i = 0; i < 10; i++) { const m = (lo + hi) / 2; if (on(m)) lo = m; else hi = m; }
+  return lo;
+}
 function drawBossBar() {
   const bosses = G.enemies.filter(e => e.arcana && !e.dead);
   if (!bosses.length) return;
   const hp = bosses.reduce((a, e) => a + Math.max(0, e.hp), 0), max = bosses.reduce((a, e) => a + e.max, 0);
-  const reach = bossInv.r || 0, half = Math.min(BOSS_BAR_R * hp / max, reach), col = ENEMIES.bonus.color;
-  const by = CY, track = Math.min(BOSS_BAR_R, reach); // ON the horizon through the core, under the core (owner)
+  const R = bossBarR(), reach = bossInv.r || 0, half = Math.min(R * hp / max, reach), col = ENEMIES.bonus.color;
+  const by = CY, track = Math.min(R, reach); // ON the horizon through the core, under the core (owner)
   if (track <= 0) return;
   ctx.strokeStyle = COL[col]; ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt";
   // the ORIGINAL HP as a translucent track (owner), the HP left solid over it
