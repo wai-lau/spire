@@ -48,17 +48,17 @@ const BOSS_FAR = { empress: 3.5, strength: 3.5, death: 2.8 };
 // ARC+SOL+ACD and ARC+FRZ+ACD at wave 120; at x0.6 both won 4/4 (triodiag, with GRV_STRIP 2.5)
 const BOSS_DEATH_K = 0.6;
 let BOSS_HP_K = 1.4; // waverep 2026-10-13: x1.4 brings bosses 24-108 in 16% (mean nearest 252 -> 211), x1.8 21%; still 36/36 won
-/* BOSSES CLOSER (owner, 2026-10-17: "10% closer than neighbouring waves"): Star x1.8, Empress x1.5, Strength x1.3, Chariot x3, Lovers x2, Temperance x2, Devil x1.5 - the highest every trio still beats (sim bosswave: Star 0.87, Empress 0.97 of the neighbours' closest approach; the rest stay far, a bigger HP loses the weakest trios) */ /* BOSSES CLOSER, 2nd pass (2026-10-18, SLOT_R 148, bosses x2 speed): vs the 2026-10-17 table Empress x0.9, Chariot x2, Lovers x2.5, Temperance x1.5, Devil x2, Justice x2, Judgement x1.6, Death x1.5 - 60/60 games won (bosswave sim); Strength is held by the FRZ trios */ const BOSS_HP = { star: 46.08 /* x0.8 (owner, 2026-10-15: "any pair of two towers doesn't leak on waves 1-12" - two ARCs broke through at 32) */ /* (owner, 2026-10-12: "require 2 towers or an upgrade to beat the star", SOL and ACD may solo it; solo.mjs; was 5.4) */, empress: 9.18, strength: 2.86, chariot: 20.4, lovers: 12, temperance: 3.66, devil: 2.28, justice: 12.8, judgement: 5.44, death: 4.8 }; // every one DOUBLED (owner, 2026-10-12: "double each bosses hp"; was 2.7 3.4 1.1 1.7 1.2 0.61 0.38 3.2 1.7 1.6)
+/* BOSSES CLOSER (owner, 2026-10-17: "10% closer than neighbouring waves"): Star x1.8, Empress x1.5, Strength x1.3, Chariot x3, Lovers x2, Temperance x2, Devil x1.5 - the highest every trio still beats (sim bosswave: Star 0.87, Empress 0.97 of the neighbours' closest approach; the rest stay far, a bigger HP loses the weakest trios) */ /* BOSSES CLOSER, 2nd pass (2026-10-18, SLOT_R 148, bosses x2 speed): vs the 2026-10-17 table Empress x0.9, Chariot x2, Lovers x2.5, Temperance x1.5, Devil x2, Justice x2, Judgement x1.6, Death x1.5 - 60/60 games won (bosswave sim); Strength is held by the FRZ trios */ const BOSS_HP = { star: 46.08 /* x0.8 (owner, 2026-10-15: "any pair of two towers doesn't leak on waves 1-12" - two ARCs broke through at 32) */ /* (owner, 2026-10-12: "require 2 towers or an upgrade to beat the star", SOL and ACD may solo it; solo.mjs; was 5.4) */, empress: 9.18, strength: 4.29, chariot: 20.4, lovers: 12, temperance: 3.66, devil: 2.28, justice: 12.8, judgement: 5.44, death: 4.8 }; // every one DOUBLED (owner, 2026-10-12: "double each bosses hp"; was 2.7 3.4 1.1 1.7 1.2 0.61 0.38 3.2 1.7 1.6)
 // each boss's ARMOR (x the armored enemy's growth curve at its wave, like ENEMIES.armor) and SPEED
 // (x the boss base) - owner, 2026-10-08: the bosses ACD is too good against get armor and speed and
 // lose HP, so SOL (whose hits strip armor) and ACD (whose ramp wants a long-lived target) boss alike
 const BOSS_ARMOR = { star: 0, empress: 0, strength: 0, chariot: 0, lovers: 0, temperance: 0, devil: 0, justice: 0, judgement: 0, death: 0 };
-const BOSS_SPEED = { star: 1, empress: 1, strength: 1, chariot: 1, lovers: 1, temperance: 1, devil: 1, justice: 0.75 /* Justice slowed (owner, 2026-10-12: "boss 80 nerf by slow" - it broke through in 5 of 36 games) */, judgement: 1, death: 1 };
+const BOSS_SPEED = { star: 1, empress: 1, strength: 1, chariot: 1.3, lovers: 1.3, temperance: 1.5, devil: 1.3, justice: 1.3, judgement: 1.4, death: 1.4 }; /* 2026-10-18: the far bosses a little quicker (justice was 0.75: slowed 2026-10-12, then it broke through) */
 // each boss's SHIELD (hits absorbed, whatever their size) and its REFILL a second - the counter to
 // SOL's few huge hits (owner, 2026-10-08): ACD's ticks, ARC's forks and FRZ's aura strip it cheaply
 // EVERY boss carries a little SHIELD (owner, 2026-10-12: "SOL feels too good vs bosses - give them all a little bit of
 // shields"): BOSS_SHIELD_K of a shield enemy's charges at its wave, on top of its own BOSS_SHIELD
-const BOSS_SHIELD_K = 0.5;
+const BOSS_SHIELD_K = 1.2; /* 0.5 -> 1.2 (2026-10-18, bosses closer without more HP) */
 const BOSS_SHIELD = { star: 0, empress: 0, strength: 0, chariot: 0, lovers: 0, temperance: 0, devil: 0, justice: 0, judgement: 0, death: 0 };
 const BOSS_SHIELD_REGEN = { star: 0, empress: 0, strength: 0, chariot: 0, lovers: 0, temperance: 0, devil: 0, justice: 0, judgement: 0, death: 0 };
 const BOSS_INTRO = 2; /* 20% shorter (owner, 2026-10-12; was 2.5) */ // s between a boss wave starting and its boss arriving (its warning plays)
@@ -112,8 +112,8 @@ function bossSpawn(e, n) {
 // six, ahead of and behind it on its lane, its own kin (the inverted sky holds till they die too). The Chariot's
 // outriders sprint when she does (bossStep). The fleet keeps the boss's pace, spaced clear of it (FLEET_GAP)
 const FLEET = {
-  star: ["fast"], empress: ["shield"], strength: ["armor"], chariot: ["fast"], lovers: ["swarm"], // shooting stars, handmaidens, lions, outriders, couples
-  temperance: ["shield"], devil: ["swarm"], justice: ["armor"], judgement: ["swarm"], death: ["fast", "swarm", "armor", "shield"], // the cup, imps, guards, the risen, four horsemen
+  star: ["fast"], empress: ["shield"], strength: ["armor"], chariot: ["fast", "armor"], lovers: ["swarm", "fast"], // shooting stars, handmaidens, lions, outriders + guards, couples + runners
+  temperance: ["shield", "fast"], devil: ["swarm", "fast"], justice: ["armor", "fast"], judgement: ["swarm", "fast", "armor"], death: ["fast", "swarm", "armor", "shield"], // the cup + runners, imps + runners, guards + runners, the risen + runners + guards, four horsemen
 };
 const FLEET_GAP = 10, FLEET_LAYER = 3 * V_BACK; // clear space between bodies, world units; a shield escort V's layers apart
 // x a plain wave, per boss: the fleet's SIZE, the balance lever (owner: "balance by adding to boss fleets") - fitted by
@@ -243,7 +243,9 @@ function bossStep(e, dt) {
 
 }
 // from applySlow: Strength shrugs slows off
-const bossSlowMul = e => (isA(e, "strength") ? 0 : 1);
+/* the share of a slow each boss still takes (1 = all; Strength 0.4: owner 2026-10-18, no longer immune, which walled ARC+FRZ trios) */
+const BOSS_SLOW_K = { strength: 0.4, temperance: 0.5, justice: 0.5, judgement: 0.5, death: 0.5, devil: 0.6 };
+const bossSlowMul = e => (BOSS_SLOW_K[e.arcana] ?? 1);
 // from damage(): Justice caps any one hit
 function bossHitCap(e, amt) {
   return isA(e, "justice") ? Math.min(amt, e.max * JUSTICE_CAP) : amt;

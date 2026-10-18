@@ -9,6 +9,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Bosses: Strength now takes 40% of a slow instead of none and has 1.5x the health; Temperance, Justice, Judgement, Death and the Devil take about half of a slow and move 30 to 50% faster (Justice no longer slowed); the Chariot, Lovers, Temperance, Devil, Justice and Judgement bring runners with their escorts; boss shields x2.4.",
     "Smoother on phones: damage-number stamps reuse canvases of the same size instead of allocating new ones (the main cause of the late-wave hitches in the slow logs).",
     "Bosses: the Empress has 10% less health; the Chariot x2, the Lovers x2.5, Temperance x1.5, the Devil x2, Justice x2, Judgement x1.6 and Death x1.5 as much.",
     "Smoother late waves: shield rings are found by a formula instead of a loop, and damage-number stamps reuse their canvases instead of making new ones.",
