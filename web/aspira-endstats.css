@@ -35,10 +35,12 @@
 .asp-end-waves th { color: hsl(var(--white-hsl)); font-weight: var(--fw-normal); }
 
 .asp-end-leak { color: hsl(var(--pink-hsl)); }
-/* the END SCREEN SCROLLS (owner, 2026-10-18: "on score screen leaks and leaderboard should be scrollable"): the overlay scrolls as a
-   whole once it outgrows the screen (centred by auto margins - justify-content: center cut its top off), and the leak list is
-   capped at a third of the screen and scrolls on its own, like the board (aspira-ascend.css) */
-#asp-ov { overflow-y: auto; justify-content: flex-start; overscroll-behavior: contain; touch-action: pan-y; }
-#asp-ov > :first-child { margin-top: auto; }
-#asp-ov > :last-child { margin-bottom: auto; }
-#asp-ov-leaks { max-height: 33vh; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; pointer-events: auto; flex-shrink: 0; }
+/* the END SCREEN FITS THE SCREEN (owner, 2026-10-18: "the screen shouldn't be scrollable, leaks and top players should expand to take up
+   remaining space with scroll within"): the overlay never scrolls; the leak list and the top-players board share the height the
+   title, stats and Play again leave, each scrolling inside itself */
+#asp-ov { overflow: hidden; justify-content: flex-start; }
+#asp-ov > * { flex-shrink: 0; }
+#asp-ov > #asp-ov-leaks, #asp-ov > #asp-asc:not([hidden]) { flex: 1 1 0; min-height: 0; } /* (#asp-asc is a flex column already - aspira-ascend.css) */
+#asp-ov-leaks { overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; pointer-events: auto; }
+#asp-asc > * { flex-shrink: 0; }
+#asp-asc > #asp-asc-board { flex: 1 1 0; min-height: 0; }

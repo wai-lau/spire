@@ -43,7 +43,7 @@ function ascBoard(entries, mine) {
   board.append(table);
   fitOneLine(table, Math.min(document.documentElement.clientWidth - 24, $("asp-asc").parentElement.clientWidth || 1e9)); // every row on ONE line, the table shrunk to fit (aspira-chooser.js)
   const rows = table.rows;
-  board.style.maxHeight = rows.length > ASC_SHOW ? rows[ASC_SHOW].offsetTop - rows[0].offsetTop + "px" : "";
+  board.style.maxHeight = ""; /* the board takes the end screen's spare height and scrolls inside it (aspira-endstats.css; owner, 2026-10-18 - was ASC_SHOW rows tall) */
   const me = table.querySelector(".asp-asc-mine");
   if (me && rows.length > ASC_SHOW) board.scrollTop = Math.max(0, me.offsetTop - rows[0].offsetTop - board.clientHeight / 2);
 }

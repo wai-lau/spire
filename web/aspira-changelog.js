@@ -50,7 +50,7 @@ const CHANGELOG = [
     "Gravity: the aura strips armor harder the closer an enemy is to its centre (it already slowed harder there).",
     "Gravity: a nova that catches nothing still leaves a full-size hole; novas land ahead of their target, so it walks into the opening hole.",
   ], u: [
-    "The end screen scrolls: the leak list and the top players can be scrolled when they do not fit.",
+    "The end screen fits the screen: the leak list and the top players fill the space left and scroll inside themselves.",
     "The wave list names hybrid waves by both traits: swarm+shield, fast+armor.",
     "Bosses: the Star has x1.8 health, the Empress x1.5, Strength x1.3, the Chariot x3, the Lovers x2, Temperance x2 and the Devil x1.5.",
     "Carrier: interceptors fly smooth loops round their target, about 75 out and wobbling +-20%, steering round the core and towers; bolts reach 390.",
