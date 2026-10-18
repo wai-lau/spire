@@ -236,12 +236,16 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
       const k = ADAPT_DECAY ** (G.wave - 1 - n), close = Number.isFinite(w.near) ? Math.max(0, 1 - w.near / ADAPT_NEAR) ** 2 : 0;
       for (const ty of Object.keys(w.types)) if (ty !== "bonus") threat[ty] = (threat[ty] || 0) + k * (close + ADAPT_LIFE * w.lost);
     }
-    let best = null, bs = 0;
+    let best = null, bs = 0; const ranked = [];
     for (const id of Object.keys(vs)) {
       if (id === "spread" || ((t.skills || {})[id] || 0) >= g.axisCap(t, id)) continue;
       let sc = 0; for (const ty in threat) sc += threat[ty] * ((vs.spread[ty] ?? 0) - (vs[id][ty] ?? 0));
+      ranked.push({ id, sc });
       if (sc > bs) { bs = sc; best = id; }
     }
+    // ALT AXES (owner, 2026-10-17: a perfect player tries other spends before it loses a wave): the smart saver's rewound tries
+    // rotate S.rot - the k-th best open axis instead of the best (smartWave)
+    if (S.rot && ranked.length > 1) { ranked.sort((a, b) => b.sc - a.sc); return ranked[S.rot % ranked.length].id; }
     return best;
   };
   // RANDOM AXIS (owner, 2026-10-17: the ceiling of the difficulty band is the random player): a point goes to a random open axis
@@ -386,7 +390,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
 // THE SMART SAVER (owner, 2026-10-12): it plays wave by wave from a snapshot, SAVING everything; a wave that costs a
 // life is played again from that snapshot with 1, 2, 3... upgrades bought before it starts - "allowed to go back to a snapshot and
 // spend money if the wave it held back on leaked". strategy.rewind false turns the replay off
-const RELOCATE_TRIES = 6; // cell shifts the smart saver tries after the purchase ladder fails
+const RELOCATE_TRIES = 6, ALT_AXES = 2; // cell shifts / alternative-axis rotations the smart saver tries after the purchase ladder fails // cell shifts the smart saver tries after the purchase ladder fails
 const SMART_INTEREST = 4, HOARD_X = 4; // HOARD_X: a hoarder's bank over the smart saver's // game seconds the replayed wave spends freely
 // one wave of the smart saver: from a snapshot, played saving; on a lost life, again with 1, 2, 3... purchases made BEFORE it
 // (owner, 2026-10-12: "if leak, rewind and buy 1 upgrade before wave starts; if still leak, rewind and buy 2") - nothing
@@ -399,18 +403,22 @@ function smartWave(p, playWave) {
   const tries = ready ? [[false, 0], [true, 0]] : [[false, 0]];
   // RELOCATION (owner, 2026-10-17): when no ladder of purchases holds the wave, the towers are moved to other cells (shift 1, 2, 3...)
   // and the ladder is tried again from the same snapshot - a wave that falls to the placement, not the build, is not a loss
+  // ALT AXES come before relocation: the whole ladder again with the k-th best axis for every purchase (k = 1, 2)
+  outer:
   for (let shift = 0; shift <= RELOCATE_TRIES; shift++) {
-    for (let i = 0; ; i++) {
-      const [pw, n] = tries[i] || [ready, i - tries.length + 1];
-      if (i || shift) { p.restore(snap); p.rewinds = (p.rewinds || 0) + 1; if (shift) p.relocate(shift); } // (rewinds on p, not S: a restore would roll S back)
-      p.S.powersOk = pw;
-      const made = p.buy(n);
-      playWave();
-      if ((p.g.G.lives >= lives && !p.g.G.over) || made < n) break; // a BOSS breach (game over) is rewound like any leak
+    for (let rot = 0; rot <= (shift ? 0 : ALT_AXES); rot++) {
+      for (let i = 0; ; i++) {
+        const [pw, n] = tries[i] || [ready, i - tries.length + 1];
+        if (i || shift || rot) { p.restore(snap); p.rewinds = (p.rewinds || 0) + 1; if (shift) p.relocate(shift); } // (rewinds on p, not S: a restore would roll S back)
+        p.S.powersOk = pw; p.S.rot = rot;
+        const made = p.buy(n);
+        playWave();
+        if ((p.g.G.lives >= lives && !p.g.G.over) || made < n) break; // a BOSS breach (game over) is rewound like any leak
+      }
+      if (p.g.G.lives >= lives && !p.g.G.over) break outer;
     }
-    if (p.g.G.lives >= lives && !p.g.G.over) break;
   }
-  p.S.powersOk = false;
+  p.S.powersOk = false; p.S.rot = 0;
 }
 export function play(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = "") {
   const p = makePlayer(strategy, seed, maxWave, dt, patch);
