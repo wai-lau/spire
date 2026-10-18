@@ -97,6 +97,7 @@ const CHANGELOG = [
     "Bosses: twice as fast (back to full speed) on a boss lane twice as long - the same time to reach the core, over a longer winding road.",
     "Auto-move's confirm now reads NO LEADERBOARD (tap again to confirm).",
     "Death gives no rewards: no credits, score, lives or interest from its wave, and the score's owed lives are not paid at the end.",
+    "Orbital Relay back to x3 (was x5).",
     "The Carrier's description now explains focus fire: each shot hits harder for every other interceptor on the same enemy.",
     "Tapping a tower opens its upgrade card again (its home slot still works too).",
     "Lanes turn in finer steps to keep as much of each one on screen as possible.",

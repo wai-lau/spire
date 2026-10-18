@@ -24,7 +24,7 @@ const CORE_GRANTS = [[2 * STAR_EVERY, "temporal"], [4 * STAR_EVERY, "relay"]]; /
 const CORE_UNLOCK = CORE_GRANTS[0][0], CORE_TIERS = 3, CORE_PICKS = [] /* (the picks are gone; corePicks() stays 0) */, CORE_POINTS = CORE_TIERS * CORE_GRANTS.length;
 const CORE_POWERS = [
   { id: "relay", name: "Orbital Relay", /* planetary defence names (owner, 2026-10-06; was Fortifications) */ how: "drag the core onto a tower",
-    desc: "For a while, a tower acts as five: every bolt, ray, burn line and moon, five times over." },
+    desc: "For a while, a tower acts as three: every bolt, ray, burn line and moon, three times over." },
   { id: "temporal", name: "Temporal Drive", /* (owner; was Temporal Manipulation) */ how: "press and hold the core",
     desc: "Every enemy stops dead at once, and stays stopped while rings pulse out from the core." },
 ];
@@ -33,7 +33,7 @@ const CORE_POWERS = [
 const TEMPORAL = [null, { dur: 2.5, cd: 4 }, { dur: 4, cd: 4 }, { dur: 6, cd: 3 }], /* halved (owner, 2026-10-12; was 5 / 8 / 12 s) - owner 2026-10-06: longer stop (was 2 / 4 s) */ TEMPORAL_GROW = 1.8, TEMPORAL_R = 560, TEMPORAL_FADE = 1, TEMPORAL_RING_EVERY = 1.5; // a ring shot out every TEMPORAL_RING_EVERY s for the whole freeze (owner, 2026-10-08); FEWER, SLOWER, LONGER (owner, 2026-10-11: were 0.6 s to spread, 0.4 s to fade, one every 0.5 s) - the look only, the stop is at once
 // the Relay: RELAY_MUL x the tower for `dur` s, the cooldown counted from when
 // it wears off (per tier for the dial's sake; only III is ever owned)
-const RELAY_MUL = 5 /* (owner, 2026-10-17: "change orbital relay to be a 5x multiplier instead of 3"; was 3) */, RELAY = [null, { dur: 11.25, cd: 4 }, { dur: 11.25, cd: 4 }, { dur: 11.25, cd: 4 }]; // 11.25 s: halved (owner, 2026-10-13; was 22.5) // 22.5 s: halved (owner, 2026-10-12; was 45) // 45 s: doubled (owner, 2026-10-11; was 22.5, halved from 45 on 2026-10-07)
+const RELAY_MUL = 3 /* back to 3 (owner, 2026-10-18: "orbital relay back down to 3x"; 5 since 2026-10-17) */, RELAY = [null, { dur: 11.25, cd: 4 }, { dur: 11.25, cd: 4 }, { dur: 11.25, cd: 4 }]; // 11.25 s: halved (owner, 2026-10-13; was 22.5) // 22.5 s: halved (owner, 2026-10-12; was 45) // 45 s: doubled (owner, 2026-10-11; was 22.5, halved from 45 on 2026-10-07)
 
 const powerLvl = id => (G.core && G.core.pw ? G.core.pw[id] || 0 : 0);
 const coreLvl = () => (G.core && G.core.pw ? Object.values(G.core.pw).reduce((a, b) => a + b, 0) : 0);
@@ -70,7 +70,7 @@ function grantPick() {
 const cooldownLeft = id => Math.max(0, (G.core && G.core.cd[id]) || 0); // in WAVES
 const wavesLeft = n => n + (n === 1 ? " wave" : " waves");
 
-// ---------- Orbital Relay: the tower acts as RELAY_MUL (five) ----------
+// ---------- Orbital Relay: the tower acts as RELAY_MUL (three) ----------
 // ONE POWER AT A TIME (owner, 2026-10-15: "whenever a power is used, slam the core and disable the other power until it is
 // done"): a power can't go while another runs (DIAL's active: seconds left)
 const otherRunning = id => typeof DIAL !== "undefined" && !!G.core && DIAL.some(d => d.id !== id && powerLvl(d.id) && d.active(G.core) > 0);
