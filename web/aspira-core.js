@@ -73,7 +73,8 @@ const wavesLeft = n => n + (n === 1 ? " wave" : " waves");
 // ---------- Orbital Relay: the tower acts as RELAY_MUL (three) ----------
 // ONE POWER AT A TIME (owner, 2026-10-15: "whenever a power is used, slam the core and disable the other power until it is
 // done"): a power can't go while another runs (DIAL's active: seconds left)
-const otherRunning = id => typeof DIAL !== "undefined" && !!G.core && DIAL.some(d => d.id !== id && powerLvl(d.id) && d.active(G.core) > 0);
+// ...except Temporal Drive, which may go while the Relay runs (owner, 2026-10-18: "allow temporal drive while orbital relay")
+const otherRunning = id => id !== "temporal" && typeof DIAL !== "undefined" && !!G.core && DIAL.some(d => d.id !== id && powerLvl(d.id) && d.active(G.core) > 0);
 function relay(t) {
   const lv = RELAY[powerLvl("relay")];
   if (!lv || !t || cooldownLeft("relay") > 0 || otherRunning("relay")) return false;

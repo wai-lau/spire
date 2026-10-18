@@ -9,6 +9,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Temporal Drive: can be fired while the Orbital Relay runs.",
     "Freeze: Rime rings bite - each ring that reaches an enemy hits it for 4 to 60 times a tick.",
     "Gravity: the nova fires 5.6 times as often at the third purchase and 8.5 times at the capstone; pellets and nova hit harder late; Void slows more.",
     "Sol: 17 beams at the third purchase and 25 at the capstone; Refraction, crits and Breach hit harder late.",
