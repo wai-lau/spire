@@ -51,6 +51,7 @@ const CHANGELOG = [
     "Gravity: the aura strips armor harder the closer an enemy is to its centre (it already slowed harder there).",
     "Gravity: a nova that catches nothing still leaves a full-size hole; novas land ahead of their target, so it walks into the opening hole.",
   ], u: [
+    "Build cards: the checks and x's against each enemy type re-measured for the current balance.",
     "Shields: an enemy's outer shield layers are spokes from the die out to its last-layer polygon.",
     "The end screen fits the screen: the leak list and the top players fill the space left and scroll inside themselves.",
     "The wave list names hybrid waves by both traits: swarm+shield, fast+armor.",

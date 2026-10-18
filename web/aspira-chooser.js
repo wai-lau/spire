@@ -138,7 +138,7 @@ function chooseUpgrade(i) {
 // have the same number of checks and x's; an enemy type can have multiple; use sim stats"): from the counter matrix (countermx.mjs,
 // three towers of a kind, spread build, waves 61-69, % leaked; 5.1.23): 3 checks and 3 x's a tower, the checks to the types it lets
 // through less than its own average, split by how far under it, the x's likewise over (scripts/aspira-sim/marks.py)
-const VS_MARKS = { arc: { swarm: 1, fast: 1, shield: 1, armor: -3 }, frz: { swarm: 2, fast: 1, shield: -2, armor: -1 }, sol: { swarm: -2, fast: 2, shield: -1, armor: 1 }, acd: { swarm: 1, fast: -3, shield: 1, armor: 1 }, grv: { swarm: 2, fast: -2, shield: -1, armor: 1 }, car: { swarm: -2, fast: 1, shield: 2, armor: -1 } }; /* regenerated 2026-10-17 (marks.py, countermx 61-69 after the late-tier steepening and the SOL shield change) */
+const VS_MARKS = { arc: { swarm: 1, fast: 1, shield: 1, armor: -3 }, frz: { swarm: 1, fast: 1, shield: -3, armor: 1 }, sol: { swarm: 1, fast: 1, shield: -3, armor: 1 }, acd: { swarm: 1, fast: -3, shield: 1, armor: 1 }, grv: { swarm: 1, fast: -1, shield: -2, armor: 2 }, car: { swarm: 1, fast: -2, shield: 2, armor: -1 } }; /* regenerated 2026-10-18 v5.1.134 (marks.py --write, countermx 61-69) */
 const VS_ORDER = ["swarm", "fast", "shield", "armor"];
 const vsMarks = k => VS_ORDER.filter(e => (VS_MARKS[k] || {})[e]).map(e => {
   const m = VS_MARKS[k][e];

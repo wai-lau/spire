@@ -1,6 +1,10 @@
 # check / x marks per tower from a countermx run (spread build, waves 61-69): leak % per type -> 3 checks and 3 x's a tower,
 # checks to the types it beats (leak under its own mean), split by how far under (largest remainder, each such type >= 1)
+# usage: python3 marks.py <countermx.out> [--write]   --write puts the result into VS_MARKS (web/aspira-chooser.js) - run it after
+# EVERY balance patch (owner, 2026-10-18: "update the checks and xs here whenever you make a balance patch")
+import datetime
 import json
+import pathlib
 import re
 import sys
 
@@ -36,3 +40,15 @@ for k, L in leak.items():
     marks[k] = m
     print(k.upper(), L, "->", " ".join(f"{t}:{'+' if c > 0 else ''}{c}" for t, c in m.items() if c))
 print(json.dumps(marks))
+
+if "--write" in sys.argv[2:]:
+    web = pathlib.Path(__file__).resolve().parents[2] / "web"
+    chooser, ver = web / "aspira-chooser.js", (web / "aspira-version.txt").read_text().strip()
+    order = ["arc", "frz", "sol", "acd", "grv", "car"]
+    body = ", ".join(f"{k}: {{ " + ", ".join(f"{t}: {marks[k][t]}" for t in TYPES if marks[k][t]) + " }" for k in order if k in marks)
+    line = f"const VS_MARKS = {{ {body} }}; /* regenerated {datetime.date.today()} v{ver} (marks.py --write, countermx 61-69) */"
+    src = chooser.read_text()
+    new, n = re.subn(r"^const VS_MARKS = .*$", lambda _: line, src, count=1, flags=re.M)
+    assert n == 1, "VS_MARKS line not found"
+    chooser.write_text(new)
+    print("wrote", chooser)
