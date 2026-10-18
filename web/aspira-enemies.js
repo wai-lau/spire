@@ -240,7 +240,8 @@ function syncSegs(segs, n, sides, flashes, keepInner) {
 // each side cut in r; slot i -> its ring r and its place in that ring
 const ringStart = (r, sides) => sides * (r - 1) * r / 2;
 function ringOf(i, sides) {
-  let r = 1;
+  let r = Math.floor((-1 + Math.sqrt(1 + 8 * (i / sides))) / 2) + 1; /* closed form (perf, 2026-10-17); the two nudges guard float rounding */
+  while (r > 1 && ringStart(r, sides) > i) r--;
   while (ringStart(r + 1, sides) <= i) r++;
   return { r, pos: i - ringStart(r, sides) };
 }

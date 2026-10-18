@@ -14,11 +14,13 @@ const TEXT_Q = 0.5, TEXT_CACHE_MAX = TEXT_BIG ? 2700 : 900;
 const TEXT_CACHE_PX = TEXT_BIG ? 18e6 : 6e6;
 const textSprites = new Map();
 let textPx = 0;
+const textPool = []; /* evicted stamps' canvases, zero-sized */
+let textMade = 0; /* canvases created, for the slow logs */
 function textEvict(keep) { // keep: the one about to be drawn - never zeroed under its own draw
   for (const [k, sp] of textSprites) {
     if (textPx <= TEXT_CACHE_PX && textSprites.size < TEXT_CACHE_MAX) return;
     if (k === keep) continue;
-    textSprites.delete(k); textPx -= sp.c.width * sp.c.height; sp.c.width = 0; sp.c.height = 0; // (a zero-size canvas: its memory back now, not at the next GC)
+    textSprites.delete(k); textPx -= sp.c.width * sp.c.height; sp.c.width = 0; sp.c.height = 0; if (textPool.length < 96) textPool.push(sp.c); // (a zero-size canvas: its memory back now, not at the next GC; kept to be REUSED by the next stamp - a new canvas a stamp was the slow logs' newCanvas tag, perf 2026-10-17)
   }
 }
 let textCacheOn = true, textBuilding = false; // textBuilding: text() drawing a stamp - the old way, no recursion
@@ -53,7 +55,9 @@ function textWarm(str, size, color, a) {
 }
 // draw the text the old way (text(), aspira-draw.js) at q device px onto a canvas just big enough: its outline, its glow
 function textStamp(str, q, color, outline, bold, sc, blur) {
-  const c = document.createElement("canvas"), x = c.getContext("2d"), main = ctx;
+  let c = textPool.pop(); if (!c) { c = document.createElement("canvas"); textMade++; }
+  const x = c.getContext("2d"), main = ctx;
+  delete x.shadowBlur; /* (a reused canvas may carry the full-density override of an earlier stamp) */
   if (main.__ent) { const sb = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, "shadowBlur"), bk = warp.entScale || 1; Object.defineProperty(x, "shadowBlur", { configurable: true, get() { return sb.get.call(this) / bk; }, set(v) { sb.set.call(this, v * bk); } }); } // the glow as the full-density layer draws it
   const sz = q / sc; // the size in the caller's units, so the outline's caps (TEXT_STROKE_MAX, in those units) scale as before
   x.font = (bold ? "bold " : "") + q + "px " + CANVAS_FONT;
