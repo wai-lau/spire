@@ -405,8 +405,8 @@ function smartWave(p, playWave) {
   // and the ladder is tried again from the same snapshot - a wave that falls to the placement, not the build, is not a loss
   // ALT AXES come before relocation: the whole ladder again with the k-th best axis for every purchase (k = 1, 2)
   outer:
-  for (let shift = 0; shift <= RELOCATE_TRIES; shift++) {
-    for (let rot = 0; rot <= (shift ? 0 : ALT_AXES); rot++) {
+  for (let shift = 0; shift <= (p.strategy.cheapSaver ? 0 : RELOCATE_TRIES); shift++) {
+    for (let rot = 0; rot <= (shift || p.strategy.cheapSaver ? 0 : ALT_AXES); rot++) {
       for (let i = 0; ; i++) {
         const [pw, n] = tries[i] || [ready, i - tries.length + 1];
         if (i || shift || rot) { p.restore(snap); p.rewinds = (p.rewinds || 0) + 1; if (shift) p.relocate(shift); } // (rewinds on p, not S: a restore would roll S back)

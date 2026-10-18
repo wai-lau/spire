@@ -9,7 +9,10 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
-    "Bosses: Strength now takes 40% of a slow instead of none and has 1.5x the health; Temperance, Justice, Judgement, Death and the Devil take about half of a slow and move 30 to 50% faster (Justice no longer slowed); the Chariot, Lovers, Temperance, Devil, Justice and Judgement bring runners with their escorts; boss shields x2.4.",
+    "Arc: Conductivity gets more strikes, jumps and forks late and hits 1.5 to 3.5 times harder from the third purchase; Voltage x1.35 harder; Capacitance holds more, stronger charges.",
+    "Acid: Contagion pools last longer, reach further, pulse faster and burn harder from the third purchase.",
+    "Gravity: Void's slow, armor strip, inner burn and aura radius are stronger from the third purchase.",
+    "Freeze: Moons - five moons with six moonlets each at the capstone (was four and four), moonlets hit harder; Rime pulses faster and harder.",
     "Smoother on phones: damage-number stamps reuse canvases of the same size instead of allocating new ones (the main cause of the late-wave hitches in the slow logs).",
     "Bosses: the Empress has 10% less health; the Chariot x2, the Lovers x2.5, Temperance x1.5, the Devil x2, Justice x2, Judgement x1.6 and Death x1.5 as much.",
     "Smoother late waves: shield rings are found by a formula instead of a loop, and damage-number stamps reuse their canvases instead of making new ones.",
@@ -169,6 +172,7 @@ const CHANGELOG = [
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], ne: [
+    "Late trims to even out the axes: Acid Corrosion and Spray x0.9, Carrier Hangar and Tether x0.75, Freeze Brittle x0.65, Gravity nova hit x0.8 (fourth purchase and capstone).",
     "Arc: late tiers trimmed - Voltage and the spread hit lower, Conductivity forks and strikes and Capacitance charges fewer at the capstone.",
     "Gravity: an untaken Gravity tower is weaker (aura 45, slow 0.04, nova x0.8, pellets 0.1, burn x3); first purchase aura 80, slow 0.10, nova x2.",
     "Carrier: an untaken Carrier launches 3 interceptors at x0.6 the hit (first purchase 5 at x2).",
