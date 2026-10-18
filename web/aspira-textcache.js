@@ -14,13 +14,19 @@ const TEXT_Q = 0.5, TEXT_CACHE_MAX = TEXT_BIG ? 2700 : 900;
 const TEXT_CACHE_PX = TEXT_BIG ? 18e6 : 6e6;
 const textSprites = new Map();
 let textPx = 0;
-const textPool = []; /* evicted stamps' canvases, zero-sized */
+const textPool = new Map(); /* evicted stamps' canvases by size bucket ("WxH"): kept at their size and reused - a canvas of a NEW size is an allocation + a texture the iPhone paid ~tens of ms for (slow logs 5.1.119: newCanvas on 53 of 89 slow frames) */
+let textPoolPx = 0; const TEXT_POOL_PX = 2e6;
+const textBucket = (w, h) => [Math.ceil(w / 16) * 16, Math.ceil(h / 8) * 8];
 let textMade = 0; /* canvases created, for the slow logs */
-function textEvict(keep) { // keep: the one about to be drawn - never zeroed under its own draw
+function textFree(sp) { // a dropped stamp's canvas: back to its bucket while the spare pool is small, else zeroed so iOS frees it now
+  const c = sp.c, n = c.width * c.height;
+  if (textPoolPx + n <= TEXT_POOL_PX) { const k = c.width + "x" + c.height; (textPool.get(k) || textPool.set(k, []).get(k)).push(c); textPoolPx += n; } else { c.width = 0; c.height = 0; }
+}
+function textEvict(keep) { // keep: the one about to be drawn - never freed under its own draw
   for (const [k, sp] of textSprites) {
     if (textPx <= TEXT_CACHE_PX && textSprites.size < TEXT_CACHE_MAX) return;
     if (k === keep) continue;
-    textSprites.delete(k); textPx -= sp.c.width * sp.c.height; sp.c.width = 0; sp.c.height = 0; if (textPool.length < 96) textPool.push(sp.c); // (a zero-size canvas: its memory back now, not at the next GC; kept to be REUSED by the next stamp - a new canvas a stamp was the slow logs' newCanvas tag, perf 2026-10-17)
+    textSprites.delete(k); textPx -= sp.c.width * sp.c.height; textFree(sp);
   }
 }
 let textCacheOn = true, textBuilding = false; // textBuilding: text() drawing a stamp - the old way, no recursion
@@ -40,7 +46,7 @@ function textSprite(str, x, y, size, color, outline, bold, shrink = 1) {
   const k = dev / q * shrink, X = m.a * x + m.e, Y = m.d * y + m.f; // shrink: the same stamp, drawn smaller (perf, 2026-10-16: a fading number made a stamp per 0.5 px step - the cache sat full and thrashed)
   const st = CanvasRenderingContext2D.prototype.setTransform; // (the prototype's: the full-density layer's own would scale it - entCtx)
   st.call(ctx, 1, 0, 0, 1, 0, 0); // device px; only the transform changes, so it alone is put back (a save / restore a number was most of its cost)
-  ctx.drawImage(sp.c, X - sp.ox * k, Y - sp.oy * k, sp.c.width * k, sp.c.height * k);
+  ctx.drawImage(sp.c, 0, 0, sp.w, sp.h, X - sp.ox * k, Y - sp.oy * k, sp.w * k, sp.h * k); /* (the stamp fills the corner of a bucket-sized canvas) */
   st.call(ctx, m);
   return true;
 }
@@ -54,17 +60,21 @@ function textWarm(str, size, color, a) {
   return true;
 }
 // draw the text the old way (text(), aspira-draw.js) at q device px onto a canvas just big enough: its outline, its glow
+let textMeasureX = null;
 function textStamp(str, q, color, outline, bold, sc, blur) {
-  let c = textPool.pop(); if (!c) { c = document.createElement("canvas"); textMade++; }
-  const x = c.getContext("2d"), main = ctx;
+  const sz = q / sc; // the size in the caller's units, so the outline's caps (TEXT_STROKE_MAX, in those units) scale as before
+  const mx = textMeasureX ||= document.createElement("canvas").getContext("2d");
+  mx.font = (bold ? "bold " : "") + q + "px " + CANVAS_FONT;
+  const w0 = mx.measureText(str).width, pad = Math.ceil(Math.min(sz * 0.32, TEXT_STROKE_MAX) * sc + blur * 2 + 2);
+  const w = Math.ceil(w0 + 2 * pad), h = Math.ceil(q * 1.3 + 2 * pad), [bw, bh] = textBucket(w, h), free = textPool.get(bw + "x" + bh);
+  let c = free && free.pop(); const main = ctx;
+  if (c) { textPoolPx -= bw * bh; if (c.getContext("2d").reset) c.getContext("2d").reset(); else c.width = bw; }
+  else { c = document.createElement("canvas"); c.width = bw; c.height = bh; textMade++; }
+  const x = c.getContext("2d");
   delete x.shadowBlur; /* (a reused canvas may carry the full-density override of an earlier stamp) */
   if (main.__ent) { const sb = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, "shadowBlur"), bk = warp.entScale || 1; Object.defineProperty(x, "shadowBlur", { configurable: true, get() { return sb.get.call(this) / bk; }, set(v) { sb.set.call(this, v * bk); } }); } // the glow as the full-density layer draws it
-  const sz = q / sc; // the size in the caller's units, so the outline's caps (TEXT_STROKE_MAX, in those units) scale as before
-  x.font = (bold ? "bold " : "") + q + "px " + CANVAS_FONT;
-  const w = x.measureText(str).width, pad = Math.ceil(Math.min(sz * 0.32, TEXT_STROKE_MAX) * sc + blur * 2 + 2);
-  c.width = Math.ceil(w + 2 * pad); c.height = Math.ceil(q * 1.3 + 2 * pad);
-  const ox = c.width / 2, oy = c.height / 2;
+  const ox = w / 2, oy = h / 2;
   ctx = x; textBuilding = true;
   try { x.setTransform(sc, 0, 0, sc, ox, oy); text(str, 0, 0, sz, color, outline, bold); } finally { ctx = main; textBuilding = false; }
-  return { c, ox, oy };
+  return { c, w, h, ox, oy };
 }
