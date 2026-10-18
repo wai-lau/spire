@@ -10,7 +10,6 @@
 // each power's word when it can go (owner, 2026-10-08): TEMPORAL DRIVE online, ORBITAL RELAY ready
 const POWER_READY = { temporal: "online", relay: "ready" };
 function powerTap(d) {
-  if (otherRunning(d.id)) return; // the other power is running: this one waits (aspira-core.js)
   if (d.id === "temporal") { if (temporalFreeze()) refreshPanels(); return; }
   // the Relay ALWAYS arms and waits for a tower (owner, 2026-10-08: "keep waiting for tower selection"),
   // whatever is selected; a second tap on the button disarms
@@ -54,10 +53,9 @@ function updatePowers() {
     let b = box.querySelector('[data-pw="' + d.id + '"]');
     if (!b) { b = button(box, "asp-power " + d.color, "", () => powerTap(d)); b.dataset.pw = d.id; }
     const lv = powerLvl(d.id), cd = cooldownLeft(d.id), full = d.tab()[lv].cd, run = d.active(c);
-    const wait = run <= 0 && otherRunning(d.id); // the other power runs: this one waits (owner, 2026-10-15)
-    const state = run > 0 ? Math.ceil(run) + "s on" : cd > 0 ? wavesLeft(cd) : wait ? "wait" : POWER_READY[d.id]; // the cooldown in waves (2026-10-11) // (owner, 2026-10-08: "should say temporal drive online"; was TIME STOP / ready)
+    const state = run > 0 ? Math.ceil(run) + "s on" : cd > 0 ? wavesLeft(cd) : POWER_READY[d.id]; // the cooldown in waves (2026-10-11) // (owner, 2026-10-08: "should say temporal drive online"; was TIME STOP / ready)
     setHtml(b, "<span>" + d.label + "</span><b>" + state + '</b><i style="width:' + Math.round(100 * (run > 0 ? 1 : 1 - Math.min(1, cd / full))) + '%"></i>');
-    b.classList.toggle("ready", run <= 0 && cd <= 0 && !wait); b.classList.toggle("run", run > 0); b.classList.toggle("wait", wait);
+    b.classList.toggle("ready", run <= 0 && cd <= 0); b.classList.toggle("run", run > 0);
     b.classList.toggle("armed", d.id === "relay" && !!ui.relayArm);
     // a power coming off cooldown pops "<NAME> ONLINE" where the interest pops up, under the core (was the dial's)
     if (c.flashAt && c.flashAt[d.id] && G.wave >= c.flashAt[d.id]) { flashPower(d.id); delete c.flashAt[d.id]; } // won from a boss: flashes as the next wave starts (grantPowers)

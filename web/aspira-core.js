@@ -71,13 +71,10 @@ const cooldownLeft = id => Math.max(0, (G.core && G.core.cd[id]) || 0); // in WA
 const wavesLeft = n => n + (n === 1 ? " wave" : " waves");
 
 // ---------- Orbital Relay: the tower acts as RELAY_MUL (three) ----------
-// ONE POWER AT A TIME (owner, 2026-10-15: "whenever a power is used, slam the core and disable the other power until it is
-// done"): a power can't go while another runs (DIAL's active: seconds left)
-// ...except Temporal Drive, which may go while the Relay runs (owner, 2026-10-18: "allow temporal drive while orbital relay")
-const otherRunning = id => id !== "temporal" && typeof DIAL !== "undefined" && !!G.core && DIAL.some(d => d.id !== id && powerLvl(d.id) && d.active(G.core) > 0);
+// the powers STACK: either may go while the other runs (owner, 2026-10-18: "allow both ways"; one at a time 2026-10-15 .. 10-18)
 function relay(t) {
   const lv = RELAY[powerLvl("relay")];
-  if (!lv || !t || cooldownLeft("relay") > 0 || otherRunning("relay")) return false;
+  if (!lv || !t || cooldownLeft("relay") > 0) return false;
   coreState().cd.relay = lv.cd; // waves from this use (sendWave ticks it)
   t.relayUntil = (G.clock || 0) + lv.dur;
   if (typeof banner === "function") banner("ORBITAL RELAY · " + TOWERS[t.kind].ab + " ×" + RELAY_MUL, TOWERS[t.kind].color, 1.5);
@@ -106,7 +103,7 @@ function relayStats(s, kind, m) {
 // ---------- Temporal Drive: the stopping ring ----------
 function temporalFreeze() {
   const lv = TEMPORAL[powerLvl("temporal")];
-  if (!lv || cooldownLeft("temporal") > 0 || otherRunning("temporal") || !G.enemies.some(e => !e.dead)) return false; // (nothing to stop: it would end at once, stepCore)
+  if (!lv || cooldownLeft("temporal") > 0 || !G.enemies.some(e => !e.dead)) return false; // (nothing to stop: it would end at once, stepCore)
   const c = coreState();
   c.cd.temporal = lv.cd;
   c.freeze = { t: 0, dur: lv.dur, hit: new Set() };

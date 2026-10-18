@@ -312,7 +312,7 @@ strength (`CORE_GRANTS`); the pick flow is dormant. Buttons above the title
 
 | Power | Granted | Use | Effect | Rules |
 |---|---|---|---|---|
-| **Temporal Drive** | 2nd boss (wave 24) | hold the core, or the button | every enemy stops dead (a 100% slow, `core:time`) for 6 game s; cooldown 3 waves | holds the wave clock and spawns; needs a live board and ends when it empties; Strength ignores it; may fire while the Relay runs (the Relay still waits for it, `otherRunning`) |
+| **Temporal Drive** | 2nd boss (wave 24) | hold the core, or the button | every enemy stops dead (a 100% slow, `core:time`) for 6 game s; cooldown 3 waves | holds the wave clock and spawns; needs a live board and ends when it empties; Strength ignores it; stacks with the Relay (either fires while the other runs) |
 | **Orbital Relay** | 4th boss (wave 48) | the button then a tower, or drag the core onto one | that tower acts as three (`RELAY_MUL`, `relayStats`: ARC 3x attacks, SOL 3x locks, ACD 3x jets, FRZ 3x moons and tick, GRV 3x the nova rate, ATC 3x the wing) for 11.25 s; cooldown 4 waves | **stays on that tower**; arming pauses the game |
 
 ### 4.8 Dormant code (kept on purpose; nothing reaches it)
