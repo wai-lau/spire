@@ -42,8 +42,8 @@ let HP_LATE = 1.13 /* 2026-10-11: the axis roles made the towers stronger - wave
 // THE END GAME EASES (owner, 2026-10-11: "for waves that make lives go fix them"): towers are fully built by about
 // wave 80, so HP growing x HP_LATE on past it made waves 80-100 a wall (47 of 48 lives lost there); x HP_END past HP_END_KNEE
 let HP_END = 1.07 /* "make it harder" (owner, 2026-10-14; was 1.06) */, HP_END_KNEE = 80; // let: the simulator sweeps both. waverep x3: 1.115 won 9/36, 1.08 33, 1.06 35 (36 with FAST_LATE_MUL)
-const hpPow = n => Math.pow(HP_GROWTH, Math.min(n, HP_KNEE) - 1) * Math.pow(HP_LATE, Math.max(0, Math.min(n, HP_END_KNEE) - HP_KNEE)) * Math.pow(HP_END, Math.max(0, n - HP_END_KNEE));
-// one enemy's HP on wave n (before a boss's own multiplier); the wave list shows it too
+let HP_PLAIN_END = 1.02; const plainEnd = n => Math.pow(HP_PLAIN_END, Math.max(0, n - HP_END_KNEE)); // LATE SCALING (owner, 2026-10-18): plain enemies (not bosses) grow x HP_PLAIN_END a wave extra past HP_END_KNEE
+const hpPow = n => Math.pow(HP_GROWTH, Math.min(n, HP_KNEE) - 1) * Math.pow(HP_LATE, Math.max(0, Math.min(n, HP_END_KNEE) - HP_KNEE)) * Math.pow(HP_END, Math.max(0, n - HP_END_KNEE)); // one enemy's HP on wave n (before a boss's own multiplier); the wave list shows it too
 // shields GROW SLOWER (owner, 2026-10-06): to the SHIELD_EXP power of the old
 // steeper curve (was 0.4) - the same early (8 on wave 3, 11 on 10), about HALF
 // late (244 on 80, was 503) - and a shielded enemy's HP rises by old / new, so
@@ -62,7 +62,7 @@ function shieldsOf(type, n) {
 // ...and EARLY ARMOR HARDER (owner, 2026-10-12: "armor feels too easy early"): x ARMOR_EARLY to wave 20, easing to x1 by 30
 const SHIELD_EARLY = 0.6, ARMOR_EARLY = 2 /* owner, 2026-10-12: "make early armor stronger" (was 1.6) */, early = (k, n) => k + (1 - k) * Math.min(1, Math.max(0, (n - 20) / 10));
 const SWARM_HP_X = 1.5; // a swarm wave's whole HP x1.5 (owner, 2026-10-12), spread by the jitter (spawnEnemy)
-const enemyHp = (type, n0, n = eqWave(n0)) => earlyHpX(type, n0) * (9 * hpPow(n) + n * 2) * ENEMIES[type].hp * 2 * (ENEMIES[type].star ? 1 : plainHpMul(n0) * plainHpGrow(n0)) * shieldsOf(type, n0).hpMul * (type === "shield" ? early(SHIELD_EARLY, n) : type === "armor" ? early(ARMOR_EARLY, n) : type === "swarm" ? SWARM_HP_X : 1); // x2: half as many enemies (owner); 9 / 2 (2026-10-08: all HP halved, was 18 / 4)
+const enemyHp = (type, n0, n = eqWave(n0)) => earlyHpX(type, n0) * (9 * hpPow(n) + n * 2) * ENEMIES[type].hp * 2 * (ENEMIES[type].star ? 1 : plainHpMul(n0) * plainHpGrow(n0) * plainEnd(n)) * shieldsOf(type, n0).hpMul * (type === "shield" ? early(SHIELD_EARLY, n) : type === "armor" ? early(ARMOR_EARLY, n) : type === "swarm" ? SWARM_HP_X : 1); // x2: half as many enemies (owner); 9 / 2 (2026-10-08: all HP halved, was 18 / 4)
 function spawnEnemy(type, n, pi, ang = 0) {
   const d = ENEMIES[type], s0 = entryS(pi), p0 = pathAt(pi, s0, ang);
   // a SWARMER's HP - and its SIZE - jitter 30-300% of the average, which is SWARM_HP_X the wave's (owner, 2026-10-12: "increase

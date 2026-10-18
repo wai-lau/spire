@@ -9,6 +9,11 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "5.1", day: "Oct 16", bu: [
+    "Freeze: Rime rings bite - each ring that reaches an enemy hits it for 4 to 60 times a tick.",
+    "Gravity: the nova fires 5.6 times as often at the third purchase and 8.5 times at the capstone; pellets and nova hit harder late; Void slows more.",
+    "Sol: 17 beams at the third purchase and 25 at the capstone; Refraction, crits and Breach hit harder late.",
+    "Carrier: Tether pulses, shots and Hangar hit harder late.",
+    "Acid: Corrosion, Spray and pool burn hit harder late.",
     "Arc: Conductivity gets more strikes, jumps and forks late and hits 1.5 to 3.5 times harder from the third purchase; Voltage x1.35 harder; Capacitance holds more, stronger charges.",
     "Acid: Contagion pools last longer, reach further, pulse faster and burn harder from the third purchase.",
     "Gravity: Void's slow, armor strip, inner burn and aura radius are stronger from the third purchase.",
@@ -183,6 +188,9 @@ const CHANGELOG = [
     "Gravity: the nova is a thin ring collapsing inward, faster and faster, purple paling; the sphere appears where it closes.",
     "Gravity: radiation pellets fly out in every direction, purple, and can miss.",
   ], ne: [
+    "Enemies grow 2% a wave faster than before from wave 80 (bosses unchanged).",
+    "Arc: Capacitance holds fewer charges late (5 and 6, was 6 and 8) and Voltage hits 1.3 times harder late.",
+    "Freeze: Brittle x4.2 and x10.6 late (was x8 and x20).",
     "Late trims to even out the axes: Acid Corrosion and Spray x0.9, Carrier Hangar and Tether x0.75, Freeze Brittle x0.65, Gravity nova hit x0.8 (fourth purchase and capstone).",
     "Arc: late tiers trimmed - Voltage and the spread hit lower, Conductivity forks and strikes and Capacitance charges fewer at the capstone.",
     "Gravity: an untaken Gravity tower is weaker (aura 45, slow 0.04, nova x0.8, pellets 0.1, burn x3); first purchase aura 80, slow 0.10, nova x2.",
