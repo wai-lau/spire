@@ -1,9 +1,8 @@
 // /spire — FLOATING TEXT and the bits that fly: damage numbers, pop-ups, sparks, the banner, the credits' dots.
 // Split out of aspira-game.js (500-line cap, 2026-10-09); same global scope, loaded right after it.
 
-// a floating damage number, sized RELATIVE to the biggest hit seen this game
-// (owner): the largest so far is 27px / 2s, a tiny one 11px / 0.8s, spaced by
-// sqrt(size / maxHit) - size being the hit before armor or shield
+// a floating damage number, sized by its hit against all damage a second (DMG_DPS_K, below) - size being the hit before
+// armor or shield
 // At most DMG_MAX on screen, a HARD cap (owner, 2026-10-06): every hit gets a
 // number, small ones too, and past the cap the SMALLEST number on screen is
 // culled to make room - unless the new hit is smaller still, which then goes
@@ -14,13 +13,17 @@ const DMG_MAX = 120;
 let dmgLive = []; // the live damage-number floats, each carrying its hit size `v`
 // a number's size follows its hit against the biggest hit yet - steeper and wider than it was (owner, 2026-10-08:
 // "big numbers bigger!!"; was sqrt, 11..27px)
+// SIZED BY THE HIT AGAINST ALL DAMAGE A SECOND (owner, 2026-10-18: "damage number sizing should be based on a ratio of hitdamage/totaldps";
+// was against the biggest hit yet): G.dps, every tower's numbered damage a game second, smoothed over DPS_TAU s (stepFx); a hit of
+// DMG_DPS_K x that is full size
+const DPS_TAU = 3, DMG_DPS_K = 0.5;
 const DMG_SIZE_EXP = 0.7, DMG_PX_MIN = 10, DMG_PX_SPAN = 28, DMG_FLY = 90; // DMG_FLY: units/s away from the hitter (owner: "make all damage numbers fly off more", was 30)
 // src: the tower that dealt it - the number flies AWAY from it (owner, 2026-10-09: "instead of having them fly upwards,
 // have them fly in the direction away from the source of damage"); none: upward, as before
 // grey: the share of the hit armor took (0..1) - the number is drawn that far from white toward Silver (dmgColor)
 function dmgNumber(e, label, size, color, src, grey = 0) {
-  G.maxHit = Math.max(G.maxHit || 1, size);
-  const rel = (size / G.maxHit) ** DMG_SIZE_EXP;
+  G.dmgAcc = (G.dmgAcc || 0) + size; // (into the running damage a second: stepFx)
+  const rel = Math.min(1, size / Math.max(1, G.dps || 0) / DMG_DPS_K) ** DMG_SIZE_EXP;
   if (dmgLive.length >= DMG_MAX) {
     dmgLive = dmgLive.filter(f => f.t < f.life);
     if (dmgLive.length >= DMG_MAX) {
@@ -126,6 +129,7 @@ function banner(t, col = "orange", life = 2 / 3) { bannerText = t; bannerT = lif
 // floating text ages in REAL time (stepFloats) so a 1s damage number is 1s
 // on screen at any speed (owner).
 function stepFx(dt) {
+  if (dt > 0) { const a = 1 - Math.exp(-dt / DPS_TAU), inst = (G.dmgAcc || 0) / dt; G.dps = G.dps == null ? inst : G.dps + (inst - G.dps) * a; G.dmgAcc = 0; } // G.dps (dmgNumber)
   for (const f of fx) {
     if (f.k === "text") continue;
     f.t += dt;

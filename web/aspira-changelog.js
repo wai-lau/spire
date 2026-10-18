@@ -98,6 +98,7 @@ const CHANGELOG = [
     "Auto-move's confirm now reads NO LEADERBOARD (tap again to confirm).",
     "Death gives no rewards: no credits, score, lives or interest from its wave, and the score's owed lives are not paid at the end.",
     "The Carrier's short name is now CRR.",
+    "Damage numbers are sized by how big the hit is next to all your towers' damage a second, not next to the biggest hit so far.",
     "The boss health bar now ends inside the screen's edges.",
     "Boss lanes: on phones that hold the board still, the boss lane now fades in fully instead of freezing faint, and a brief gap no longer makes it vanish and fade in again.",
     "The Lovers walk in step - slow one and both slow - so they arrive together.",
