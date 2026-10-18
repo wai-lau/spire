@@ -69,11 +69,11 @@ function onTap(ev) {
   if (G.over) return;
   const p = toWorld(ev);
   ui.hover = p;
-  // a tower's CARD opens ONLY from its home SLOT, its origin (owner, 2026-10-17: "remove clicking the tower to upgrade, you have to
-  // click the tower origin now"); an armed Relay still takes the tower tapped, body or slot
+  // a tower's CARD opens from its home SLOT or its BODY (owner, 2026-10-18: "bring back tapping tower to upgrade"; 2026-10-17 had
+  // made it the slot alone); an armed Relay takes the tower tapped, body or slot
   const ci = cellAt(p.x, p.y), pk = pickAt(ev), home = ci >= 0 && G.towers.find(t => t.cell === ci); // (aspira-pick.js)
   if (relayArmTap(home || (pk && pk.t))) { refreshPanels(); return; } // an armed Relay: this tower takes it, anything else disarms (aspira-powers.js)
-  const hit = home;
+  const hit = home || (pk && pk.t);
   if (hit) { ui.sel = hit.id; ui.build = null; }
   else if (!ui.build && pk && pk.core) { ui.sel = "core"; } // the core's card (aspira-core.js)
   else if (ui.build) placeTower(p);
