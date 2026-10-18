@@ -303,6 +303,7 @@ function refreshPanels() {
 }
 
 let lastNote = "", waveListAt = 0, hudAt = 0;
+const bestWave = () => Math.max(best.wave || 0, best.ascended ? WIN_WAVE : 0); // an ASCENDANT's best is the win (owner, 2026-10-18: "'Your best' not true, I have ascended" - a win kept on an older WIN_WAVE, or another device's, read lower)
 function updateHud() {
   updateSpend(); // the spend bar's credits (aspira-chooser.js)
   updatePowers(); // the core powers' buttons under the title (aspira-powers.js)
@@ -313,7 +314,7 @@ function updateHud() {
   updateAutoWait();
   // BEST is the furthest WAVE reached (owner: no one cares about score; the score
   // still counts underneath, it is what pays the extra lives - addScore)
-  setText($("asp-best"), Math.max(best.wave || 0, G.wave));
+  setText($("asp-best"), Math.max(bestWave(), G.wave));
   flashBuild();
   for (const k of KINDS) {
     const btn = $("asp-tw-" + k);

@@ -395,7 +395,7 @@ function stepEnemies(dt) {
       if (e.burnT > 0) e.burnT -= dt; // under an ACD burn (Fresh targeting)
       if (e.marks) sumMarks(e, dt);
       if (e.dotT > 0) { e.dotT -= dt; damage(e, e.dotDps * dt, e.dotSrc, true); if (e.dead) continue; }
-      e.s += effSpeed(e) * dt;
+      e.s += (e.mate && !e.mate.dead && !e.enraged ? Math.min(effSpeed(e), effSpeed(e.mate)) : effSpeed(e)) * dt; /* the LOVERS walk in step, at the slower one's pace, so they arrive together (owner, 2026-10-18) */
     }
     const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)
     if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js) - which sets p whole, so no pathAt first (perf)
@@ -496,5 +496,5 @@ function gameOver() {
   try { localStorage.setItem("aspira.best", JSON.stringify(best)); } catch (_e) {}
   if (typeof renderEndStats === "function") renderEndStats(); // the end screen's tower + leak stats (aspira-endstats.js)
   if (typeof showAscendants === "function") showAscendants(); // a loss: THE ASCENDANTS board, no entry (aspira-ascend.js)
-  showOverlay((G.breachBy && BOSS_BREACH[G.breachBy]) || "core breached", "Reached wave " + G.wave + (G.wave >= (best.wave || 0) ? ", your best." : " (best: " + best.wave + ")."), "Play again");
+  showOverlay((G.breachBy && BOSS_BREACH[G.breachBy]) || "core breached", "Reached wave " + G.wave + (G.wave >= bestWave() ? ", your best." : " (best: " + bestWave() + ")."), "Play again");
 }
