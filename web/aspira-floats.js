@@ -9,6 +9,7 @@
 // unshown. (They age in REAL time while the game runs up to 20x, so late
 // waves at speed piled thousands up - drawing them was most of the frame;
 // profiled 2026-10-05, waves 80-85, 9 max towers.)
+const bestWave = () => Math.max(best.wave || 0, best.ascended ? WIN_WAVE : 0); // an ASCENDANT's best is the win (owner, 2026-10-18: "'Your best' not true, I have ascended" - a win kept on an older WIN_WAVE, or another device's, read lower)
 const DMG_MAX = 120;
 let dmgLive = []; // the live damage-number floats, each carrying its hit size `v`
 // a number's size follows its hit against the biggest hit yet - steeper and wider than it was (owner, 2026-10-08:

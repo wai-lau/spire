@@ -303,7 +303,6 @@ function refreshPanels() {
 }
 
 let lastNote = "", waveListAt = 0, hudAt = 0;
-const bestWave = () => Math.max(best.wave || 0, best.ascended ? WIN_WAVE : 0); // an ASCENDANT's best is the win (owner, 2026-10-18: "'Your best' not true, I have ascended" - a win kept on an older WIN_WAVE, or another device's, read lower)
 function updateHud() {
   updateSpend(); // the spend bar's credits (aspira-chooser.js)
   updatePowers(); // the core powers' buttons under the title (aspira-powers.js)
