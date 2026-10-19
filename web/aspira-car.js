@@ -23,14 +23,14 @@ const CAR_VOLLEY_K = 2;
 // the shot's HIT is SPREAD across the axes like ARC's (owner, 2026-10-15: "spread out armament damage like arc"): Armament half of
 // it (log), Hangar and Launch a quarter each (CAR_SIDE_DMG). STEEPER than ARC's: on ARC's tables a mid build (III on every
 // axis) dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899 - ARC chains, and an interceptor spends ~40% flying and reloading
-const CAR_SHOT_MUL = [0.6, 2, 4.5, 7.5, 145.7, 354.8]; /* V x9, VI x36 (steeper late tiers) */ // Armament (VI 15)
-const CAR_SIDE_DMG = [1, 1.6, 2.4, 3.4, 8.482, 18.01]; /* V x3, VI x6 (steeper late tiers) */ // Hangar's and Launch's share (VI 5.1)
+const CAR_SHOT_MUL = [0.6, 2, 4.5, 7.5, 123.845, 301.58]; /* V x9, VI x36 (steeper late tiers) */ // Armament (VI 15)
+const CAR_SIDE_DMG = [1, 1.6, 2.4, 4.76, 11.8748, 25.214]; /* V x3, VI x6 (steeper late tiers) */ // Hangar's and Launch's share (VI 5.1)
 const CAR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
 // TETHER (owner, 2026-10-17: "replace Launch with Tether"): once an interceptor fires at an enemy a BEAM joins them while it keeps at it;
 // it SLOWS that enemy (the old Pin, which needs Tether now, and harder) and PULSES every CAR_TETHER_PULSE s for CAR_TETHER_K x the shot,
 // a real hit that pops a shield charge; both grow with the tier. Capstone (Chain): the beam runs on to the nearest other enemy within
 // the interceptor's circling range of its target, slowing and pulsing it too. Index 0 = untaken; capstone.js pushes VI
-const CAR_TETHER_SLOW = [0, 0.45, 0.5, 0.55, 0.6, 0.65], CAR_TETHER_K = [0, 2, 3, 4, 9, 23.4] /* V 6 -> 24 (x4), VI 10 -> 40: Tether as impactful as Launch was (countermx 61-69 launch V: 32/47/39/55 -> 12/12/7/0 % leaked swarm/fast/shield/armor; 2026-10-17) */, CAR_TETHER_PULSE = 0.5, CAR_TETHER_ST = { noFx: true };
+const CAR_TETHER_SLOW = [0, 0.45, 0.5, 0.55, 0.6, 0.65], CAR_TETHER_K = [0, 2, 3, 36, 81, 210.6] /* V 6 -> 24 (x4), VI 10 -> 40: Tether as impactful as Launch was (countermx 61-69 launch V: 32/47/39/55 -> 12/12/7/0 % leaked swarm/fast/shield/armor; 2026-10-17) */, CAR_TETHER_PULSE = 0.5, CAR_TETHER_ST = { noFx: true };
 const CAR_SLOW = 0.2, CAR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CAR_BOLT_PAIR = 2, CAR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 const CAR_BOLTS = Math.ceil(10 / CAR_BOLT_PAIR) * CAR_BOLT_PAIR; /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CAR_BOLTS of the hit

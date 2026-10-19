@@ -183,7 +183,7 @@ function skillMove(t, s) {
 // voltage" -> "spread out a bit more" - a build without Voltage hit for 24 whatever it bought): the old Voltage curve's log shared
 // 50% Voltage, 25% each Conductivity and Capacitance (ARC_SIDE_DMG); a full ARC (Voltage VI, the others V) x53.5, was x69.9 on Voltage alone
 const ARC_SIDE_DMG = [1, 1.38, 1.69, 1.99, 2.01, 2.04, 2.08]; // Conductivity's and Capacitance's share, by tier (its VI here)
-const ARC_VOLTAGE_DMG = [1, 1.91, 2.86, 5.319, 5.689, 7.877] /* was 1 3.64 8.16 15.55 26.14 40.76 (Voltage alone) */ /* x (1 + 0.1 tier) for the armor pierce it lost (owner, 2026-10-13: "arc voltage should just increase damage instead of pierce"; was 3.31 6.8 11.96 18.67 27.17) */ /* x (1 + 0.6 tier) (2026-10-11, roles: TEAM countermx 81-89 - Voltage leaks 4% of armor, Conductivity 10, Capacitance 12; was 2.068 3.093 4.272 5.492 6.793) */, ARC_VOLTAGE_FALL = [0.5, 0.65, 0.8, 1, 1.1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
+const ARC_VOLTAGE_DMG = [1, 1.91, 2.86, 26.595, 28.445, 39.385] /* was 1 3.64 8.16 15.55 26.14 40.76 (Voltage alone) */ /* x (1 + 0.1 tier) for the armor pierce it lost (owner, 2026-10-13: "arc voltage should just increase damage instead of pierce"; was 3.31 6.8 11.96 18.67 27.17) */ /* x (1 + 0.6 tier) (2026-10-11, roles: TEAM countermx 81-89 - Voltage leaks 4% of armor, Conductivity 10, Capacitance 12; was 2.068 3.093 4.272 5.492 6.793) */, ARC_VOLTAGE_FALL = [0.5, 0.65, 0.8, 1, 1.1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
 // Conductivity's shape by tier (owner): strikes (separate first targets),
 // jumps, and forks per jump - 3, 7, 13, then two separate 13-hit attacks -
 // and r, how much further each JUMP reaches (owner; Voltage owns the tower's range)
@@ -200,7 +200,7 @@ let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 2, r: 1, d: 1, v: 0 }, { s: 1, j: 2, f:
 // charges instead of arcing more ... hits add more and more charges as you level up"): an ARC hit leaves `n`
 // charges, each worth `frac` of the hit; the next hit from anything sets them ALL off, each a BURST of radius
 // ARC_BURST_R round the enemy hitting everything inside (each burst its own hit: armor bites each, each pops a shield)
-const ARC_CAPACITANCE = [null, { n: 1, frac: 0.14 }, { n: 2, frac: 0.14 }, { n: 4, frac: 0.175 }, { n: 6, frac: 0.175 }, { n: 5, frac: 0.149 }]; // frac 0.1 -> 0.14 (2026-10-12, chartvalue 30-60: tier III read 96% of the 2/2/2 team and 3/0/3 92% - now 99% / 98%) // a burst hits all round it, so each charge is small: isolation I..V 110 119 150 167 184% (with the slows below)
+const ARC_CAPACITANCE = [null, { n: 1, frac: 0.14 }, { n: 2, frac: 0.14 }, { n: 4, frac: 0.875 }, { n: 6, frac: 0.875 }, { n: 5, frac: 0.745 }]; // frac 0.1 -> 0.14 (2026-10-12, chartvalue 30-60: tier III read 96% of the 2/2/2 team and 3/0/3 92% - now 99% / 98%) // a burst hits all round it, so each charge is small: isolation I..V 110 119 150 167 184% (with the slows below)
 const ARC_BURST_R = 70, ARC_BURST_A = 0.45;
 // each jump hits ARC_FALL as hard and reaches ARC_SHRINK as far as the one before (owner)
 const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
@@ -359,7 +359,7 @@ const SOL_HOP = [1, 1, 1, 1, 1, 1]; // every refraction hop a full strike (overn
 // Refraction peaked at I (107%) and fell by III (93%): range alone spread its fire
 // thin, so II / III also hit harder (owner, 2026-10-07)
 // (LIGHT OUTRUNS THE FAST, Refraction x the fast, removed 2026-10-12 - owner: no extra damage by enemy type)
-const SOL_REFRACTION_DMG = [1, 1, 1.3, 1.84, 3.493, 6.434]; // III..V x1.15 / 1.35 / 1.5 with the 160-degree cone (owner, 2026-10-08: "even a 160 deg angle?" - the cone alone tops out at 156%)
+const SOL_REFRACTION_DMG = [1, 1, 1.3, 4.6, 8.7325, 16.085]; // III..V x1.15 / 1.35 / 1.5 with the 160-degree cone (owner, 2026-10-08: "even a 160 deg angle?" - the cone alone tops out at 156%)
 // each Focus tier's beam STRENGTH (2026-10-08, the tier fit's lever for Focus: more beams alone measured 168% at V)
 const SOL_FOCUS_DMG = [1, 1, 1, 1, 1.139, 1.176]; // never below 1 (owner, 2026-10-08: no upgrade lowers a stat) - more beams carry I..III (114 / 133 / 152%)
 function solSkillStats(t, s, b) {
