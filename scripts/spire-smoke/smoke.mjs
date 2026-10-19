@@ -15,7 +15,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const TEMPLATE = fs.readFileSync(path.join(ROOT, "api/templates/aspira.html"), "utf8");
 const SCRIPTS = [...TEMPLATE.matchAll(/src="\/(aspira[^"?]*\.js)/g)].map(m => m[1]);
 
-function boot(store = {}, view) {
+function boot(store = {}, view = { w: 390, h: 844 }) { // portrait by default: the lanes turn with the box only from Task 3 on
   const dom = makeDom(TEMPLATE, store, view);
   const ctx = vm.createContext(dom.globals);
   for (const f of SCRIPTS) vm.runInContext(fs.readFileSync(path.join(ROOT, "web", f), "utf8"), ctx, { filename: f });
@@ -382,6 +382,21 @@ check("a win shows THE ASCENDANTS entry", () => {
 check("play again starts a fresh game", () => {
   env.dom.byId("asp-ov-btn").onclick();
   return run("G.over") ? "still over" : "";
+});
+
+check("slots: landscape is portrait turned +90 degrees; switching back restores exactly", () => {
+  const e = boot({}, { w: 390, h: 844 });
+  const r = e.run(`(() => { const before = CELLS.map(c => [c.x, c.y, c.ang]); setPlayBox(true);
+    const turned = CELLS.every((c, i) => Math.abs(c.x - (CX - (before[i][1] - CY))) < 1e-9 && Math.abs(c.y - (CY + (before[i][0] - CX))) < 1e-9 && c.ang === before[i][2]);
+    setPlayBox(false); const back = CELLS.every((c, i) => c.x === before[i][0] && c.y === before[i][1]); return { turned, back }; })()`);
+  if (!r.turned) return "landscape slots are not the portrait slots turned +90";
+  if (!r.back) return "portrait slots not restored exactly";
+});
+check("a built tower moves with its slot when the box switches", () => {
+  const e = boot({}, { w: 390, h: 844 });
+  const r = e.run(`(() => { G.money = 1e6; ui.build = "arc"; const c = CELLS[0]; placeTower({ x: c.x, y: c.y }); const t = G.towers[0];
+    setPlayBox(true); return Math.hypot(t.x - CELLS[t.cell].x, t.y - CELLS[t.cell].y); })()`);
+  if (r > 1e-6) return "tower left " + r + "u from its turned slot";
 });
 
 const bad = results.filter(r => r[1] !== "ok");

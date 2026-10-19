@@ -184,6 +184,32 @@ function setPlayBox(wide) { // the box's shape, and everything cached against it
   if (typeof resize === "function") { resize(); if (typeof fitK !== "undefined") fitK = cam.fit; }
   if (typeof turnSlots === "function") turnSlots(BOX_WIDE);
 }
+// THE SLOTS TURN WITH THE BOX (landscape = the portrait box turned +90 degrees about the core): each cell keeps its portrait
+// x, y, pts (px, py, ppts) the first time; wide sets them turned, portrait restores them exactly. A built tower and its goal
+// move with their slot (offset from the old slot spot, turned by the same quarter turn), then legalSpot if off the slot.
+const quarter = (x, y, back) => back ? { x: CX + (y - CY), y: CY - (x - CX) } : { x: CX - (y - CY), y: CY + (x - CX) };
+let slotsWide = false;
+function turnSlots(wide) {
+  wide = !!wide;
+  if (wide === slotsWide) return;
+  const old = CELLS.map(c => ({ x: c.x, y: c.y }));
+  for (const c of CELLS) {
+    if (c.px === undefined) { c.px = c.x; c.py = c.y; c.ppts = c.pts.map(p => ({ ...p })); }
+    if (wide) { const q = quarter(c.px, c.py); c.x = q.x; c.y = q.y; c.pts = c.ppts.map(p => ({ ...p, ...quarter(p.x, p.y) })); }
+    else { c.x = c.px; c.y = c.py; c.pts = c.ppts.map(p => ({ ...p })); }
+    if (c.home) { c.home.x = c.x; c.home.y = c.y; c.home.pts = c.pts.map(p => ({ ...p })); } // pushCells (newGame) goes home to THIS shape
+  }
+  slotsWide = wide;
+  if (typeof G !== "object" || !G || !G.towers) return;
+  for (const t of G.towers) {
+    const c0 = old[t.cell], c1 = CELLS[t.cell];
+    if (!c0 || !c1) continue;
+    const turn = o => { const dx = o.x - c0.x, dy = o.y - c0.y; return wide ? { x: c1.x - dy, y: c1.y + dx } : { x: c1.x + dy, y: c1.y - dx }; };
+    if (t.goal) { const g = turn(t.goal); t.goal.x = g.x; t.goal.y = g.y; }
+    const p = turn(t); t.x = p.x; t.y = p.y;
+    if (typeof moveTower === "function") moveTower(t, t); // off the slot (a box edge, the core, a neighbour): the nearest legal spot
+  }
+}
 function phoneBox() { // 2D: world units (fixed per shape: made once - legalSpot asks for it thousands of times a second in a simulation)
   return (phoneBoxC ||= { x0: CX - BOX_HX, y0: CY - BOX_HY, x1: CX + BOX_HX, y1: CY + BOX_HY, r: PHONE_CORNER });
 }
