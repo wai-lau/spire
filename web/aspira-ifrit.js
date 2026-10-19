@@ -158,7 +158,7 @@ function ifrFlare(t, st, x, y) {
 }
 // the FLARE: six beams from the burst point, a hexagonal star like the tower's own hex (world angles: 3D is a view), burning for
 // `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge. Enemies are found through the
-// projectile grid at sample points every GRID_S / 2 along the beam (never all flares x all enemies); Hellfire VI runs each beam
+// projectile grid at sample points every GRID_S along the beam (never all flares x all enemies); Hellfire VI runs each beam
 // to the play box's edge (phoneBox)
 const IFR_ONE_TICK = new Set();
 const IFR_BEAMS = 6; // beams a flare: a hexagonal star, like the tower's own hex (owner, 2026-10-19: six, never four)
@@ -176,10 +176,13 @@ function ifrBeamEnd(x, y, a, len, edges) {
 function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, f.L, f.edges)); return out; }
 // one tick down one beam at any angle: point-to-segment distance against the enemy's size + half the beam's width
 function ifrTickBeam(t, st, f, x0, y0, x1, y1, g, hit) {
-  const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1, n = Math.max(1, Math.ceil(Math.sqrt(L2) / (GRID_S / 2))), half = f.W / 2, amt = st.dmg * st.tickK;
+  const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1, n = Math.max(1, Math.ceil(Math.sqrt(L2) / GRID_S)), half = f.W / 2, amt = st.dmg * st.tickK;
+  let last = null;
   for (let i = 0; i <= n; i++) {
-    const sx = x0 + dx * i / n, sy = y0 + dy * i / n;
-    for (const e of enemiesNear(sx, sy, g)) {
+    const sx = x0 + dx * i / n, sy = y0 + dy * i / n, cell = enemiesNear(sx, sy, g);
+    if (cell === last) continue; /* a diagonal beam samples one cell twice: scan its list once */
+    last = cell;
+    for (const e of cell) {
       if (e.dead || hit.has(e.id)) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + half;
       const u = Math.max(0, Math.min(1, ((e.x - x0) * dx + (e.y - y0) * dy) / L2)), px = x0 + dx * u, py = y0 + dy * u;

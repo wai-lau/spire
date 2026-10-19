@@ -271,6 +271,36 @@ check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flig
   const sold = run(`(() => { try { const t = G.towers[0]; G.money += sellValue(t); G.towers = G.towers.filter(x => x !== t); ui.sel = null; for (let i = 0; i < 30; i++) step(1 / 30); return "ok"; } catch (e) { return String(e); } })()`); // what the card's sell button does (aspira-sliders.js)
   return sold === "ok" ? "" : "sell threw: " + sold;
 });
+check("IFR: a shielded enemy in a flare loses one charge a tick; the ring pops one; Impact gives six slots", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 1e9; ui.build = "ifr";
+    const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0]; for (let k = 0; k < 6; k++) upgradeTower(t, "meteor", true);
+    const st = towerStats(t), out = { slots: st.slots };
+    ifrInit(t); const e = ifrNear("shield", t, 400); e.shield = 9; egridAt = NaN; /* out of the tower's range: no ball, only the flare below touches it */
+    out.dist = Math.round(Math.hypot(e.x - t.x, e.y - t.y));
+    t.ifrFlares.push({ x: e.x - 40, y: e.y, L: 80, W: 12, life: 3, left: 3, tick: 0, edges: false }); /* 40 u left of it: the 0-degree beam runs through its body */
+    for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); out.afterTicks = e.shield; /* 3 ticks (the first fires at tickS) */
+    return out;
+  })()`);
+  if (r.slots !== 6) return "Impact gives " + r.slots + " slots, not 6";
+  if (r.afterTicks !== 6) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 6), enemy " + r.dist + " u out";
+  return "";
+});
+/* worst case: 40 Hellfire-VI flares tick in the SAME frame (in play each ticks on its own phase); about 2.4 ms of it is damage()/onHit on ~200 hit enemies, which any tower pays - the guard is for the traversal (~3 ms), a regression to all-flares x all-enemies */
+check("IFR: 200 enemies and 40 Hellfire flares tick under 8 ms", () => {
+  run(`G = newGame(); G.money = 1e9; ui.build = "ifr";
+    { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); }
+    { const t = G.towers[0]; ifrInit(t); for (let k = 0; k < 6; k++) upgradeTower(t, "hellfire", true);
+      for (let i = 0; i < 200; i++) { spawnEnemy("swarm", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.s = entryS(0) + i * 3; const p = pathAt(0, e.s, 0); e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e6; } egridAt = NaN;
+      for (let i = 0; i < 40; i++) t.ifrFlares.push({ x: CX - 300 + i * 15, y: CY - 200 + i * 10, L: 140, W: 24, life: 10, left: 10, tick: 0, edges: true }); }`);
+  run("{ const t = G.towers[0], st = towerStats(t); for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); }"); /* warm the JIT first, as a running game is */
+  const t0 = performance.now(); /* the HOST clock: the vm's performance.now is dom.mjs's fake frame clock */
+  run("{ const t = G.towers[0], st = towerStats(t); for (let i = 0; i < 10; i++) stepIfrFlares(t, st, st.tickS); }");
+  const ms = (performance.now() - t0) / 10;
+  console.log("  hellfire tick " + ms.toFixed(1) + " ms");
+  return ms < 8 ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms";
+});
 check("the slow-log report builds and sends (perfSend - it runs from the frame loop every 3 min: a throw there froze the game, 6.1.1-6.1.7)", () => {
   run(`G = newGame(); { const v = document.querySelector(".asp-ver span"); v.parentNode = document.createElement("div"); } perf.act.playing = [5, 0];`); // (the fake DOM's span has no parent; some play, so it builds the whole report)
   run("perfSend()");
