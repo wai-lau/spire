@@ -24,6 +24,7 @@ const CHANGELOG = [
     "Changes: Ifrit has its own heading.",
     "Enemies: off screen they are drawn at 20%, fading in over a second as they come on screen.",
     "Build cards: the red box round an uncovered enemy type is drawn whole (it showed as two bars), centred in its gap without moving the marks.",
+    "Build cards: a red \u26A0 after each red box.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
     "Ifrit: Hellfire flares last half as long and burn twice as hard.",
