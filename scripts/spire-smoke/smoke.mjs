@@ -299,6 +299,7 @@ check("IFR: 200 enemies and 40 Hellfire flares tick under 8 ms", () => {
   run("{ const t = G.towers[0], st = towerStats(t); for (let i = 0; i < 10; i++) stepIfrFlares(t, st, st.tickS); }");
   const ms = (performance.now() - t0) / 10;
   console.log("  hellfire tick " + ms.toFixed(1) + " ms");
+  if (!run("G.enemies.some(e => e.hp < 1e6)")) return "Hellfire ticks hit nothing";
   return ms < 8 ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms";
 });
 check("the slow-log report builds and sends (perfSend - it runs from the frame loop every 3 min: a throw there froze the game, 6.1.1-6.1.7)", () => {

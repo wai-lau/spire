@@ -157,10 +157,9 @@ function ifrFlare(t, st, x, y) {
   t.ifrFlares.push({ x, y, L: st.beamL, W: st.beamW, life: st.burnS, left: st.burnS, tick: 0, edges: st.hellfire });
 }
 // the FLARE: six beams from the burst point, a hexagonal star like the tower's own hex (world angles: 3D is a view), burning for
-// `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge. Enemies are found through the
-// projectile grid at sample points every GRID_S along the beam (never all flares x all enemies); Hellfire VI runs each beam
+// `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge. Hellfire VI runs each beam
 // to the play box's edge (phoneBox)
-const IFR_ONE_TICK = new Set();
+const IFR_BODY_MAX = 150; // a generous bound on the biggest body: base size 28 (the biggest) x the HP-log growth (about x2 by wave 119) x a boss's arcana (up to about x2), rounded up
 const IFR_BEAMS = 6; // beams a flare: a hexagonal star, like the tower's own hex (owner, 2026-10-19: six, never four)
 // one beam from (x, y) at angle a: len u long, or to the play box's edge at Hellfire VI (the first wall the ray meets)
 function ifrBeamEnd(x, y, a, len, edges) {
@@ -174,31 +173,35 @@ function ifrBeamEnd(x, y, a, len, edges) {
   return [x, y, x + c * len, y + s * len];
 }
 function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, f.L, f.edges)); return out; }
-// one tick down one beam at any angle: point-to-segment distance against the enemy's size + half the beam's width
-function ifrTickBeam(t, st, f, x0, y0, x1, y1, g, hit) {
-  const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1, n = Math.max(1, Math.ceil(Math.sqrt(L2) / GRID_S)), half = f.W / 2, amt = st.dmg * st.tickK;
-  let last = null;
-  for (let i = 0; i <= n; i++) {
-    const sx = x0 + dx * i / n, sy = y0 + dy * i / n, cell = enemiesNear(sx, sy, g);
-    if (cell === last) continue; /* a diagonal beam samples one cell twice: scan its list once */
-    last = cell;
-    for (const e of cell) {
-      if (e.dead || hit.has(e.id)) continue;
-      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + half;
-      const u = Math.max(0, Math.min(1, ((e.x - x0) * dx + (e.y - y0) * dy) / L2)), px = x0 + dx * u, py = y0 + dy * u;
-      if ((e.x - px) ** 2 + (e.y - py) ** 2 > r * r) continue;
-      hit.add(e.id); damage(e, amt, t, false, false, IFR_BURN_ST); onHit(e, t, st, amt); /* not quiet=true: damage() lets a shield bounce a quiet hit unpopped; IFR_BURN_ST's noFx + noNum keep it silent (ACD's pools, the same way) */
+// a flare's tick: every live on-screen enemy whose body touches ANY of its beams takes one quiet tick (one hit a flare a tick, on
+// two beams too). Exact, not sampled: a cheap radius reject (a flare that cannot reach the enemy), then point-to-segment on its
+// beams. 40 Hellfire-VI flares x 200 enemies x 6 beams is ~50k dot products, under the smoke's budget (2026-10-19; the grid
+// sampling it replaced could skip a body a 60-degree beam clipped at a cell corner)
+function ifrTickFlare(t, st, f) {
+  const ends = ifrBeamEnds(f), half = f.W / 2, amt = st.dmg * st.tickK, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
+  const all = G.enemies, defs = ENEMIES; /* (locals: a global read in this loop costs more than the arithmetic) */
+  for (let i = 0; i < all.length; i++) {
+    const e = all[i];
+    if (e.dead || !e.seen) continue;
+    const r = defs[e.type].size * (e.sizeMul || 1) + half, ex = e.x - f.x, ey = e.y - f.y;
+    if (ex * ex + ey * ey > reach * reach) continue; /* no beam this short can reach it */
+    let hit = false;
+    for (let k = 0; k < ends.length; k++) {
+      const b = ends[k], x0 = b[0], y0 = b[1], dx = b[2] - x0, dy = b[3] - y0, L2 = dx * dx + dy * dy || 1;
+      let u = ((e.x - x0) * dx + (e.y - y0) * dy) / L2; if (u < 0) u = 0; else if (u > 1) u = 1; /* (no Math calls in the hot loop) */
+      const px = x0 + dx * u, py = y0 + dy * u;
+      const qx = e.x - px, qy = e.y - py; if (qx * qx + qy * qy <= r * r) { hit = true; break; }
     }
+    if (!hit) continue;
+    damage(e, amt, t, false, false, IFR_BURN_ST); onHit(e, t, st, amt); /* not quiet=true: damage() lets a shield bounce a quiet hit unpopped; IFR_BURN_ST's noFx + noNum keep it silent (ACD's pools, the same way) */
   }
 }
 function stepIfrFlares(t, st, dt) {
   if (!t.ifrFlares.length) return;
-  const g = projGrid();
   for (const f of t.ifrFlares) {
     f.left -= dt; f.tick += dt;
     if (f.tick < st.tickS) continue;
-    f.tick -= st.tickS; IFR_ONE_TICK.clear();
-    for (const [x0, y0, x1, y1] of ifrBeamEnds(f)) ifrTickBeam(t, st, f, x0, y0, x1, y1, g, IFR_ONE_TICK);
+    f.tick -= st.tickS; ifrTickFlare(t, st, f);
   }
   keepLive(t.ifrFlares);
 }
