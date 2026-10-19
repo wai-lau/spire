@@ -166,6 +166,35 @@ check("IFR: a ball bursts where it was aimed (its target gone), the ring hits on
   if (!r.fHits) return "the second enemy inside the blast lost no shield charge";
   return "";
 });
+check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring hits once; pellets fly before they can hit", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 1e9; ui.build = "ifr";
+    const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0]; for (let k = 0; k < 3; k++) upgradeTower(t, "firaga", true); // blast r95: room for an enemy 70 u out (no Backdraft)
+    ifrInit(t); const st = towerStats(t), out = {}, a60 = Math.PI / 3, a30 = Math.PI / 6;
+    const held = (x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 5; return e; }; // held still, placed by hand
+    const fresh = () => { egridAt = NaN; }; // the enemies moved without a step: rebuild the projectile grid
+    // the BURN, by hand (no step: a step walks held enemies back onto the lane)
+    const cx = CX, cy = CY, on = held(cx + 40 * Math.cos(a60), cy + 40 * Math.sin(a60)), off = held(cx + 120 * Math.cos(a30), cy + 120 * Math.sin(a30)); fresh();
+    ifrFlare(t, st, cx, cy); const f = t.ifrFlares[t.ifrFlares.length - 1]; f.L = 80; f.W = 12; f.edges = false;
+    stepIfrFlares(t, st, st.tickS); out.on = 5 - on.shield; out.off = 5 - off.shield;
+    on.dead = off.dead = true; t.ifrFlares.length = 0;
+    // a PLAIN ring (k 1) over a held enemy 20 u off its spot, run until fully grown and gone
+    const q = held(cx + 20, cy); fresh(); ifrBurst(t, st, cx, cy, 1); t.ifrPellets.length = 0;
+    for (let i = 0; i < 30; i++) stepIfrRings(t, st, 1 / 30);
+    out.ring = 5 - q.shield; out.ringsLeft = t.ifrRings.length; q.dead = true;
+    // PELLETS: a burst on a held enemy with a second 70 u out; every pellet picks the far one (Math.random held high)
+    const c0 = held(cx, cy), far = held(cx, cy + 70); fresh();
+    const rnd = Math.random; Math.random = () => 0.999; try { ifrBurst(t, st, cx, cy, 1); } finally { Math.random = rnd; }
+    out.fired = t.ifrPellets.length; stepIfrPellets(t, st, 1 / 30); out.flying = t.ifrPellets.length;
+    return out;
+  })()`);
+  if (r.on !== 1) return "the enemy on the 60-degree beam lost " + r.on + " charges in one tick (expected exactly 1)";
+  if (r.off !== 0) return "the enemy off every beam lost " + r.off + " charges";
+  if (r.ring !== 1 || r.ringsLeft) return "a plain ring took " + r.ring + " charges (expected exactly 1), rings left " + r.ringsLeft;
+  if (!(r.fired >= 1 && r.flying >= 1)) return "no pellet still in flight one frame after the burst (fired " + r.fired + ", flying " + r.flying + ")";
+  return "";
+});
 check("Temporal Drive: the field draws", () => {
   run(`G = newGame(); G.core = G.core || {}; G.core.freeze = { t: 1, dur: 10 };`);
   const seen = calls(env, ["drawTimeStop"], () => frames(env, 1));

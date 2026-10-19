@@ -24,6 +24,7 @@ const IFR_BLAST_R = [60, 70, 80, 95, 110, 130]; // Firaga: the ring's reach, u
 const IFR_BLAST_K = [1, 1.5, 2.3, 3.5, 6, 10]; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [5, 6, 7, 8, 9, 10]; // Firaga: pellets a burst
 const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 600, IFR_PELLET_V = 300, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25, IFR_MINI_K = 0.5; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit; Backdraft's mini ring x radius and x hit
+const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
 const IFR_FLARE_MAX = 60; // live flares a tower at most: the oldest goes (perf)
 const IFR_ROUTE_ST = { shieldPop: 1 }, IFR_RING_ST = { shieldPop: 1 }, IFR_PELLET_ST = { shieldPop: 1 }, IFR_BURN_ST = { noFx: true, noNum: true, shieldPop: 1 }; // (damage: st.shieldPop; the burn is quiet)
 
@@ -85,7 +86,7 @@ function stepIfrBalls(t, st, dt) {
   if (!t.ifrBalls.length) return;
   const g = projGrid();
   for (const b of t.ifrBalls) {
-    b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
+    const s = Math.min(dt, b.left); b.x += b.vx * s; b.y += b.vy * s; b.left -= dt; /* s: the burst frame stops at the aim spot, never hit-tests past it */
     for (const e of enemiesNear(b.x, b.y, g)) {
       if (e.dead || b.hit.includes(e.id)) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + IFR_BALL_R;
@@ -109,7 +110,7 @@ function ifrBurst(t, st, x, y, k) {
   if (!inside.length) return;
   for (let i = 0; i < st.pellets; i++) {
     const e = inside[Math.floor(Math.random() * inside.length)], d = Math.hypot(e.x - x, e.y - y) || 1;
-    t.ifrPellets.push({ x, y, ax: e.x, ay: e.y, vx: (e.x - x) / d * IFR_PELLET_V, vy: (e.y - y) / d * IFR_PELLET_V, left: d / IFR_PELLET_V });
+    t.ifrPellets.push({ x, y, ax: e.x, ay: e.y, vx: (e.x - x) / d * IFR_PELLET_V, vy: (e.y - y) / d * IFR_PELLET_V, left: d / IFR_PELLET_V, flown: 0 });
   }
 }
 // the RING: expands at IFR_RING_V to R; every enemy it passes takes the blast hit once (full splash - owner: good vs swarm)
@@ -129,14 +130,15 @@ function stepIfrRings(t, st, dt) {
   keepLive(t.ifrRings);
 }
 // the PELLETS: non-homing, at the unit's spot when fired; the first enemy touched stops one (a hit), else it stops at its aim spot
-// (owner: "a missed pellet bursts where it was aimed"); where it stops, a FLARE - and at Backdraft a smaller ring too
+// (owner: "a missed pellet bursts where it was aimed"); where it stops, a FLARE - and at Backdraft a smaller ring too. It hits
+// nothing until it has flown IFR_PELLET_ARM (it is born on top of whatever stood at the burst spot)
 function stepIfrPellets(t, st, dt) {
   if (!t.ifrPellets.length) return;
   const g = projGrid();
   for (const p of t.ifrPellets) {
-    p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt;
+    p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt; p.flown += IFR_PELLET_V * dt;
     let sx = p.ax, sy = p.ay, stop = p.left <= 0;
-    for (const e of enemiesNear(p.x, p.y, g)) {
+    for (const e of p.flown < IFR_PELLET_ARM ? GRID_NONE : enemiesNear(p.x, p.y, g)) {
       if (e.dead) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + IFR_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
