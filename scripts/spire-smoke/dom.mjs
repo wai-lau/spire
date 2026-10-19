@@ -64,7 +64,8 @@ class FakeEl {
     this._dom = dom; this.tagName = tag.toUpperCase(); this._id = ""; this.children = []; this.parentNode = null;
     this.style = { setProperty() {}, removeProperty() {}, getPropertyValue: () => "" };
     this.dataset = {}; this.hidden = false; this.textContent = ""; this._html = ""; this.value = ""; this.disabled = false;
-    this.width = 1280; this.height = 800; this.clientWidth = 1280; this.clientHeight = 800; this.offsetWidth = 1280; this.offsetHeight = 800;
+    const v = (dom && dom.view) || { w: 1280, h: 800 };
+    this.width = v.w; this.height = v.h; this.clientWidth = v.w; this.clientHeight = v.h; this.offsetWidth = v.w; this.offsetHeight = v.h;
     this.scrollTop = 0; this.scrollHeight = 0; this.attrs = {};
     const cls = new Set();
     this.classList = { add: (...c) => c.forEach(x => cls.add(x)), remove: (...c) => c.forEach(x => cls.delete(x)), contains: c => cls.has(c),
@@ -114,8 +115,8 @@ class FakeEl {
   setPointerCapture() {} releasePointerCapture() {} scrollIntoView() {} animate() { return { finished: Promise.resolve(), cancel() {} }; }
 }
 
-export function makeDom(template, store = {}) {
-  const dom = { ids: new Map(), sel: new Map() };
+export function makeDom(template, store = {}, view = { w: 1280, h: 800 }) {
+  const dom = { ids: new Map(), sel: new Map(), view };
   // every id in the template exists up front (with its tag), so $("asp-ov") is the real overlay, hidden as written
   for (const m of template.matchAll(/<(\w+)([^>]*)\sid="([^"]+)"([^>]*)>/g)) {
     const el = new FakeEl(dom, m[1], m[3]);
@@ -151,7 +152,7 @@ export function makeDom(template, store = {}) {
     sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
     matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {} }),
     getComputedStyle: el => ({ color: (el && el._color) || "rgb(0, 0, 0)", getPropertyValue: () => "", gap: "0px", columnGap: "0px", rowGap: "0px", paddingLeft: "0px", paddingRight: "0px", fontSize: "16px" }),
-    devicePixelRatio: 1, innerWidth: 1280, innerHeight: 800,
+    devicePixelRatio: 1, innerWidth: view.w, innerHeight: view.h,
     fetch: () => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ entries: [] }), arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) }),
     AudioContext: function () { return anything(); }, Audio: function () { return anything(); },
     navigator: { userAgent: "smoke", maxTouchPoints: 0, vibrate() {}, clipboard: { writeText: () => Promise.resolve() } },

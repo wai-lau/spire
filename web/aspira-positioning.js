@@ -162,20 +162,30 @@ function autoPosition(t, dt) {
 
 // THE PLAY BOX (owner, 2026-10-13: "draw a faint outline of the mobile screen with rounded corners on the map"): the view EVERY
 // standard phone shares ("standardize the limit so that it works the same way on all standardish phones") - the tightest of
-// PHONES at PHONE_ZOOM, each with the core VIEW_UP_K x as far from the top as from the sides: VIEW_SIDE either side of the core, VIEW_UP
-// above, VIEW_DOWN below (world units). EVERY screen zooms so the box fits it ("the zoom should be adjusted so that either the
-// top and bottom touch, or the sides"), centred on the other axis (resize, aspira-draw.js); and it is the towers' MOVEMENT
+// PHONES at PHONE_ZOOM. The CORE IS CENTRED in it (owner, 2026-10-19; was 1.5 x as far from the top as the sides): BOX_SHORT
+// either side of it across the short axis, BOX_LONG either side along the long one (world units; BOX_LONG keeps the old
+// total height, VIEW_UP + VIEW_DOWN, halved). TWO SHAPES: portrait is BOX_SHORT wide x BOX_LONG tall (half-extents BOX_HX,
+// BOX_HY), landscape the same box TURNED 90 degrees; setPlayBox(wide) picks one, and boxWanted() follows the window.
+// EVERY screen zooms so the box fits it ("the zoom should be adjusted so that either the top and bottom touch, or the
+// sides"), centred on the other axis (resize, aspira-draw.js); and it is the towers' MOVEMENT
 // CAP ("the cap should be that the movement is within this range"): legalSpot (aspira-towers.js)
 // PHONES: [w, h] CSS px of the page in the browser (bars taken off), small Android to iPhone 15 Pro Max
 const PHONES = [[360, 640], [375, 667], [390, 664], [393, 659], [412, 732], [430, 740]];
-// the core sits VIEW_UP_K x its side distance from the top (owner, 2026-10-13: "1.5 side distance, to top"; was 1)
-const VIEW_UP_K = 1.5;
-const VIEW_SIDE = Math.min(...PHONES.map(([w]) => w / 2)) / PHONE_ZOOM, VIEW_UP = VIEW_SIDE * VIEW_UP_K;
-const VIEW_DOWN = Math.min(...PHONES.map(([w, h]) => h - VIEW_UP_K * w / 2)) / PHONE_ZOOM;
+const BOX_SHORT = Math.min(...PHONES.map(([w]) => w / 2)) / PHONE_ZOOM;
+const BOX_LONG = (BOX_SHORT * 1.5 + Math.min(...PHONES.map(([w, h]) => h - 1.5 * w / 2)) / PHONE_ZOOM) / 2;
 const PHONE_CORNER = 40 / PHONE_ZOOM, PHONE_ALPHA = 0.35 /* "less faint" (owner, 2026-10-13; was 0.15) */;
+let BOX_HX = BOX_SHORT, BOX_HY = BOX_LONG, BOX_WIDE = false;
 let phoneBoxC = null;
-function phoneBox() { // 2D: world units (fixed: made once - legalSpot asks for it thousands of times a second in a simulation)
-  return (phoneBoxC ||= { x0: CX - VIEW_SIDE, y0: CY - VIEW_UP, x1: CX + VIEW_SIDE, y1: CY + VIEW_DOWN, r: PHONE_CORNER });
+const boxWanted = () => innerWidth > innerHeight;
+function setPlayBox(wide) { // the box's shape, and everything cached against it
+  BOX_WIDE = !!wide; BOX_HX = wide ? BOX_LONG : BOX_SHORT; BOX_HY = wide ? BOX_SHORT : BOX_LONG;
+  phoneBoxC = null;
+  if (typeof laneTurnCache !== "undefined") laneTurnCache.clear();
+  if (typeof resize === "function") { resize(); if (typeof fitK !== "undefined") fitK = cam.fit; }
+  if (typeof turnSlots === "function") turnSlots(BOX_WIDE);
+}
+function phoneBox() { // 2D: world units (fixed per shape: made once - legalSpot asks for it thousands of times a second in a simulation)
+  return (phoneBoxC ||= { x0: CX - BOX_HX, y0: CY - BOX_HY, x1: CX + BOX_HX, y1: CY + BOX_HY, r: PHONE_CORNER });
 }
 // in 3D it is a SCREEN rectangle (owner, 2026-10-13: "it should be rectangular not trapezoidal"), not a box on the floor: the
 // same rectangle on screen as 2D's (it fits the window), in the 3D view's pixels (under the texture camera);
@@ -189,7 +199,7 @@ function viewCam(fn) { // the 3D maths runs under the texture camera (warp3d set
 }
 function phoneRect3d() { // 3D: the view's pixels (call under viewCam) - the SAME screen rectangle as 2D's, so it fits the window too
   const k = cam.k;
-  return { x0: cam.ox + (CX - VIEW_SIDE) * k, y0: cam.oy + (CY - VIEW_UP) * k, x1: cam.ox + (CX + VIEW_SIDE) * k, y1: cam.oy + (CY + VIEW_DOWN) * k, r: PHONE_CORNER * k };
+  return { x0: cam.ox + (CX - BOX_HX) * k, y0: cam.oy + (CY - BOX_HY) * k, x1: cam.ox + (CX + BOX_HX) * k, y1: cam.oy + (CY + BOX_HY) * k, r: PHONE_CORNER * k };
 }
 // OFF-SCREEN = UNTOUCHABLE (owner, 2026-10-17: "untargetable and completely immune to effects or damage until they are within the screen
 // area"): e.seen latches on the phone's screen (phoneInside); every enemy loop, damage and applySlow test it
@@ -208,3 +218,4 @@ function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once 
 // OFF_SCREEN_SPEED like an unseen one (stepEnemies, aspira-game.js). The circles are worked out once a step
 const reachCircles = () => G.towers.map(t => { const c = CELLS[t.cell] || t, R = leashR(t) + towerStats(t).range; return [c.x, c.y, R * R]; });
 const inReach = (e, reach) => reach.some(([x, y, r2]) => (e.x - x) ** 2 + (e.y - y) ** 2 <= r2);
+setPlayBox(boxWanted()); // once, as this loads: before any draw, before runOffer

@@ -11,8 +11,8 @@ let ctx = cv.getContext("2d", DESYNC ? { desynchronized: true } : undefined); //
 // THE ZOOM FITS THE PLAY BOX (owner, 2026-10-13: "the zoom should be adjusted so that either the top and bottom touch, or the
 // sides", "center the rectangle on the remaining axis"): every screen shows the same box (phoneBox, aspira-positioning.js),
 // as big as its band allows. (Fixed at 0.72 CSS px a unit 2026-10-11..13 - PHONE_ZOOM, still the box's measure)
-// THE CORE: centred across, VIEW_UP_K x as far from the box's TOP as from its sides (owner, 2026-10-13: "keep the core distance
-// from top the same as core distance from side", then "1.5 side distance, to top")
+// THE CORE: centred in the box, and so at the window's centre (owner, 2026-10-19; it sat 1.5 x as far from the top as the
+// sides 2026-10-13..19). The box has two shapes, portrait and landscape (setPlayBox, aspira-positioning.js)
 const cam = { k: 1, ox: 0, oy: 0, fit: 1 };
 // the canvas draws at most RES_CAP device pixels per CSS pixel (owner: "need
 // more perf"): a phone at 3x drew 3.4 million pixels a frame; 2x is 2.25x fewer
@@ -24,10 +24,10 @@ function resize() {
   cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
   // the play box fits the WHOLE window (owner, 2026-10-13: "zoom should fit window!"; it fitted the band between the header
   // and the bottom bar, which left a gap above and below), centred on the other axis
-  const bw = 2 * VIEW_SIDE, bh = VIEW_UP + VIEW_DOWN, k = Math.min(r.width / bw, r.height / bh);
+  const k = Math.min(r.width / (2 * BOX_HX), r.height / (2 * BOX_HY));
   cam.fit = k * dpr; cam.k = k * dpr;
   cam.ox = (r.width / 2 - CX * k) * dpr;
-  cam.oy = (r.height / 2 - (bh / 2 - VIEW_UP) * k - CY * k) * dpr;
+  cam.oy = (r.height / 2 - CY * k) * dpr;
 }
 // Re-fit ONLY when the canvas itself changes size (window resize). Nothing in
 // the overlays — the placing note, a send-wave label rewrapping — may move the

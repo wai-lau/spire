@@ -15,8 +15,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const TEMPLATE = fs.readFileSync(path.join(ROOT, "api/templates/aspira.html"), "utf8");
 const SCRIPTS = [...TEMPLATE.matchAll(/src="\/(aspira[^"?]*\.js)/g)].map(m => m[1]);
 
-function boot(store = {}) {
-  const dom = makeDom(TEMPLATE, store);
+function boot(store = {}, view) {
+  const dom = makeDom(TEMPLATE, store, view);
   const ctx = vm.createContext(dom.globals);
   for (const f of SCRIPTS) vm.runInContext(fs.readFileSync(path.join(ROOT, "web", f), "utf8"), ctx, { filename: f });
   return { ctx, dom, run: src => vm.runInContext(src, ctx) };
@@ -44,6 +44,15 @@ function calls(env, names, fn) {
   return seen;
 }
 const frames = (env, n, dt = 1000 / 60) => { for (let i = 0; i < n; i++) env.dom.tick(dt); };
+
+check("play box: portrait is centred, landscape is it turned 90 degrees", () => {
+  const p = boot({}, { w: 390, h: 844 }), w = boot({}, { w: 1280, h: 800 });
+  const bp = p.run("phoneBox()"), bw = w.run("phoneBox()"), cx = p.run("CX"), cy = p.run("CY");
+  if (p.run("BOX_WIDE") || !w.run("BOX_WIDE")) return "BOX_WIDE should follow the window's shape";
+  if (Math.abs((cy - bp.y0) - (bp.y1 - cy)) > 1e-9) return "portrait core not centred top-bottom";
+  if (Math.abs((bw.x1 - bw.x0) - (bp.y1 - bp.y0)) > 1e-9 || Math.abs((bw.y1 - bw.y0) - (bp.x1 - bp.x0)) > 1e-9) return "landscape box is not the portrait box turned";
+  if (Math.abs((bp.y1 - bp.y0) - 2 * p.run("BOX_LONG")) > 1e-9) return "portrait height is not 2 x BOX_LONG";
+});
 
 const env = boot();
 const { run } = env;
