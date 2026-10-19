@@ -157,7 +157,7 @@ function sendWave() {
     for (let j = 0, at = 0; j < k; j++) {
       const len = share ? per + (j < list.length - per * k ? 1 : 0) : per, part = list.slice(at, at + len); at += len;
       if (!part.length) continue;
-      const ang = (laneBestTurn(lanes[list[0]], k, G.wave) + (j / k) * Math.PI * 2) % (Math.PI * 2); // the turn that keeps the most of the lane on screen (below), then the split
+      const ang = (laneBestTurn(lanes[list[0]], k, G.wave) + (j / k) * Math.PI * 2) % (Math.PI * 2); // laneBestTurn: the most even copies, then the most lane, then nearest the usual turn; then the split
       // a boss arrives BOSS_INTRO s into its wave, after its warning (owner)
       G.spawns.push({ n: G.wave, list: part, lanes, ang, idx: 0, timer: boss ? BOSS_INTRO : 0 });
       // each lane copy remembers how many it was sent, for its brightness
@@ -317,7 +317,7 @@ function laneTurnScores(pi, k) {
   setTimeout(tick, 2000);
 })();
 function laneBestTurn(pi, k, n) {
-  const base = laneTurn(n);
+  const base = laneTurn(n) + (typeof BOX_WIDE !== "undefined" && BOX_WIDE ? Math.PI / 2 : 0); // landscape = the portrait pick turned the box's quarter turn (rotAbout sense)
   if ((typeof AUTO_POS !== "undefined" && AUTO_POS && !(typeof SIM_REAL_LANES !== "undefined" && SIM_REAL_LANES)) || typeof phoneInside !== "function" || !PATHS[pi]) return base; // (SIM_REAL_LANES: the simulator turns them as the game does - REAL_LANES=1)
   const sc = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS;
   const flat = Math.min(...sc.map(s => s.spread)) + LANE_EVEN_SLACK * Math.max(...sc.map(s => s.total)), even = sc.filter(s => s.spread <= flat);

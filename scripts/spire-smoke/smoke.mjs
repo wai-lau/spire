@@ -54,6 +54,15 @@ check("play box: portrait is centred, landscape is it turned 90 degrees", () => 
   if (Math.abs((bp.y1 - bp.y0) - 2 * p.run("BOX_LONG")) > 1e-9) return "portrait height is not 2 x BOX_LONG";
 });
 
+check("lanes: a landscape pick is the portrait pick turned 90 degrees", () => {
+  const p = boot({}, { w: 390, h: 844 }), w = boot({}, { w: 1280, h: 800 });
+  for (const [pi, k, n] of [[0, 1, 1], [1, 2, 3], [2, 3, 7], [3, 5, 12], [5, 6, 20], [8, 2, 31]]) {
+    const a = p.run(`laneBestTurn(${pi}, ${k}, ${n})`), b = w.run(`laneBestTurn(${pi}, ${k}, ${n})`), per = Math.PI * 2 / k;
+    const d = (((b - a - Math.PI / 2) % per) + per) % per;
+    if (Math.min(d, per - d) > 1e-6) return `pi ${pi} k ${k} n ${n}: portrait ${a.toFixed(4)}, landscape ${b.toFixed(4)}`;
+  }
+});
+
 const env = boot();
 const { run } = env;
 check("boots: every script loads, the frame loop is queued", () => (env.dom.rafQueue() ? "" : "no requestAnimationFrame"));
