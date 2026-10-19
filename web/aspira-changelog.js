@@ -19,6 +19,7 @@ const CHANGELOG = [
     "Ifrit: pellets land closer to the blast; Firaga's first purchase widens the blast.",
     "Ifrit: Meteor buys more fireballs, faster; Hellfire longer, hotter flares (to the board's edges at the top); Firaga a bigger blast and more pellets (which burst too at the top).",
   ], ne: [], u: [
+    "Resume: the saved-game card comes up as the page loads, before a tower can be built.",
     "Ifrit: Hellfire spokes are drawn only as far as they burn.",
     "Build cards: all four enemy types always show; a yellow dash where the tower is neither good nor bad.",
     "Wave list: a table - the HP in its own column, then the type.",

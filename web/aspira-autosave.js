@@ -3,12 +3,24 @@
 // Maps, Sets and shared enemies kept as they are), dropped when the game ends; on a load with a run saved, a card offers to
 // resume that wave or start fresh. A resumed run may still sign TOP PLAYERS (owner). Loaded after aspira-ui.js; the
 // simulator has no indexedDB, so all of this stands down there.
-const RUN_DB = "spire", RUN_STORE = "run", RUN_KEY = "current";
-const runDb = () => new Promise((res, rej) => {
-  const r = indexedDB.open(RUN_DB, 1);
-  r.onupgradeneeded = () => r.result.createObjectStore(RUN_STORE);
-  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-});
+// RUN_META: the card's few numbers, kept apart from the run (owner, 2026-10-19: the card came up only after the first tower was
+// built) - reading the whole run on load took long enough on a phone for a tower to go down first; the run is read on "resume"
+const RUN_DB = "spire", RUN_STORE = "run", RUN_KEY = "current", RUN_META = "meta";
+// one connection, opened once. WebKit can leave the page's first open hanging: unanswered after RUN_OPEN_RETRY ms, it asks again
+// (up to RUN_OPEN_TRIES), the first answer wins and a late one is closed
+const RUN_OPEN_RETRY = 300, RUN_OPEN_TRIES = 4;
+let runDbP = null;
+const runDb = () => runDbP || (runDbP = new Promise((res, rej) => {
+  let done = false, n = 0;
+  const go = () => {
+    const r = indexedDB.open(RUN_DB, 1);
+    r.onupgradeneeded = () => r.result.createObjectStore(RUN_STORE);
+    r.onsuccess = () => { if (done) r.result.close(); else { done = true; res(r.result); } };
+    r.onerror = () => { if (!done) { done = true; rej(r.error); } };
+    if (++n < RUN_OPEN_TRIES) setTimeout(() => { if (!done) go(); }, RUN_OPEN_RETRY);
+  };
+  go();
+}).catch(e => { runDbP = null; throw e; }));
 async function runDo(mode, fn) {
   if (typeof indexedDB === "undefined") return null;
   try {
@@ -29,8 +41,8 @@ function runClean(g) {
   Object.assign(g, { enemies: [], spawns: [], fleetQ: [], chains: [], drips: [] });
   return g;
 }
-const runSave = () => { if (G.started && !G.over) runDo("readwrite", s => s.put({ G: runClean(structuredClone(G)), wave: G.wave, lives: G.lives, at: Date.now() }, RUN_KEY)); };
-const runClear = () => runDo("readwrite", s => s.delete(RUN_KEY));
+const runSave = () => { if (G.started && !G.over) runDo("readwrite", s => { const at = Date.now(); s.put({ wave: G.wave, lives: G.lives, at }, RUN_META); return s.put({ G: runClean(structuredClone(G)), wave: G.wave, lives: G.lives, at }, RUN_KEY); }); };
+const runClear = () => runDo("readwrite", s => { s.delete(RUN_META); return s.delete(RUN_KEY); });
 // a CHECKPOINT AT EVERY BOSS, on a CLEAR board (owner, 2026-10-16: "save to last wave not mid wave", "actually, save every boss"):
 // once a boss wave is beaten and nothing is left on the field or still to spawn (waveClear, aspira-waves.js), that state is
 // saved - a resume starts between waves, the boss behind it. Was: every wave as it was SENT, mid-fight. Every end (a loss, a
@@ -49,7 +61,7 @@ function runOffer(saved) {
   card.innerHTML = '<h2>resume?</h2><p>Your game after wave ' + saved.wave + " (" + saved.lives + " lives) was saved.</p>";
   const row = document.createElement("div"); row.className = "asp-row asp-resume-row"; card.appendChild(row);
   const done = () => { card.remove(); ui.paused = false; };
-  button(row, "asp-primary", "resume after wave " + saved.wave, () => { if (!runResume(saved)) runClear(); done(); });
+  button(row, "asp-primary", "resume after wave " + saved.wave, () => runDo("readonly", s => s.get(RUN_KEY)).then(run => { if (!run || !runResume(run)) runClear(); done(); }));
   button(row, "", "new game", () => { runClear(); done(); });
   document.querySelector(".asp-board").appendChild(card);
   ui.paused = true;
@@ -63,4 +75,6 @@ function runResume(saved) {
     return true;
   } catch (e) { G = newGame(); autoMove = false; refreshPanels(); return false; } // a save the game can no longer read: a fresh one
 }
-runDo("readonly", s => s.get(RUN_KEY)).then(saved => { if (saved && saved.G && !saved.G.over && G.wave === 0 && !G.towers.length) runOffer(saved); });
+// (a save from before RUN_META has no meta: its whole run is read, once - the next save writes one)
+runDo("readonly", s => s.get(RUN_META)).then(m => m || runDo("readonly", s => s.get(RUN_KEY)))
+  .then(saved => { if (saved && !(saved.G && saved.G.over) && G.wave === 0 && !G.towers.length) runOffer(saved); });
