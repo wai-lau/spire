@@ -179,7 +179,7 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     // the BURN, by hand (no step: a step walks held enemies back onto the lane)
     const cx = CX, cy = CY, on = held(cx + 40 * Math.cos(a60), cy + 40 * Math.sin(a60)), off = held(cx + 120 * Math.cos(a30), cy + 120 * Math.sin(a30)); fresh();
     ifrFlare(t, st, cx, cy); const f = t.ifrFlares[t.ifrFlares.length - 1]; f.L = 80; f.W = 12; f.edges = false;
-    stepIfrFlares(t, st, st.tickS); out.on = 5 - on.shield; out.off = 5 - off.shield;
+    stepIfrFlares(t, st, st.tickS); out.lit = 5 - on.shield; stepIfrFlares(t, st, st.tickS); out.on = 5 - on.shield; out.off = 5 - off.shield; /* CATCHING FIRE: the first tick only lights it, the second burns */
     on.dead = off.dead = true; t.ifrFlares.length = 0;
     // a PLAIN ring (k 1) over a held enemy 20 u off its spot, run until fully grown and gone
     const q = held(cx + 20, cy); fresh(); ifrBurst(t, st, cx, cy, 1); t.ifrPellets.length = 0;
@@ -197,7 +197,7 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = st.blastR + IFR_PELLET_V / 30;
     return out;
   })()`);
-  if (r.on !== 1) return "the enemy on the 60-degree beam lost " + r.on + " charges in one tick (expected exactly 1)";
+  if (r.lit !== 0 || r.on !== 1) return "the enemy on the 60-degree beam lost " + r.lit + " charges at its first tick (expected 0: it only catches fire) and " + r.on + " after two (expected exactly 1)";
   if (r.off !== 0) return "the enemy off every beam lost " + r.off + " charges";
   if (r.ring !== 1 || r.ringsLeft) return "a plain ring took " + r.ring + " charges (expected exactly 1), rings left " + r.ringsLeft;
   if (r.fired !== r.want) return "an empty burst fired " + r.fired + " pellets (expected " + r.want + ")";
@@ -284,7 +284,7 @@ check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flig
   const sold = run(`(() => { try { const t = G.towers[0]; G.money += sellValue(t); G.towers = G.towers.filter(x => x !== t); ui.sel = null; for (let i = 0; i < 30; i++) step(1 / 30); return "ok"; } catch (e) { return String(e); } })()`); // what the card's sell button does (aspira-sliders.js)
   return sold === "ok" ? "" : "sell threw: " + sold;
 });
-check("IFR: a shielded enemy in a flare loses one charge a tick; the ring pops one; Impact gives six slots", () => {
+check("IFR: a shielded enemy in a flare catches fire, then loses one charge a tick; the ring pops one; Impact gives six slots", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -293,11 +293,11 @@ check("IFR: a shielded enemy in a flare loses one charge a tick; the ring pops o
     ifrInit(t); const e = ifrNear("shield", t, 400); e.shield = 9; egridAt = NaN; /* out of the tower's range: no ball, only the flare below touches it */
     out.dist = Math.round(Math.hypot(e.x - t.x, e.y - t.y));
     t.ifrFlares.push({ x: e.x - 40, y: e.y, L: 80, W: 12, life: 3, left: 3, tick: 0, edges: false }); /* 40 u left of it: the 0-degree beam runs through its body */
-    for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); out.afterTicks = e.shield; /* 3 ticks (the first fires at tickS) */
+    for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); out.afterTicks = e.shield; /* 3 ticks: the first lights it (CATCHING FIRE), the next two burn */
     return out;
   })()`);
   if (r.slots !== 6) return "Impact gives " + r.slots + " slots, not 6";
-  if (r.afterTicks !== 6) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 6), enemy " + r.dist + " u out";
+  if (r.afterTicks !== 7) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 7: the first tick only lights it), enemy " + r.dist + " u out";
   return "";
 });
 /* worst case: 40 Hellfire-VI flares tick in the SAME frame (in play each ticks on its own phase); about 2.4 ms of it is damage()/onHit on ~200 hit enemies, which any tower pays - the guard is for the traversal (~3 ms), a regression to all-flares x all-enemies */
