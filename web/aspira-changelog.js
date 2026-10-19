@@ -21,6 +21,7 @@ const CHANGELOG = [
     "Carrier: fewer, harder volleys and bolts - fewer shield charges popped.",
   ], u: [
     "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
+    "Changes: Ifrit has its own heading.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
     "Ifrit: Hellfire flares last half as long and burn twice as hard.",
@@ -425,7 +426,8 @@ const CHANGELOG = [
 // the order shown). Keep ONE line per change a day: merge a later tweak into the line it changes (owner, 2026-10-16: "Merge
 // similar changes")
 const LOG_SUBJECTS = [["All towers", /^all towers\b/i], ["Arc", /\barcs?\b/i], ["Freeze", /\bfreeze\b|\bfrz\b/i], ["Sol", /\bsol(ar)?\b/i], ["Acid", /\bacid\b|\bacd\b/i],
-  ["Carrier", /\bcarriers?\b|\batc\b|\binterceptors?\b/i], ["Gravity", /\bgravity\b|\bgrv\b|\bblack holes?\b/i],
+  ["Carrier", /\bcarriers?\b|\batc\b|\bcrr\b|\binterceptors?\b/i], ["Gravity", /\bgravity\b|\bgrv\b|\bblack holes?\b/i],
+  ["Ifrit", /\bifrit\b|\bifr\b|\bhellfire\b|\bfiraga\b|\bmeteor\b/i], // its own heading (owner, 2026-10-19: it fell under Other)
   ["Swarm", /\bswarms?\b/i], ["Fast", /\bfast\b/i], ["Armor", /\barmou?r(ed)?\b/i], ["Shield", /\bshield(s|ed)?\b/i],
   ["Bosses", /\bboss(es)?\b|\bstar\b|\bempress\b|\btarot\b/i], ["Core", /\bcore\b/i], ["Other", /$^/]];
 function logSubject(line) {
