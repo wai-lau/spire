@@ -183,7 +183,7 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     on.dead = off.dead = true; t.ifrFlares.length = 0;
     // a PLAIN ring (k 1) over a held enemy 20 u off its spot, run until fully grown and gone
     const q = held(cx + 20, cy); fresh(); ifrBurst(t, st, cx, cy, 1); t.ifrPellets.length = 0;
-    for (let i = 0; i < 30; i++) stepIfrRings(t, st, 1 / 30);
+    for (let i = 0; i < 60; i++) stepIfrRings(t, st, 1 / 30); /* 60 not 30: the ring is slower (IFR_RING_V 220) and bigger (x1.3), then fades out 0.15 s (owner, 2026-10-19) */
     out.ring = 5 - q.shield; out.ringsLeft = t.ifrRings.length; q.dead = true;
     // PELLETS (owner, 2026-10-19: random directions, enemies there or not): a burst on empty ground - each flies OUT from the
     // spot on its own heading and stops (a flare) no further than the blast radius + a frame
@@ -278,7 +278,7 @@ check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flig
   if (r.cloned !== true) return "G does not clone: " + r.cloned;
   const seen = calls(env, ["drawIfr"], () => frames(env, 2));
   if (!seen.drawIfr) return "drawIfr never called";
-  const n = drawn(env, () => run("drawIfr()")).n;
+  const n = drawn(env, () => run("drawIfr(); drawIfr(true)")).n; /* both passes: the rings, pellets and spokes, then the balls in skyKeep */
   if (n < 20) return "only " + n + " canvas calls with IFR effects live";
   const sold = run(`(() => { try { const t = G.towers[0]; G.money += sellValue(t); G.towers = G.towers.filter(x => x !== t); ui.sel = null; for (let i = 0; i < 30; i++) step(1 / 30); return "ok"; } catch (e) { return String(e); } })()`); // what the card's sell button does (aspira-sliders.js)
   return sold === "ok" ? "" : "sell threw: " + sold;

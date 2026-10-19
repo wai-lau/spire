@@ -20,10 +20,10 @@ const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Hellfire: its width, u
 const IFR_BURN_S = [1.2, 1.4, 1.6, 2, 2.6, 3.2] /* was [1.5, 2, 2.5, 3, 4, 5] (countermx 61-69 spread @6pts, 2026-10-19, pellets in random directions: swarm/fast/shield/armor 8/35/9/56 -> 13/77/23/58 - a short burn: fast is clear of the flares round its old spot before the next tick, a slow body still burns; with the radius, the ball speed or the tick period fast stayed 33-47) */; // Hellfire: a flare burns this long (VI 10 = EFFECT_MAX_S)
 const IFR_TICK_S = [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] /* was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Hellfire: s between burn ticks
 const IFR_TICK_K = [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] /* was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
-const IFR_BLAST_R = [90, 90, 100, 115, 130, 150] /* base 90, was 80 (solo.mjs 2026-10-19, after the random pellets and the slow ticks: a lone L1 1/0/0 -> 0/0/0, 5 seeds 1/0/0/2/2 -> 0/0/0/0/2 - a single wave-4 swarm body now and then) */ /* was [60 .. 130] VI 160 (solo.mjs 2026-10-19, ball 360 + a 1 s charge: a lone L1 0/2/0 -> 0/0/0, every L1 pair with IFR beats the Star on every slot pair) */; // Firaga: the ring's reach, u
+const IFR_BLAST_R = [117, 117, 130, 150, 169, 195] /* x1.3: bigger and more visible (owner, 2026-10-19: "make the initial explosion slower and bigger and more visible"); was [90, 90, 100, 115, 130, 150], base 90, was 80 (solo.mjs 2026-10-19, after the random pellets and the slow ticks: a lone L1 1/0/0 -> 0/0/0, 5 seeds 1/0/0/2/2 -> 0/0/0/0/2 - a single wave-4 swarm body now and then) */ /* was [60 .. 130] VI 160 (solo.mjs 2026-10-19, ball 360 + a 1 s charge: a lone L1 0/2/0 -> 0/0/0, every L1 pair with IFR beats the Star on every slot pair) */; // Firaga: the ring's reach, u
 const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 9, 15] /* was [1, 1.5, 2.3, 3.5, 6, 10] VI 18 (countermx 61-69 spread @6pts, 2026-10-19: leaked swarm/fast/shield/armor 27/91/42/100 -> 18/75/23/90) */; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [5, 9, 12, 15, 18, 21] /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
-const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 600, IFR_PELLET_V = 300, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25, IFR_MINI_K = 0.5; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit; Backdraft's mini ring x radius and x hit
+const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 220 /* was 600 (owner, 2026-10-19: the explosion slower) */, IFR_PELLET_V = 170 /* was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25, IFR_MINI_K = 0.5; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit; Backdraft's mini ring x radius and x hit
 const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
 const IFR_FLARE_MAX = 60; // live flares a tower at most: the oldest goes (perf)
 const IFR_ROUTE_ST = { shieldPop: 1 }, IFR_RING_ST = { shieldPop: 1 }, IFR_PELLET_ST = { shieldPop: 1 }, IFR_BURN_ST = { noFx: true, noNum: true, shieldPop: 1 }; // (damage: st.shieldPop; the burn is quiet)
@@ -106,7 +106,7 @@ function stepIfrBalls(t, st, dt) {
 // "shooting 5 pellets in random directions that each make asterisks"); k: 1 a ball, IFR_MINI_K a Backdraft pellet
 function ifrBurst(t, st, x, y, k) {
   const R = st.blastR * k;
-  t.ifrRings.push({ x, y, r: 0, R, k, hit: [], left: R / IFR_RING_V + 0.05 });
+  t.ifrRings.push({ x, y, r: 0, R, k, hit: [], left: R / IFR_RING_V + IFR_RING_FADE /* stays on screen a moment after full size, fading (owner, 2026-10-19); it hits nothing then */ });
   sfx("ifrblast");
   if (k < 1) return; /* a mini ring sends no pellets */
   for (let i = 0; i < st.pellets; i++) {
@@ -118,7 +118,9 @@ function ifrBurst(t, st, x, y, k) {
 function stepIfrRings(t, st, dt) {
   if (!t.ifrRings.length) return;
   for (const q of t.ifrRings) {
+    const grew = q.r < q.R; /* hits only while the ring GROWS: the fade-out touches nothing */
     q.r = Math.min(q.R, q.r + IFR_RING_V * dt); q.left -= dt;
+    if (!grew) continue;
     for (const e of G.enemies) {
       if (e.dead || !e.seen || q.hit.includes(e.id)) continue;
       const d2 = (e.x - q.x) ** 2 + (e.y - q.y) ** 2;
@@ -206,10 +208,14 @@ function stepIfrFlares(t, st, dt) {
   }
   keepLive(t.ifrFlares);
 }
-// ---------- the look: orange balls growing on the corners, a small ball with a short trail in flight, a thinning ring, pellet
-// streaks, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
+// ---------- the look: orange balls growing on the corners, a small ball in flight, a glowing ring, ember pellets, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
-const IFR_BALL_PX = 13, IFR_FLY_PX = 6, IFR_TRAIL_S = 0.06, IFR_PELLET_PX = 2, IFR_PELLET_TAIL = 0.03, IFR_RING_W = 3;
+const IFR_BALL_PX = 13, IFR_FLY_PX = 6;
+/* a pellet is an EMBER (owner, 2026-10-19: "more visible"): a faint halo, an orange disc, a white core, and a tail of IFR_TAIL_N
+   segments behind it at falling alpha. Sized for a phone (the board ~1000 u across 430 px) */
+const IFR_EMBER_HALO = 9, IFR_EMBER_R = 4, IFR_EMBER_CORE = 1.5, IFR_TAIL_N = 3, IFR_TAIL_S = 0.05;
+/* the RING is a glow, [width u, alpha] wide faint / mid / bright core, plus a faint disc inside the front */
+const IFR_RING_GLOW = [[16, 0.14], [8, 0.3], [3, 0.9]], IFR_RING_DISC = 0.08;
 function drawIfrCharge(t, st) {
   const corners = ifrSlotCorners(t, st.slots);
   ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
@@ -221,16 +227,37 @@ function drawIfrCharge(t, st) {
     if (full) { ctx.fillStyle = COL.white; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(c.x, c.y, IFR_BALL_PX * 0.35, 0, 6.283); ctx.fill(); ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9; }
   }
 }
-function drawIfrFlight(t) {
-  ctx.strokeStyle = COL.tifr; ctx.fillStyle = COL.tifr; ctx.lineCap = "round"; ctx.lineWidth = IFR_PELLET_PX; ctx.globalAlpha = 0.8;
-  if (t.ifrBalls.length || t.ifrPellets.length) {
-  ctx.beginPath();
-  for (const b of t.ifrBalls) { ctx.moveTo(b.x - b.vx * IFR_TRAIL_S, b.y - b.vy * IFR_TRAIL_S); ctx.lineTo(b.x, b.y); }
-  for (const p of t.ifrPellets) { ctx.moveTo(p.x - p.vx * IFR_PELLET_TAIL, p.y - p.vy * IFR_PELLET_TAIL); ctx.lineTo(p.x, p.y); }
-  ctx.stroke();
+function drawIfrEmbers(t, low) {
+  ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr; ctx.lineWidth = IFR_EMBER_R;
+  for (const p of t.ifrPellets) {
+    if (!low) {
+      for (let k = 0; k < IFR_TAIL_N; k++) {
+        const a = k / IFR_TAIL_N, b = (k + 1) / IFR_TAIL_N; ctx.globalAlpha = 0.6 * (1 - a);
+        ctx.beginPath(); ctx.moveTo(p.x - p.vx * IFR_TAIL_S * a, p.y - p.vy * IFR_TAIL_S * a); ctx.lineTo(p.x - p.vx * IFR_TAIL_S * b, p.y - p.vy * IFR_TAIL_S * b); ctx.stroke();
+      }
+      ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_HALO, 0, 6.283); ctx.fill();
+    }
+    ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_R, 0, 6.283); ctx.fill();
+    ctx.fillStyle = COL.white; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_CORE, 0, 6.283); ctx.fill();
   }
+}
+function drawIfrRings(t, low) {
+  ctx.strokeStyle = COL.tifr; ctx.fillStyle = COL.tifr;
+  for (const q of t.ifrRings) {
+    const grow = q.r / q.R, fade = grow < 1 ? 1 : Math.max(0, q.left / IFR_RING_FADE), a = (0.9 * (1 - grow) + 0.1) * fade;
+    if (!low && grow < 1) { ctx.globalAlpha = IFR_RING_DISC * (1 - grow); ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.fill(); }
+    for (let g = low ? IFR_RING_GLOW.length - 1 : 0; g < IFR_RING_GLOW.length; g++) {
+      ctx.lineWidth = IFR_RING_GLOW[g][0]; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
+      ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke();
+    }
+  }
+}
+/* the ball: a disc, no line before it (owner, 2026-10-19: "remove the line that precedes the ball during launch") */
+function drawIfrFlight(t) {
+  const low = typeof lowQ === "function" && lowQ();
+  ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
   for (const b of t.ifrBalls) { ctx.beginPath(); ctx.arc(b.x, b.y, IFR_FLY_PX, 0, 6.283); ctx.fill(); }
-  for (const q of t.ifrRings) { ctx.globalAlpha = 0.9 * (1 - q.r / q.R) + 0.1; ctx.lineWidth = IFR_RING_W; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke(); }
+  drawIfrRings(t, low); drawIfrEmbers(t, low);
 }
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
