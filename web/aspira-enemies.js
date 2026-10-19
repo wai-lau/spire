@@ -256,11 +256,14 @@ function ringOf(i, sides, off = 0) {
 const SHIELD_LAST_W = 2;
 // an ENEMY's OUTER shield chips are SPOKES (owner, 2026-10-18: "shields (other than the last ngon) should be spokes coming out of the dice
 // and stopping at the ngon"): chip i of ring r (2+, sides x r of them) is a spoke at its share of the turn, from the die's edge
-// (base - SHIELD_OUT) out to the last layer's polygon (base + gap) - [x0, y0, x1, y1], or null for the last layer itself
+// (base - SHIELD_OUT) out to the last layer's polygon (base + gap) - [x0, y0, x1, y1], or null for the last layer itself.
+// They START INSIDE the die (SPOKE_IN of its size) and END SPOKE_GAP u short of the polygon (owner, 2026-10-18: "the shield spokes
+// should start inside the shape and end before the outer outline")
+const SPOKE_IN = 0.5, SPOKE_GAP = 6;
 function shieldSpoke(x, y, i, sides, rot, base, gap, k) {
   const { r: ring, pos } = ringOf(i, sides, SHIELD_IN_OFF);
   if (ring < 2) return null;
-  const a = rot + (pos + 0.5 + (ring - 2) * 0.5) / (sides * ring) * Math.PI * 2, r0 = Math.max(0, base - SHIELD_OUT), r1 = (base + gap) * k;
+  const a = rot + (pos + 0.5 + (ring - 2) * 0.5) / (sides * ring) * Math.PI * 2, r0 = Math.max(0, base - SHIELD_OUT) * SPOKE_IN, r1 = Math.max(r0, (base + gap) * k - SPOKE_GAP);
   return [x + Math.cos(a) * r0, y + Math.sin(a) * r0, x + Math.cos(a) * r1, y + Math.sin(a) * r1];
 }
 function shieldPoly(x, y, r, k, n, rot) {
