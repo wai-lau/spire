@@ -67,7 +67,7 @@ const CAPSTONE_NUM = [
   [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 16], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
   [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
   // IFR: Meteor every corner, charging as fast as it launches (Impact); Hellfire beams across the whole board; Firaga the biggest blast, the most pellets (Backdraft)
-  [IFR_SLOTS, 6], [IFR_CHARGE_S, 0.1], [IFR_BALL_V, 540], [IFR_ROUTE_K, 16], [IFR_BEAM_L, 140], [IFR_BEAM_W, 24], [IFR_BURN_S, 10], [IFR_TICK_S, 0.12], [IFR_TICK_K, 1], [IFR_BLAST_R, 180], [IFR_BLAST_K, 27], [IFR_PELLETS, 12],
+  [IFR_SLOTS, 6], [IFR_CHARGE_S, 0.1], [IFR_BALL_V, 540], [IFR_ROUTE_K, 16], [IFR_BEAM_L, 140], [IFR_BEAM_W, 24], [IFR_BURN_S, 10], [IFR_TICK_S, 0.36], [IFR_TICK_K, 4.2], [IFR_BLAST_R, 180], [IFR_BLAST_K, 27], [IFR_PELLETS, 12],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)
