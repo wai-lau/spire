@@ -1,11 +1,12 @@
 // /spire - WHAT'S NEW (owner, 2026-10-14: "construct a changelog, clicking the version number should pause the game and show the
 // changelog on a card ... only include changes that affect the player, like graphics and balance changes"). Newest first; one
-// short line a change, in the player's words - a FACT, no reason or explanation (owner, 2026-10-14). Add to the top day (or start a new one) with every change a player would notice.
-// THE VERSION (web/aspira-version.txt, major.minor.tiny): the next MINOR is a new day here OR a balance battery's patch (owner,
-// 2026-10-19: "every group of changes that is the result of a balance battery run should result in a new minor version" - the day
-// 5.1 became 5.1-5.9, one a battery, ARCHAEOLOGY.md 9); every deploy after bumps tiny. A new TOWER is the next MAJOR (owner,
-// 2026-10-16: "adding grv and atc should be a new major version": their day, 4.5, became 5.0 and the next 4.6 5.1).
-// each day's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
+// short line a change, in the player's words - a FACT, no reason or explanation (owner, 2026-10-14). Add to the top entry (a new one only at a battery's patch) with every change a player would notice.
+// THE VERSION (web/aspira-version.txt, major.minor.tiny): the next MINOR is a balance battery's patch - ONLY that, a new day is
+// not one (owner, 2026-10-19: "every group of changes that is the result of a balance battery run should result in a new minor
+// version" / "stop doing the new day new minor thing"; 5.1 became 5.1-5.8, one a battery, ARCHAEOLOGY.md 9); every other deploy
+// bumps tiny. A new TOWER is the next MAJOR (owner, 2026-10-16: "adding grv and atc should be a new major version": their day,
+// 4.5, became 5.0 and the next 4.6 5.1).
+// each entry's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
@@ -29,7 +30,7 @@ const CHANGELOG = [
     "The flat 2D view is gone - THE SPIRE is 3D only; a browser without WebGL shows a notice.",
     "Build cards: the checks and x's re-measured for the new balance.",
   ] },
-  { v: "5.9", day: "Oct 18", bu: [
+  { v: "5.8", day: "Oct 18", bu: [
     "Core powers: Temporal Drive and Orbital Relay can run at the same time.",
     "Freeze: Rime rings bite - each ring that reaches an enemy hits it for 4 to 60 times a tick.",
     "Gravity: the nova fires 5.6 times as often at the third purchase and 8.5 times at the capstone; pellets and nova hit harder late; Void slows more.",
@@ -44,7 +45,7 @@ const CHANGELOG = [
     "The end screen fits the screen: the leak list and the top players fill the space left and scroll inside themselves.",
     "The wave list names hybrid waves by both traits: swarm+shield, fast+armor.",
   ] },
-  { v: "5.8", day: "Oct 18", bu: [
+  { v: "5.7", day: "Oct 18", bu: [
     "Arc: Conductivity gets more strikes, jumps and forks late and hits 1.5 to 3.5 times harder from the third purchase; Voltage x1.35 harder; Capacitance holds more, stronger charges.",
     "Acid: Contagion pools last longer, reach further, pulse faster and burn harder from the third purchase.",
     "Gravity: Void's slow, armor strip, inner burn and aura radius are stronger from the third purchase.",
@@ -62,20 +63,17 @@ const CHANGELOG = [
     "The Carrier's description now explains focus fire: each shot hits harder for every other interceptor on the same enemy.",
     "Tapping a tower opens its upgrade card again (its home slot still works too).",
   ] },
-  { v: "5.7", day: "Oct 18", bu: [
+  { v: "5.6", day: "Oct 17", bu: [
     "Smoother on phones: damage-number stamps reuse canvases of the same size instead of allocating new ones (the main cause of the late-wave hitches in the slow logs).",
     "Bosses: the Empress has 10% less health; the Chariot x2, the Lovers x2.5, Temperance x1.5, the Devil x2, Justice x2, Judgement x1.6 and Death x1.5 as much.",
-  ], u: [
-    "Lanes turn in finer steps to keep as much of each one on screen as possible.",
-    "The build and upgrade cards no longer grey out the board behind them.",
-    "Shields: an enemy's last layer loses one side a hit, down to a triangle, which is its last shield - the next hit leaves it unshielded.",
-  ] },
-  { v: "5.6", day: "Oct 17", bu: [
     "Smoother late waves: shield rings are found by a formula instead of a loop, and damage-number stamps reuse their canvases instead of making new ones.",
     "Smoother late waves on desktop: the damage-number cache holds three times as many stamps, so numbers stop being redrawn from scratch.",
     "Gravity: the nova fires 3.6 times as often at the third purchase and 5.5 times at the capstone (was 3 and 4.6).",
     "Carrier: Tether pulses hit harder - 2, 3 and 4 times the shot at the first three purchases, 24 at the fourth, 40 at the capstone.",
   ], u: [
+    "Lanes turn in finer steps to keep as much of each one on screen as possible.",
+    "The build and upgrade cards no longer grey out the board behind them.",
+    "Shields: an enemy's last layer loses one side a hit, down to a triangle, which is its last shield - the next hit leaves it unshielded.",
     "A tower's home slot shows only when an upgrade can be bought; the build spots sit 30 u closer to the core.",
   ] },
   { v: "5.5", day: "Oct 17", bu: [

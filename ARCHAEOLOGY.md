@@ -517,20 +517,20 @@ focus loss.
   code") -> hand-kept `major.minor.tiny` + the build, clickable to the changelog card; 10-14 the card split into Buffs / Nerfs /
   Perf-UI groups (Perf-UI smaller) and the initials box stopped scrolling.
 - **A minor per battery (10-19).** "Every group of changes that is the result of a balance battery run should result in a
-  new minor version": the day 5.1 (10-16..18, tiny 0-141) was split at each battery-result commit, 5.1.0-92 unchanged.
-  Commit subjects and the slow logs keep the old numbers; the board's six affected rows were corrected through FIXES.
+  new minor version", then "stop doing the new day new minor thing" (a day is NOT a minor any more): the day 5.1 (10-16..18,
+  tiny 0-141) was split at each battery-result commit, 5.1.0-92 unchanged (first split 5.1-5.9 with a day minor 5.7, re-folded
+  the same hour). Commit subjects and the slow logs keep the old numbers; the board's six affected rows were corrected through FIXES.
 
-  | old 5.1.tiny | new | started by |
+  | old 5.1.tiny | new | battery-result commit |
   |---|---|---|
-  | 0-92 | 5.1.0-92 (unchanged) | 10-16, the day |
+  | 0-92 | 5.1.0-92 (unchanged) | `b9327e5` trio scale (4.6.0), 16 of 20 trios |
   | 93 | 5.2.0 | `40fa8cf` late tiers steeper, 20 trios 3/3 |
   | 94-96 | 5.3.0-2 | `33c1462` Sol one shield charge a beam, 20 trios 3/3 |
   | 97-107 | 5.4.0-10 | `90b5cc0` difficulty band, 20/20 perfect, random 0/20 |
   | 108-113 | 5.5.0-5 | `514748b` late tiers evened per tower, 16 winnable 3/3 |
-  | 114-118 | 5.6.0-4 | `310fe4d` ATC Tether pulses, 20/20 perfect, random 0/60 |
-  | 119-125 | 5.7.0-6 | 10-18, the day |
-  | 126 | 5.8.0 | `3b7d5e8` axis balance, 16 winnable 3/3, random 0/60 |
-  | 127-141 | 5.9.0-14 | `9129624` late balance, 20/20 perfect, random 1/60 |
+  | 114-125 | 5.6.0-11 | `310fe4d` ATC Tether pulses, 20/20 perfect, random 0/60 |
+  | 126 | 5.7.0 | `3b7d5e8` axis balance, 16 winnable 3/3, random 0/60 |
+  | 127-141 | 5.8.0-14 | `9129624` late balance, 20/20 perfect, random 1/60 |
 
 - **Guest tier (10-02):** first owner-only and a nav entry, then guest ("aspira should be public, behind cloudflare"),
   landing-wheel section; the page moved to `/spire` 10-04 with `/aspira` a 301.

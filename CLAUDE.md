@@ -32,9 +32,9 @@ are this repo's gitignored `data/aspira-sfx/`.
   push hook pushes it, then bumps + pushes exec-fn's pointer. Never edit the
   files through exec-fn's index.
 - **Lints, hooks and checks are exec-fn's, not this repo's.** `scripts/pre-commit` here is a SHIM (verbatim copy of exec-fn's `scripts/subrepo-pre-commit`; git runs it via `core.hooksPath=scripts`, which exec-fn's session hook sets). Inside exec-fn it runs exec-fn's `scripts/pre-commit`; cloned on its own it sparse-pulls ONLY the lint files (exec-fn `scripts/tooling-paths.txt`) into the gitignored `.exec-fn/` and runs that (lints only; tests need exec-fn). Never edit the shim here — change checks in exec-fn. A standalone clone: `git config core.hooksPath scripts` once. exec-fn ARCHITECTURE.md §1e. The game smoke (`node scripts/spire-smoke/smoke.mjs`, this repo's) is run by exec-fn's hook when a game file is staged.
-- **A balance battery's patch is the next MINOR** (owner 2026-10-19: "every group of changes that is the result of a
-  balance battery run should result in a new minor version"); a new changelog day is one too; anything else bumps tiny.
-  ARCHITECTURE.md §9.4.
+- **A balance battery's patch is the next MINOR, and only that** (owner 2026-10-19: "every group of changes that is the
+  result of a balance battery run should result in a new minor version"; a new day is NOT one: "stop doing the new day new
+  minor thing"); anything else bumps tiny. ARCHITECTURE.md §9.4.
 - **Every balance patch refreshes the build card's checks and x's** (`VS_MARKS`, owner 2026-10-18): run
   `SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car node scripts/aspira-sim/countermx.mjs 2 > cmx.out` on the patched code, then
   `python3 scripts/aspira-sim/marks.py cmx.out --write`, and ship the new marks with the patch. ARCHITECTURE.md §7.2.
