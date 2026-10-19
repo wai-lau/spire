@@ -300,7 +300,9 @@ function drawSegs(x, y, segs, sides, rot, base, gap, flashes, lastRing) {
       shieldPoly(x, y, (base + gap) * k, ids.length + SHIELD_IN_OFF, sides, rot).forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
       ctx.closePath(); ctx.stroke(); ctx.lineWidth = lw; continue;
     }
-    ctx.beginPath(); ids.forEach(side); ctx.stroke();
+    // an enemy's SPOKES are as thick as its last-layer outline (owner, 2026-10-18: "the spokes should be as thick as the outlines")
+    const lw = ctx.lineWidth; if (lastRing) ctx.lineWidth = lw * SHIELD_LAST_W;
+    ctx.beginPath(); ids.forEach(side); ctx.stroke(); ctx.lineWidth = lw;
   }
   ctx.globalAlpha = a0;
   if (!flashes || !flashes.length) return;
