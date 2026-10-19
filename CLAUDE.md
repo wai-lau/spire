@@ -33,7 +33,7 @@ are this repo's gitignored `data/aspira-sfx/`.
   files through exec-fn's index.
 - **Lints, hooks and checks are exec-fn's, not this repo's.** `scripts/pre-commit` here is a SHIM (verbatim copy of exec-fn's `scripts/subrepo-pre-commit`; git runs it via `core.hooksPath=scripts`, which exec-fn's session hook sets). Inside exec-fn it runs exec-fn's `scripts/pre-commit`; cloned on its own it sparse-pulls ONLY the lint files (exec-fn `scripts/tooling-paths.txt`) into the gitignored `.exec-fn/` and runs that (lints only; tests need exec-fn). Never edit the shim here — change checks in exec-fn. A standalone clone: `git config core.hooksPath scripts` once. exec-fn ARCHITECTURE.md §1e. The game smoke (`node scripts/spire-smoke/smoke.mjs`, this repo's) is run by exec-fn's hook when a game file is staged.
 - **Every balance patch refreshes the build card's checks and x's** (`VS_MARKS`, owner 2026-10-18): run
-  `WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car node scripts/aspira-sim/countermx.mjs 2 > cmx.out` on the patched code, then
+  `SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car node scripts/aspira-sim/countermx.mjs 2 > cmx.out` on the patched code, then
   `python3 scripts/aspira-sim/marks.py cmx.out --write`, and ship the new marks with the patch. ARCHITECTURE.md §7.2.
 - **Tests:** from exec-fn, `.venv/bin/pytest apps/spire/tests` (the shared
   fixtures live in exec-fn's root `conftest.py`).

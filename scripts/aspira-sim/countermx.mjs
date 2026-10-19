@@ -5,7 +5,7 @@
 // Lives refilled so every wave plays out. Prints % of that type LEAKED per window.
 // TEAM=1 (2026-10-11, "make upgrade choices matter"): ONE tower of the kind under test plus one of every OTHER kind,
 // those spread - a support axis (FRZ Rime cracking shields) only shows in a team that can kill what it opens up.
-// usage: node countermx.mjs [seeds=2]   env N=3 POINTS=8 WINDOWS=41-49,61-69 KINDS=... BV_PATCH=<file> TEAM=1
+// usage: node countermx.mjs [seeds=2]   env N=3 POINTS=8 WINDOWS=41-49,61-69 KINDS=... BV_PATCH=<file> TEAM=1 SPREAD_ONLY=1 (spread builds only: marks.py's input)
 // a window may carry its OWN points (owner, 2026-10-12: test each boss band at the points a player has there): WINDOWS=1-9:2,11-19:4
 // - a focused build then takes as many tiers as those points allow, capped at SKILL_TIERS
 import fs from "node:fs";
@@ -57,12 +57,12 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("countermx.mjs")
   const TRIO = TEAM && process.env.TRIO === "1", TRIOS = k => { const o = ["arc", "frz", "sol", "acd"].filter(x => x !== k); return [[o[0], o[1]], [o[0], o[2]], [o[1], o[2]]]; };
   const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], car: ["hangar", "launch", "armament"] };
   const jobs = [];
-  for (const [from, to, points] of WINDOWS) for (const kind of KINDS) for (const build of ["spread", ...AX[kind]]) for (const type of TYPES) for (let seed = 1; seed <= SEEDS; seed++) for (const mates of TRIO ? TRIOS(kind) : [null]) jobs.push({ kind, build, type, from, to, seed, points, mates });
+  for (const [from, to, points] of WINDOWS) for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) for (const type of TYPES) for (let seed = 1; seed <= SEEDS; seed++) for (const mates of TRIO ? TRIOS(kind) : [null]) jobs.push({ kind, build, type, from, to, seed, points, mates });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true });
   console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at V + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds: % LEAKED`);
   for (const [from, to, points] of WINDOWS) {
     console.log(`\nwaves ${from}-${to} (${points} pts)`.padEnd(26) + TYPES.map(t => t.padStart(8)).join(""));
-    for (const kind of KINDS) for (const build of ["spread", ...AX[kind]]) {
+    for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) {
       const cells = TYPES.map(type => { const rs = jobs.map((j, i) => (j.kind === kind && j.build === build && j.type === type && j.from === from ? res[i] : null)).filter(Boolean);
         const l = rs.reduce((a, r) => a + r.leaked, 0), s = rs.reduce((a, r) => a + r.spawned, 0); return (s ? Math.round(100 * l / s) + "%" : "-").padStart(8); });
       console.log(("  " + kind.toUpperCase() + " " + build).padEnd(25) + cells.join(""));
