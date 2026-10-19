@@ -23,7 +23,7 @@ const CHANGELOG = [
     "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
     "Changes: Ifrit has its own heading.",
     "Enemies: off screen they are drawn at 20%, fading in over a second as they come on screen.",
-    "Build cards: the red box round an uncovered enemy type is drawn whole (it showed as two bars).",
+    "Build cards: the red box round an uncovered enemy type is drawn whole (it showed as two bars), centred in its gap without moving the marks.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
     "Ifrit: Hellfire flares last half as long and burn twice as hard.",
