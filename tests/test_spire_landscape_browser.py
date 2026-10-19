@@ -178,12 +178,15 @@ def gl_page(_pw):
 
 
 @pytest.mark.parametrize("w,h", [(844, 390), (640, 360), (1280, 800)])
-def test_landscape_floor_area_matches_portrait(gl_page, w, h):
+def test_landscape_floor_area_matches_portrait_on_the_same_screen_turned(gl_page, w, h):
     page = gl_page(w, h)
     assert page.evaluate("q3d()") is True and page.evaluate("BOX_WIDE") is True
-    area, goal, tilt = page.evaluate("[boxFloorArea(), BOX_FLOOR_GOAL, warpTilt()]")
+    area, tilt = page.evaluate("[boxFloorArea(), warpTilt()]")
+    turned = gl_page(h, w)  # the same screen held the other way: portrait at the default tilt
+    assert turned.evaluate("BOX_WIDE") is False
+    goal = turned.evaluate("boxFloorArea()")
     print("AREA", w, h, area, goal, tilt)
-    assert goal > 0 and abs(area - goal) <= 0.02 * goal
+    assert abs(area - goal) <= 0.02 * goal
     assert page.evaluate("tiltDirty") is False and tilt <= 0.55
 
 
