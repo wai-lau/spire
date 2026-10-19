@@ -195,7 +195,7 @@ function turnSlots(wide) {
   const old = CELLS.map(c => ({ x: c.x, y: c.y }));
   for (const c of CELLS) {
     if (c.px === undefined) { c.px = c.x; c.py = c.y; c.ppts = c.pts.map(p => ({ ...p })); }
-    if (wide) { const q = quarter(c.px, c.py); c.x = q.x; c.y = q.y; c.pts = c.ppts.map(p => ({ ...p, ...quarter(p.x, p.y) })); }
+    if (wide) { const q = quarter(c.px, c.py); c.x = q.x; c.y = q.y; c.pts = c.ppts.map(p => ({ ...p, x: p.x - c.px + q.x, y: p.y - c.py + q.y })); } // the SPOT turns, the hex does not: still point-up (owner, 2026-10-19: a turned hex laid the tower and its chart on their side)
     else { c.x = c.px; c.y = c.py; c.pts = c.ppts.map(p => ({ ...p })); }
     delete c.cornerOf; // aspira-chart.js's snapped corners, memoised on the cell: stale once it turns
     if (c.home) { c.home.x = c.x; c.home.y = c.y; c.home.pts = c.pts.map(p => ({ ...p })); } // pushCells (newGame) goes home to THIS shape

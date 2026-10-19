@@ -40,7 +40,7 @@ const CHANGELOG = [
     "Ifrit: each flare is a big plus over a small cross, of random size; twice the pellets, landing up to three times further out, most of them near the blast and in any direction.",
     "Build cards: Carrier now shows a check vs fast and an x vs swarm.",
     "Ifrit: the small cross in each flare is half as big.",
-    "Board: on a turned screen towers and enemies draw the same size as upright.",
+    "Board: on a turned screen towers and enemies draw the same size as upright, and stand upright.",
     "Carrier: interceptors fly faster, open fire sooner and carry twice the ammo; a volley's spare bolts no longer fly on into other enemies, and a kill no longer hops to the next.",
     "Resume: no tower can be built while the resume card is up.",
     "Board: the core sits in the middle of the screen; on a landscape screen the board turns to fill it.",
