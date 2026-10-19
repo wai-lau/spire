@@ -169,16 +169,11 @@ function placeChallenge() {
   if (!ready) return;
   // under the core AND clear of the build slots round it (a slot under the button could not be tapped)
   const wy = Math.max(CY + CORE_R + LIFE_GAP * LIFE_RINGS, ...CELLS.map(c => c.y + CELL_S * TOWER_K)) + CHALLENGE_BELOW, root = $("asp").getBoundingClientRect();
-  let x, y;
-  if (q3d() && typeof warp !== "undefined" && warp.ent && warp.p) {
-    const c0 = { k: cam.k, ox: cam.ox, oy: cam.oy }; // projected as warp3d does: under the texture camera (warpRes)
-    cam.k *= warpRes(); cam.ox *= warpRes(); cam.oy *= warpRes();
-    let P; try { P = warpProject(CX, wy, 0); } finally { Object.assign(cam, c0); }
-    const r = warp.ent.getBoundingClientRect();
-    x = r.left + P.x * r.width / warp.ent.width; y = r.top + P.y * r.height / warp.ent.height;
-  } else {
-    const r = cv.getBoundingClientRect(), k = r.width / cv.width;
-    x = r.left + (CX * cam.k + cam.ox) * k; y = r.top + (wy * cam.k + cam.oy) * k;
-  }
+  if (!(typeof warp !== "undefined" && warp.ent && warp.p)) return; // (before the first 3D frame: placed on the next)
+  const c0 = { k: cam.k, ox: cam.ox, oy: cam.oy }; // projected as warp3d does: under the texture camera (warpRes)
+  cam.k *= warpRes(); cam.ox *= warpRes(); cam.oy *= warpRes();
+  let P; try { P = warpProject(CX, wy, 0); } finally { Object.assign(cam, c0); }
+  const r = warp.ent.getBoundingClientRect();
+  const x = r.left + P.x * r.width / warp.ent.width, y = r.top + P.y * r.height / warp.ent.height;
   btn.style.left = (x - root.left) + "px"; btn.style.top = (y - root.top) + "px";
 }

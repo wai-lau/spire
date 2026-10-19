@@ -25,6 +25,7 @@ const CHANGELOG = [
     "Gravity: Supernova's nova damage is much lower from the second purchase (three novas a fire now).",
     "Sol: Breach shrapnel no longer deals damage - it breaches the enemies near the one that died instead; Breach crits hit 1.3x harder to make up for it.",
   ], u: [
+    "The flat 2D view is gone - THE SPIRE is 3D only; a browser without WebGL shows a notice.",
     "Build cards: the checks and x's re-measured for the new balance.",
   ] },
   { v: "5.1", day: "Oct 16", bu: [

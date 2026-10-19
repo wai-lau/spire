@@ -317,34 +317,18 @@ const PUDDLE_BUBBLES = 5, BUBBLE_T = 0.6, BUBBLE_POP = 0.15;
 // a puddle's bubbles are as INTENSE as its damage (owner, 2026-10-07): brighter and
 // bolder the more it burns, 0.6x for a faint puddle up to 1.8x for a deadly one
 const puddleGlow = p => Math.max(0.6, Math.min(1.8, 0.6 + 0.3 * Math.log2(1 + (p.dps || 0) / 60)));
-// the POOL under the bubbles (owner, 2026-10-11: "visually more appealing"): a liquid
-// body whose rim wobbles, that SPLASHES out to size over PUDDLE_SPREAD s, shrinks as it
-// dries, and carries a smaller, brighter sheen at its heart
-const PUDDLE_SPREAD = 0.25, PUDDLE_RIM = 20;
-function puddleBlob(p, now, k, seed) {
-  const grow = 1 - (1 - Math.min(1, p.age / PUDDLE_SPREAD)) ** 3, dry = 0.8 + 0.2 * (1 - p.age / p.life), R = p.r * grow * dry * k;
-  const pt = i => { const a = i / PUDDLE_RIM * 6.283, w = 0.9 + 0.07 * Math.sin(a * 3 + seed + now * 1.3) + 0.04 * Math.sin(a * 5 - seed - now * 0.9); return [p.x + Math.cos(a) * R * w, p.y + Math.sin(a) * R * w]; };
-  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-  // a SMOOTH rim: a curve through the midpoints, each rim point its control
-  let prev = pt(0), m = mid(pt(PUDDLE_RIM - 1), prev);
-  ctx.beginPath(); ctx.moveTo(m[0], m[1]);
-  for (let i = 1; i <= PUDDLE_RIM; i++) { const q = pt(i); m = mid(prev, q); ctx.quadraticCurveTo(prev[0], prev[1], m[0], m[1]); prev = q; }
-  ctx.closePath();
-}
 // ...and DRAWN within a budget: past POOL_LOD pools a pool is a plain circle (no wobbling rim, no sheen) and the bubbles
 // are shared out so all of them together stay near POOL_LOD x PUDDLE_BUBBLES
 const POOL_LOD = 24;
 function drawPools(t, now) {
-  const n = (t.puddles || []).length, many = q3d() || n > POOL_LOD; // 3D: always the plain circle - the board is drawn into a texture and warped, the rim's wobble barely shows and its fills cost (owner, 2026-10-12: pool perf in 3D)
+  // (always the plain circle: the board is drawn into a texture and warped - the old wobbling 2D rim is gone, 2026-10-18) // 3D: always the plain circle - the board is drawn into a texture and warped, the rim's wobble barely shows and its fills cost (owner, 2026-10-12: pool perf in 3D)
   // a PILE of pools reads as one (owner, 2026-10-14: "late game ACD has too much effects visually" - a Contagion's 100+
   // see-through pools stacked 20 deep into one bright green wash): each is drawn at 1 / the pools over its centre
   const pools = t.puddles || [], deep = poolDepth(pools);
   pools.forEach((p, i) => {
     const crowd = 1 / deep[i], fade = Math.min(1, (1 - p.age / p.life) * puddleGlow(p)) * crowd, seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
     // a pool a KILL left (Contagion's spread) is a DASHED ring, no body; the jets' own drips filled: the two read apart (owner, 2026-10-14)
-    if (many) { ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.9 * (0.8 + 0.2 * (1 - p.age / p.life)), 0, 6.283); if (!p.spread) { ctx.globalAlpha = 0.14 * fade; ctx.fill(); } ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * fade / Math.sqrt(crowd); ctx.stroke(); return; } // (a crowd's rims fade only by the root of it: the rims tell one pool from the next)
-    puddleBlob(p, now, 1, seed); if (!p.spread) { ctx.globalAlpha = 0.14 * fade; ctx.fill(); } ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * fade; ctx.stroke();
-    if (!p.spread) { puddleBlob(p, now, 0.5, seed * 7); ctx.globalAlpha = 0.12 * fade; ctx.fill(); }
+    { ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.9 * (0.8 + 0.2 * (1 - p.age / p.life)), 0, 6.283); if (!p.spread) { ctx.globalAlpha = 0.14 * fade; ctx.fill(); } ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * fade / Math.sqrt(crowd); ctx.stroke(); return; } // (a crowd's rims fade only by the root of it: the rims tell one pool from the next)
   });
   ctx.setLineDash([]);
 }
@@ -365,7 +349,7 @@ function drawPuddles(t) {
   const now = performance.now() / 1000;
   ctx.strokeStyle = ctx.fillStyle = COL.tacd; ctx.lineWidth = 1.2;
   drawPools(t, now);
-  const n = (t.puddles || []).length, per = Math.min(q3d() ? 2 : PUDDLE_BUBBLES, n > POOL_LOD ? POOL_LOD * PUDDLE_BUBBLES / n : PUDDLE_BUBBLES); // bubbles a pool, on average (3D: 2 at most)
+  const n = (t.puddles || []).length, per = Math.min(2, n > POOL_LOD ? POOL_LOD * PUDDLE_BUBBLES / n : PUDDLE_BUBBLES); // bubbles a pool, on average (3D: 2 at most)
   (t.puddles || []).forEach((p, j) => {
     const I = puddleGlow(p), fade = Math.min(1, (1 - p.age / p.life) * I), seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
     ctx.lineWidth = 1.2 * I;

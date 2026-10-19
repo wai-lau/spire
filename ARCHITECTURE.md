@@ -493,19 +493,17 @@ with a chooser open 1-4 pick the first four of its cards instead (the build choo
 
 ## 8. Rendering, audio, performance
 
-### 8.1 Views and quality (pillar 7)
+### 8.1 The view (pillar 7)
 
-A three-stop slider (`spire.quality`): **low / high / 3D**, 3D the default.
+**3D only** (`aspira-warp.js`): the game as a **flat board under a perspective camera** on a WebGL canvas; the 2D canvas `#asp-cv`
+draws the board's texture and still takes every pointer event. Towers and the core are **hexagonal prisms** (taller with level),
+enemies **real dice** rolling nose-forward (`aspira-solids.js`), shields lines on the floor, text flat; everything below the floor
+fades (`aspira-fog.js`); the light comes from the core; taps map back through `unwarp`. The low / high / 2D looks went on
+2026-10-16 and the flat 2D picture kept for a browser with no WebGL on 2026-10-18 (owner: "delete all the visual code for 2d") -
+such a browser gets a notice (`noWebGl`, `aspira-ui.js`). `q3d()` survives as a constant `true`.
 
-| Stop | Draws |
-|---|---|
-| high | the 2D picture |
-| low | half resolution, no `shadowBlur`, decoration skipped at its draw sites (`lowQ`); a new pure-decoration draw site checks `lowQ` |
-| 3D (`aspira-warp.js`) | the same game as a **flat board under a perspective camera** on a WebGL canvas; the 2D canvas still takes every pointer event. Towers and the core are **hexagonal prisms** (taller with level), enemies **real dice** rolling nose-forward (`aspira-solids.js`), shields lines on the floor, text flat; everything below the floor fades (`aspira-fog.js`); the light comes from the core; taps map back through `unwarp` |
-
-Adaptation: while no quality is pinned a slow machine **steps down** 3D -> high -> low; the
-3D **far-detail radius** shrinks on slow frames. **Never lower resolution or reallocate the
-big canvases during play** (§11).
+Adaptation: the **far-detail radius** shrinks on slow frames and the resolution steps to 1.25 (`stepDetail`, `RES_CAP_3D`).
+**Never reallocate the big canvases during play** (§11).
 
 ### 8.2 The 3D pipeline
 
@@ -563,7 +561,7 @@ be in the game's way.
 
 | Store | Holds |
 |---|---|
-| localStorage | `aspira.best` `{score, wave, ascended}`, `spire.quality` / `qpick` / `autowait` / `automove`, `aspira.mute` / `vol` |
+| localStorage | `aspira.best` `{score, wave, ascended}`, `spire.autowait` / `automove`, `aspira.mute` / `vol` |
 | IndexedDB (`aspira-autosave.js`) | the whole `G` as each wave starts, cleared when a game ends; on load **resume wave N** or **new game** (a resumed run may still sign TOP PLAYERS); **everything in `G` must be structured-cloneable** |
 | server | nothing beyond §9.1-9.2; no accounts |
 
@@ -588,7 +586,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
 | towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (ATC), `desc`, `capstone` (index 6 on every table), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
-| draw (2D) | `quality` (`lowQ`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
+| draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
 | draw (3D) | `warp`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
 | UI and tail | `chooser`, `wavelist`, `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave` |
 
@@ -623,7 +621,7 @@ handler's guest prefixes, the router tier); `/spire` is in all three.
 |---|---|
 | `tests/test_spire_board.py`, `test_spire_perflog.py` | stdlib units |
 | `tests/test_spire_sliders_browser.py` | WebKit, exec-fn's fixtures: the stepper rules and the card grids at 1280x800 and 430x932 |
-| `node scripts/spire-smoke/smoke.mjs` | every script the template loads, in order, in one node vm over a fake DOM (`dom.mjs`) whose canvas RECORDS calls; drives the real frame loop and checks things **draw**: boot, every quality, each kind built, a fought wave, the sky, towers keeping their colours, a capstone (a second refused), Temporal Drive, two-finger moves, a fling, lives left, game over / a loss past 10 / a win and the Ascendants, play again. exec-fn's pre-commit runs it when a game file is staged; a new browser global needs a `dom.mjs` stub |
+| `node scripts/spire-smoke/smoke.mjs` | every script the template loads, in order, in one node vm over a fake DOM (`dom.mjs`) whose canvas RECORDS calls; drives the real 3D frame loop over a stand-in WebGL (`fakeGl`) and checks things **draw** on every canvas: boot, 3D up, each kind built, a fought wave, the sky, towers keeping their colours, a capstone (a second refused), Temporal Drive, two-finger moves, a fling, lives left, game over / a loss past 10 / a win and the Ascendants, play again. exec-fn's pre-commit runs it when a game file is staged; a new browser global needs a `dom.mjs` stub |
 
 ### 10.4 Simulator and balance tooling (`scripts/aspira-sim/`, README there)
 
@@ -671,7 +669,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | code | cooldowns count WAVES; durations are game s; timers that must not follow the speed use real time (`stepFloats`, flings, the sky) |
 | view | **3D is a view, never a rule**: no game logic reads a projected position; taps go back through `unwarp` / `pickAt` |
 | view | **never lower resolution or resize the big 3D canvases during play** (380-540 ms hitches, iPhone crashes); only the far-detail radius adapts; keep text stamps on budget, zero evicted canvases |
-| view | every density read through `canvasDpr()`; new pure-decoration draws check `lowQ` |
+| view | every density read through `canvasDpr()` |
 | view | Safari has no canvas `filter`; a NaN gradient aborts the overlay's frame: skip tracers with non-finite ends |
 | view | no `backdrop-filter` / blend layer over animated content (a full-canvas `difference` makes the GPU copy the canvas) |
 | view | the ACD pool and goo loops are bucketed (`POOL_CELL`) and capped; never all-enemies x all-pools |

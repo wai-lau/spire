@@ -9,7 +9,7 @@
 // drawCoreFx goes under the towers (beams), drawCoreHud over the enemies.
 // sized for a PHONE (the board shows at ~0.54 css px per unit there): text
 // 26 units reads as ~14px
-const READY_POP = 15, RELAY_TEXT = 26;
+const READY_POP = 15;
 const DIAL = [ // the owned powers' buttons (aspira-powers.js) read this; colours are palette keys
   { id: "temporal", label: "TEMPORAL DRIVE", color: "white", /* white (owner, 2026-10-08; was cyan) */ mid: Math.PI, tab: () => TEMPORAL, active: c => c.freezeUntil - c.clock }, // the left half
   { id: "relay", label: "ORBITAL RELAY", color: "white", mid: 0, tab: () => RELAY, active: () => relayLeft() }, // the right half
@@ -43,8 +43,6 @@ function drawCoreHud() {
   if (!G.core) return;
   const c = G.core, now = performance.now();
   ctx.lineCap = "round";
-  if (!q3d()) drawTimeStop(c); // (3D: on the floor, in the board's picture - owner, 2026-10-09: "temporal drive should be on the plane in 3d")
-  if (!q3d()) drawRelayHalos(true);
   ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 }
 // a Relayed tower's HALO (its base hexagon); label: with "RELAY x3 . 5s" over it. In 3D it lies ON THE FLOOR, in the board's picture,
@@ -52,23 +50,6 @@ function drawCoreHud() {
 // a step OUTSIDE the footprint (owner, 2026-10-16: "the ring is invisible?" - on the base itself the prism standing on it hid it
 // all): a hexagon round the tower's base on the floor, the tower still hiding the part behind it
 const RELAY_HEX_OUT = 1.3, RELAY_HEX_OUT2 = 1.6; // OUT2: the thinner second ring (owner, 2026-10-16)
-function drawRelayHalos(label) {
-  for (const t of G.towers) {
-    const left = (t.relayUntil || 0) - (G.clock || 0);
-    if (left <= 0) continue;
-    ctx.strokeStyle = COL.white; glow(COL.white, 20 * blinkWave()); ctx.lineWidth = 6; // its GLOW fades in and out (owner, 2026-10-16)
-    ctx.globalAlpha = 1; // 100% OPAQUE (owner, 2026-10-16; was the 0.5-1 blink)
-    // the tower's own FOOTPRINT, not a circle (owner, 2026-10-16: "instead of circle, do that effect on the hexagon, defined by
-    // the intersection between the tower and the floor, make sure that the part of the hexagon that is behind the tower is
-    // occluded"): the 3D prism's base (aspira-warp.js solids), on the floor, so the prism standing on it hides its far edges
-    const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
-    ctx.beginPath(); c0.pts.forEach((q, i) => { const px = x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT, py = y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.closePath(); ctx.stroke();
-    ctx.shadowBlur = 0; ctx.lineWidth = 2; ctx.beginPath(); c0.pts.forEach((q, i) => { const px = x + (q.x - c0.x) * TOWER_K * RELAY_HEX_OUT2, py = y + (q.y - c0.y) * TOWER_K * RELAY_HEX_OUT2; if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.closePath(); ctx.stroke(); // the thinner second ring
-    ctx.globalAlpha = 1;
-    if (label) text("RELAY ×" + RELAY_MUL + " · " + Math.ceil(left) + "s", t.x, t.y - CELL_S * 2.4, RELAY_TEXT, "white", true, true);
-  }
-  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
-}
 // each pulse an EVANGELION AT FIELD (owner, 2026-10-08): nested WHITE OCTAGONS, the power's colour (owner: field and button both white; was orange, then cyan) sweeping out together,
 // the outer one brightest, a faint fill inside it, the whole field shimmering fast; pulses still come
 // every TEMPORAL_RING_EVERY s for the whole freeze (owner, same day; it was one plain cyan ring)

@@ -56,7 +56,6 @@ function drawStarTrail(e, size) {
   // most of a boss frame - owner, 2026-10-11: "greatly improve boss perf, specifically for the devil boss")
   ctx.globalAlpha = 1;
 }
-const BOSS_HALO = { k: 1.45, a: 0.3 };
 // how FROZEN an enemy shows, 0..1: its slow (e.slowF, the share of its speed lost - effSpeed) over FROST_FULL, the slow
 // that shows full cyan - so a light chill is a hint of frost and a deep freeze is solid (2D outline; 3D tint, aspira-solids.js)
 const FROST_FULL = 0.6;
@@ -75,16 +74,7 @@ function drawEnemy(e, solid) {
   const d = ENEMIES[e.type], f = Math.max(0, e.hp / e.max), size = d.size * hpShrink(e, f) * (e.sizeMul || 1) * (DRAW_SIZE[e.type] || 1);
   if (TRAIL[e.type] && !(solid && farFx(e))) { // 3D: no tracers in the far ring
     drawStarTrail(e, size);
-    // the body is see-through, so blank its shape first: the tracer must not
-    // show through the enemy it trails (owner)
-    if (!solid) { poly(e.x, e.y, size, d.sides, e.rot, d.pointy); ctx.fillStyle = COL.bg; ctx.globalAlpha = 1; ctx.fill(); }
   }
-  // a boss GLOWS in its colour (owner); the tracer is the boss type's own - the glow a faint wider copy of its body, not
-  // a shadowBlur (BOSS_HALO; perf, 2026-10-11)
-  if (e.arcana && !solid) { poly(e.x, e.y, size * BOSS_HALO.k, d.sides, e.rot, d.pointy); ctx.fillStyle = COL[d.color]; ctx.globalAlpha = BOSS_HALO.a * (0.15 + 0.6 * f); ctx.fill(); }
-  poly(e.x, e.y, size, d.sides, e.rot, d.pointy);
-  if (!solid) { ctx.fillStyle = COL[d.color]; ctx.globalAlpha = 0.15 + 0.6 * f; ctx.fill(); }
-  if (e.arcana && !solid) drawBossEye(e, size);
   // outlines brighten as the enemy closes on the core (faint beyond the rim,
   // full at the core), still dimmed by lost HP
   const near = 1 - Math.min(1, Math.max(0, (Math.hypot(e.x - CX, e.y - CY) - CORE_R) / (RIM_R - CORE_R)));
@@ -92,19 +82,10 @@ function drawEnemy(e, solid) {
   // armor = a thick outline
   // Permafrost (a slow that never ends) draws the freeze outline thicker (owner)
   const perma = e.slowT === Infinity;
-  if (!solid) {
-    ctx.strokeStyle = COL[ENEMIES[e.aug || e.type].color]; ctx.lineWidth = (e.armor ? 6.5 : 3) + (perma ? 3 : 0); ctx.stroke(); // an augmented enemy's outline in its augment's colour (owner, 2026-10-13)
-    const k = frostK(e); // the FROST outline as strong as the slow (owner, 2026-10-11: "slow correlated to opacity of frost indicator")
-    if (k > 0) { const a = ctx.globalAlpha; ctx.strokeStyle = COL.tfrz; ctx.globalAlpha = a * k; ctx.stroke(); ctx.globalAlpha = a; }
-    const w = rimeK(e); // RIME whitens the outline: none at no rime, all white at full (owner, 2026-10-12)
-    if (w > 0) { const a = ctx.globalAlpha; ctx.strokeStyle = COL.white; ctx.globalAlpha = a * w; ctx.stroke(); ctx.globalAlpha = a; }
-    dieFacets(e, size);
-  }
   // shield = SEGMENTS (owner): one per charge, on rings of its own shape
   if (e.shield > 0 || e.shSegs) {
     e.shSegs = syncSegs(e.shSegs || [], shieldShown(e, d.sides), d.sides, undefined, true);
-    ctx.lineWidth = 1.4;
-    if (!solid) drawSegs(e.x, e.y, e.shSegs, d.sides, e.rot, shieldBase(e, size), 2.5, undefined, true); // (3D: walls round the die, aspira-walls.js) // layers tight (owner: much thinner gap; was 5)
+    // (drawn as lines on the floor round the die: aspira-walls.js)
   }
   ctx.globalAlpha = 1;
   if (e.charged || e.charge) { // ARC's Static charge: a border in ARC's colour just outside the outline (owner) - ONE PER CHARGE held (Capacitance, 2026-10-08)
@@ -123,24 +104,6 @@ function drawEnemy(e, solid) {
   drawStatus(e, d, size, solid);
 }
 
-// the DIE's facet lines inside the outline (owner, 2026-10-09: each enemy a die seen from above, from a
-// corner): the corners `poly` drew, joined as that die's edges
-function dieFacets(e, size) {
-  const d = ENEMIES[e.type], n = d.pointy ? d.sides * 2 : d.sides, lw = ctx.lineWidth;
-  const at = (i, k = 1) => { const a = e.rot + i * Math.PI * 2 / n; return [e.x + Math.cos(a) * size * k, e.y + Math.sin(a) * size * k]; };
-  ctx.beginPath();
-  if (e.type === "bonus") { // d20: a pentagon round the top corner, each of its corners joined to three of the rim's
-    const ip = i => { const a = e.rot + i * Math.PI * 2 / 5; return [e.x + Math.cos(a) * size * 0.5, e.y + Math.sin(a) * size * 0.5]; };
-    for (let i = 0; i < 5; i++) {
-      ctx.moveTo(e.x, e.y); ctx.lineTo(...ip(i)); ctx.lineTo(...ip(i + 1));
-      for (const j of [-1, 0, 1]) { ctx.moveTo(...ip(i)); ctx.lineTo(...at(2 * i + j)); }
-    }
-  } else { // d4 / d8: every corner to the middle; d6: every other one (the cube's Y); d10: its five outer corners
-    const step = e.type === "swarm" || d.pointy ? 2 : 1;
-    for (let i = 0; i < n; i += step) { ctx.moveTo(e.x, e.y); ctx.lineTo(...at(i)); }
-  }
-  ctx.lineWidth = 1.2; ctx.stroke(); ctx.lineWidth = lw;
-}
 
 // what the upgrades are doing to an enemy, drawn on it (owner, 2026-10-02):
 //   Frostbite  a frost TINT over the body (biteT)
@@ -165,18 +128,7 @@ function drawStatus(e, d, size, solid) {
     ctx.strokeStyle = COL.cyan; ctx.globalAlpha = 0.9; ctx.lineWidth = 2.5; ctx.stroke();
   }
   // BLEED (SOL's Impale): a pink outline, for good (owner)
-  // BREACH (SOL's Pierce; owner): thin spokes in SOL's colour sticking out of
-  // the shape, one per stack (BREACH_SPOKES at most drawn), each at a RANDOM
-  // angle (owner) fixed for that stack (a hash of the enemy and the stack), turning with it
-  if (e.breachN > 0 && !solid) { // (3D: one upright spike through the die, warpSolid)
-    const n = Math.min(BREACH_SPOKES, Math.max(1, e.breachN || 1));
-    ctx.beginPath();
-    for (let i = 0; i < n; i++) {
-      const a = e.rot + fixedRand(e.id * 31 + i, 5) * 6.283, c = Math.cos(a), s = Math.sin(a);
-      ctx.moveTo(e.x + c * size * 0.8, e.y + s * size * 0.8); ctx.lineTo(e.x + c * (size + 9), e.y + s * (size + 9));
-    }
-    ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9; ctx.lineWidth = 1.2; ctx.stroke();
-  }
+  // (BREACH: one upright spike through the die - warpSolid)
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
     ctx.setLineDash([2, 4]); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
@@ -184,23 +136,6 @@ function drawStatus(e, d, size, solid) {
   ctx.globalAlpha = 1;
 }
 
-// a boss is ringed by a static EYE (owner): an OCTAGON round it, flat sides
-// up and down, with its left and right sides left open, so the top and
-// bottom halves read as lids; in the boss's colour (red once inverted); it
-// never turns with the boss
-const EYE_R = 1.9;
-function drawBossEye(e, size) {
-  const r = size * EYE_R, pts = [];
-  for (let i = 0; i < 8; i++) { const a = Math.PI / 8 + i * Math.PI / 4; pts.push([e.x + Math.cos(a) * r, e.y + Math.sin(a) * r]); }
-  ctx.strokeStyle = COL[ENEMIES[e.type].color]; ctx.globalAlpha = 0.95; ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.lineJoin = "round";
-  // vertices 0..7 from just below the right side, clockwise; sides 7-0 (right) and 3-4 (left) stay open
-  for (const lid of [[0, 1, 2, 3], [4, 5, 6, 7]]) {
-    ctx.beginPath(); ctx.moveTo(...pts[lid[0]]);
-    for (const k of lid.slice(1)) ctx.lineTo(...pts[k]);
-    ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-}
 
 
 // ---------- SEGMENTED shields (owner, 2026-10-04) ----------
@@ -278,46 +213,6 @@ function shieldPoly(x, y, r, k, n, rot) {
 const shieldPulse = () => 1 + 0.04 * Math.sin(performance.now() / 300); // the core's own breath
 // ring r (0 = inner) has radius base + gap * (r + 1); slot i is side i % sides of ring floor(i / sides)
 const SHIELD_RING_FADE = 0.7, SHIELD_RING_MIN = 0.2;
-function drawSegs(x, y, segs, sides, rot, base, gap, flashes, lastRing) {
-  const k = shieldPulse();
-  const side = i => {
-    if (lastRing) { const sp = shieldSpoke(x, y, i, sides, rot, base, gap, k, segs); if (sp) { ctx.moveTo(sp[0], sp[1]); ctx.lineTo(sp[2], sp[3]); return; } }
-    const { r: ring, pos } = ringOf(i, sides, lastRing ? SHIELD_IN_OFF : 0), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
-    const a0 = rot + s * Math.PI * 2 / sides, a1 = rot + (s + 1) * Math.PI * 2 / sides;
-    const x0 = x + Math.cos(a0) * r, y0 = y + Math.sin(a0) * r, x1 = x + Math.cos(a1) * r, y1 = y + Math.sin(a1) * r;
-    // piece j of the side's `ring` pieces
-    ctx.moveTo(x0 + (x1 - x0) * j / ring, y0 + (y1 - y0) * j / ring);
-    ctx.lineTo(x0 + (x1 - x0) * (j + 1) / ring, y0 + (y1 - y0) * (j + 1) / ring);
-  };
-  // each ring OUT is fainter (owner, 2026-10-08: "shields lose opacity as you get more layers out"):
-  // ring r at SHIELD_RING_FADE^(r-1) of the alpha it was drawn with, never under SHIELD_RING_MIN
-  const a0 = ctx.globalAlpha, byRing = new Map();
-  segs.forEach((on, i) => { if (on) { const r = ringOf(i, sides, lastRing ? SHIELD_IN_OFF : 0).r; (byRing.get(r) || byRing.set(r, []).get(r)).push(i); } });
-  for (const [r, ids] of byRing) {
-    ctx.globalAlpha = a0 * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (r - 1));
-    if (lastRing && r === 1) { // an ENEMY's LAST layer: THICKER, and as it thins a smaller REGULAR polygon, never a gap (shieldPoly)
-      const lw = ctx.lineWidth; ctx.lineWidth = lw * SHIELD_LAST_W; ctx.beginPath();
-      shieldPoly(x, y, (base + gap) * k, ids.length + SHIELD_IN_OFF, sides, rot).forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
-      ctx.closePath(); ctx.stroke(); ctx.lineWidth = lw; continue;
-    }
-    // an enemy's SPOKES are as thick as its last-layer outline (owner, 2026-10-18: "the spokes should be as thick as the outlines")
-    const lw = ctx.lineWidth; if (lastRing) ctx.lineWidth = lw * SHIELD_LAST_W;
-    ctx.beginPath(); ids.forEach(side); ctx.stroke(); ctx.lineWidth = lw;
-  }
-  ctx.globalAlpha = a0;
-  if (!flashes || !flashes.length) return;
-  // a LOST segment flashes RED and thick, fading over SEG_FLASH_T (owner). The
-  // red is the BOSS red - Hack cyan inverted, as a boss icon shows it - since
-  // Ember read as orange (owner: "should flash red")
-  const now = performance.now() / 1000, keep = flashes.filter(f => now - f.t < SEG_FLASH_T);
-  flashes.length = 0; flashes.push(...keep);
-  const lw = ctx.lineWidth, ss = ctx.strokeStyle;
-  ctx.strokeStyle = flashRed(); ctx.lineWidth = SEG_FLASH_W;
-  // full strength for the first half, then fading out
-  for (const f of keep) { ctx.globalAlpha = Math.min(1, 2 * (1 - (now - f.t) / SEG_FLASH_T)); ctx.beginPath(); side(f.i); ctx.stroke(); }
-  ctx.globalAlpha = 1; ctx.lineWidth = lw; ctx.strokeStyle = ss;
-}
-const SEG_FLASH_T = 0.8, SEG_FLASH_W = 6; // longer and bolder (owner: make it read as a red flash)
 // a resolved colour, INVERTED (alpha kept): the boss red is Hack cyan inverted,
 // and the boss sky's overlay draws towers in inverted colours (aspira-bosses.js)
 const invMemo = new Map(); // (called per solid per frame on a boss sky - 3D skyOwn)
@@ -332,5 +227,3 @@ function invertRaw(c) {
   const rgb = m.slice(0, 3).map(v => 255 - v).join(",");
   return m.length > 3 ? "rgba(" + rgb + "," + m[3] + ")" : "rgb(" + rgb + ")";
 }
-let flashRedCss = null;
-const flashRed = () => (flashRedCss ||= invertColor(COL.cyan));

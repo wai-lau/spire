@@ -3,7 +3,7 @@
 // Loads EVERY script the page loads, in the template's own order, into one node vm with a fake DOM and a
 // RECORDING canvas, then drives the real frame loop through the basic features and checks each one actually
 // DRAWS - not just that nothing threw. Born of a comment that swallowed render()'s else branch: 2D drew nothing
-// and 3D lost its ranges, beams and movement arrows, with no error anywhere.
+// and 3D lost its ranges, beams and movement arrows, with no error anywhere. 3D only since 2026-10-18 (dom.mjs fakeGl).
 //   node scripts/spire-smoke/smoke.mjs        (exit 1 on any failure; pre-commit runs it when /spire is staged)
 import fs from "node:fs";
 import path from "node:path";
@@ -26,12 +26,11 @@ const results = [];
 function check(name, fn) {
   try { const why = fn(); results.push([name, why ? "FAIL: " + why : "ok"]); } catch (e) { results.push([name, "FAIL: " + (e.stack || e).toString().split("\n").slice(0, 3).join(" | ")]); }
 }
-// draw calls on the main 2D canvas during fn
+// draw calls on EVERY canvas during fn (3D: the board texture, the moving layer, #asp-ent)
 function drawn(env, fn) {
-  const rec = env.dom.canvas2d.rec;
-  rec.n = 0; rec.ops = {};
+  for (const r of env.dom.recs) { r.n = 0; r.ops = {}; }
   fn();
-  return rec;
+  return { n: env.dom.recs.reduce((a, r) => a + r.n, 0) };
 }
 // how often each named game function ran during fn (they are vm globals, so they can be wrapped)
 function calls(env, names, fn) {
@@ -50,9 +49,9 @@ const env = boot();
 const { run } = env;
 check("boots: every script loads, the frame loop is queued", () => (env.dom.rafQueue() ? "" : "no requestAnimationFrame"));
 check("frame loop runs 60 frames", () => { frames(env, 60); });
-check("no WebGL: the frame loop falls back to the flat board once, and it draws (rings, lanes, core)", () => {
+check("3D: WebGL comes up and a frame draws (the board, the moving layer, the entities)", () => {
   frames(env, 2);
-  if (run("q3d()")) return "still in 3D with no WebGL context";
+  if (!run("typeof warp !== 'undefined' && !!warp.gl")) return "no WebGL context (warpInit failed)";
   const r = drawn(env, () => frames(env, 1));
   return r.n > 50 ? "" : "only " + r.n + " canvas calls in a frame";
 });
@@ -165,8 +164,9 @@ check("a flung tower bounces off its leash", () => {
 });
 check("a lost life: 'X lives left' replaces the interest line", () => {
   run(`G = newGame(); G.lives = 7; livesLost();`);
-  const texts = env.dom.canvas2d.rec.texts; texts.length = 0;
+  for (const r of env.dom.recs) r.texts.length = 0;
   frames(env, 1);
+  const texts = env.dom.recs.flatMap(r => r.texts);
   return texts.some(t => /^7 lives left$/.test(t)) ? "" : "no '7 lives left' among " + texts.length + " texts";
 });
 

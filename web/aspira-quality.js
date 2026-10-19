@@ -1,16 +1,14 @@
-// /spire - DISPLAY MODE (2026-10-16, owner: "remove the other quality levels. optimize only 3D"): the game is the 3D view.
-// qMode is "3d", or "flat" for a browser that cannot make a WebGL context (aspira-ui.js frame switches to it once, so such a
-// device sees the board drawn flat instead of nothing). The 2D drawing paths stay for that fallback and for the smoke test
-// (no WebGL there); the slider, the High and Low looks and the automatic step-down between them are gone. Loaded just BEFORE aspira-draw.js.
-let qMode = "3d";
-const q3d = () => qMode === "3d";
-const updateQuality = () => $("asp").classList.toggle("asp-3d", q3d());
-// no WebGL: the flat picture (called once by the frame loop when warpInit() finds no context)
-function flatFallback() {
-  qMode = "flat";
-  if (typeof towerSprites !== "undefined") towerSprites.clear();
-  if (typeof resize === "function") { resize(); if (typeof fitK !== "undefined") fitK = cam.fit; }
-  updateQuality();
+// /spire - DISPLAY MODE: the game is the 3D view ONLY (2026-10-16, owner: "remove the other quality levels. optimize only 3D"; the
+// flat 2D picture, kept for a browser with no WebGL, deleted 2026-10-18 - owner: "delete all the visual code for 2d, we don't need to
+// keep updating it"). q3d() stays (always true) for the code that still asks; a browser with no WebGL gets a notice (noWebGl,
+// aspira-ui.js). The smoke test runs the 3D frame over a stand-in WebGL (scripts/spire-smoke/dom.mjs). Loaded just BEFORE aspira-draw.js.
+const q3d = () => true;
+const updateQuality = () => $("asp").classList.add("asp-3d");
+// NO WEBGL: called by the frame loop (aspira-ui.js) when warpInit() finds no context - say so over the board, once
+function noWebGl() {
+  if (noWebGl.done) return; noWebGl.done = true;
+  const m = document.createElement("div"); m.className = "asp-nogl"; m.textContent = "THE SPIRE needs WebGL, which this browser could not start.";
+  $("asp").append(m);
 }
 // DETAIL BY DISTANCE (owner, 2026-10-12: "details by distance yes"): in 3D, past DETAIL_FAR_R from the core - the far half of
 // the board, where little is decided - no tracers, no hit flashes, no damage numbers, and swarmers draw flat (CPU per frame

@@ -57,7 +57,7 @@ function devXY(ev) {
 // keep the core (the chart's centre) somewhere on the canvas
 function clampView() {
   const cx = cam.ox + CX * cam.k, cy = cam.oy + CY * cam.k;
-  const w = q3d() ? warpScreenFull().w : cv.width, h = q3d() ? warpScreenFull().h : cv.height; // (3D: the canvas is the picture's square)
+  const { w, h } = warpScreenFull(); // (the canvas is the picture's square)
   cam.ox += Math.max(0, Math.min(w, cx)) - cx;
   cam.oy += Math.max(0, Math.min(h, cy)) - cy;
 }
@@ -193,13 +193,6 @@ function drawPhoneWalls(c, b, a, px) { // px: one screen px in c's units
     c.stroke();
   });
   c.restore();
-}
-function drawPhoneFrame() { // 2D, on the board (render); 3D draws it on the view instead (drawPhoneFrame3d)
-  if (phoneOn3d()) return;
-  const k = cam.k, px = canvasDpr() / k, b = phoneBox(), near = CELL_S * TOWER_K + MOVE_EDGE + PHONE_NEAR;
-  const S = { x0: -cam.ox / k, y0: -cam.oy / k, x1: (cv.width - cam.ox) / k, y1: (cv.height - cam.oy) / k }; // the screen, in world units
-  const a = phoneFrameAlpha(phoneWalls(b, S, t => t, near, 6 * px));
-  if (a) drawPhoneWalls(ctx, b, a, px);
 }
 function drawPhoneFrame3d() { // in warpEntities, under the texture camera, before the boss sky's flip: over the view, square to the screen
   const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes(), b = phoneRect3d();

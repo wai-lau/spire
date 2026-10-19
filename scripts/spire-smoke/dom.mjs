@@ -1,10 +1,36 @@
 // The fake browser for smoke.mjs: just enough DOM for every /spire script to load and run, and a 2D canvas
 // context that RECORDS what is drawn (rec.n calls, rec.ops by name, rec.texts) instead of drawing it.
-// No WebGL (3D must fall back), no audio, a fetch that answers empty.
+// A STAND-IN WebGL context (fakeGl: every call answers something plausible, nothing draws) - the game is 3D only since
+// 2026-10-18 (owner: "delete all the visual code for 2d"), so the smoke drives the 3D frame; no audio, a fetch that answers empty.
+
+// a WebGL(2) context that accepts everything: constants are stable numbers, create* hand back objects, the status queries say
+// yes - enough for warpInit / warpDraw / fxGlInit to run their real code paths over it
+function fakeGl(canvas) {
+  const consts = new Map(), num = k => (consts.has(k) || consts.set(k, 0x8000 + consts.size), consts.get(k));
+  const special = {
+    getParameter: () => 4096, getShaderParameter: () => true, getProgramParameter: () => true, getShaderInfoLog: () => "", getProgramInfoLog: () => "",
+    getError: () => 0, isContextLost: () => false, getContextAttributes: () => ({ alpha: true, premultipliedAlpha: true }),
+    checkFramebufferStatus: () => num("FRAMEBUFFER_COMPLETE"), getSupportedExtensions: () => ["ANGLE_instanced_arrays", "OES_vertex_array_object"],
+    getAttribLocation: () => 0, getUniformLocation: () => ({}),
+  };
+  const gl = new Proxy({ canvas, drawingBufferWidth: canvas.width, drawingBufferHeight: canvas.height }, {
+    get(t, k) {
+      if (k in t) return t[k];
+      if (typeof k !== "string") return undefined;
+      if (k in special) return special[k];
+      if (/^[A-Z0-9_]+$/.test(k)) return num(k);
+      if (k === "getExtension") return () => gl;
+      return () => ({});
+    },
+    set(t, k, v) { t[k] = v; return true; },
+  });
+  return gl;
+}
 
 // a 2D context that counts every call; state (fillStyle, lineWidth...) just sticks
+const ALL_RECS = []; // every recording context made: the 3D frame draws on several canvases (#asp-cv's board texture, the moving layer, #asp-ent)
 function recordingCtx(canvas) {
-  const rec = { n: 0, ops: {}, texts: [] };
+  const rec = { n: 0, ops: {}, texts: [] }; ALL_RECS.push(rec);
   const state = { canvas, globalAlpha: 1, globalCompositeOperation: "source-over", lineWidth: 1, font: "10px sans", shadowBlur: 0 };
   const special = {
     measureText: s => ({ width: String(s).length * 7, actualBoundingBoxAscent: 7, actualBoundingBoxDescent: 2 }),
@@ -22,7 +48,7 @@ function recordingCtx(canvas) {
       if (k === "rec") return rec;
       if (k in special) return (...a) => { rec.n++; return special[k](...a); };
       if (k in t) return t[k];
-      if (typeof k !== "string") return undefined;
+      if (typeof k !== "string" || k.startsWith("_")) return undefined; // (an expando the game hangs on a context, e.g. glCtx's __glc)
       return (...a) => {
         rec.n++; rec.ops[k] = (rec.ops[k] || 0) + 1;
         if (k === "fillText" || k === "strokeText") rec.texts.push(String(a[0]));
@@ -56,7 +82,8 @@ class FakeEl {
   get rows() { return this.children; }
   get cells() { return this.children; }
   getContext(kind) {
-    if (kind !== "2d") return null; // no WebGL: 3D must fall back
+    if (kind === "webgl" || kind === "webgl2" || kind === "experimental-webgl") return (this._gl ||= fakeGl(this));
+    if (kind !== "2d") return null;
     return (this._ctx ||= recordingCtx(this));
   }
   getBoundingClientRect() { return { x: 0, y: 0, left: 0, top: 0, width: this.clientWidth, height: this.clientHeight, right: this.clientWidth, bottom: this.clientHeight }; }
@@ -141,5 +168,6 @@ export function makeDom(template, store = {}) {
   dom.rafQueue = () => raf.length;
   dom.tick = dt => { now += dt; const q = raf; raf = []; for (const cb of q) cb(now); };
   Object.defineProperty(dom, "canvas2d", { get: () => dom.byId("asp-cv").getContext("2d") });
+  dom.recs = ALL_RECS; // (smoke.mjs sums them: drawn / texts)
   return dom;
 }

@@ -17,8 +17,8 @@ const cam = { k: 1, ox: 0, oy: 0, fit: 1 };
 // the canvas draws at most RES_CAP device pixels per CSS pixel (owner: "need
 // more perf"): a phone at 3x drew 3.4 million pixels a frame; 2x is 2.25x fewer
 // for a barely softer line. EVERY dpr use in the game reads canvasDpr().
-const RES_CAP = 2; let RES_CAP_3D = 2; // 3D: full until frames run slow, then down to 1.25 (stepDetail, aspira-quality.js)
-const canvasDpr = () => Math.min(window.devicePixelRatio || 1, q3d() ? RES_CAP_3D : RES_CAP); // (3D: RES_CAP_3D)
+let RES_CAP_3D = 2; // full until frames run slow, then down to 1.25 (stepDetail, aspira-quality.js)
+const canvasDpr = () => Math.min(window.devicePixelRatio || 1, RES_CAP_3D);
 function resize() {
   const r = cv.getBoundingClientRect(), dpr = canvasDpr();
   cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
@@ -130,43 +130,9 @@ function drawGraticuleLive() {
 // the lanes (strokes, labels, fades) are drawn by aspira-lanes.js
 
 function drawBoard() {
-  drawBoardLayers();
-  if (!q3d()) { drawCells(); if (!G.towers.length && !ui.build) drawSlotArrow(); } // slot outlines (3D: flat, warpEntities) (owner); before the first tower an arrow points at one (aspira-chooser.js)
+  drawBoardLayers(); // (the slots and the first-tower arrow: warpEntities)
 }
 
-// the core: a solid white hexagon (gently pulsing), lives in black on it -
-// drawn LAST, over everything else (owner)
-function drawCore() {
-  const pulse = 1 + 0.04 * Math.sin(performance.now() / 300);
-  // Fortifications: the core takes on the copied tower's colour, every ring of it (owner)
-  const cw = COL.white;
-  // a core power waits to be chosen: a slow white ring breathes around it, so it
-  // reads as something to click (owner: show the unlock)
-  // the core's LEVEL shows like a tower's (owner): a bold white ring outside
-  // it per level, LEVEL_GAP apart, under a glow that grows with the level
-  const lvl = Math.round(coreLvl() / CORE_TIERS); // one ring per power owned
-  // LIVES drawn like an enemy's shield (owner): SEGMENTS of the core's own hex,
-  // one per life, no number (aspira-enemies.js syncSegs / drawSegs)
-  G.lifeFlash = G.lifeFlash || [];
-  G.lifeSegs = syncSegs(G.lifeSegs || [], Math.max(0, G.lives), 6, G.lifeFlash);
-  ctx.strokeStyle = cw; ctx.lineWidth = 2.6; // thicker (owner; was 1.8)
-  drawSegs(CX, CY, G.lifeSegs, 6, Math.PI / 6, CORE_R, LIFE_GAP, G.lifeFlash); // a lost life flashes red
-  const out = LIFE_GAP * LIFE_RINGS / CORE_R; // the level rings sit outside the life rings
-  if (lvl) {
-    ctx.strokeStyle = cw; ctx.shadowColor = cw; ctx.shadowBlur = TOWER_GLOW[lvl] * cam.k; ctx.lineWidth = 3.5;
-    for (let r = 1; r <= lvl; r++) {
-      ctx.globalAlpha = 1 - 0.12 * r;
-      poly(CX, CY, CORE_R * (1 + out + LEVEL_GAP * r) * shieldPulse(), 6, Math.PI / 6, false); ctx.stroke(); // breathes with the life rings (owner)
-    }
-    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
-  }
-  if (corePicks() > 0) {
-    poly(CX, CY, CORE_R * (1 + out + LEVEL_GAP * (lvl + 1) + 0.08 * Math.sin(performance.now() / 400)), 6, Math.PI / 6, false);
-    ctx.strokeStyle = cw; ctx.globalAlpha = 0.6; ctx.lineWidth = 2.5; ctx.stroke(); ctx.globalAlpha = 1;
-  }
-  poly(CX, CY, CORE_R * pulse, 6, Math.PI / 6, false);
-  ctx.fillStyle = cw; ctx.globalAlpha = 1; ctx.fill();
-}
 const LIFE_RINGS = 5, LIFE_GAP = 3.75; // (5 before the 25% shrink) // room kept for 5 rings of life segments (20 lives fill 3 and a bit)
 
 function drawTower(t, ghost) {
@@ -421,32 +387,9 @@ function shakeOffset() {
   return [(Math.random() * 2 - 1) * a, (Math.random() * 2 - 1) * a];
 }
 
-// The BOSS SKY (owner, round 3, 2026-10-05: the overlay was still "very
-// laggy"): no blending or filters at all. With the sky full the frame is simply
-// DRAWN in inverted colours (withPalette); while it spreads or collapses, the
-// normal frame is drawn and then the inverted one again, CLIPPED to the circle
-// - two plain draws, nothing composited. Towers, their ranges and every beam
-// and effect they draw keep their own colours either way (skyKeep).
-function render() { // round 4 (2026-10-09, "way less laggy, 10x"): ONE draw, then the sky's circle flipped (skyFlip, aspira-bosses.js)
-  bossSkyStep(); // the sky's state: phase, radius, full (aspira-bosses.js)
-  const shake = shakeOffset();
-  // round 5 (2026-10-11, owner: "invert has huge cost"): the FULL sky is no pass at all - the frame drawn in the inverted
-  // palette (skyPal); only the spreading / collapsing circle is still flipped
-  // (3D: the bell's picture stays plain, the shader side turns it over - warpFlip)
-  if (skyPal() && !q3d()) withPalette(() => drawScene(shake, 0));
-  else { drawScene(shake, 0); skyFlip(shake); }
-}
-function drawScene([sx, sy], clipR) {
-  ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox + sx, cam.oy + sy);
-  ctx.save();
-  if (clipR) { ctx.beginPath(); ctx.arc(bossInv.x, bossInv.y, clipR, 0, 6.283); ctx.clip(); }
-  drawSceneBase(); drawSceneTop();
-  ctx.restore();
-}
 // the BOARD under everything - in 3D its own layer, redrawn only every WARP_STAT_MS (aspira-warplayers.js)
 function drawSceneBase() {
   ctx.fillStyle = COL.bg; ctx.globalAlpha = 1; ctx.fillRect(CX - 4000, CY - 4000, 8000, 8000);
-  if (!q3d()) skyKeep(() => drawFx("dmg")); /* the damage numbers keep their own colours on a boss sky (owner, 2026-10-17: "damage numbers should not get inverted") */ // (3D: flat, warpEntities) damage numbers just above the background, under all else (the cooldown dial moved to buttons above the title - aspira-powers.js)
   drawBoard();
 }
 // everything that MOVES, over the board - in 3D its own layer, every frame
@@ -455,29 +398,13 @@ function drawSceneTop() {
   const sel = ui.sel && G.towers.find(t => t.id === ui.sel);
   const ranges = k => () => { for (const t of G.towers) if (t !== sel) drawTowerRange(t, !k, k); if (sel) drawTowerRange(sel, false, k); }; // (sky: every one at full strength - "range should be visible during boss waves") // tower colours survive the boss sky (2026-10-11) - but RANGES go white, unkept, so the inversion turns them BLACK (owner, 2026-10-12)
   if (skyOn()) ranges("white")(); else skyKeep(ranges());
-  // stars go on top of lanes and range fills, which would otherwise tint them
-  if (!q3d()) drawStars(); // (3D: round, on the overlay - warpEntities)
   // BEAMS turn over with the boss sky (owner, 2026-10-11: "inversion should invert tower movement indicators and tower
   // beams"; they kept their colours since earlier that day) - only the towers and their ranges keep theirs
   drawTethers(); drawAcd(); drawGrv(); drawCar(); skyKeep(() => drawCar(true)); drawAims(); drawFx("shots"); // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
-  drawCoreFx(); if (q3d() && G.core) drawTimeStop(G.core); /* (3D's Relay hexagons: drawRelayHex3d, on the overlay before the towers) */ // the core's struts and beams, under the towers (aspira-core.js); 3D: Temporal Drive's field ON the floor
+  drawCoreFx(); if (G.core) drawTimeStop(G.core); /* (3D's Relay hexagons: drawRelayHex3d, on the overlay before the towers) */ // the core's struts and beams, under the towers (aspira-core.js); 3D: Temporal Drive's field ON the floor
   // in 3D the towers, the core and the enemies are drawn FLAT over the bell instead (warpEntities, aspira-warp.js)
-  drawLeash(); drawPhoneFrame(); /* (aspira-camera.js) */ // the movement indicator turns over with the sky too (owner, 2026-10-11)
-  skyKeep(() => { if (!q3d()) for (const t of G.towers) drawTower(t); drawRelayArm(); }); // towers keep their colours on a boss sky (owner); an armed Relay rings them (aspira-powers.js)
+  drawLeash(); // the movement indicator turns over with the sky too (owner, 2026-10-11)
   drawSlotFlash(); drawDrips(); drawCoins(); skyKeep(drawUpPlus); /* (aspira-towers.js) - the upgrade chevron and its hex keep the TOWER'S colour on a boss sky (owner, 2026-10-16: "Tower upgrade indicators should retain color on inversion") */ if (typeof drawThreat === "function") skyKeep(drawThreat); // (drawThreat: the nearest danger's ring and spoke, aspira-ui.js) a corner slot that just opened (aspira-waves.js); the credits flying home (aspira-floats.js)
-  if (!q3d()) {
-    if (ui.build && ui.hover) drawPlacement();
-    drawCore();
-    drawCredits(); // ON the core, so after it (aspira-waves.js)
-    for (const e of G.enemies) drawEnemy(e); // ENEMIES over the towers and the core (owner)
-    drawCoreHud(); // the core powers' dial, freeze, copy and halos, over everything (aspira-core-fx.js)
-  }
-  if (!q3d()) drawFx("text");
-  if (bannerT > 0 && !q3d()) { // (3D: over everything, warpEntities)
-    ctx.globalAlpha = Math.min(1, bannerT);
-    text(bannerText, CX, 70, 30, bannerCol, true); // smaller (owner, 2026-10-06; was 44)
-    ctx.globalAlpha = 1;
-  }
 }
 // the whole palette inverted while fn draws (invertColor keeps alpha); the
 // inverted set is built once, COL being fixed after resolveColors

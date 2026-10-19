@@ -480,8 +480,8 @@ function frame(now) {
   }
   // while the upgrade cards are up the board is paused AND frozen: no redraw,
   // so its CSS blur (aspira.css .asp-choosing) is computed once, not per frame
-  if (q3d() && !warpInit()) flatFallback(); /* no WebGL: the flat picture instead (aspira-quality.js) */
-  if (!chooser.t && !DIAG.includes("nocanvas")) { if (q3d()) warp3d(); else render(); } // 3D lays the frame, drawn to fit the whole board, on the spire (aspira-warp.js)
+  if (!warpInit()) { noWebGl(); return; } /* no WebGL: a notice, and the loop stops (the flat 2D picture is gone, 2026-10-18) */
+  if (!chooser.t && !DIAG.includes("nocanvas")) warp3d(); // 3D lays the frame, drawn to fit the whole board, on the spire (aspira-warp.js)
   // the HUD's text and buttons 10x a second, not every frame (perf, 2026-10-05)
   if (!(now < hudAt)) { hudAt = now + 100; updateHud(); syncBlinks(); }
   placePop(); placeChallenge(); tickFps(now); // (placeChallenge: aspira-wavelist.js)

@@ -335,7 +335,6 @@ function drawGrv() {
     const st = towerStats(t, true);
     for (const sp of t.spheres) drawSphere(sp, st);
   }
-  if (!(typeof q3d === "function" && q3d())) drawGrvCores((x, y, fn) => fn()); // the centres, over every aura (3D: over the damage numbers instead - drawGrvCores, aspira-warp.js), over every aura (3D: over the damage numbers instead - drawGrvCores, aspira-warp.js)
   drawGrvPellets();
   ctx.globalAlpha = 1;
 }

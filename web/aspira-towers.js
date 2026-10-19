@@ -437,7 +437,7 @@ function drawUpPlus() { // over the towers (render, aspira-draw.js), so a tower 
   ctx.globalAlpha = 1;
 }
 function drawLeash() {
-  ctx.save(); if (!phoneOn3d()) { phonePath(ctx, phoneBox()); ctx.clip(); } /* a leash past the phone's screen is no use: cut at it in 2D (owner, 2026-10-13) */
+  ctx.save();
   ctx.lineWidth = 2;
   const now = performance.now() / 1000;
   if (typeof warp !== "undefined") warp.leashRings = [];
@@ -452,8 +452,7 @@ function drawLeash() {
     ctx.globalAlpha = Math.max(held ? 0.8 : t.id === ui.sel ? 0.5 : 0, 0.8 * hint);
     // 3D: the RING goes on the screen layer (drawLeashRings3d, aspira-camera.js), its dashes even in screen px - on the floor
     // the warp drew them long and slanted toward the sides (owner, 2026-10-14: "the mvmt range indicators look weird on the sides")
-    if (q3d()) (warp.leashRings ||= []).push({ x: c.x, y: c.y, R: leashR(t), col, A: ctx.globalAlpha, march: hint ? now : 0 });
-    else { ctx.setLineDash([8, 8]); if (hint) ctx.lineDashOffset = -now * 24; /* marching */ ctx.beginPath(); ctx.arc(c.x, c.y, leashR(t), 0, 6.283); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0; }
+    (warp.leashRings ||= []).push({ x: c.x, y: c.y, R: leashR(t), col, A: ctx.globalAlpha, march: hint ? now : 0 });
     if (!held) leashArrows(t, c, now, ctx.globalAlpha); // not while it is being dragged (owner, 2026-10-11)
   }
   ctx.globalAlpha = 1; ctx.restore();
