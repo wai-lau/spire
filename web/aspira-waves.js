@@ -159,7 +159,7 @@ function sendWave() {
       if (!part.length) continue;
       const ang = (laneBestTurn(lanes[list[0]], k, G.wave) + (j / k) * Math.PI * 2) % (Math.PI * 2); // the turn that keeps the most of the lane on screen (below), then the split
       // a boss arrives BOSS_INTRO s into its wave, after its warning (owner)
-      G.spawns.push({ n: G.wave, list: part, lanes, ang, idx: 0, timer: boss ? BOSS_INTRO : 0 });
+      G.spawns.push({ n: G.wave, list: part, lanes, ang, idx: 0, timer: boss ? BOSS_INTRO : LANE_LEAD }); // the rest LANE_LEAD s in, their lanes lit first (activeLanes)
       // each lane copy remembers how many it was sent, for its brightness
       for (const type of part) { const key = laneKey(lanes[type], ang); (G.laneTotals ||= {})[key] = (G.laneTotals[key] || 0) + 1; }
     }
@@ -194,6 +194,9 @@ function laneMap() {
 // replacing a timed fade): it fills in as the group spawns and drains as it
 // dies, and the lane's count is forgotten once nothing is alive or queued.
 const laneKey = (pi, ang) => pi + ":" + ang.toFixed(3);
+// LANES BEFORE THEIR ENEMIES (owner, 2026-10-19: "show lanes a few seconds before the enemy spawns" / "except for bosses"): an
+// ordinary wave's first enemy comes LANE_LEAD s after the wave is sent (sendWave), and its lanes fade in over that lead
+const LANE_LEAD = 3;
 function activeLanes() {
   const out = new Map(), totals = G.laneTotals || {};
   for (const e of G.enemies) {
@@ -206,6 +209,11 @@ function activeLanes() {
   for (const w of G.spawns) for (let i = w.idx; i < w.list.length; i++) queued.add(laneKey(w.lanes[w.list[i]], w.ang || 0));
   for (const key in totals) if (!out.has(key) && !queued.has(key)) delete totals[key];
   for (const [key, u] of out) u.a = Math.min(1, u.alive / (totals[key] || u.alive));
+  for (const w of G.spawns) { // a wave still in its lead: its lanes, fading in (never a boss's - its sky has its own fade, litLanes)
+    if (w.idx || !(w.timer > 0) || w.n % STAR_EVERY === 0) continue;
+    const type = w.list[0], key = laneKey(w.lanes[type], w.ang || 0);
+    if (!out.has(key)) out.set(key, { pi: w.lanes[type], ang: w.ang || 0, color: ENEMIES[type].color, n: w.n, star: false, swarm: type === "swarm", alive: 0, a: Math.max(0, Math.min(1, 1 - w.timer / LANE_LEAD)) });
+  }
   return out;
 }
 

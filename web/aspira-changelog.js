@@ -25,6 +25,7 @@ const CHANGELOG = [
     "Enemies: off screen they are drawn at 20%, fading in over a second as they come on screen.",
     "Build cards: the red box round an uncovered enemy type is drawn whole (it showed as two bars), centred in its gap without moving the marks.",
     "Build cards: a red warning sign after each red box; the enemy and its marks centred in the box.",
+    "Lanes: a wave's lanes light up 3 seconds before its first enemy arrives (not bosses).",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
     "Ifrit: Hellfire flares last half as long and burn twice as hard.",
