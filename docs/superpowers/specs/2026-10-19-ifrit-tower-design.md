@@ -1,8 +1,8 @@
 # IFRIT - the seventh tower (design, 2026-10-19)
 
 The owner's design, 2026-10-19 (quoted rules are hers). Based on Ifrit, the fire aeon of
-Final Fantasy X (Meteor Strike, Hellfire, the Fire line). Orange. Version **7.0.0** (a new
-tower is a new major, ARCHITECTURE.md 9.4). Id `ifr`, shown **IFR**, name "Ifrit".
+Final Fantasy X (Meteor Strike, Hellfire, the Fire line). Orange. Version **6.2.0** - the owner keeps it within 6 (overrides "a new
+tower is a new major", ARCHITECTURE.md 9.4: the next MINOR after 6.1.0). Id `ifr`, shown **IFR**, name "Ifrit".
 
 ## 1. Why: the gap the sim shows
 
@@ -109,7 +109,7 @@ Ink tokens shift by their tower's delta: `--asp-violet-ink-hsl` 272 -> 264, `--a
 | `scripts/spire-smoke/smoke.mjs` | `ifr` in both kind loops |
 | `scripts/aspira-sim/sim.mjs` `FILES`; `countermx.mjs`, `trios.mjs`, `tribal.mjs`, `solo.mjs` | the new file; `ifr` in the kind lists (`KINDS=` defaults) |
 | `tests/test_spire_board.py`, `test_spire_sliders_browser.py` | the seventh kind |
-| `web/aspira-version.txt` 7.0.0; `aspira-changelog.js` | "Ifrit: ..." lines |
+| `web/aspira-version.txt` 6.2.0 (the next minor after 6.1.0; owner: stay within 6); `aspira-changelog.js` | "Ifrit: ..." lines |
 | `ARCHITECTURE.md` 4.1 (seven kinds), 4.6 (the matrix row), new 4.6e Ifrit, 10.1 (colours: seven tokens); `ARCHAEOLOGY.md` the starting numbers | docs |
 
 Traps to honour: no mid-line `//`; a new top-level name must not collide (prefix `IFR_` /
@@ -118,7 +118,7 @@ in a module list rebuilt from `G`); per-tier tables exactly 6 before capstone.js
 in game s, cooldowns in waves; `fixedRand` only for wave-shaping (the corner pick is per
 tower, `Math.random` is fine - the sim seeds it).
 
-## 7. Tests and balance gates (before 7.0.0 ships)
+## 7. Tests and balance gates (before 6.2.0 ships)
 
 1. `node scripts/spire-smoke/smoke.mjs`: Ifrit builds, fires, draws; 3D frame.
 2. `.venv/bin/pytest apps/spire/tests` (board accepts `ifr`; sliders at both sizes).
