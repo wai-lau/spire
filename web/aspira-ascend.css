@@ -25,6 +25,12 @@
   border: none;
   outline: none;
 }
+#asp-asc-in { animation: asp-asc-lines 2.4s ease-in-out infinite; } /* the three underscores FLASH, in step with the buttons' asp-flash (owner, 2026-10-19) */
+@keyframes asp-asc-lines {
+  0%, 100% { background-size: calc(3ch + 2 * var(--asc-gap)) var(--space-0-5); }
+  50% { background-size: calc(3ch + 2 * var(--asc-gap)) 0; }
+}
+#asp-asc-form button { animation: asp-flash 2.4s ease-in-out infinite; } /* post (the return sign) / ascend flashes like Play again (owner, 2026-10-19) */
 #asp-asc-in.asp-asc-gold { color: hsl(var(--orange-hsl)); }
 #asp-asc-in.asp-asc-green { color: hsl(var(--green-hsl)); }
 #asp-asc-in::placeholder { color: currentcolor; opacity: 0.35; }

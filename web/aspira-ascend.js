@@ -74,7 +74,7 @@ function showAscend() {
   box.hidden = false;
   if (autoBarred()) { box.innerHTML = ASC_TITLE + '<p id="asp-asc-note">Auto-move was used - this game stays off the board.</p><div id="asp-asc-board"></div>'; ascLoad(); return; }
   box.innerHTML = ASC_TITLE + '<form id="asp-asc-form"><input id="asp-asc-in" class="' + (won ? "asp-asc-gold" : "asp-asc-green") + '" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" aria-label="your initials">' +
-    '<button class="asp-primary" type="submit">' + (won ? "ascend" : "post") + '</button></form><p id="asp-asc-note">' +
+    '<button class="asp-primary" type="submit"' + (won ? ">ascend" : ' aria-label="post">\u21B5') + '</button></form><p id="asp-asc-note">' +
     (won ? "Leave your initials among the Ascendants." : "Wave " + G.wave + " - leave your initials on the board.") + '</p><div id="asp-asc-board"></div>';
   const input = $("asp-asc-in");
   input.oninput = () => { input.value = input.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3); };
