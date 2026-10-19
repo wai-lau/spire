@@ -228,7 +228,7 @@ let creditsFx = null;
 // 1.5x larger (owner, 2026-10-11: "3x larger", then "too large, like half that size"; were 14 / 15 / 8)
 const POP_PX = 21, CRED_PX = 23, CRED_SUB_PX = 12;
 const popY = (px = POP_PX) => CY + CORE_R + LIFE_GAP * LIFE_RINGS + 9 + px / 2; // just under the rings (was +16 at 14px)
-const INT_POP_PX = Math.round(POP_PX * 1.5); // the INTEREST pop-up 1.5x (owner, 2026-10-19: "interest popup should be 1.5x bigger and it should say interest: +XXc (%)")
+const INT_POP_PX = POP_PX; // the INTEREST pop-up: "interest: +XXc (%)" (owner, 2026-10-19), back at POP_PX ("reduce the font size back to what it was previously"; 1.5x for 6.1.11)
 // a LOST LIFE puts "X lives left" in the same spot for as long (owner, 2026-10-11), over an interest pop-up older than it
 let livesFx = null;
 function livesLost() { livesFx = { t0: performance.now() / 1000 }; }
