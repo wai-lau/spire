@@ -635,7 +635,7 @@
    lines, the blurb a size smaller */
 .asp-cards.asp-build-cards { gap: var(--space-2); }
 /* an ODD last build card sits centred under the two columns, at a column's width (owner, 2026-10-19: "center the last tower" - seven cards since IFR) */
-.asp-build-cards > .asp-card:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; width: var(--card-w, 380px); }
+.asp-build-cards > .asp-card:last-child:nth-child(odd) { transform: translateX(calc(50% + var(--space-2) / 2)); } /* left column, slid right by half its own width + half the gap: centred, the size of every other card */
 
 #asp .asp-build-cards button.asp-card { gap: var(--space-1); padding: var(--space-2-5) var(--space-3); line-height: var(--lh-tight); }
 
