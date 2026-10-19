@@ -442,6 +442,7 @@ document.addEventListener("keydown", ev => {
     ev.preventDefault(); return;
   }
   if (/^[1-9]$/.test(ev.key) && SPEEDS[ev.key - 1]) { ui.speed = SPEEDS[ev.key - 1]; ui.paused = false; } // 1-4: the buttons in order
+  else if (ev.key === "`" || ev.key === "~") { ui.speed = 0.75; ui.paused = false; } // 0.75x on ~, no button (owner, 2026-10-19)
   else if (ev.key === "m" || ev.key === "M") setMuted(!muted);
   else if (ev.key === " ") { ev.preventDefault(); ui.paused = !ui.paused; ui.pauseBtn = ui.paused; }
   else if (ev.key === "u" || ev.key === "U") keyUpgrade(ui.sel && G.towers.find(x => x.id === ui.sel));
