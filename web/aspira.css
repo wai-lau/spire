@@ -301,6 +301,7 @@
 .asp-spend[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-spend[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
 .asp-spend[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-spend[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
 .asp-spend[data-kind="core"] { --green-hsl: var(--white-hsl); }
 
 /* the boss's haiku, above the title (owner; was on the board under the core) */
@@ -414,6 +415,7 @@
 .asp-pop[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-pop[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
 .asp-pop[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-pop[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
 .asp-pop[data-kind="core"] { --green-hsl: var(--white-hsl); } /* the core's card is white, like the core */
 .asp-pop[data-kind] { color: hsl(var(--green-hsl)); }
 
@@ -513,20 +515,18 @@
 .asp-sw.glow { color: hsl(var(--orange-glow-hsl)); }
 .asp-sw.pink { color: hsl(var(--pink-hsl)); }
 .asp-sw.white { color: hsl(var(--white-hsl)); }
-/* THE SIX TOWER HUES, the same angle apart FOR THE EYE (owner, 2026-10-16: "adjust the hues so that they each sit at the same angle
-   (for humans) from each other"): OKLCH hues 73 / 133 / 193 / 253 / 313 / 13 (ARC ACD FRZ ATC GRV SOL, 60 apart - they were 69 146 214
-   259 300 350), each keeping its own OKLCH lightness and chroma (pulled in to stay in sRGB) - ARC / FRZ / ACD on tokens of their own
-   now, not the shared Marigold / Hack / Chatsubo */
+/* THE SEVEN TOWER HUES, the same angle apart FOR THE EYE: OKLCH hues 359 / 50 / 101 / 153 / 204 / 256 / 307 (SOL IFR ARC ACD FRZ CRR GRV, 360/7 apart; the six were 60 apart at 13 / 73 / 133 / 193 / 253 / 313, 2026-10-16), each keeping its own OKLCH lightness and chroma (pulled in to stay in sRGB) - ARC lifted to L 0.88 for a clean lightning yellow; neighbours checked by CIEDE2000, the closest pair 25 (scripts/aspira-sim/hues.py). The ink tokens shift by their tower's delta. Owner, 2026-10-19: "7 equidistant slots ... calibrate for Human Color Discrimination" */
 .asp-sw.tarc { color: hsl(var(--asp-arc-hsl)); }
 .asp-sw.tfrz { color: hsl(var(--asp-frz-hsl)); }
 .asp-sw.tacd { color: hsl(var(--asp-acd-hsl)); }
+.asp-sw.tifr { color: hsl(var(--asp-ifr-hsl)); } /* IFR, the fire tower (2026-10-19): Kilika's orange */
 /* GRV (2026-10-15; new /spire colours are allowed - owner): violet its aura and outline, yellow its nova */
 /* ...its look from a black-hole image (owner, 2026-10-15: "these colors (excl bg), in a similar ratio"): deep purple, plum, pink,
    coral, yellow, white-hot - the aura's bands; violet (its card and text) the plum, lifted to read on the board */
 /* the ENEMY colours, pinned at the root: a tower's card redefines --green-hsl as its own colour, which turned fast's icon
    (green) the tower's colour in the build chooser (owner, 2026-10-16: "the enemies need to be colored correctly") */
 #asp { --asp-e-white-hsl: var(--white-hsl); --asp-e-green-hsl: var(--green-hsl); --asp-e-cyan-hsl: var(--cyan-hsl); --asp-e-pink-hsl: var(--pink-hsl); --asp-e-orange-hsl: var(--orange-hsl); }
-#asp { --asp-blue-hsl: 207 99% 48%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 285 99% 38%; --asp-violet-ink-hsl: 272 80% 78%; --asp-blue-ink-hsl: 216 100% 74%; --asp-solar-hsl: 353 100% 78%; --asp-arc-hsl: 35 96% 67%; --asp-frz-hsl: 179 98% 45%; --asp-acd-hsl: 94 55% 64%; --asp-yellow-hsl: 54 100% 62%; --asp-threat-hsl: 0 100% 55%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
+#asp { --asp-blue-hsl: 212 91% 55%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 278 85% 43%; --asp-violet-ink-hsl: 264 89% 80%; --asp-blue-ink-hsl: 218 100% 75%; --asp-solar-hsl: 339 91% 77%; --asp-arc-hsl: 53 75% 67%; --asp-frz-hsl: 184 95% 48%; --asp-acd-hsl: 140 61% 65%; --asp-ifr-hsl: 23 100% 65%; --asp-yellow-hsl: 54 100% 62%; --asp-threat-hsl: 0 100% 55%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
 .asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
 .asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
@@ -560,6 +560,7 @@
 .asp-chooser[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-chooser[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
 .asp-chooser[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-chooser[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
 
 /* the BUILD cards each wear their own tower's colour (aspira-chooser.js) - GRV and ATC in a PALE ink of it (owner, 2026-10-16: "use a
    pale font if the card is dark", "maintain the same level of visibility"): lightness lifted to SOL's contrast on the dark card,
@@ -570,6 +571,7 @@
 .asp-card[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-card[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
 .asp-card[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-card[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
 
 /* ...unless the credits cannot cover it: faint Ember red, every kind alike (owner, 2026-10-07) */
 #asp .asp-card.poor, #asp .asp-tw.poor { --green-hsl: var(--orange-glow-hsl); color: hsl(var(--orange-glow-hsl)); }

@@ -43,3 +43,4 @@
 .asp-asc-k[data-kind="acd"] { color: hsl(var(--asp-acd-hsl)); }
 .asp-asc-k[data-kind="grv"] { color: hsl(var(--asp-violet-hsl)); }
 .asp-asc-k[data-kind="car"] { color: hsl(var(--asp-blue-hsl)); }
+.asp-asc-k[data-kind="ifr"] { color: hsl(var(--asp-ifr-hsl)); }
