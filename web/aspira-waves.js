@@ -275,25 +275,28 @@ function drawCredits(part) {
   parts.forEach((p, i) => { text(p[0], x + ws[i] / 2, popY(INT_POP_PX), INT_POP_PX, p[1], true); x += ws[i]; });
 }
 // EVERY LANE TURNED TO THE SCREEN (owner, 2026-10-14: bosses first - "rotate them so that they stay on screen for as long as
-// possible" - then "rotate all paths to maximize time on screen"): of LANE_TURNS turns of a group's lane (its k split copies
-// with it), those keeping within LANE_TURN_SLACK of the most lane on the screen (phoneInside: 2D or 3D) - and of those, the
-// nearest the wave's usual turn, so the waves still come round from new directions. Scores cached per lane, split and screen.
+// possible" - then "rotate all paths to maximize time on screen"), AND ITS COPIES EVENED OUT (landscape box): of LANE_TURNS
+// turns of a group's lane (its k split copies with it), keep those whose copies' on-screen lengths differ least (spread =
+// longest - shortest, within LANE_EVEN_SLACK of the biggest total); of those, the ones keeping within LANE_TURN_SLACK of the
+// most lane on the screen (total) - and of those, the nearest the wave's usual turn, so the waves still come round from new
+// directions. k = 1 has no spread, so it is just the old most-on-screen rule. Scores cached per lane, split, screen and box.
 // The simulator (no screen) keeps laneTurn
-const LANE_TURNS = 72, LANE_TURN_SLACK = 0.005, laneTurnCache = new Map(); /* finer (owner, 2026-10-18: "the lanes are rotated about the core such that as much of it is visible as possible"): 5-degree turns, within 0.5% of the best (was 24 turns, 2%) */
-const laneTurnKey = (pi, k) => pi + "|" + k + "|" + innerWidth + "x" + innerHeight + "|" + (typeof q3d === "function" && q3d() ? 3 : 2);
+const LANE_TURNS = 72, LANE_TURN_SLACK = 0.005, LANE_EVEN_SLACK = 0.02, laneTurnCache = new Map(); /* finer (owner, 2026-10-18: "the lanes are rotated about the core such that as much of it is visible as possible"): 5-degree turns, within 0.5% of the best (was 24 turns, 2%) */
+const laneTurnKey = (pi, k) => pi + "|" + k + "|" + innerWidth + "x" + innerHeight + "|" + (typeof q3d === "function" && q3d() ? 3 : 2) + "|" + (typeof BOX_WIDE !== "undefined" && BOX_WIDE ? "w" : "p");
 function laneTurnScores(pi, k) {
   const pts = PATHS[pi].pts, key = laneTurnKey(pi, k);
   let sc = laneTurnCache.get(key);
   if (sc) return sc;
   sc = [];
   for (let i = 0; i < LANE_TURNS; i++) {
-    let len = 0;
+    let total = 0, lo = Infinity, hi = 0;
     for (let j = 0; j < k; j++) {
       const a = i / LANE_TURNS * Math.PI * 2 + (j / k) * Math.PI * 2;
-      let prev = null;
+      let prev = null, len = 0;
       for (let q = 0; q < pts.length; q += 6) { const p = rotAbout(pts[q], a), on = phoneInside(p.x, p.y); if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
+      total += len; lo = Math.min(lo, len); hi = Math.max(hi, len);
     }
-    sc.push(len);
+    sc.push({ spread: hi - lo, total });
   }
   laneTurnCache.set(key, sc);
   return sc;
@@ -316,8 +319,10 @@ function laneTurnScores(pi, k) {
 function laneBestTurn(pi, k, n) {
   const base = laneTurn(n);
   if ((typeof AUTO_POS !== "undefined" && AUTO_POS && !(typeof SIM_REAL_LANES !== "undefined" && SIM_REAL_LANES)) || typeof phoneInside !== "function" || !PATHS[pi]) return base; // (SIM_REAL_LANES: the simulator turns them as the game does - REAL_LANES=1)
-  const sc = laneTurnScores(pi, k), best = Math.max(...sc), step = Math.PI * 2 / LANE_TURNS;
+  const sc = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS;
+  const flat = Math.min(...sc.map(s => s.spread)) + LANE_EVEN_SLACK * Math.max(...sc.map(s => s.total)), even = sc.filter(s => s.spread <= flat);
+  const best = Math.max(...even.map(s => s.total));
   let pick = base, gap = Infinity;
-  sc.forEach((l, i) => { if (l < best * (1 - LANE_TURN_SLACK)) return; const t = i * step, d = Math.abs(((t - base) % (Math.PI * 2) + 3 * Math.PI) % (Math.PI * 2) - Math.PI); if (d < gap) { gap = d; pick = t; } });
+  sc.forEach((s, i) => { if (s.spread > flat || s.total < best * (1 - LANE_TURN_SLACK)) return; const t = i * step, d = Math.abs(((t - base) % (Math.PI * 2) + 3 * Math.PI) % (Math.PI * 2) - Math.PI); if (d < gap) { gap = d; pick = t; } });
   return pick;
 }

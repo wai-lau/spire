@@ -405,6 +405,24 @@ check("a built tower moves with its slot when the box switches", () => {
   for (const k in r) if (!(r[k] < 1e-6)) return k + " off by " + r[k];
 });
 
+check("lanes: every pick has the smallest copy spread (within slack)", () => {
+  const e = boot({}, { w: 390, h: 844 });
+  const bad = e.run(`(() => { const out = []; for (let pi = 1; pi < PATHS.length; pi += 2) for (const k of [2, 3, 6]) {
+      const sc = laneTurnScores(pi, k), t = laneBestTurn(pi, k, 7), i = Math.round(t / (Math.PI * 2 / LANE_TURNS)) % LANE_TURNS;
+      const minS = Math.min(...sc.map(s => s.spread)), maxT = Math.max(...sc.map(s => s.total));
+      if (sc[i].spread > minS + LANE_EVEN_SLACK * maxT + 1e-9) out.push(pi + "/" + k); } return out; })()`);
+  if (bad.length) return "picks not the most even: " + bad.join(", ");
+});
+check("landscape: a tower on an open slot meets wave 1 (slots and lane picks agree)", () => {
+  const e = boot({}, { w: 1280, h: 800 });
+  const r = e.run(`(() => { G = newGame(); G.money = 1e6; ui.build = "arc"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0]; let near = Infinity; G.started = true; sendWave();
+    for (let i = 0; i < 600; i++) { step(1 / 30); for (const en of G.enemies) near = Math.min(near, Math.hypot(en.x - t.x, en.y - t.y)); }
+    return { wide: BOX_WIDE, near, range: t.range, dealt: t.dealt || 0 }; })()`);
+  if (!r.wide) return "did not boot landscape";
+  if (!(r.dealt > 0 || r.near <= r.range)) return "no enemy came within range (nearest " + r.near + ", range " + r.range + ")";
+});
+
 const bad = results.filter(r => r[1] !== "ok");
 for (const [n, r] of results) console.log((r === "ok" ? "  ok    " : "  FAIL  ") + n + (r === "ok" ? "" : "\n          " + r.slice(6)));
 console.log(bad.length ? `\nspire smoke: ${bad.length} of ${results.length} FAILED` : `\nspire smoke: all ${results.length} passed`);
