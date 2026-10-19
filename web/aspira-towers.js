@@ -453,7 +453,7 @@ function drawLeash() {
     ctx.globalAlpha = Math.max(held ? 0.8 : t.id === ui.sel ? 0.5 : 0, 0.8 * hint);
     // 3D: the RING goes on the screen layer (drawLeashRings3d, aspira-camera.js), its dashes even in screen px - on the floor
     // the warp drew them long and slanted toward the sides (owner, 2026-10-14: "the mvmt range indicators look weird on the sides")
-    (warp.leashRings ||= []).push({ x: c.x, y: c.y, R: leashR(t), col, A: ctx.globalAlpha, march: hint ? now : 0 });
+    (warp.leashRings ||= []).push({ x: c.x, y: c.y, R: leashR(t), col: (colOwn || COL)[TOWERS[t.kind].color] /* 3D: the tower's own colour, sky or not (drawn after the sky's flip - warpEntities) */, A: ctx.globalAlpha, march: hint ? now : 0 });
     if (!held) leashArrows(t, c, now, ctx.globalAlpha); // not while it is being dragged (owner, 2026-10-11)
   }
   ctx.globalAlpha = 1; ctx.restore();

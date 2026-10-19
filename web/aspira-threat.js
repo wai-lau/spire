@@ -55,12 +55,13 @@ function drawThreat() {
   for (const e of G.enemies) if (!e.dead) { const t = etaToCore(e); if (t <= THREAT_FROM) near.push([t, e]); }
   if (!near.length && !threatBounces.length) return;
   near.sort((a, b) => a[0] - b[0]);
+  const flash = autoWaiting() ? 0.25 + 0.75 * blinkWave() : 1; // FLASHING while auto-wait holds the game slow (owner, 2026-10-19), in step with the UI's blinks
   ctx.save(); /* Ember, the palette's red (owner, 2026-10-12: "use red for threat indicators ... not SOL pink") */
   drawThreatBounces();
   for (const [t, e] of near.slice(0, THREAT_N)) {
     // STRONGER and THICKER the nearer (owner, 2026-10-12), squared: a far one a whisper, one about to land loud
     const k = (1 - t / THREAT_FROM) ** 2, fade = Math.min(1, (THREAT_FROM - t) / THREAT_FADE);
-    const al = fade * (THREAT_A_MIN + (THREAT_A_MAX - THREAT_A_MIN) * k), core = fade * k, w = 1.2 + 1.8 * k;
+    const al = flash * fade * (THREAT_A_MIN + (THREAT_A_MAX - THREAT_A_MIN) * k), core = flash * fade * k, w = 1.2 + 1.8 * k;
     const R = ENEMIES[e.type].size * (e.sizeMul || 1) + THREAT_GAP;
     const a = Math.atan2(CY - e.y, CX - e.x) + Math.PI / 2, s = THREAT_TRI[0] + (THREAT_TRI[1] - THREAT_TRI[0]) * k, d = R + s / 2 + 3;
     if (t <= AUTO_WAIT3_S) { ctx.beginPath(); ctx.arc(e.x, e.y, R, 0, 6.283); threatStroke(al, w, core); threatCoreRing(e, e.x + Math.cos(a) * (d + s / 2), e.y + Math.sin(a) * (d + s / 2), al, w, core); } // the circle only when TOO close: auto-wait's LAST stage, 1 s out ("much later than the triangles", owner 2026-10-13; was its second, 2 s)
