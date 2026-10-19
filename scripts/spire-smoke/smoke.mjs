@@ -175,6 +175,18 @@ check("the slow-log report builds and sends (perfSend - it runs from the frame l
   run("perfSend()");
   return "";
 });
+check("a resumed save is the board at rest: towers on their slots, no enemies, pools or interceptors (runClean)", () => {
+  run(`G = newGame(); G.money = 1e6; for (const k of ["acd", "grv", "car"]) { ui.build = k;
+         const ci = CELLS.findIndex((c, i) => cellOpen(i) && !G.towers.some(t => t.cell === i)); placeTower(CELLS[ci]); }
+       G.towers[0].x += 40; G.started = true; sendWave(); for (let i = 0; i < 300; i++) step(1 / 30);`);
+  const r = run(`(() => { const saved = { G: runClean(structuredClone(G)), wave: G.wave, lives: G.lives }; runResume(saved);
+    return { off: G.towers.filter(t => t.x !== CELLS[t.cell].x || t.y !== CELLS[t.cell].y).length, enemies: G.enemies.length,
+             junk: G.towers.filter(t => t.puddles || t.spheres || t.icp || t.carBolts).length, n: G.towers.length }; })()`);
+  if (r.n !== 3) return "lost towers: " + r.n;
+  if (r.off || r.enemies || r.junk) return JSON.stringify(r);
+  frames(env, 3); // and the game runs on from it
+  return "";
+});
 check("game over shows the overlay and the Ascendants board, no entry", () => {
   run(`G = newGame(); gameOver();`);
   const ov = env.dom.byId("asp-ov"), asc = env.dom.byId("asp-asc");

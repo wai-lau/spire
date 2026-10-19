@@ -160,7 +160,7 @@ export function makeDom(template, store = {}) {
     Image: class { set src(v) { this._src = v; } },
     Path2D: class { moveTo() {} lineTo() {} arc() {} closePath() {} rect() {} bezierCurveTo() {} quadraticCurveTo() {} ellipse() {} addPath() {} },
     CanvasRenderingContext2D: class {},
-    DOMMatrix: class { constructor() { Object.assign(this, { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }); } }, URLSearchParams, TextEncoder, TextDecoder,
+    structuredClone, DOMMatrix: class { constructor() { Object.assign(this, { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }); } }, URLSearchParams, TextEncoder, TextDecoder,
     addEventListener() {}, removeEventListener() {}, HTMLElement: FakeEl, Element: FakeEl,
   };
   globals.window = globals; globals.self = globals; globals.globalThis = globals;
