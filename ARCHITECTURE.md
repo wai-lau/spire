@@ -50,12 +50,19 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 ![The play box](docs/arch/play-box.svg)
 
 
-`PHONES` lists standard phone page sizes; at `PHONE_ZOOM` 0.72 the tightest gives the box
-(`aspira-positioning.js`). **Every screen zooms to fit it** (`resize`, centred on the
+`PHONES` lists standard phone page sizes; at `PHONE_ZOOM` 0.72 the tightest gives the
+box (`aspira-positioning.js`). **Every screen zooms to fit it** (`resize`, centred on the
 other axis) and it is the towers' **movement cap** (`legalSpot` -> `phoneInside`): a
-desktop gets no more board than a phone; in 3D it is the same rectangle on the screen. Its
-outline shows only as three thin lines on an edge holding a tower back for no visible
-reason.
+desktop gets no more board than a phone. Its outline shows only as three thin lines on an
+edge holding a tower back for no visible reason.
+
+| Rule | What |
+|------|------|
+| centred core | the core sits in the middle of the box: `BOX_SHORT` either side across the short axis, `BOX_LONG` along the long one |
+| two shapes | portrait (`BOX_HX` short, `BOX_HY` long) and landscape, the same box turned 90 degrees; `boxWanted()` follows the window, `setPlayBox(wide)` applies it and `turnSlots(wide)` turns the cells and built towers with it |
+| switch | only on a clear field with no lane preview (`boxSwitchIfIdle`, checked before each step), so a turn never lands under live enemies |
+| lane copies | a wave's lanes turn to the angle whose copies are on screen about equally long (`laneBestTurn`, within `LANE_EVEN_SLACK`), then the most lane on screen, then nearest the usual turn |
+| wave list | `fitWaveList` drops trailing rows until the list clears the core and the open starting slots; phone rows are `WAVE_ROW_H_PHONE` high |
 
 ### 2.3 Shields as segments
 

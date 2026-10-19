@@ -164,7 +164,7 @@ function autoPosition(t, dt) {
 // standard phone shares ("standardize the limit so that it works the same way on all standardish phones") - the tightest of
 // PHONES at PHONE_ZOOM. The CORE IS CENTRED in it (owner, 2026-10-19; was 1.5 x as far from the top as the sides): BOX_SHORT
 // either side of it across the short axis, BOX_LONG either side along the long one (world units; BOX_LONG keeps the old
-// total height, VIEW_UP + VIEW_DOWN, halved). TWO SHAPES: portrait is BOX_SHORT wide x BOX_LONG tall (half-extents BOX_HX,
+// total height, halved). TWO SHAPES: portrait is BOX_SHORT wide x BOX_LONG tall (half-extents BOX_HX,
 // BOX_HY), landscape the same box TURNED 90 degrees; setPlayBox(wide) picks one, and boxWanted() follows the window.
 // EVERY screen zooms so the box fits it ("the zoom should be adjusted so that either the top and bottom touch, or the
 // sides"), centred on the other axis (resize, aspira-draw.js); and it is the towers' MOVEMENT
@@ -172,7 +172,7 @@ function autoPosition(t, dt) {
 // PHONES: [w, h] CSS px of the page in the browser (bars taken off), small Android to iPhone 15 Pro Max
 const PHONES = [[360, 640], [375, 667], [390, 664], [393, 659], [412, 732], [430, 740]];
 const BOX_SHORT = Math.min(...PHONES.map(([w]) => w / 2)) / PHONE_ZOOM;
-const BOX_LONG = (BOX_SHORT * 1.5 + Math.min(...PHONES.map(([w, h]) => h - 1.5 * w / 2)) / PHONE_ZOOM) / 2;
+const BOX_LONG = /* the 1.5 is the frozen old VIEW_UP_K */ (BOX_SHORT * 1.5 + Math.min(...PHONES.map(([w, h]) => h - 1.5 * w / 2)) / PHONE_ZOOM) / 2;
 const PHONE_CORNER = 40 / PHONE_ZOOM, PHONE_ALPHA = 0.35 /* "less faint" (owner, 2026-10-13; was 0.15) */;
 let BOX_HX = BOX_SHORT, BOX_HY = BOX_LONG, BOX_WIDE = false;
 let phoneBoxC = null;

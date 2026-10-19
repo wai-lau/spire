@@ -33,6 +33,9 @@ const CHANGELOG = [
     "Speed: the whole game runs 20% slower; every speed button is that much slower too.",
     "Speed: a 0.75x button.",
     "Resume: no tower can be built while the resume card is up.",
+    "Board: the core sits in the middle of the screen; on a landscape screen the board turns to fill it.",
+    "Lanes: a wave's lanes are turned so each copy is on screen about as long as the others.",
+    "Wave list: tighter rows on phones, never over the core or the first tower slots.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
     "Ifrit: Hellfire flares last half as long and burn twice as hard.",

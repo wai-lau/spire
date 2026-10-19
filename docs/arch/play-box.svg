@@ -1,21 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 310" width="440" height="310">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 250" width="440" height="250">
 <title>The play box</title>
-<rect x="60.0" y="40.0" width="305.0" height="220.2" fill="none" stroke="#8b949e" stroke-dasharray="4 3"/>
-<rect x="150" y="40" width="125.0" height="220.2" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
-<polygon points="212.5,127.8 217.7,130.8 217.7,136.8 212.5,139.8 207.3,136.8 207.3,130.8" fill="#d29922"/>
-<line x1="150" y1="133.8" x2="204.5" y2="133.8" stroke="#3fb950"/>
-<line x1="220.5" y1="133.8" x2="275.0" y2="133.8" stroke="#3fb950"/>
-<line x1="212.5" y1="40" x2="212.5" y2="125.8" stroke="#f778ba"/>
-<line x1="212.5" y1="141.8" x2="212.5" y2="260.2" stroke="#f778ba"/>
-<text x="181.2" y="129.8" font-size="7.5" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#3fb950">side 250</text>
-<text x="243.8" y="129.8" font-size="7.5" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#3fb950">side 250</text>
-<text x="146.0" y="136.8" font-size="7.5" text-anchor="end" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#3fb950">VIEW_SIDE</text>
-<text x="216.5" y="86.9" font-size="8" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#f778ba">VIEW_UP 375</text>
-<text x="216.5" y="96.9" font-size="8" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#f778ba">= 1.5 x side</text>
-<text x="216.5" y="197.0" font-size="8" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#f778ba">VIEW_DOWN ~506</text>
-<text x="64.0" y="254.2" font-size="7.5" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#8b949e">a wider window: the box fits, centred;</text>
-<text x="64.0" y="270.2" font-size="7.5" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#8b949e">no more board than a phone</text>
-<text x="212.5" y="32.0" font-size="9" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#58a6ff">the play box (PHONES x PHONE_ZOOM 0.72)</text>
-<text x="220.0" y="283.0" font-size="8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#8b949e">every screen zooms to fit this box (resize)</text>
-<text x="220.0" y="296.0" font-size="8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#8b949e">it is also the towers' movement cap (legalSpot -&gt; phoneInside)</text>
+<rect x="40" y="50" width="100" height="160" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<polygon points="90,122 97,126 97,134 90,138 83,134 83,126" fill="#d29922"/>
+<line x1="40" y1="130" x2="82" y2="130" stroke="#3fb950"/><line x1="98" y1="130" x2="140" y2="130" stroke="#3fb950"/>
+<line x1="90" y1="50" x2="90" y2="120" stroke="#f778ba"/><line x1="90" y1="140" x2="90" y2="210" stroke="#f778ba"/>
+<text x="65" y="126" font-size="6.5" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#3fb950">BOX_SHORT</text><text x="118" y="126" font-size="6.5" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#3fb950">BOX_SHORT</text>
+<text x="98" y="88" font-size="7" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#f778ba">BOX_LONG</text><text x="98" y="180" font-size="7" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#f778ba">BOX_LONG</text>
+<text x="90" y="38" font-size="9" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#58a6ff">portrait</text><text x="90" y="226" font-size="7" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#8b949e">BOX_HX = BOX_SHORT, BOX_HY = BOX_LONG</text>
+<rect x="230" y="80" width="160" height="100" rx="6" fill="none" stroke="#58a6ff" stroke-width="2"/>
+<polygon points="310,122 317,126 317,134 310,138 303,134 303,126" fill="#d29922"/>
+<line x1="230" y1="130" x2="302" y2="130" stroke="#f778ba"/><line x1="318" y1="130" x2="390" y2="130" stroke="#f778ba"/>
+<line x1="310" y1="80" x2="310" y2="122" stroke="#3fb950"/><line x1="310" y1="138" x2="310" y2="180" stroke="#3fb950"/>
+<text x="266" y="126" font-size="7" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#f778ba">BOX_LONG</text><text x="354" y="126" font-size="7" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#f778ba">BOX_LONG</text>
+<text x="318" y="100" font-size="6.5" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#3fb950">BOX_SHORT</text><text x="318" y="166" font-size="6.5" text-anchor="start" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#3fb950">BOX_SHORT</text>
+<text x="310" y="68" font-size="9" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#58a6ff">landscape (turned 90 degrees)</text><text x="310" y="196" font-size="7" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#8b949e">BOX_HX = BOX_LONG, BOX_HY = BOX_SHORT</text>
+<text x="220" y="236" font-size="8" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#8b949e">the core is centred; every screen zooms to fit the box; it is also the towers' movement cap</text>
 </svg>
