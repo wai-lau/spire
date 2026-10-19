@@ -146,7 +146,7 @@ function updateWaveList() {
     // countdown moved to the heading, the ":" column is empty
     note += "<span></span><span></span>" +
       '<span class="asp-dots e-' + ENEMIES[w.type].color + (boss ? " e-boss" : "") + '" style="width:' + span + 'px">' + icons + "</span>" +
-      "<span>" + (boss ? "<b>" + arcanaOf(n).name + "</b>" : waveName(w.type, n)) + "</span>"; // boss names BOLD (owner)
+      "<span>" + '<span class="asp-hp">' + dmgUnits(Math.round(hp)) + "hp</span> " + (boss ? "<b>" + arcanaOf(n).name + "</b>" : waveName(w.type, n)) + "</span>"; // boss names BOLD (owner); each unit's HP LEFT of its name (owner, 2026-10-19: "show HP value to the left of unit in wave indicator e.g. 20hp swarm")
   }
   // the waves still ALIVE (and the current one) sit at the top: ONE rounded green box round them all
   // (owner, 2026-10-09: "replace the current wave highlight with a single rounded green rectangle";
