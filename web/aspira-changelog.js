@@ -36,7 +36,7 @@ const CHANGELOG = [
     "Ifrit: a white core runs down each Hellfire spoke; the first blast ring opens slower and brighter.",
     "Ifrit: Hellfire spokes start fainter and fade out much sooner along their length.",
     "Ifrit: Hellfire spokes 30% fainter again, then half that.",
-    "Ifrit: a white core in the blast ring; the ring opens faster than the pellets fly.",
+    "Ifrit: a white core in the blast ring; the ring opens fast, and only once every pellet has landed and lit its flare.",
     "Ifrit: each flare is a big plus over a small cross, of random size; twice the pellets, landing up to three times further out, most of them near the blast and in any direction.",
     "Build cards: Carrier now shows a check vs fast and an x vs swarm.",
     "Ifrit: the small cross in each flare is half as big.",

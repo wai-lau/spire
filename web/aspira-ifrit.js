@@ -111,15 +111,20 @@ function stepIfrBalls(t, st, dt) {
 }
 // the BURST: a ring from the spot, and pellets out in random directions to the blast radius, enemies there or not (owner, 2026-10-19:
 // "shooting 5 pellets in random directions that each make asterisks"); k: 1 a ball, IFR_MINI_K a Backdraft pellet
-function ifrBurst(t, st, x, y, k) {
-  const R = st.blastR * k;
+// THE RING COMES LAST (owner, 2026-10-19: "move the initial explosion to after all the hellfires have started"): a ball's pellets fly
+// first and its ring opens once the last of them has stopped (its flare lit) - p.burst counts them down; a Backdraft mini ring is at once
+function ifrRing(t, x, y, R, k) {
   t.ifrRings.push({ x, y, r: 0, R, k, hit: [], left: R / IFR_RING_V + IFR_RING_FADE /* stays on screen a moment after full size, fading (owner, 2026-10-19); it hits nothing then */ });
   sfx("ifrblast");
-  if (k < 1) return; /* a mini ring sends no pellets */
+}
+function ifrBurst(t, st, x, y, k) {
+  const R = st.blastR * k;
+  if (k < 1 || !st.pellets) { ifrRing(t, x, y, R, k); return; } /* a mini ring sends no pellets */
+  const burst = { x, y, R, k, n: st.pellets };
   for (let i = 0; i < st.pellets; i++) {
     /* ANY direction, evenly (owner, 2026-10-19: "remove the backwards bias" - it leaned to the core); a distance weighted near (IFR_LAND_POW) */
     const a = Math.random() * 2 * Math.PI, cx = Math.cos(a), cy = Math.sin(a), d = R * IFR_PELLET_REACH * Math.random() ** IFR_LAND_POW;
-    t.ifrPellets.push({ x, y, ax: x + cx * d, ay: y + cy * d, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: d / IFR_PELLET_V, flown: 0 });
+    t.ifrPellets.push({ x, y, ax: x + cx * d, ay: y + cy * d, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: d / IFR_PELLET_V, flown: 0, burst });
   }
 }
 // the RING: expands at IFR_RING_V to R; every enemy it passes takes the blast hit once (full splash - owner: good vs swarm)
@@ -159,6 +164,7 @@ function stepIfrPellets(t, st, dt) {
     }
     if (!stop) continue;
     p.left = 0; ifrFlare(t, st, sx, sy);
+    if (p.burst && --p.burst.n === 0) ifrRing(t, p.burst.x, p.burst.y, p.burst.R, p.burst.k); // the last flare lit: the ring
     if (st.backdraft) ifrBurst(t, st, sx, sy, IFR_MINI_K);
   }
   keepLive(t.ifrPellets);

@@ -200,23 +200,24 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     stepIfrFlares(t, st, st.tickS); out.lit = 5 - on.shield; stepIfrFlares(t, st, st.tickS); out.on = 5 - on.shield; out.off = 5 - off.shield; /* CATCHING FIRE: the first tick only lights it, the second burns */
     on.dead = off.dead = true; t.ifrFlares.length = 0;
     // a PLAIN ring (k 1) over a held enemy 20 u off its spot, run until fully grown and gone
-    const q = held(cx + 20, cy); fresh(); ifrBurst(t, st, cx, cy, 1); t.ifrPellets.length = 0;
+    const q = held(cx + 20, cy); fresh(); ifrRing(t, cx, cy, st.blastR, 1); t.ifrPellets.length = 0; /* (ifrRing: a ball's own ring waits for its pellets - below) */
     for (let i = 0; i < 60; i++) stepIfrRings(t, st, 1 / 30); /* 60 not 30: the ring is slower (IFR_RING_V 220) and bigger (x1.3), then fades out 0.15 s (owner, 2026-10-19) */
     out.ring = 5 - q.shield; out.ringsLeft = t.ifrRings.length; q.dead = true;
     // PELLETS (owner, 2026-10-19: random directions, enemies there or not): a burst on empty ground - each flies OUT from the
     // spot on its own heading and stops (a flare) no further than the blast radius + a frame
     for (const e of G.enemies) e.dead = true; fresh(); t.ifrFlares.length = 0;
-    ifrBurst(t, st, cx, cy, 1); const ps = t.ifrPellets.slice();
+    t.ifrRings.length = 0; ifrBurst(t, st, cx, cy, 1); const ps = t.ifrPellets.slice(); out.ringEarly = t.ifrRings.length;
     out.fired = ps.length; out.want = st.pellets; out.headings = new Set(ps.map(p => Math.atan2(p.vy, p.vx).toFixed(3))).size;
     const d0 = ps.map(p => Math.hypot(p.x - cx, p.y - cy)); stepIfrPellets(t, st, 1 / 30);
     out.outward = ps.every((p, i) => Math.hypot(p.x - cx, p.y - cy) > d0[i]); out.flying = t.ifrPellets.length;
     for (let i = 0; i < 60 && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
-    out.left = t.ifrPellets.length; out.flares = t.ifrFlares.length;
+    out.left = t.ifrPellets.length; out.flares = t.ifrFlares.length; out.ringAfter = t.ifrRings.length; /* THE RING COMES LAST (owner, 2026-10-19) */
     out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = st.blastR * IFR_PELLET_REACH + IFR_PELLET_V / 30;
     return out;
   })()`);
   if (r.lit !== 0 || r.on !== 1) return "the enemy on the 90-degree beam lost " + r.lit + " charges at its first tick (expected 0: it only catches fire) and " + r.on + " after two (expected exactly 1)";
   if (r.off !== 0) return "the enemy off every beam lost " + r.off + " charges";
+  if (r.ringEarly !== 0 || r.ringAfter !== 1) return "a ball's ring opened " + (r.ringEarly ? "with its pellets still flying" : "never, or twice (" + r.ringAfter + ")") + " - it waits for the last flare";
   if (r.ring !== 1 || r.ringsLeft) return "a plain ring took " + r.ring + " charges (expected exactly 1), rings left " + r.ringsLeft;
   if (r.fired !== r.want) return "an empty burst fired " + r.fired + " pellets (expected " + r.want + ")";
   if (r.headings < 2) return "every pellet flew on the same heading";
