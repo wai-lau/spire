@@ -43,5 +43,42 @@ function ifrSkillStats(t, s, b) {
   s.dmg = b.dmg * s.blastK; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the blast hit, balls a second
   s.skill = true;
 }
-function stepIfr(t, dt) { /* Task 3 */ }
+// ---------- the corners and the charge ----------
+// a corner of the tower's drawn hex (the slot's pts shrunk to TOWER_K) at the tower's CURRENT spot (drawTower moves the hex the same way)
+function ifrCorner(t, k) { const c = CELLS[t.cell], p = c.pts[k % 6]; return { x: (t.x ?? c.x) + (p.x - c.x) * TOWER_K, y: (t.y ?? c.y) + (p.y - c.y) * TOWER_K }; }
+// the corners n slots use (owner, 2026-10-19): 1 = the corner picked at build, 2 = + the opposite, 3 = every other corner, 6 = all
+function ifrSlotCorners(t, n) {
+  const a = t.ifrSlot0 ?? 0;
+  if (n >= 6) return [0, 1, 2, 3, 4, 5];
+  if (n >= 3) return [a, (a + 2) % 6, (a + 4) % 6];
+  if (n >= 2) return [a, (a + 3) % 6];
+  return [a];
+}
+function ifrInit(t) { if (t.ifrSlot0 == null) { t.ifrSlot0 = Math.floor(Math.random() * 6); t.ifrCharge = 0; t.ifrReady = 0; t.ifrLaunchCd = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrCrosses = []; } }
+// ALWAYS CHARGING while a slot is free (owner): the ball under way fills over chargeS, then waits in its slot; the next starts at once
+function ifrCharge(t, st, dt) {
+  if (t.ifrReady >= st.slots) { t.ifrCharge = 0; return; }
+  t.ifrCharge += dt / Math.max(0.01, st.chargeS);
+  while (t.ifrCharge >= 1 && t.ifrReady < st.slots) { t.ifrCharge -= 1; t.ifrReady++; }
+  if (t.ifrReady >= st.slots) t.ifrCharge = 0;
+}
+// a launch: a charged ball + an enemy in range (the tower's targeting), one every IFR_LAUNCH_GAP s; aimed at the enemy's spot NOW,
+// never led (the fast weakness). The ball leaves from the slot's corner (the last filled)
+function ifrLaunch(t, st, dt) {
+  t.ifrLaunchCd = Math.max(0, t.ifrLaunchCd - dt);
+  if (t.ifrReady <= 0 || t.ifrLaunchCd > 0) return;
+  const e = pickTargets(t, st, 1)[0];
+  if (!e) return;
+  const c = ifrCorner(t, ifrSlotCorners(t, st.slots)[t.ifrReady - 1]), d = Math.hypot(e.x - c.x, e.y - c.y) || 1;
+  t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, hit: [] }); /* hit: enemy ids struck en route */
+  t.ifrReady--; t.ifrLaunchCd = IFR_LAUNCH_GAP; t.shots = (t.shots || 0) + 1; sfx("ifr");
+}
+function stepIfr(t, dt) {
+  ifrInit(t);
+  const st = towerStats(t);
+  ifrCharge(t, st, dt);
+  ifrLaunch(t, st, dt);
+  stepIfrBalls(t, st, dt); stepIfrRings(t, st, dt); stepIfrPellets(t, st, dt); stepIfrCrosses(t, st, dt); // Task 4
+}
+function stepIfrBalls() {} function stepIfrRings() {} function stepIfrPellets() {} function stepIfrCrosses() {}
 function drawIfr() { /* Task 5 */ }
