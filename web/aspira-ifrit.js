@@ -47,7 +47,9 @@ function ifrSkillStats(t, s, b) {
 // ---------- the corners and the charge ----------
 // a corner of the tower's drawn hex (the slot's pts shrunk to TOWER_K) at the tower's CURRENT spot (drawTower moves the hex the same way)
 function ifrCorner(t, k) { const c = CELLS[t.cell], p = c.pts[k % 6]; return { x: (t.x ?? c.x) + (p.x - c.x) * TOWER_K, y: (t.y ?? c.y) + (p.y - c.y) * TOWER_K }; }
-// the corners n slots use (owner, 2026-10-19): 1 = the corner picked at build, 2 = + the opposite, 3 = every other corner, 6 = all
+// the corners n slots use (owner, 2026-10-19): 1 = the FIRST corner (ifrSlot0), 2 = + the opposite, 3 = every other corner, 6 = all.
+// The first corner is random, picked at the first step (ifrInit) and again whenever the last charged ball leaves (ifrLaunch -
+// owner: "the first ball should spawn on a random corner whenever there are no charged balls"); the pattern follows from it
 function ifrSlotCorners(t, n) {
   const a = t.ifrSlot0 ?? 0;
   if (n >= 6) return [0, 1, 2, 3, 4, 5];
@@ -73,6 +75,7 @@ function ifrLaunch(t, st, dt) {
   const c = ifrCorner(t, ifrSlotCorners(t, st.slots)[t.ifrReady - 1]), d = Math.hypot(e.x - c.x, e.y - c.y) || 1;
   t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, hit: [] }); /* hit: enemy ids struck en route */
   t.ifrReady--; t.ifrLaunchCd = IFR_LAUNCH_GAP; t.shots = (t.shots || 0) + 1; sfx("ifr");
+  if (t.ifrReady <= 0) t.ifrSlot0 = Math.floor(Math.random() * 6); /* none charged: the next first ball takes a new random corner (owner) */
 }
 function stepIfr(t, dt) {
   ifrInit(t);

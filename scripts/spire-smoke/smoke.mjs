@@ -121,7 +121,7 @@ run(`function ifrNear(type, t, dist) {
   for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
   const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e6; e.armor = 0; e.shield = 0; return e;
 }`);
-check("IFR: charges on its corners, holds one ball at base, launches at a target in range", () => {
+check("IFR: charges on its corners, holds one ball at base, launches at a target in range, re-picks its first corner once empty", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e6; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -131,7 +131,8 @@ check("IFR: charges on its corners, holds one ball at base, launches at a target
     out.ready = t.ifrReady; out.charge = t.ifrCharge;
     const c = ifrCorner(t, t.ifrSlot0); out.onCorner = Math.abs(Math.hypot(c.x - t.x, c.y - t.y) - CELL_S * TOWER_K) < 1;
     ifrNear("armor", t, 100);
-    step(1 / 30); out.readyAfter = t.ifrReady; out.balls = (t.ifrBalls || []).length;
+    const rnd = Math.random; Math.random = () => 0.99; try { step(1 / 30); } finally { Math.random = rnd; } /* the launch empties the slots: corner 5 */
+    out.readyAfter = t.ifrReady; out.balls = (t.ifrBalls || []).length; out.slot0After = t.ifrSlot0;
     return out;
   })()`);
   if (!(r.slot0 >= 0 && r.slot0 < 6)) return "no corner picked at build: " + r.slot0;
@@ -139,6 +140,7 @@ check("IFR: charges on its corners, holds one ball at base, launches at a target
   if (!r.onCorner) return "the slot is not on the hex corner";
   if (r.ready !== 1 || r.charge !== 0) return "after 5 s: ready " + r.ready + " charge " + r.charge + " (expected 1 ball, the second not charging)";
   if (r.readyAfter !== 0 || r.balls !== 1) return "no launch at a target in range: ready " + r.readyAfter + " balls " + r.balls;
+  if (r.slot0After !== 5) return "the empty tower did not re-pick its first corner (Math.random 0.99 -> 5, got " + r.slot0After + ")";
   return "";
 });
 check("IFR: a ball bursts where it was aimed (its target gone), the ring hits once, pellets fly, a flare burns", () => {
