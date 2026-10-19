@@ -10,6 +10,18 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
+  { v: "6.3", day: "Oct 19", bu: [
+    "Arc: Voltage - a kill passes its leftover damage on to the nearest enemy, more hops at each purchase.",
+    "Arc: Capacitance - chain reactions from its first purchase: an enemy a discharge kills goes off too, and the bursts reach further each purchase.",
+    "Sol: every beam passes through to the enemies along its line, carrying 35% of the hit, up to 125% with Breach; each of those hits breaches in full.",
+    "Sol: Focus and Refraction hit far harder at their last purchases.",
+    "Carrier: every Carrier's tether slows a little; Tether runs on to a second enemy from its first purchase; interceptors fly faster and open fire sooner.",
+  ], ne: [
+    "Sol: fires 25% slower, each shot a third harder (the same damage a second); its refraction cone is much narrower.",
+    "Carrier: fewer, harder volleys and bolts - fewer shield charges popped.",
+  ], u: [
+    "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
+  ] },
   { v: "6.2", day: "Oct 19", bu: [
     "Ifrit: Hellfire flares last half as long and burn twice as hard.",
     "Enemies: they move 3x faster wherever no tower could reach them (beyond every tower's movement and range), as they do off screen.",

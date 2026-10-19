@@ -281,6 +281,7 @@ function rayHit(t, st, e, base, from) {
   for (let i = 0; i < n && !e.dead; i++) {
     fromHit(from, () => damage(e, part, t, false, crit, st)); onHit(e, t, st, part); bleed(e, st, t); // a crit shows as a PINK number (owner); st: its shieldPop
   }
+  if (st.pierce) solPierce(t, st, from, e, n * part); // (always - kill or not)
   if (e.dead && st.smash && !e.smashed) {
     // Nova / Supernova: the kill bursts (a filled blast that lingers, owner)
     e.smashed = true;

@@ -216,7 +216,7 @@ function arcSkillStats(t, s, b) {
   s.dmg = b.dmg * ARC_VOLTAGE_DMG[v] * ARC_SIDE_DMG[c] * ARC_SIDE_DMG[z] * ARC_CONDUCTIVITY[c].d; s.range = b.range * RANGE_BONUS;
   const sh = ARC_CONDUCTIVITY[c]; // Conductivity: strikes, jumps AND forks
   s.arcRange = ARC_JUMP_BASE * ARC_VOLTAGE_JUMP[v] * sh.r; s.targets = sh.s; s.layers = sh.j; s.branch = sh.f; s.revisit = sh.v || 0;
-  s.arcFall = ARC_VOLTAGE_FALL[v]; s.arcShrink = ARC_SHRINK; s.charge = ARC_CAPACITANCE[z]; s.statSlow = ARC_STAT_SLOW[z]; s.skill = true;
+  s.carry = VOLT_CARRY_N[v]; s.arcFall = ARC_VOLTAGE_FALL[v]; s.arcShrink = ARC_SHRINK; s.charge = ARC_CAPACITANCE[z]; s.statSlow = ARC_STAT_SLOW[z]; s.skill = true;
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
 function skillOptions(t) {
@@ -257,8 +257,25 @@ function fireSkillChain(t, st, e, seen) {
   skillHit(c, e, d);
   branchFrom(c, root, 1);
 }
+// VOLTAGE CARRIES (owner, 2026-10-18: "a kill passes its leftover damage on to the nearest enemy"): a Voltage hit that kills arcs
+// what the kill did not need on to the nearest enemy within VOLT_CARRY_R x the jump reach, up to VOLT_CARRY_N hops by tier - its
+// single-target hit had nothing to spend on a swarm (countermx N=1: Voltage 71% leaked, Conductivity 35)
+const VOLT_CARRY_N = [0, 1, 2, 3, 4, 6, 8], VOLT_CARRY_R = 0.8;
+function voltCarry(c, e, left) {
+  const seen = new Set([e]);
+  for (let k = 0; k < c.st.carry && left > 0; k++) {
+    let o = null, bd = (c.st.arcRange * VOLT_CARRY_R) ** 2;
+    for (const x of G.enemies) { if (x.dead || !x.seen || seen.has(x)) continue; const dd = (x.x - e.x) ** 2 + (x.y - e.y) ** 2; if (dd < bd) { bd = dd; o = x; } }
+    if (!o) return;
+    beam(e, o, TOWERS.arc.color, CHAIN_BEAM_LIFE, 1, left);
+    const h = o.hp; fromHit(e, () => damage(o, left, c.t, false, false, c.st)); seen.add(o);
+    if (!o.dead) return; left -= Math.max(0, h); e = o;
+  }
+}
 function skillHit(c, e, d) {
+  const hp0 = e.hp;
   damage(e, d, c.t, false, false, c.st); onHit(e, c.t, c.st, d); // (discharges e's own charges, if any)
+  if (c.st.carry && e.dead && hp0 > 0 && d > hp0) voltCarry(c, e, d - hp0);
   const b = c.st.charge;
   if (!b || e.dead) return;
   const ch = e.charge || (e.charge = { list: [], t: c.t });
@@ -277,7 +294,16 @@ const ARC_STAT_SLOW = [0, 0.25, 0.3, 0.35, 0.4, 0.45] /* from tier I and deeper 
 // so under Voltage IV-V, where a jump carries MORE than the strike, the far jumps outshine the shot; widths follow the
 // damage at ARC_W_CORR of the usual slope; Capacitance's leaps thin and faint; the glow narrower and dimmer (drawFx, f.soft)
 const ARC_A = 0.4, ARC_CORR = 0.5, ARC_W_CORR = 0.5, ARC_LEAP_A = 0.6 * ARC_A, ARC_LEAP_W = 0.6, ARC_GLOW_A = 0.16, ARC_GLOW_W = 2; // A and GLOW_A x1.33 (owner, 2026-10-19: "make arc visual effect slightly more intense"; were 0.3 / 0.12)
+// CAPACITANCE CHAINS from tier CAP_CHAIN_FROM (owner, 2026-10-18: "a charged enemy that dies discharges into its neighbours" - it did,
+// but not when a discharge killed it: no chain reaction): a charged enemy a discharge kills joins capQueue and goes off after the
+// burst that killed it, once each (its charge is spent as it goes)
+const CAP_CHAIN_FROM = 1, capQueue = [], CAP_BURST_K = [1, 1.1, 1.2, 1.35, 1.5, 1.7, 2]; // CAP_BURST_K: the burst's reach by Capacitance tier
 function dischargeStatic(e) {
+  const outer = !staticQuiet;
+  dischargeOne(e);
+  if (outer) while (capQueue.length) { const q = capQueue.shift(); if (q.charge) dischargeOne(q); }
+}
+function dischargeOne(e) {
   const ch = e.charge;
   e.charge = null;
   staticQuiet = true;
@@ -287,7 +313,7 @@ function dischargeStatic(e) {
     ring(e.x, e.y, ARC_BURST_R, TOWERS.arc.color, 0.18, false); const rf = fx[fx.length - 1]; if (rf && rf.k === "ring") Object.assign(rf, { a: ARC_BURST_A, w: 1.2 }); // (the simulator stubs ring out)
     ch.list.forEach(dmg => {
       for (const o of G.enemies) {
-        if (o.dead || !o.seen || Math.hypot(o.x - e.x, o.y - e.y) > ARC_BURST_R) continue;
+        if (o.dead || !o.seen || Math.hypot(o.x - e.x, o.y - e.y) > ARC_BURST_R * CAP_BURST_K[skillOf(ch.t, "capacitance")]) continue;
         fromHit(e, () => damage(o, dmg, ch.t, false, false, null)); // away from the discharging enemy
         if (ch.slow && !o.dead) applySlow(o, ch.slow, STAT_SLOW_T, ch.t.id + ":stat");
       }
@@ -348,7 +374,7 @@ const SOL_BREACH_ARMOR = [80, 200, 350, 550, 1219, 2359] /* bigger tiers (owner,
 // chance for every tower
 // the cone's half-angle by Refraction tier (owner, 2026-10-08: it WIDENS with the tier and starts wider, since every hop
 // must now travel forward - see solRefraction; was a flat 8, before that 25)
-const SOL_CONE_BY = [8, 24, 24, 32, 32, 32] /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit; the chart SOL uses SOL_BREACH_CRIT)
+const SOL_CONE_BY = [3, 6, 6, 8, 8, 9] /* NARROW (owner, 2026-10-19: "SOL should not be good vs swarm whatsoever" - the cone is the lever) */ /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit; the chart SOL uses SOL_BREACH_CRIT)
 // SOL's own lever (owner: more crit): Breach also raises the crit MULTIPLIER, x3 at base
 const SOL_CRITMUL = [3, 5, 6.5, 9, 14.6, 25]; /* x1.3 from I (2026-10-18: Breach's shrapnel no longer deals damage) */
 // FITTED 2026-10-06 to +25 / +50 / +100% (on an HP-scaled field, so nothing
@@ -359,15 +385,16 @@ const SOL_HOP = [1, 1, 1, 1, 1, 1]; // every refraction hop a full strike (overn
 // Refraction peaked at I (107%) and fell by III (93%): range alone spread its fire
 // thin, so II / III also hit harder (owner, 2026-10-07)
 // (LIGHT OUTRUNS THE FAST, Refraction x the fast, removed 2026-10-12 - owner: no extra damage by enemy type)
-const SOL_REFRACTION_DMG = [1, 1, 1.3, 4.6, 8.7325, 16.085]; // III..V x1.15 / 1.35 / 1.5 with the 160-degree cone (owner, 2026-10-08: "even a 160 deg angle?" - the cone alone tops out at 156%)
+const SOL_REFRACTION_DMG = [1, 1, 1.3, 4.6, 13.0987, 24.1275]; // III..V x1.15 / 1.35 / 1.5 with the 160-degree cone (owner, 2026-10-08: "even a 160 deg angle?" - the cone alone tops out at 156%)
 // each Focus tier's beam STRENGTH (2026-10-08, the tier fit's lever for Focus: more beams alone measured 168% at V)
-const SOL_FOCUS_DMG = [1, 1, 1, 1, 1.139, 1.176]; // never below 1 (owner, 2026-10-08: no upgrade lowers a stat) - more beams carry I..III (114 / 133 / 152%)
+const SOL_PIERCE = [0.35, 0.6, 0.7, 0.8, 0.9, 1]; /* by Breach STOP: 0 35%, I 60%, II 80%, III 100%, IV (the capstone) 125% (owner, 2026-10-19: "100% carry earlier / capstone goes above 100%"; 2 and 4 are never bought) */ // the overkill a kill carries on (solPierce, aspira-towers.js) by Breach tier; VI 1 (capstone)
+const SOL_FOCUS_DMG = [1, 1, 1, 1, 4.556, 4.704]; // never below 1 (owner, 2026-10-08: no upgrade lowers a stat) - more beams carry I..III (114 / 133 / 152%)
 function solSkillStats(t, s, b) {
   s.dmg = b.dmg * SOL_REFRACTION_DMG[skillOf(t, "refraction")] * SOL_FOCUS_DMG[skillOf(t, "focus")]; s.range = b.range * RANGE_BONUS; s.crit = LVL_SOL_CRIT[0]; s.rate = b.rate;
   s.shieldPop = SOL_SHIELD_POP[skillOf(t, "focus")] + SOL_REFRACT_POP[skillOf(t, "refraction")]; // FOCUS pierces shields: each beam pops this many (SOL's shield help, counter matrix)
   s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")]; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.twinCone = skillOf(t, "refraction") >= 6; // VI: two opposite cones (solRefraction)
   const bk = skillOf(t, "breach");
-  s.breach = 1; s.critMul = SOL_CRITMUL[bk]; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = SOL_BREACH_CRIT[bk]; s.skill = true;
+  s.breach = 1; s.pierce = SOL_PIERCE[bk]; s.critMul = SOL_CRITMUL[bk]; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = SOL_BREACH_CRIT[bk]; s.skill = true;
 }
 // from fireRay: bend on from the first enemy hit to st.refraction more, each the nearest not yet hit to the last one,
 // inside ONE light cone, SOL_CONE degrees either side - no reach limit between hops, nor the tower's range.

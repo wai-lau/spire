@@ -56,15 +56,15 @@ const CAPSTONE_NUM = [
   [FRZ_TEMP_SLOW, 0.67], [FRZ_TEMP_TICK, 0.0495], [FRZ_BRITTLE, 9.0185], [FRZ_RIME, 0.9], [FRZ_RIME_BITE, 300], [FRZ_RIME_PERIOD, 0.1925] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 1.2],
   [FRZ_MOON_COUNT, 5], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 6],
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
-  [SOL_BEAMS, 25], [SOL_FOCUS_DMG, 1.3], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, Infinity], [SOL_REFRACTION_DMG, 21.445],
-  [SOL_CONE_BY, 40], [SOL_HOP, 1], [SOL_CRITMUL, 33], [SOL_BREACH_ARMOR, 3216], [SOL_REFRACT_POP, 0], [SOL_BREACH_CRIT, 0],
+  [SOL_BEAMS, 25], [SOL_FOCUS_DMG, 5.2], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, Infinity], [SOL_REFRACTION_DMG, 32.1675],
+  [SOL_CONE_BY, 12], [SOL_HOP, 1], [SOL_CRITMUL, 33], [SOL_PIERCE, 1.25], [SOL_BREACH_ARMOR, 3216], [SOL_REFRACT_POP, 0], [SOL_BREACH_CRIT, 0],
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
   [ACD_CORROSION_DMG, 26.98], [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9], [ACD_FLOW_SLOW, 0.2], [ACD_SPRAY_MUL, 26.98],
   [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }], [ACD_PUDDLE_HEAT, 34.17],
   // GRV: Void the widest, coldest aura (Event Horizon: a full sphere nearly stops what it holds); Supernova the biggest nova
   // (Hypernova: it tears half the armor away, spheres start heavy); Radiation the most pellets (Hawking: a last burst)
   // CRR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
-  [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 16], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
+  [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 8], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
   [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
   // IFR: Meteor every corner, charging as fast as it launches (Impact); Hellfire beams across the whole board; Firaga the biggest blast, the most pellets (Backdraft)
   [IFR_SLOTS, 6], [IFR_CHARGE_S, 0.1], [IFR_BALL_V, 540], [IFR_ROUTE_K, 150], [IFR_BEAM_L, 140], [IFR_BEAM_W, 24], [IFR_BURN_S, 5], [IFR_TICK_S, 0.22], [IFR_TICK_K, 7.56], [IFR_BLAST_R, 234], [IFR_BLAST_K, 40], [IFR_PELLETS, 24],

@@ -163,8 +163,8 @@ there; armor stripped to <= 0 lets arcs through again.
 | axis | buys |
 |---|---|
 | Conductivity | the branching: strikes x jump layers x forks, and jump reach; from III a bolt may return to a struck enemy (3 hits a tree at 0, 40 at the capstone); range |
-| Voltage | raw power: the hit, and what each jump keeps of the hit before it (above 1 from the third buy: jumps out-hit the strike); range |
-| Capacitance | charges left on the enemy; the next hit **from anything**, or its death, bursts them all (`ARC_BURST_R`) and slows; bursts never charge or chain; slide |
+| Voltage | raw power: the hit, and what each jump keeps of the hit before it (above 1 from the third buy: jumps out-hit the strike); a kill passes its overkill on to the nearest enemy, `VOLT_CARRY_N` hops by tier (`voltCarry`); range |
+| Capacitance | charges left on the enemy; the next hit **from anything**, or its death, bursts them all (`ARC_BURST_R`) and slows; bursts never charge; from tier I a charged enemy a burst kills goes off next, once (`capQueue`, `CAP_CHAIN_FROM`), the burst reaching `CAP_BURST_K` x by tier; slide |
 
 **FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the enemy's slow (`FRZ_CHILL_K`: "the colder, the
@@ -179,7 +179,10 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 
 **SOL** - locks a target (a lock holds out to `SOL_HOLD`), charges the whole reload, fires;
 a target dying mid-charge restarts the charge; a lost lock hands its charge only to a new
-target inside the Refraction cone. Armor cuts SOL like any other. **Weakness: swarms**.
+target inside the Refraction cone. Armor cuts SOL like any other. **Weakness: swarms** (a narrow cone, `SOL_CONE_BY`).
+Every hit PASSES THROUGH, kill or not (`solPierce`, `web/aspira-sol.js`): the beam goes on along its line to the next enemies (`SOL_PIERCE_W` wide,
+`SOL_PIERCE_LEN` on, `SOL_PIERCE_HOPS` at most) with `SOL_PIERCE[breach]` of the full hit (35% untaken .. 125% capstone), each hit
+breaching in full; it is drawn at 50% + half the carry.
 
 | axis | buys |
 |---|---|
@@ -281,6 +284,7 @@ are in ARCHAEOLOGY §4.6c.
 | hold | with any Hangar tier, reloaded interceptors with nothing to hit are STORED in orbit round the carrier (a quarter, half, three quarters, all of the wing by tier; `CRR_HOLD_FRAC`), at a jittered distance and size, carried with the carrier as if fixed to it. They still launch one by one |
 | flight | a heading with a capped turn rate, steered onto an orbit circle round the target (`CRR_ORBIT`, each interceptor's radius breathing by `CRR_ORBIT_JIT`); it steers round the core and the towers (`carAvoid`) and leads nothing. On arrival it makes a strafing pass (the ram) |
 | volleys | `CRR_AMMO` volleys a sortie, each `CRR_BOLTS` bolts fired `CRR_BOLT_PAIR` at a time, side by side, as a steady stream, at `CRR_VOLLEY_K` x the hit between them. Armor cuts each small bolt (ATC's armor weakness). All the bolts of a volley go at the ONE enemy it began on, even if it dies; a bolt whose target is gone flies on only `CRR_BOLT_ON` s, hitting the first enemy it touches or nothing. Every bolt slows (one slow a tower), and what an interceptor circles is held back the whole time (the pin, `CRR_PIN`) |
+| tether | every interceptor tethers its target with a light slow (`CRR_TETHER_SLOW[0]`); the pulse, a real hit, only with Tether bought; Tether runs on to a second enemy from tier I (`CRR_CHAIN_FROM`) |
 | after a kill | the interceptor hops to the nearest enemy within `CRR_HOP` that no wingmate is on (`carHop`), else the nearest within it, else it flies home. Out of volleys it goes home and reloads |
 | numbers | one damage number per `CRR_NUM_HITS` hits per interceptor, their sum (`carNum`) |
 | look | hairline trails (`carTrails`); darts sized by Armament; drawn in `skyKeep` so a boss sky does not invert them. No new 3D primitives: darts are filled triangles, firing lines and pellets single strokes (the board's path context takes no gradient stroke, §11) |

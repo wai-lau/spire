@@ -306,7 +306,7 @@ function kill(e, t) {
   if (e.charged) staticDischarge(e); // ARC's Static (the old path)
   // the chart ARC's Static: a charged enemy that DIES lets its charges go too
   // (owner) - unless a Static blast killed it (no chain reaction)
-  if (e.charge && !staticQuiet) dischargeStatic(e);
+  if (e.charge && !staticQuiet) dischargeStatic(e); else if (e.charge && e.charge.t && skillOf(e.charge.t, "capacitance") >= CAP_CHAIN_FROM) capQueue.push(e); // a discharge killed it: it goes off next (CAP_CHAIN_FROM, aspira-skills.js)
 }
 
 // LIVES come in multiples of LIFE_STEP 6 - a ring's first side count (owner, 2026-10-04)
