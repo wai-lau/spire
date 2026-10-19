@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add IFR (Ifrit), the seventh Spire tower: corner-slot charge balls lobbed slowly at a target, bursting into an expanding ring plus pellets that burst into burning cardinal crosses; re-space all seven tower hues 51.4 OKLCH degrees apart; ship as 6.2.0.
+**Goal:** Add IFR (Ifrit), the seventh Spire tower: corner-slot charge balls lobbed slowly at a target, bursting into an expanding ring plus pellets that burst into burning six-beam flares; re-space all seven tower hues 51.4 OKLCH degrees apart; ship as 6.2.0.
 
-**Architecture:** One new kind module `web/aspira-ifrit.js` (tables, `ifrSkillStats`, `stepIfr`, `drawIfr`) loaded after `aspira-car.js`, hooked into the same per-kind tables the carrier uses (defs, game loop, towers, core, capstone, stats, sliders, desc, sfx, chooser, css, template, board API, smoke, simulator). Every ball, ring, pellet and cross is a plain object in a list on its tower (`t.ifrBalls`, `t.ifrRings`, `t.ifrPellets`, `t.ifrCrosses`), so `G` stays structured-cloneable. All hits go through `damage()`; burns are quiet ticks that pop one shield charge each.
+**Architecture:** One new kind module `web/aspira-ifrit.js` (tables, `ifrSkillStats`, `stepIfr`, `drawIfr`) loaded after `aspira-car.js`, hooked into the same per-kind tables the carrier uses (defs, game loop, towers, core, capstone, stats, sliders, desc, sfx, chooser, css, template, board API, smoke, simulator). Every ball, ring, pellet and flare is a plain object in a list on its tower (`t.ifrBalls`, `t.ifrRings`, `t.ifrPellets`, `t.ifrFlares`), so `G` stays structured-cloneable. All hits go through `damage()`; burns are quiet ticks that pop one shield charge each.
 
 **Tech Stack:** Vanilla JS in one global scope (no modules), canvas 2D primitives that the 3D moving layer turns into GL instances, Python 3 (`spire_board.py`, tests), Node 18 (smoke + simulator), exec-fn's pre-commit lints (ruff, ESLint `max-lines-per-function: 100`, 500-line file cap, palette lint, `lint-swallowed.py`).
 
@@ -25,10 +25,10 @@
 ## Review Focus
 
 1. A ball whose target dies mid-flight must still fly to its aim spot and burst there (pinned: Task 4 smoke check "a ball bursts where it was aimed").
-2. A tower sold or dragged while balls charge: charge balls are drawn from `t.x`/`t.y` every frame (never stored positions), and selling a tower with balls, rings and crosses alive throws nothing (pinned: Task 5 smoke check "sell mid-flight").
-3. Autosave: `structuredClone(G)` must succeed with every Ifrit list populated — no enemy object references inside balls/pellets/crosses, only ids and coordinates (pinned: Task 5 smoke check "G clones").
-4. Hellfire capstone beams run to the play-box edges (over 1000 u); the burn tick must stay bucketed (sample points every `GRID_S` along the beam through `enemiesNear`), never all crosses x all enemies (pinned: Task 6 smoke check "200 enemies, 40 crosses under 4 ms a tick").
-5. Shields: the ring, a pellet hit and every burn tick each pop exactly one charge; a shield wave inside a cross melts charge by charge, and a quiet tick on a shielded enemy pops without a flash spam (pinned: Task 6 smoke check "a shielded enemy loses one charge a tick").
+2. A tower sold or dragged while balls charge: charge balls are drawn from `t.x`/`t.y` every frame (never stored positions), and selling a tower with balls, rings and flares alive throws nothing (pinned: Task 5 smoke check "sell mid-flight").
+3. Autosave: `structuredClone(G)` must succeed with every Ifrit list populated — no enemy object references inside balls/pellets/flares, only ids and coordinates (pinned: Task 5 smoke check "G clones").
+4. Hellfire capstone beams run to the play-box edges (over 1000 u); the burn tick must stay bucketed (sample points every `GRID_S` along the beam through `enemiesNear`), never all flares x all enemies (pinned: Task 6 smoke check "200 enemies, 40 flares under 4 ms a tick").
+5. Shields: the ring, a pellet hit and every burn tick each pop exactly one charge; a shield wave inside a flare melts charge by charge, and a quiet tick on a shielded enemy pops without a flash spam (pinned: Task 6 smoke check "a shielded enemy loses one charge a tick").
 
 ---
 
@@ -82,9 +82,9 @@
 // armor, weak to fast. It CHARGES balls on its hex corners (one slot at base, 2, 3, then all 6 at the capstone) and is never idle
 // while a slot is free; a charged ball + an enemy in range = a launch, one every IFR_LAUNCH_GAP s. The ball flies SLOWLY at the
 // enemy's spot at launch (no lead: a fast enemy walks out from under it), hitting what it passes through; where it lands a RING
-// expands to the blast radius hitting everything it crosses once, and PELLETS fly at the units inside the blast (they can miss);
-// where a pellet stops it bursts into a burning CROSS - four beams along the board's axes, quiet ticks that pop a shield charge.
-// Meteor: slots, charge rate, ball speed, en-route hit (Impact: 6 slots, charging as fast as it launches). Hellfire: the cross
+// expands to the blast radius hitting everything it flares once, and PELLETS fly at the units inside the blast (they can miss);
+// where a pellet stops it bursts into a FLARE - six beams 60 degrees apart, quiet ticks that pop a shield charge.
+// Meteor: slots, charge rate, ball speed, en-route hit (Impact: 6 slots, charging as fast as it launches). Hellfire: the flare
 // (Hellfire VI: beams to the play-box edges). Firaga: the blast and the pellet count (Backdraft VI: a pellet bursts into a
 // smaller ring too). Loaded after aspira-car.js (the simulator too); towerStats calls ifrSkillStats, the tower loop stepIfr,
 // drawSceneTop drawIfr. Every list on the tower holds plain objects (ids and coordinates, never enemy refs): autosave clones G.
@@ -95,16 +95,16 @@ const IFR_SLOTS = [1, 2, 2, 3, 3, 3]; // Meteor: charge slots on the hex corners
 const IFR_CHARGE_S = [2.0, 1.6, 1.3, 1.0, 0.8, 0.6]; // Meteor: s to fill one ball (VI 0.1: "near the launch rate")
 const IFR_BALL_V = [140, 170, 200, 240, 280, 320]; // Meteor: u/s in flight - SLOW, the fast weakness (VI 360)
 const IFR_ROUTE_K = [0.25, 0.5, 1, 2, 4, 8]; // Meteor: the en-route hit, x the blast hit ("a lot to make up for the faster travel speed"; VI 16)
-const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Hellfire: a cross beam's half-length, u (VI: to the play-box edges)
+const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Hellfire: a flare beam's half-length, u (VI: to the play-box edges)
 const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Hellfire: its width, u
-const IFR_BURN_S = [1.5, 2, 2.5, 3, 4, 5]; // Hellfire: a cross burns this long (VI 10 = EFFECT_MAX_S)
+const IFR_BURN_S = [1.5, 2, 2.5, 3, 4, 5]; // Hellfire: a flare burns this long (VI 10 = EFFECT_MAX_S)
 const IFR_TICK_S = [0.3, 0.27, 0.24, 0.2, 0.17, 0.15]; // Hellfire: s between burn ticks
 const IFR_TICK_K = [0.08, 0.12, 0.18, 0.27, 0.4, 0.6]; // Hellfire: a tick, x the blast hit
 const IFR_BLAST_R = [60, 70, 80, 95, 110, 130]; // Firaga: the ring's reach, u
 const IFR_BLAST_K = [1, 1.5, 2.3, 3.5, 6, 10]; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [5, 6, 7, 8, 9, 10]; // Firaga: pellets a burst
 const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 600, IFR_PELLET_V = 300, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25, IFR_MINI_K = 0.5; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit; Backdraft's mini ring x radius and x hit
-const IFR_CROSS_MAX = 60; // live crosses a tower at most: the oldest goes (perf)
+const IFR_FLARE_MAX = 60; // live flares a tower at most: the oldest goes (perf)
 const IFR_ROUTE_ST = { shieldPop: 1 }, IFR_RING_ST = { shieldPop: 1 }, IFR_PELLET_ST = { shieldPop: 1 }, IFR_BURN_ST = { noFx: true, noNum: true, shieldPop: 1 }; // (damage: st.shieldPop; the burn is quiet)
 
 SKILL_TREES.ifr = [
@@ -129,18 +129,18 @@ function drawIfr() { /* Task 5 */ }
 
 - [ ] **Step 3: Register the kind.** `aspira-defs.js` TOWERS: after `grv:` add `ifr: { name: "Ifrit", ab: "IFR", color: "tifr", cost: 40, dmg: 60 /* the blast hit (owner's starting value, 2026-10-19; the sim sets it) */, rate: 0.5 /* (unused: ifrSkillStats sets rate = 1 / the charge time) */, range: 200 /* a mortar: between CRR 160 and SOL 260 */, blurb: "Kilika's hellfire." /* owner, 2026-10-19 */, up: "slots" }, // IFR, the fire tower (owner, 2026-10-19; aspira-ifrit.js)`. COUNTERS: `swarm: { main: ["arc", "grv", "ifr"], ... }`, `shield: { main: ["acd", "car", "ifr"], ... }` and update the comment: `// ifr: swarm + shield mains, 2026-10-19 (owner: neutral armor, weak to fast)`. towerStats switch: after `case "car": ...` add `case "ifr": ifrSkillStats(t, s, b); break; // Ifrit (aspira-ifrit.js)`. `aspira-game.js:465`: after `if (t.kind === "car") { stepCar(t, dt); continue; }` add `if (t.kind === "ifr") { stepIfr(t, dt); continue; }`. `aspira-towers.js` MOVE_BASE: add `, ifr: 200 /* medium, like ARC and GRV (owner's design, 2026-10-19) */`. `aspira-core.js` relayStats: add `if (kind === "ifr") s.chargeS /= m; // IFR: charges m times as fast`.
 
-- [ ] **Step 4: The capstone entries.** `aspira-capstone.js` CAPSTONE_NUM: add `// IFR: Meteor every corner, charging as fast as it launches (Impact); Hellfire beams across the whole board; Firaga the biggest blast, the most pellets (Backdraft)` then `[IFR_SLOTS, 6], [IFR_CHARGE_S, 0.1], [IFR_BALL_V, 360], [IFR_ROUTE_K, 16], [IFR_BEAM_L, 140], [IFR_BEAM_W, 24], [IFR_BURN_S, 10], [IFR_TICK_S, 0.12], [IFR_TICK_K, 1], [IFR_BLAST_R, 160], [IFR_BLAST_K, 18], [IFR_PELLETS, 12],`. CAPSTONE_MOVE: `ifr: { meteor: [1.6, 1], hellfire: [1.4, 1], firaga: [1, 3] },`. CAPSTONE_TIERS: `meteor: { name: "Impact" }, hellfire: { name: "Hellfire" }, firaga: { name: "Backdraft" },`.
+- [ ] **Step 4: The capstone entries.** `aspira-capstone.js` CAPSTONE_NUM: add `// IFR: Meteor every corner, charging as fast as it launches (Impact); Hellfire beams aflare the whole board; Firaga the biggest blast, the most pellets (Backdraft)` then `[IFR_SLOTS, 6], [IFR_CHARGE_S, 0.1], [IFR_BALL_V, 360], [IFR_ROUTE_K, 16], [IFR_BEAM_L, 140], [IFR_BEAM_W, 24], [IFR_BURN_S, 10], [IFR_TICK_S, 0.12], [IFR_TICK_K, 1], [IFR_BLAST_R, 160], [IFR_BLAST_K, 18], [IFR_PELLETS, 12],`. CAPSTONE_MOVE: `ifr: { meteor: [1.6, 1], hellfire: [1.4, 1], firaga: [1, 3] },`. CAPSTONE_TIERS: `meteor: { name: "Impact" }, hellfire: { name: "Hellfire" }, firaga: { name: "Backdraft" },`.
 
 - [ ] **Step 5: The words and rows.** `aspira-stats.js` SPEC add:
 
 ```js
   // IFR (aspira-ifrit.js): Damage is the blast hit, Rate balls a second from one slot
   ifr: st => [["Slots", st.slots], ["Charge", st.chargeS + "s"], ["Ball speed", st.ballV], ["En route", dmgUnits(st.dmg * st.routeK)], ["Blast", "r" + st.blastR], ["Pellets", st.pellets + " × " + dmgUnits(st.dmg * IFR_PELLET_K)],
-    ["Cross", (st.hellfire ? "to the edges" : "±" + st.beamL) + " · " + st.beamW + " wide"], ["Burn", dmgUnits(st.dmg * st.tickK) + " / " + st.tickS + "s · " + st.burnS + "s"], ["Shields", "−1 / hit, −1 / tick"],
+    ["Flare", (st.hellfire ? "to the edges" : "±" + st.beamL) + " · " + st.beamW + " wide"], ["Burn", dmgUnits(st.dmg * st.tickK) + " / " + st.tickS + "s · " + st.burnS + "s"], ["Shields", "−1 / hit, −1 / tick"],
     ["Backdraft", st.backdraft ? "pellets burst r" + Math.round(st.blastR * IFR_MINI_K) : "—"]],
 ```
 
-`aspira-sliders.js` STAT_SECTIONS add `ifr: [["Meteor", ["Slots", "Charge", "Ball speed", "En route", "Rate", "Range"]], ["Hellfire", ["Cross", "Burn"]], ["Firaga", ["Damage", "Blast", "Pellets", "Backdraft", "Shields"]]],`. `aspira-desc.js` DESCRIBE add (and, near the top of the file, the two word lists):
+`aspira-sliders.js` STAT_SECTIONS add `ifr: [["Meteor", ["Slots", "Charge", "Ball speed", "En route", "Rate", "Range"]], ["Hellfire", ["Flare", "Burn"]], ["Firaga", ["Damage", "Blast", "Pellets", "Backdraft", "Shields"]]],`. `aspira-desc.js` DESCRIBE add (and, near the top of the file, the two word lists):
 
 ```js
 const IFR_BALLS = ["", "a ball", "two balls", "three balls", "", "", "six balls"]; // by SLOT count (IFR_SLOTS: 1 2 3, capstone 6)
@@ -148,12 +148,12 @@ const IFR_PELL = ["", "", "", "", "", "five", "six", "seven", "eight", "nine", "
 ```
 
 ```js
-  // IFR (owner, 2026-10-19): Meteor more slots, faster, harder on the way (Impact: all six corners); Hellfire the burning cross
-  // (Hellfire VI: across the whole board); Firaga a bigger blast, more pellets (Backdraft: a pellet bursts too)
+  // IFR (owner, 2026-10-19): Meteor more slots, faster, harder on the way (Impact: all six corners); Hellfire the flare of six beams
+  // (Hellfire VI: aflare the whole board); Firaga a bigger blast, more pellets (Backdraft: a pellet bursts too)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
     return "Charges " + IFR_BALLS[IFR_SLOTS[m]] + " on its corners and lobs each slowly at an enemy, burning what it passes. Where it lands a ring of fire bursts outward and " +
-      IFR_PELL[IFR_PELLETS[f]] + " pellets fly at whatever stands in the blast; where a pellet stops a burning cross " + (h >= 6 ? "runs to the edges of the board" : "spreads") + (f >= 6 ? ", and the pellet bursts into a smaller ring." : ".");
+      IFR_PELL[IFR_PELLETS[f]] + " pellets fly at whatever stands in the blast; where a pellet stops a flare of six beams " + (h >= 6 ? "runs to the edges of the board" : "spreads") + (f >= 6 ? ", and the pellet bursts into a smaller ring." : ".");
   },
 ```
 
@@ -239,7 +239,7 @@ function ifrSlotCorners(t, n) {
   if (n >= 2) return [a, (a + 3) % 6];
   return [a];
 }
-function ifrInit(t) { if (t.ifrSlot0 == null) { t.ifrSlot0 = Math.floor(Math.random() * 6); t.ifrCharge = 0; t.ifrReady = 0; t.ifrLaunchCd = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrCrosses = []; } }
+function ifrInit(t) { if (t.ifrSlot0 == null) { t.ifrSlot0 = Math.floor(Math.random() * 6); t.ifrCharge = 0; t.ifrReady = 0; t.ifrLaunchCd = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrFlares = []; } }
 // ALWAYS CHARGING while a slot is free (owner): the ball under way fills over chargeS, then waits in its slot; the next starts at once
 function ifrCharge(t, st, dt) {
   if (t.ifrReady >= st.slots) { t.ifrCharge = 0; return; }
@@ -263,9 +263,9 @@ function stepIfr(t, dt) {
   const st = towerStats(t);
   ifrCharge(t, st, dt);
   ifrLaunch(t, st, dt);
-  stepIfrBalls(t, st, dt); stepIfrRings(t, st, dt); stepIfrPellets(t, st, dt); stepIfrCrosses(t, st, dt); // Task 4
+  stepIfrBalls(t, st, dt); stepIfrRings(t, st, dt); stepIfrPellets(t, st, dt); stepIfrFlares(t, st, dt); // Task 4
 }
-function stepIfrBalls() {} function stepIfrRings() {} function stepIfrPellets() {} function stepIfrCrosses() {}
+function stepIfrBalls() {} function stepIfrRings() {} function stepIfrPellets() {} function stepIfrFlares() {}
 ```
 
 - [ ] **Step 3: Run the smoke.** Expected: the new check passes; every earlier check still passes.
@@ -274,7 +274,7 @@ function stepIfrBalls() {} function stepIfrRings() {} function stepIfrPellets() 
 
 ---
 
-### Task 4: Flight, the ring, the pellets, the crosses
+### Task 4: Flight, the ring, the pellets, the flares
 
 **Files:**
 - Modify: `web/aspira-ifrit.js` (replace the four stubs)
@@ -282,12 +282,12 @@ function stepIfrBalls() {} function stepIfrRings() {} function stepIfrPellets() 
 
 **Interfaces:**
 - Consumes: `damage(e, amt, t, quiet, crit, st)`, `onHit(e, t, st, amt)`, `projGrid()` / `enemiesNear(x, y, g)` (aspira-grv.js), `keepLive(list)` (aspira-floats.js), `HIT_AT` / `hitFrom` (aspira-floats.js), `phoneBox()` (aspira-positioning.js), `ENEMIES[e.type].size`, `e.sizeMul`.
-- Produces: `t.ifrRings[] = {x, y, r, R, hit: [], k}` (k: the hit multiplier, 1 or IFR_MINI_K), `t.ifrPellets[] = {x, y, ax, ay, vx, vy, left}`, `t.ifrCrosses[] = {x, y, L, W, life, tick}`; `ifrBurst(t, st, x, y, k)`.
+- Produces: `t.ifrRings[] = {x, y, r, R, hit: [], k}` (k: the hit multiplier, 1 or IFR_MINI_K), `t.ifrPellets[] = {x, y, ax, ay, vx, vy, left}`, `t.ifrFlares[] = {x, y, L, W, life, tick}`; `ifrBurst(t, st, x, y, k)`.
 
 - [ ] **Step 1: Write the failing smoke checks:**
 
 ```js
-check("IFR: a ball bursts where it was aimed (its target gone), the ring hits once, pellets fly, a cross burns", () => {
+check("IFR: a ball bursts where it was aimed (its target gone), the ring hits once, pellets fly, a flare burns", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -299,14 +299,14 @@ check("IFR: a ball bursts where it was aimed (its target gone), the ring hits on
     e.dead = true; e.gone = true; // the target dies in flight (f, 4 u down the lane, stays)
     let n = 0; while (t.ifrBalls.length && n++ < 200) step(1 / 30);
     const out = { aimed: aimedAt, rings: t.ifrRings.length, pellets: t.ifrPellets.length };
-    for (let i = 0; i < 90; i++) step(1 / 30); // the ring crosses f, pellets land, crosses tick
-    out.fShield = f.shield; out.crosses = t.ifrCrosses.length; out.fHits = f.shield < 5;
+    for (let i = 0; i < 90; i++) step(1 / 30); // the ring flares f, pellets land, flares tick
+    out.fShield = f.shield; out.flares = t.ifrFlares.length; out.fHits = f.shield < 5;
     return out;
   })()`);
   if (r.noBall) return "no ball launched";
   if (!r.aimed) return "the ball was not aimed at the target's spot at launch";
   if (r.rings < 1) return "no ring where the ball landed (target gone)";
-  if (!(r.pellets >= 1 || r.crosses >= 1)) return "no pellets / crosses after the burst";
+  if (!(r.pellets >= 1 || r.flares >= 1)) return "no pellets / flares after the burst";
   if (!r.fHits) return "the second enemy inside the blast lost no shield charge";
   return "";
 });
@@ -349,7 +349,7 @@ function ifrBurst(t, st, x, y, k) {
     t.ifrPellets.push({ x, y, ax: e.x, ay: e.y, vx: (e.x - x) / d * IFR_PELLET_V, vy: (e.y - y) / d * IFR_PELLET_V, left: d / IFR_PELLET_V });
   }
 }
-// the RING: expands at IFR_RING_V to R; every enemy it crosses takes the blast hit once (full splash - owner: good vs swarm)
+// the RING: expands at IFR_RING_V to R; every enemy it flares takes the blast hit once (full splash - owner: good vs swarm)
 function stepIfrRings(t, st, dt) {
   if (!t.ifrRings.length) return;
   for (const q of t.ifrRings) {
@@ -366,7 +366,7 @@ function stepIfrRings(t, st, dt) {
   keepLive(t.ifrRings);
 }
 // the PELLETS: non-homing, at the unit's spot when fired; the first enemy touched stops one (a hit), else it stops at its aim spot
-// (owner: "a missed pellet bursts where it was aimed"); where it stops, a CROSS - and at Backdraft a smaller ring too
+// (owner: "a missed pellet bursts where it was aimed"); where it stops, a FLARE - and at Backdraft a smaller ring too
 function stepIfrPellets(t, st, dt) {
   if (!t.ifrPellets.length) return;
   const g = projGrid();
@@ -382,52 +382,60 @@ function stepIfrPellets(t, st, dt) {
       sx = p.x; sy = p.y; stop = true; break;
     }
     if (!stop) continue;
-    p.left = 0; ifrCross(t, st, sx, sy);
+    p.left = 0; ifrFlare(t, st, sx, sy);
     if (st.backdraft) ifrBurst(t, st, sx, sy, IFR_MINI_K);
   }
   keepLive(t.ifrPellets);
 }
-function ifrCross(t, st, x, y) {
-  if (t.ifrCrosses.length >= IFR_CROSS_MAX) t.ifrCrosses.shift();
-  t.ifrCrosses.push({ x, y, L: st.beamL, W: st.beamW, life: st.burnS, left: st.burnS, tick: 0, edges: st.hellfire });
+function ifrFlare(t, st, x, y) {
+  if (t.ifrFlares.length >= IFR_FLARE_MAX) t.ifrFlares.shift();
+  t.ifrFlares.push({ x, y, L: st.beamL, W: st.beamW, life: st.burnS, left: st.burnS, tick: 0, edges: st.hellfire });
 }
 ```
 
-- [ ] **Step 3: Implement the crosses' burn** (bucketed along each beam; the capstone's beams run to the play box):
+- [ ] **Step 3: Implement the flares' burn** (bucketed along each beam; the capstone's beams run to the play box):
 
 ```js
-// the CROSS: four beams along the board's axes (3D is a view: world axes), burning for `life` - every tickS a QUIET tick on each
+// the FLARE: six beams along the board's axes (3D is a view: world axes), burning for `life` - every tickS a QUIET tick on each
 // enemy touching a beam, popping one shield charge. Enemies are found through the projectile grid at sample points every GRID_S
-// along the beam (never all crosses x all enemies); Hellfire VI runs each beam to the play box's edge (phoneBox)
+// along the beam (never all flares x all enemies); Hellfire VI runs each beam to the play box's edge (phoneBox)
 const IFR_ONE_TICK = new Set();
-function ifrBeamEnds(c) {
-  if (!c.edges) return [[c.x - c.L, c.y, c.x + c.L, c.y], [c.x, c.y - c.L, c.x, c.y + c.L]];
-  const b = phoneBox();
-  return [[b.x0, c.y, b.x1, c.y], [c.x, b.y0, c.x, b.y1]];
+const IFR_BEAMS = 6; // beams a flare: a hexagonal star, like the tower's own hex (owner, 2026-10-19: six, never a flare)
+// one beam from (x, y) at angle a: len u long, or to the play box's edge at Hellfire VI (the first wall the ray meets)
+function ifrBeamEnd(x, y, a, len, edges) {
+  const c = Math.cos(a), s = Math.sin(a);
+  if (edges) {
+    const b = phoneBox(); let t = Infinity;
+    if (c > 1e-9) t = Math.min(t, (b.x1 - x) / c); else if (c < -1e-9) t = Math.min(t, (b.x0 - x) / c);
+    if (s > 1e-9) t = Math.min(t, (b.y1 - y) / s); else if (s < -1e-9) t = Math.min(t, (b.y0 - y) / s);
+    len = Math.max(0, t);
+  }
+  return [x, y, x + c * len, y + s * len];
 }
-function ifrTickBeam(t, st, c, x0, y0, x1, y1, g, hit) {
-  const len = Math.hypot(x1 - x0, y1 - y0), n = Math.max(1, Math.ceil(len / (GRID_S / 2))), half = c.W / 2, amt = st.dmg * st.tickK;
+function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, f.L, f.edges)); return out; }
+function ifrTickBeam(t, st, f, x0, y0, x1, y1, g, hit) {
+  const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1, len = Math.sqrt(L2), n = Math.max(1, Math.ceil(len / (GRID_S / 2))), half = f.W / 2, amt = st.dmg * st.tickK;
   for (let i = 0; i <= n; i++) {
-    const sx = x0 + (x1 - x0) * i / n, sy = y0 + (y1 - y0) * i / n;
+    const sx = x0 + dx * i / n, sy = y0 + dy * i / n;
     for (const e of enemiesNear(sx, sy, g)) {
       if (e.dead || hit.has(e.id)) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + half;
-      const d = x0 === x1 ? Math.abs(e.x - x0) : Math.abs(e.y - y0), along = x0 === x1 ? e.y : e.x, lo = Math.min(x0 === x1 ? y0 : x0, x0 === x1 ? y1 : x1) - r, hi = Math.max(x0 === x1 ? y0 : x0, x0 === x1 ? y1 : x1) + r;
-      if (d > r || along < lo || along > hi) continue;
+      const u = Math.max(0, Math.min(1, ((e.x - x0) * dx + (e.y - y0) * dy) / L2)), px = x0 + dx * u, py = y0 + dy * u; // the nearest point of the beam to the body
+      if ((e.x - px) ** 2 + (e.y - py) ** 2 > r * r) continue;
       hit.add(e.id); damage(e, amt, t, true, false, IFR_BURN_ST); onHit(e, t, st, amt);
     }
   }
 }
-function stepIfrCrosses(t, st, dt) {
-  if (!t.ifrCrosses.length) return;
+function stepIfrFlares(t, st, dt) {
+  if (!t.ifrFlares.length) return;
   const g = projGrid();
-  for (const c of t.ifrCrosses) {
-    c.left -= dt; c.tick += dt;
-    if (c.tick < st.tickS) continue;
-    c.tick -= st.tickS; IFR_ONE_TICK.clear();
-    for (const [x0, y0, x1, y1] of ifrBeamEnds(c)) ifrTickBeam(t, st, c, x0, y0, x1, y1, g, IFR_ONE_TICK);
+  for (const f of t.ifrFlares) {
+    f.left -= dt; f.tick += dt;
+    if (f.tick < st.tickS) continue;
+    f.tick -= st.tickS; IFR_ONE_TICK.clear();
+    for (const [x0, y0, x1, y1] of ifrBeamEnds(f)) ifrTickBeam(t, st, f, x0, y0, x1, y1, g, IFR_ONE_TICK);
   }
-  keepLive(t.ifrCrosses);
+  keepLive(t.ifrFlares);
 }
 ```
 
@@ -437,7 +445,7 @@ function stepIfrCrosses(t, st, dt) {
 
 - [ ] **Step 5: A sim sanity run** — `cd scripts/aspira-sim && KINDS=ifr LAST=11 node solo.mjs 2>&1 | tail -5` (if `solo.mjs` takes `KINDS`; its line 12 shows it does). Expected: it runs to completion with no exception; note the lives lost (tuning is Task 8).
 
-- [ ] **Step 6: Commit** — `Spire: IFR flight, ring, pellets and burning crosses`.
+- [ ] **Step 6: Commit** — `Spire: IFR flight, ring, pellets and burning flares`.
 
 ---
 
@@ -453,16 +461,16 @@ function stepIfrCrosses(t, st, dt) {
 - [ ] **Step 1: Failing smoke checks:**
 
 ```js
-check("IFR: draws its charge balls, rings and crosses; G clones; selling mid-flight throws nothing", () => {
+check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flight throws nothing", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
     const t = G.towers[0]; for (let i = 0; i < 90; i++) step(1 / 30);
     ifrNear("swarm", t, 90);
     for (let i = 0; i < 60; i++) step(1 / 30);
-    const out = { live: t.ifrBalls.length + t.ifrRings.length + t.ifrPellets.length + t.ifrCrosses.length };
+    const out = { live: t.ifrBalls.length + t.ifrRings.length + t.ifrPellets.length + t.ifrFlares.length };
     const fn = v => typeof v === "function" || (v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) !== Object.prototype) || (v && typeof v === "object" && Object.values(v).some(fn)); // a function or a non-plain object anywhere in G breaks the autosave's structured clone
-    out.cloned = !fn({ t: [t.ifrBalls, t.ifrRings, t.ifrPellets, t.ifrCrosses] });
+    out.cloned = !fn({ t: [t.ifrBalls, t.ifrRings, t.ifrPellets, t.ifrFlares] });
     return out;
   })()`);
   if (r.cloned !== true) return "G does not clone: " + r.cloned;
@@ -481,7 +489,7 @@ Run: FAIL (`drawIfr never called` / low call count).
 
 ```js
 // ---------- the look: orange balls growing on the corners, a small ball with a short trail in flight, a thinning ring, pellet
-// streaks, and the crosses - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
+// streaks, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
 const IFR_BALL_PX = 13, IFR_FLY_PX = 6, IFR_TRAIL_S = 0.06, IFR_PELLET_PX = 2, IFR_PELLET_TAIL = 0.03, IFR_RING_W = 3, IFR_BEAM_A = 0.28, IFR_LINE_A = 0.85;
 function drawIfrCharge(t, st) {
@@ -504,9 +512,9 @@ function drawIfrFlight(t) {
   for (const b of t.ifrBalls) { ctx.beginPath(); ctx.arc(b.x, b.y, IFR_FLY_PX, 0, 6.283); ctx.fill(); }
   for (const q of t.ifrRings) { ctx.globalAlpha = 0.9 * (1 - q.r / q.R) + 0.1; ctx.lineWidth = IFR_RING_W; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke(); }
 }
-function drawIfrCrosses(t) {
+function drawIfrFlares(t) {
   const low = typeof lowQ === "function" && lowQ();
-  for (const c of t.ifrCrosses) {
+  for (const c of t.ifrFlares) {
     const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c);
     if (!low) { ctx.strokeStyle = COL.tifr; ctx.lineWidth = c.W; ctx.globalAlpha = IFR_BEAM_A * f; ctx.beginPath(); for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke(); }
     ctx.strokeStyle = COL.white; ctx.lineWidth = 1; ctx.globalAlpha = IFR_LINE_A * f; ctx.beginPath(); for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke();
@@ -516,15 +524,15 @@ function drawIfr() {
   for (const t of G.towers) {
     if (t.kind !== "ifr" || t.ifrSlot0 == null) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    drawIfrCrosses(t); drawIfrFlight(t); drawIfrCharge(t, towerStats(t));
+    drawIfrFlares(t); drawIfrFlight(t); drawIfrCharge(t, towerStats(t));
   }
   ctx.globalAlpha = 1;
 }
 ```
 
-- [ ] **Step 3: Run the smoke.** Expected: pass. Then eyeball in a browser: `cd ~/src/exec-fn && docker compose up -d` (if not running), open `http://localhost:8080/spire` (guest login), build IFR, watch the corners fill, a lob, the ring, the crosses. Phone width 430 x 932 too. Fix anything that reads wrong (ball too small, ring too faint) by the constants above.
+- [ ] **Step 3: Run the smoke.** Expected: pass. Then eyeball in a browser: `cd ~/src/exec-fn && docker compose up -d` (if not running), open `http://localhost:8080/spire` (guest login), build IFR, watch the corners fill, a lob, the ring, the flares. Phone width 430 x 932 too. Fix anything that reads wrong (ball too small, ring too faint) by the constants above.
 
-- [ ] **Step 4: Commit** — `Spire: IFR drawn - corner balls, lob trail, ring, pellets, crosses; sound`.
+- [ ] **Step 4: Commit** — `Spire: IFR drawn - corner balls, lob trail, ring, pellets, flares; sound`.
 
 ---
 
@@ -537,29 +545,29 @@ function drawIfr() {
 - [ ] **Step 1: Shield check:**
 
 ```js
-check("IFR: a shielded enemy in a cross loses one charge a tick; the ring pops one; Impact gives six slots", () => {
+check("IFR: a shielded enemy in a flare loses one charge a tick; the ring pops one; Impact gives six slots", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
     const t = G.towers[0]; for (let k = 0; k < 6; k++) upgradeTower(t, "meteor", true);
     const st = towerStats(t), out = { slots: st.slots };
-    const e = ifrNear("shield", t, 400); e.shield = 9; // out of the tower's range: no ball, only the cross below touches it
-    t.ifrCrosses.push({ x: e.x, y: e.y - 50, L: 80, W: 12, life: 3, left: 3, tick: 0, edges: false });
-    for (let i = 0; i < 3; i++) stepIfrCrosses(t, st, st.tickS); out.afterTicks = e.shield; // 3 ticks (the first fires at tickS)
+    const e = ifrNear("shield", t, 400); e.shield = 9; // out of the tower's range: no ball, only the flare below touches it
+    t.ifrFlares.push({ x: e.x - 40, y: e.y, L: 80, W: 12, life: 3, left: 3, tick: 0, edges: false }); // 40 u left of it: the 0-degree beam runs through its body
+    for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); out.afterTicks = e.shield; // 3 ticks (the first fires at tickS)
     return out;
   })()`);
   if (r.slots !== 6) return "Impact gives " + r.slots + " slots, not 6";
   if (r.afterTicks !== 6) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 6)";
   return "";
 });
-check("IFR: 200 enemies and 40 Hellfire crosses tick under 4 ms", () => {
+check("IFR: 200 enemies and 40 Hellfire flares tick under 4 ms", () => {
   run(`G = newGame(); G.money = 1e9; ui.build = "ifr";
     { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); }
     { const t = G.towers[0]; for (let k = 0; k < 6; k++) upgradeTower(t, "hellfire", true);
       for (let i = 0; i < 200; i++) { spawnEnemy("swarm", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.s = entryS(0) + i * 3; const p = pathAt(0, e.s, 0); e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e6; }
-      for (let i = 0; i < 40; i++) t.ifrCrosses.push({ x: CX - 300 + i * 15, y: CY - 200 + i * 10, L: 140, W: 24, life: 10, left: 10, tick: 0, edges: true }); }`);
+      for (let i = 0; i < 40; i++) t.ifrFlares.push({ x: CX - 300 + i * 15, y: CY - 200 + i * 10, L: 140, W: 24, life: 10, left: 10, tick: 0, edges: true }); }`);
   const t0 = performance.now(); // the HOST clock: the vm's performance.now is dom.mjs's fake frame clock
-  run("{ const t = G.towers[0], st = towerStats(t); for (let i = 0; i < 10; i++) stepIfrCrosses(t, st, st.tickS); }");
+  run("{ const t = G.towers[0], st = towerStats(t); for (let i = 0; i < 10; i++) stepIfrFlares(t, st, st.tickS); }");
   const ms = (performance.now() - t0) / 10;
   return ms < 4 ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms";
 });
@@ -611,9 +619,9 @@ Run on the droplet (`nice -n 19`, one at a time) or locally on the WSL box (12 c
 **Files:**
 - Modify: `web/aspira-version.txt` (6.2.0), `web/aspira-changelog.js` (a new top entry), `ARCHITECTURE.md` (4.1, 4.6, new 4.6e, 7.2, 9.4, 10.1), `ARCHAEOLOGY.md` (4.6e: the starting numbers and what the sim moved), `CLAUDE.md` (the marks command's `KINDS=` list), `docs/arch/ifrit-ball.mmd` is already in; exec-fn `CLAUDE.md` (the `/spire` row: seven kinds)
 
-- [ ] **Step 1: Version + changelog.** `web/aspira-version.txt` -> `6.2.0`. `aspira-changelog.js`: a new entry at the top `{ v: "6.2", day: "Oct 19", bu: ["Ifrit: a seventh tower - charges fireballs on its corners and lobs them; where one lands a ring of fire bursts and pellets fly, each leaving a burning cross. Strong against swarms and shields, weak to fast enemies.", "Towers: the seven colours are spaced evenly for the eye; Arc is yellow now, Ifrit orange."], ne: [], u: ["Build: seven cards."] }`. Update the file's header comment: a new tower is a new MAJOR, "except Ifrit, kept within 6 (owner, 2026-10-19)".
+- [ ] **Step 1: Version + changelog.** `web/aspira-version.txt` -> `6.2.0`. `aspira-changelog.js`: a new entry at the top `{ v: "6.2", day: "Oct 19", bu: ["Ifrit: a seventh tower - charges fireballs on its corners and lobs them; where one lands a ring of fire bursts and pellets fly, each leaving a flare of six beams. Strong against swarms and shields, weak to fast enemies.", "Towers: the seven colours are spaced evenly for the eye; Arc is yellow now, Ifrit orange."], ne: [], u: ["Build: seven cards."] }`. Update the file's header comment: a new tower is a new MAJOR, "except Ifrit, kept within 6 (owner, 2026-10-19)".
 
-- [ ] **Step 2: ARCHITECTURE.md.** 4.1: title "The seven kinds", add the IFR column (design: a lobbed ball, a ring, burning crosses; colour: orange; targeting Near; main: swarm, shield; helps: nothing; weak to: fast (slow ball, no lead); leash medium 200); the Ids line `arc frz sol acd grv car ifr`; the ARC colour cell "yellow", SOL "pink", etc. per Task 1. 4.6: add the IFR column (swarm MAIN, fast weak, armor neutral, shield MAIN) and the `COUNTERS` note. New **4.6e IFR, Ifrit (`web/aspira-ifrit.js`)**: the owner's design in a rules table (charge, slots on the corners 1/2/3/6, launch gap, no lead, flight, ring, pellets, cross, shields, armor, fast, Relay), the axes table (Meteor / Hellfire / Firaga, capstones Impact / Hellfire / Backdraft), the diagram `![The ball's life](docs/arch/ifrit-ball.svg)`; numbers go to ARCHAEOLOGY. 7.2: "seven tower cards". 9.4: "a new tower is a new major (GRV, ATC) — Ifrit stayed within 6 as 6.2.0 (owner)". 10.1 colours: seven tokens, `--asp-ifr-hsl`, OKLCH 360/7 apart, `scripts/aspira-sim/hues.py`. 11 traps: add "IFR's lists hold ids and coordinates, never enemy refs (autosave); its burn ticks sample the projectile grid along each beam".
+- [ ] **Step 2: ARCHITECTURE.md.** 4.1: title "The seven kinds", add the IFR column (design: a lobbed ball, a ring, burning flares; colour: orange; targeting Near; main: swarm, shield; helps: nothing; weak to: fast (slow ball, no lead); leash medium 200); the Ids line `arc frz sol acd grv car ifr`; the ARC colour cell "yellow", SOL "pink", etc. per Task 1. 4.6: add the IFR column (swarm MAIN, fast weak, armor neutral, shield MAIN) and the `COUNTERS` note. New **4.6e IFR, Ifrit (`web/aspira-ifrit.js`)**: the owner's design in a rules table (charge, slots on the corners 1/2/3/6, launch gap, no lead, flight, ring, pellets, flare, shields, armor, fast, Relay), the axes table (Meteor / Hellfire / Firaga, capstones Impact / Hellfire / Backdraft), the diagram `![The ball's life](docs/arch/ifrit-ball.svg)`; numbers go to ARCHAEOLOGY. 7.2: "seven tower cards". 9.4: "a new tower is a new major (GRV, ATC) — Ifrit stayed within 6 as 6.2.0 (owner)". 10.1 colours: seven tokens, `--asp-ifr-hsl`, OKLCH 360/7 apart, `scripts/aspira-sim/hues.py`. 11 traps: add "IFR's lists hold ids and coordinates, never enemy refs (autosave); its burn ticks sample the projectile grid along each beam".
 
 - [ ] **Step 3: ARCHAEOLOGY.md.** A **4.6e** section: the starting tables (as shipped in Task 2), each lever the battery moved with the before -> after and the run that justified it, the six-tower hues before the seven (13 / 73 / 133 / 193 / 253 / 313) and the data gap that placed IFR (the countermx columns, the trio diagnostic). The memory rule: numbers and dated notes here, principles in ARCHITECTURE.
 

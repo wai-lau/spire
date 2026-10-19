@@ -27,11 +27,11 @@ slow and aimed with no lead; armor bites every hit as usual (no pierce, no bonus
 | **slots** | balls sit **centred on the hex's corners**, so the limit is **6**. By slot count: 1 = a random corner (fixed per tower, `fixedRand`-free: picked at build, stored on the tower); 2 = that corner and its opposite; 3 = an equidistant triangle (every other corner); 6 = all. **4 and 5 never occur** (Meteor's ladder skips them) |
 | **launch** | a charged ball + an enemy in range -> it flies at that enemy's position NOW (no lead). With several charged, one launches every `IFR_LAUNCH_GAP` **0.05 s** (a dump). Targeting default **Near** |
 | **flight** | slow (`IFR_BALL_V`), small (`IFR_BALL_R`); it hits every enemy it passes through once for the **en-route hit** and keeps going. The charge ball is drawn big; in flight it is drawn small ("it's small") |
-| **impact** | at the aim spot the ball bursts: a **ring** expands quickly (`IFR_RING_V`) to the blast radius, hitting each enemy it crosses once for the **blast hit**; at the same instant `pellets` **pellets** fire, one at each of up to `pellets` units inside the blast radius (random picks; fewer units = pellets double up), non-homing, with travel time (`IFR_PELLET_V`, radius `IFR_PELLET_R`) - they can miss |
-| **cross** | where a pellet stops (the first enemy it touches, else its aim spot - **a miss still bursts where it was aimed**) it bursts into **four beams** along the board's cardinal axes (+x -x +y -y, world axes: 3D is a view), each `beamLen` long and `beamW` wide, burning for `burnS`: every `tickS` a quiet tick of `tickDmg` on every enemy touching a beam; each tick pops a shield charge. Beams are a flat effect on the board; they obey `EFFECT_MAX_S` 10 s |
-| **shields** | the ring pops one charge per enemy; every burn tick pops one; the en-route hit pops one. A shield wave standing in crosses melts |
+| **impact** | at the aim spot the ball bursts: a **ring** expands quickly (`IFR_RING_V`) to the blast radius, hitting each enemy it passes once for the **blast hit**; at the same instant `pellets` **pellets** fire, one at each of up to `pellets` units inside the blast radius (random picks; fewer units = pellets double up), non-homing, with travel time (`IFR_PELLET_V`, radius `IFR_PELLET_R`) - they can miss |
+| **flare** | where a pellet stops (the first enemy it touches, else its aim spot - **a miss still bursts where it was aimed**) it bursts into a **flare of six beams** 60 degrees apart (a hexagonal star like the tower's own hex; world axes: 3D is a view), each `beamLen` long and `beamW` wide, burning for `burnS`: every `tickS` a quiet tick of `tickDmg` on every enemy touching a beam; each tick pops a shield charge. Beams are a flat effect on the board; they obey `EFFECT_MAX_S` 10 s |
+| **shields** | the ring pops one charge per enemy; every burn tick pops one; the en-route hit pops one. A shield wave standing in flares melts |
 | **armor** | every hit (ring, pellet, tick, en-route) takes the armor bite like any other tower's: neutral |
-| **fast** | no lead, slow flight: a fast enemy is gone before the ring opens; the crosses burn where it was |
+| **fast** | no lead, slow flight: a fast enemy is gone before the ring opens; the flares burn where it was |
 | **Relay** | x`RELAY_MUL` the charge rate (`relayStats`), like the others |
 
 ## 3. The chart (starting values - the simulator sets the final ones)
@@ -42,7 +42,7 @@ Purchases I II III IV read indices 1 3 5 6 (`SKILL_STOPS`).
 | axis | job | buys | capstone (VI) |
 |---|---|---|---|
 | **Meteor** | DEPTH + TEMPO of the ball | **slots** `[1, 2, 2, 3, 3, 3]`; **charge time** s `[2.0, 1.6, 1.3, 1.0, 0.8, 0.6]`; **ball speed** u/s `[140, 170, 200, 240, 280, 320]`; **en-route hit** x blast `[0.25, 0.5, 1, 2, 4, 8]` ("a lot to make up for the faster travel speed"); range x `[1, 1.1, 1.2, 1.3, 1.4, 1.5]` | **Impact**: 6 slots; charge time 0.1 s ("near the launch rate"); speed 360; en-route x16 |
-| **Hellfire** | the CROSS | beam half-length u `[50, 65, 80, 100, 120, 140]`; width u `[10, 12, 14, 16, 18, 20]`; burn s `[1.5, 2, 2.5, 3, 4, 5]`; tick s `[0.3, 0.27, 0.24, 0.2, 0.17, 0.15]`; tick x blast `[0.08, 0.12, 0.18, 0.27, 0.4, 0.6]` | **Hellfire**: the beams run to the play-box edges (`phoneBox()`), burn 10 s |
+| **Hellfire** | the FLARE | beam length u `[50, 65, 80, 100, 120, 140]`; width u `[10, 12, 14, 16, 18, 20]`; burn s `[1.5, 2, 2.5, 3, 4, 5]`; tick s `[0.3, 0.27, 0.24, 0.2, 0.17, 0.15]`; tick x blast `[0.08, 0.12, 0.18, 0.27, 0.4, 0.6]` | **Hellfire**: the beams run to the play-box edges (`phoneBox()`), burn 10 s |
 | **Firaga** | the BLAST | blast radius u `[60, 70, 80, 95, 110, 130]`; blast hit x `[1, 1.5, 2.3, 3.5, 6, 10]`; pellets `[5, 6, 7, 8, 9, 10]`; slide x `[1, 1.3, 1.6, 2, 2.2, 2.4]` (the fire roams) | **Backdraft**: every pellet bursts into a **smaller ring** too (half the blast radius, half the hit) |
 
 Tier names: Meteor = Pebble, Stone, Rock, Boulder, Meteor, **Impact**; Hellfire = Kindle,
@@ -82,7 +82,7 @@ Ink tokens shift by their tower's delta: `--asp-violet-ink-hsl` 272 -> 264, `--a
 - Ball in flight: a small orange disc with a short trail (stroked line, like CRR's hairlines).
 - Ring: a stroked circle growing at `IFR_RING_V`, thinning and brightening as it opens (GRV's
   nova inverted).
-- Pellets: tiny discs; a cross: four stroked beams, orange at low alpha with a bright hairline
+- Pellets: tiny discs; a flare: six stroked beams, orange at low alpha with a bright hairline
   down the middle, fading over the burn.
 - Everything is fills, strokes and single lines: the moving layer turns them into GL instances;
   no gradient on the board context (ARCHITECTURE.md 11). Pure-decoration draws check `lowQ`.
@@ -93,14 +93,14 @@ Ink tokens shift by their tower's delta: `--asp-violet-ink-hsl` 272 -> 264, `--a
 
 | Where | Change |
 |---|---|
-| `web/aspira-ifrit.js` (new, < 500 lines; split on a seam if not) | the tables, `ifrSkillStats`, `stepIfr` (charge, launch, flight, impact, pellets, crosses, burns), `drawIfr`; loaded after `aspira-car.js` |
+| `web/aspira-ifrit.js` (new, < 500 lines; split on a seam if not) | the tables, `ifrSkillStats`, `stepIfr` (charge, launch, flight, impact, pellets, flares, burns), `drawIfr`; loaded after `aspira-car.js` |
 | `aspira-defs.js` | `TOWERS.ifr`, `COUNTERS` swarm + shield mains, `BOSS_KILLERS` unchanged |
 | `aspira-game.js` | the tower loop dispatch `if (t.kind === "ifr") { stepIfr(t, dt); continue; }` |
 | `aspira-towers.js` | `MOVE_BASE.ifr` 200; the corner geometry helper (hex corners at `TOWER_K`) |
 | `aspira-core.js` | `relayStats`: x3 charge rate |
 | `aspira-capstone.js` | `CAPSTONE_NUM` entries for every new table; `CAPSTONE_TIERS` names; `SKILL_MOVE.ifr` |
 | `aspira-stats.js`, `aspira-sliders.js` | the stat rows and `KEY_STATS` |
-| `aspira-desc.js` | the `DESCRIBE` template (fire words: ball, ring, beams, burn; never "jets"/"pools"); regenerate `docs/spire-descriptions.md` |
+| `aspira-desc.js` | the `DESCRIBE` template (fire words: ball, ring, flare, beams, burn; never "jets"/"pools"; NEVER "cross"); regenerate `docs/spire-descriptions.md` |
 | `aspira-sfx.js` | the two sounds, `SOUND_MAX` |
 | `aspira-chooser.js` | `VS_MARKS.ifr` (from countermx); the build chooser shows seven cards, two columns (a last row one short is allowed) |
 | `aspira-floats.js` | `DMG_INK` none |
@@ -113,7 +113,7 @@ Ink tokens shift by their tower's delta: `--asp-violet-ink-hsl` 272 -> 264, `--a
 | `ARCHITECTURE.md` 4.1 (seven kinds), 4.6 (the matrix row), new 4.6e Ifrit, 10.1 (colours: seven tokens); `ARCHAEOLOGY.md` the starting numbers | docs |
 
 Traps to honour: no mid-line `//`; a new top-level name must not collide (prefix `IFR_` /
-`ifr`); `G` structured-cloneable (balls, pellets, crosses are plain objects on the tower or
+`ifr`); `G` structured-cloneable (balls, pellets, flares are plain objects on the tower or
 in a module list rebuilt from `G`); per-tier tables exactly 6 before capstone.js; durations
 in game s, cooldowns in waves; `fixedRand` only for wave-shaping (the corner pick is per
 tower, `Math.random` is fine - the sim seeds it).
@@ -137,3 +137,4 @@ tower, `Math.random` is fine - the sim seeds it).
 - Slots 1 / 2 / 3 / 6 on the hex corners; 4 and 5 never (owner).
 - Firaga capstone: pellets also burst into a smaller ring (owner).
 - Lands after exec-fn-f8's 6.1.0 balance patch (SOL weak vs swarm via the Refraction angle).
+- **No cross, in shape or word** (owner, 2026-10-19): the burning shape is a FLARE of SIX beams; "burning cross" is Klan imagery. Names `ifrFlare` / `t.ifrFlares`; the card says "a flare of six beams".
