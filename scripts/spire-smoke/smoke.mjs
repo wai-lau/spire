@@ -191,7 +191,7 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
     const t = G.towers[0]; for (let k = 0; k < 3; k++) upgradeTower(t, "firaga", true); // blast r95: room for an enemy 70 u out (no Backdraft)
-    ifrInit(t); const st = towerStats(t), out = {}, a60 = Math.PI / 3, a30 = Math.PI / 6;
+    ifrInit(t); const st = towerStats(t), out = {}, a60 = Math.PI / 2 /* (a + arm: the beams are on the axes and diagonals since 2026-10-19) */, a30 = Math.PI / 6;
     const held = (x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 5; return e; }; // held still, placed by hand
     const fresh = () => { egridAt = NaN; }; // the enemies moved without a step: rebuild the projectile grid
     // the BURN, by hand (no step: a step walks held enemies back onto the lane)
@@ -212,17 +212,17 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     out.outward = ps.every((p, i) => Math.hypot(p.x - cx, p.y - cy) > d0[i]); out.flying = t.ifrPellets.length;
     for (let i = 0; i < 60 && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
     out.left = t.ifrPellets.length; out.flares = t.ifrFlares.length;
-    out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = st.blastR + IFR_PELLET_V / 30;
+    out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = st.blastR * IFR_PELLET_REACH + IFR_PELLET_V / 30;
     return out;
   })()`);
-  if (r.lit !== 0 || r.on !== 1) return "the enemy on the 60-degree beam lost " + r.lit + " charges at its first tick (expected 0: it only catches fire) and " + r.on + " after two (expected exactly 1)";
+  if (r.lit !== 0 || r.on !== 1) return "the enemy on the 90-degree beam lost " + r.lit + " charges at its first tick (expected 0: it only catches fire) and " + r.on + " after two (expected exactly 1)";
   if (r.off !== 0) return "the enemy off every beam lost " + r.off + " charges";
   if (r.ring !== 1 || r.ringsLeft) return "a plain ring took " + r.ring + " charges (expected exactly 1), rings left " + r.ringsLeft;
   if (r.fired !== r.want) return "an empty burst fired " + r.fired + " pellets (expected " + r.want + ")";
   if (r.headings < 2) return "every pellet flew on the same heading";
   if (!r.outward || r.flying < 1) return "the pellets did not fly outward from the burst (outward " + r.outward + ", flying " + r.flying + ")";
   if (r.left || r.flares !== r.fired) return "pellets left " + r.left + ", flares " + r.flares + " of " + r.fired;
-  if (!(r.reach <= r.maxReach)) return "a pellet stopped " + Math.round(r.reach) + " u out, past the blast radius + a frame (" + Math.round(r.maxReach) + ")";
+  if (!(r.reach <= r.maxReach)) return "a pellet stopped " + Math.round(r.reach) + " u out, past the blast radius x IFR_PELLET_REACH + a frame (" + Math.round(r.maxReach) + ")";
   return "";
 });
 check("Temporal Drive: the field draws", () => {

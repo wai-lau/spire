@@ -11,8 +11,8 @@
 const CRR_HANGAR = [3, 5, 7, 11, 11, 13]; // interceptors: PRIMES by purchase (owner: "prime numbers starting at 5") - bare 5, then I 7 (stop 1), II 11 (3), III 13 (5), IV 17 (6)
 // each axis ITS OWN job (owner, 2026-10-15: "make sure each axis for each tower feels unique"): Hangar WIDTH (more interceptors),
 // Launch TEMPO (faster there and back, a shorter reload ) - (Warp, a teleport, was removed: owner, 2026-10-17), Armament DEPTH (a far harder hit, more of them)
-const CRR_SPEED_V = 1900 /* x1.3: keeps up with fast (owner, 2026-10-18: "more good vs fast and less good vs shield"; was 1470) */, CRR_RELOAD_S = 0.4; // an interceptor's speed and its reload at home - FIXED since Tether replaced Launch (owner, 2026-10-17)
-const CRR_AMMO = [2, 3, 3, 3, 3, 7]; /* HALVED again, each volley x2 (CRR_VOLLEY_K 4): the same damage in half the hits - half the shield pops (owner, 2026-10-18: CAR less good vs shield) */ /* halved, its bolts doubled into fewer, bigger VOLLEYS (CRR_VOLLEY_K, CRR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
+const CRR_SPEED_V = 2500 /* 1900 -> 2500 (owner, 2026-10-19: CRR toward fast; countermx 61-69 spread with the rest of 6.4: fast 34% -> 22% leaked) */ /* x1.3: keeps up with fast (owner, 2026-10-18: "more good vs fast and less good vs shield"; was 1470) */, CRR_RELOAD_S = 0.4; // an interceptor's speed and its reload at home - FIXED since Tether replaced Launch (owner, 2026-10-17)
+const CRR_AMMO = [4, 6, 6, 6, 6, 14]; /* doubled back (2026-10-19, CRR toward fast: more sorties keep up with a fast wave) */ /* HALVED again, each volley x2 (CRR_VOLLEY_K 4): the same damage in half the hits - half the shield pops (owner, 2026-10-18: CAR less good vs shield) */ /* halved, its bolts doubled into fewer, bigger VOLLEYS (CRR_VOLLEY_K, CRR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
 // ONE TARGET A VOLLEY (owner, 2026-10-16: "to make ATC worse vs swarms reduce ammo (number of volleys), increase bolts per volley to
 // match, then make it so that all bolts from a single volley need to target a single target, regardless of overkill, remaining bolts
 // just keep going for a little bit and may chance a hit on something else"; then "don't shoot unshot parts of a volley if the enemy dies" - the rest of
@@ -232,8 +232,8 @@ function carOrbit(i, e, st, d, dt) {
 // salvo", "homing, and just keep going straight if the enemy dies"): one bolt every 1 / (rate x CRR_BOLTS) s, a projectile that
 // homes on its target; its target gone, it flies on straight and hits the first enemy it touches, or nothing (was: three at once,
 // side by side, landing the instant they were fired)
-const CRR_FIRE_R = 260; /* 200 -> 260: a chaser opens fire on a fast enemy sooner (2026-10-18) */ // u: an interceptor on its way fires once its target is this close (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor with CRR_HOP 30: 0 39/13/0/18, 200 19/5/0/23; 150 20/8/0/20)
-const CRR_BOLT_ON = 0.08; // s a bolt flies on past a dead target (~70u)
+const CRR_FIRE_R = 340; /* 260 -> 340 (2026-10-19): a chaser on a fast enemy opens fire sooner */ /* 200 -> 260: a chaser opens fire on a fast enemy sooner (2026-10-18) */ // u: an interceptor on its way fires once its target is this close (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor with CRR_HOP 30: 0 39/13/0/18, 200 19/5/0/23; 150 20/8/0/20)
+const CRR_BOLT_ON = 0; /* was 0.08 (2026-10-19, CRR AWAY from swarm - owner: weak to swarm): a volley's spare bolts no longer fly on into the next swarmer */ // s a bolt flies on past a dead target (~70u)
 const CRR_BOLT_V = 900, CRR_BOLT_REACH = 390 /* x1.5 with the orbit (was 260) */, CRR_BOLT_HIT = 3; // u/s; u flown before it fades; u added to the enemy's size
 function carBolt(i, e, t, st, side = 0) { // side: u across its flight, left or right of the interceptor (a pair)
   let n = 0;
@@ -273,7 +273,7 @@ function carNum(i, e, dealt, raw0, vx, vy) {
   const sum = i.numSum, raw = i.numRaw; i.numSum = i.numRaw = i.numN = 0;
   if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgTick(e, sum, raw, dmgInk("car"), { x: e.x - vx, y: e.y - vy }, raw > sum ? 1 - sum / raw : 0, 0);
 }
-const CRR_HOP = 30; /* back to 30 with CRR_FIRE_R 200 */ /* 30 -> 40 with a volley STOPPING when its target dies (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor: 30 39/13/0/18, 40 19/14/0/21, 50 9/13/0/21, 80 2/9/0/21) */ /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
+const CRR_HOP = 0; /* was 30 (2026-10-19, away from swarm): no hop to a neighbour after a kill - home or a fresh pick */ /* back to 30 with CRR_FIRE_R 200 */ /* 30 -> 40 with a volley STOPPING when its target dies (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor: 30 39/13/0/18, 40 19/14/0/21, 50 9/13/0/21, 80 2/9/0/21) */ /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
 // the NEXT target after a kill: the nearest enemy within CRR_HOP that no other interceptor of this carrier is already on, else the
 // nearest at all (owner, 2026-10-16: "each interceptor should be able to target a different fast with their respective volley")
 function carHop(i, t, st) { // (i: where the last target was - the interceptor itself circles CRR_ORBIT out)
