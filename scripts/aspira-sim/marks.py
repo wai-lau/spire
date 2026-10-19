@@ -48,7 +48,7 @@ for k, L in leak.items():
     marks[k] = m
     print(k.upper(), L, "->", " ".join(f"{t}:{'+' if c > 0 else ''}{c}" for t, c in m.items() if c))
 print(json.dumps(marks))
-# RULE (owner, 2026-10-19: "ensure that no tower has only 1 enemy type with checkmarks"): every tower beats at least TWO types -
+# RULE (owner, 2026-10-19: "ensure that no tower has only 1 enemy type with checkmarks", "beats or at least helps"): every tower has a check (any size) on at least TWO types -
 # a tower with checks on one type alone (CRR, 2026-10-19: shields only) is a balance failure to fix, not a mark to fudge
 MIN_CHECKED = 2
 lone = {k: [t for t in TYPES if m[t] > 0] for k, m in marks.items() if sum(1 for t in TYPES if m[t] > 0) < MIN_CHECKED}
