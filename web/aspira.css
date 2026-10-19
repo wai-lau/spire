@@ -117,6 +117,8 @@
 /* the enemies, ONE ICON EACH sized by HP (owner), on one line */
 .asp-dots { position: relative; display: flex; align-items: center; height: 22px; } /* every row the same height (WAVE_ROW_H, aspira-ui.js) and width; spacing set per icon */
 
+@media (orientation: portrait) and (width < 700px) { .asp-dots { height: 14px; } } /* WAVE_ROW_H_PHONE (aspira-wavelist.js): compact rows on a portrait phone */
+
 /* a tessellated swarm: ONE lattice band, three diamonds tall (owner; aspira-ui.js places each) */
 .asp-band { position: relative; display: block; }
 

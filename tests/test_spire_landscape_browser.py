@@ -80,3 +80,22 @@ def test_no_switch_mid_wave(spire_page):
     assert page.evaluate("BOX_WIDE") is True  # still wide while enemies ride
     page.evaluate("for (const e of G.enemies) e.dead = true; G.spawns.length = 0; G.fleetQ.length = 0; G.nextIn = 30")
     page.wait_for_function("BOX_WIDE === false", timeout=3000)
+
+
+PHONES = [(360, 640), (375, 667), (390, 664), (393, 659), (412, 732), (430, 740)]
+SHOT = REPO / ".superpowers/sdd/2026-10-19-landscape-box/task-5-360.png"
+
+
+@pytest.mark.parametrize("w,h", PHONES)
+def test_wave_list_clears_core_and_starting_slots(spire_page, w, h):
+    page = spire_page(w, h)
+    page.evaluate("G.started = true; sendWave()")
+    page.wait_for_timeout(600)
+    hit = page.evaluate("""() => { const L = document.querySelector('.asp-left').getBoundingClientRect();
+      const ov = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      const spots = [[CX, CY, CORE_R], ...CELLS.filter(c => OPEN_SLOTS.includes(c.ang)).map(c => [c.x, c.y, CELL_S])];
+      return spots.filter(([x, y, r]) => ov(L, boardScreenRect(x, y, r))).length; }""")
+    if (w, h) == (360, 640):
+        page.screenshot(path=str(SHOT))
+    assert hit == 0
+    assert page.evaluate("document.querySelector('.asp-dots').getBoundingClientRect().height") == 14

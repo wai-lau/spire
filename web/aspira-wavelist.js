@@ -2,7 +2,7 @@
 // cap): one row per wave still alive and the next ones - Roman number, the
 // enemies as one icon each sized by HP (tessellating when long), the name.
 // UI only; loaded before aspira-ui.js, whose updateHud calls updateWaveList.
-const WAVE_ROWS = 10, WAVE_DEAD_A = 0.18, WAVE_ICON = [5, 18], WAVE_SPAN = 110, WAVE_SPAN_PHONE = 95, SWARM_MIN = 4, WAVE_ROW_H = 22, WAVE_BOSS_PX = 22; // WAVE_ROW_H: every row's height (owner: consistent) // SWARM_MIN: the smallest tessellated diamond box (px); a boss's icon, always the biggest // the upcoming-wave icons' size range (px); rows up to this many never overlap
+const WAVE_ROWS = 10, WAVE_DEAD_A = 0.18, WAVE_ICON = [5, 18], WAVE_SPAN = 110, WAVE_SPAN_PHONE = 95, SWARM_MIN = 4, WAVE_ROW_H = 22, WAVE_ROW_H_PHONE = 14, WAVE_BOSS_PX = 22; // WAVE_ROW_H: every row's height (owner: consistent) // SWARM_MIN: the smallest tessellated diamond box (px); a boss's icon, always the biggest // the upcoming-wave icons' size range (px); rows up to this many never overlap
 // the list's headings: the boxed live waves, then the rest (owner, 2026-10-09)
 const WAVE_HEAD = { now: "warped in", next: "warping in..." }; // (owner: "replace upcoming waves with: warping in...")
 
@@ -33,11 +33,14 @@ function enemyIcon(type, px, gap, dy, x, y, dim) {
 // (owner), TESS_STEP of an icon so diagonal neighbours just clear each other;
 // icons shrink only as far as the row's height and width force, down to
 // SWARM_MIN px, and columns squeeze (overlap) past that.
+// a PORTRAIT PHONE gets compact rows (WAVE_ROW_H_PHONE; the CSS media query on .asp-dots matches), so the list stays clear of the centred core
+const PHONE_PORTRAIT_Q = "(orientation: portrait) and (width < 700px)";
+const waveRowH = () => matchMedia(PHONE_PORTRAIT_Q).matches ? WAVE_ROW_H_PHONE : WAVE_ROW_H;
 const TESS_STEP = 0.72, WAVE_PACK_MAX = 5;
 // a band's HTML depends only on its arguments: kept (perf - most rows are the same from one rebuild to the next)
 const BAND_MEMO = new Map(), BAND_MEMO_MAX = 200;
 function waveBand(type, count, px, span, alive) {
-  const key = type + "|" + count + "|" + px + "|" + span + "|" + alive;
+  const key = type + "|" + count + "|" + px + "|" + span + "|" + alive + "|" + waveRowH();
   let html = BAND_MEMO.get(key);
   if (html === undefined) {
     if (BAND_MEMO.size >= BAND_MEMO_MAX) BAND_MEMO.clear();
@@ -47,7 +50,7 @@ function waveBand(type, count, px, span, alive) {
 }
 function waveBandHtml(type, count, px, span, alive) {
   // alive (a live wave): that many icons solid, the rest faded to WAVE_DEAD_A (owner)
-  const H = WAVE_ROW_H, fade = k => alive != null && k >= alive;
+  const H = waveRowH(), fade = k => alive != null && k >= alive;
   const place = (pts, b) => '<span class="asp-band" style="width:' + span + "px;height:" + H + 'px">' +
     pts.map(([x, y], k) => enemyIcon(type, b, 0, 0, x.toFixed(2) + "px", y.toFixed(2) + "px", fade(k))).join("") + "</span>";
   if (type !== "swarm" && count * (px + 2) - 2 <= span) return place(Array.from({ length: count }, (_, k) => [k * (px + 2), (H - px) / 2]), px);
@@ -140,7 +143,7 @@ function updateWaveList() {
     // long for the fixed width `span` TESSELLATES into 2, then 3 staggered rows
     // (waveBand), overlapping only past that. The box is always `span` wide, so
     // the name column never moves. A boss sits centred between two lines.
-    const px = Math.min(pxOf(hp, boss), WAVE_ROW_H);
+    const px = Math.min(pxOf(hp, boss), waveRowH());
     let icons = boss
       ? '<span class="asp-bline"></span>' + enemyIcon(w.type, px, 2).repeat(w.count - 1) + enemyIcon(w.type, px, 0) + '<span class="asp-bline"></span>'
       : waveBand(w.type, w.count, px, span, alive);
@@ -157,7 +160,39 @@ function updateWaveList() {
   // columns' nth-child rules still count five cells a row
   if (curRows) note += '<i class="asp-curbox" style="grid-row:1 / ' + (curRows + 1) + '"></i>';
   if (note !== lastNote) { $("asp-wavenote").innerHTML = note; lastNote = note; } // innerHTML re-reads normalised, so compare the source
+  waveLiveRows = curRows; fitWaveList();
 }
+// THE LIST NEVER COVERS THE CORE OR A STARTING SLOT (owner, 2026-10-19 landscape box): a board shape's rectangle on screen, in CSS px
+// (3D: its corners through warpProject under the texture camera; 2D: cam, device px / dpr)
+function boardScreenRect(x, y, r) {
+  const pts = [[x - r, y - r], [x + r, y - r], [x - r, y + r], [x + r, y + r]];
+  let P;
+  if (phoneOn3d()) {
+    const e = warp.ent.getBoundingClientRect(), sx = e.width / warp.ent.width, sy = e.height / warp.ent.height;
+    P = viewCam(() => pts.map(([px, py]) => { const q = warpProject(px, py, 0); return { x: e.left + q.x * sx, y: e.top + q.y * sy }; }));
+  } else {
+    const c = cv.getBoundingClientRect(), d = canvasDpr();
+    P = pts.map(([px, py]) => ({ x: c.left + (cam.ox + px * cam.k) / d, y: c.top + (cam.oy + py * cam.k) / d }));
+  }
+  const xs = P.map(q => q.x), ys = P.map(q => q.y);
+  return { left: Math.min(...xs), right: Math.max(...xs), top: Math.min(...ys), bottom: Math.max(...ys) };
+}
+let waveLiveRows = 0, waveGapPx = 0;
+// while the list's rect overlaps the core's (CORE_R) or an OPEN starting slot's (CELL_S), plus var(--space-2), drop its last row (down to the live waves);
+// rows are five grid cells, the "warping in" sub-heading one more row; runs on every list update and on resize
+function fitWaveList() {
+  const note = $("asp-wavenote"), box = document.querySelector(".asp-left");
+  if (!note || !box) return;
+  const cells = [...note.children].filter(c => !c.classList.contains("asp-curbox"));
+  for (const c of cells) if (c.style.display) c.style.display = "";
+  if (!matchMedia(PHONE_PORTRAIT_Q).matches) return;
+  if (!waveGapPx) { const t = document.createElement("div"); t.style.cssText = "position:absolute;visibility:hidden;width:var(--space-2)"; document.body.appendChild(t); waveGapPx = t.getBoundingClientRect().width; t.remove(); }
+  const spots = [[CX, CY, CORE_R], ...CELLS.filter(c => OPEN_SLOTS.includes(c.ang)).map(c => [c.x, c.y, CELL_S])].map(([x, y, r]) => boardScreenRect(x, y, r));
+  const g = waveGapPx, hits = () => { const L = box.getBoundingClientRect(); return spots.some(b => L.left < b.right + g && b.left - g < L.right && L.top < b.bottom + g && b.top - g < L.bottom); };
+  for (let n = Math.ceil(cells.length / 5); n > Math.max(waveLiveRows, 1) && hits(); n--)
+    for (const c of cells.slice((n - 1) * 5)) c.style.display = "none";
+}
+if (typeof addEventListener === "function") addEventListener("resize", () => typeof G === "object" && fitWaveList());
 // the CHALLENGE button UNDER THE CORE, centred on it (owner, 2026-10-12: "move the challenge button under the core, centered
 // horizontally"): below the core's life rings, followed every frame (the camera moves), in 2D and 3D alike
 const CHALLENGE_BELOW = 16; // world units under the life rings / the lowest slot
