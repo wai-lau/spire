@@ -474,7 +474,7 @@ function frame(now) {
   if (!ui.paused) {
     // the game HOLDS while the boss sky turns over (aspira-bosses.js); the real-time bits below still run
     let left = typeof skyTurning === "function" && skyTurning() ? 0 : dt * BASE_SPEED * speedX(); // auto-wait only ever SLOWS; a time freeze runs at 1x (speedX)
-    while (left > 0) { const h = Math.min(0.02, left); step(h); stepFx(h); left -= h; }
+    while (left > 0) { if (boxPending !== null) boxSwitchIfIdle(); /* the clear field lasts one step: look before each */ const h = Math.min(0.02, left); step(h); stepFx(h); left -= h; }
     stepFloats(dt); // real time: unaffected by the game speed
     if (autoMove && best.ascended && G.started && !G.over) G.autoMoveS = (G.autoMoveS || 0) + dt; // auto-move's REAL seconds this game (autoBarred, aspira-ascend.js)
     stepFlings(dt); // a let-go tower coasting (aspira-fling.js), real time too

@@ -245,4 +245,17 @@ function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once 
 // OFF_SCREEN_SPEED like an unseen one (stepEnemies, aspira-game.js). The circles are worked out once a step
 const reachCircles = () => G.towers.map(t => { const c = CELLS[t.cell] || t, R = leashR(t) + towerStats(t).range; return [c.x, c.y, R * R]; });
 const inReach = (e, reach) => reach.some(([x, y, r2]) => (e.x - x) ** 2 + (e.y - y) ** 2 <= r2);
+// THE BOX SWITCHES BETWEEN WAVES ONLY: a resize/rotation just sets boxPending; boxSwitchIfIdle (before each step of the frame loop, aspira-ui.js: a clear field lasts one step, the next wave
+// goes at once; plus a 250 ms timer for a paused game - never step(), the simulator must not see it) applies it once the field is clear and no lane is lit (or before the run starts)
+let boxPending = null;
+function boxSwitchIfIdle() {
+  if (boxPending === null) return;
+  if (boxPending === BOX_WIDE) { boxPending = null; return; }
+  if (typeof G === "object" && G && G.started && !(waveClear() && !laneSoon().length)) return;
+  const w = boxPending; boxPending = null; setPlayBox(w);
+}
+if (typeof addEventListener === "function") {
+  addEventListener("resize", () => { boxPending = boxWanted(); });
+  setInterval(boxSwitchIfIdle, 250);
+}
 setPlayBox(boxWanted()); // once, as this loads: before any draw, before runOffer
