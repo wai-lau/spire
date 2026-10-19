@@ -187,7 +187,7 @@ def test_landscape_floor_area_matches_portrait_on_the_same_screen_turned(gl_page
     goal = turned.evaluate("boxFloorArea()")
     print("AREA", w, h, area, goal, tilt)
     assert abs(area - goal) <= 0.02 * goal
-    assert page.evaluate("tiltDirty") is False and tilt <= 0.55
+    assert page.evaluate("tiltSolved !== \"\"") is True
 
 
 def test_portrait_keeps_the_default_tilt(gl_page):

@@ -181,7 +181,6 @@ function setPlayBox(wide) { // the box's shape, and everything cached against it
   BOX_WIDE = !!wide; BOX_HX = wide ? BOX_LONG : BOX_SHORT; BOX_HY = wide ? BOX_SHORT : BOX_LONG;
   phoneBoxC = null;
   if (typeof laneTurnCache !== "undefined") laneTurnCache.clear();
-  tiltDirty = true; // the tilt is solved lazily, in the first frame (warp.js loads after this)
   if (typeof resize === "function") { resize(); if (typeof fitK !== "undefined") fitK = cam.fit; }
   if (typeof turnSlots === "function") turnSlots(BOX_WIDE);
 }
@@ -215,48 +214,82 @@ function turnSlots(wide) {
 // THE LANDSCAPE TILT (owner, 2026-10-19: "change the tilt between portrait and landscape so that the area on screen is the same"):
 // the 3D play box is a SCREEN rectangle, so the floor it covers grows with the tilt. Portrait keeps WARP.tilt; wide solves tiltWide
 // so boxFloorArea() matches portraitFloorGoal(). Every reader of the tilt goes through warpTilt().
-const WARP_TILT_DEFAULT = 0.55;
-let tiltWide = WARP_TILT_DEFAULT, tiltDirty = false, tiltKey = ""; // tiltKey: the screen the tilt was solved for (a layout that settles late re-solves it)
-const warpTilt = () => { if (BOX_WIDE && typeof warpParams === "function") { const sc = warpScreenFull(), key = sc.w + "x" + sc.h + "@" + cam.fit; if (key !== tiltKey) { tiltKey = key; tiltDirty = true; } }
-  if (tiltDirty && BOX_WIDE && typeof warpParams === "function") { tiltDirty = false; fitTiltWide(); } return BOX_WIDE ? tiltWide : WARP.tilt; };
-function boxFloorArea() { // the floor points (step 20 grid) whose projection is on the phone, at the CURRENT tilt
-  const p0 = warp.p, f0 = warp.inFrame;
-  let n = 0;
-  viewCam(() => {
-    warp.inFrame = true; warp.p = warpParams();
-    for (let x = CX - 900; x <= CX + 900; x += 20) for (let y = CY - 900; y <= CY + 900; y += 20) if (phoneInside(x, y, 0, true)) n++;
-  });
-  warp.inFrame = f0; warp.p = p0;
-  return n;
+const WARP_TILT_DEFAULT = 0.55, TILT_SETTLE_MS = 200, GRID_R = 900, TILT_MAX = 0.7;
+// tiltSeen: the screen size last seen and since when; tiltSolved: the one tiltWide was solved for. A resize is solved once the
+// size has held TILT_SETTLE_MS (the first solve at once), so a drag-resize keeps the last tilt meanwhile
+let tiltWide = WARP_TILT_DEFAULT, tiltSeen = "", tiltSeenAt = 0, tiltSolved = "", tiltBusy = false;
+function tiltCheck() { // wide only, from warpTilt (a frame: warpParams)
+  if (tiltBusy || typeof warpParams !== "function" || typeof q3d !== "function" || !q3d()) return;
+  const sc = warpScreenFull(), key = sc.w + "x" + sc.h, now = performance.now();
+  if (key !== tiltSeen) { tiltSeen = key; tiltSeenAt = now; }
+  if (key === tiltSolved || (tiltSolved !== "" && now - tiltSeenAt < TILT_SETTLE_MS)) return;
+  fitTiltWide(key);
+}
+function warpTilt() { // every reader of the tilt
+  if (BOX_WIDE) tiltCheck();
+  return BOX_WIDE ? tiltWide : WARP.tilt;
+}
+// the camera resize() would fit for a w x h window and this box, under the texture scale the 3D maths runs in
+function fitCamFor(w, h) {
+  const k = Math.min(w / (2 * BOX_HX), h / (2 * BOX_HY)), m = canvasDpr() * warpRes();
+  cam.k = k * m; cam.ox = (w / 2 - CX * k) * m; cam.oy = (h / 2 - CY * k) * m;
+}
+// the floor the phone covers at the CURRENT tilt, under the FIT camera (not the live one, which a pinch can clamp off its fit): per
+// column (step 40) the y span whose projection is on the phone (it is convex) - a coarse scan, then the two edges bisected - in
+// cells of 20 x 20. Exact edges instead of counting points: a point count at this step is +-1% noise
+function boxFloorArea() {
+  const p0 = warp.p, f0 = warp.inFrame, c0 = { k: cam.k, ox: cam.ox, oy: cam.oy }, r = cv.getBoundingClientRect();
+  const ins = (x, y) => phoneInside(x, y, 0, true);
+  let sum = 0;
+  try {
+    fitCamFor(r.width, r.height); warp.inFrame = true; warp.p = warpParams();
+    for (let x = CX - GRID_R; x <= CX + GRID_R; x += 40) {
+      let first = -1, last = -1;
+      for (let i = 0; i <= 30; i++) if (ins(x, CY - GRID_R + i * 60)) { if (first < 0) first = i; last = i; }
+      if (first < 0) continue;
+      const edge = (y0, y1) => { for (let j = 0; j < 6; j++) { const m = (y0 + y1) / 2; if (ins(x, m) === ins(x, y1)) y1 = m; else y0 = m; } return (y0 + y1) / 2; };
+      const lo = first ? edge(CY - GRID_R + (first - 1) * 60, CY - GRID_R + first * 60) : CY - GRID_R;
+      const hi = last < 30 ? edge(CY - GRID_R + last * 60, CY - GRID_R + (last + 1) * 60) : CY + GRID_R;
+      sum += hi - lo;
+    }
+  } finally { warp.inFrame = f0; warp.p = p0; Object.assign(cam, c0); }
+  return sum * 40 / 400;
 }
 // THE GOAL, PER SCREEN: the floor area portrait would cover on THIS window held the other way (w and h swapped, the portrait box,
 // the default tilt). Floor area depends on the screen's aspect, so no constant fits every screen. Inputs are swapped for one
-// measurement and restored in the finally: cv's rect (warpScreen), the box, the fit camera (resize's), the shape (warpTilt)
+// measurement and restored in the finally: cv's rect (warpScreen), the box, the shape (warpTilt)
 function portraitFloorGoal() {
-  const r = cv.getBoundingClientRect(), w = r.height, h = r.width, d = canvasDpr(), c0 = { k: cam.k, ox: cam.ox, oy: cam.oy };
-  const hx = BOX_HX, hy = BOX_HY, wide = BOX_WIDE;
+  const r = cv.getBoundingClientRect(), w = r.height, h = r.width, hx = BOX_HX, hy = BOX_HY, wide = BOX_WIDE;
+  const own = Object.getOwnPropertyDescriptor(cv, "getBoundingClientRect");
   try {
     cv.getBoundingClientRect = () => ({ x: 0, y: 0, left: 0, top: 0, width: w, height: h, right: w, bottom: h });
     BOX_WIDE = false; BOX_HX = BOX_SHORT; BOX_HY = BOX_LONG;
-    const k = Math.min(w / (2 * BOX_HX), h / (2 * BOX_HY));
-    const m = d * (warp.inFrame ? warpRes() : 1); // in a frame the camera is already under the texture scale
-    cam.k = k * m; cam.ox = (w / 2 - CX * k) * m; cam.oy = (h / 2 - CY * k) * m;
     return boxFloorArea();
   } finally {
-    delete cv.getBoundingClientRect; BOX_WIDE = wide; BOX_HX = hx; BOX_HY = hy; Object.assign(cam, c0);
+    if (own) Object.defineProperty(cv, "getBoundingClientRect", own); else delete cv.getBoundingClientRect;
+    BOX_WIDE = wide; BOX_HX = hx; BOX_HY = hy;
   }
 }
-function fitTiltWide() { // bisect tiltWide in [0.2, WARP.tilt] (area grows with tilt) to within 1% of the goal
-  tiltDirty = false;
-  if (!BOX_WIDE || typeof q3d !== "function" || !q3d()) return;
-  const goal = portraitFloorGoal();
-  let lo = 0.2, hi = WARP_TILT_DEFAULT;
-  for (let i = 0; i < 10; i++) {
-    tiltWide = (lo + hi) / 2;
-    const a = boxFloorArea();
-    if (Math.abs(a - goal) <= goal * 0.01) break;
-    if (a > goal) hi = tiltWide; else lo = tiltWide;
-  }
+// bisect tiltWide (area grows with tilt) to within 1% of the goal; warm from the last solve (a narrow bracket round it), the
+// whole [0.2, TILT_MAX] if that misses. A throw leaves the last good tilt and the screen unsolved, so the next frame retries
+function fitTiltWide(key) {
+  const good = tiltWide;
+  let ok = false;
+  tiltBusy = true;
+  try {
+    const goal = portraitFloorGoal(), bisect = (lo, hi) => {
+      for (let i = 0; i < 10; i++) {
+        tiltWide = (lo + hi) / 2;
+        const a = boxFloorArea();
+        if (Math.abs(a - goal) <= goal * 0.01) return true;
+        if (a > goal) hi = tiltWide; else lo = tiltWide;
+      }
+      return false;
+    };
+    if (!(tiltSolved !== "" && bisect(Math.max(0.2, good - 0.04), Math.min(TILT_MAX, good + 0.04)))) bisect(0.2, TILT_MAX);
+    ok = true;
+  } finally { tiltBusy = false; if (!ok) tiltWide = good; }
+  tiltSolved = key;
   if (typeof laneTurnCache !== "undefined") laneTurnCache.clear(); // the lane turns were scored under the old view
   if (typeof starAt !== "undefined") starAt.k = NaN; // so were the cached star spots
 }
