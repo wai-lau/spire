@@ -227,7 +227,8 @@ const CREDITS_FX_T = 2.5;
 let creditsFx = null;
 // 1.5x larger (owner, 2026-10-11: "3x larger", then "too large, like half that size"; were 14 / 15 / 8)
 const POP_PX = 21, CRED_PX = 23, CRED_SUB_PX = 12;
-const popY = () => CY + CORE_R + LIFE_GAP * LIFE_RINGS + 9 + POP_PX / 2; // just under the rings (was +16 at 14px)
+const popY = (px = POP_PX) => CY + CORE_R + LIFE_GAP * LIFE_RINGS + 9 + px / 2; // just under the rings (was +16 at 14px)
+const INT_POP_PX = Math.round(POP_PX * 1.5); // the INTEREST pop-up 1.5x (owner, 2026-10-19: "interest popup should be 1.5x bigger and it should say interest: +XXc (%)")
 // a LOST LIFE puts "X lives left" in the same spot for as long (owner, 2026-10-11), over an interest pop-up older than it
 let livesFx = null;
 function livesLost() { livesFx = { t0: performance.now() / 1000 }; }
@@ -256,11 +257,11 @@ function drawCredits(part) {
   const livesOn = livesFx && performance.now() / 1000 - livesFx.t0 < CREDITS_FX_T && (!fxOn || livesFx.t0 >= creditsFx.t0);
   if (livesOn) { text(G.lives + (G.lives === 1 ? " life left" : " lives left"), CX, popY(), POP_PX, "pink", true); return; }
   if (!fxOn) return;
-  const parts = [["+" + creditsFx.gain + "c", "green"], [" (+" + creditsFx.pct.toFixed(1) + "%)", "green"]];
-  ctx.font = POP_PX + "px " + CANVAS_FONT; // the interest pop-up
+  const parts = [["interest: +" + creditsFx.gain + "c", "green"], [" (+" + creditsFx.pct.toFixed(1) + "%)", "green"]];
+  ctx.font = INT_POP_PX + "px " + CANVAS_FONT; // the interest pop-up
   const ws = parts.map(p => ctx.measureText(p[0]).width);
   let x = CX - ws.reduce((a, w) => a + w, 0) / 2;
-  parts.forEach((p, i) => { text(p[0], x + ws[i] / 2, popY(), POP_PX, p[1], true); x += ws[i]; });
+  parts.forEach((p, i) => { text(p[0], x + ws[i] / 2, popY(INT_POP_PX), INT_POP_PX, p[1], true); x += ws[i]; });
 }
 // EVERY LANE TURNED TO THE SCREEN (owner, 2026-10-14: bosses first - "rotate them so that they stay on screen for as long as
 // possible" - then "rotate all paths to maximize time on screen"): of LANE_TURNS turns of a group's lane (its k split copies

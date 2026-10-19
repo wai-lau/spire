@@ -108,7 +108,7 @@ KINDS.forEach((k, i) => {
 });
 
 // AUTO-WAIT (owner): a checkbox under the pause button; while ticked, the game
-// drops to a share of the chosen speed (AUTO_WAIT_K) whenever an enemy is within AUTO_WAIT_S game-seconds of
+// drops to a share of the chosen speed (AUTO_WAIT_K) whenever an enemy is within AUTO_WAIT3_S game-seconds of
 // reaching the core at its current speed (owner: time, not distance), and goes
 // back to the chosen speed once none is. Remembered in localStorage.
 const AUTO_WAIT3_S = 1; // ONE stage (owner, 2026-10-19: "remove the outer tier also, just keep the innermost tier of slow (keep all threat indicators)" - the x0.5 at 4 s and the x0.25 at 1.5 s are gone); 2026-10-18: "make the first and second tier of auto-wait happen later" (was 6 / 2); 2026-10-11: "start at 6s, 1/2 at 2s and 1/4 at 1s" (was 8 / 3)
