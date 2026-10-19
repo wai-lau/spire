@@ -32,6 +32,8 @@ const CHANGELOG = [
     "Threat marks: they flash while auto-wait is slowing the game.",
     "Speed: the whole game runs 20% slower; every speed button is that much slower too.",
     "Speed: a 0.75x button.",
+    "Ifrit: Hellfire's last purchase makes the longest spokes (no longer across the whole board).",
+    "Ifrit: a white core runs down each Hellfire spoke; the first blast ring opens slower and brighter.",
     "Resume: no tower can be built while the resume card is up.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
