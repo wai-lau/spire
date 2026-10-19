@@ -11,8 +11,7 @@ for (let seed = 1; seed <= SEEDS; seed++) {
   const team = [["sol", BUILD], ["arc", "spread"], ["frz", "spread"]];
   for (const [k, b] of team) {
     const ax = g.run(`SKILL_TREES["${k}"].map(a => a.id)`), sk = {}, tiers = Math.min(POINTS, 5);
-    if (b === "spread") for (let p = 0; p < POINTS; p++) sk[ax[p % 3]] = (sk[ax[p % 3]] || 0) + 1;
-    else { sk[b] = tiers; const rest = ax.filter(a => a !== b); for (let p = 0; p < POINTS - tiers; p++) sk[rest[p % 2]] = (sk[rest[p % 2]] || 0) + 1; }
+    Object.assign(sk, b === "spread" ? spreadStops(ax, POINTS) : focusStops(ax, b, POINTS)); // by STOP (stops.mjs)
     const sc = cellScores(g, k), free = g.run("CELLS.map((c, i) => i).filter(cellOpen)").filter(ci => !g.G.towers.some(t => t.cell === ci)).sort((a, b) => sc[b] - sc[a]);
     for (const ci of free) { const t = g.place(k, ci); if (t) { t.skills = sk; t.lvl = 1 + POINTS; break; } }
   }

@@ -38,6 +38,10 @@ are this repo's gitignored `data/aspira-sfx/`.
 - **Every balance patch refreshes the build card's checks and x's** (`VS_MARKS`, owner 2026-10-18): run
   `SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car node scripts/aspira-sim/countermx.mjs 2 > cmx.out` on the patched code, then
   `python3 scripts/aspira-sim/marks.py cmx.out --write`, and ship the new marks with the patch. ARCHITECTURE.md §7.2.
+- **Every tower beats at least two enemy types** (owner, 2026-10-19): `marks.py` prints `RULE FAIL` for a tower with checks on one
+  type alone - fix it with balance, never by editing the marks.
+- **Sims buy tiers by STOP** (owner, 2026-10-19: "only 4 tiers now, tier 4 is the capstone / don't sim the intermediate tiers"): an
+  axis is 0, 1, 3, 5 or 6 (`SKILL_STOPS`); a script that sets skills by hand spends points through `scripts/aspira-sim/stops.mjs`.
 - **Tests:** from exec-fn, `.venv/bin/pytest apps/spire/tests` (the shared
   fixtures live in exec-fn's root `conftest.py`).
 - **Diagrams:** mermaid source in `docs/arch/*.mmd`; staging one makes exec-fn's

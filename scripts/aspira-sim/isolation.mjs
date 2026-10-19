@@ -9,6 +9,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makeGame } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
+import { spreadStops, focusStops, snapStop, STOPS } from "./stops.mjs"; // tiers by STOP only (0 1 3 5 6)
 
 const KINDS = ["arc", "frz", "sol", "acd"];
 const WINDOWS = (process.env.WINDOWS || "10-30,40-70").split(",").map(w => w.split("-").map(Number));
@@ -37,7 +38,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("isolation.mjs")
   const jobs = [];
   for (const [from, to] of WINDOWS) for (const kind of KINDS) {
     for (let seed = 1; seed <= SEEDS; seed++) jobs.push({ kind, axis: null, k: 0, seed, from, to });
-    for (const axis of axesOf(kind)) for (let k = 1; k <= 5; k++) for (let seed = 1; seed <= SEEDS; seed++) jobs.push({ kind, axis, k, seed, from, to });
+    for (const axis of axesOf(kind)) for (const k of STOPS.slice(1)) for (let seed = 1; seed <= SEEDS; seed++) jobs.push({ kind, axis, k, seed, from, to });
   }
   const res = await runPool(new URL(import.meta.url), jobs, { out: OUT });
   const mean = (rs, f) => rs.reduce((a, r) => a + f(r), 0) / rs.length;
