@@ -2,7 +2,7 @@
 // aspira-draw.js (which fits `cam` to the window in resize) and before
 // aspira-ui.js (whose onTap this calls).
 //
-// THE VIEW IS FIXED (owner, 2026-10-11): no zoom (it fits the play box - resize, aspira-draw.js) and no pan
+// THE VIEW IS FIXED (owner, 2026-10-11): no zoom (it fits the play box - resize, aspira-draw.js; a desktop's wheel zooms since 2026-10-19, below) and no pan
 // ("don't allow camera pan either") - a drag on open board does nothing; a drag on a tower moves it. A press that moves less than DRAG_PX is a TAP and goes
 // to onTap (select / place); the core is kept on screen. Double-click /
 // double-tap recentres.
@@ -63,7 +63,19 @@ function clampView() {
 }
 function refit() { resize(); fitK = cam.fit; }
 
-cv.addEventListener("wheel", ev => ev.preventDefault(), { passive: false }); // (no zoom: the page must not scroll either)
+// THE WHEEL ZOOMS on a desktop (ZOOM_WHEEL, aspira-draw.js; owner, 2026-10-19): ~10% a mouse notch (100 px), smooth on a trackpad,
+// shown in steps of ZOOM_STEP (each new scale redraws the tower sprites), clamped to [ZOOM_MIN, ZOOM_MAX]; about the core, never the
+// cursor (no pan). The page never scrolls
+const ZOOM_PER_PX = 0.001, ZOOM_STEP = 0.05;
+let zoomRaw = viewZoom;
+cv.addEventListener("wheel", ev => {
+  ev.preventDefault();
+  if (!ZOOM_WHEEL) return;
+  const dy = ev.deltaY * (ev.deltaMode === 1 ? 33 : ev.deltaMode === 2 ? 800 : 1); // lines / pages to px
+  zoomRaw = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomRaw * Math.exp(-dy * ZOOM_PER_PX)));
+  const z = Math.round(zoomRaw / ZOOM_STEP) * ZOOM_STEP;
+  if (Math.abs(z - viewZoom) > 1e-9) { viewZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, +z.toFixed(4))); zoomApply(); }
+}, { passive: false });
 
 // TWO TOWERS AT ONCE (owner, 2026-10-11: "now that zoom is fixed, allow moving two towers at once"): every finger that
 // lands on a tower holds that tower (moves: pointerId -> { t, dx, dy, down, dragged }), each following its own finger;
@@ -164,11 +176,11 @@ const phonePath = (c, b) => { c.beginPath(); c.roundRect(b.x0, b.y0, b.x1 - b.x0
 // this screen, a tower near it - drawn as THREE thin lines, fainter inward ("increasing in opacity as you reach the exterior one")
 const PHONE_NEAR = 20, PHONE_FADE = 0.25, PHONE_WALL_A = [0.3, 0.6, 1], PHONE_WALL_GAP = 4, PHONE_WALL_W = 0.75; // GAP, W: screen px
 let phoneShow = 0, phoneAt = 0, phoneLast = [];
-// the box's edges (l r t b) to show: b the box, S the screen and pos(tower) in one space, near and m (in-screen margin) in it too
-function phoneWalls(b, S, pos, near, m) {
-  const open = { l: b.x0 > S.x0 + m, r: b.x1 < S.x1 - m, t: b.y0 > S.y0 + m, b: b.y1 < S.y1 - m }, out = new Set();
-  for (const t of G.towers) {
-    const p = pos(t);
+// the box's edges (l r t b) to show: b the box, the towers' spots and near in one space; open from boxOpen (S the screen, m an in-screen margin)
+const boxOpen = (b, S, m) => ({ l: b.x0 > S.x0 + m, r: b.x1 < S.x1 - m, t: b.y0 > S.y0 + m, b: b.y1 < S.y1 - m });
+function phoneWalls(b, open, pts, near) { // open: the edges inside the screen (boxOpen); pts: the towers' spots
+  const out = new Set();
+  for (const p of pts) {
     if (open.l && p.x - b.x0 < near) out.add("l"); if (open.r && b.x1 - p.x < near) out.add("r");
     if (open.t && p.y - b.y0 < near) out.add("t"); if (open.b && b.y1 - p.y < near) out.add("b");
   }
@@ -181,25 +193,44 @@ function phoneFrameAlpha(walls) {
   phoneShow = Math.max(0, Math.min(1, phoneShow + (walls.length ? 1 : -1) * dt / PHONE_FADE));
   return PHONE_ALPHA * phoneShow;
 }
-function drawPhoneWalls(c, b, a, px) { // px: one screen px in c's units
+// one wall's line, d in from its edge, as [x0, y0, x1, y1] in b's space
+const wallLine = (b, w, d) => w === "l" ? [b.x0 + d, b.y0, b.x0 + d, b.y1] : w === "r" ? [b.x1 - d, b.y0, b.x1 - d, b.y1] : w === "t" ? [b.x0, b.y0 + d, b.x1, b.y0 + d] : [b.x0, b.y1 - d, b.x1, b.y1 - d];
+// map: b's space -> c's (the zoomed view: each line bent through it in PHONE_BENT pieces, a point it cannot place breaking the line)
+const PHONE_BENT = 16;
+function drawPhoneWalls(c, b, a, px, map) { // px: one screen px in c's units
   c.save(); c.strokeStyle = COL.white; c.lineWidth = PHONE_WALL_W * px; c.lineCap = "butt";
   PHONE_WALL_A.forEach((k, i) => {
     const d = (PHONE_WALL_A.length - 1 - i) * PHONE_WALL_GAP * px; // the faintest innermost, the strongest ON the edge
     c.globalAlpha = a * k; c.beginPath();
     for (const w of phoneLast) {
-      if (w === "l") { c.moveTo(b.x0 + d, b.y0); c.lineTo(b.x0 + d, b.y1); } else if (w === "r") { c.moveTo(b.x1 - d, b.y0); c.lineTo(b.x1 - d, b.y1); }
-      else if (w === "t") { c.moveTo(b.x0, b.y0 + d); c.lineTo(b.x1, b.y0 + d); } else { c.moveTo(b.x0, b.y1 - d); c.lineTo(b.x1, b.y1 - d); }
+      const [x0, y0, x1, y1] = wallLine(b, w, d);
+      if (!map) { c.moveTo(x0, y0); c.lineTo(x1, y1); continue; }
+      let on = false;
+      for (let j = 0; j <= PHONE_BENT; j++) { const q = map(x0 + (x1 - x0) * j / PHONE_BENT, y0 + (y1 - y0) * j / PHONE_BENT); if (!q) { on = false; continue; } if (on) c.lineTo(q.x, q.y); else c.moveTo(q.x, q.y); on = true; }
     }
     c.stroke();
   });
   c.restore();
 }
+// ZOOMED (desktop zoom, aspira-draw.js): the outline is the GAMEPLAY box - the fit view's screen rectangle (fitView) - as its floor
+// footprint seen through the zoomed view: smaller than the screen zoomed out, partly off it zoomed in. fitMap: a fit-view pixel to
+// this view's, through the floor (floorAt under the fit, warpProject under this view)
+const fitMap = (x, y) => { const f = fitView(() => floorAt(x, y)); return f && warpProject(f.x, f.y, 0); };
+const phoneOutline3d = () => viewCam(() => { const b = fitView(phoneRect3d); return [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]].map(([x, y]) => fitMap(x, y)); }); // the corners (a test reads it)
 function drawPhoneFrame3d() { // in warpEntities, under the texture camera, before the boss sky's flip: over the view, square to the screen
-  const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes(), b = phoneRect3d();
-  const near = (CELL_S * TOWER_K + MOVE_EDGE + PHONE_NEAR) * cam.k;
-  const a = phoneFrameAlpha(phoneWalls(b, { x0: 0, y0: 0, x1: warp.ent.width, y1: warp.ent.height }, t => warpProject(t.x, t.y, 0), near, 6 * px));
+  const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes(), S = { x0: 0, y0: 0, x1: warp.ent.width, y1: warp.ent.height };
+  const zoomed = typeof viewZoom !== "undefined" && viewZoom !== 1;
+  // the box, the towers and near all in the FIT view's pixels; the open edges are those whose middle shows inside THIS screen
+  const [b, near, pos] = fitView(() => [phoneRect3d(), (CELL_S * TOWER_K + MOVE_EDGE + PHONE_NEAR) * cam.k, G.towers.map(t => warpProject(t.x, t.y, 0))]);
+  let open = boxOpen(b, S, 6 * px);
+  if (zoomed) {
+    const mid = { l: [b.x0, (b.y0 + b.y1) / 2], r: [b.x1, (b.y0 + b.y1) / 2], t: [(b.x0 + b.x1) / 2, b.y0], b: [(b.x0 + b.x1) / 2, b.y1] }, m = 6 * px;
+    open = {};
+    for (const w in mid) { const q = fitMap(...mid[w]); open[w] = !!q && q.x > m && q.x < S.x1 - m && q.y > m && q.y < S.y1 - m; }
+  }
+  const a = phoneFrameAlpha(phoneWalls(b, open, pos, near));
   if (!a) return;
-  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); drawPhoneWalls(g, b, a, px); g.restore();
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); drawPhoneWalls(g, b, a, px, zoomed ? fitMap : null); g.restore();
 }
 // 3D: the LEASH RINGS (drawLeash, aspira-towers.js) on the screen layer - the floor circle's points projected, dashed in screen
 // px so every dash is the same on the sides as in front. In warpEntities, under the texture camera, beside drawPhoneFrame3d

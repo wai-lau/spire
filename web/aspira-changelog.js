@@ -20,7 +20,7 @@ const CHANGELOG = [
     "Sol: fires 25% slower, each shot a third harder (the same damage a second); its refraction cone is much narrower.",
     "Carrier: fewer, harder volleys and bolts - fewer shield charges popped.",
   ], u: [
-    "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
+    "Desktop: the mouse wheel zooms the board in and out; it starts zoomed out a little.", "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
     "Changes: Ifrit has its own heading.",
     "Enemies: off screen they are drawn at 20%, fading in over a second as they come on screen.",
     "Build cards: the red box round an uncovered enemy type is drawn whole (it showed as two bars), centred in its gap without moving the marks.",

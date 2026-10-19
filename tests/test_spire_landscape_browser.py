@@ -161,8 +161,8 @@ def gl_page(_pw):
     ctxs = []
     b = _pw.chromium.launch(args=GL_ARGS)
 
-    def make(w, h):
-        ctx = b.new_context(viewport={"width": w, "height": h})
+    def make(w, h, **opts):
+        ctx = b.new_context(viewport={"width": w, "height": h}, **opts)
         ctxs.append(ctx)
         page = ctx.new_page()
         page.route(HOST + "/**", _serve)
@@ -194,3 +194,76 @@ def test_portrait_keeps_the_default_tilt(gl_page):
     page = gl_page(390, 844)
     assert page.evaluate("BOX_WIDE") is False
     assert page.evaluate("warpTilt() === WARP.tilt && WARP.tilt === 0.55") is True
+
+
+# --- desktop scroll zoom (owner, 2026-10-19): the wheel zooms the VIEW about the core; the gameplay box stays the fit's ---
+def _set_zoom(page, z):
+    page.evaluate(f"viewZoom = {z}; zoomApply()")
+    page.wait_for_timeout(250)  # a few frames: warp.p made under the new view
+
+
+def test_desktop_starts_zoomed_out_and_the_wheel_zooms_in_to_the_cap(gl_page):
+    page = gl_page(1280, 800)
+    assert abs(page.evaluate("cam.k / cam.fit") - 0.7) < 1e-6
+    core = "[cam.ox + CX * cam.k - (cam.fitOx + CX * cam.fit), cam.oy + CY * cam.k - (cam.fitOy + CY * cam.fit)]"
+    page.mouse.move(640, 400)
+    page.mouse.wheel(0, -100)
+    page.wait_for_timeout(100)
+    z1 = page.evaluate("cam.k / cam.fit")
+    assert 0.72 < z1 < 0.85, z1  # one notch ~10%
+    assert all(abs(d) < 1e-6 for d in page.evaluate(core))  # about the core: it keeps its fitted spot
+    for _ in range(30):
+        page.mouse.wheel(0, -100)
+    page.wait_for_timeout(100)
+    assert abs(page.evaluate("cam.k / cam.fit") - 1.5) < 1e-6
+    for _ in range(40):
+        page.mouse.wheel(0, 100)
+    page.wait_for_timeout(100)
+    assert abs(page.evaluate("cam.k / cam.fit") - 0.5) < 1e-6
+    assert all(abs(d) < 1e-6 for d in page.evaluate(core))
+
+
+GRID = """(() => { const out = []; for (let x = CX - 900; x <= CX + 900; x += 30) for (let y = CY - 900; y <= CY + 900; y += 30)
+  out.push(phoneInside(x, y) ? 1 : 0); return out.join(""); })()"""
+LEGAL = """(() => { const c = CELLS[CELLS.reduce((b, c, i) => Math.hypot(c.x - CX, c.y - CY) > Math.hypot(CELLS[b].x - CX, CELLS[b].y - CY) ? i : b, 0)];
+  const t = { id: -1, kind: "acd", cell: CELLS.indexOf(c), x: c.x, y: c.y, lvl: 5, cd: 0, mode: DEFAULT_MODE.acd, spent: 0 }, out = [];
+  for (let i = 0; i < 16; i++) { const a = i / 16 * 6.283, s = legalSpot(t, { x: c.x + Math.cos(a) * 2000, y: c.y + Math.sin(a) * 2000 });
+    out.push(s ? s.x.toFixed(3) + "," + s.y.toFixed(3) : "null"); } return out; })()"""
+
+
+@pytest.mark.parametrize("w,h", [(1280, 800), (800, 1000)])
+def test_the_gameplay_box_is_the_same_at_every_zoom(gl_page, w, h):
+    page = gl_page(w, h)
+    seen = {}
+    for z in (0.7, 1.0, 1.4):
+        _set_zoom(page, z)
+        assert abs(page.evaluate("cam.k / cam.fit") - z) < 1e-6
+        seen[z] = (page.evaluate(GRID), page.evaluate(LEGAL), page.evaluate("bossBarR()") if page.evaluate("typeof bossBarR") == "function" else 0)
+    grid = seen[1.0][0]
+    assert "0" in grid and "1" in grid
+    assert seen[0.7] == seen[1.0] == seen[1.4]
+
+
+def test_the_outline_draws_the_gameplay_box_under_the_zoomed_view(gl_page):
+    page = gl_page(1280, 800)
+    _set_zoom(page, 0.7)
+    # every fit-box corner, through the floor and the zoomed view, lands INSIDE the screen (smaller than it)
+    pts = page.evaluate("phoneOutline3d().map(q => [q.x, q.y, warp.ent.width, warp.ent.height])")
+    assert len(pts) == 4
+    for x, y, W, H in pts:
+        assert 0 < x < W and 0 < y < H, (x, y, W, H)
+    _set_zoom(page, 1.0)
+    b = page.evaluate("viewCam(() => { const b = phoneRect3d(); return [b.x0, b.y0, b.x1, b.y1]; })")
+    pts = page.evaluate("phoneOutline3d().map(q => [q.x, q.y])")
+    xs, ys = sorted(p[0] for p in pts), sorted(p[1] for p in pts)
+    assert abs(xs[0] - b[0]) < 0.5 and abs(xs[-1] - b[2]) < 0.5 and abs(ys[0] - b[1]) < 0.5 and abs(ys[-1] - b[3]) < 0.5
+
+
+def test_touch_phone_has_no_zoom(gl_page):
+    page = gl_page(390, 844, has_touch=True, is_mobile=True)
+    assert page.evaluate("matchMedia('(pointer: fine)').matches") is False
+    assert page.evaluate("cam.k === cam.fit && viewZoom === 1") is True
+    page.mouse.move(195, 422)
+    page.mouse.wheel(0, -300)
+    page.wait_for_timeout(100)
+    assert page.evaluate("cam.k === cam.fit") is True

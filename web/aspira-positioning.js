@@ -242,11 +242,11 @@ function fitCamFor(w, h) {
 // column (step 40) the y span whose projection is on the phone (it is convex) - a coarse scan, then the two edges bisected - in
 // cells of 20 x 20. Exact edges instead of counting points: a point count at this step is +-1% noise
 function boxFloorArea() {
-  const p0 = warp.p, f0 = warp.inFrame, c0 = { k: cam.k, ox: cam.ox, oy: cam.oy }, r = cv.getBoundingClientRect();
+  const p0 = warp.p, f0 = warp.inFrame, h0 = fitHeld, c0 = { k: cam.k, ox: cam.ox, oy: cam.oy }, r = cv.getBoundingClientRect();
   const ins = (x, y) => phoneInside(x, y, 0, true);
   let sum = 0;
   try {
-    fitCamFor(r.width, r.height); warp.inFrame = true; warp.p = warpParams();
+    fitHeld = true; fitCamFor(r.width, r.height); warp.inFrame = true; warp.p = warpParams(); // (fitHeld: this IS the fit camera - fitView keeps out)
     for (let x = CX - GRID_R; x <= CX + GRID_R; x += 40) {
       let first = -1, last = -1;
       for (let i = 0; i <= 30; i++) if (ins(x, CY - GRID_R + i * 60)) { if (first < 0) first = i; last = i; }
@@ -256,7 +256,7 @@ function boxFloorArea() {
       const hi = last < 30 ? edge(CY - GRID_R + last * 60, CY - GRID_R + (last + 1) * 60) : CY + GRID_R;
       sum += hi - lo;
     }
-  } finally { warp.inFrame = f0; warp.p = p0; Object.assign(cam, c0); }
+  } finally { fitHeld = h0; warp.inFrame = f0; warp.p = p0; Object.assign(cam, c0); }
   return sum * 40 / 400;
 }
 // THE GOAL, PER SCREEN: the floor area portrait would cover on THIS window held the other way (w and h swapped, the portrait box,
@@ -310,6 +310,29 @@ function viewCam(fn) { // the 3D maths runs under the texture camera (warp3d set
   cam.k *= warpRes(); cam.ox *= warpRes(); cam.oy *= warpRes();
   try { return fn(); } finally { Object.assign(cam, c0); }
 }
+// THE GAMEPLAY BOX IGNORES THE ZOOM (desktop zoom, owner 2026-10-19: "with the same limiting borders"): the box is the FIT view's
+// screen rectangle, so every gameplay test of it (phoneInside: enemySeen, legalSpot, flings, lane turns, the boss bar) runs under the
+// fit camera (zoom 1, the texture scale) and its params warp.pFit - made once per warp.p (a frame), never per call: phoneInside runs
+// thousands of times a second. Every swap restored in the finally. fitHeld: boxFloorArea already set the fit camera up itself
+let fitHeld = false;
+function fitView(fn) {
+  if (fitHeld || typeof viewZoom === "undefined" || viewZoom === 1) return fn();
+  const k = cam.k, ox = cam.ox, oy = cam.oy, p0 = warp.p, f0 = warp.inFrame, m = warpRes();
+  fitHeld = true;
+  try {
+    cam.k = cam.fit * m; cam.ox = cam.fitOx * m; cam.oy = cam.fitOy * m; warp.inFrame = true;
+    if (warp.pFitFor !== p0) { warp.pFit = warpParams(); warp.pFitFor = p0; }
+    warp.p = warp.pFit;
+    return fn();
+  } finally { fitHeld = false; cam.k = k; cam.ox = ox; cam.oy = oy; warp.p = p0; warp.inFrame = f0; }
+}
+// a view pixel back to the world spot on the FLOOR (height 0) seen there: warpProject(x, y, 0)'s inverse; null above the horizon
+function floorAt(sx, sy) {
+  const p = warp.p, u = (sx - p.core[0]) / (p.z * p.f), v = (sy - p.core[1] - p.oy) / (p.z * p.f), d = p.c + v * p.s;
+  if (d <= 1e-9) return null;
+  const py = v * p.f / d, px = u * (p.f - p.s * py), r = Math.hypot(px, py), m = r ? warpUnview(p, r) / r : 1 / p.hc;
+  return { x: (p.core[0] + px * m - cam.ox) / cam.k, y: (p.core[1] + py * m - cam.oy) / cam.k };
+}
 function phoneRect3d() { // 3D: the view's pixels (call under viewCam) - the SAME screen rectangle as 2D's, so it fits the window too
   const k = cam.k;
   return { x0: cam.ox + (CX - BOX_HX) * k, y0: cam.oy + (CY - BOX_HY) * k, x1: cam.ox + (CX + BOX_HX) * k, y1: cam.oy + (CY + BOX_HY) * k, r: PHONE_CORNER * k };
@@ -320,10 +343,10 @@ const enemySeen = e => typeof phoneInside !== "function" || phoneInside(e.x, e.y
 // is (x, y) on the phone, `inset` world units clear of its edge?
 function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once by a caller testing many points (legalSpot - perf)
   if (!on3d) { const b = phoneBox(); return x >= b.x0 + inset && x <= b.x1 - inset && y >= b.y0 + inset && y <= b.y1 - inset; }
-  return viewCam(() => {
+  return fitView(() => viewCam(() => { // (fitView: the gameplay box is the FIT view's at any zoom)
     const b = phoneRect3d(), p = warpProject(x, y, 0), e = inset * cam.k;
     return p.s > 0 && p.x >= b.x0 + e && p.x <= b.x1 - e && p.y >= b.y0 + e && p.y <= b.y1 - e;
-  });
+  }));
 }
 
 // OUT OF REACH = OFF SCREEN (owner, 2026-10-19: "enemy speed should also be 3x when outside of mvmt+range of all towers"): an enemy no

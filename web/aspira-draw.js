@@ -13,7 +13,16 @@ let ctx = cv.getContext("2d", DESYNC ? { desynchronized: true } : undefined); //
 // as big as its band allows. (Fixed at 0.72 CSS px a unit 2026-10-11..13 - PHONE_ZOOM, still the box's measure)
 // THE CORE: centred in the box, and so at the window's centre (owner, 2026-10-19; it sat 1.5 x as far from the top as the
 // sides 2026-10-13..19). The box has two shapes, portrait and landscape (setPlayBox, aspira-positioning.js)
-const cam = { k: 1, ox: 0, oy: 0, fit: 1 };
+// DESKTOP ZOOM (owner, 2026-10-19: "allow scroll to zoom on desktop, default zoom out like 30% with the same limiting borders"): on a
+// fine pointer the wheel (aspira-camera.js) sets viewZoom, the view's scale over the fit, in [ZOOM_MIN, ZOOM_MAX], about the CORE's
+// fitted spot (no pan); it starts at ZOOM_DEFAULT. A touch screen stays at 1. cam.fit / fitOx / fitOy keep the fit: the GAMEPLAY box
+// is the fit's at any zoom (fitView, aspira-positioning.js)
+const cam = { k: 1, ox: 0, oy: 0, fit: 1, fitOx: 0, fitOy: 0 };
+const ZOOM_WHEEL = typeof matchMedia === "function" && matchMedia("(pointer: fine)").matches, ZOOM_MIN = 0.5, ZOOM_MAX = 1.5, ZOOM_DEFAULT = 0.7;
+let viewZoom = ZOOM_WHEEL ? ZOOM_DEFAULT : 1;
+function zoomApply() { // the view from the fit: x viewZoom about the core (a resize keeps the zoom, laid on the new fit)
+  cam.k = cam.fit * viewZoom; cam.ox = cam.fitOx + CX * (cam.fit - cam.k); cam.oy = cam.fitOy + CY * (cam.fit - cam.k);
+}
 // the canvas draws at most RES_CAP device pixels per CSS pixel (owner: "need
 // more perf"): a phone at 3x drew 3.4 million pixels a frame; 2x is 2.25x fewer
 // for a barely softer line. EVERY dpr use in the game reads canvasDpr().
@@ -25,9 +34,8 @@ function resize() {
   // the play box fits the WHOLE window (owner, 2026-10-13: "zoom should fit window!"; it fitted the band between the header
   // and the bottom bar, which left a gap above and below), centred on the other axis
   const k = Math.min(r.width / (2 * BOX_HX), r.height / (2 * BOX_HY));
-  cam.fit = k * dpr; cam.k = k * dpr;
-  cam.ox = (r.width / 2 - CX * k) * dpr;
-  cam.oy = (r.height / 2 - CY * k) * dpr;
+  cam.fit = k * dpr; cam.fitOx = (r.width / 2 - CX * k) * dpr; cam.fitOy = (r.height / 2 - CY * k) * dpr;
+  zoomApply();
 }
 // Re-fit ONLY when the canvas itself changes size (window resize). Nothing in
 // the overlays — the placing note, a send-wave label rewrapping — may move the
