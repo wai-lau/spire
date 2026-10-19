@@ -111,7 +111,7 @@ KINDS.forEach((k, i) => {
 // drops to a share of the chosen speed (AUTO_WAIT_K) whenever an enemy is within AUTO_WAIT_S game-seconds of
 // reaching the core at its current speed (owner: time, not distance), and goes
 // back to the chosen speed once none is. Remembered in localStorage.
-const AUTO_WAIT_S = 6, AUTO_WAIT2_S = 2, AUTO_WAIT3_S = 1; // owner, 2026-10-11: "start at 6s, 1/2 at 2s and 1/4 at 1s" (was 8 / 3)
+const AUTO_WAIT_S = 4, AUTO_WAIT2_S = 1.5, AUTO_WAIT3_S = 1; // owner, 2026-10-18: "make the first and second tier of auto-wait happen later" (was 6 / 2); 2026-10-11: "start at 6s, 1/2 at 2s and 1/4 at 1s" (was 8 / 3)
 // each stage a SHARE of the chosen speed, not a fixed one (owner, 2026-10-12: "make auto-wait slowness be a percentage of the
 // chosen speed"): half of it from 6s out, a quarter from 2s, an eighth from 1s (was 1x / 1/2x / 1/4x, capped by the speed)
 const AUTO_WAIT_K = [0.5, 0.25, 0.125];
