@@ -81,8 +81,8 @@ lost core segment flashes the boss red.
 
 ![Wave gating](docs/arch/wave-gating.svg)
 
-**Auto-wait** (on by default; only ever slows): x0.5 / 0.25 / 0.125 of the chosen speed
-when a live enemy is 4 / 1.5 / 1 game s from the core; a stage is left past 1.25x its line,
+**Auto-wait** (on by default; only ever slows): x0.5 / 0.125 of the chosen speed
+when a live enemy is 4 / 1 game s from the core (two stages since 2026-10-19; the x0.25 at 1.5 s is gone); a stage is left past 1.25x its line,
 and a slower speed holds 1.5 s real before speeding up.
 
 | Pauses (`towersFrozen` while paused and while the sky turns) | Pauses | On close |
