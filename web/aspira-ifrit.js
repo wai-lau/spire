@@ -111,7 +111,9 @@ function ifrBurst(t, st, x, y, k) {
   sfx("ifrblast");
   if (k < 1) return; /* a mini ring sends no pellets */
   for (let i = 0; i < st.pellets; i++) {
-    const a = Math.random() * 2 * Math.PI, cx = Math.cos(a), cy = Math.sin(a);
+    /* LEANING TO THE CORE (owner, 2026-10-19: "bias the hellfire explosions to choose an angle pointed towards the core"): the
+       difference of two uniform draws - any direction, most often the core's, where the lanes run in */
+    const a = Math.atan2(CY - y, CX - x) + (Math.random() - Math.random()) * Math.PI, cx = Math.cos(a), cy = Math.sin(a);
     t.ifrPellets.push({ x, y, ax: x + cx * R * IFR_PELLET_REACH, ay: y + cy * R * IFR_PELLET_REACH, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: R * IFR_PELLET_REACH / IFR_PELLET_V, flown: 0 });
   }
 }
