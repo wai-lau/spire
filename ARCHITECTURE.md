@@ -487,7 +487,7 @@ spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**
 
 | Gesture | Result |
 |---|---|
-| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; keys 1-4 pick the first four) and a cancel; too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`): up to 3 checks and 3 x's a tower from a `countermx` run (waves 61-69, 6 points spread - at 8 most leaks hit 0% and FRZ/SOL tied), so they follow the matrix (§4.6): each type's leak is taken against the SIX-TOWER mean for that type, then against the tower's own mean of those; checks to the types it does best, x's to the worst, split by how far, a gap under 3 points no mark, but a type it leaks 5% or less always a check (`marks.py`, owner 2026-10-18) |
+| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel; building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`): up to 3 checks and 3 x's a tower from a `countermx` run (waves 61-69, 6 points spread - at 8 most leaks hit 0% and FRZ/SOL tied), so they follow the matrix (§4.6): each type's leak is taken against the SIX-TOWER mean for that type, then against the tower's own mean of those; checks to the types it does best, x's to the worst, split by how far, a gap under 3 points no mark, but a type it leaks 5% or less always a check (`marks.py`, owner 2026-10-18) |
 | tap a tower, its home slot, or the core | its card |
 | a press moving under `DRAG_PX` | a tap; more on a tower = a move (§4.3) |
 | unaffordable | tappable but dimmed (`.poor`): a tap shakes it and says "need Nc more" |
@@ -512,7 +512,7 @@ with a chooser open 1-4 pick the first four of its cards instead (the build choo
 | wave list | ten rows: live waves plus upcoming (at least 3), one icon an enemy sized by log HP, long rows tessellating; live waves in one green box; "warped in" / "warping in..." with the countdown, hidden while a boss holds the timer |
 | wave card | a tap on a wave's icons or name (`data-n`) opens its stats (`aspira-wavecard.js`): units, lanes, HP each / in all, shields, armor, speed, time to core, credits, a late trait - read off ONE sample enemy made by `spawnEnemy` and taken back out (RNG held at 0.5), rows of 0 / N/A hidden; pauses like the changelog |
 | threat | a mark on the three closest enemies within 4 s of the core; a leak's ring bounces out from the core with the lives left |
-| end screen | one overlay for loss and win: the title (`ascendant`, the breaching boss's phrase, or `core breached`), the furthest wave, a line a tower ranked by damage and named by its two strongest axes' tier names (`aspira-endstats.js`), the waves that TOOK lives, "Play again", then TOP PLAYERS (§9.1): the entry form on a win or a loss past wave 10 |
+| end screen | one overlay for loss and win: TOP PLAYERS (§9.1) first, taking the spare height: the entry form on a win or a loss past wave 10; then the title (`ascendant`, the breaching boss's phrase, or `core breached`), the furthest wave, a line a tower ranked by damage and named by its two strongest axes' tier names (`aspira-endstats.js`), "Play again", then the waves that TOOK lives, most lives first, three rows tall (scrolls) |
 
 ## 8. Rendering, audio, performance
 
@@ -585,7 +585,7 @@ be in the game's way.
 | Store | Holds |
 |---|---|
 | localStorage | `aspira.best` `{score, wave, ascended}`, `spire.autowait` / `automove`, `aspira.mute` / `vol` |
-| IndexedDB (`aspira-autosave.js`) | the whole `G` as each wave starts, cleared when a game ends; on load **resume wave N** or **new game** - the save is the board AT REST (`runClean`: towers back on their build slots, every transient state and the field dropped; the Challenge button up) (a resumed run may still sign TOP PLAYERS); **everything in `G` must be structured-cloneable** |
+| IndexedDB (`aspira-autosave.js`) | the whole `G` as each wave starts, cleared when a game ends; on load **resume wave N** or **new game**, the card read from a small `meta` record so it comes up before a tower can be built (the run itself is read on resume) - the save is the board AT REST (`runClean`: towers back on their build slots, every transient state and the field dropped; the Challenge button up) (a resumed run may still sign TOP PLAYERS); **everything in `G` must be structured-cloneable** |
 | server | nothing beyond §9.1-9.2; no accounts |
 
 ### 9.4 Version and changelog
