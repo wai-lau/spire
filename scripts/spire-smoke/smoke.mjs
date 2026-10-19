@@ -331,6 +331,12 @@ check("a resumed save is the board at rest: towers on their slots, no enemies, p
   frames(env, 3); // and the game runs on from it
   return "";
 });
+check("the resume card up: no tower can be built behind it (placeTower stands down)", () => {
+  const n = run(`(() => { G = newGame(); G.money = 1e6; runOffer({ wave: 10, lives: 20 }); ui.build = "acd";
+    placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const n = G.towers.length + (G.started ? 100 : 0);
+    document.getElementById("asp-resume").remove(); ui.paused = false; return n; })()`);
+  return n ? "built behind the card: " + n : "";
+});
 check("a wave's card: tapping a wave opens its stats - no NaN, no zero rows - on an ordinary wave and a boss wave", () => {
   run(`G = newGame(); G.started = true; G.wave = STAR_EVERY - 2; refreshPanels();`); frames(env, 2);
   const r = run(`(() => { const out = {}; for (const n of [G.wave + 1, G.wave + 2]) { if (!WAVE_PLANS.has(n)) WAVE_PLANS.set(n, wavePlan(n, G.lastType));

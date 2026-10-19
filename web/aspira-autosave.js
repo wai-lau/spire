@@ -54,6 +54,8 @@ if (typeof indexedDB !== "undefined") {
   const over0 = gameOver; gameOver = function (...a) { runClear(); return over0.apply(this, a); };
   const win0 = winGame; winGame = function (...a) { runClear(); return win0.apply(this, a); };
 }
+// NO BUILD WHILE THE RESUME CARD IS UP (owner, 2026-10-19): a tower would start wave 1, and "resume" would then throw that game away
+{ const place0 = placeTower; placeTower = function (...a) { if (document.getElementById("asp-resume")) { ui.build = null; return; } return place0.apply(this, a); }; }
 // on load: a saved run waiting - the card, the game held behind it
 function runOffer(saved) {
   const card = document.createElement("div");

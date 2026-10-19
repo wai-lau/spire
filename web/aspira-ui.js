@@ -66,7 +66,7 @@ function syncBlinks() {
   for (const a of $("asp").getAnimations({ subtree: true })) if (BLINKS.has(a.animationName) && a.startTime !== 0) a.startTime = 0;
 }
 function onTap(ev) {
-  if (G.over) return;
+  if (G.over || document.getElementById("asp-resume")) return; // the resume card is up (aspira-autosave.js): the board waits behind it
   const p = toWorld(ev);
   ui.hover = p;
   // a tower's CARD opens from its home SLOT or its BODY (owner, 2026-10-18: "bring back tapping tower to upgrade"; 2026-10-17 had
