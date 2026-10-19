@@ -121,7 +121,7 @@ function updateWaveList() {
   // the list's two HEADINGS (owner, 2026-10-09: "move upcoming waves to below the rectangle and above
   // it show current wave"): the one above the list names the boxed live waves; "upcoming waves" then
   // heads the rest INSIDE the grid, a full-width cell padded with three hidden ones so the columns'
-  // nth-child rules still count four cells a row
+  // nth-child rules still count five cells a row
   // The incoming wave's COUNTDOWN rides the "warping in..." heading (owner, 2026-10-09: "left align" -
   // the rows sit flush under the headings; the countdown had a column of its own left of them).
   // None while a boss is up or next (a boss waits for a clear field)
@@ -135,7 +135,7 @@ function updateWaveList() {
   if (btn.textContent !== label) btn.textContent = label;
   let note = "", i = 0;
   for (const { n, w, boss, hp, alive } of rows) {
-    if (curRows && i++ === curRows) note += '<span class="asp-wavelabel asp-wavesub">' + WAVE_HEAD.next + eta + "</span>" + "<i hidden></i>".repeat(3);
+    if (curRows && i++ === curRows) note += '<span class="asp-wavelabel asp-wavesub">' + WAVE_HEAD.next + eta + "</span>" + "<i hidden></i>".repeat(4);
     // rows LEFT-ALIGNED at their natural size (owner: not justified); a row too
     // long for the fixed width `span` TESSELLATES into 2, then 3 staggered rows
     // (waveBand), overlapping only past that. The box is always `span` wide, so
@@ -148,12 +148,13 @@ function updateWaveList() {
     // countdown moved to the heading, the ":" column is empty
     note += "<span></span><span></span>" +
       '<span class="asp-dots e-' + ENEMIES[w.type].color + (boss ? " e-boss" : "") + '" data-n="' + n + '" style="width:' + span + 'px">' + icons + "</span>" +
-      '<span data-n="' + n + '">' + '<span class="asp-hp">' + dmgUnits(Math.round(hp)) + "hp</span> " + (boss ? "<b>" + arcanaOf(n).name + "</b>" : waveName(w.type, n)) + "</span>"; // boss names BOLD (owner); each unit's HP LEFT of its name (owner, 2026-10-19: "show HP value to the left of unit in wave indicator e.g. 20hp swarm")
+      '<span class="asp-hpcol" data-n="' + n + '">' + dmgUnits(Math.round(hp)) + "hp</span>" + // each unit's HP in its OWN column (owner, 2026-10-19: "turn the wave thing into a table, hp and type in their own columns")
+      '<span data-n="' + n + '">' + (boss ? "<b>" + arcanaOf(n).name + "</b>" : waveName(w.type, n)) + "</span>"; // boss names BOLD (owner); each unit's HP LEFT of its name (owner, 2026-10-19: "show HP value to the left of unit in wave indicator e.g. 20hp swarm")
   }
   // the waves still ALIVE (and the current one) sit at the top: ONE rounded green box round them all
   // (owner, 2026-10-09: "replace the current wave highlight with a single rounded green rectangle";
   // was a white band on each row). Placed on the grid's rows but out of the flow, and LAST so the
-  // columns' nth-child rules still count four cells a row
+  // columns' nth-child rules still count five cells a row
   if (curRows) note += '<i class="asp-curbox" style="grid-row:1 / ' + (curRows + 1) + '"></i>';
   if (note !== lastNote) { $("asp-wavenote").innerHTML = note; lastNote = note; } // innerHTML re-reads normalised, so compare the source
 }

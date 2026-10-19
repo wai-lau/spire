@@ -87,7 +87,7 @@
 
 .asp-wavenote {
   display: grid;
-  grid-template-columns: repeat(4, auto); /* number : enemies name */
+  grid-template-columns: repeat(5, auto); /* (empty) (empty) enemies hp name - five cells a row (2026-10-19: hp its own column) */
   align-items: center; /* text level with the icons' centres (owner) */
   justify-content: start;
   gap: var(--space-0-5) 0; /* no column gap: cells pad instead, so a live row's band is unbroken */
@@ -104,15 +104,15 @@
 
 /* a wave's icons and name take a TAP (its card: aspira-wavecard.js); the rest of the list lets touches through to the board */
 #asp .asp-wavenote > span[data-n] { pointer-events: auto; cursor: pointer; }
-.asp-wavenote .asp-hp { margin-right: 0.5ch; } /* "8hp fast": the cell is flex, so a plain space between them collapsed */
 .asp-wavecard-t { border-collapse: collapse; margin: var(--space-2) 0 var(--space-3); }
 .asp-wavecard-t td { padding: var(--space-0-5) var(--space-3) var(--space-0-5) 0; }
 .asp-wavecard-t td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
-.asp-wavenote > span:nth-child(4n + 1) { justify-content: flex-start; } /* empty: the countdown rides the heading (aspira-wavelist.js) */
+.asp-wavenote > span:nth-child(5n + 1) { justify-content: flex-start; } /* empty: the countdown rides the heading (aspira-wavelist.js) */
 
-.asp-wavenote > span:nth-child(4n) { padding: 0 var(--space-2) 0 2ch; } /* a gap before the name (owner) */
+.asp-wavenote > span:nth-child(5n + 4) { padding: 0 0 0 2ch; justify-content: flex-end; } /* the HP, right-aligned, a gap after the icons (owner) */
+.asp-wavenote > span:nth-child(5n) { padding: 0 var(--space-2) 0 1ch; } /* the name */
 
-.asp-wavenote > span:nth-child(4n + 3) { padding-left: var(--space-1); }
+.asp-wavenote > span:nth-child(5n + 3) { padding-left: var(--space-1); }
 
 /* the enemies, ONE ICON EACH sized by HP (owner), on one line */
 .asp-dots { position: relative; display: flex; align-items: center; height: 22px; } /* every row the same height (WAVE_ROW_H, aspira-ui.js) and width; spacing set per icon */
@@ -665,10 +665,10 @@
    same bottom band */
 @media (width < 700px) {
   /* no holes (owner: "gaps"): HP right after the count, rows packed */
-  .asp-wavenote { grid-template-columns: auto auto auto; gap: var(--space-1) 0; } /* the countdown + icons + name */
+  .asp-wavenote { grid-template-columns: auto auto auto auto; gap: var(--space-1) 0; } /* the countdown + icons + hp + name */
 
-  .asp-wavenote > span:nth-child(4n + 2) { display: none; }
-  .asp-wavenote > span:nth-child(4n) { padding-left: var(--space-2); }
+  .asp-wavenote > span:nth-child(5n + 2) { display: none; }
+  .asp-wavenote > span:nth-child(5n + 4) { padding-left: var(--space-2); }
 
 
 
