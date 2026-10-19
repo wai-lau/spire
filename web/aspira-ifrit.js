@@ -174,7 +174,7 @@ function ifrFlare(t, st, x, y) {
 const IFR_BODY_MAX = 150; // a generous bound on the biggest body: base size 28 (the biggest) x the HP-log growth (about x2 by wave 119) x a boss's arcana (up to about x2), rounded up
 // a flare's SHAPE (owner, 2026-10-19: "a big + overlapping with a tiny x"; was a six-beam star): four long beams on the axes and four short
 // ones, IFR_X_K as long, on the diagonals - IFR_BEAMS in all
-const IFR_BEAMS = 8, IFR_X_K = 0.3;
+const IFR_BEAMS = 8, IFR_X_K = 0.15; /* the x half as big again (owner, 2026-10-19; was 0.3) */
 // one beam from (x, y) at angle a: len u long, or to the play box's edge at Hellfire VI (the first wall the ray meets)
 function ifrBeamEnd(x, y, a, len, edges) {
   const c = Math.cos(a), s = Math.sin(a);
