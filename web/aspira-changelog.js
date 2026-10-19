@@ -27,6 +27,7 @@ const CHANGELOG = [
     "Build cards: a red warning sign after each red box; the enemy and its marks centred in the box.",
     "Lanes: the next wave's lanes fade in over the last 3 seconds of the countdown (not bosses).",
     "Game over: Play again sits under the lives lost; it, the post button (now \u21B5) and the initials' underscores flash.",
+    "Build cards: checks in the cancel button's green, x's in the red of the box; the box thinner.",
     "Resume: no tower can be built while the resume card is up.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
