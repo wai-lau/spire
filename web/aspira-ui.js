@@ -465,6 +465,7 @@ function tickFps(now) {
 // 2026-10-08: "during time freeze, temporarily set speed to 1x"); the setting itself is kept
 const freezing = () => timeStopped();
 let last = performance.now();
+const CHOOSER_REDRAW_MS = 1000; let chooserDrawAt = 0; // (the frozen board under the cards: frame)
 function frame(now) {
   const cb0 = performance.now();
   stepDetail((now - last) / 1000); if (typeof perfTick === "function") perfTick((now - last) / 1000); // the 3D detail radius, slow logs (aspira-quality.js, aspira-perflog.js)
@@ -478,10 +479,11 @@ function frame(now) {
     if (autoMove && best.ascended && G.started && !G.over) G.autoMoveS = (G.autoMoveS || 0) + dt; // auto-move's REAL seconds this game (autoBarred, aspira-ascend.js)
     stepFlings(dt); // a let-go tower coasting (aspira-fling.js), real time too
   }
-  // while the upgrade cards are up the board is paused AND frozen: no redraw,
-  // so its CSS blur (aspira.css .asp-choosing) is computed once, not per frame
+  // while the upgrade cards are up the board is paused and all but frozen: ONE redraw a CHOOSER_REDRAW_MS, so its CSS blur
+  // (aspira.css .asp-choosing) is rarely recomputed - but never none: a GPU that throws away an idle WebGL canvas's frame showed the
+  // blur of a blank buffer, the board turned light grey under the cards ~10 s in (owner, 2026-10-19: "first tower buy inverts the screen")
   if (!warpInit()) { noWebGl(); return; } /* no WebGL: a notice, and the loop stops (the flat 2D picture is gone, 2026-10-18) */
-  if (!chooser.t && !DIAG.includes("nocanvas")) warp3d(); // 3D lays the frame, drawn to fit the whole board, on the spire (aspira-warp.js)
+  if ((!chooser.t || !(now < chooserDrawAt)) && !DIAG.includes("nocanvas")) { if (chooser.t) chooserDrawAt = now + CHOOSER_REDRAW_MS; warp3d(); } // 3D lays the frame, drawn to fit the whole board, on the spire (aspira-warp.js)
   // the HUD's text and buttons 10x a second, not every frame (perf, 2026-10-05)
   if (!(now < hudAt)) { hudAt = now + 100; updateHud(); syncBlinks(); }
   placePop(); placeChallenge(); tickFps(now); // (placeChallenge: aspira-wavelist.js)
