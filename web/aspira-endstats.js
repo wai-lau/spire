@@ -1,9 +1,11 @@
 // /aspira — the END SCREEN's stats (owner, 2026-10-06): under "core breached" /
 // "ascendant", a line for EVERY tower ranked by damage dealt (level, kills,
-// damage, share; the core's copy too if it fought; named by its build), and ABOVE the
-// title a line for each wave that TOOK LIVES - what it was (type x count, or the boss's
+// damage, share; the core's copy too if it fought; named by its build), and BELOW Play
+// again a line for each wave that TOOK LIVES - what it was (type x count, or the boss's
 // name, from G.planLog) and how many (G.leaks, counted where an enemy reaches
-// the core) - in a box that scrolls. UI only; gameOver / winGame call renderEndStats.
+// the core), MOST LIVES FIRST, three rows tall and the rest a scroll away (owner, 2026-10-19:
+// "sort the lives lost by amount of lives / box should only show 3 ... to make more space for scores"; TOP PLAYERS
+// swapped up to where the leaks were). UI only; gameOver / winGame call renderEndStats.
 // a tower's NAME is its build (owner: "name the towers"): the tier names of its
 // two strongest axes, strongest first - "Superconductor · Charge"
 function buildName(t) {
@@ -12,7 +14,7 @@ function buildName(t) {
     .map(o => o.ax.tiers[o.n - 1].name).join(" · ");
 }
 function renderEndStats() {
-  const box = $("asp-ov-stats"), top = $("asp-ov-leaks"); // the leaks sit ABOVE the title (owner)
+  const box = $("asp-ov-stats"), top = $("asp-ov-leaks"); // the leaks sit BELOW Play again (owner, 2026-10-19; were above the title)
   if (!box || !top) return;
   const rows = [...G.towers];
   const total = rows.reduce((a, t) => a + (t.dealt || 0), 0) || 1;
@@ -26,7 +28,7 @@ function renderEndStats() {
   html += "</table>";
   box.innerHTML = html;
   html = '<div class="asp-end-waves"><table><tr><th>wave</th><th>what</th><th>lives</th></tr>';
-  const leakWaves = Object.keys(G.leaks || {}).map(Number).sort((a, b) => a - b);
+  const leakWaves = Object.keys(G.leaks || {}).map(Number).sort((a, b) => (G.leaks[b] || 0) - (G.leaks[a] || 0) || a - b); // most lives first, then by wave
   if (!leakWaves.length) { top.innerHTML = '<p class="asp-end-leak">no lives lost</p>'; return; }
   for (const n of leakWaves) { // only the waves that took lives (owner)
     const p = (G.planLog || {})[n], lost = G.leaks[n];

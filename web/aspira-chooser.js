@@ -140,16 +140,19 @@ function chooseUpgrade(i) {
 // through less than its own average, split by how far under it, the x's likewise over (scripts/aspira-sim/marks.py)
 const VS_MARKS = { arc: { swarm: 1, fast: 2, shield: 1, armor: -3 }, frz: { swarm: 1, fast: 2, shield: -2, armor: -1 }, sol: { swarm: -2, fast: 1, shield: -1, armor: 2 }, acd: { swarm: -1, fast: -2, shield: 1, armor: 2 }, grv: { swarm: 1, fast: -1, shield: -2, armor: 2 }, car: { swarm: -1, shield: 3, armor: -2 }, ifr: { swarm: 1, fast: -2, shield: 2, armor: -1 } }; /* regenerated 2026-10-19 v6.2.2 (marks.py --write, countermx 61-69 @6pts) */
 const VS_ORDER = ["swarm", "fast", "shield", "armor"];
-const vsMarks = k => VS_ORDER.map(e => { // ALL FOUR types always (owner, 2026-10-19: "always have all 4 sections"); a 0 is a yellow dash
+// THE GAPS (owner, 2026-10-19: "when building the third tower: for each tower card that has X where the two towers that you have do
+// not cover draw a red box around that"): with two towers built, the types neither has a check on; a card's x's on one are boxed red
+const vsGaps = () => { const own = G.towers.filter(t => !t.isCore); return own.length !== 2 ? new Set() : new Set(VS_ORDER.filter(e => own.every(t => ((VS_MARKS[t.kind] || {})[e] || 0) <= 0))); };
+const vsMarks = (k, gaps = new Set()) => VS_ORDER.map(e => { // ALL FOUR types always (owner, 2026-10-19: "always have all 4 sections"); a 0 is a yellow dash
   const m = (VS_MARKS[k] || {})[e] || 0;
   if (!m) return '<span class="asp-vs e-' + ENEMIES[e].color + '">' + enemyIcon(e) + '<b class="asp-vs-m">\u2013</b></span>';
-  return '<span class="asp-vs e-' + ENEMIES[e].color + '">' + enemyIcon(e) + '<b class="' + (m > 0 ? "asp-vs-y" : "asp-vs-n") + '">' + Array(Math.abs(m)).fill(m > 0 ? "\u2713" : "\u2717").join(" ") /* a space between marks (owner, 2026-10-16) */ + "</b></span>";
+  return '<span class="asp-vs e-' + ENEMIES[e].color + (m < 0 && gaps.has(e) ? " asp-vs-gap" : "") + '">' + enemyIcon(e) + '<b class="' + (m > 0 ? "asp-vs-y" : "asp-vs-n") + '">' + Array(Math.abs(m)).fill(m > 0 ? "\u2713" : "\u2717").join(" ") /* a space between marks (owner, 2026-10-16) */ + "</b></span>";
 }).join("");
-function buildCard(k, i) {
+function buildCard(k, gaps) {
   const b = TOWERS[k], cost = towerCost(k);
   // "good vs" right under the title (owner); the base stats on ONE line so all
   // seven cards fit on a phone above the spend bar (owner: everything fits)
-  return '<div class="name">' + (i + 1) + " · " + b.name + " · -" + cr(cost) + "</div>" + '<div class="asp-goodvs">' + vsMarks(k) + "</div>" + // each enemy's symbol with its checks / x's (VS_MARKS)
+  return '<div class="name">' + b.name + " · -" + cr(cost) + "</div>" + '<div class="asp-goodvs">' + vsMarks(k, gaps) + "</div>" + // no number (owner, 2026-10-19) // each enemy's symbol with its checks / x's (VS_MARKS)
     '<p class="asp-hint">' + b.blurb + "</p>"; // WHY it works, no stat dump (owner, 2026-10-07)
 }
 // the BUILD cards' ORDER: shuffled ONCE, kept for every build after (owner, 2026-10-16: "Shuffle them once and use that for build
@@ -173,9 +176,9 @@ function openBuildChooser(ci) {
   chooser.wasPaused = ui.paused; ui.paused = true;
   el.dataset.kind = ""; el.classList.add("asp-building"); // (never inverted on a boss sky)
   el.innerHTML = '<p class="asp-chooser-cost">build a tower</p><div class="asp-cards asp-build-cards"></div>';
-  const row = el.querySelector(".asp-cards");
+  const row = el.querySelector(".asp-cards"), gaps = vsGaps();
   kinds.forEach((k, i) => {
-    const c = button(row, "asp-card", buildCard(k, i), () => chooseBuild(i));
+    const c = button(row, "asp-card", buildCard(k, gaps), () => chooseBuild(i));
     c.dataset.kind = k; c.dataset.cost = towerCost(k); c.classList.toggle("poor", G.money < towerCost(k)); // updateHud keeps it current
   });
   showSpend(towerCost(kinds[0]), "cancel", closeChooser); // every kind costs the same (towerCost counts towers)
