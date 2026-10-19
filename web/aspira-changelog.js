@@ -1,10 +1,10 @@
 // /spire - WHAT'S NEW (owner, 2026-10-14: "construct a changelog, clicking the version number should pause the game and show the
 // changelog on a card ... only include changes that affect the player, like graphics and balance changes"). Newest first; one
-// short line a change, in the player's words - a FACT, no reason or explanation (owner, 2026-10-14). Add to the top entry (a new one only at a battery's patch) with every change a player would notice.
-// THE VERSION (web/aspira-version.txt, major.minor.tiny): the next MINOR is a balance battery's patch - ONLY that, a new day is
+// short line a change, in the player's words - a FACT, no reason or explanation (owner, 2026-10-14). Add to the top entry (a new one only at a battery's changes) with every change a player would notice.
+// THE VERSION (web/aspira-version.txt, major.minor.patch): the next MINOR is a balance battery's changes - ONLY that, a new day is
 // not one (owner, 2026-10-19: "every group of changes that is the result of a balance battery run should result in a new minor
 // version" / "stop doing the new day new minor thing"; 5.1 became 5.1-5.8, one a battery, ARCHAEOLOGY.md 9); every other deploy
-// bumps tiny. A new TOWER is the next MAJOR (owner, 2026-10-16: "adding grv and atc should be a new major version": their day,
+// bumps patch (semver; "patch", never "tiny" - owner, 2026-10-19). A new TOWER is the next MAJOR (owner, 2026-10-16: "adding grv and atc should be a new major version": their day,
 // 4.5, became 5.0 and the next 4.6 5.1).
 // each entry's lines in three groups (owner, 2026-10-14: "split changelog balance section, into buff and nerfs, make UI/perf a
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since

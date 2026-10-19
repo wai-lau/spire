@@ -514,15 +514,15 @@ focus loss.
   slowlogs", `0fa17d5`); gained 3D-pass splits (glMs, entMs) and canvas-memory counts.
 - **Autosave (10-14).** "An iPhone that runs out of memory reloads the page, and a run at wave 62 or 120 was gone."
 - **Version / changelog (10-14).** A stamp `vMMDD.HHMM` of the newest file mtime ("an older stamp on a phone means cached
-  code") -> hand-kept `major.minor.tiny` + the build, clickable to the changelog card; 10-14 the card split into Buffs / Nerfs /
+  code") -> hand-kept `major.minor.tiny` (the third number renamed PATCH, semver, 10-19) + the build, clickable to the changelog card; 10-14 the card split into Buffs / Nerfs /
   Perf-UI groups (Perf-UI smaller) and the initials box stopped scrolling.
 - **A minor per battery (10-19).** "Every group of changes that is the result of a balance battery run should result in a
   new minor version", then "stop doing the new day new minor thing" (a day is NOT a minor any more): the day 5.1 (10-16..18,
-  tiny 0-141) was split at each battery-result commit, 5.1.0-92 unchanged (first split 5.1-5.9 with a day minor 5.7, re-folded
+  patch 0-141) was split at each battery-result commit, 5.1.0-92 unchanged (first split 5.1-5.9 with a day minor 5.7, re-folded
   the same hour). Commit subjects and the slow logs keep the old numbers; the board's six affected rows were corrected through FIXES. The same
   day 6.0.1 (the 01:13 axis-balance battery) became 6.1.0 and 6.0.2-5 became 6.1.1-4 (no board row sat on a 6.0.x).
 
-  | old 5.1.tiny | new | battery-result commit |
+  | old 5.1.patch | new | battery-result commit |
   |---|---|---|
   | 0-92 | 5.1.0-92 (unchanged) | `b9327e5` trio scale (4.6.0), 16 of 20 trios |
   | 93 | 5.2.0 | `40fa8cf` late tiers steeper, 20 trios 3/3 |

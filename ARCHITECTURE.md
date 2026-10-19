@@ -567,10 +567,10 @@ be in the game's way.
 
 ### 9.4 Version and changelog
 
-`web/aspira-version.txt` is hand-kept `major.minor.tiny`. **The next minor** = a balance
-battery's patch (the group of changes one battery run - every trio in `scripts/aspira-sim/` -
+`web/aspira-version.txt` is hand-kept semver `major.minor.patch` (owner, 2026-10-19: "patch", never "tiny"). **The next minor** = a balance
+battery's changes (the group of changes one battery run - every trio in `scripts/aspira-sim/` -
 produced), and ONLY that: a new day is not a minor (owner 2026-10-19; 5.1 became 5.1-5.8 by
-that rule, ARCHAEOLOGY §9); every other deploy bumps tiny; **a new tower is a new major** (GRV
+that rule, ARCHAEOLOGY §9); every other deploy bumps patch; **a new tower is a new major** (GRV
 and ATC made 4.5 into 5.0 and 4.6 into 5.1). `spire_build()` stamps the newest file mtime; both go into
 the template and every slow log. The changelog card (`aspira-changelog.js`, tap the version)
 lists each minor's player-visible changes as facts, grouped by SUBJECT (`logSubject`: a tower, an enemy type, the core ... read from a leading "Subject:" or the first one a line names; Buffs and Nerfs are no longer headed, the lines keep their three kinds underneath, Perf/UI smaller):

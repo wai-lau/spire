@@ -41,7 +41,7 @@ SFX_DIR = (_HERE.parent / "data" / "aspira-sfx").resolve()
 
 
 def spire_version() -> str:
-    """The game's version, shown top-left after BEST: major.minor.tiny, kept by
+    """The game's version, shown top-left after BEST: major.minor.patch (semver), kept by
     hand in web/aspira-version.txt (owner, 2026-10-14: "change the version to be
     a number like major.minor.tiny") - the changelog card (aspira-changelog.js)
     names its days by it. Never raises."""
