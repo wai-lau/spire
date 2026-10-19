@@ -12,7 +12,7 @@
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const IFR_SLOTS = [1, 2, 2, 3, 3, 3]; // Meteor: charge slots on the hex corners - 1, 2 (opposite), 3 (a triangle); VI all 6 (owner: "skip 4 and 5")
-const IFR_CHARGE_S = [1.0, 0.85, 0.7, 0.55, 0.45, 0.35] /* was [2.0, 1.6, 1.3, 1.0, 0.8, 0.6] (solo.mjs 2026-10-19, ball 360: a lone L1 8/6/2 -> 0/2/0 - one ball a second catches the wave-4 swarm a ball every two let through) */; // Meteor: s to fill one ball (VI 0.1: "near the launch rate")
+const IFR_CHARGE_S = [0.5, 0.5, 0.5, 0.45, 0.4, 0.35] /* was [1.0, 0.85, 0.7, 0.55, 0.45, 0.35] (solo.mjs 16 seeds 2026-10-19, after the slower ring and pellets: a lone L1 leaked the wave-4 swarm on most seeds at 1.0 s - one ball a second while shields and armor arrive with it; 0.5 s: 14/16 clean) - was [2.0, 1.6, 1.3, 1.0, 0.8, 0.6] (solo.mjs 2026-10-19, ball 360: a lone L1 8/6/2 -> 0/2/0 - one ball a second catches the wave-4 swarm a ball every two let through) */; // Meteor: s to fill one ball (VI 0.1: "near the launch rate")
 const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
 const IFR_ROUTE_K = [0.25, 0.5, 1, 2, 4, 8]; // Meteor: the en-route hit, x the blast hit ("a lot to make up for the faster travel speed"; VI 16)
 const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Hellfire: a flare beam's length from its centre, u (VI: to the play-box edges)
@@ -25,6 +25,7 @@ const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 9, 15] /* was [1, 1.5, 2.3, 3.5, 6, 
 const IFR_PELLETS = [5, 9, 12, 15, 18, 21] /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
 const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 220 /* was 600 (owner, 2026-10-19: the explosion slower) */, IFR_PELLET_V = 170 /* was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25, IFR_MINI_K = 0.5; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit; Backdraft's mini ring x radius and x hit
 const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
+let IFR_PELLET_REACH = 0.6; // a pellet flies this x the blast radius (owner, 2026-10-19: "reduce pellet range" - its flare lands nearer the burst, on the crowd; was the whole radius). let: the simulator sweeps it
 const IFR_FLARE_MAX = 60; // live flares a tower at most: the oldest goes (perf)
 const IFR_ROUTE_ST = { shieldPop: 1 }, IFR_RING_ST = { shieldPop: 1 }, IFR_PELLET_ST = { shieldPop: 1 }, IFR_BURN_ST = { noFx: true, noNum: true, shieldPop: 1 }; // (damage: st.shieldPop; the burn is quiet)
 
@@ -111,7 +112,7 @@ function ifrBurst(t, st, x, y, k) {
   if (k < 1) return; /* a mini ring sends no pellets */
   for (let i = 0; i < st.pellets; i++) {
     const a = Math.random() * 2 * Math.PI, cx = Math.cos(a), cy = Math.sin(a);
-    t.ifrPellets.push({ x, y, ax: x + cx * R, ay: y + cy * R, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: R / IFR_PELLET_V, flown: 0 });
+    t.ifrPellets.push({ x, y, ax: x + cx * R * IFR_PELLET_REACH, ay: y + cy * R * IFR_PELLET_REACH, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: R * IFR_PELLET_REACH / IFR_PELLET_V, flown: 0 });
   }
 }
 // the RING: expands at IFR_RING_V to R; every enemy it passes takes the blast hit once (full splash - owner: good vs swarm)
