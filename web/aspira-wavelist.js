@@ -81,6 +81,7 @@ function liveWaves() {
 // wave indicator"): from HYBRID_FROM swarms carry shields and fast carry armor (spawnEnemy's aug)
 const WAVE_AUG = { swarm: "shield", fast: "armor" };
 const waveName = (type, n) => (n >= HYBRID_FROM && WAVE_AUG[type] ? type + "+" + WAVE_AUG[type] : type);
+const WAVE_PLANS = new Map(); // n -> its plan, as the list last drew it (a tap opens its card: aspira-wavecard.js)
 function updateWaveList() {
   // the waves still alive and the next ones, one per row (owner; waves are fixed, so they are
   // known): its Roman number : its enemies, ONE ICON EACH, sized by HP : name.
@@ -93,6 +94,7 @@ function updateWaveList() {
   // upcoming) (owner). A live wave's icons: `alive` solid, the dead faded.
   const live = liveWaves(), rows = [];
   const rowOf = (n, w) => {
+    WAVE_PLANS.set(n, w); // (the wave card reads it - aspira-wavecard.js)
     const boss = w.type === "bonus";
     const hp = enemyHp(w.type, n) * (boss ? (BOSS_HP[arcanaOf(n).id] || 1) * BOSS_LANE_HP : 1);
     return { n, w, boss, hp, alive: live.get(n), cur: n === G.wave || live.has(n) }; // highlighted: every wave still ALIVE, and the current one (owner)
@@ -145,8 +147,8 @@ function updateWaveList() {
     // NO wave numbers (owner, 2026-10-06); the first column is empty and takes no room since the
     // countdown moved to the heading, the ":" column is empty
     note += "<span></span><span></span>" +
-      '<span class="asp-dots e-' + ENEMIES[w.type].color + (boss ? " e-boss" : "") + '" style="width:' + span + 'px">' + icons + "</span>" +
-      "<span>" + '<span class="asp-hp">' + dmgUnits(Math.round(hp)) + "hp</span> " + (boss ? "<b>" + arcanaOf(n).name + "</b>" : waveName(w.type, n)) + "</span>"; // boss names BOLD (owner); each unit's HP LEFT of its name (owner, 2026-10-19: "show HP value to the left of unit in wave indicator e.g. 20hp swarm")
+      '<span class="asp-dots e-' + ENEMIES[w.type].color + (boss ? " e-boss" : "") + '" data-n="' + n + '" style="width:' + span + 'px">' + icons + "</span>" +
+      '<span data-n="' + n + '">' + '<span class="asp-hp">' + dmgUnits(Math.round(hp)) + "hp</span> " + (boss ? "<b>" + arcanaOf(n).name + "</b>" : waveName(w.type, n)) + "</span>"; // boss names BOLD (owner); each unit's HP LEFT of its name (owner, 2026-10-19: "show HP value to the left of unit in wave indicator e.g. 20hp swarm")
   }
   // the waves still ALIVE (and the current one) sit at the top: ONE rounded green box round them all
   // (owner, 2026-10-09: "replace the current wave highlight with a single rounded green rectangle";

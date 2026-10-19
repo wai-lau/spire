@@ -187,6 +187,19 @@ check("a resumed save is the board at rest: towers on their slots, no enemies, p
   frames(env, 3); // and the game runs on from it
   return "";
 });
+check("a wave's card: tapping a wave opens its stats - no NaN, no zero rows - on an ordinary wave and a boss wave", () => {
+  run(`G = newGame(); G.started = true; G.wave = STAR_EVERY - 2; refreshPanels();`); frames(env, 2);
+  const r = run(`(() => { const out = {}; for (const n of [G.wave + 1, G.wave + 2]) { if (!WAVE_PLANS.has(n)) WAVE_PLANS.set(n, wavePlan(n, G.lastType));
+      const before = G.enemies.length; openWaveCard(n); const c = document.getElementById("asp-wavecard");
+      out[n] = { html: c ? c.innerHTML : "", left: G.enemies.length - before, paused: ui.paused }; closeWaveCard(); } return out; })()`);
+  for (const [n, c] of Object.entries(r)) {
+    if (!c.html) return "no card for wave " + n;
+    if (/NaN|undefined|>0<\/td>/.test(c.html)) return "bad value on wave " + n + ": " + c.html.slice(0, 200);
+    if (c.left) return "the sample enemy stayed on the board (wave " + n + ")";
+    if (!/speed/.test(c.html)) return "no speed row on wave " + n;
+  }
+  return "";
+});
 check("game over shows the overlay and the Ascendants board, no entry", () => {
   run(`G = newGame(); gameOver();`);
   const ov = env.dom.byId("asp-ov"), asc = env.dom.byId("asp-asc");

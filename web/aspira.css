@@ -102,6 +102,11 @@
   filter: drop-shadow(0 0 1px hsl(var(--bg-hsl))) drop-shadow(0 0 1px hsl(var(--bg-hsl)));
 }
 
+/* a wave's icons and name take a TAP (its card: aspira-wavecard.js); the rest of the list lets touches through to the board */
+#asp .asp-wavenote > span[data-n] { pointer-events: auto; cursor: pointer; }
+.asp-wavecard-t { border-collapse: collapse; margin: var(--space-2) 0 var(--space-3); }
+.asp-wavecard-t td { padding: var(--space-0-5) var(--space-3) var(--space-0-5) 0; }
+.asp-wavecard-t td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
 .asp-wavenote > span:nth-child(4n + 1) { justify-content: flex-start; } /* empty: the countdown rides the heading (aspira-wavelist.js) */
 
 .asp-wavenote > span:nth-child(4n) { padding: 0 var(--space-2) 0 2ch; } /* a gap before the name (owner) */

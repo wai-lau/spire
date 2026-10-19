@@ -11,6 +11,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "6.1", day: "Oct 19", bu: [
+    "Wave list: tap a wave for its card - units, lanes, HP, shields, armor, speed, time to the core and credits.",
     "Wave list: each wave shows its units' HP before the name, e.g. \"20hp swarm\".",
     "Resume: a saved game loads with the board empty, every tower back on its build slot and the Challenge button up.",
     "Arc: its lightning draws a little brighter.",
