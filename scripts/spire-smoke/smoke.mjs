@@ -166,7 +166,7 @@ check("IFR: a ball bursts where it was aimed (its target gone), the ring hits on
   if (!r.fHits) return "the second enemy inside the blast lost no shield charge";
   return "";
 });
-check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring hits once; pellets fly before they can hit", () => {
+check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring hits once; pellets fly outward in different directions, each stopping by the blast radius", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -183,16 +183,26 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     const q = held(cx + 20, cy); fresh(); ifrBurst(t, st, cx, cy, 1); t.ifrPellets.length = 0;
     for (let i = 0; i < 30; i++) stepIfrRings(t, st, 1 / 30);
     out.ring = 5 - q.shield; out.ringsLeft = t.ifrRings.length; q.dead = true;
-    // PELLETS: a burst on a held enemy with a second 70 u out; every pellet picks the far one (Math.random held high)
-    const c0 = held(cx, cy), far = held(cx, cy + 70); fresh();
-    const rnd = Math.random; Math.random = () => 0.999; try { ifrBurst(t, st, cx, cy, 1); } finally { Math.random = rnd; }
-    out.fired = t.ifrPellets.length; stepIfrPellets(t, st, 1 / 30); out.flying = t.ifrPellets.length;
+    // PELLETS (owner, 2026-10-19: random directions, enemies there or not): a burst on empty ground - each flies OUT from the
+    // spot on its own heading and stops (a flare) no further than the blast radius + a frame
+    for (const e of G.enemies) e.dead = true; fresh(); t.ifrFlares.length = 0;
+    ifrBurst(t, st, cx, cy, 1); const ps = t.ifrPellets.slice();
+    out.fired = ps.length; out.want = st.pellets; out.headings = new Set(ps.map(p => Math.atan2(p.vy, p.vx).toFixed(3))).size;
+    const d0 = ps.map(p => Math.hypot(p.x - cx, p.y - cy)); stepIfrPellets(t, st, 1 / 30);
+    out.outward = ps.every((p, i) => Math.hypot(p.x - cx, p.y - cy) > d0[i]); out.flying = t.ifrPellets.length;
+    for (let i = 0; i < 60 && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
+    out.left = t.ifrPellets.length; out.flares = t.ifrFlares.length;
+    out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = st.blastR + IFR_PELLET_V / 30;
     return out;
   })()`);
   if (r.on !== 1) return "the enemy on the 60-degree beam lost " + r.on + " charges in one tick (expected exactly 1)";
   if (r.off !== 0) return "the enemy off every beam lost " + r.off + " charges";
   if (r.ring !== 1 || r.ringsLeft) return "a plain ring took " + r.ring + " charges (expected exactly 1), rings left " + r.ringsLeft;
-  if (!(r.fired >= 1 && r.flying >= 1)) return "no pellet still in flight one frame after the burst (fired " + r.fired + ", flying " + r.flying + ")";
+  if (r.fired !== r.want) return "an empty burst fired " + r.fired + " pellets (expected " + r.want + ")";
+  if (r.headings < 2) return "every pellet flew on the same heading";
+  if (!r.outward || r.flying < 1) return "the pellets did not fly outward from the burst (outward " + r.outward + ", flying " + r.flying + ")";
+  if (r.left || r.flares !== r.fired) return "pellets left " + r.left + ", flares " + r.flares + " of " + r.fired;
+  if (!(r.reach <= r.maxReach)) return "a pellet stopped " + Math.round(r.reach) + " u out, past the blast radius + a frame (" + Math.round(r.maxReach) + ")";
   return "";
 });
 check("Temporal Drive: the field draws", () => {
