@@ -5,7 +5,7 @@
 // the old 2x is the new 1x (owner, 2026-10-02): every button runs the game
 // twice as fast as its label used to (0.5x added, 10x for testing - owner)
 // ...and back (owner, 2026-10-12: "make whatever is 1/2 speed the new 1x speed"): every button at half its 2-based rate
-const BASE_SPEED = 1;
+const BASE_SPEED = 0.8; // the whole game 20% slower, every button with it (owner, 2026-10-19: "1x is 20% slower, 1.5x is still 1.5x of 1x"; was 1)
 const SPEED_MULT = { 0.25: 0.25 * BASE_SPEED, 0.5: 0.5 * BASE_SPEED, 1: BASE_SPEED, 1.5: 1.5 * BASE_SPEED, 2: 2 * BASE_SPEED, 3: 3 * BASE_SPEED, 10: 10 * BASE_SPEED };
 // 1x 1.5x 2x 3x, and 10x for the OWNER only (owner, 2026-10-14: "make 10x speed owner only, replace 2x with 1.5x and 3x with 2x",
 // "also add a 3x speed then"; was 1 2 3 10) - the page says whose it is (data-owner, routes_aspira.py)
