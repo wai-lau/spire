@@ -93,19 +93,19 @@ and a slower speed holds 1.5 s real before speeding up.
 
 ## 4. Towers
 
-### 4.1 The six kinds
+### 4.1 The seven kinds
 
-| | ARC | FRZ | SOL | ACD | GRV | CRR |
-|---|---|---|---|---|---|---|
-| design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools | a nova that leaves a black hole (§4.6b) | a carrier launching interceptors (§4.6c) |
-| colour | orange | cyan | pink | chatsubo green | violet | electric blue |
-| default targeting | Near | Fresh | Biggest | Biggest | Near | Near |
-| main counter of (`GOOD_VS`) | swarm | fast | armor, bosses | shield, bosses | swarm, armor | fast, shields |
-| helps against (`HELPS_VS`) | fast, shields | swarms, armor | fast, shields | swarms, armor | nothing | nothing |
-| weak to | armor (grounds the arc) | shields (cannot be slowed) | swarms (one lock) | fast and shields (cold jets) | fast and shields (the slow skips them; pellets pop few) | swarms and armor (one target a volley; small bolts) |
-| leash (`MOVE_BASE`) | medium (200) | long (240) | short (74) | longest (280) | medium (200) | long (240) |
+| | ARC | FRZ | SOL | ACD | GRV | CRR | IFR |
+|---|---|---|---|---|---|---|---|
+| design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools | a nova that leaves a black hole (§4.6b) | a carrier launching interceptors (§4.6c) | fireballs lobbed slowly, bursting into rings, pellets and six-spoked flares (§4.6e) |
+| colour | yellow | cyan | pink | green | violet | blue | orange |
+| default targeting | Near | Fresh | Biggest | Biggest | Near | Near | Near |
+| main counter of (`GOOD_VS`) | swarm | fast | armor, bosses | shield, bosses | swarm, armor | fast, shields | swarm, shields |
+| helps against (`HELPS_VS`) | fast, shields | swarms, armor | fast, shields | swarms, armor | nothing | nothing | nothing (armor neutral) |
+| weak to | armor (grounds the arc) | shields (cannot be slowed) | swarms (one lock) | fast and shields (cold jets) | fast and shields (the slow skips them; pellets pop few) | swarms and armor (one target a volley; small bolts) | fast (a slow ball aimed with no lead; it runs through the fire before it catches) |
+| leash (`MOVE_BASE`) | medium (200) | long (240) | short (74) | longest (280) | medium (200) | long (240) | medium (200) |
 
-Ids `arc frz sol acd grv car` (`KINDS`; `car` is shown as CRR); range x `RANGE_BONUS`. The legacy path/form tree
+Ids `arc frz sol acd grv car ifr` (`KINDS`; `car` is shown as CRR). The seven hues sit 360/7 OKLCH degrees apart (§10.1); range x `RANGE_BONUS`. The legacy path/form tree
 (`aspira-upgrades.js`) is dormant: every kind `hasSkills`.
 
 ### 4.2 The chart (pillar 4)
@@ -292,6 +292,28 @@ are in ARCHAEOLOGY §4.6c.
 | Armament | DEPTH: a far harder hit, more volleys a sortie | **Autopilot**: out of volleys, an interceptor bursts into pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
 
 The Orbital Relay triples the wing (`relayStats`).
+
+### 4.6e IFR, Ifrit (`web/aspira-ifrit.js`)
+
+The fire aeon of FFX (owner's design, 2026-10-19; "Kilika's hellfire."), orange: **strong vs swarm + shield, neutral to armor,
+weak to fast**. The design and its reasons: `docs/superpowers/specs/2026-10-19-ifrit-tower-design.md`; the numbers: the code.
+
+![The ball's life](docs/arch/ifrit-ball.svg)
+
+| Part | Rule |
+|---|---|
+| charge | balls grow on the hex's CORNERS, one at a time, always while a slot is free; 1 slot, then 2 (opposite), 3 (a triangle), 6 at the capstone - never 4 or 5. The first corner is random, and re-picked whenever no ball is charged |
+| launch | a charged ball + an enemy in range: one every `IFR_LAUNCH_GAP` 0.05 s, aimed at where it stands NOW (no lead - the fast weakness) |
+| flight | slow; hits what it passes once (the en-route hit); bursts at its aim spot whatever became of the target |
+| burst | a RING expands slowly to the blast radius, hitting each enemy once (full splash: the swarm answer); PELLETS fly out in random directions leaning toward the core, to 0.6 of the blast radius, armed after 16 u; where each stops (an enemy, or its reach) a FLARE |
+| flare | SIX spokes, never a cross (owner); burning for the Hellfire time; **catching fire**: a tick burns only an enemy that touched a spoke at the tick before too - what stands in it burns, what runs through it does not. Each burn tick pops one shield charge |
+| look | balls keep their orange on a boss sky (`skyKeep`); in 3D the spokes are GPU glow lines (shape 7, `fxGlGlowLine`), fading to the tip; the ring a glow that fades out |
+
+| axis | buys | capstone (VI) |
+|---|---|---|
+| Meteor | slots, charge, ball speed, the en-route hit | Impact: all six corners, charging as fast as it launches |
+| Hellfire | the flares: longer, wider, harder, faster ticks | Hellfire: spokes to the play box's edges |
+| Firaga | the blast: radius, hit, pellets | Backdraft: each pellet bursts into a smaller ring too |
 
 ### 4.6d Trio scale (2026-10-16)
 

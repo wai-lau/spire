@@ -10,6 +10,14 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
+  { v: "6.2", day: "Oct 19", bu: [
+    "Ifrit: a seventh tower - it charges fireballs on its corners and lobs them slowly; where one lands a ring of fire bursts out and pellets fly, each leaving a six-spoked flare that burns what stands in it.",
+    "Ifrit: strong against swarms and shields, weak to fast enemies (they run through the fire before it catches).",
+    "Ifrit: Meteor buys more fireballs, faster; Hellfire longer, hotter flares (to the board's edges at the top); Firaga a bigger blast and more pellets (which burst too at the top).",
+  ], ne: [], u: [
+    "Towers: the seven colours are spaced evenly for the eye - Arc is yellow now, Ifrit orange.",
+    "Build: seven cards, the last one centred; the Carrier and Gravity cards are easier to tell apart.",
+  ] },
   { v: "6.1", day: "Oct 19", bu: [
     "Fixed: the board could turn light grey behind the build cards after a few seconds.",
     "Wave list: a space between the HP and the name.",

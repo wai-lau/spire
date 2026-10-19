@@ -22,7 +22,8 @@ async function runDo(mode, fn) {
 // the field empty - only what was BOUGHT (kind, slot, skills, mode, spent) and its stats kept. Applied to the copy that is saved, and
 // again on resume (an older save). The resume lands between waves after a boss, so the Challenge button is up (afterBoss)
 const RUN_TOWER_DROP = ["cd", "spin", "posT", "goal", "auraT", "rimeT", "pulses", "period", "locks", "lines", "spare", "puddles", "poolSumT",
-  "spheres", "pellets", "icp", "launchCd", "launchN", "carBolts", "fling", "held", "leashHint", "links", "relayUntil", "tc", "ve"];
+  "spheres", "pellets", "icp", "launchCd", "launchN", "carBolts", "fling", "held", "leashHint", "links", "relayUntil", "tc", "ve",
+  "ifrSlot0", "ifrCharge", "ifrReady", "ifrLaunchCd", "ifrBalls", "ifrRings", "ifrPellets", "ifrFlares"]; /* IFR: all of it - ifrInit rebuilds it on the first step (ifrSlot0 unset) */
 function runClean(g) {
   for (const t of g.towers) { const c = CELLS[t.cell]; if (c) { t.x = c.x; t.y = c.y; } for (const k of RUN_TOWER_DROP) delete t[k]; }
   Object.assign(g, { enemies: [], spawns: [], fleetQ: [], chains: [], drips: [] });
