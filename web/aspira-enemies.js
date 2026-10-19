@@ -104,7 +104,7 @@ function drawEnemy(e, solid) {
   if (e.shield > 0 || e.shSegs) {
     e.shSegs = syncSegs(e.shSegs || [], shieldShown(e, d.sides), d.sides, undefined, true);
     ctx.lineWidth = 1.4;
-    if (!solid) drawSegs(e.x, e.y, e.shSegs, d.sides, e.rot, size + SHIELD_OUT, 2.5, undefined, true); // (3D: walls round the die, aspira-walls.js) // layers tight (owner: much thinner gap; was 5)
+    if (!solid) drawSegs(e.x, e.y, e.shSegs, d.sides, e.rot, shieldBase(e, size), 2.5, undefined, true); // (3D: walls round the die, aspira-walls.js) // layers tight (owner: much thinner gap; was 5)
   }
   ctx.globalAlpha = 1;
   if (e.charged || e.charge) { // ARC's Static charge: a border in ARC's colour just outside the outline (owner) - ONE PER CHARGE held (Capacitance, 2026-10-08)

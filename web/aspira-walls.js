@@ -70,8 +70,8 @@ function coreWallPieces() {
 function enemyWallPieces(e) {
   if (!e.shSegs || e.dead) return [];
   const d = ENEMIES[e.type];
-  const ps = segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, solidSize(e) + SHIELD_OUT, 2.5, SHIELD_IN_OFF).filter(p => p.r !== 1); // SHIELD_OUT: aspira-enemies.js
+  const ps = segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, shieldBase(e, solidSize(e)), 2.5, SHIELD_IN_OFF).filter(p => p.r !== 1); // SHIELD_OUT: aspira-enemies.js
   const k = e.shSegs.slice(0, d.sides - SHIELD_IN_OFF).filter(Boolean).length; // the LAST layer: a regular k-gon, thick (shieldPoly, aspira-enemies.js)
-  if (k) { const c = shieldPoly(e.x, e.y, (solidSize(e) + SHIELD_OUT + 2.5) * shieldPulse(), k + SHIELD_IN_OFF, d.sides, e.rot), m = c.length; for (let i = 0; i < m; i++) ps.push({ a: c[i], b: c[(i + 1) % c.length], r: 1, thick: true }); }
+  if (k) { const c = shieldPoly(e.x, e.y, (shieldBase(e, solidSize(e)) + 2.5) * shieldPulse(), k + SHIELD_IN_OFF, d.sides, e.rot), m = c.length; for (let i = 0; i < m; i++) ps.push({ a: c[i], b: c[(i + 1) % c.length], r: 1, thick: true }); }
   return ps;
 }
