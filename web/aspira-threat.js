@@ -1,5 +1,5 @@
 // /aspira - THE THREAT MARKS (split from aspira-ui.js at its 500-line cap): drawThreat (aspira-draw.js) and
-// threatBounce (a leak, aspira-game.js); AUTO_WAIT_S and etaToCore come from aspira-ui.js
+// threatBounce (a leak, aspira-game.js); AUTO_WAIT3_S and etaToCore come from aspira-ui.js
 // THE THREAT, SHOWN (owner, 2026-10-12): each enemy within THREAT_FROM s of the core (the soonest THREAT_N) is marked, fainter
 // far off and stronger as it closes - since 2026-10-13 a circle and two triangles on the enemy itself (drawThreat, below)
 const THREAT_A_MIN = 0.1, THREAT_A_MAX = 0.75, THREAT_W_MAX = 6; // (W_MAX: a leak's bounce, world units wide)
