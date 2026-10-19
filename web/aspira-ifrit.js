@@ -21,7 +21,7 @@ const IFR_BURN_S = [1.5, 2, 2.5, 3, 4, 5]; // Hellfire: a flare burns this long 
 const IFR_TICK_S = [0.3, 0.27, 0.24, 0.2, 0.17, 0.15]; // Hellfire: s between burn ticks
 const IFR_TICK_K = [0.08, 0.12, 0.18, 0.27, 0.4, 0.6]; // Hellfire: a tick, x the blast hit
 const IFR_BLAST_R = [80, 90, 100, 115, 130, 150] /* was [60 .. 130] VI 160 (solo.mjs 2026-10-19, ball 360 + a 1 s charge: a lone L1 0/2/0 -> 0/0/0, every L1 pair with IFR beats the Star on every slot pair) */; // Firaga: the ring's reach, u
-const IFR_BLAST_K = [1, 1.5, 2.3, 3.5, 6, 10]; // Firaga: the blast hit, x TOWERS.ifr.dmg
+const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 9, 15] /* was [1, 1.5, 2.3, 3.5, 6, 10] VI 18 (countermx 61-69 spread @6pts, 2026-10-19: leaked swarm/fast/shield/armor 27/91/42/100 -> 18/75/23/90) */; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [5, 6, 7, 8, 9, 10]; // Firaga: pellets a burst
 const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 600, IFR_PELLET_V = 300, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25, IFR_MINI_K = 0.5; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit; Backdraft's mini ring x radius and x hit
 const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
