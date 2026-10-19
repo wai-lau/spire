@@ -199,4 +199,43 @@ function stepIfrFlares(t, st, dt) {
   }
   keepLive(t.ifrFlares);
 }
-function drawIfr() { /* Task 5 */ }
+// ---------- the look: orange balls growing on the corners, a small ball with a short trail in flight, a thinning ring, pellet
+// streaks, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
+// 3D moving layer turns them into GL instances; no gradient on the board context) ----------
+const IFR_BALL_PX = 13, IFR_FLY_PX = 6, IFR_TRAIL_S = 0.06, IFR_PELLET_PX = 2, IFR_PELLET_TAIL = 0.03, IFR_RING_W = 3, IFR_BEAM_A = 0.28, IFR_LINE_A = 0.85;
+function drawIfrCharge(t, st) {
+  const corners = ifrSlotCorners(t, st.slots);
+  ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
+  for (let i = 0; i < corners.length; i++) {
+    const full = i < t.ifrReady, k = full ? 1 : i === t.ifrReady ? t.ifrCharge : 0;
+    if (k <= 0) continue;
+    const c = ifrCorner(t, corners[i]);
+    ctx.beginPath(); ctx.arc(c.x, c.y, IFR_BALL_PX * (0.3 + 0.7 * k), 0, 6.283); ctx.fill();
+    if (full) { ctx.fillStyle = COL.white; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(c.x, c.y, IFR_BALL_PX * 0.35, 0, 6.283); ctx.fill(); ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9; }
+  }
+}
+function drawIfrFlight(t) {
+  ctx.strokeStyle = COL.tifr; ctx.fillStyle = COL.tifr; ctx.lineCap = "round"; ctx.lineWidth = IFR_PELLET_PX; ctx.globalAlpha = 0.8;
+  ctx.beginPath();
+  for (const b of t.ifrBalls) { ctx.moveTo(b.x - b.vx * IFR_TRAIL_S, b.y - b.vy * IFR_TRAIL_S); ctx.lineTo(b.x, b.y); }
+  for (const p of t.ifrPellets) { ctx.moveTo(p.x - p.vx * IFR_PELLET_TAIL, p.y - p.vy * IFR_PELLET_TAIL); ctx.lineTo(p.x, p.y); }
+  ctx.stroke();
+  for (const b of t.ifrBalls) { ctx.beginPath(); ctx.arc(b.x, b.y, IFR_FLY_PX, 0, 6.283); ctx.fill(); }
+  for (const q of t.ifrRings) { ctx.globalAlpha = 0.9 * (1 - q.r / q.R) + 0.1; ctx.lineWidth = IFR_RING_W; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke(); }
+}
+function drawIfrFlares(t) {
+  const low = typeof lowQ === "function" && lowQ();
+  for (const c of t.ifrFlares) {
+    const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c);
+    if (!low) { ctx.strokeStyle = COL.tifr; ctx.lineWidth = c.W; ctx.globalAlpha = IFR_BEAM_A * f; ctx.beginPath(); for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke(); }
+    ctx.strokeStyle = COL.white; ctx.lineWidth = 1; ctx.globalAlpha = IFR_LINE_A * f; ctx.beginPath(); for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke();
+  }
+}
+function drawIfr() {
+  for (const t of G.towers) {
+    if (t.kind !== "ifr" || t.ifrSlot0 == null) continue;
+    ctx.lineCap = "butt"; ctx.lineJoin = "round";
+    drawIfrFlares(t); drawIfrFlight(t); drawIfrCharge(t, towerStats(t));
+  }
+  ctx.globalAlpha = 1;
+}

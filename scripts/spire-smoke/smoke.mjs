@@ -250,6 +250,26 @@ check("a lost life: 'X lives left' replaces the interest line", () => {
   return texts.some(t => /^7 lives left$/.test(t)) ? "" : "no '7 lives left' among " + texts.length + " texts";
 });
 
+check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flight throws nothing", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 1e9; ui.build = "ifr";
+    const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0]; for (let i = 0; i < 90; i++) step(1 / 30);
+    ifrNear("swarm", t, 90);
+    for (let i = 0; i < 60; i++) step(1 / 30);
+    const out = { live: t.ifrBalls.length + t.ifrRings.length + t.ifrPellets.length + t.ifrFlares.length };
+    const fn = v => typeof v === "function" || (v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) !== Object.prototype) || (v && typeof v === "object" && Object.values(v).some(fn)); // a function or a non-plain object anywhere in G breaks the autosave's structured clone
+    out.cloned = !fn({ t: [t.ifrBalls, t.ifrRings, t.ifrPellets, t.ifrFlares] });
+    return out;
+  })()`);
+  if (r.cloned !== true) return "G does not clone: " + r.cloned;
+  const seen = calls(env, ["drawIfr"], () => frames(env, 2));
+  if (!seen.drawIfr) return "drawIfr never called";
+  const n = drawn(env, () => run("drawIfr()")).n;
+  if (n < 20) return "only " + n + " canvas calls with IFR effects live";
+  const sold = run(`(() => { try { const t = G.towers[0]; G.money += sellValue(t); G.towers = G.towers.filter(x => x !== t); ui.sel = null; for (let i = 0; i < 30; i++) step(1 / 30); return "ok"; } catch (e) { return String(e); } })()`); // what the card's sell button does (aspira-sliders.js)
+  return sold === "ok" ? "" : "sell threw: " + sold;
+});
 check("the slow-log report builds and sends (perfSend - it runs from the frame loop every 3 min: a throw there froze the game, 6.1.1-6.1.7)", () => {
   run(`G = newGame(); { const v = document.querySelector(".asp-ver span"); v.parentNode = document.createElement("div"); } perf.act.playing = [5, 0];`); // (the fake DOM's span has no parent; some play, so it builds the whole report)
   run("perfSend()");
