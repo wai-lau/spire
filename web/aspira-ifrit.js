@@ -253,11 +253,9 @@ function drawIfrRings(t, low) {
   }
 }
 /* the ball: a disc, no line before it (owner, 2026-10-19: "remove the line that precedes the ball during launch") */
-function drawIfrFlight(t) {
-  const low = typeof lowQ === "function" && lowQ();
+function drawIfrBalls(t) {
   ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
   for (const b of t.ifrBalls) { ctx.beginPath(); ctx.arc(b.x, b.y, IFR_FLY_PX, 0, 6.283); ctx.fill(); }
-  drawIfrRings(t, low); drawIfrEmbers(t, low);
 }
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
@@ -282,11 +280,14 @@ function drawIfrFlares(t) {
     }
   }
 }
-function drawIfr() {
+/* balls true (drawn in skyKeep, aspira-draw.js): the charge balls on the corners and the balls in flight, which keep their orange on a
+   boss sky (owner, 2026-10-19: "ifrit balls should stay orange on boss inversion"); else the rings, pellets and spokes, which turn over with it */
+function drawIfr(balls) {
+  const low = typeof lowQ === "function" && lowQ();
   for (const t of G.towers) {
     if (t.kind !== "ifr" || t.ifrSlot0 == null) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    drawIfrFlares(t); drawIfrFlight(t); drawIfrCharge(t, towerStats(t));
+    if (balls) { drawIfrBalls(t); drawIfrCharge(t, towerStats(t)); } else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }

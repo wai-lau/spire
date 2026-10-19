@@ -400,7 +400,7 @@ function drawSceneTop() {
   if (skyOn()) ranges("white")(); else skyKeep(ranges());
   // BEAMS turn over with the boss sky (owner, 2026-10-11: "inversion should invert tower movement indicators and tower
   // beams"; they kept their colours since earlier that day) - only the towers and their ranges keep theirs
-  drawTethers(); drawAcd(); drawGrv(); drawCar(); drawIfr(); skyKeep(() => drawCar(true)); drawAims(); drawFx("shots"); // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
+  drawTethers(); drawAcd(); drawGrv(); drawCar(); drawIfr(); skyKeep(() => drawIfr(true)); skyKeep(() => drawCar(true)); drawAims(); drawFx("shots"); // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
   drawCoreFx(); if (G.core) drawTimeStop(G.core); /* (3D's Relay hexagons: drawRelayHex3d, on the overlay before the towers) */ // the core's struts and beams, under the towers (aspira-core.js); 3D: Temporal Drive's field ON the floor
   // in 3D the towers, the core and the enemies are drawn FLAT over the bell instead (warpEntities, aspira-warp.js)
   drawLeash(); // the movement indicator turns over with the sky too (owner, 2026-10-11)
