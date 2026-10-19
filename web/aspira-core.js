@@ -98,6 +98,7 @@ function relayStats(s, kind, m) {
   if (kind === "frz") { s.dmg *= m; s.targets *= m; if (s.moonN) s.moonN *= m; if (s.moons) s.moons *= m; }
   if (kind === "grv") s.rate *= m; // GRV: three novas for one
   if (kind === "car") s.wing *= m; // CRR: three times the interceptors
+  if (kind === "ifr") { s.chargeS /= m; s.rate *= m; } // IFR: charges m times as fast
 }
 
 // ---------- Temporal Drive: the stopping ring ----------

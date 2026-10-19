@@ -52,7 +52,7 @@ print(json.dumps(marks))
 if "--write" in sys.argv[2:]:
     web = pathlib.Path(__file__).resolve().parents[2] / "web"
     chooser, ver = web / "aspira-chooser.js", (web / "aspira-version.txt").read_text().strip()
-    order = ["arc", "frz", "sol", "acd", "grv", "car"]
+    order = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]
     body = ", ".join(f"{k}: {{ " + ", ".join(f"{t}: {marks[k][t]}" for t in TYPES if marks[k][t]) + " }" for k in order if k in marks)
     line = f"const VS_MARKS = {{ {body} }}; /* regenerated {datetime.date.today()} v{ver} (marks.py --write, countermx 61-69 @6pts) */"
     src = chooser.read_text()

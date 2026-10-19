@@ -16,8 +16,8 @@ import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
 
 const LEAK = Number(process.env.LEAK || 0.01) /* hold = no leak past lane coverage (owner's closest-approach rule: a leak is 0% power; 1% for noise) */, SPAN = 4, FLOOR_HPX = 0.001, TYPES = ["swarm", "fast", "shield", "armor"];
-const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car").split(","); // (grv: the gravity tower, 2026-10-15)
-const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"] , car: ["hangar", "launch", "armament"] };
+const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car,ifr").split(","); // (grv: the gravity tower, 2026-10-15)
+const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"] , car: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
 // every build: a trio, and per tower the axis it skips (null = buys all three)
 export const BUILDS = [];
 for (let i = 0; i < ALL.length; i++) for (let j = i + 1; j < ALL.length; j++) for (let l = j + 1; l < ALL.length; l++) {

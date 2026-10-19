@@ -66,6 +66,8 @@ const CAPSTONE_NUM = [
   // CRR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
   [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 16], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
   [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
+  // IFR: Meteor every corner, charging as fast as it launches (Impact); Hellfire beams across the whole board; Firaga the biggest blast, the most pellets (Backdraft)
+  [IFR_SLOTS, 6], [IFR_CHARGE_S, 0.1], [IFR_BALL_V, 360], [IFR_ROUTE_K, 16], [IFR_BEAM_L, 140], [IFR_BEAM_W, 24], [IFR_BURN_S, 10], [IFR_TICK_S, 0.12], [IFR_TICK_K, 1], [IFR_BLAST_R, 160], [IFR_BLAST_K, 18], [IFR_PELLETS, 12],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)
@@ -76,6 +78,7 @@ const CAPSTONE_MOVE = {
   acd: { corrosion: [1, 1], spray: [1.5, 1] /* VI: range, not a hotter carry (owner, 2026-10-12; was 1.25) */, contagion: [1, 2.1] },
   car: { hangar: [1, 1], launch: [1, 1], armament: [1, 1] },
   grv: { void: [1.15, 1], supernova: [1.25, 1], radiation: [1, 2.2] },
+  ifr: { meteor: [1.6, 1], hellfire: [1.4, 1], firaga: [1, 3] },
 };
 for (const [kind, axes] of Object.entries(CAPSTONE_MOVE)) {
   for (const [id, m] of Object.entries(axes)) {
@@ -104,6 +107,9 @@ const CAPSTONE_TIERS = {
   hangar: { name: "Full Wing" },
   launch: { name: "Anchor" } /* (owner, 2026-10-17: "have Anchor as the final level") - its beam chains on to one more enemy */,
   armament: { name: "Autopilot" },
+  meteor: { name: "Impact" },
+  hellfire: { name: "Hellfire" },
+  firaga: { name: "Backdraft" },
 };
 for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1 && CAPSTONE_TIERS[ax.id]) ax.tiers.push(CAPSTONE_TIERS[ax.id]);
 ARC_KEEP.push("over one and a half times") /* ARC_VOLTAGE_FALL VI 1.6 (read "twice" - 2026-10-14) */; ARC_RETURN.push("four times");

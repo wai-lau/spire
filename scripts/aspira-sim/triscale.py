@@ -3,7 +3,7 @@ import math
 import sys
 
 # per-trio score from a tribal run: a win = 120 + lives left, a loss = the wave reached (mean of its games)
-ALL = ["arc", "frz", "sol", "acd", "grv", "car"]
+ALL = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]
 rows = [json.loads(line) for line in open(sys.argv[1]) if line.strip()]
 jobs = [(r["args"]["trio"], r["args"]["seed"]) for r in rows]
 res = [r["res"] for r in rows]

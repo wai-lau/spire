@@ -4,7 +4,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car").split(",");
+const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car,ifr").split(",");
 export default async function task({ trio, seed }) {
   const p = makePlayer({ up: 0.5, maxTowers: 3, opening: trio, mix: Object.fromEntries(trio.map(k => [k, 1])), econ: "smart", threat: 220, core: ["temporal", "relay"], useCore: true }, seed, 120, 0.02, process.env.ASPIRA_PATCH || "");
   p.runTo(121); const r = p.result();

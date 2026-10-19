@@ -5,9 +5,9 @@
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "/home/wai/src/exec-fn/apps/spire/scripts/aspira-sim/sim.mjs";
 import { runPool } from "/home/wai/src/exec-fn/apps/spire/scripts/aspira-sim/pool.mjs";
-const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], car: ["hangar", "launch", "armament"] };
+const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], car: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
 const FREE = [["arc", "frz", "car"], ["sol", "acd", "car"], ["arc", "acd", "grv"], ["frz", "sol", "grv"]].map(t => t.join());
-const ALL = ["arc", "frz", "sol", "acd", "grv", "car"];
+const ALL = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"];
 export default async function task({ trio, kind, axis, seed }) {
   const skills = axis ? { [kind]: [axis, ...AX[kind].filter(a => a !== axis)] } : {};
   const p = makePlayer({ up: 0.5, maxTowers: 3, opening: trio, mix: Object.fromEntries(trio.map(k => [k, 1])), econ: "smart", threat: 220, core: ["temporal", "relay"], useCore: true, skills, cheapSaver: true }, seed, 120, 0.02, process.env.ASPIRA_PATCH || "");

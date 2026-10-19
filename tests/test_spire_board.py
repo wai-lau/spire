@@ -155,3 +155,10 @@ def test_clean_entry_keeps_a_version_and_drops_junk():
     assert spire_board.clean_entry({**base, "ver": "5.1.10"})["ver"] == "5.1.10"
     assert "ver" not in spire_board.clean_entry({**base, "ver": "<script>"})
     assert "ver" not in spire_board.clean_entry(base)
+
+
+def test_team_accepts_ifrit(tmp_path, monkeypatch):
+    """The seventh kind posts; an unknown kind still does not."""
+    base = {"initials": "IFR", "lives": 5, "team": ["ifr", "arc"], "won": True, "wave": 120}
+    assert spire_board.clean_entry(dict(base))["team"] == ["arc", "ifr"]
+    assert spire_board.clean_entry(dict(base, team=["ifr", "xyz"])) is None

@@ -57,7 +57,7 @@ check("3D: WebGL comes up and a frame draws (the board, the moving layer, the en
 });
 
 // a tower of each kind: build through placeTower (the real click path), then draw
-for (const kind of ["arc", "frz", "sol", "acd", "grv", "car"]) {
+for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) {
   check("build " + kind.toUpperCase() + ": placed, its range + tower + movement arrows draw", () => {
     run(`G = newGame(); G.money = 1e6; refreshPanels(); ui.build = "${kind}";
          { const ci = CELLS.findIndex((c, i) => cellOpen(i) && !G.towers.some(t => t.cell === i)); placeTower(CELLS[ci]); }
@@ -103,7 +103,7 @@ check("capstone: one axis to VI, a second refused; every tier table covers VI", 
     for (let k = 0; k < 6; k++) upgradeTower(t, ids[0], true);
     for (let k = 0; k < 6; k++) upgradeTower(t, ids[1], true);
     const out = { a: skillOf(t, ids[0]), b: skillOf(t, ids[1]), opts: skillOptions(t).map(o => o.choice) };
-    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car"]) for (const ax of SKILL_TREES[kind]) {
+    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) {
       const s = towerStats({ id: 99, kind, x: CX, y: CY, lvl: 7, skills: { [ax.id]: 6 } });
       if (!ax.tiers[5] || Object.values(s).some(v => v === undefined || (typeof v === "number" && isNaN(v)))) out.bad = kind + " " + ax.id;
       if (/undefined/.test(describeTower(kind, { [ax.id]: 6 }))) out.bad = kind + " " + ax.id + " desc";

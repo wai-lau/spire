@@ -15,6 +15,8 @@ const FRZ_MOONS = ["", " A moon copies it.", " Two moons copy it.", " Three moon
 const SOL_RAYS = ["A ray", "Two rays", "Three rays", "Four rays", "Five rays", "Eight rays"];
 const SOL_REFRACT = ["refracting on to one more enemy", "refracting on to three more enemies", "refracting on to six more enemies", "refracting on to ten more enemies", "refracting on to thirteen more enemies", "refracting through every enemy ahead"];
 const ACD_JETS = ["Two", "Three", "Four", "Six", "Seven", "Eight"]; // acidic terms, never heat (owner)
+const IFR_BALLS = ["", "a ball", "two balls", "three balls", "", "", "six balls"]; // by SLOT count (IFR_SLOTS: 1 2 3, capstone 6)
+const IFR_PELL = ["", "", "", "", "", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]; // by PELLET count (IFR_PELLETS 5..10, capstone 12)
 const DESCRIBE = {
   // "Arcs fork on hit, each jump carrying half the hit." -> Conductivity: chain once and / into
   // three / twin; Voltage: most of .. all of (its harder hit is a stat row); Capacitance: the charge sentence (owner's words)
@@ -58,6 +60,13 @@ const DESCRIBE = {
     return (n >= 6 ? "Three hypernovas that tear armor away, each where it catches the most, leave" : "Three novas, each where it catches the most, leave") + " a black hole" + (n >= 6 ? " twice as big as usual" : "") + ", its aura as big as the nova's hit. The aura " +
       (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; its black centre burns whatever it touches, and the hole grows with the nova's hit and that burn. Nearby holes pull together and merge. It radiates " +
       (r >= 6 ? "pellets and bursts as it fades." : "pellets.");
+  },
+  // IFR (owner, 2026-10-19): Meteor more slots, faster, harder on the way (Impact: all six corners); Hellfire the burning cross
+  // (Hellfire VI: across the whole board); Firaga a bigger blast, more pellets (Backdraft: a pellet bursts too)
+  ifr(sk) {
+    const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
+    return "Charges " + IFR_BALLS[IFR_SLOTS[m]] + " on its corners and lobs each slowly at an enemy, burning what it passes. Where it lands a ring of fire bursts outward and " +
+      IFR_PELL[IFR_PELLETS[f]] + " pellets fly at whatever stands in the blast; where a pellet stops a burning cross " + (h >= 6 ? "runs to the edges of the board" : "spreads") + (f >= 6 ? ", and the pellet bursts into a smaller ring." : ".");
   },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
