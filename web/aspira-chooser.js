@@ -143,11 +143,12 @@ const VS_ORDER = ["swarm", "fast", "shield", "armor"];
 // THE GAPS (owner, 2026-10-19: "when building the third tower: for each tower card that has X where the two towers that you have do
 // not cover draw a red box around that"): with two towers built, the types neither has a check on; a card's x's on one are boxed red
 const vsGaps = () => { const own = G.towers.filter(t => !t.isCore); return own.length !== 2 ? new Set() : new Set(VS_ORDER.filter(e => own.every(t => ((VS_MARKS[t.kind] || {})[e] || 0) <= 0))); };
+const VS_WARN = '<svg class="asp-vs-warn" viewBox="0 0 20 20" aria-label="warning"><path d="M10 2.5 18.5 17.5H1.5Z" fill="none" stroke="currentcolor" stroke-width="2" stroke-linejoin="round"/><path d="M10 8v4.2" stroke="currentcolor" stroke-width="2.2" stroke-linecap="round"/><circle cx="10" cy="14.9" r="1.2" fill="currentcolor"/></svg>';
 const vsMarks = (k, gaps = new Set()) => VS_ORDER.map(e => { // ALL FOUR types always (owner, 2026-10-19: "always have all 4 sections"); a 0 is a yellow dash
   const m = (VS_MARKS[k] || {})[e] || 0;
   if (!m) return '<span class="asp-vs e-' + ENEMIES[e].color + '">' + enemyIcon(e) + '<b class="asp-vs-m">\u2013</b></span>';
   const gap = m < 0 && gaps.has(e), html = '<span class="asp-vs e-' + ENEMIES[e].color + (gap ? " asp-vs-gap" : "") + '">' + enemyIcon(e) + '<b class="' + (m > 0 ? "asp-vs-y" : "asp-vs-n") + '">' + Array(Math.abs(m)).fill(m > 0 ? "\u2713" : "\u2717").join(" ") /* a space between marks (owner, 2026-10-16) */ + "</b></span>";
-  return gap ? '<span class="asp-vs-gapw">' + html + '<b class="asp-vs-warn">\u26A0\uFE0E</b></span>' : html; // a red warning after the box (owner, 2026-10-19)
+  return gap ? '<span class="asp-vs-gapw">' + html + VS_WARN + '</span>' : html; // a red warning after the box (owner, 2026-10-19)
 }).join("");
 function buildCard(k, gaps) {
   const b = TOWERS[k], cost = towerCost(k);
