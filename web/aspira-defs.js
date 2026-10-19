@@ -57,6 +57,7 @@ const plainHpMul = n => (n <= PLAIN_HP_EASY ? 1 : n <= (typeof CORE_GRANTS !== "
 // ...each its OWN factor, growing slowly after (owner, 2026-10-12: "late traits grow slowly after 49", "they don't need to all
 // share the same factor"): [x at LATE_FROM, + a wave]. Armor flattest in the battery (no build leaked >4% after 97), so it ramps hardest;
 // fast gentlest (speed is the strongest trait). let: the sims sweep it
+const EFFECT_MAX_S = 10, POOL_MAX_S = 5, GOO_MAX_S = 30; // NO EFFECT LASTS LONGER (owner, 2026-10-18: "no effect should last more than 10s"; "goo can be 30s", "pools should be max 5s")
 let LATE_TRAIT = { swarm: [1.3, 0.006], fast: [1.15, 0.004] }; /* armor: ARMOR_HP_FROM below */
 const LATE_FROM = 49, lateK = (n, type) => { const f = LATE_TRAIT[type]; return f && n >= LATE_FROM ? f[0] + f[1] * (n - LATE_FROM) : 1; };
 // ARMOR SCALES WITH HP (owner, 2026-10-13: "make armor scale with hp" - a flat bite off a hit of thousands meant nothing late):

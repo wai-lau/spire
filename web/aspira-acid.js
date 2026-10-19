@@ -139,7 +139,7 @@ function corrodeHit(e, amt, t) {
 // as drops of DRIP_UNIT x the wave's armor reference; a drop lies DRIP_LIFE s, and the first other enemy within DRIP_R of it
 // takes it - its armor loses DRIP_TAKE x the drop, credited to the ACD. let: the sims sweep them
 let DRIP_TAKE = 2 /* countermx 2026-10-13: 0.5 / 1 / 2 - 2 brought the late armor column down most (ACD 6-13%) */, DRIP_UNIT = 0.3 /* a third as many drops, each 3x - the same goo in all (owner, 2026-10-13: "reduce goo pellet count"; was 0.1) */, DRIP_REAL = 3, DRIP_TIER_K = 0.6; // DRIP_TIER_K: x (1 + it x the dropping ACD's Corrosion tier) - countermx 2026-10-13: 0.6 brings Corrosion builds to 1-6% late armor (0: 6-12%)
-const DRIP_LIFE = 40 /* x5 (owner, 2026-10-14: "make corrosion goo last 5x longer"; was 8) */, DRIP_R = 14, DRIP_MAX = 1000 /* (was 300 at the 8 s life) */, DRIP_JIT = 8;
+const DRIP_LIFE = GOO_MAX_S /* x5 (owner, 2026-10-14: "make corrosion goo last 5x longer"; was 8) */, DRIP_R = 14, DRIP_MAX = 1000 /* (was 300 at the 8 s life) */, DRIP_JIT = 8;
 // a drop is FLUNG back up the lane (owner, 2026-10-13: "give them some initial velocity in the direction of the lane (outwards),
 // give them a bit of angle jitter"): along the lane behind the enemy, +-DRIP_SPREAD rad, slowing from the start (by DRIP_TAU s)
 // and coming to rest DRIP_STOP units out ("it should slow down right away, but stop at 200 units"): launched at DRIP_STOP / DRIP_TAU
@@ -229,7 +229,7 @@ const ACD_DOUBLE = [0.5, 0.39, 0.3, 0.12, 0.12, 0.12], ACD_LINES = [2, 3, 4, 6, 
 // pools from the START, large and long (owner, 2026-10-12: "ACD should have pools ... large and last longer from the start";
 // Contagion grows them, massive at VI); was null at 0, then life 4 .. 10, r 36 .. 85
 // life x~1.8 (owner, 2026-10-12: "just make the pools last even longer with contagion"; was 6 7 8 10 12 14)
-const ACD_CONTAGION = [{ every: 1.2, life: 6, r: 55 }, { every: 1.2, life: 9, r: 62 }, { every: 1.18, life: 12, r: 70 }, { every: 1.062, life: 20, r: 88 }, { every: 1.062, life: 25, r: 101.2 }, { every: 1.062, life: 31.25, r: 115.5 }]; // BIGGER (x1.3) and LONGER (x1.5) pools that burn LESS (owner, 2026-10-08; were life 2.4 3.1 4.2 5 6.5, r 28 33 42 50 65) // drip 1.24 / 1.18s (owner, 2026-10-08: Contagion under 200% - was 1.2 .. 0.7; V at 643%); size and life keep climbing; // pools bigger (x1.25) and longer (x1.3) at every tier (owner, 2026-10-08); V the top regular tier (VI, the capstone, in aspira-capstone.js)
+const ACD_CONTAGION = [{ every: 1.2, life: 5, r: 55 }, { every: 1.2, life: 5, r: 62 }, { every: 1.18, life: 5, r: 70 }, { every: 1.062, life: 5, r: 88 }, { every: 1.062, life: 5, r: 101.2 }, { every: 1.062, life: 5, r: 115.5 }]; // BIGGER (x1.3) and LONGER (x1.5) pools that burn LESS (owner, 2026-10-08; were life 2.4 3.1 4.2 5 6.5, r 28 33 42 50 65) // drip 1.24 / 1.18s (owner, 2026-10-08: Contagion under 200% - was 1.2 .. 0.7; V at 643%); size and life keep climbing; // pools bigger (x1.25) and longer (x1.3) at every tier (owner, 2026-10-08); V the top regular tier (VI, the capstone, in aspira-capstone.js)
 // a puddle ramps to the OLD x32 ceiling (owner, 2026-10-08: "increase the puddle damage to compensate" for the jets' cap halved to x16)
 const ACD_PUDDLE_CAP = 8; // (2026-10-08: x8, was x32 - a pool held the jet's whole ramp)
 let ACD_SHIELD_POP = 1; // 1 (owner, 2026-10-12: ACD pops 1x, pools too - shields are a bare ACD's weakness); // 2026-10-11 (was 1, as every hit; 2 left ACD 16-34% leaked on shield waves, 3 gives 6-23%): let: the simulator sweeps it
@@ -253,7 +253,7 @@ function acdSkillStats(t, s, b) {
 // puddle ticks its burn on whatever stands in it, st.rate times a second
 function stepPuddles(t, st, dt) {
   const sp = st.contagion;
-  const drop = l => (t.puddles ||= []).push({ x: l.e.x, y: l.e.y, r: sp.r, life: sp.life, age: 0, tick: 0, dps: st.dmg * Math.min(ACD_PUDDLE_CAP, 2 ** (l.held / st.double)) * st.contagionHeat });
+  const drop = l => (t.puddles ||= []).push({ x: l.e.x, y: l.e.y, r: sp.r, life: Math.min(POOL_MAX_S, sp.life), age: 0, tick: 0, dps: st.dmg * Math.min(ACD_PUDDLE_CAP, 2 ** (l.held / st.double)) * st.contagionHeat });
   for (const l of t.lines) {
     // a KILL under a jet drops a pool where it fell (owner, 2026-10-12); an escape drops none
     if (l.e.dead) { if (l.e.hp <= 0 && !l.dropped) { l.dropped = true; drop(l); } continue; }

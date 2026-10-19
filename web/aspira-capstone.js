@@ -52,15 +52,15 @@ const CAPSTONE_NUM = [
   [FRZ_MOON_COUNT, 5], [FRZ_MOON_BY, 1.3], [FRZ_SUBMOON_N, 6],
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
   [SOL_BEAMS, 25], [SOL_FOCUS_DMG, 1.3], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, Infinity], [SOL_REFRACTION_DMG, 8.578],
-  [SOL_CONE_BY, 40], [SOL_HOP, 1], [SOL_CRITMUL, 25.74], [SOL_BREACH_ARMOR, 3216], [SOL_REFRACT_POP, 0], [SOL_BREACH_CRIT, 0],
+  [SOL_CONE_BY, 40], [SOL_HOP, 1], [SOL_CRITMUL, 33], [SOL_BREACH_ARMOR, 3216], [SOL_REFRACT_POP, 0], [SOL_BREACH_CRIT, 0],
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
   [ACD_CORROSION_DMG, 26.98], [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9], [ACD_FLOW_SLOW, 0.2], [ACD_SPRAY_MUL, 26.98],
-  [ACD_CONTAGION, { every: 0.9, life: 50, r: 165 }], [ACD_PUDDLE_HEAT, 11.39],
+  [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }], [ACD_PUDDLE_HEAT, 11.39],
   // GRV: Void the widest, coldest aura (Event Horizon: a full sphere nearly stops what it holds); Supernova the biggest nova
   // (Hypernova: it tears half the armor away, spheres start heavy); Radiation the most pellets (Hawking: a last burst)
   // CAR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
   [CAR_HANGAR, 17], [CAR_FOCUS, 0.7], [CAR_TETHER_SLOW, 0.75], [CAR_TETHER_K, 39], [CAR_AMMO, 16], [CAR_SHOT_MUL, 1702], [CAR_SIDE_DMG, 39.96], [CAR_RATE_MUL, 1],
-  [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 15.37], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 167.8], [GRV_PELLETS, 9], [GRV_PELLET_K, 118],
+  [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)

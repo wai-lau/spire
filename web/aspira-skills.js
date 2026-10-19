@@ -350,7 +350,7 @@ const SOL_BREACH_ARMOR = [80, 200, 350, 550, 1219, 2359] /* bigger tiers (owner,
 // must now travel forward - see solRefraction; was a flat 8, before that 25)
 const SOL_CONE_BY = [8, 24, 24, 32, 32, 32] /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit; the chart SOL uses SOL_BREACH_CRIT)
 // SOL's own lever (owner: more crit): Breach also raises the crit MULTIPLIER, x3 at base
-const SOL_CRITMUL = [3, 4, 5, 7, 11.22, 19.3];
+const SOL_CRITMUL = [3, 5, 6.5, 9, 14.6, 25]; /* x1.3 from I (2026-10-18: Breach's shrapnel no longer deals damage) */
 // FITTED 2026-10-06 to +25 / +50 / +100% (on an HP-scaled field, so nothing
 // saturates): each Focus beam's share of the shot by tier, and each Refract
 // hop's damage by tier (a hop is far weaker than the first hit)
@@ -439,7 +439,7 @@ function drawCone(f, k) {
 // the armor it had LOST (healthy armor0 minus its armor now - owner: "a multiple of the armour diff between healthy and current"),
 // so each pops a shield charge and armor blunts it as ever; credited to the SOL that breached it. Breach had stopped paying past
 // armor (its strip was overkill); this spends the overkill on whatever is near
-const SHRAP_MUL = 1, SHRAP_N = 8, SHRAP_R = 90;
+const SHRAP_MUL = 1, SHRAP_N = 8, SHRAP_R = 90, SHRAP_BREACH = 1;
 function breachShrapnel(e) {
   const t = e.breachBy && G.towers.includes(e.breachBy) ? e.breachBy : null;
   const near = G.enemies.filter(o => !o.dead && o.seen && o !== e && Math.hypot(o.x - e.x, o.y - e.y) <= SHRAP_R)
@@ -449,6 +449,8 @@ function breachShrapnel(e) {
   if (typeof burst === "function") burst(e.x, e.y, TOWERS.sol.color, 6 + near.length);
   for (const o of near) {
     beam(e, o, TOWERS.sol.color, RAY_BEAM_LIFE, 1, 0, true, false);
-    fromHit(e, () => damage(o, each, t, false, false, null)); // away from the enemy that burst
+    // BREACH, not damage (owner, 2026-10-18: "breach shrapnel should cause more breach to nearby units, not deal damage"): each piece
+    // strips SHRAP_BREACH x the armor the dead one had lost off its target, as a Breach hit does (spokes, shrapnel of its own)
+    const k = each * SHRAP_BREACH; o.armor = (o.armor || 0) - k; if (t) stripBy(o, t, k); o.breachN = (o.breachN || 0) + 1; o.breached = (o.breached || 0) + k; o.breachBy = t || o.breachBy;
   }
 }

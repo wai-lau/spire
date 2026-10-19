@@ -185,7 +185,7 @@ target inside the Refraction cone. Armor cuts SOL like any other. **Weakness: sw
 |---|---|
 | Focus | more beams a shot, each a full hit popping more shield charges; range |
 | Refraction | the shot bends FORWARD on to more enemies in a cone from the first struck, pointed where it holds the most (third buy: all ahead, then out of sight; capstone: two opposite cones), hops hitting harder; range |
-| Breach (SOL's own) | armor stripped **for good, below zero**; bigger crits; a breached death fires shrapnel; slide |
+| Breach (SOL's own) | armor stripped **for good, below zero**; bigger crits; a breached death fires shrapnel that BREACHES the enemies near it (the armor it had lost, `SHRAP_BREACH` x) - no damage (owner, 2026-10-18); slide |
 
 **ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; a jet
 resets when its enemy dies or leaves (no carry at the base), jets never share an enemy;
@@ -205,6 +205,7 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 | a tier's words | change only when behaviour changes (§7.3) |
 | debuff credit | damage a debuff adds goes to the tower that caused it (`damageCredit`) |
 | negative armor | a flat bonus on every later hit from every tower (Breach, Corrosion, goo, Rime frost) |
+| 10 s at most | no effect on the board outlives `EFFECT_MAX_S` 10 s - GRV holes, the Orbital Relay; ACD pools `POOL_MAX_S` 5 s, goo `GOO_MAX_S` 30 s (owner, 2026-10-18). Debuffs ON an enemy (Breach, Corrosion's strip) are outside the rule |
 | tier names | one a tier (Transfer .. Hyperstorm, Chill .. Zero Point, ...), used on the end screen, never on the card; ARCHAEOLOGY §12 |
 
 ### 4.6 The counter matrix (pillar 6)
@@ -229,10 +230,11 @@ weak to the other two; GRV takes **swarm + armor** and is weak to **fast + shiel
 aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*` tokens). The constants and the numbers it started from are in
 ARCHAEOLOGY §4.6b.
 
-**The attack.** Every fire puts a **nova** on the target; there is no projectile. It lands where the enemy will be a moment on
-(`GRV_LEAD_S`, along its lane at its pace now, slows and stuns counted), so the enemy walks into it. The yellow front collapses
-inward from the nova's reach, hitting each enemy it passes once. When it is gone a **black centre** with a purple outline is
-left, and a **purple aura** opens from it.
+**The attack.** Every fire is **three novas** (`GRV_NOVA_N`, `GRV_NOVA_GAP` s apart, owner 2026-10-18) and then a hole; there is no
+projectile. Each nova lands on the enemy in range whose nova reach holds the most enemies, ties to the targeting mode (`grvNovaSpot`);
+its yellow front collapses inward, hitting each enemy it passes once. The HOLE is born where the target will be a moment on
+(`GRV_LEAD_S`, along its lane at its pace now, slows and stuns counted), so the enemy walks into it. After the last nova a
+**black centre** with a purple outline is left, and a **purple aura** opens from it - sized off ONE nova's damage (the three's / 3).
 
 **A hole is its mass.**
 
@@ -240,7 +242,7 @@ left, and a **purple aura** opens from it.
 |---|---|
 | size | the aura's area is the hole's mass: its radius is the root of (area-per-mass x mass), capped at `GRV_R_MAX` base auras (the mass itself may go on past it). Area-per-mass is fixed as the aura opens, from the nova: the base radius x the root of the damage the nova really dealt in tower hits (a kill counts the whole hit, a hit a shield swallowed nothing), clamped to `GRV_GROW_MIN`..`GRV_GROW_MAX`, so even an empty nova leaves the hole one bare hit would |
 | gain | mass grows with the damage the hole deals (nova and pellets; the aura deals none), up to a cap. A crowd feeds it fast; shields soak hits and feed it little; fast enemies pass before it feeds |
-| loss | it evaporates in proportion to its radius (`dm/dt = -E x radius / base radius`), not linearly: an unfed base hole lasts about 5 s (`GRV_LIFE`), a big or merged one burns out sooner, and it shrinks all its life |
+| loss | gone by `EFFECT_MAX_S` (10 s) from its oldest part's birth whatever it eats - the last `GRV_FADE_S` it shrinks to nothing; before that it evaporates in proportion to its radius (`dm/dt = -E x radius / base radius`), not linearly: an unfed base hole lasts about 5 s (`GRV_LIFE`), a big or merged one burns out sooner, and it shrinks all its life |
 | pull and merge | open holes (any GRV's) accelerate toward each other by the OTHER's mass over distance squared (`grvPull`, speed capped); when their black centres touch the bigger takes the other in (`grvMerge`): masses, caps, aura areas and nova damage all add, and the radius eases out to the summed area |
 
 **The aura** deals NO damage. It slows (never the shielded; a fast enemy's slow is not doubled, GRV being weak to it) in two
@@ -261,7 +263,8 @@ GRV damage number flies into its hole (`grvFloat`); the aura opens only after th
 
 | axis | buys | capstone (IV) |
 |---|---|---|
-| **Void** | a bigger aura, a stronger slow | **Event Horizon**: near-total slow (90%) in the core of a full-grown hole, unshielded only |
+| (every axis) | the late FIRE RATE (`GRV_RATE_MUL`) comes from the deepest axis - shared, not Supernova's alone (owner 2026-10-18: "each axis still equally powerful"; countermx N=1 61-69 leaks now Void 16 / Supernova 1 / Radiation 1 %) | |
+| **Void** | a bigger aura, a stronger slow, a harder inner burn; the nova's REACH grows with it too (max of Void / Supernova) | **Event Horizon**: near-total slow (90%) in the core of a full-grown hole, unshielded only |
 | **Supernova** | a bigger, harder nova - the swarm answer | **Hypernova**: the nova takes half the positive armor at once, and a hole starts heavy |
 | **Radiation** | more pellets per mass, harder pellets | **Hawking**: a hole that runs out of mass ends in a last burst of pellets (not one a merge swallowed) |
 
@@ -313,7 +316,7 @@ strength (`CORE_GRANTS`); the pick flow is dormant. Buttons above the title
 | Power | Granted | Use | Effect | Rules |
 |---|---|---|---|---|
 | **Temporal Drive** | 2nd boss (wave 24) | hold the core, or the button | every enemy stops dead (a 100% slow, `core:time`) for 6 game s; cooldown 3 waves | holds the wave clock and spawns; needs a live board and ends when it empties; Strength ignores it; stacks with the Relay (either fires while the other runs) |
-| **Orbital Relay** | 4th boss (wave 48) | the button then a tower, or drag the core onto one | that tower acts as three (`RELAY_MUL`, `relayStats`: ARC 3x attacks, SOL 3x locks, ACD 3x jets, FRZ 3x moons and tick, GRV 3x the nova rate, ATC 3x the wing) for 11.25 s; cooldown 4 waves | **stays on that tower**; arming pauses the game |
+| **Orbital Relay** | 4th boss (wave 48) | the button then a tower, or drag the core onto one | that tower acts as five (`RELAY_MUL`, `relayStats`: ARC 3x attacks, SOL 3x locks, ACD 3x jets, FRZ 3x moons and tick, GRV 3x the nova rate, ATC 3x the wing - x`RELAY_MUL` 5 since 2026-10-18) for 10 s (`EFFECT_MAX_S`); cooldown 4 waves | **stays on that tower**; arming pauses the game |
 
 ### 4.8 Dormant code (kept on purpose; nothing reaches it)
 
