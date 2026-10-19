@@ -202,3 +202,9 @@ function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once 
     return p.s > 0 && p.x >= b.x0 + e && p.x <= b.x1 - e && p.y >= b.y0 + e && p.y <= b.y1 - e;
   });
 }
+
+// OUT OF REACH = OFF SCREEN (owner, 2026-10-19: "enemy speed should also be 3x when outside of mvmt+range of all towers"): an enemy no
+// tower could touch - beyond every tower's movement range + its range, measured from the slot it was built on - moves at
+// OFF_SCREEN_SPEED like an unseen one (stepEnemies, aspira-game.js). The circles are worked out once a step
+const reachCircles = () => G.towers.map(t => { const c = CELLS[t.cell] || t, R = leashR(t) + towerStats(t).range; return [c.x, c.y, R * R]; });
+const inReach = (e, reach) => reach.some(([x, y, r2]) => (e.x - x) ** 2 + (e.y - y) ** 2 <= r2);

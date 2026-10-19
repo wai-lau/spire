@@ -11,6 +11,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "6.2", day: "Oct 19", bu: [
+    "Enemies: they move 3x faster wherever no tower could reach them (beyond every tower's movement and range), as they do off screen.",
     "Ifrit: a seventh tower - it charges fireballs on its corners and lobs them slowly; where one lands a ring of fire bursts out and pellets fly, each leaving a six-spoked flare that burns what stands in it.",
     "Ifrit: strong against swarms and shields, weak to fast enemies (they run through the fire before it catches).",
     "Ifrit: Meteor is much stronger at its later purchases; Hellfire a little weaker at its last two; Firaga stronger at its top.",

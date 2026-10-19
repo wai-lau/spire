@@ -378,7 +378,7 @@ const JIT_FADE_R = 400; // swarm wander is full beyond this radius, 0 at the cor
 // enemies turn nose-first along their lane - drawing only, so the headless
 // balance simulator switches it off (scripts/aspira-sim)
 let FACING = true;
-function stepEnemies(dt) {
+function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower's reach = off screen: aspira-positioning.js)
   for (const e of G.enemies) {
     if (e.gone) continue; if (!e.seen && enemySeen(e)) e.seen = true; // (off-screen: untouchable - enemySeen, aspira-positioning.js)
     if (e.dead) {
@@ -395,7 +395,7 @@ function stepEnemies(dt) {
       if (e.burnT > 0) e.burnT -= dt; // under an ACD burn (Fresh targeting)
       if (e.marks) sumMarks(e, dt);
       if (e.dotT > 0) { e.dotT -= dt; damage(e, e.dotDps * dt, e.dotSrc, true); if (e.dead) continue; }
-      { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; e.s += (m ? Math.min(effSpeed(e), effSpeed(m)) : effSpeed(e)) * (e.seen || (m && m.seen) ? 1 : OFF_SCREEN_SPEED) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") */
+      { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; e.s += (m ? Math.min(effSpeed(e), effSpeed(m)) : effSpeed(e)) * ((e.seen && inReach(e, reach)) || (m && m.seen && inReach(m, reach)) ? 1 : OFF_SCREEN_SPEED) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") */
     }
     const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)
     if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js) - which sets p whole, so no pathAt first (perf)
