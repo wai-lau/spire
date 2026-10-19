@@ -156,9 +156,12 @@ function stepIfrPellets(t, st, dt) {
   }
   keepLive(t.ifrPellets);
 }
+// a flare is TURNED so one spoke points at the core, give or take IFR_FLARE_JIT (owner, 2026-10-19: "bias the hellfire explosions to
+// choose an angle pointed towards the core") - the lanes run in toward it, so that spoke lies along the path the enemies walk
+const IFR_FLARE_JIT = Math.PI / 12;
 function ifrFlare(t, st, x, y) {
   if (t.ifrFlares.length >= IFR_FLARE_MAX) t.ifrFlares.shift();
-  t.ifrFlares.push({ x, y, L: st.beamL, W: st.beamW, life: st.burnS, left: st.burnS, tick: 0, edges: st.hellfire });
+  t.ifrFlares.push({ x, y, a: Math.atan2(CY - y, CX - x) + (Math.random() * 2 - 1) * IFR_FLARE_JIT, L: st.beamL, W: st.beamW, life: st.burnS, left: st.burnS, tick: 0, edges: st.hellfire });
 }
 // the FLARE: six beams from the burst point, a hexagonal star like the tower's own hex (world angles: 3D is a view), burning for
 // `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge. Hellfire VI runs each beam
@@ -176,7 +179,7 @@ function ifrBeamEnd(x, y, a, len, edges) {
   }
   return [x, y, x + c * len, y + s * len];
 }
-function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, f.L, f.edges)); return out; }
+function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, (f.a || 0) + k * Math.PI / 3, f.L, f.edges)); return out; }
 // a flare's tick: every live on-screen enemy whose body touches ANY of its beams takes one quiet tick (one hit a flare a tick, on
 // two beams too). Exact, not sampled: a cheap radius reject (a flare that cannot reach the enemy), then point-to-segment on its
 // beams. 40 Hellfire-VI flares x 200 enemies x 6 beams is ~50k dot products, under the smoke's budget (2026-10-19; the grid
