@@ -179,11 +179,6 @@ function ifrBeamEnd(x, y, a, len, edges) {
   return [x, y, x + c * len, y + s * len];
 }
 function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, f.L, f.edges)); return out; }
-// ON DESKTOP the spokes are DRAWN as far as the screen goes (owner, 2026-10-19: "when on desktop render IFR hellfire spokes as far as they
-// can across the real screen, even if they don't deal damage there") - IFR_DRAW_FAR out, the board picture clipping them at its edge;
-// they still BURN only out to f.L (ifrBeamEnds). A phone (no fine pointer) draws what burns
-const IFR_DRAW_FAR = 4000, IFR_DESKTOP = typeof matchMedia === "function" && matchMedia("(pointer: fine)").matches;
-function ifrDrawEnds(f) { if (!IFR_DESKTOP) return ifrBeamEnds(f); const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, IFR_DRAW_FAR, false)); return out; }
 // a flare's tick: every live on-screen enemy whose body touches ANY of its beams takes one quiet tick (one hit a flare a tick, on
 // two beams too). Exact, not sampled: a cheap radius reject (a flare that cannot reach the enemy), then point-to-segment on its
 // beams. 40 Hellfire-VI flares x 200 enemies x 6 beams is ~50k dot products, under the smoke's budget (2026-10-19; the grid
@@ -287,7 +282,7 @@ const IFR_GLOW_GL = [[0.8, 0.5, "tifr"], [0.2, 0.95, "tifr"]];
 function drawIfrFlaresGl(t, low) {
   for (const c of t.ifrFlares) {
     const f = Math.max(0, c.left / c.life);
-    for (const [x0, y0, x1, y1] of ifrDrawEnds(c)) {
+    for (const [x0, y0, x1, y1] of ifrBeamEnds(c)) {
       const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 1 : 0; g < IFR_GLOW_GL.length; g++) {
@@ -302,7 +297,7 @@ function drawIfrFlares(t) {
   if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { drawIfrFlaresGl(t, low); return; } /* ctx IS the stand-in (glCtx) */
   ctx.strokeStyle = COL.tifr;
   for (const c of t.ifrFlares) {
-    const f = Math.max(0, c.left / c.life), ends = ifrDrawEnds(c);
+    const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c);
     for (let g = low ? IFR_GLOW.length - 1 : 0; g < IFR_GLOW.length; g++) {
       ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
       for (let k = 0; k < IFR_GLOW_BANDS; k++) {
