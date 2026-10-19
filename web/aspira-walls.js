@@ -11,7 +11,7 @@ function segPieces(x, y, segs, sides, rot, base, gap, off = 0) {
   const k = shieldPulse(), out = [];
   segs.forEach((on, i) => {
     if (!on) return;
-    const sp = off ? shieldSpoke(x, y, i, sides, rot, base, gap, k) : null; // an enemy's outer chip: a SPOKE (aspira-enemies.js)
+    const sp = off ? shieldSpoke(x, y, i, sides, rot, base, gap, k, segs) : null; // an enemy's outer chip: a SPOKE (aspira-enemies.js)
     if (sp) { out.push({ a: [sp[0], sp[1]], b: [sp[2], sp[3]], r: ringOf(i, sides, off).r }); return; }
     const { r: ring, pos } = ringOf(i, sides, off), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
     const a0 = rot + s * Math.PI * 2 / sides, a1 = rot + (s + 1) * Math.PI * 2 / sides;

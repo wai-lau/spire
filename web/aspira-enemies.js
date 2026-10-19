@@ -259,11 +259,16 @@ const SHIELD_LAST_W = 2;
 // (base - SHIELD_OUT) out to the last layer's polygon (base + gap) - [x0, y0, x1, y1], or null for the last layer itself.
 // They START INSIDE the die (SPOKE_IN of its size) and END SPOKE_GAP u short of the polygon (owner, 2026-10-18: "the shield spokes
 // should start inside the shape and end before the outer outline")
+// The end is measured to the polygon's EDGE at the spoke's angle, not its corner radius (owner, 2026-10-18: "inner spokes still
+// protruding" - a spoke between corners ran out past the edge): the last layer is a regular m-gon (shieldPoly), m = its live chips + 2
 const SPOKE_IN = 0.5, SPOKE_GAP = 6;
-function shieldSpoke(x, y, i, sides, rot, base, gap, k) {
+function shieldSpoke(x, y, i, sides, rot, base, gap, k, segs) {
   const { r: ring, pos } = ringOf(i, sides, SHIELD_IN_OFF);
   if (ring < 2) return null;
-  const a = rot + (pos + 0.5 + (ring - 2) * 0.5) / (sides * ring) * Math.PI * 2, r0 = Math.max(0, base - SHIELD_OUT) * SPOKE_IN, r1 = Math.max(r0, (base + gap) * k - SPOKE_GAP);
+  const a = rot + (pos + 0.5 + (ring - 2) * 0.5) / (sides * ring) * Math.PI * 2, r0 = Math.max(0, base - SHIELD_OUT) * SPOKE_IN;
+  let live = 0; for (let j = 0; j < sides - SHIELD_IN_OFF; j++) if (segs[j]) live++;
+  const m = Math.max(3, live + SHIELD_IN_OFF), w = Math.PI * 2 / m, t = (((a - rot) % w) + w) % w - w / 2;
+  const R = (base + gap) * k * (live ? Math.cos(Math.PI / m) / Math.cos(t) : 1), r1 = Math.max(r0, R - SPOKE_GAP);
   return [x + Math.cos(a) * r0, y + Math.sin(a) * r0, x + Math.cos(a) * r1, y + Math.sin(a) * r1];
 }
 function shieldPoly(x, y, r, k, n, rot) {
@@ -276,7 +281,7 @@ const SHIELD_RING_FADE = 0.7, SHIELD_RING_MIN = 0.2;
 function drawSegs(x, y, segs, sides, rot, base, gap, flashes, lastRing) {
   const k = shieldPulse();
   const side = i => {
-    if (lastRing) { const sp = shieldSpoke(x, y, i, sides, rot, base, gap, k); if (sp) { ctx.moveTo(sp[0], sp[1]); ctx.lineTo(sp[2], sp[3]); return; } }
+    if (lastRing) { const sp = shieldSpoke(x, y, i, sides, rot, base, gap, k, segs); if (sp) { ctx.moveTo(sp[0], sp[1]); ctx.lineTo(sp[2], sp[3]); return; } }
     const { r: ring, pos } = ringOf(i, sides, lastRing ? SHIELD_IN_OFF : 0), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
     const a0 = rot + s * Math.PI * 2 / sides, a1 = rot + (s + 1) * Math.PI * 2 / sides;
     const x0 = x + Math.cos(a0) * r, y0 = y + Math.sin(a0) * r, x1 = x + Math.cos(a1) * r, y1 = y + Math.sin(a1) * r;
