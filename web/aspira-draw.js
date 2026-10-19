@@ -403,7 +403,7 @@ function drawSceneTop() {
   drawTethers(); drawAcd(); drawGrv(); drawCar(); drawIfr(); skyKeep(() => drawIfr(true)); skyKeep(() => drawCar(true)); drawAims(); drawFx("shots"); // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
   drawCoreFx(); if (G.core) drawTimeStop(G.core); /* (3D's Relay hexagons: drawRelayHex3d, on the overlay before the towers) */ // the core's struts and beams, under the towers (aspira-core.js); 3D: Temporal Drive's field ON the floor
   // in 3D the towers, the core and the enemies are drawn FLAT over the bell instead (warpEntities, aspira-warp.js)
-  drawLeash(); // the movement indicator turns over with the sky too (owner, 2026-10-11)
+  skyKeep(drawLeash); // the movement indicator keeps its TOWER'S colour on a boss sky (owner, 2026-10-19: "should not be inverted in color"; it turned over with the sky, owner 2026-10-11)
   drawSlotFlash(); drawDrips(); drawCoins(); skyKeep(drawUpPlus); /* (aspira-towers.js) - the upgrade chevron and its hex keep the TOWER'S colour on a boss sky (owner, 2026-10-16: "Tower upgrade indicators should retain color on inversion") */ if (typeof drawThreat === "function") skyKeep(drawThreat); // (drawThreat: the nearest danger's ring and spoke, aspira-ui.js) a corner slot that just opened (aspira-waves.js); the credits flying home (aspira-floats.js)
 }
 // the whole palette inverted while fn draws (invertColor keeps alpha); the
