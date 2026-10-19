@@ -16,7 +16,7 @@ const SOL_RAYS = ["A ray", "Two rays", "Three rays", "Four rays", "Five rays", "
 const SOL_REFRACT = ["refracting on to one more enemy", "refracting on to three more enemies", "refracting on to six more enemies", "refracting on to ten more enemies", "refracting on to thirteen more enemies", "refracting through every enemy ahead"];
 const ACD_JETS = ["Two", "Three", "Four", "Six", "Seven", "Eight"]; // acidic terms, never heat (owner)
 const IFR_BALLS = ["", "a ball", "two balls", "three balls", "", "", "six balls"]; // by SLOT count (IFR_SLOTS: 1 2 3, capstone 6)
-const IFR_PELL = ["", "", "", "", "", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]; // by PELLET count (IFR_PELLETS 5..10, capstone 12)
+const IFR_PELL = ["", "", "", "", "", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty", "twenty-one", "twenty-two", "twenty-three", "twenty-four"]; // by PELLET count (IFR_PELLETS 6..21, capstone 24)
 const DESCRIBE = {
   // "Arcs fork on hit, each jump carrying half the hit." -> Conductivity: chain once and / into
   // three / twin; Voltage: most of .. all of (its harder hit is a stat row); Capacitance: the charge sentence (owner's words)
