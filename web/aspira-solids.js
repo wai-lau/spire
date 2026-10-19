@@ -59,7 +59,7 @@ function solidGeom(e) {
   const p = warp.p, P = warpProject(e.x, e.y), k = cam.k * P.s;
   // FAINTER FARTHER from the camera (owner, 2026-10-09: "enemy opacity should also be relative to their distance to camera"):
   // its perspective size against the core's, squared, never under SOLID_FAR_MIN
-  const fa = Math.max(SOLID_FAR_MIN, Math.min(1, P.s / p.z) ** 2);
+  const fa = Math.max(SOLID_FAR_MIN, Math.min(1, P.s / p.z) ** 2) * enemyVis(e); // x its off-screen fade (enemyVis, aspira-enemies.js)
   // it ROLLS about its direction of travel (owner: "rotate about the axis of movement, proportional to move
   // speed"): the angle is the distance it has come over its size, so a fast one spins fast and a frozen one stops.
   // Its own resting pose (e.rot about z, a fixed lean about x) varies the dice
@@ -169,7 +169,7 @@ function warpFlatDie(e) {
   const P = warpProject(e.x, e.y), r = solidSize(e) * cam.k * P.s;
   if (!(r < SOLID_LOD_PX) && !farFx(e)) return false; // (or out in the far ring - farFx, aspira-quality.js)
   if (warpBand && warpBand.lo !== 0) return true; // only the pass above the floor draws it
-  const d = ENEMIES[e.type], n = d.sides, col = COL[d.color], fa = warpFade * Math.max(SOLID_FAR_MIN, Math.min(1, P.s / warp.p.z) ** 2);
+  const d = ENEMIES[e.type], n = d.sides, col = COL[d.color], fa = warpFade * Math.max(SOLID_FAR_MIN, Math.min(1, P.s / warp.p.z) ** 2) * enemyVis(e);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath();
   for (let i = 0; i < n; i++) { const a = (e.rot || 0) + i * 6.283 / n; if (i) ctx.lineTo(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); else ctx.moveTo(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); }
   ctx.closePath(); ctx.fillStyle = blendFill([[rgbOf(col), 0.35 * fa], [rgbOf(COL.tfrz), 0.35 * fa * SOLID_FROZEN_A * frostK(e)]]); ctx.fill();

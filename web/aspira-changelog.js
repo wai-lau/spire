@@ -22,6 +22,7 @@ const CHANGELOG = [
   ], u: [
     "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
     "Changes: Ifrit has its own heading.",
+    "Enemies: off screen they are drawn at 20%, fading in over a second as they come on screen.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
     "Ifrit: Hellfire flares last half as long and burn twice as hard.",

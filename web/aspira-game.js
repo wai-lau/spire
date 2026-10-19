@@ -380,7 +380,7 @@ const JIT_FADE_R = 400; // swarm wander is full beyond this radius, 0 at the cor
 let FACING = true;
 function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower's reach = off screen: aspira-positioning.js)
   for (const e of G.enemies) {
-    if (e.gone) continue; if (!e.seen && enemySeen(e)) e.seen = true; // (off-screen: untouchable - enemySeen, aspira-positioning.js)
+    if (e.gone) continue; if (!e.seen && enemySeen(e)) { e.seen = true; e.seenAt = performance.now(); } // (off-screen: untouchable - enemySeen, aspira-positioning.js)
     if (e.dead) {
       // a GHOST (owner): the dead keep drifting in at their plain pace,
       // untargetable and harmless, and are removed at the core with no life lost

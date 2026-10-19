@@ -51,7 +51,7 @@ function drawStarTrail(e, size) {
   for (const p of L) ctx.lineTo(p.x, p.y);
   for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i].x, R[i].y);
   ctx.closePath();
-  ctx.fillStyle = g; ctx.globalAlpha = TRAIL_ALPHA;
+  ctx.fillStyle = g; ctx.globalAlpha = TRAIL_ALPHA * enemyVis(e);
   ctx.fill(); // (no shadowBlur on a boss's tail: a blur the size of the boss over its whole trail, six Devils at once, was
   // most of a boss frame - owner, 2026-10-11: "greatly improve boss perf, specifically for the devil boss")
   ctx.globalAlpha = 1;
@@ -67,6 +67,10 @@ const frostK = e => (e.slowT > 0 ? Math.min(1, Math.max(0, (e.slowF || 0) / FROS
 // have a min size of 5%, bosses min size of 10%"; were 45% and 0%). solidSize (aspira-solids.js) too
 const SHRINK_MIN = 0.05, SHRINK_MIN_BOSS = 0.1;
 const hpShrink = (e, f) => { const m = e.arcana ? SHRINK_MIN_BOSS : SHRINK_MIN; return m + (1 - m) * f; };
+// OFF SCREEN = FAINT (owner, 2026-10-19: "enemies off screen should have their opacity reduced by 80%, and fade in over 1s as they enter
+// the screen"): ENEMY_OFF_A until e.seen latches (enemySeen), then up to full over ENEMY_FADE_S of real time (e.seenAt, stepEnemies - the same second at any game speed)
+const ENEMY_OFF_A = 0.2, ENEMY_FADE_S = 1;
+const enemyVis = e => !e.seen ? ENEMY_OFF_A : e.seenAt == null ? 1 : Math.min(1, ENEMY_OFF_A + (1 - ENEMY_OFF_A) * (performance.now() - e.seenAt) / (1000 * ENEMY_FADE_S));
 function drawEnemy(e, solid) {
   // damage shows as both size and opacity: full HP = full size, solid; near death small (hpShrink), faint
   // a ghost (dead enemy) is INVISIBLE: it only carries the beams that follow it
@@ -78,7 +82,7 @@ function drawEnemy(e, solid) {
   // outlines brighten as the enemy closes on the core (faint beyond the rim,
   // full at the core), still dimmed by lost HP
   const near = 1 - Math.min(1, Math.max(0, (Math.hypot(e.x - CX, e.y - CY) - CORE_R) / (RIM_R - CORE_R)));
-  ctx.globalAlpha = (0.1 + 0.9 * near) * (0.7 + 0.3 * f);
+  ctx.globalAlpha = (0.1 + 0.9 * near) * (0.7 + 0.3 * f) * enemyVis(e);
   // armor = a thick outline
   // Permafrost (a slow that never ends) draws the freeze outline thicker (owner)
   const perma = e.slowT === Infinity;
