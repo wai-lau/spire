@@ -152,7 +152,7 @@ function warpMesh() {
 const warpGridRgb = (key = "grid") => (String(COL[key] || COL.green).match(/[\d.]+/g) || [0, 255, 0]).slice(0, 3).map(n => n / 255);
 // this frame's bell, centred on the core's canvas spot
 function warpParams() {
-  let wt; const f = warpScreen().h / 2 / Math.tan(WARP.fov / 2), D = WARP.depth * cam.k, c = Math.cos(wt = warpTilt()), s = Math.sin(wt);
+  let wt; const sw = warpScreen(), f = (BOX_WIDE ? sw.w * WIDE_FOCAL_K : sw.h) / 2 / Math.tan(WARP.fov / 2) /* (WIDE_FOCAL_K, aspira-positioning.js) */, D = WARP.depth * cam.k, c = Math.cos(wt = warpTilt()), s = Math.sin(wt);
   const oy = -WARP.anchor * WARP.zoom * f * s * D / (f + c * D); // the bell's foot sits this far below the tip on screen
   return { core: [cam.ox + CX * cam.k, cam.oy + CY * cam.k], D, L: R0 * cam.k, T: WARP_TOWERS * cam.k, hc: WARP.head, e: WARP.shoulder, P: WARP.pow, c, s, f, k: cam.k, z: WARP.zoom, oy };
 }

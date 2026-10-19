@@ -225,6 +225,10 @@ function tiltCheck() { // wide only, from warpTilt (a frame: warpParams)
   if (key === tiltSolved || (tiltSolved !== "" && now - tiltSeenAt < TILT_SETTLE_MS)) return;
   fitTiltWide(key);
 }
+// LANDSCAPE'S PERSPECTIVE (owner, 2026-10-19: "when rotated the towers and enemies should stay the same size", with the floor area kept
+// equal): the focal length from the screen's LONG side x WIDE_FOCAL_K, so a tower's height on a turned phone matches portrait's (60u tall:
+// 38.8 px both, 844x390 vs 390x844; 1280x800 39.8) while fitTiltWide keeps the area (tilt ~0.565). From the short side it drew 16% shorter
+const WIDE_FOCAL_K = 0.63;
 function warpTilt() { // every reader of the tilt
   if (BOX_WIDE) tiltCheck();
   return BOX_WIDE ? tiltWide : WARP.tilt;
