@@ -395,8 +395,14 @@ check("slots: landscape is portrait turned +90 degrees; switching back restores 
 check("a built tower moves with its slot when the box switches", () => {
   const e = boot({}, { w: 390, h: 844 });
   const r = e.run(`(() => { G.money = 1e6; ui.build = "arc"; const c = CELLS[0]; placeTower({ x: c.x, y: c.y }); const t = G.towers[0];
-    setPlayBox(true); return Math.hypot(t.x - CELLS[t.cell].x, t.y - CELLS[t.cell].y); })()`);
-  if (r > 1e-6) return "tower left " + r + "u from its turned slot";
+    t.x = c.x + 5; t.y = c.y + 3; t.goal = { x: c.x + 4, y: c.y - 6 };
+    const d = (o, k) => [o.x - CELLS[t.cell].x, o.y - CELLS[t.cell].y];
+    const err = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    setPlayBox(true); const w = [d(t), d(t.goal)];
+    const wideT = err(w[0], [-3, 5]), wideG = err(w[1], [6, 4]);
+    setPlayBox(false); const p = [d(t), d(t.goal)];
+    return { wideT, wideG, backT: err(p[0], [5, 3]), backG: err(p[1], [4, -6]) }; })()`);
+  for (const k in r) if (!(r[k] < 1e-6)) return k + " off by " + r[k];
 });
 
 const bad = results.filter(r => r[1] !== "ok");
