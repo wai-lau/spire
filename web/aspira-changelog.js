@@ -15,6 +15,7 @@ const CHANGELOG = [
     "Ifrit: strong against swarms and shields, weak to fast enemies (they run through the fire before it catches).",
     "Ifrit: Meteor buys more fireballs, faster; Hellfire longer, hotter flares (to the board's edges at the top); Firaga a bigger blast and more pellets (which burst too at the top).",
   ], ne: [], u: [
+    "Build cards: all four enemy types always show; a yellow dash where the tower is neither good nor bad.",
     "Wave list: a table - the HP in its own column, then the type.",
     "Towers: the seven colours are spaced evenly for the eye - Arc is yellow now, Ifrit orange.",
     "Build: seven cards, the last one centred; the Carrier and Gravity cards are easier to tell apart.",

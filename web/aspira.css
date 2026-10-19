@@ -532,7 +532,7 @@
 /* the ENEMY colours, pinned at the root: a tower's card redefines --green-hsl as its own colour, which turned fast's icon
    (green) the tower's colour in the build chooser (owner, 2026-10-16: "the enemies need to be colored correctly") */
 #asp { --asp-e-white-hsl: var(--white-hsl); --asp-e-green-hsl: var(--green-hsl); --asp-e-cyan-hsl: var(--cyan-hsl); --asp-e-pink-hsl: var(--pink-hsl); --asp-e-orange-hsl: var(--orange-hsl); }
-#asp { --asp-blue-hsl: 212 91% 55%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 278 85% 43%; --asp-violet-ink-hsl: 270 99% 83%; --asp-blue-ink-hsl: 213 100% 61%; --asp-solar-hsl: 339 91% 77%; --asp-arc-hsl: 53 75% 67%; --asp-frz-hsl: 184 95% 48%; --asp-acd-hsl: 140 61% 65%; --asp-ifr-hsl: 23 100% 65%; --asp-yellow-hsl: 54 100% 62%; --asp-threat-hsl: 0 100% 55%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
+#asp { --asp-mark-mid-hsl: 55 100% 58% /* the build card's yellow "-" (neither good nor bad, 2026-10-19) */; --asp-blue-hsl: 212 91% 55%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 278 85% 43%; --asp-violet-ink-hsl: 270 99% 83%; --asp-blue-ink-hsl: 213 100% 61%; --asp-solar-hsl: 339 91% 77%; --asp-arc-hsl: 53 75% 67%; --asp-frz-hsl: 184 95% 48%; --asp-acd-hsl: 140 61% 65%; --asp-ifr-hsl: 23 100% 65%; --asp-yellow-hsl: 54 100% 62%; --asp-threat-hsl: 0 100% 55%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
 .asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
 .asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
@@ -634,7 +634,8 @@
 .asp-goodvs .asp-vs { display: inline-flex; align-items: center; gap: var(--space-0-5); white-space: nowrap; } /* an enemy's symbol and its marks (aspira-chooser.js vsMarks) */
 .asp-goodvs .asp-vs-y { color: hsl(var(--cat-social-h) var(--cat-social-s) var(--cat-social-l)); font-weight: var(--fw-bold); } /* the SAME green and orange on every card (owner, 2026-10-16: "always show the checks and x in the same color") - not --asp-good/bad, which ARC and ACD retint */
 .asp-goodvs .asp-vs-n { color: hsl(var(--orange-glow-hsl)); font-weight: var(--fw-bold); }
-.asp-goodvs .asp-vs-y, .asp-goodvs .asp-vs-n { -webkit-text-stroke: 0.7px currentcolor; paint-order: stroke fill; } /* BOLD marks, their own colours (owner, 2026-10-16: "dont change the x and check color here, just make it bold") - the glyphs have no heavy weight in the font */
+.asp-goodvs .asp-vs-m { color: hsl(var(--asp-mark-mid-hsl)); font-weight: var(--fw-bold); } /* neither good nor bad (owner, 2026-10-19: "if neither good or bad, put a yellow -")*/
+.asp-goodvs .asp-vs-y, .asp-goodvs .asp-vs-n, .asp-goodvs .asp-vs-m { -webkit-text-stroke: 0.7px currentcolor; paint-order: stroke fill; } /* BOLD marks, their own colours (owner, 2026-10-16: "dont change the x and check color here, just make it bold") - the glyphs have no heavy weight in the font */
 
 /* the BUILD cards are COMPACT so all four fit above the spend bar on a real
    phone (owner: they overlapped it in iOS Safari) - tighter padding, gaps and
