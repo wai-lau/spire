@@ -526,7 +526,7 @@
 /* the ENEMY colours, pinned at the root: a tower's card redefines --green-hsl as its own colour, which turned fast's icon
    (green) the tower's colour in the build chooser (owner, 2026-10-16: "the enemies need to be colored correctly") */
 #asp { --asp-e-white-hsl: var(--white-hsl); --asp-e-green-hsl: var(--green-hsl); --asp-e-cyan-hsl: var(--cyan-hsl); --asp-e-pink-hsl: var(--pink-hsl); --asp-e-orange-hsl: var(--orange-hsl); }
-#asp { --asp-blue-hsl: 212 91% 55%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 278 85% 43%; --asp-violet-ink-hsl: 264 89% 80%; --asp-blue-ink-hsl: 218 100% 75%; --asp-solar-hsl: 339 91% 77%; --asp-arc-hsl: 53 75% 67%; --asp-frz-hsl: 184 95% 48%; --asp-acd-hsl: 140 61% 65%; --asp-ifr-hsl: 23 100% 65%; --asp-yellow-hsl: 54 100% 62%; --asp-threat-hsl: 0 100% 55%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
+#asp { --asp-blue-hsl: 212 91% 55%; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 278 85% 43%; --asp-violet-ink-hsl: 270 99% 83%; --asp-blue-ink-hsl: 213 100% 61%; --asp-solar-hsl: 339 91% 77%; --asp-arc-hsl: 53 75% 67%; --asp-frz-hsl: 184 95% 48%; --asp-acd-hsl: 140 61% 65%; --asp-ifr-hsl: 23 100% 65%; --asp-yellow-hsl: 54 100% 62%; --asp-threat-hsl: 0 100% 55%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
 .asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
 .asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
@@ -564,7 +564,7 @@
 
 /* the BUILD cards each wear their own tower's colour (aspira-chooser.js) - GRV and ATC in a PALE ink of it (owner, 2026-10-16: "use a
    pale font if the card is dark", "maintain the same level of visibility"): lightness lifted to SOL's contrast on the dark card,
-   9.4:1 (GRV 46% -> 78% was 2.9:1, ATC 58% -> 74% was 5.5:1; ARC/FRZ/ACD 12:1) */
+   9.4:1 (GRV 46% -> 78% was 2.9:1, ATC 58% -> 74% was 5.5:1; ARC/FRZ/ACD 12:1) */ /* 2026-10-19 (owner: CRR and GRV cards "visually too similar"): the two inks were 18.5 apart (CIEDE2000); now GRV pale violet 270 99% 83% on its tower hue (10:1), CRR a deeper blue 213 100% 61% (6:1) - 27 apart */
 .asp-card[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
 .asp-card[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
 .asp-card[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
@@ -634,6 +634,8 @@
    phone (owner: they overlapped it in iOS Safari) - tighter padding, gaps and
    lines, the blurb a size smaller */
 .asp-cards.asp-build-cards { gap: var(--space-2); }
+/* an ODD last build card sits centred under the two columns, at a column's width (owner, 2026-10-19: "center the last tower" - seven cards since IFR) */
+.asp-build-cards > .asp-card:last-child:nth-child(odd) { grid-column: 1 / -1; justify-self: center; width: var(--card-w, 380px); }
 
 #asp .asp-build-cards button.asp-card { gap: var(--space-1); padding: var(--space-2-5) var(--space-3); line-height: var(--lh-tight); }
 
