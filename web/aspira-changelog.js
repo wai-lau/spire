@@ -14,7 +14,7 @@ const CHANGELOG = [
     "Resume: a saved game loads with the board empty, every tower back on its build slot and the Challenge button up.",
     "Arc: its lightning draws a little brighter.",
     "Interest pop-up: it reads \"interest: +21c (+3.0%)\".",
-    "Auto-wait: one slow-down only - an eighth of the speed when an enemy is 1 s from the core (the steps at 4 s and 1.5 s are gone; the threat rings stay).",
+    "Auto-wait: one slow-down only - an eighth of the speed when an enemy is half a second from the core (the steps at 4 s and 1.5 s are gone; the threat rings stay).",
     "Fixed: the game froze about three minutes into play (6.1.1 to 6.1.7).",
     "Shields: an enemy's outer shield spokes start at its shield line and run inward to the die.",
     "Arc: Voltage and Capacitance hit far harder from the third purchase.",

@@ -111,7 +111,7 @@ KINDS.forEach((k, i) => {
 // drops to a share of the chosen speed (AUTO_WAIT_K) whenever an enemy is within AUTO_WAIT3_S game-seconds of
 // reaching the core at its current speed (owner: time, not distance), and goes
 // back to the chosen speed once none is. Remembered in localStorage.
-const AUTO_WAIT3_S = 1; // ONE stage (owner, 2026-10-19: "remove the outer tier also, just keep the innermost tier of slow (keep all threat indicators)" - the x0.5 at 4 s and the x0.25 at 1.5 s are gone); 2026-10-18: "make the first and second tier of auto-wait happen later" (was 6 / 2); 2026-10-11: "start at 6s, 1/2 at 2s and 1/4 at 1s" (was 8 / 3)
+const AUTO_WAIT3_S = 1, AUTO_SLOW_S = 0.5; // AUTO_SLOW_S: the slow itself, closer still (owner, 2026-10-19: "make auto-wait slow happen when even closer only"; was AUTO_WAIT3_S, 1 s) - AUTO_WAIT3_S stays the threat ring's line (aspira-threat.js). ONE stage (owner, 2026-10-19: "remove the outer tier also, just keep the innermost tier of slow (keep all threat indicators)" - the x0.5 at 4 s and the x0.25 at 1.5 s are gone); 2026-10-18: "make the first and second tier of auto-wait happen later" (was 6 / 2); 2026-10-11: "start at 6s, 1/2 at 2s and 1/4 at 1s" (was 8 / 3)
 // each stage a SHARE of the chosen speed, not a fixed one (owner, 2026-10-12: "make auto-wait slowness be a percentage of the
 // chosen speed"): half of it from 6s out, a quarter from 2s, an eighth from 1s (was 1x / 1/2x / 1/4x, capped by the speed)
 const AUTO_WAIT_K = [0.5, 0.25, 0.125]; // (only [2] is used since 2026-10-19: the outer stages are gone)
@@ -134,7 +134,7 @@ const autoWaiting = () => {
   awAt = now;
   let eta = Infinity;
   for (const e of G.enemies) if (!e.dead) eta = Math.min(eta, etaToCore(e));
-  const stages = [[AUTO_WAIT3_S, AUTO_WAIT_K[2] * ui.speed]];
+  const stages = [[AUTO_SLOW_S, AUTO_WAIT_K[2] * ui.speed]];
   const hold = (lvl, line) => awLevel && awLevel <= lvl && eta <= line * AUTO_RELEASE; // already this slow or slower, still near
   const hit = stages.find(([line, lvl]) => eta <= line || hold(lvl, line));
   const want = hit ? hit[1] : 0;
