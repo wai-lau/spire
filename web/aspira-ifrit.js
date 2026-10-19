@@ -12,7 +12,7 @@
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const IFR_SLOTS = [1, 2, 2, 3, 3, 3]; // Meteor: charge slots on the hex corners - 1, 2 (opposite), 3 (a triangle); VI all 6 (owner: "skip 4 and 5")
-const IFR_CHARGE_S = [2.0, 1.6, 1.3, 1.0, 0.8, 0.6]; // Meteor: s to fill one ball (VI 0.1: "near the launch rate")
+const IFR_CHARGE_S = [1.0, 0.85, 0.7, 0.55, 0.45, 0.35] /* was [2.0, 1.6, 1.3, 1.0, 0.8, 0.6] (solo.mjs 2026-10-19, ball 360: a lone L1 8/6/2 -> 0/2/0 - one ball a second catches the wave-4 swarm a ball every two let through) */; // Meteor: s to fill one ball (VI 0.1: "near the launch rate")
 const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
 const IFR_ROUTE_K = [0.25, 0.5, 1, 2, 4, 8]; // Meteor: the en-route hit, x the blast hit ("a lot to make up for the faster travel speed"; VI 16)
 const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Hellfire: a flare beam's length from its centre, u (VI: to the play-box edges)
