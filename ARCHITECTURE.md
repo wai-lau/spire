@@ -95,7 +95,7 @@ and a slower speed holds 1.5 s real before speeding up.
 
 ### 4.1 The six kinds
 
-| | ARC | FRZ | SOL | ACD | GRV | ATC |
+| | ARC | FRZ | SOL | ACD | GRV | CRR |
 |---|---|---|---|---|---|---|
 | design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools | a nova that leaves a black hole (§4.6b) | a carrier launching interceptors (§4.6c) |
 | colour | orange | cyan | pink | chatsubo green | violet | electric blue |
@@ -105,7 +105,7 @@ and a slower speed holds 1.5 s real before speeding up.
 | weak to | armor (grounds the arc) | shields (cannot be slowed) | swarms (one lock) | fast and shields (cold jets) | fast and shields (the slow skips them; pellets pop few) | swarms and armor (one target a volley; small bolts) |
 | leash (`MOVE_BASE`) | medium (200) | long (240) | short (74) | longest (280) | medium (200) | long (240) |
 
-Ids `arc frz sol acd grv car` (`KINDS`; `car` is shown as ATC); range x `RANGE_BONUS`. The legacy path/form tree
+Ids `arc frz sol acd grv car` (`KINDS`; `car` is shown as CRR); range x `RANGE_BONUS`. The legacy path/form tree
 (`aspira-upgrades.js`) is dormant: every kind `hasSkills`.
 
 ### 4.2 The chart (pillar 4)
@@ -210,12 +210,12 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 
 ### 4.6 The counter matrix (pillar 6)
 
-| enemy \ tower | ARC | FRZ | SOL | ACD | GRV | ATC | the lever |
+| enemy \ tower | ARC | FRZ | SOL | ACD | GRV | CRR | the lever |
 |---|---|---|---|---|---|---|---|
 | **swarm** | MAIN | help | weak (one lock) | help | MAIN | weak (one target a volley) | branching hits; bursts; a hole that feeds on a crowd |
 | **fast** | help | MAIN | help | weak (cold jets) | weak (no time to feed) | MAIN | the chill bite doubles on fast; interceptors outrun them |
 | **armor** | weak (grounds the arc) | help | MAIN | help | MAIN | weak (small bolts) | strip below zero = a flat bonus; armor scales with HP |
-| **shield** | help | weak (no slow) | help | MAIN | weak (the slow skips them) | MAIN | pops a hit: ACD one a tick, SOL by Focus, ATC one a bolt |
+| **shield** | help | weak (no slow) | help | MAIN | weak (the slow skips them) | MAIN | pops a hit: ACD one a tick, SOL by Focus, CRR one a bolt |
 
 The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds (swarm `[arc, grv]`,
 fast `[frz, car]`, armor `[sol, grv]`, shield `[acd, car]`) and a `help` list of two (swarm `[frz, acd]`, fast `[arc, sol]`,
@@ -268,7 +268,7 @@ GRV damage number flies into its hole (`grvFloat`); the aura opens only after th
 | **Supernova** | a bigger, harder nova - the swarm answer | **Hypernova**: the nova takes half the positive armor at once, and a hole starts heavy |
 | **Radiation** | more pellets per mass, harder pellets | **Hawking**: a hole that runs out of mass ends in a last burst of pellets (not one a merge swallowed) |
 
-### 4.6c ATC (id `car`), the carrier (`web/aspira-car.js`)
+### 4.6c CRR (id `car`), the carrier (`web/aspira-car.js`)
 
 The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`): **strong vs fast + shield, weak to swarm + armor**. It never
 fires itself; its **interceptors** do. The constants (wing sizes, speeds, volley counts, reloads) and every superseded number
@@ -276,19 +276,19 @@ are in ARCHAEOLOGY §4.6c.
 
 | Part | Rule |
 |---|---|
-| launch | the tower's range only LAUNCHES: an enemy inside it sends the wing out, one interceptor at a time on `CAR_GAP` |
-| target | each interceptor then picks its own from everything within the interceptors' reach (`CAR_LEASH` x the range, about 960), in the tower's targeting order. `carTarget` sends enough: the first enemy whose HP (and shield) outweighs the damage already committed to it by interceptors on it. The carrier itself moves inside a leash of 240 |
-| hold | with any Hangar tier, reloaded interceptors with nothing to hit are STORED in orbit round the carrier (a quarter, half, three quarters, all of the wing by tier; `CAR_HOLD_FRAC`), at a jittered distance and size, carried with the carrier as if fixed to it. They still launch one by one |
-| flight | a heading with a capped turn rate, steered onto an orbit circle round the target (`CAR_ORBIT`, each interceptor's radius breathing by `CAR_ORBIT_JIT`); it steers round the core and the towers (`carAvoid`) and leads nothing. On arrival it makes a strafing pass (the ram) |
-| volleys | `CAR_AMMO` volleys a sortie, each `CAR_BOLTS` bolts fired `CAR_BOLT_PAIR` at a time, side by side, as a steady stream, at `CAR_VOLLEY_K` x the hit between them. Armor cuts each small bolt (ATC's armor weakness). All the bolts of a volley go at the ONE enemy it began on, even if it dies; a bolt whose target is gone flies on only `CAR_BOLT_ON` s, hitting the first enemy it touches or nothing. Every bolt slows (one slow a tower), and what an interceptor circles is held back the whole time (the pin, `CAR_PIN`) |
-| after a kill | the interceptor hops to the nearest enemy within `CAR_HOP` that no wingmate is on (`carHop`), else the nearest within it, else it flies home. Out of volleys it goes home and reloads |
-| numbers | one damage number per `CAR_NUM_HITS` hits per interceptor, their sum (`carNum`) |
+| launch | the tower's range only LAUNCHES: an enemy inside it sends the wing out, one interceptor at a time on `CRR_GAP` |
+| target | each interceptor then picks its own from everything within the interceptors' reach (`CRR_LEASH` x the range, about 960), in the tower's targeting order. `carTarget` sends enough: the first enemy whose HP (and shield) outweighs the damage already committed to it by interceptors on it. The carrier itself moves inside a leash of 240 |
+| hold | with any Hangar tier, reloaded interceptors with nothing to hit are STORED in orbit round the carrier (a quarter, half, three quarters, all of the wing by tier; `CRR_HOLD_FRAC`), at a jittered distance and size, carried with the carrier as if fixed to it. They still launch one by one |
+| flight | a heading with a capped turn rate, steered onto an orbit circle round the target (`CRR_ORBIT`, each interceptor's radius breathing by `CRR_ORBIT_JIT`); it steers round the core and the towers (`carAvoid`) and leads nothing. On arrival it makes a strafing pass (the ram) |
+| volleys | `CRR_AMMO` volleys a sortie, each `CRR_BOLTS` bolts fired `CRR_BOLT_PAIR` at a time, side by side, as a steady stream, at `CRR_VOLLEY_K` x the hit between them. Armor cuts each small bolt (ATC's armor weakness). All the bolts of a volley go at the ONE enemy it began on, even if it dies; a bolt whose target is gone flies on only `CRR_BOLT_ON` s, hitting the first enemy it touches or nothing. Every bolt slows (one slow a tower), and what an interceptor circles is held back the whole time (the pin, `CRR_PIN`) |
+| after a kill | the interceptor hops to the nearest enemy within `CRR_HOP` that no wingmate is on (`carHop`), else the nearest within it, else it flies home. Out of volleys it goes home and reloads |
+| numbers | one damage number per `CRR_NUM_HITS` hits per interceptor, their sum (`carNum`) |
 | look | hairline trails (`carTrails`); darts sized by Armament; drawn in `skyKeep` so a boss sky does not invert them. No new 3D primitives: darts are filled triangles, firing lines and pellets single strokes (the board's path context takes no gradient stroke, §11) |
 
 | Axis | Buys | Capstone (VI) |
 |---|---|---|
 | Hangar | WIDTH: more interceptors, more of them stored in orbit; **focus fire** (each other interceptor looping the same target adds a share to every shot on it); a share of the hit | Full Wing |
-| Launch | TEMPO: interceptor speed, a shorter reload, the strafing pass (`CAR_RAM`), the carrier's leash; a share of the hit | **Warp**: they teleport onto the target's circle and home |
+| Launch | TEMPO: interceptor speed, a shorter reload, the strafing pass (`CRR_RAM`), the carrier's leash; a share of the hit | **Warp**: they teleport onto the target's circle and home |
 | Armament | DEPTH: a far harder hit, more volleys a sortie | **Autopilot**: out of volleys, an interceptor bursts into pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
 
 The Orbital Relay triples the wing (`relayStats`).
@@ -297,12 +297,12 @@ The Orbital Relay triples the wing (`relayStats`).
 
 Owner, 2026-10-15: "scale all trios up and down for each winning group they are in for a factor of how much better/worse they
 are". Every trio is played to wave 120 by the smart saver (perfect play, both powers, a few seeds: `tribal.mjs`); a trio's score
-= 120 + lives left on a win, else the wave reached. A **designed death** (ARC+FRZ+ATC, SOL+ACD+ATC, ARC+ACD+GRV, FRZ+SOL+GRV:
+= 120 + lives left on a win, else the wave reached. A **designed death** (ARC+FRZ+CRR, SOL+ACD+CRR, ARC+ACD+GRV, FRZ+SOL+GRV:
 the trio has no answer to one enemy type, by the six-tower square) that DIES is neutral; one that wins counts like any other.
 A kind's factor = the geometric mean, over the trios it is in, of (mean score / trio score) (`triscale.py`), applied to
 `TOWERS[k].dmg` and squared to converge faster. **Every other trio is winnable; these four are the exception** (pillar 2).
 
-Round 3 shipped on 2026-10-16, after the ATC rework: `dmg` is now ACD 34.32, ATC 15, FRZ 16.68, SOL 61.54, GRV 24.38, ARC 24
+Round 3 shipped on 2026-10-16, after the ATC rework: `dmg` is now ACD 34.32, CRR 15, FRZ 16.68, SOL 61.54, GRV 24.38, ARC 24
 (`defs.js`). GRV was left alone in round 3 (x0.9 broke ARC+GRV and GRV+GRV on the Star) and so was ARC (its factor is about
 x0.99; 22.96 lost the Star with ARC+ARC). `triodiag.mjs` shows why a trio loses (per enemy type: lives lost and closest
 approach). The method scripts, the rounds and the numbers each moved from: ARCHAEOLOGY §4.6d; the tooling, §10.4.
@@ -587,7 +587,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 |---|---|
 | data and state | `defs` (geometry, tables, `towerStats`), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows) |
 | waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
-| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (ATC), `desc`, `capstone` (index 6 on every table), `chart`, `stats`, `sliders` (the card) |
+| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (CRR), `desc`, `capstone` (index 6 on every table), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
 | draw (3D) | `warp`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |

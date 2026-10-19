@@ -105,7 +105,7 @@ const SFX = {
   },
   frz:     () => tone({ f0: 900, f1: 480, dur: 0.18, vol: 0.1 }),
   // the GRV nova (2026-10-15): a deep thump that swells, a bright crack on top - a star going off
-  // CAR (2026-10-15): an interceptor launching - a short rising whine
+  // CRR (2026-10-15): an interceptor launching - a short rising whine
   car:     () => { tone({ type: "triangle", f0: 500, f1: 1400, dur: 0.09, vol: 0.05 }); },
   // an interceptor's SHOT (2026-10-16), once a shot's stream of bolts starts - a short falling zap
   carshot: () => tone({ type: "square", f0: 1800, f1: 900, dur: 0.04, vol: 0.03 }),

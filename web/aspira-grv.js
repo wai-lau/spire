@@ -64,7 +64,7 @@ function grvSkillStats(t, s, b) {
   // as many are open at once to merge with, and deals its pellets, burn and strip off the UNcompensated damage (hdmg) - the same holes
   // the late FIRE RATE comes from the DEEPEST axis and the nova's REACH from Void or Supernova (owner, 2026-10-18: "make sure each axis is
   // still equally powerful, move things between axes if necessary" - countermx N=1 had Supernova 0-17% leaked, Void 79-97%; Supernova alone
-  // held the rate and the reach. A rate moved to Void instead cost every SOL/ACD/CAR + GRV trio its late game)
+  // held the rate and the reach. A rate moved to Void instead cost every SOL/ACD/CRR + GRV trio its late game)
   const rm = GRV_RATE_MUL[Math.max(v, n, r)], rh = 1 + (rm - 1) / 2;
   s.dmg = b.dmg * rm / rh; s.hdmg = b.dmg; s.evapK = rh / rm; s.range = b.range * RANGE_BONUS; s.rate = b.rate * rh; s.targets = 1;
   s.auraR = GRV_AURA_R[v]; s.slow = GRV_SLOW[v]; s.stripMul = GRV_STRIP_MUL[v]; s.innerK = GRV_INNER_T[v]; s.horizon = v >= CAPSTONE_TIER;

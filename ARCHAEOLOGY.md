@@ -293,25 +293,25 @@ Counter matrix 61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14 b
 | Constant | Value |
 |---|---|
 | tower `dmg` / `rate` / `range` / leash (`MOVE_BASE`) | 15 / 4 / 160 (launch only; 130 until 5.1.32) / 240 |
-| wing, `CAR_HANGAR` (primes from 5) | 5, 7, 11, 13 [17] |
-| speed, `CAR_SPEED` | 1050, 1260, 1470, 1680 |
-| reload, `CAR_RELOAD` | .75, .55, .4, .275 s; launch gap `CAR_GAP` .15 s |
-| volleys a sortie, `CAR_AMMO` | 4, 5, 6, 7 |
-| bolts a volley / together / side gap | `CAR_BOLTS` 10 / `CAR_BOLT_PAIR` 2 / `CAR_BOLT_SIDE` 6 u; the volley hits `CAR_VOLLEY_K` 2 x |
-| hit spread | Armament `CAR_SHOT_MUL` 1, 2.6, 4.5, 7.5, 10, 12.5 [15]; Hangar and Launch each `CAR_SIDE_DMG` 1, 1.6, 2.4, 3.4, 4, 4.6 [5.1] |
-| focus fire, `CAR_FOCUS` | 0, .15, .3, .45 |
-| strafing pass, `CAR_RAM` | 0, 2, 4, 7 x base dmg x speed / 700; Warp `CAR_WARP_V` 2800 |
-| orbit | `CAR_ORBIT` 75 u at `CAR_ORBIT_V` 400, jitter `CAR_ORBIT_JIT` .2, turn radius `CAR_TURN_R` 50 |
-| interceptor reach | `CAR_LEASH` 7.4 x the range (about 960) |
-| hop | `CAR_HOP` 30 u |
-| hold | `CAR_HOLD_FRAC` 0, .25, .5, .75, 1 of the wing; `CAR_HOLD_R` 80 u +- 25%, size +- 15% |
-| bolts | speed `CAR_BOLT_V` 900, fade `CAR_BOLT_REACH` 390, flies on `CAR_BOLT_ON` .08 s past a dead target |
-| slow / numbers | `CAR_SLOW` .2 for .6 s, one a tower; the PIN `CAR_PIN` .3 on what an interceptor circles (held the whole time); one number a `CAR_NUM_HITS` 3 hits |
-| Autopilot | `CAR_BURST_N` 10 pellets, `CAR_BURST_K` 1.5, speed 340, reach 90 |
+| wing, `CRR_HANGAR` (primes from 5) | 5, 7, 11, 13 [17] |
+| speed, `CRR_SPEED` | 1050, 1260, 1470, 1680 |
+| reload, `CRR_RELOAD` | .75, .55, .4, .275 s; launch gap `CRR_GAP` .15 s |
+| volleys a sortie, `CRR_AMMO` | 4, 5, 6, 7 |
+| bolts a volley / together / side gap | `CRR_BOLTS` 10 / `CRR_BOLT_PAIR` 2 / `CRR_BOLT_SIDE` 6 u; the volley hits `CRR_VOLLEY_K` 2 x |
+| hit spread | Armament `CRR_SHOT_MUL` 1, 2.6, 4.5, 7.5, 10, 12.5 [15]; Hangar and Launch each `CRR_SIDE_DMG` 1, 1.6, 2.4, 3.4, 4, 4.6 [5.1] |
+| focus fire, `CRR_FOCUS` | 0, .15, .3, .45 |
+| strafing pass, `CRR_RAM` | 0, 2, 4, 7 x base dmg x speed / 700; Warp `CRR_WARP_V` 2800 |
+| orbit | `CRR_ORBIT` 75 u at `CRR_ORBIT_V` 400, jitter `CRR_ORBIT_JIT` .2, turn radius `CRR_TURN_R` 50 |
+| interceptor reach | `CRR_LEASH` 7.4 x the range (about 960) |
+| hop | `CRR_HOP` 30 u |
+| hold | `CRR_HOLD_FRAC` 0, .25, .5, .75, 1 of the wing; `CRR_HOLD_R` 80 u +- 25%, size +- 15% |
+| bolts | speed `CRR_BOLT_V` 900, fade `CRR_BOLT_REACH` 390, flies on `CRR_BOLT_ON` .08 s past a dead target |
+| slow / numbers | `CRR_SLOW` .2 for .6 s, one a tower; the PIN `CRR_PIN` .3 on what an interceptor circles (held the whole time); one number a `CRR_NUM_HITS` 3 hits |
+| Autopilot | `CRR_BURST_N` 10 pellets, `CRR_BURST_K` 1.5, speed 340, reach 90 |
 
 Superseded: the spec (2026-10-15) had reach 260 (then 460, 330, 240 and 130 as owner moved range and leash; the leash was 0, then
 130, then swapped to 240), interceptors that circled in a 30 u loop and each shot ammo 8 .. 16 small shots (three bolts a shot, then 4, 5 and 10 a volley with the volleys
-halved; ammo 12 .. 28 before that) at speed 600 .. 1080 (x1.75 with the 460 range), `CAR_GAP` .2 (then .11, .25), `CAR_LEASH` 3
+halved; ammo 12 .. 28 before that) at speed 600 .. 1080 (x1.75 with the 460 range), `CRR_GAP` .2 (then .11, .25), `CRR_LEASH` 3
 (then 4: the pursuit was never what bound), hop 40 (then 90, 20, 35), the hit 9 per shot (11.25, 15 with the trio scale), the
 hit spread steeper than ARC's because an interceptor spends ~40% of a sortie flying and reloading (a mid build on ARC's tables
 dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899). Solo and pairs (`solo.mjs`): a lone ATC lost 2 lives on wave 9 and the

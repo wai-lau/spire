@@ -23,14 +23,14 @@ const LEVERS = {
   breach: { kind: "sol", get: k => `SOL_BREACH_ARMOR[${k}]`, set: (k, v) => `SOL_BREACH_ARMOR[${k}] = ${v};`, min: 1 },
   corrosion: { kind: "acd", get: k => `ACD_CORROSION_DMG[${k}]`, set: (k, v) => `ACD_CORROSION_DMG[${k}] = ${v};`, min: 0.1 },
   spray: { kind: "acd", get: k => `ACD_SPRAY_MUL[${k}]`, set: (k, v) => `ACD_SPRAY_MUL[${k}] = ${v};`, min: 0.1 },
-  // GRV + CAR (2026-10-15): one lever an axis, each its own mechanic - the aura's reach, the nova's hit, the pellet rate;
+  // GRV + CRR (2026-10-15): one lever an axis, each its own mechanic - the aura's reach, the nova's hit, the pellet rate;
   // the carrier's Hangar is the owner's fixed primes, so its lever is the reload; Launch the interceptors' speed; Armament a shot's hit
   void: { kind: "grv", get: k => `GRV_AURA_R[${k}]`, set: (k, v) => `GRV_AURA_R[${k}] = ${v};`, min: 10 },
   supernova: { kind: "grv", get: k => `GRV_NOVA_MUL[${k}]`, set: (k, v) => `GRV_NOVA_MUL[${k}] = ${v};`, min: 0.1 },
   radiation: { kind: "grv", get: k => `GRV_PELLETS[${k}]`, set: (k, v) => `GRV_PELLETS[${k}] = ${v};`, min: 0.1 },
-  hangar: { kind: "car", get: k => `CAR_FOCUS[${k}]`, set: (k, v) => `CAR_FOCUS[${k}] = ${v};`, min: 0.01 },
-  launch: { kind: "car", get: k => `CAR_RAM[${k}]`, set: (k, v) => `CAR_RAM[${k}] = ${v};`, min: 0.1 },
-  armament: { kind: "car", get: k => `CAR_SHOT_MUL[${k}]`, set: (k, v) => `CAR_SHOT_MUL[${k}] = ${v};`, min: 0.1 },
+  hangar: { kind: "car", get: k => `CRR_FOCUS[${k}]`, set: (k, v) => `CRR_FOCUS[${k}] = ${v};`, min: 0.01 },
+  launch: { kind: "car", get: k => `CRR_RAM[${k}]`, set: (k, v) => `CRR_RAM[${k}] = ${v};`, min: 0.1 },
+  armament: { kind: "car", get: k => `CRR_SHOT_MUL[${k}]`, set: (k, v) => `CRR_SHOT_MUL[${k}] = ${v};`, min: 0.1 },
   contagion: { kind: "acd", get: k => `ACD_PUDDLE_HEAT[${k}]`, set: (k, v) => `ACD_PUDDLE_HEAT[${k}] = ${v};`, min: 0.01 },
 };
 const AXES = process.env.AXES ? process.env.AXES.split(",") : Object.keys(LEVERS).filter(a => !LEVERS[a].axis); // (alternate levers only when named)

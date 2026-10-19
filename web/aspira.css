@@ -530,7 +530,7 @@
 .asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
 .asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
 .asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
-.asp-sw.ltblue { color: hsl(var(--asp-ltblue-hsl)); } /* CAR's bolts and pellets (StarCraft light blue) */ /* CAR, the carrier (2026-10-15): electric blue */
+.asp-sw.ltblue { color: hsl(var(--asp-ltblue-hsl)); } /* CRR's bolts and pellets (StarCraft light blue) */ /* CRR, the carrier (2026-10-15): electric blue */
 .asp-sw.yellow { color: hsl(var(--asp-yellow-hsl)); }
 .asp-sw.threat { color: hsl(var(--asp-threat-hsl)); }
 .asp-sw.violetink { color: hsl(var(--asp-violet-ink-hsl)); } /* GRV's card text (and its damage numbers) */

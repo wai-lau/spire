@@ -19,7 +19,7 @@ export default async function task({ kind, axis, k, seed, hpx, patch = "" }) {
   g.run(`G.money = 1e12; G.started = true; G.wave = ${FROM - 1}; G.lives = 1e6;`);
   const t = g.place(kind, 0);
   if (axis && k) { t.skills = { [axis]: k }; t.lvl = lvlAt(k); }
-  ALL.filter(x => x !== kind).slice(0, 3).forEach((x, i) => g.place(x, [2, 3, 4][i])); // (GRV / CAR under test: ARC, FRZ, SOL help)
+  ALL.filter(x => x !== kind).slice(0, 3).forEach((x, i) => g.place(x, [2, 3, 4][i])); // (GRV / CRR under test: ARC, FRZ, SOL help)
   g.run(`let prev = "swarm"; for (let n = 1; n < ${FROM}; n++) { const w = wavePlan(n, prev); if (w.type !== "bonus") prev = w.type; } G.lastType = prev; G.nextIn = 0;`);
   let guard = 0, leaked = 0;
   const seen = new Set();

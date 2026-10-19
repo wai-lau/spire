@@ -46,7 +46,7 @@ const levelsFor = (t, add) => Object.values(add).reduce((a, b) => a + b, 0) +
 // AXIS BALANCE, every tower (owner, 2026-10-18: "do axis balance for all towers"): tiers III-VI of the weak axes x, the strong
 // trimmed (countermx N=1, 41-109, mean % leaked before -> after): ARC_VOLTAGE_DMG x5 (90 -> 71), ARC_CAPACITANCE frac x5 (91 -> 76),
 // FRZ_RIME_BITE x5 (70 -> 58), FRZ_MOON_BY x1.25 (57 -> 37), FRZ_BRITTLE V-VI x0.85 (Temp 31 -> 34), SOL_REFRACTION_DMG x2.5
-// (76 -> 60), ACD_PUDDLE_HEAT x3 (61 -> 51), CAR_TETHER_K x9 (90 -> 60), CAR_SIDE_DMG x1.4 (57 -> 49), CAR_SHOT_MUL V-VI x0.85
+// (76 -> 60), ACD_PUDDLE_HEAT x3 (61 -> 51), CRR_TETHER_K x9 (90 -> 60), CRR_SIDE_DMG x1.4 (57 -> 49), CRR_SHOT_MUL V-VI x0.85
 // (Armament 38). SOL Breach (81) and ARC's single-target axes stay behind: count-limited, a mechanic question, not a number
 const CAPSTONE_NUM = [
   // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit; Capacitance eight charges
@@ -63,8 +63,8 @@ const CAPSTONE_NUM = [
   [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }], [ACD_PUDDLE_HEAT, 34.17],
   // GRV: Void the widest, coldest aura (Event Horizon: a full sphere nearly stops what it holds); Supernova the biggest nova
   // (Hypernova: it tears half the armor away, spheres start heavy); Radiation the most pellets (Hawking: a last burst)
-  // CAR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
-  [CAR_HANGAR, 17], [CAR_FOCUS, 0.7], [CAR_TETHER_SLOW, 0.75], [CAR_TETHER_K, 351], [CAR_AMMO, 16], [CAR_SHOT_MUL, 1446.7], [CAR_SIDE_DMG, 55.944], [CAR_RATE_MUL, 1],
+  // CRR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
+  [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 16], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
   [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
