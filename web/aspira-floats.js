@@ -193,7 +193,7 @@ function stepCoins(dt) {
       if (--c.grp.left > 0) continue; // the kill's popup waits for its last coin
       // SMALLER and from ABOVE the core, so it never hides it (owner, 2026-10-09): in 3D above its raised top too - a height
       // h stands h x tan(tilt) floor units up the screen
-      const lift = h.core && typeof q3d === "function" && q3d() && warp.lightZ ? warp.lightZ * Math.tan(WARP.tilt) : 0;
+      const lift = h.core && typeof q3d === "function" && q3d() && warp.lightZ ? warp.lightZ * Math.tan(warpTilt()) : 0;
       // SIZED LIKE A DAMAGE NUMBER (owner, 2026-10-09: "gold popups should also be sized like damage"): by its share of
       // the biggest payout yet, on the damage numbers' scale (was a flat 12px)
       const gb = c.grp.b;

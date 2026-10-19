@@ -181,6 +181,7 @@ function setPlayBox(wide) { // the box's shape, and everything cached against it
   BOX_WIDE = !!wide; BOX_HX = wide ? BOX_LONG : BOX_SHORT; BOX_HY = wide ? BOX_SHORT : BOX_LONG;
   phoneBoxC = null;
   if (typeof laneTurnCache !== "undefined") laneTurnCache.clear();
+  tiltDirty = true; // the tilt is solved lazily, in the first frame (warp.js loads after this)
   if (typeof resize === "function") { resize(); if (typeof fitK !== "undefined") fitK = cam.fit; }
   if (typeof turnSlots === "function") turnSlots(BOX_WIDE);
 }
@@ -210,6 +211,36 @@ function turnSlots(wide) {
     const p = turn(t); t.x = p.x; t.y = p.y;
     if (typeof moveTower === "function") moveTower(t, t); // off the slot (a box edge, the core, a neighbour): the nearest legal spot
   }
+}
+// THE LANDSCAPE TILT (owner, 2026-10-19: "change the tilt between portrait and landscape so that the area on screen is the same"):
+// the 3D play box is a SCREEN rectangle, so the floor it covers grows with the tilt. Portrait keeps WARP.tilt; wide solves tiltWide
+// so boxFloorArea() matches BOX_FLOOR_GOAL. Every reader of the tilt goes through warpTilt().
+const WARP_TILT_DEFAULT = 0.55;
+const BOX_FLOOR_GOAL = 1536; // portrait floor area at tilt 0.55: boxFloorArea() is 1536 on every PHONES size (step 20, CX/CY +-900; 1467 on a tall 390x844)
+let tiltWide = WARP_TILT_DEFAULT, tiltDirty = false;
+const warpTilt = () => { if (tiltDirty && BOX_WIDE && typeof warpParams === "function") { tiltDirty = false; fitTiltWide(); } return BOX_WIDE ? tiltWide : WARP.tilt; };
+function boxFloorArea() { // the floor points (step 20 grid) whose projection is on the phone, at the CURRENT tilt
+  const p0 = warp.p, f0 = warp.inFrame;
+  let n = 0;
+  viewCam(() => {
+    warp.inFrame = true; warp.p = warpParams();
+    for (let x = CX - 900; x <= CX + 900; x += 20) for (let y = CY - 900; y <= CY + 900; y += 20) if (phoneInside(x, y, 0, true)) n++;
+  });
+  warp.inFrame = f0; warp.p = p0;
+  return n;
+}
+function fitTiltWide() { // bisect tiltWide in [0.2, WARP.tilt] (area grows with tilt) to within 1% of the goal
+  tiltDirty = false;
+  if (!BOX_WIDE || typeof q3d !== "function" || !q3d() || !BOX_FLOOR_GOAL) return;
+  let lo = 0.2, hi = WARP_TILT_DEFAULT;
+  for (let i = 0; i < 10; i++) {
+    tiltWide = (lo + hi) / 2;
+    const a = boxFloorArea();
+    if (Math.abs(a - BOX_FLOOR_GOAL) <= BOX_FLOOR_GOAL * 0.01) break;
+    if (a > BOX_FLOOR_GOAL) hi = tiltWide; else lo = tiltWide;
+  }
+  if (typeof laneTurnCache !== "undefined") laneTurnCache.clear(); // the lane turns were scored under the old view
+  if (typeof starAt !== "undefined") starAt.k = NaN; // so were the cached star spots
 }
 function phoneBox() { // 2D: world units (fixed per shape: made once - legalSpot asks for it thousands of times a second in a simulation)
   return (phoneBoxC ||= { x0: CX - BOX_HX, y0: CY - BOX_HY, x1: CX + BOX_HX, y1: CY + BOX_HY, r: PHONE_CORNER });

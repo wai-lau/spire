@@ -28,6 +28,7 @@ function resize() {
   cam.fit = k * dpr; cam.k = k * dpr;
   cam.ox = (r.width / 2 - CX * k) * dpr;
   cam.oy = (r.height / 2 - CY * k) * dpr;
+  if (typeof tiltDirty !== "undefined") tiltDirty = true; // a wide box re-solves its tilt (aspira-positioning.js)
 }
 // Re-fit ONLY when the canvas itself changes size (window resize). Nothing in
 // the overlays — the placing note, a send-wave label rewrapping — may move the

@@ -35,11 +35,16 @@ def _serve(route):
 
 
 @pytest.fixture(scope="module")
-def _browser():
+def _pw():
     with sync_playwright() as p:
-        b = p.webkit.launch()
-        yield b
-        b.close()
+        yield p
+
+
+@pytest.fixture(scope="module")
+def _browser(_pw):
+    b = _pw.webkit.launch()
+    yield b
+    b.close()
 
 
 @pytest.fixture
@@ -145,3 +150,44 @@ def test_resize_before_the_first_wave_switches_promptly(spire_page):
     assert page.evaluate("G.started") is False
     page.set_viewport_size({"width": 390, "height": 844})
     page.wait_for_function("BOX_WIDE === false", timeout=3000)
+
+
+# --- the landscape tilt: the on-screen floor area equals portrait's (needs WebGL: chromium on swiftshader) ---
+GL_ARGS = ["--use-gl=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"]
+
+
+@pytest.fixture
+def gl_page(_pw):
+    ctxs = []
+    b = _pw.chromium.launch(args=GL_ARGS)
+
+    def make(w, h):
+        ctx = b.new_context(viewport={"width": w, "height": h})
+        ctxs.append(ctx)
+        page = ctx.new_page()
+        page.route(HOST + "/**", _serve)
+        page.goto(HOST + "/spire.html")
+        page.wait_for_function("typeof G === 'object' && !!warp.p", timeout=20000)
+        page.wait_for_timeout(300)
+        return page
+
+    yield make
+    for c in ctxs:
+        c.close()
+    b.close()
+
+
+@pytest.mark.parametrize("w,h", [(844, 390), (640, 360), (1280, 800)])
+def test_landscape_floor_area_matches_portrait(gl_page, w, h):
+    page = gl_page(w, h)
+    assert page.evaluate("q3d()") is True and page.evaluate("BOX_WIDE") is True
+    area, goal, tilt = page.evaluate("[boxFloorArea(), BOX_FLOOR_GOAL, warpTilt()]")
+    print("AREA", w, h, area, goal, tilt)
+    assert goal > 0 and abs(area - goal) <= 0.02 * goal
+    assert page.evaluate("tiltDirty") is False and tilt <= 0.55
+
+
+def test_portrait_keeps_the_default_tilt(gl_page):
+    page = gl_page(390, 844)
+    assert page.evaluate("BOX_WIDE") is False
+    assert page.evaluate("warpTilt() === WARP.tilt && WARP.tilt === 0.55") is True
