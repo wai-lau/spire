@@ -2,10 +2,10 @@
 // armor, weak to fast. It CHARGES balls on its hex corners (one slot at base, 2, 3, then all 6 at the capstone) and is never idle
 // while a slot is free; a charged ball + an enemy in range = a launch, one every IFR_LAUNCH_GAP s. The ball flies SLOWLY at the
 // enemy's spot at launch (no lead: a fast enemy walks out from under it), hitting what it passes through; where it lands a RING
-// expands to the blast radius hitting everything it crosses once, and PELLETS fly at the units inside the blast (they can miss);
-// where a pellet stops it bursts into a burning CROSS - four beams along the board's axes, quiet ticks that pop a shield charge.
-// Meteor: slots, charge rate, ball speed, en-route hit (Impact: 6 slots, charging as fast as it launches). Hellfire: the cross
-// (Hellfire VI: beams to the play-box edges). Firaga: the blast and the pellet count (Backdraft VI: a pellet bursts into a
+// expands to the blast radius hitting everything it passes once, and PELLETS fly at the units inside the blast (they can miss);
+// where a pellet stops it bursts into a burning FLARE - six beams, a hexagonal star like the tower's own hex, quiet ticks that pop
+// a shield charge (owner, 2026-10-19: six beams, never four). Meteor: slots, charge rate, ball speed, en-route hit (Impact: 6 slots,
+// charging as fast as it launches). Hellfire: the flare (Hellfire VI: beams to the play-box edges). Firaga: the blast and the pellet count (Backdraft VI: a pellet bursts into a
 // smaller ring too). Loaded after aspira-car.js (the simulator too); towerStats calls ifrSkillStats, the tower loop stepIfr,
 // drawSceneTop drawIfr. Every list on the tower holds plain objects (ids and coordinates, never enemy refs): autosave clones G.
 // Spec: docs/superpowers/specs/2026-10-19-ifrit-tower-design.md
@@ -15,16 +15,16 @@ const IFR_SLOTS = [1, 2, 2, 3, 3, 3]; // Meteor: charge slots on the hex corners
 const IFR_CHARGE_S = [2.0, 1.6, 1.3, 1.0, 0.8, 0.6]; // Meteor: s to fill one ball (VI 0.1: "near the launch rate")
 const IFR_BALL_V = [140, 170, 200, 240, 280, 320]; // Meteor: u/s in flight - SLOW, the fast weakness (VI 360)
 const IFR_ROUTE_K = [0.25, 0.5, 1, 2, 4, 8]; // Meteor: the en-route hit, x the blast hit ("a lot to make up for the faster travel speed"; VI 16)
-const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Hellfire: a cross beam's half-length, u (VI: to the play-box edges)
+const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Hellfire: a flare beam's length from its centre, u (VI: to the play-box edges)
 const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Hellfire: its width, u
-const IFR_BURN_S = [1.5, 2, 2.5, 3, 4, 5]; // Hellfire: a cross burns this long (VI 10 = EFFECT_MAX_S)
+const IFR_BURN_S = [1.5, 2, 2.5, 3, 4, 5]; // Hellfire: a flare burns this long (VI 10 = EFFECT_MAX_S)
 const IFR_TICK_S = [0.3, 0.27, 0.24, 0.2, 0.17, 0.15]; // Hellfire: s between burn ticks
 const IFR_TICK_K = [0.08, 0.12, 0.18, 0.27, 0.4, 0.6]; // Hellfire: a tick, x the blast hit
 const IFR_BLAST_R = [60, 70, 80, 95, 110, 130]; // Firaga: the ring's reach, u
 const IFR_BLAST_K = [1, 1.5, 2.3, 3.5, 6, 10]; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [5, 6, 7, 8, 9, 10]; // Firaga: pellets a burst
 const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 600, IFR_PELLET_V = 300, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25, IFR_MINI_K = 0.5; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit; Backdraft's mini ring x radius and x hit
-const IFR_CROSS_MAX = 60; // live crosses a tower at most: the oldest goes (perf)
+const IFR_FLARE_MAX = 60; // live flares a tower at most: the oldest goes (perf)
 const IFR_ROUTE_ST = { shieldPop: 1 }, IFR_RING_ST = { shieldPop: 1 }, IFR_PELLET_ST = { shieldPop: 1 }, IFR_BURN_ST = { noFx: true, noNum: true, shieldPop: 1 }; // (damage: st.shieldPop; the burn is quiet)
 
 SKILL_TREES.ifr = [
@@ -54,7 +54,7 @@ function ifrSlotCorners(t, n) {
   if (n >= 2) return [a, (a + 3) % 6];
   return [a];
 }
-function ifrInit(t) { if (t.ifrSlot0 == null) { t.ifrSlot0 = Math.floor(Math.random() * 6); t.ifrCharge = 0; t.ifrReady = 0; t.ifrLaunchCd = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrCrosses = []; } }
+function ifrInit(t) { if (t.ifrSlot0 == null) { t.ifrSlot0 = Math.floor(Math.random() * 6); t.ifrCharge = 0; t.ifrReady = 0; t.ifrLaunchCd = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrFlares = []; } }
 // ALWAYS CHARGING while a slot is free (owner): the ball under way fills over chargeS, then waits in its slot; the next starts at once
 function ifrCharge(t, st, dt) {
   if (t.ifrReady >= st.slots) { t.ifrCharge = 0; return; }
@@ -78,7 +78,123 @@ function stepIfr(t, dt) {
   const st = towerStats(t);
   ifrCharge(t, st, dt);
   ifrLaunch(t, st, dt);
-  stepIfrBalls(t, st, dt); stepIfrRings(t, st, dt); stepIfrPellets(t, st, dt); stepIfrCrosses(t, st, dt); // Task 4
+  stepIfrBalls(t, st, dt); stepIfrRings(t, st, dt); stepIfrPellets(t, st, dt); stepIfrFlares(t, st, dt);
 }
-function stepIfrBalls() {} function stepIfrRings() {} function stepIfrPellets() {} function stepIfrCrosses() {}
+// ---------- the flight: slow, small, hitting what it passes; it bursts at its AIM spot whatever happened to the target ----------
+function stepIfrBalls(t, st, dt) {
+  if (!t.ifrBalls.length) return;
+  const g = projGrid();
+  for (const b of t.ifrBalls) {
+    b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
+    for (const e of enemiesNear(b.x, b.y, g)) {
+      if (e.dead || b.hit.includes(e.id)) continue;
+      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + IFR_BALL_R;
+      if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
+      b.hit.push(e.id); const amt = st.dmg * st.routeK;
+      const h0 = hitFrom; HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
+      try { damage(e, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
+    }
+    if (b.left <= 0) ifrBurst(t, st, b.ax, b.ay, 1);
+  }
+  keepLive(t.ifrBalls);
+}
+// the BURST: a ring from the spot, and pellets at the units inside the blast (random picks, with replacement); k: 1 a ball, IFR_MINI_K a Backdraft pellet
+function ifrBurst(t, st, x, y, k) {
+  const R = st.blastR * k;
+  t.ifrRings.push({ x, y, r: 0, R, k, hit: [], left: R / IFR_RING_V + 0.05 });
+  sfx("ifrblast");
+  if (k < 1) return; /* a mini ring sends no pellets */
+  const inside = [];
+  for (const e of G.enemies) if (!e.dead && e.seen && (e.x - x) ** 2 + (e.y - y) ** 2 <= R * R) inside.push(e);
+  if (!inside.length) return;
+  for (let i = 0; i < st.pellets; i++) {
+    const e = inside[Math.floor(Math.random() * inside.length)], d = Math.hypot(e.x - x, e.y - y) || 1;
+    t.ifrPellets.push({ x, y, ax: e.x, ay: e.y, vx: (e.x - x) / d * IFR_PELLET_V, vy: (e.y - y) / d * IFR_PELLET_V, left: d / IFR_PELLET_V });
+  }
+}
+// the RING: expands at IFR_RING_V to R; every enemy it passes takes the blast hit once (full splash - owner: good vs swarm)
+function stepIfrRings(t, st, dt) {
+  if (!t.ifrRings.length) return;
+  for (const q of t.ifrRings) {
+    q.r = Math.min(q.R, q.r + IFR_RING_V * dt); q.left -= dt;
+    for (const e of G.enemies) {
+      if (e.dead || !e.seen || q.hit.includes(e.id)) continue;
+      const d2 = (e.x - q.x) ** 2 + (e.y - q.y) ** 2;
+      if (d2 > q.r * q.r || d2 > q.R * q.R) continue;
+      q.hit.push(e.id); const amt = st.dmg * q.k;
+      const h0 = hitFrom; HIT_AT.x = q.x; HIT_AT.y = q.y; hitFrom = HIT_AT;
+      try { damage(e, amt, t, false, false, IFR_RING_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
+    }
+  }
+  keepLive(t.ifrRings);
+}
+// the PELLETS: non-homing, at the unit's spot when fired; the first enemy touched stops one (a hit), else it stops at its aim spot
+// (owner: "a missed pellet bursts where it was aimed"); where it stops, a FLARE - and at Backdraft a smaller ring too
+function stepIfrPellets(t, st, dt) {
+  if (!t.ifrPellets.length) return;
+  const g = projGrid();
+  for (const p of t.ifrPellets) {
+    p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt;
+    let sx = p.ax, sy = p.ay, stop = p.left <= 0;
+    for (const e of enemiesNear(p.x, p.y, g)) {
+      if (e.dead) continue;
+      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + IFR_PELLET_HIT;
+      if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
+      const amt = st.dmg * IFR_PELLET_K, h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT;
+      try { damage(e, amt, t, false, false, IFR_PELLET_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
+      sx = p.x; sy = p.y; stop = true; break;
+    }
+    if (!stop) continue;
+    p.left = 0; ifrFlare(t, st, sx, sy);
+    if (st.backdraft) ifrBurst(t, st, sx, sy, IFR_MINI_K);
+  }
+  keepLive(t.ifrPellets);
+}
+function ifrFlare(t, st, x, y) {
+  if (t.ifrFlares.length >= IFR_FLARE_MAX) t.ifrFlares.shift();
+  t.ifrFlares.push({ x, y, L: st.beamL, W: st.beamW, life: st.burnS, left: st.burnS, tick: 0, edges: st.hellfire });
+}
+// the FLARE: six beams from the burst point, a hexagonal star like the tower's own hex (world angles: 3D is a view), burning for
+// `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge. Enemies are found through the
+// projectile grid at sample points every GRID_S / 2 along the beam (never all flares x all enemies); Hellfire VI runs each beam
+// to the play box's edge (phoneBox)
+const IFR_ONE_TICK = new Set();
+const IFR_BEAMS = 6; // beams a flare: a hexagonal star, like the tower's own hex (owner, 2026-10-19: six, never four)
+// one beam from (x, y) at angle a: len u long, or to the play box's edge at Hellfire VI (the first wall the ray meets)
+function ifrBeamEnd(x, y, a, len, edges) {
+  const c = Math.cos(a), s = Math.sin(a);
+  if (edges) {
+    const b = phoneBox(); let t = Infinity;
+    if (c > 1e-9) t = Math.min(t, (b.x1 - x) / c); else if (c < -1e-9) t = Math.min(t, (b.x0 - x) / c);
+    if (s > 1e-9) t = Math.min(t, (b.y1 - y) / s); else if (s < -1e-9) t = Math.min(t, (b.y0 - y) / s);
+    len = Math.max(0, t);
+  }
+  return [x, y, x + c * len, y + s * len];
+}
+function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, f.L, f.edges)); return out; }
+// one tick down one beam at any angle: point-to-segment distance against the enemy's size + half the beam's width
+function ifrTickBeam(t, st, f, x0, y0, x1, y1, g, hit) {
+  const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1, n = Math.max(1, Math.ceil(Math.sqrt(L2) / (GRID_S / 2))), half = f.W / 2, amt = st.dmg * st.tickK;
+  for (let i = 0; i <= n; i++) {
+    const sx = x0 + dx * i / n, sy = y0 + dy * i / n;
+    for (const e of enemiesNear(sx, sy, g)) {
+      if (e.dead || hit.has(e.id)) continue;
+      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + half;
+      const u = Math.max(0, Math.min(1, ((e.x - x0) * dx + (e.y - y0) * dy) / L2)), px = x0 + dx * u, py = y0 + dy * u;
+      if ((e.x - px) ** 2 + (e.y - py) ** 2 > r * r) continue;
+      hit.add(e.id); damage(e, amt, t, false, false, IFR_BURN_ST); onHit(e, t, st, amt); /* not quiet=true: damage() lets a shield bounce a quiet hit unpopped; IFR_BURN_ST's noFx + noNum keep it silent (ACD's pools, the same way) */
+    }
+  }
+}
+function stepIfrFlares(t, st, dt) {
+  if (!t.ifrFlares.length) return;
+  const g = projGrid();
+  for (const f of t.ifrFlares) {
+    f.left -= dt; f.tick += dt;
+    if (f.tick < st.tickS) continue;
+    f.tick -= st.tickS; IFR_ONE_TICK.clear();
+    for (const [x0, y0, x1, y1] of ifrBeamEnds(f)) ifrTickBeam(t, st, f, x0, y0, x1, y1, g, IFR_ONE_TICK);
+  }
+  keepLive(t.ifrFlares);
+}
 function drawIfr() { /* Task 5 */ }

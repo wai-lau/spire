@@ -61,12 +61,12 @@ const DESCRIBE = {
       (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; its black centre burns whatever it touches, and the hole grows with the nova's hit and that burn. Nearby holes pull together and merge. It radiates " +
       (r >= 6 ? "pellets and bursts as it fades." : "pellets.");
   },
-  // IFR (owner, 2026-10-19): Meteor more slots, faster, harder on the way (Impact: all six corners); Hellfire the burning cross
-  // (Hellfire VI: across the whole board); Firaga a bigger blast, more pellets (Backdraft: a pellet bursts too)
+  // IFR (owner, 2026-10-19): Meteor more slots, faster, harder on the way (Impact: all six corners); Hellfire the burning flare
+  // of six beams (Hellfire VI: to the edges of the board); Firaga a bigger blast, more pellets (Backdraft: a pellet bursts too)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
     return "Charges " + IFR_BALLS[IFR_SLOTS[m]] + " on its corners and lobs each slowly at an enemy, burning what it passes. Where it lands a ring of fire bursts outward and " +
-      IFR_PELL[IFR_PELLETS[f]] + " pellets fly at whatever stands in the blast; where a pellet stops a burning cross " + (h >= 6 ? "runs to the edges of the board" : "spreads") + (f >= 6 ? ", and the pellet bursts into a smaller ring." : ".");
+      IFR_PELL[IFR_PELLETS[f]] + " pellets fly at whatever stands in the blast; where a pellet stops a flare of six beams burns" + (h >= 6 ? ", whose beams run to the edges of the board" : "") + (f >= 6 ? ", and the pellet bursts into a smaller ring." : ".");
   },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows

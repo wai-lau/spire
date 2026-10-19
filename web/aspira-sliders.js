@@ -133,7 +133,7 @@ const STAT_SECTIONS = {
   sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Refraction", ["Refract"]], ["Breach", ["Breach", "Bleed", "Shrapnel"]]],
   car: [["Hangar", ["Interceptors", "Focus fire"]], ["Tether", ["Tether slow", "Tether pulse", "Chain"]], ["Armament", ["Damage", "Rate", "Ammo", "Autopilot", "Slow", "Shields"]]],
   grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Aura size", "Aura slow", "Armor strip"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]]],
-  ifr: [["Meteor", ["Slots", "Charge", "Ball speed", "En route", "Rate", "Range"]], ["Hellfire", ["Cross", "Burn"]], ["Firaga", ["Damage", "Blast", "Pellets", "Backdraft", "Shields"]]],
+  ifr: [["Meteor", ["Slots", "Charge", "Ball speed", "En route", "Rate", "Range"]], ["Hellfire", ["Flare", "Burn"]], ["Firaga", ["Damage", "Blast", "Pellets", "Backdraft", "Shields"]]],
   acd: [["Jets", ["Corrode", "Builds", "Peak", "Jets", "Carry", "Jet slow", "Shields", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
 function cardStats(t, pv) {
@@ -227,7 +227,7 @@ function lockIn(t) {
 function inspectTower(el, t) {
   const maxed = t.lvl >= maxLvl(t), chart = hasSkills(t), pv = chart && basketPoints(t) ? previewTower(t) : null;
   // no title line (owner): the upgrade button names the tower and its points (upgradeButton);
-  // the DESCRIPTION tops the card, across its width (owner) - the tower's prose in track
+  // the DESCRIPTION tops the card, the full width of it (owner) - the tower's prose in track
   // changes while points are pulled (aspira-sliders.js); else the current upgrade's tagline
   el.innerHTML = '<div class="asp-tower-grid">' +
     '<div id="asp-desc-box">' + (chart ? skillDesc(t, previewTower(t)) : '<p class="asp-hint">' + towerTagline(t) + "</p>") + "</div>" +

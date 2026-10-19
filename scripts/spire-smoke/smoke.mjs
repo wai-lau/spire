@@ -141,6 +141,31 @@ check("IFR: charges on its corners, holds one ball at base, launches at a target
   if (r.readyAfter !== 0 || r.balls !== 1) return "no launch at a target in range: ready " + r.readyAfter + " balls " + r.balls;
   return "";
 });
+check("IFR: a ball bursts where it was aimed (its target gone), the ring hits once, pellets fly, a flare burns", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 1e9; ui.build = "ifr";
+    const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0]; for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true); // Backdraft: pellets burst into rings too
+    const hold = () => { for (const x of G.enemies) x.stunT = 1e9; step(1 / 30); }; // wave 1 held at the gate: it walked into range and took the first ball
+    for (let i = 0; i < 90; i++) hold(); // a ball charged
+    const e = ifrNear("shield", t, 120), f = ifrNear("shield", t, 120); e.shield = 5; f.shield = 5; const ex = e.x, ey = e.y;
+    const fp = pathAt(0, e.s + 4, 0); f.s = e.s + 4; f.x = fp.x; f.y = fp.y; // f 4 u down the lane (ifrNear at 125 u picked another lane point)
+    hold(); const ball = t.ifrBalls[0]; if (!ball) return { noBall: true };
+    const aimedAt = Math.hypot(ball.ax - ex, ball.ay - ey) < 1 || Math.hypot(ball.ax - f.x, ball.ay - f.y) < 1;
+    e.dead = true; e.gone = true; // the target dies in flight (f, 4 u down the lane, stays)
+    let n = 0; while (t.ifrBalls.length && n++ < 200) hold();
+    const out = { aimed: aimedAt, rings: t.ifrRings.length, pellets: t.ifrPellets.length };
+    for (let i = 0; i < 90; i++) hold(); // the ring passes f, pellets land, flares tick
+    out.fShield = f.shield; out.flares = t.ifrFlares.length; out.fHits = f.shield < 5;
+    return out;
+  })()`);
+  if (r.noBall) return "no ball launched";
+  if (!r.aimed) return "the ball was not aimed at the target's spot at launch";
+  if (r.rings < 1) return "no ring where the ball landed (target gone)";
+  if (!(r.pellets >= 1 || r.flares >= 1)) return "no pellets / flares after the burst";
+  if (!r.fHits) return "the second enemy inside the blast lost no shield charge";
+  return "";
+});
 check("Temporal Drive: the field draws", () => {
   run(`G = newGame(); G.core = G.core || {}; G.core.freeze = { t: 1, dur: 10 };`);
   const seen = calls(env, ["drawTimeStop"], () => frames(env, 1));
