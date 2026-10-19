@@ -278,6 +278,7 @@ check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flig
   if (r.cloned !== true) return "G does not clone: " + r.cloned;
   const seen = calls(env, ["drawIfr"], () => frames(env, 2));
   if (!seen.drawIfr) return "drawIfr never called";
+  if (run("G.towers[0].ifrFlares.length") && run("q3d()") && !calls(env, ["fxGlGlowLine"], () => frames(env, 1)).fxGlGlowLine) return "3D: the flare spokes never reached the GPU (fxGlGlowLine)";
   const n = drawn(env, () => run("drawIfr(); drawIfr(true)")).n; /* both passes: the rings, pellets and spokes, then the balls in skyKeep */
   if (n < 20) return "only " + n + " canvas calls with IFR effects live";
   const sold = run(`(() => { try { const t = G.towers[0]; G.money += sellValue(t); G.towers = G.towers.filter(x => x !== t); ui.sel = null; for (let i = 0; i < 30; i++) step(1 / 30); return "ok"; } catch (e) { return String(e); } })()`); // what the card's sell button does (aspira-sliders.js)

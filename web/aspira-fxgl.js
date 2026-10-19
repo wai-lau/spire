@@ -34,7 +34,9 @@ function fxGlLutRow(stops) {
 }
 // one shape (world units): the round-ended segment x0,y0 - x1,y1 (a disc when they meet) r round it, filled at fillA in
 // fillCss and outlined lw wide at strokeA in strokeCss; shape: 0 round, 1 (or true) a fillRect's square, 2 a butt-ended
-// segment (lineCap "butt"), 3 a disc clear at its centre to its colour at the rim (gradDisc), 4 a light cone (fxGlCone).
+// segment (lineCap "butt"), 3 a disc clear at its centre to its colour at the rim (gradDisc), 4 a light cone (fxGlCone),
+// 7 a GLOW LINE (fxGlGlowLine): butt-ended, r its half-width, lw 0, the fill colour alone; b0x / b0y are NOT joint planes
+// for it but the spoke's share t at p0 and at p1 (0 .. 1 on an untrimmed one), the alpha (1 - |off centre| / r)^2 x (1 - t^2).
 // b0 / b1: a polyline's JOINTS - the segment is cut where it meets its neighbour (the bisector, normal b pointing along
 // the line) so two segments seen through never overlap there; 0, 0: an open end. dOn / dOff / dAt: a dash (setLineDash,
 // lineDashOffset; world units) along a circle from its east point, or a segment from p0; 0: solid. Written straight into the instance
@@ -60,11 +62,12 @@ void main() {
   loc = vec2(corner.x * (hl + ext), corner.y * ext); v = vec4(r, h, rws.z, hl);
   cb = vec4(dot(clipB.xy, u), dot(clipB.xy, nrm), dot(clipB.zw, u), dot(clipB.zw, nrm)); /* the joint planes, in the segment's own frame */
   dsh = dashA * tcam.z;
-  if (rws.z > 3.5) { u = normalize(d); nrm = vec2(-u.y, u.x); loc = corner * (r + (rws.z > 4.5 ? h : 0.0) + 1.5); v.w = len / tcam.z; }
+  if (rws.z > 6.5) cb = clipB; /* 7, a glow line: its t at p0 and p1, as sent */
+  if (rws.z > 3.5 && rws.z < 6.5) { u = normalize(d); nrm = vec2(-u.y, u.x); loc = corner * (r + (rws.z > 4.5 ? h : 0.0) + 1.5); v.w = len / tcam.z; }
   if (tight > 0.5 && rws.z < 4.5 && rws.z > 3.5) { float th = len / tcam.z, hw = th < 1.5 ? r * sin(th) + 2.0 : r + 2.0; loc = vec2(mix(-1.5, r + 1.5, corner.x * 0.5 + 0.5), corner.y * hw); } /* a cone: its quad is the sector's box (along its direction, as wide as its edge), not the square round the whole disc - ~20x less overdraw */ /* 4, a cone: round its tip, p1 - p0 its direction, its length the half angle; 5, a regular polygon: p1 - p0 its first corner's direction, its length the sides */
   vec2 C = tcam.xy + clipB.xy * tcam.z, cen = (a + b + C) / 3.0; /* 6, a triangle: p0, p1 and clipB.xy its corners, sent on (from its middle, px) in cb and dsh */
-  if (rws.z > 5.5) { u = vec2(1.0, 0.0); nrm = vec2(0.0, 1.0); loc = corner * (max(length(a - cen), max(length(b - cen), length(C - cen))) + h + 1.5); cb = vec4(a - cen, b - cen); dsh = vec3(C - cen, 0.0); }
-  vec2 mid = rws.z > 5.5 ? cen : rws.z > 3.5 ? a : (a + b) * 0.5;
+  if (rws.z > 5.5 && rws.z < 6.5) { u = vec2(1.0, 0.0); nrm = vec2(0.0, 1.0); loc = corner * (max(length(a - cen), max(length(b - cen), length(C - cen))) + h + 1.5); cb = vec4(a - cen, b - cen); dsh = vec3(C - cen, 0.0); }
+  vec2 mid = rws.z > 6.5 ? (a + b) * 0.5 : rws.z > 5.5 ? cen : rws.z > 3.5 ? a : (a + b) * 0.5;
   fc = vec4(fillC.rgb * fillC.a, fillC.a); sc = vec4(strokeC.rgb * strokeC.a, strokeC.a);
   vec2 p = mid + u * loc.x + nrm * loc.y;
   ppos = p; sky = vec4(tcam.xy + skyC.xy * tcam.z, skyC.z * tcam.z, skyC.w);
@@ -95,6 +98,9 @@ void main() {
     vec2 m = min(min(vec2(dot(q0, q0), k * (w0.x * e0.y - w0.y * e0.x)), vec2(dot(q1, q1), k * (w1.x * e1.y - w1.y * e1.x))), vec2(dot(q2, q2), k * (w2.x * e2.y - w2.y * e2.x)));
     float td = -sqrt(m.x) * sign(m.y);
     fa = 1.0 - smoothstep(-0.5, 0.5, td); sa = v.y > 0.0 ? (1.0 - smoothstep(h - 0.5, h + 0.5, abs(td))) * min(1.0, v.y * 2.0) : 0.0; }
+  if (sh == 7.0) { /* the glow line: brightest on its centre line, clear at r off it; fading as 1 - t^2 from p0 (t = cb.x) to p1 (cb.y) */
+    float off = clamp(abs(loc.y) / max(v.x, 0.001), 0.0, 1.0), t = mix(cb.x, cb.y, clamp(loc.x / max(2.0 * v.w, 0.001) + 0.5, 0.0, 1.0));
+    fa = (1.0 - off) * (1.0 - off) * (1.0 - t * t) * (1.0 - smoothstep(v.w - 0.5, v.w + 0.5, abs(loc.x))) * min(1.0, v.x * 2.0); sa = 0.0; }
   /* a canvas gradient to "transparent" (black at alpha 0) runs through the dark between: colour x g x g, alpha x g */
   if (sh < 5.5 && dsh.x > 0.0) { /* a dash: along the circle from its east point, or the segment from p0 (px) */
     float at = v.w > 0.0 ? loc.x + v.w : mod(atan(loc.y, loc.x), 6.2831853) * v.x, ph = mod(at + dsh.z, dsh.x + dsh.y);
@@ -178,6 +184,9 @@ function fxGlBeam(f, a) {
 }
 // the COINS (drawCoins, aspira-floats.js) in 3D: a disc in its fill, ringed in its ring colour when the two differ
 function fxGlCoin(x, y, r, ring, fill, a) { fxGlPush(x, y, x, y, r, ring !== fill ? 1.1 : 0, COL[fill], a, COL[ring], ring !== fill ? a : 0); }
+// a GLOW LINE (shape 7): x0,y0 - x1,y1 (world), w its half-width, css at a on its centre line, clear at w off it, fading to
+// clear at p1 as 1 - t^2; t0 / t1: the line's share at each end when it is a trimmed part of a longer one (IFR's spokes)
+function fxGlGlowLine(x0, y0, x1, y1, w, css, a, t0 = 0, t1 = 1) { fxGlPush(x0, y0, x1, y1, w, 0, css, a, css, 0, 7, t0, t1); }
 // SOL's light CONE (drawCone, aspira-skills.js) through the GPU stand-in: a sector f.half either side of f.a, f.len long,
 // its colour at the tip fading to clear at f.len x SOL_CONE_FADE
 function fxGlCone(f, a) {
