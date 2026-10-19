@@ -262,6 +262,7 @@ check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flig
     out.cloned = !fn({ t: [t.ifrBalls, t.ifrRings, t.ifrPellets, t.ifrFlares] });
     return out;
   })()`);
+  if (!r.live) return "burst produced no IFR effects";
   if (r.cloned !== true) return "G does not clone: " + r.cloned;
   const seen = calls(env, ["drawIfr"], () => frames(env, 2));
   if (!seen.drawIfr) return "drawIfr never called";

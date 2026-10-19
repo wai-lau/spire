@@ -216,10 +216,12 @@ function drawIfrCharge(t, st) {
 }
 function drawIfrFlight(t) {
   ctx.strokeStyle = COL.tifr; ctx.fillStyle = COL.tifr; ctx.lineCap = "round"; ctx.lineWidth = IFR_PELLET_PX; ctx.globalAlpha = 0.8;
+  if (t.ifrBalls.length || t.ifrPellets.length) {
   ctx.beginPath();
   for (const b of t.ifrBalls) { ctx.moveTo(b.x - b.vx * IFR_TRAIL_S, b.y - b.vy * IFR_TRAIL_S); ctx.lineTo(b.x, b.y); }
   for (const p of t.ifrPellets) { ctx.moveTo(p.x - p.vx * IFR_PELLET_TAIL, p.y - p.vy * IFR_PELLET_TAIL); ctx.lineTo(p.x, p.y); }
   ctx.stroke();
+  }
   for (const b of t.ifrBalls) { ctx.beginPath(); ctx.arc(b.x, b.y, IFR_FLY_PX, 0, 6.283); ctx.fill(); }
   for (const q of t.ifrRings) { ctx.globalAlpha = 0.9 * (1 - q.r / q.R) + 0.1; ctx.lineWidth = IFR_RING_W; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke(); }
 }
@@ -237,5 +239,5 @@ function drawIfr() {
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
     drawIfrFlares(t); drawIfrFlight(t); drawIfrCharge(t, towerStats(t));
   }
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
