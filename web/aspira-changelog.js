@@ -31,6 +31,7 @@ const CHANGELOG = [
     "Towers: the dashed movement ring keeps the tower's colour on a boss sky.",
     "Threat marks: they flash while auto-wait is slowing the game.",
     "Speed: the whole game runs 20% slower; every speed button is that much slower too.",
+    "Speed: a 0.75x button.",
     "Resume: no tower can be built while the resume card is up.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
