@@ -36,7 +36,7 @@ const CHANGELOG = [
     "Ifrit: a white core runs down each Hellfire spoke; the first blast ring opens slower and brighter.",
     "Ifrit: Hellfire spokes start fainter and fade out much sooner along their length.",
     "Ifrit: Hellfire spokes 30% fainter again, then half that.",
-    "Ifrit: a white core in the blast ring.",
+    "Ifrit: a white core in the blast ring; the ring opens faster than the pellets fly.",
     "Resume: no tower can be built while the resume card is up.",
   ] },
   { v: "6.2", day: "Oct 19", bu: [
