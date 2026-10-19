@@ -100,7 +100,7 @@ void main() {
     fa = 1.0 - smoothstep(-0.5, 0.5, td); sa = v.y > 0.0 ? (1.0 - smoothstep(h - 0.5, h + 0.5, abs(td))) * min(1.0, v.y * 2.0) : 0.0; }
   if (sh == 7.0) { /* the glow line: brightest on its centre line, clear at r off it; fading as 1 - t^2 from p0 (t = cb.x) to p1 (cb.y) */
     float off = clamp(abs(loc.y) / max(v.x, 0.001), 0.0, 1.0), t = mix(cb.x, cb.y, clamp(loc.x / max(2.0 * v.w, 0.001) + 0.5, 0.0, 1.0));
-    fa = (1.0 - off) * (1.0 - off) * (1.0 - t * t) * (1.0 - smoothstep(v.w - 0.5, v.w + 0.5, abs(loc.x))) * min(1.0, v.x * 2.0); sa = 0.0; }
+    fa = (1.0 - off) * (1.0 - off) * (1.0 - t) * (1.0 - t) * (1.0 - t) /* falls off fast along the spoke (owner, 2026-10-19; was 1 - t^2) */ * (1.0 - smoothstep(v.w - 0.5, v.w + 0.5, abs(loc.x))) * min(1.0, v.x * 2.0); sa = 0.0; }
   /* a canvas gradient to "transparent" (black at alpha 0) runs through the dark between: colour x g x g, alpha x g */
   if (sh < 5.5 && dsh.x > 0.0) { /* a dash: along the circle from its east point, or the segment from p0 (px) */
     float at = v.w > 0.0 ? loc.x + v.w : mod(atan(loc.y, loc.x), 6.2831853) * v.x, ph = mod(at + dsh.z, dsh.x + dsh.y);
