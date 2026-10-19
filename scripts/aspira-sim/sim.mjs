@@ -361,6 +361,8 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
       while (!this.done() && g.G.wave < w) { const w0 = g.G.wave; smartWave(this, () => { while (!g.G.over && g.G.wave <= w0 && g.G.wave <= maxWave && S.time < 60 * 60 * 2) tick(); }); if (g.G.wave === w0) break; }
       return !g.G.over;
     },
+    // one wave played straight through (the deeper rewind's replay: no ladder, no rewind)
+    playWaveN(n) { while (!g.G.over && g.G.wave <= n && g.G.wave <= maxWave && S.time < 60 * 60 * 2) tick(); },
     done: () => g.G.over || g.G.wave > maxWave || S.time >= 60 * 60 * 2,
     // `next` rides along by tower id: re-choosing it would roll the player's RNG and fork the build order
     // the game's own state outside G: the positioning cache (posPred holds enemy refs - stale after a
@@ -390,7 +392,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
 // THE SMART SAVER (owner, 2026-10-12): it plays wave by wave from a snapshot, SAVING everything; a wave that costs a
 // life is played again from that snapshot with 1, 2, 3... upgrades bought before it starts - "allowed to go back to a snapshot and
 // spend money if the wave it held back on leaked". strategy.rewind false turns the replay off
-const RELOCATE_TRIES = 6, ALT_AXES = 2; // cell shifts / alternative-axis rotations the smart saver tries after the purchase ladder fails // cell shifts the smart saver tries after the purchase ladder fails
+const DEEPER_BACK = [2, 4, 8, 16, 32], RELOCATE_TRIES = 6, ALT_AXES = 2; // cell shifts / alternative-axis rotations the smart saver tries after the purchase ladder fails // cell shifts the smart saver tries after the purchase ladder fails
 const SMART_INTEREST = 4, HOARD_X = 4; // HOARD_X: a hoarder's bank over the smart saver's // game seconds the replayed wave spends freely
 // one wave of the smart saver: from a snapshot, played saving; on a lost life, again with 1, 2, 3... purchases made BEFORE it
 // (owner, 2026-10-12: "if leak, rewind and buy 1 upgrade before wave starts; if still leak, rewind and buy 2") - nothing
@@ -399,7 +401,10 @@ function smartWave(p, playWave) {
   // the CORE POWERS come first (owner, 2026-10-12: "treat the powers as the first step (if available), then buy upgrades
   // as next"): try 0 saves everything and holds the powers; try 1 uses the powers (when one is ready) and buys nothing; then
   // the powers and 1, 2, 3... upgrades
+  const w0 = p.g.G.wave, rwRow = ((p.rw ||= {})[w0] ||= { r: 0, alt: 0, mv: 0 }); // (the PHASE MEASURE for a rewinding player, owner 2026-10-18: rewinds, alt-axis ladders and relocations used on this wave, and the credits banked entering it)
+  (p.moneyAt ||= {})[w0] = Math.round(p.g.G.money);
   const snap = p.snapshot(), lives = p.g.G.lives, ready = p.strategy.useCore && p.g.run("CORE_POWERS.some(c => powerLvl(c.id) && cooldownLeft(c.id) <= 0)");
+  (p.hist ||= []).push({ wave: w0, snap }); if (p.hist.length > 33) p.hist.shift(); // (the last waves' snapshots, for the DEEPER REWIND below)
   const tries = ready ? [[false, 0], [true, 0]] : [[false, 0]];
   // RELOCATION (owner, 2026-10-17): when no ladder of purchases holds the wave, the towers are moved to other cells (shift 1, 2, 3...)
   // and the ladder is tried again from the same snapshot - a wave that falls to the placement, not the build, is not a loss
@@ -409,13 +414,28 @@ function smartWave(p, playWave) {
     for (let rot = 0; rot <= (shift || p.strategy.cheapSaver ? 0 : ALT_AXES); rot++) {
       for (let i = 0; ; i++) {
         const [pw, n] = tries[i] || [ready, i - tries.length + 1];
-        if (i || shift || rot) { p.restore(snap); p.rewinds = (p.rewinds || 0) + 1; if (shift) p.relocate(shift); } // (rewinds on p, not S: a restore would roll S back)
+        if (i || shift || rot) { p.restore(snap); p.rewinds = (p.rewinds || 0) + 1; rwRow.r++; if (rot && !i) rwRow.alt++; if (shift && !i) rwRow.mv++; if (shift) p.relocate(shift); } // (rewinds on p, not S: a restore would roll S back)
         p.S.powersOk = pw; p.S.rot = rot;
         const made = p.buy(n);
         playWave();
         if ((p.g.G.lives >= lives && !p.g.G.over) || made < n) break; // a BOSS breach (game over) is rewound like any leak
       }
       if (p.g.G.lives >= lives && !p.g.G.over) break outer;
+    }
+  }
+  // THE DEEPER REWIND (owner, 2026-10-18: a one-wave rewind can only spend at the failing wave, where prices are high and money is
+  // short): when the ladder, the alt axes and the relocations all failed, back 2, 4, 8 waves, replaying those waves spending as it goes
+  // (powers on) before the loss stands
+  if ((p.g.G.lives < lives || p.g.G.over) && !p.strategy.cheapSaver && p.strategy.deeper !== false) {
+    deeper:
+    for (const back of DEEPER_BACK) {
+      const h = p.hist.find(x => x.wave === w0 - back); if (!h) continue;
+      for (let rot = 0; rot <= ALT_AXES; rot++) { // (the earlier purchases may need other axes too)
+        p.restore(h.snap); p.rewinds = (p.rewinds || 0) + 1; rwRow.r++; rwRow.deep = (rwRow.deep || 0) + 1;
+        p.S.powersOk = true; p.S.rot = rot;
+        for (let n = h.wave; n <= w0 && !p.g.G.over; n++) { p.buy(99); p.playWaveN(n); }
+        if (!p.g.G.over) { p.hist = p.hist.filter(x => x.wave <= h.wave); break deeper; } // (the replay lived: it stands; later waves keep their own ladders)
+      }
     }
   }
   p.S.powersOk = false; p.S.rot = 0;
