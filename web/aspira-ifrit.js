@@ -17,7 +17,7 @@ const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 
 const IFR_ROUTE_K = [0.25, 0.5, 1, 2, 4, 8]; // Meteor: the en-route hit, x the blast hit ("a lot to make up for the faster travel speed"; VI 16)
 const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Hellfire: a flare beam's length from its centre, u (VI: to the play-box edges)
 const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Hellfire: its width, u
-const IFR_BURN_S = [1.5, 2, 2.5, 3, 4, 5]; // Hellfire: a flare burns this long (VI 10 = EFFECT_MAX_S)
+const IFR_BURN_S = [1.2, 1.4, 1.6, 2, 2.6, 3.2] /* was [1.5, 2, 2.5, 3, 4, 5] (countermx 61-69 spread @6pts, 2026-10-19, pellets in random directions: swarm/fast/shield/armor 8/35/9/56 -> 13/77/23/58 - a short burn: fast is clear of the flares round its old spot before the next tick, a slow body still burns; with the radius, the ball speed or the tick period fast stayed 33-47) */; // Hellfire: a flare burns this long (VI 10 = EFFECT_MAX_S)
 const IFR_TICK_S = [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] /* was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Hellfire: s between burn ticks
 const IFR_TICK_K = [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] /* was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
 const IFR_BLAST_R = [80, 90, 100, 115, 130, 150] /* was [60 .. 130] VI 160 (solo.mjs 2026-10-19, ball 360 + a 1 s charge: a lone L1 0/2/0 -> 0/0/0, every L1 pair with IFR beats the Star on every slot pair) */; // Firaga: the ring's reach, u
@@ -209,7 +209,7 @@ function stepIfrFlares(t, st, dt) {
 // ---------- the look: orange balls growing on the corners, a small ball with a short trail in flight, a thinning ring, pellet
 // streaks, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
-const IFR_BALL_PX = 13, IFR_FLY_PX = 6, IFR_TRAIL_S = 0.06, IFR_PELLET_PX = 2, IFR_PELLET_TAIL = 0.03, IFR_RING_W = 3, IFR_BEAM_A = 0.28, IFR_LINE_A = 0.85;
+const IFR_BALL_PX = 13, IFR_FLY_PX = 6, IFR_TRAIL_S = 0.06, IFR_PELLET_PX = 2, IFR_PELLET_TAIL = 0.03, IFR_RING_W = 3;
 function drawIfrCharge(t, st) {
   const corners = ifrSlotCorners(t, st.slots);
   ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
@@ -232,12 +232,27 @@ function drawIfrFlight(t) {
   for (const b of t.ifrBalls) { ctx.beginPath(); ctx.arc(b.x, b.y, IFR_FLY_PX, 0, 6.283); ctx.fill(); }
   for (const q of t.ifrRings) { ctx.globalAlpha = 0.9 * (1 - q.r / q.R) + 0.1; ctx.lineWidth = IFR_RING_W; ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke(); }
 }
+// THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
+// each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
+// IFR_GLOW_BANDS lengths whose alpha falls off toward the tip as 1 - (k / bands)^2 (flat near the centre, fading at the end).
+// No gradient: the board's path context takes none (ARCHITECTURE.md 11) - the bands are the gradient. lowQ keeps the core only
+const IFR_GLOW = [[1.6, 0.12], [0.8, 0.28], [0.25, 0.85]], IFR_GLOW_BANDS = 6;
 function drawIfrFlares(t) {
+  if (!t.ifrFlares.length) return;
   const low = typeof lowQ === "function" && lowQ();
+  ctx.strokeStyle = COL.tifr;
   for (const c of t.ifrFlares) {
     const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c);
-    if (!low) { ctx.strokeStyle = COL.tifr; ctx.lineWidth = c.W; ctx.globalAlpha = IFR_BEAM_A * f; ctx.beginPath(); for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke(); }
-    ctx.strokeStyle = COL.white; ctx.lineWidth = 1; ctx.globalAlpha = IFR_LINE_A * f; ctx.beginPath(); for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); } ctx.stroke();
+    for (let g = low ? IFR_GLOW.length - 1 : 0; g < IFR_GLOW.length; g++) {
+      ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
+      for (let k = 0; k < IFR_GLOW_BANDS; k++) {
+        const a0 = k / IFR_GLOW_BANDS, a1 = (k + 1) / IFR_GLOW_BANDS;
+        ctx.globalAlpha = IFR_GLOW[g][1] * f * (1 - a0 * a0);
+        ctx.beginPath();
+        for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0 + (x1 - x0) * a0, y0 + (y1 - y0) * a0); ctx.lineTo(x0 + (x1 - x0) * a1, y0 + (y1 - y0) * a1); }
+        ctx.stroke();
+      }
+    }
   }
 }
 function drawIfr() {
