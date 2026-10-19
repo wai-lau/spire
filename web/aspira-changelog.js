@@ -11,6 +11,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "6.1", day: "Oct 19", bu: [
+    "Start: 122 credits and no interest before wave 1 (it was 120, then 2 interest as the first wave began).",
     "Interest pop-up: 1.5x bigger, and it reads \"interest: +21c (+3.0%)\".",
     "Auto-wait: one slow-down only - an eighth of the speed when an enemy is 1 s from the core (the steps at 4 s and 1.5 s are gone; the threat rings stay).",
     "Fixed: the game froze about three minutes into play (6.1.1 to 6.1.7).",

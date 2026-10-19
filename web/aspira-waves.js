@@ -135,7 +135,7 @@ function sendWave() {
   // the payout is CAPPED at INTEREST_PER_WAVE x the wave being sent (owner, 2026-10-06, "late money is way
   // too much"): the core's 9 powers cost up to 20000, so a saver's 5-8% was out-earning the whole field
   const gain = Math.floor(G.money * G.interest); // NO CAP (owner, 2026-10-12: "no interest cap pls"; INTEREST_PER_WAVE x the wave until then)
-  if (gain > 0) { G.money += gain; creditsFx = { gain, pct: G.interest * 100, t0: performance.now() / 1000 }; }
+  if (gain > 0 && G.wave > 0) { G.money += gain; creditsFx = { gain, pct: G.interest * 100, t0: performance.now() / 1000 }; } // NONE before wave 1: the game starts with it instead (START_MONEY; owner, 2026-10-19)
   G.wave++;
   if (typeof tickPowerCooldowns === "function") tickPowerCooldowns(); // core power cooldowns count waves (aspira-core.js)
   // the boss is named in its HP BAR under the speed row (owner), not mid-screen
