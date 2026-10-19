@@ -10,11 +10,7 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
-  { v: "6.0", day: "Oct 18", bu: [
-    "Gravity: every fire is three novas in quick succession, each landing where it hits the most enemies; the black hole then forms ahead of the target.",
-    "Gravity: the late fire-rate boost comes from whichever path is deepest, and Void grows the nova's reach as Supernova does; Void's inner burn and Radiation's late pellets hit much harder.",
-    "Orbital Relay: the tower acts as five instead of three, for 10 s.",
-    "The Star: much less HP - any two towers beat it.",
+  { v: "6.1", day: "Oct 19", bu: [
     "Arc: Voltage and Capacitance hit far harder from the third purchase.",
     "Freeze: Rime rings bite much harder and Moons are stronger from the third purchase.",
     "Sol: Refraction hops hit 2.5 times harder from the third purchase.",
@@ -23,11 +19,19 @@ const CHANGELOG = [
   ], ne: [
     "Freeze: Temp's Brittle is a little weaker at the last two purchases.",
     "Carrier: Armament's shots are a little weaker at the last two purchases.",
+  ], u: [
+    "The flat 2D view is gone - THE SPIRE is 3D only; a browser without WebGL shows a notice.",
+  ] },
+  { v: "6.0", day: "Oct 18", bu: [
+    "Gravity: every fire is three novas in quick succession, each landing where it hits the most enemies; the black hole then forms ahead of the target.",
+    "Gravity: the late fire-rate boost comes from whichever path is deepest, and Void grows the nova's reach as Supernova does; Void's inner burn and Radiation's late pellets hit much harder.",
+    "Orbital Relay: the tower acts as five instead of three, for 10 s.",
+    "The Star: much less HP - any two towers beat it.",
+  ], ne: [
     "No effect lasts more than 10 s: Acid pools last at most 5 s, goo 30 s, and a black hole is gone 10 s after it forms.",
     "Gravity: Supernova's nova damage is much lower from the second purchase (three novas a fire now).",
     "Sol: Breach shrapnel no longer deals damage - it breaches the enemies near the one that died instead; Breach crits hit 1.3x harder to make up for it.",
   ], u: [
-    "The flat 2D view is gone - THE SPIRE is 3D only; a browser without WebGL shows a notice.",
     "Build cards: the checks and x's re-measured for the new balance.",
   ] },
   { v: "5.8", day: "Oct 18", bu: [

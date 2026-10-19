@@ -519,7 +519,8 @@ focus loss.
 - **A minor per battery (10-19).** "Every group of changes that is the result of a balance battery run should result in a
   new minor version", then "stop doing the new day new minor thing" (a day is NOT a minor any more): the day 5.1 (10-16..18,
   tiny 0-141) was split at each battery-result commit, 5.1.0-92 unchanged (first split 5.1-5.9 with a day minor 5.7, re-folded
-  the same hour). Commit subjects and the slow logs keep the old numbers; the board's six affected rows were corrected through FIXES.
+  the same hour). Commit subjects and the slow logs keep the old numbers; the board's six affected rows were corrected through FIXES. The same
+  day 6.0.1 (the 01:13 axis-balance battery) became 6.1.0 and 6.0.2-5 became 6.1.1-4 (no board row sat on a 6.0.x).
 
   | old 5.1.tiny | new | battery-result commit |
   |---|---|---|
