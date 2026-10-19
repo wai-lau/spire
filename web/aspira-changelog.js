@@ -11,6 +11,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "6.1", day: "Oct 19", bu: [
+    "Fixed: the game froze about three minutes into play (6.1.1 to 6.1.7).",
     "Shields: an enemy's outer shield spokes start at its shield line and run inward to the die.",
     "Arc: Voltage and Capacitance hit far harder from the third purchase.",
     "Freeze: Rime rings bite much harder and Moons are stronger from the third purchase.",

@@ -170,6 +170,11 @@ check("a lost life: 'X lives left' replaces the interest line", () => {
   return texts.some(t => /^7 lives left$/.test(t)) ? "" : "no '7 lives left' among " + texts.length + " texts";
 });
 
+check("the slow-log report builds and sends (perfSend - it runs from the frame loop every 3 min: a throw there froze the game, 6.1.1-6.1.7)", () => {
+  run(`G = newGame(); { const v = document.querySelector(".asp-ver span"); v.parentNode = document.createElement("div"); } perf.act.playing = [5, 0];`); // (the fake DOM's span has no parent; some play, so it builds the whole report)
+  run("perfSend()");
+  return "";
+});
 check("game over shows the overlay and the Ascendants board, no entry", () => {
   run(`G = newGame(); gameOver();`);
   const ov = env.dom.byId("asp-ov"), asc = env.dom.byId("asp-asc");
