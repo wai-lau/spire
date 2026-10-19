@@ -108,10 +108,10 @@ KINDS.forEach((k, i) => {
 });
 
 // AUTO-WAIT (owner): a checkbox under the pause button; while ticked, the game
-// drops to a share of the chosen speed (AUTO_WAIT_K) whenever an enemy is within AUTO_WAIT_S game-seconds of
+// drops to a share of the chosen speed (AUTO_WAIT_K) whenever an enemy is within AUTO_WAIT3_S game-seconds of
 // reaching the core at its current speed (owner: time, not distance), and goes
 // back to the chosen speed once none is. Remembered in localStorage.
-const AUTO_WAIT3_S = 1; // ONE stage (owner, 2026-10-19: "remove the outer tier also, just keep the innermost tier of slow (keep all threat indicators)" - the x0.5 at 4 s and the x0.25 at 1.5 s are gone); 2026-10-18: "make the first and second tier of auto-wait happen later" (was 6 / 2); 2026-10-11: "start at 6s, 1/2 at 2s and 1/4 at 1s" (was 8 / 3)
+const AUTO_WAIT3_S = 1, AUTO_SLOW_S = 0.5; // AUTO_SLOW_S: the slow itself, closer still (owner, 2026-10-19: "make auto-wait slow happen when even closer only"; was AUTO_WAIT3_S, 1 s) - AUTO_WAIT3_S stays the threat ring's line (aspira-threat.js). ONE stage (owner, 2026-10-19: "remove the outer tier also, just keep the innermost tier of slow (keep all threat indicators)" - the x0.5 at 4 s and the x0.25 at 1.5 s are gone); 2026-10-18: "make the first and second tier of auto-wait happen later" (was 6 / 2); 2026-10-11: "start at 6s, 1/2 at 2s and 1/4 at 1s" (was 8 / 3)
 // each stage a SHARE of the chosen speed, not a fixed one (owner, 2026-10-12: "make auto-wait slowness be a percentage of the
 // chosen speed"): half of it from 6s out, a quarter from 2s, an eighth from 1s (was 1x / 1/2x / 1/4x, capped by the speed)
 const AUTO_WAIT_K = [0.5, 0.25, 0.125]; // (only [2] is used since 2026-10-19: the outer stages are gone)
@@ -134,7 +134,7 @@ const autoWaiting = () => {
   awAt = now;
   let eta = Infinity;
   for (const e of G.enemies) if (!e.dead) eta = Math.min(eta, etaToCore(e));
-  const stages = [[AUTO_WAIT3_S, AUTO_WAIT_K[2] * ui.speed]];
+  const stages = [[AUTO_SLOW_S, AUTO_WAIT_K[2] * ui.speed]];
   const hold = (lvl, line) => awLevel && awLevel <= lvl && eta <= line * AUTO_RELEASE; // already this slow or slower, still near
   const hit = stages.find(([line, lvl]) => eta <= line || hold(lvl, line));
   const want = hit ? hit[1] : 0;
@@ -442,6 +442,7 @@ document.addEventListener("keydown", ev => {
     ev.preventDefault(); return;
   }
   if (/^[1-9]$/.test(ev.key) && SPEEDS[ev.key - 1]) { ui.speed = SPEEDS[ev.key - 1]; ui.paused = false; } // 1-4: the buttons in order
+  else if (ev.key === "`" || ev.key === "~") { ui.speed = 0.75; ui.paused = false; } // 0.75x on ~, no button (owner, 2026-10-19)
   else if (ev.key === "m" || ev.key === "M") setMuted(!muted);
   else if (ev.key === " ") { ev.preventDefault(); ui.paused = !ui.paused; ui.pauseBtn = ui.paused; }
   else if (ev.key === "u" || ev.key === "U") keyUpgrade(ui.sel && G.towers.find(x => x.id === ui.sel));
@@ -464,6 +465,7 @@ function tickFps(now) {
 // 2026-10-08: "during time freeze, temporarily set speed to 1x"); the setting itself is kept
 const freezing = () => timeStopped();
 let last = performance.now();
+const CHOOSER_REDRAW_MS = 1000; let chooserDrawAt = 0; // (the frozen board under the cards: frame)
 function frame(now) {
   const cb0 = performance.now();
   stepDetail((now - last) / 1000); if (typeof perfTick === "function") perfTick((now - last) / 1000); // the 3D detail radius, slow logs (aspira-quality.js, aspira-perflog.js)
@@ -477,10 +479,11 @@ function frame(now) {
     if (autoMove && best.ascended && G.started && !G.over) G.autoMoveS = (G.autoMoveS || 0) + dt; // auto-move's REAL seconds this game (autoBarred, aspira-ascend.js)
     stepFlings(dt); // a let-go tower coasting (aspira-fling.js), real time too
   }
-  // while the upgrade cards are up the board is paused AND frozen: no redraw,
-  // so its CSS blur (aspira.css .asp-choosing) is computed once, not per frame
+  // while the upgrade cards are up the board is paused and all but frozen: ONE redraw a CHOOSER_REDRAW_MS, so its CSS blur
+  // (aspira.css .asp-choosing) is rarely recomputed - but never none: a GPU that throws away an idle WebGL canvas's frame showed the
+  // blur of a blank buffer, the board turned light grey under the cards ~10 s in (owner, 2026-10-19: "first tower buy inverts the screen")
   if (!warpInit()) { noWebGl(); return; } /* no WebGL: a notice, and the loop stops (the flat 2D picture is gone, 2026-10-18) */
-  if (!chooser.t && !DIAG.includes("nocanvas")) warp3d(); // 3D lays the frame, drawn to fit the whole board, on the spire (aspira-warp.js)
+  if ((!chooser.t || !(now < chooserDrawAt)) && !DIAG.includes("nocanvas")) { if (chooser.t) chooserDrawAt = now + CHOOSER_REDRAW_MS; warp3d(); } // 3D lays the frame, drawn to fit the whole board, on the spire (aspira-warp.js)
   // the HUD's text and buttons 10x a second, not every frame (perf, 2026-10-05)
   if (!(now < hudAt)) { hudAt = now + 100; updateHud(); syncBlinks(); }
   placePop(); placeChallenge(); tickFps(now); // (placeChallenge: aspira-wavelist.js)

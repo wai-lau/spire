@@ -10,6 +10,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
+import { spreadStops, focusStops, snapStop, STOPS } from "./stops.mjs"; // tiers by STOP only (0 1 3 5 6)
 import { usePowers, grantAll } from "./corepower.mjs";
 
 const KINDS = ["arc", "frz", "sol", "acd"];
@@ -24,7 +25,7 @@ function run(kinds, seed) {
     const kind = kinds[i % kinds.length]; g.run("G.money += 1e9"); const t = g.place(kind, ci); g.run("G.money -= 1e9");
     if (!t) return;
     const axes = g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`), sk = {};
-    let left = POINTS; for (let r = 0; r < 5 && left > 0; r++) for (const a of axes) if (left > 0) { sk[a] = (sk[a] || 0) + 1; left--; }
+    Object.assign(sk, spreadStops(axes, POINTS)); // by STOP (stops.mjs)
     t.skills = sk; t.lvl = 1 + POINTS;
   });
   grantAll(g);

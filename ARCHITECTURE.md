@@ -82,7 +82,7 @@ lost core segment flashes the boss red.
 ![Wave gating](docs/arch/wave-gating.svg)
 
 **Auto-wait** (on by default; only ever slows): x0.125 of the chosen speed
-when a live enemy is 1 game s from the core (ONE stage since 2026-10-19; the x0.5 at 4 s and x0.25 at 1.5 s are gone - the threat rings stay); a stage is left past 1.25x its line,
+when a live enemy is 0.5 game s from the core (`AUTO_SLOW_S`; the threat ring keeps its 1 s line, `AUTO_WAIT3_S`) (ONE stage since 2026-10-19; the x0.5 at 4 s and x0.25 at 1.5 s are gone - the threat rings stay); a stage is left past 1.25x its line,
 and a slower speed holds 1.5 s real before speeding up.
 
 | Pauses (`towersFrozen` while paused and while the sky turns) | Pauses | On close |
@@ -488,6 +488,7 @@ with a chooser open 1-4 pick the first four of its cards instead (the build choo
 | Surface | Design |
 |---|---|
 | wave list | ten rows: live waves plus upcoming (at least 3), one icon an enemy sized by log HP, long rows tessellating; live waves in one green box; "warped in" / "warping in..." with the countdown, hidden while a boss holds the timer |
+| wave card | a tap on a wave's icons or name (`data-n`) opens its stats (`aspira-wavecard.js`): units, lanes, HP each / in all, shields, armor, speed, time to core, credits, a late trait - read off ONE sample enemy made by `spawnEnemy` and taken back out (RNG held at 0.5), rows of 0 / N/A hidden; pauses like the changelog |
 | threat | a mark on the three closest enemies within 4 s of the core; a leak's ring bounces out from the core with the lives left |
 | end screen | one overlay for loss and win: the title (`ascendant`, the breaching boss's phrase, or `core breached`), the furthest wave, a line a tower ranked by damage and named by its two strongest axes' tier names (`aspira-endstats.js`), the waves that TOOK lives, "Play again", then TOP PLAYERS (§9.1): the entry form on a win or a loss past wave 10 |
 
@@ -562,7 +563,7 @@ be in the game's way.
 | Store | Holds |
 |---|---|
 | localStorage | `aspira.best` `{score, wave, ascended}`, `spire.autowait` / `automove`, `aspira.mute` / `vol` |
-| IndexedDB (`aspira-autosave.js`) | the whole `G` as each wave starts, cleared when a game ends; on load **resume wave N** or **new game** (a resumed run may still sign TOP PLAYERS); **everything in `G` must be structured-cloneable** |
+| IndexedDB (`aspira-autosave.js`) | the whole `G` as each wave starts, cleared when a game ends; on load **resume wave N** or **new game** - the save is the board AT REST (`runClean`: towers back on their build slots, every transient state and the field dropped; the Challenge button up) (a resumed run may still sign TOP PLAYERS); **everything in `G` must be structured-cloneable** |
 | server | nothing beyond §9.1-9.2; no accounts |
 
 ### 9.4 Version and changelog
@@ -591,7 +592,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
 | draw (3D) | `warp`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
-| UI and tail | `chooser`, `wavelist`, `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave` |
+| UI and tail | `chooser`, `wavelist`, `wavecard`, `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave` |
 
 
 | Piece | Where |

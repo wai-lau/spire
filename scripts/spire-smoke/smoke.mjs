@@ -319,6 +319,31 @@ check("the slow-log report builds and sends (perfSend - it runs from the frame l
   run("perfSend()");
   return "";
 });
+check("a resumed save is the board at rest: towers on their slots, no enemies, pools or interceptors (runClean)", () => {
+  run(`G = newGame(); G.money = 1e6; for (const k of ["acd", "grv", "car"]) { ui.build = k;
+         const ci = CELLS.findIndex((c, i) => cellOpen(i) && !G.towers.some(t => t.cell === i)); placeTower(CELLS[ci]); }
+       G.towers[0].x += 40; G.started = true; sendWave(); for (let i = 0; i < 300; i++) step(1 / 30);`);
+  const r = run(`(() => { const saved = { G: runClean(structuredClone(G)), wave: G.wave, lives: G.lives }; runResume(saved);
+    return { off: G.towers.filter(t => t.x !== CELLS[t.cell].x || t.y !== CELLS[t.cell].y).length, enemies: G.enemies.length,
+             junk: G.towers.filter(t => t.puddles || t.spheres || t.icp || t.carBolts).length, n: G.towers.length }; })()`);
+  if (r.n !== 3) return "lost towers: " + r.n;
+  if (r.off || r.enemies || r.junk) return JSON.stringify(r);
+  frames(env, 3); // and the game runs on from it
+  return "";
+});
+check("a wave's card: tapping a wave opens its stats - no NaN, no zero rows - on an ordinary wave and a boss wave", () => {
+  run(`G = newGame(); G.started = true; G.wave = STAR_EVERY - 2; refreshPanels();`); frames(env, 2);
+  const r = run(`(() => { const out = {}; for (const n of [G.wave + 1, G.wave + 2]) { if (!WAVE_PLANS.has(n)) WAVE_PLANS.set(n, wavePlan(n, G.lastType));
+      const before = G.enemies.length; openWaveCard(n); const c = document.getElementById("asp-wavecard");
+      out[n] = { html: c ? c.innerHTML : "", left: G.enemies.length - before, paused: ui.paused }; closeWaveCard(); } return out; })()`);
+  for (const [n, c] of Object.entries(r)) {
+    if (!c.html) return "no card for wave " + n;
+    if (/NaN|undefined|>0<\/td>/.test(c.html)) return "bad value on wave " + n + ": " + c.html.slice(0, 200);
+    if (c.left) return "the sample enemy stayed on the board (wave " + n + ")";
+    if (!/speed/.test(c.html)) return "no speed row on wave " + n;
+  }
+  return "";
+});
 check("game over shows the overlay and the Ascendants board, no entry", () => {
   run(`G = newGame(); gameOver();`);
   const ov = env.dom.byId("asp-ov"), asc = env.dom.byId("asp-asc");

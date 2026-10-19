@@ -7,11 +7,12 @@
 // those spread - a support axis (FRZ Rime cracking shields) only shows in a team that can kill what it opens up.
 // usage: node countermx.mjs [seeds=2]   env N=3 POINTS=8 WINDOWS=41-49,61-69 KINDS=... BV_PATCH=<file> TEAM=1 SPREAD_ONLY=1 (spread builds only: marks.py's input)
 // a window may carry its OWN points (owner, 2026-10-12: test each boss band at the points a player has there): WINDOWS=1-9:2,11-19:4
-// - a focused build then takes as many tiers as those points allow, capped at SKILL_TIERS
+// - a focused build then takes the deepest STOP those points reach (stops.mjs: 0 1 3 5 6, never 2 or 4), capped at the capstone
 import fs from "node:fs";
 import { isMainThread } from "node:worker_threads";
 import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
+import { spreadStops, focusStops, snapStop, STOPS } from "./stops.mjs"; // tiers by STOP only (0 1 3 5 6)
 
 const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), TYPES = ["swarm", "fast", "shield", "armor"];
 const TEAM = process.env.TEAM === "1", N = TEAM ? 1 : Number(process.env.N || 3), POINTS = Number(process.env.POINTS || 8);
@@ -24,10 +25,9 @@ export default async function task({ kind, build, type, from, to, seed, points: 
   g.run(`G.started = true; G.money = 1e12; G.lives = 1e6; G.wave = ${from - 1}; G.lastType = ${JSON.stringify(type)};`);
   if (TEAM) g.run("OPEN_SLOTS = SLOT_ANGLES.slice(); G.opened ||= {}; CELLS.forEach((c, i) => { if (c.unlock) G.opened[i] = true; });"); // every slot: four towers
   const sc = cellScores(g, kind), open = g.run("CELLS.map((c, i) => i).filter(cellOpen)").sort((a, b) => sc[b] - sc[a]);
-  const axes = g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`), tiers = Math.min(POINTS, g.run("SKILL_TIERS"));
+  const axes = g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`);
   const sk = {};
-  if (build === "spread") for (let p = 0; p < POINTS; p++) sk[axes[p % 3]] = (sk[axes[p % 3]] || 0) + 1;
-  else { sk[build] = tiers; const rest = axes.filter(a => a !== build); for (let p = 0; p < POINTS - tiers; p++) sk[rest[p % 2]] = (sk[rest[p % 2]] || 0) + 1; }
+  Object.assign(sk, build === "spread" ? spreadStops(axes, POINTS) : focusStops(axes, build, POINTS)); // by STOP (stops.mjs; tiers was the old raw depth)
   let placed = 0;
   for (const ci of open) { if (placed >= N) break; const t = g.place(kind, ci); if (!t) continue; t.skills = { ...sk }; t.lvl = 1 + POINTS; placed++; }
   if (TEAM) for (const m of mates || ["arc", "frz", "sol", "acd"].filter(k => k !== kind)) {

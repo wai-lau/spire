@@ -16,8 +16,19 @@ async function runDo(mode, fn) {
     return await new Promise((res, rej) => { const tx = db.transaction(RUN_STORE, mode), q = fn(tx.objectStore(RUN_STORE)); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); });
   } catch (e) { return null; } // (a private window, a full disk: no save, the game plays on)
 }
-// the clone is taken the moment put() is called: the state as this wave starts
-const runSave = () => { if (G.started && !G.over) runDo("readwrite", s => s.put({ G, wave: G.wave, lives: G.lives, at: Date.now() }, RUN_KEY)); };
+// A SAVE IS THE BOARD AT REST (owner, 2026-10-19: "on save, don't save tower positions and effects of enemies on screen, just load the
+// screen with 'Challenge X' button and the towers in their starting positions and board empty"): every tower back on the slot it was
+// built on, its moment-to-moment state dropped (cooldowns, locks, pools, holes, pellets, interceptors, bolts, drags, an active Relay),
+// the field empty - only what was BOUGHT (kind, slot, skills, mode, spent) and its stats kept. Applied to the copy that is saved, and
+// again on resume (an older save). The resume lands between waves after a boss, so the Challenge button is up (afterBoss)
+const RUN_TOWER_DROP = ["cd", "spin", "posT", "goal", "auraT", "rimeT", "pulses", "period", "locks", "lines", "spare", "puddles", "poolSumT",
+  "spheres", "pellets", "icp", "launchCd", "launchN", "carBolts", "fling", "held", "leashHint", "links", "relayUntil", "tc", "ve"];
+function runClean(g) {
+  for (const t of g.towers) { const c = CELLS[t.cell]; if (c) { t.x = c.x; t.y = c.y; } for (const k of RUN_TOWER_DROP) delete t[k]; }
+  Object.assign(g, { enemies: [], spawns: [], fleetQ: [], chains: [], drips: [] });
+  return g;
+}
+const runSave = () => { if (G.started && !G.over) runDo("readwrite", s => s.put({ G: runClean(structuredClone(G)), wave: G.wave, lives: G.lives, at: Date.now() }, RUN_KEY)); };
 const runClear = () => runDo("readwrite", s => s.delete(RUN_KEY));
 // a CHECKPOINT AT EVERY BOSS, on a CLEAR board (owner, 2026-10-16: "save to last wave not mid wave", "actually, save every boss"):
 // once a boss wave is beaten and nothing is left on the field or still to spawn (waveClear, aspira-waves.js), that state is
@@ -44,8 +55,7 @@ function runOffer(saved) {
 }
 function runResume(saved) {
   try {
-    G = saved.G; runSavedAt = G.wave; autoMove = !!G.autoMove; // (auto-move is the game's own)
-    for (const t of G.towers) delete t.leashHint; // page-clock stamps (performance.now) mean nothing after a reload: a saved one kept the movement rings on for hours (owner, 2026-10-16)
+    G = runClean(saved.G); runSavedAt = G.wave; autoMove = !!G.autoMove; // (auto-move is the game's own; runClean also drops leashHint - a page-clock stamp that kept the movement rings on for hours, owner 2026-10-16)
     fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null;
     if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 });
     refreshPanels();
