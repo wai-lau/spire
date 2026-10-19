@@ -226,7 +226,7 @@ const IFR_BALL_PX = 13, IFR_FLY_PX = 6;
    segments behind it at falling alpha. Sized for a phone (the board ~1000 u across 430 px) */
 const IFR_EMBER_HALO = 9, IFR_EMBER_R = 4, IFR_EMBER_CORE = 1.5, IFR_TAIL_N = 3, IFR_TAIL_S = 0.05;
 /* the RING is a glow, [width u, alpha] wide faint / mid / bright core, plus a faint disc inside the front */
-const IFR_RING_GLOW = [[22, 0.22], [11, 0.45], [4, 1]], IFR_RING_DISC = 0.14; /* brighter, wider (owner, 2026-10-19: "more visible"; were [16, 0.14], [8, 0.3], [3, 0.9], disc 0.08) */
+const IFR_RING_GLOW = [[22, 0.22, "tifr"], [11, 0.45, "tifr"], [4, 1, "tifr"], [1.5, 0.95, "white"]], IFR_RING_DISC = 0.14; /* + a WHITE core (owner, 2026-10-19) */ /* brighter, wider (owner, 2026-10-19: "more visible"; were [16, 0.14], [8, 0.3], [3, 0.9], disc 0.08) */
 function drawIfrCharge(t, st) {
   const corners = ifrSlotCorners(t, st.slots);
   ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
@@ -257,8 +257,8 @@ function drawIfrRings(t, low) {
   for (const q of t.ifrRings) {
     const grow = q.r / q.R, fade = grow < 1 ? 1 : Math.max(0, q.left / IFR_RING_FADE), a = (0.9 * (1 - grow) + 0.1) * fade;
     if (!low && grow < 1) { ctx.globalAlpha = IFR_RING_DISC * (1 - grow); ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.fill(); }
-    for (let g = low ? IFR_RING_GLOW.length - 1 : 0; g < IFR_RING_GLOW.length; g++) {
-      ctx.lineWidth = IFR_RING_GLOW[g][0]; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
+    for (let g = low ? IFR_RING_GLOW.length - 2 : 0; g < IFR_RING_GLOW.length; g++) { /* lowQ: the orange core + the white */
+      ctx.strokeStyle = COL[IFR_RING_GLOW[g][2]]; ctx.lineWidth = IFR_RING_GLOW[g][0]; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
       ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke();
     }
   }
@@ -275,7 +275,7 @@ function drawIfrBalls(t) {
 // smooth aura gradients while IFR spokes cannot? fix") each spoke is instead two GLOW LINES on the GPU (shape 7, aspira-fxgl.js):
 // a halo and a narrow core, each brightest on its centre line and clear at its edge, fading as 1 - t^2 to the tip - smooth, no
 // bands. IFR_GLOW_GL: [half-width x the beam width, alpha, colour]. lowQ keeps the core only, both ways
-const IFR_GLOW = [[1.6, 0.12, "tifr"], [0.8, 0.28, "tifr"], [0.25, 0.85, "tifr"], [0.08, 0.9, "white"]], IFR_GLOW_BANDS = 6, IFR_GLOW_A = 0.455; /* a WHITE core in the orange (owner, 2026-10-19); IFR_GLOW_A: every spoke starts at 45.5% (owner, 2026-10-19: 65%, then "down another 30%") */
+const IFR_GLOW = [[1.6, 0.12, "tifr"], [0.8, 0.28, "tifr"], [0.25, 0.85, "tifr"], [0.08, 0.9, "white"]], IFR_GLOW_BANDS = 6, IFR_GLOW_A = 0.2275; /* a WHITE core in the orange (owner, 2026-10-19); IFR_GLOW_A: every spoke starts at 22.75% (owner, 2026-10-19: 65%, x0.7, then x0.5) */
 const IFR_GLOW_GL = [[0.8, 0.5, "tifr"], [0.2, 0.95, "tifr"], [0.06, 0.95, "white"]];
 /* 3D, drawn through the GPU stand-in (glCtx, aspira-glctx.js - the real canvas keeps it as __glc): each spoke stops at a tower's edge like any
    beam (trimToTowers), its t range kept so the fade still runs over the whole spoke */
