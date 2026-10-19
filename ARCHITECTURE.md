@@ -465,14 +465,14 @@ spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**
 
 | Gesture | Result |
 |---|---|
-| tap an empty open slot | **six tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; keys 1-4 pick the first four) and a cancel; too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`): up to 3 checks and 3 x's a tower from a `countermx` run (waves 61-69, 6 points spread - at 8 most leaks hit 0% and FRZ/SOL tied), so they follow the matrix (§4.6): each type's leak is taken against the SIX-TOWER mean for that type, then against the tower's own mean of those; checks to the types it does best, x's to the worst, split by how far, a gap under 3 points no mark, but a type it leaks 5% or less always a check (`marks.py`, owner 2026-10-18) |
+| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; keys 1-4 pick the first four) and a cancel; too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`): up to 3 checks and 3 x's a tower from a `countermx` run (waves 61-69, 6 points spread - at 8 most leaks hit 0% and FRZ/SOL tied), so they follow the matrix (§4.6): each type's leak is taken against the SIX-TOWER mean for that type, then against the tower's own mean of those; checks to the types it does best, x's to the worst, split by how far, a gap under 3 points no mark, but a type it leaks 5% or less always a check (`marks.py`, owner 2026-10-18) |
 | tap a tower, its home slot, or the core | its card |
 | a press moving under `DRAG_PX` | a tap; more on a tower = a move (§4.3) |
 | unaffordable | tappable but dimmed (`.poor`): a tap shakes it and says "need Nc more" |
 | before the first tower | the free slots flash, a white triangle bobs over the top-left one |
 
 Keys: 1-4 speeds (5 = 10x, owner), Space pause, M mute, U lock in the basket, Esc cancel;
-with a chooser open 1-4 pick the first four of its cards instead (the build chooser shows all six, so the last two are tap only). No key opens the build chooser or builds without it (by choice).
+with a chooser open 1-4 pick the first four of its cards instead (the build chooser shows all seven, so the last three are tap only). No key opens the build chooser or builds without it (by choice).
 
 ### 7.3 The tower card (pillar 5)
 

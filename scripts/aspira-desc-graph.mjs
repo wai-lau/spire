@@ -58,7 +58,7 @@ for (const kind of Object.keys(V("SKILL_TREES"))) {
   for (const ax of V(`SKILL_TREES[${JSON.stringify(kind)}]`)) {
     md += `\n### ${ax.name}\n\n| tier | sentence (changes from the tier before marked) | mechanic |\n|---|---|---|\n`;
     const chain = [0, 1, 2, 3, 4, 5, 6].map(k => V(`describeTower(${JSON.stringify(kind)}, { ${ax.id}: ${k} })`));
-    chain.forEach((sentence, k) => { md += `| ${roman[k]} | ${k ? mark(chain[k - 1], sentence) : sentence} | ${MECH[kind][ax.id](k)} |\n`; });
+    chain.forEach((sentence, k) => { md += `| ${roman[k]} | ${k ? mark(chain[k - 1], sentence) : sentence} | ${MECH[kind]?.[ax.id]?.(k) ?? "-"} |\n`; });
   }
 }
 process.stdout.write(md);

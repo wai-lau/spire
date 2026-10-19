@@ -130,7 +130,7 @@ function chooseUpgrade(i) {
 }
 
 // BUILDING (owner, 2026-10-06): no build buttons - every free slot shows a
-// faint outline, and tapping one opens FOUR tower cards (name, price, what it
+// faint outline, and tapping one opens SEVEN tower cards (name, price, what it
 // does, its base stats) and a cancel, the same chooser as an upgrade's. Each
 // card wears its tower's colour. chooser.t is a stand-in while it is open (the
 // loop and the keys test it); chooser.ci is the slot.
@@ -147,7 +147,7 @@ const vsMarks = k => VS_ORDER.filter(e => (VS_MARKS[k] || {})[e]).map(e => {
 function buildCard(k, i) {
   const b = TOWERS[k], cost = towerCost(k);
   // "good vs" right under the title (owner); the base stats on ONE line so all
-  // four cards fit on a phone above the spend bar (owner: everything fits)
+  // seven cards fit on a phone above the spend bar (owner: everything fits)
   return '<div class="name">' + (i + 1) + " · " + b.name + " · -" + cr(cost) + "</div>" + '<div class="asp-goodvs">' + vsMarks(k) + "</div>" + // each enemy's symbol with its checks / x's (VS_MARKS)
     '<p class="asp-hint">' + b.blurb + "</p>"; // WHY it works, no stat dump (owner, 2026-10-07)
 }
