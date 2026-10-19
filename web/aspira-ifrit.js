@@ -17,9 +17,9 @@ const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 
 const IFR_ROUTE_K = [0.25, 0.5, 1, 4, 10, 60] /* AXIS BALANCE (owner, 2026-10-19; countermx N=1 81-89 / 101-109 mean leak by axis: Meteor 80 / 98 -> 31 / 73 - it was dead weight late) - most at IV and VI; III only x2 (the 6-point spread build sits on Meteor III: 16/51/26/20 at x4 -> 13/68/16/57 at x2 with Hellfire I faster); was [0.25, 0.5, 1, 2, 4, 8] */; // Meteor: the en-route hit, x the blast hit ("a lot to make up for the faster travel speed"; VI 16)
 const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Hellfire: a flare beam's length from its centre, u (VI: to the play-box edges)
 const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Hellfire: its width, u
-const IFR_BURN_S = [2.4, 2.8, 3.2, 4, 5.2, 6.4] /* x2, longer flares (owner, 2026-10-19: "make the flares last longer"), with CATCHING FIRE and faster, harder ticks (countermx 61-69 spread @6pts 4 seeds: 9/69/8/37 swarm/fast/shield/armor); was [1.2, 1.4, 1.6, 2, 2.6, 3.2] - was [1.5, 2, 2.5, 3, 4, 5] (countermx 61-69 spread @6pts, 2026-10-19, pellets in random directions: swarm/fast/shield/armor 8/35/9/56 -> 13/77/23/58 - a short burn: fast is clear of the flares round its old spot before the next tick, a slow body still burns; with the radius, the ball speed or the tick period fast stayed 33-47) */; // Hellfire: a flare burns this long (VI 10 = EFFECT_MAX_S)
+const IFR_BURN_S = [1.2, 1.4, 1.6, 2, 2.6, 3.2] /* HALVED, the ticks x2 (owner, 2026-10-19: "reduce duration of spokes and increase damage" - the same burn a flare in half the time); was [2.4 .. 6.4], VI 10 */ /* x2, longer flares (owner, 2026-10-19: "make the flares last longer"), with CATCHING FIRE and faster, harder ticks (countermx 61-69 spread @6pts 4 seeds: 9/69/8/37 swarm/fast/shield/armor); was [1.2, 1.4, 1.6, 2, 2.6, 3.2] - was [1.5, 2, 2.5, 3, 4, 5] (countermx 61-69 spread @6pts, 2026-10-19, pellets in random directions: swarm/fast/shield/armor 8/35/9/56 -> 13/77/23/58 - a short burn: fast is clear of the flares round its old spot before the next tick, a slow body still burns; with the radius, the ball speed or the tick period fast stayed 33-47) */; // Hellfire: a flare burns this long (VI 10 = EFFECT_MAX_S)
 const IFR_TICK_S = [0.54, 0.38, 0.37, 0.36, 0.3, 0.27] /* stop I faster (axis balance 2026-10-19: the 6-point spread build sits on Hellfire I - shields 35% -> 16% leaked); was [0.54, 0.48, 0.43, 0.36, 0.3, 0.27] - x0.6 with the longer flares (2026-10-19); was [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] - was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Hellfire: s between burn ticks
-const IFR_TICK_K = [0.41, 0.6, 0.91, 1.36, 1.52, 2.27] /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
+const IFR_TICK_K = [0.82, 1.2, 1.82, 2.72, 3.04, 4.54] /* x2 with the flares halved (2026-10-19); was [0.41, 0.6, 0.91, 1.36, 1.52, 2.27], VI 3.78 */ /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
 const IFR_BLAST_R = [117, 150, 150, 150, 169, 195] /* stop I 117 -> 150 (marks rule, 2026-10-19: every tower needs checks on 2 types - swarm 14% was too near the seven-tower mean for one; 10% at 150) - x1.3: bigger and more visible (owner, 2026-10-19: "make the initial explosion slower and bigger and more visible"); was [90, 90, 100, 115, 130, 150], base 90, was 80 (solo.mjs 2026-10-19, after the random pellets and the slow ticks: a lone L1 1/0/0 -> 0/0/0, 5 seeds 1/0/0/2/2 -> 0/0/0/0/2 - a single wave-4 swarm body now and then) */ /* was [60 .. 130] VI 160 (solo.mjs 2026-10-19, ball 360 + a 1 s charge: a lone L1 0/2/0 -> 0/0/0, every L1 pair with IFR beats the Star on every slot pair) */; // Firaga: the ring's reach, u
 const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 12, 22] /* AXIS BALANCE (2026-10-19): Firaga's top stops up (101-109 mean leak 82 -> 78); was [1.5, 2.25, 3.45, 5.25, 9, 15] */ /* was [1, 1.5, 2.3, 3.5, 6, 10] VI 18 (countermx 61-69 spread @6pts, 2026-10-19: leaked swarm/fast/shield/armor 27/91/42/100 -> 18/75/23/90) */; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [5, 9, 12, 15, 18, 21] /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
@@ -179,6 +179,11 @@ function ifrBeamEnd(x, y, a, len, edges) {
   return [x, y, x + c * len, y + s * len];
 }
 function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, f.L, f.edges)); return out; }
+// ON DESKTOP the spokes are DRAWN as far as the screen goes (owner, 2026-10-19: "when on desktop render IFR hellfire spokes as far as they
+// can across the real screen, even if they don't deal damage there") - IFR_DRAW_FAR out, the board picture clipping them at its edge;
+// they still BURN only out to f.L (ifrBeamEnds). A phone (no fine pointer) draws what burns
+const IFR_DRAW_FAR = 4000, IFR_DESKTOP = typeof matchMedia === "function" && matchMedia("(pointer: fine)").matches;
+function ifrDrawEnds(f) { if (!IFR_DESKTOP) return ifrBeamEnds(f); const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 3, IFR_DRAW_FAR, false)); return out; }
 // a flare's tick: every live on-screen enemy whose body touches ANY of its beams takes one quiet tick (one hit a flare a tick, on
 // two beams too). Exact, not sampled: a cheap radius reject (a flare that cannot reach the enemy), then point-to-segment on its
 // beams. 40 Hellfire-VI flares x 200 enemies x 6 beams is ~50k dot products, under the smoke's budget (2026-10-19; the grid
@@ -282,7 +287,7 @@ const IFR_GLOW_GL = [[0.8, 0.5, "tifr"], [0.2, 0.95, "tifr"]];
 function drawIfrFlaresGl(t, low) {
   for (const c of t.ifrFlares) {
     const f = Math.max(0, c.left / c.life);
-    for (const [x0, y0, x1, y1] of ifrBeamEnds(c)) {
+    for (const [x0, y0, x1, y1] of ifrDrawEnds(c)) {
       const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 1 : 0; g < IFR_GLOW_GL.length; g++) {
@@ -297,7 +302,7 @@ function drawIfrFlares(t) {
   if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { drawIfrFlaresGl(t, low); return; } /* ctx IS the stand-in (glCtx) */
   ctx.strokeStyle = COL.tifr;
   for (const c of t.ifrFlares) {
-    const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c);
+    const f = Math.max(0, c.left / c.life), ends = ifrDrawEnds(c);
     for (let g = low ? IFR_GLOW.length - 1 : 0; g < IFR_GLOW.length; g++) {
       ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
       for (let k = 0; k < IFR_GLOW_BANDS; k++) {

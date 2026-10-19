@@ -11,6 +11,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "6.2", day: "Oct 19", bu: [
+    "Ifrit: Hellfire flares last half as long and burn twice as hard.",
     "Enemies: they move 3x faster wherever no tower could reach them (beyond every tower's movement and range), as they do off screen.",
     "Ifrit: a seventh tower - it charges fireballs on its corners and lobs them slowly; where one lands a ring of fire bursts out and pellets fly, each leaving a six-spoked flare that burns what stands in it.",
     "Ifrit: strong against swarms and shields, weak to fast enemies (they run through the fire before it catches).",
@@ -18,6 +19,7 @@ const CHANGELOG = [
     "Ifrit: pellets land closer to the blast; Firaga's first purchase widens the blast.",
     "Ifrit: Meteor buys more fireballs, faster; Hellfire longer, hotter flares (to the board's edges at the top); Firaga a bigger blast and more pellets (which burst too at the top).",
   ], ne: [], u: [
+    "Ifrit: on a desktop the Hellfire spokes are drawn right across the screen (they still burn only as far as before).",
     "Build cards: all four enemy types always show; a yellow dash where the tower is neither good nor bad.",
     "Wave list: a table - the HP in its own column, then the type.",
     "Towers: the seven colours are spaced evenly for the eye - Arc is yellow now, Ifrit orange.",
