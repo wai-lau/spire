@@ -275,7 +275,7 @@ function drawIfrBalls(t) {
 // smooth aura gradients while IFR spokes cannot? fix") each spoke is instead two GLOW LINES on the GPU (shape 7, aspira-fxgl.js):
 // a halo and a narrow core, each brightest on its centre line and clear at its edge, fading as 1 - t^2 to the tip - smooth, no
 // bands. IFR_GLOW_GL: [half-width x the beam width, alpha, colour]. lowQ keeps the core only, both ways
-const IFR_GLOW = [[1.6, 0.12, "tifr"], [0.8, 0.28, "tifr"], [0.25, 0.85, "tifr"], [0.08, 0.9, "white"]], IFR_GLOW_BANDS = 6; /* a WHITE core in the orange (owner, 2026-10-19) */
+const IFR_GLOW = [[1.6, 0.12, "tifr"], [0.8, 0.28, "tifr"], [0.25, 0.85, "tifr"], [0.08, 0.9, "white"]], IFR_GLOW_BANDS = 6, IFR_GLOW_A = 0.65; /* a WHITE core in the orange (owner, 2026-10-19); IFR_GLOW_A: every spoke starts at 65% (owner, 2026-10-19) */
 const IFR_GLOW_GL = [[0.8, 0.5, "tifr"], [0.2, 0.95, "tifr"], [0.06, 0.95, "white"]];
 /* 3D, drawn through the GPU stand-in (glCtx, aspira-glctx.js - the real canvas keeps it as __glc): each spoke stops at a tower's edge like any
    beam (trimToTowers), its t range kept so the fade still runs over the whole spoke */
@@ -286,7 +286,7 @@ function drawIfrFlaresGl(t, low) {
       const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { /* lowQ: the orange core + the white one */
-        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], COL[q[2]], q[1] * f, t0, t1);
+        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], COL[q[2]], q[1] * f * IFR_GLOW_A, t0, t1);
       }
     }
   }
@@ -302,7 +302,7 @@ function drawIfrFlares(t) {
       ctx.strokeStyle = COL[IFR_GLOW[g][2]]; ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
       for (let k = 0; k < IFR_GLOW_BANDS; k++) {
         const a0 = k / IFR_GLOW_BANDS, a1 = (k + 1) / IFR_GLOW_BANDS;
-        ctx.globalAlpha = IFR_GLOW[g][1] * f * (1 - a0 * a0);
+        ctx.globalAlpha = IFR_GLOW[g][1] * f * IFR_GLOW_A * (1 - a0) ** 3; // fast falloff to the tip (owner, 2026-10-19; was 1 - a0^2)
         ctx.beginPath();
         for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0 + (x1 - x0) * a0, y0 + (y1 - y0) * a0); ctx.lineTo(x0 + (x1 - x0) * a1, y0 + (y1 - y0) * a1); }
         ctx.stroke();
