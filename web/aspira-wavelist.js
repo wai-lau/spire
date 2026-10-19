@@ -188,6 +188,7 @@ function fitWaveList() {
   if (!matchMedia(PHONE_PORTRAIT_Q).matches) return;
   if (!waveGapPx) { const t = document.createElement("div"); t.style.cssText = "position:absolute;visibility:hidden;width:var(--space-2)"; document.body.appendChild(t); waveGapPx = t.getBoundingClientRect().width; t.remove(); }
   const spots = [[CX, CY, CORE_R], ...CELLS.filter(c => OPEN_SLOTS.includes(c.ang)).map(c => [c.x, c.y, CELL_S])].map(([x, y, r]) => boardScreenRect(x, y, r));
+  const chal = $("asp-challenge"); if (chal && !chal.hidden) spots.push(chal.getBoundingClientRect()); // (the Challenge button too)
   const g = waveGapPx, hits = () => { const L = box.getBoundingClientRect(); return spots.some(b => L.left < b.right + g && b.left - g < L.right && L.top < b.bottom + g && b.top - g < L.bottom); };
   for (let n = Math.ceil(cells.length / 5); n > Math.max(waveLiveRows, 1) && hits(); n--)
     for (const c of cells.slice((n - 1) * 5)) c.style.display = "none";
@@ -213,5 +214,10 @@ function placeChallenge() {
   let P; try { P = warpProject(CX, wy, 0); } finally { Object.assign(cam, c0); }
   const r = warp.ent.getBoundingClientRect();
   const x = r.left + P.x * r.width / warp.ent.width, y = r.top + P.y * r.height / warp.ent.height;
-  btn.style.left = (x - root.left) + "px"; btn.style.top = (y - root.top) + "px";
+  // ...and INSIDE the window, above the speed bar (landscape phones put the lowest slot past it): clamped by its own rect
+  const b = btn.getBoundingClientRect(), foot = document.querySelector(".asp-foot"), fy = foot ? foot.getBoundingClientRect().top : innerHeight, g = waveGapPx || 8;
+  const cx = Math.min(Math.max(x, root.left + b.width / 2 + g), root.right - b.width / 2 - g), cy = Math.max(root.top + g, Math.min(y, fy - b.height - g));
+  const L = (cx - root.left) + "px", T = (cy - root.top) + "px";
+  if (btn.style.left === L && btn.style.top === T) return;
+  btn.style.left = L; btn.style.top = T; fitWaveList(); // (the list keeps clear of it: it moved)
 }

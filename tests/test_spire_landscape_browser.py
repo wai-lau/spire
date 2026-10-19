@@ -83,7 +83,6 @@ def test_no_switch_mid_wave(spire_page):
 
 
 PHONES = [(360, 640), (375, 667), (390, 664), (393, 659), (412, 732), (430, 740)]
-SHOT = REPO / ".superpowers/sdd/2026-10-19-landscape-box/task-5-360.png"
 
 
 @pytest.mark.parametrize("w,h", PHONES)
@@ -95,7 +94,54 @@ def test_wave_list_clears_core_and_starting_slots(spire_page, w, h):
       const ov = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
       const spots = [[CX, CY, CORE_R], ...CELLS.filter(c => OPEN_SLOTS.includes(c.ang)).map(c => [c.x, c.y, CELL_S])];
       return spots.filter(([x, y, r]) => ov(L, boardScreenRect(x, y, r))).length; }""")
-    if (w, h) == (360, 640):
-        page.screenshot(path=str(SHOT))
     assert hit == 0
     assert page.evaluate("document.querySelector('.asp-dots').getBoundingClientRect().height") == 14
+
+
+CHALLENGE_VIEWS = [(360, 640), (640, 360), (844, 390)]
+
+
+@pytest.mark.parametrize("w,h", CHALLENGE_VIEWS)
+def test_challenge_button_stays_in_window_clear_of_speed_bar_and_wave_list(spire_page, w, h):
+    page = spire_page(w, h)
+    page.evaluate("G.started = true; G.wave = STAR_EVERY; G.enemies.length = 0; G.spawns.length = 0; "
+                  "bossInv.phase = 'off'; bossInv.offAt = 0; G.nextIn = 30; refreshPanels(); fitWaveList()")
+    page.wait_for_timeout(1500)
+    r = page.evaluate("""() => {
+      const R = e => { const b = e.getBoundingClientRect(); return { l: b.left, r: b.right, t: b.top, b: b.bottom }; };
+      const btn = document.getElementById('asp-challenge');
+      const vis = !btn.hidden && btn.style.visibility !== 'hidden';
+      const speed = [...document.querySelectorAll('#asp-speed button')].map(R);
+      const list = [...document.getElementById('asp-wavenote').children].filter(c => !c.style.display && c.offsetHeight).map(R);
+      return { vis, btn: R(btn), speed, list, w: innerWidth, h: innerHeight }; }""")
+    assert r["vis"]
+    b = r["btn"]
+    assert b["l"] >= 0 and b["t"] >= 0 and b["r"] <= r["w"] and b["b"] <= r["h"], b
+    hit = lambda o: b["l"] < o["r"] and o["l"] < b["r"] and b["t"] < o["b"] and o["t"] < b["b"]  # noqa: E731
+    assert not any(hit(o) for o in r["speed"]), "over the speed buttons"
+    assert not any(hit(o) for o in r["list"]), "over the wave list"
+
+
+def _lit(page):
+    # (wave = a boss just beaten: the field is clear and the Challenge button holds the next wave back, yet the next ordinary wave's lanes preview)
+    page.evaluate("""G.started = true; G.wave = STAR_EVERY; G.over = false; bossInv.phase = "off"; G.enemies.length = 0; G.spawns.length = 0; G.fleetQ.length = 0;
+      G.nextIn = 2; window.__lit = laneSoon().length""")
+    return page.evaluate("window.__lit")
+
+
+def test_resize_waits_while_the_lane_preview_is_lit_then_switches(spire_page):
+    page = spire_page(1280, 800)
+    assert _lit(page) > 0, "setup: the preview should be lit"
+    page.evaluate("window.__hold = setInterval(() => { G.nextIn = 2; }, 20)")  # keep the countdown lit
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.wait_for_timeout(700)
+    assert page.evaluate("BOX_WIDE") is True and page.evaluate("laneSoon().length") > 0
+    page.evaluate("clearInterval(window.__hold); G.nextIn = 30")  # preview over, field clear
+    page.wait_for_function("BOX_WIDE === false", timeout=3000)
+
+
+def test_resize_before_the_first_wave_switches_promptly(spire_page):
+    page = spire_page(1280, 800)
+    assert page.evaluate("G.started") is False
+    page.set_viewport_size({"width": 390, "height": 844})
+    page.wait_for_function("BOX_WIDE === false", timeout=3000)
