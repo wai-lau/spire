@@ -172,7 +172,7 @@ check("IFR: each axis scales only its own numbers", () => {
   })()`);
   const F = { meteor: ["chargeS", "ballV", "ballR", "routeK", "fireR"], hellfire: ["fireR", "fireV", "fireLinger", "fireK"], firaga: ["pellets", "pelletK", "beamL", "beamW", "burnS", "tickS", "flareK", "giant"] };
   for (const ax of Object.keys(F)) { const stray = r.moved[ax].filter(k => !F[ax].includes(k)); if (stray.length) return ax + " moved another axis's numbers: " + stray; if (!r.moved[ax].length) return ax + " moved nothing"; }
-  if (r.base.fireR !== r.base.ballR) return "Hellfire 0: the fire's max " + r.base.fireR + " is not the meteor's size " + r.base.ballR;
+  if (Math.abs(r.base.fireR - 16 * r.base.ballR) > 1e-9) return "Hellfire 0: the fire's max " + r.base.fireR + " is not 16x the meteor's size " + r.base.ballR + " (owner, 2026-10-20)";
   if (Math.abs(r.vi.meteor.ballR - 5.4) > 1e-9) return "Meteor VI meteor radius " + r.vi.meteor.ballR + " (expected 5.4: 20% of 27, owner 2026-10-20)";
   if (r.vi.hellfire.fireR !== 160) return "Hellfire VI fire radius " + r.vi.hellfire.fireR + " (expected 160)";
   if (r.base.giant || !r.vi.firaga.giant) return "the giant flare is not Blk Magic VI's alone";
@@ -303,7 +303,7 @@ check("IFR: the fire opens at the meteor's size, grows to its max, burns by catc
     land(t, st); try { G.towers = G.towers.filter(x => x !== t); for (let i = 0; i < 5; i++) step(1 / 30); out.sold = true; } catch (e) { out.sold = String(e); } /* sold with a live fire */
     return out;
   })()`);
-  if (r.r0 !== r.ballR || r.R0 !== r.ballR) return "Hellfire 0: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + " both)";
+  if (r.r0 !== r.ballR || Math.abs(r.R0 - 16 * r.ballR) > 1e-9) return "Hellfire 0: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + ", then 16x it)";
   if (r.lit !== 0 || r.burnt !== 1) return "an enemy in the fire lost " + r.lit + " at the first tick (0: it only catches fire) and " + r.burnt + " after two (1)";
   if (r.far !== 0) return "an enemy outside the fire lost " + r.far;
   if (r.R6 !== 160) return "Hellfire VI fire grows to " + r.R6 + " (expected 160)";

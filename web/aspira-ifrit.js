@@ -14,8 +14,8 @@ const IFR_CHARGE_S = [2.0, 1.9, 1.8, 1.6, 1.4, 1.2] /* x2 (owner, 2026-10-20: "f
 const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
 const IFR_ROUTE_K = [1.5, 2, 4, 10, 60, 400] /* AXES REDONE (2026-10-20): x TOWERS.ifr.dmg, Meteor's own - was x the Blk Magic blast hit, [0.25, 0.5, 1, 4, 10, 60] VI 150 */; // Meteor: the en-route hit, its ONLY damage
 const IFR_BALL_RAD = [2.7, 3, 3.3, 3.7, 4.2, 4.7] /* x0.2 (owner, 2026-10-20: "reduce meteor size to 20% of current"; was [13.5 .. 23.5] VI 27) */ /* HALVED (owner, 2026-10-20: "meteor is also too big, halve all the current sizes"); was [27 .. 47] VI 54 */; // Meteor: the meteor's radius, u (solo.mjs 2026-10-20: the hex's width across untaken - half of it leaked the wave-4 swarm, 15 lives; owner: "twice the size" of it at VI: 54, capstone.js)
-// Hellfire: THE FIRE the meteor leaves (owner, 2026-10-20) - it opens at the meteor's size, grows at FIRE_V to FIRE_R (never below the meteor: untaken
-// it does not grow), burns by catching fire every IFR_FIRE_TICK_S for FIRE_K x TOWERS.ifr.dmg a tick ("small ticks, many"), lingers FIRE_LINGER s at full size
+// Hellfire: THE FIRE the meteor leaves (owner, 2026-10-20) - it opens at the meteor's size, grows at FIRE_V to FIRE_R (never below IFR_FIRE_FLOOR x the meteor), burns by catching fire every IFR_FIRE_TICK_S for FIRE_K x TOWERS.ifr.dmg a tick ("small ticks, many"), lingers FIRE_LINGER s at full size
+const IFR_FIRE_FLOOR = 16; // the fire's max is never under this x the meteor's radius - with no Hellfire too (owner, 2026-10-20: "even with no hellfire bought, fire should start at 16x meteor size"; was 1x)
 const IFR_FIRE_R = [0, 60, 60, 85, 110, 130]; // u radius (VI 160: "6 towers across", capstone.js)
 const IFR_FIRE_V = [60, 80, 100, 120, 150, 180]; // u/s (VI 220)
 const IFR_FIRE_LINGER = [0.5, 2, 2, 2, 2.5, 3]; // s at full size, still burning (VI 5)
@@ -57,7 +57,7 @@ function ifrSkillStats(t, s, b) {
   // EACH AXIS ITS OWN PART, ITS OWN DAMAGE (owner, 2026-10-20: "axes don't feel unique nor impactful"), every hit x TOWERS.ifr.dmg:
   // Meteor the ball in flight, Hellfire the fire it leaves, Blk Magic the pellets and their flares
   s.chargeS = IFR_CHARGE_S[m]; s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K[m];
-  s.fireR = Math.max(s.ballR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireLinger = IFR_FIRE_LINGER[h]; s.fireK = IFR_FIRE_K[h];
+  s.fireR = Math.max(s.ballR * IFR_FIRE_FLOOR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireLinger = IFR_FIRE_LINGER[h]; s.fireK = IFR_FIRE_K[h];
   s.pellets = IFR_PELLETS[f]; s.pelletK = IFR_PELLET_DK[f]; s.giant = f >= CAPSTONE_TIER;
   s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareK = IFR_TICK_K[f];
   // every hit is st.dmg x its axis's K AT THE HIT, so what towerStats does to dmg after this (the DAM core power, an aura) reaches all of them
