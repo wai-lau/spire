@@ -32,7 +32,7 @@ const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 12, 22] /* AXIS BALANCE (2026-10-19)
 const IFR_PELLETS = [5, 6, 8, 10, 14, 19] /* HALVED (owner, 2026-10-20: "still too many pellets, halve the counts" - they pass through and re-hit now); was [10, 12, 15, 20, 28, 38] */ /* DOUBLED, each flare a random size (owner, 2026-10-19: "double the number of pellets (and hellfires) but add size jitter"; were 5 .. 21, VI 24) */ /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
 const IFR_PELLET_DK = [0.3, 0.45, 0.7, 1, 1.6, 2.5]; // Blk Magic: a pellet's pass-through hit, x TOWERS.ifr.dmg (owner, 2026-10-20: "pellets should also deal damage en route, scaled by blk magic"; VI 4)
 const IFR_GIANT_K = 4; // Mega Firaga (Blk Magic VI, owner 2026-10-20): ONE giant flare at the impact spot, its size and hit x a VI flare's
-const IFR_RING_V = 210 /* FASTER than the pellets (IFR_PELLET_V 100), x1.25 (owner, 2026-10-19: "the initial explosion is faster than the pellets"); was 140, 220, 600 */, IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25; // s between launches; the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
+const IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25; // a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
 const IFR_PELLET_SPREAD_S = 0.5; // s: a burst's pellets leave at random times over this (owner, 2026-10-20: "randomize the pellet launch times over 0.5s")
 const IFR_PELLET_REHIT = 0.2; // s: a pellet still touching an enemy it hit hits it again this often (a slow pellet riding along a body hits it several times)
 const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
@@ -45,7 +45,7 @@ const IFR_TRIPLE_N = 3, IFR_TRIPLE_JIT = 14; // Backdraft (Firaga VI, owner 2026
 let IFR_FLARE_K = 6 /* x2 (owner, 2026-10-20: "double flare sizes"); was 3 */, IFR_LAND_POW = 1.5, IFR_FLARE_WS = 1; /* swept 2026-10-19 (countermx 61-69 spread @6pts, swarm/fast/shield/armor % leaked): K 1 POW 2: 17/74/64/49 - small flares popped no shields; K 3 POW 1.5 + ticks x0.5: 11/63/18/51 (the old six-beam IFR: 11/69/14/56) */ // IFR_FLARE_WS: the width's share of the jitter (W x s^WS; 0 = a full-width spoke at any length)
 const IFR_FLARE_MEAN = 0.5, IFR_FLARE_SD = 0.45 /* x3 (owner, 2026-10-20: "triple flare size jitter"; was 0.15) - more of them hit the [MIN, 1] clamp */, IFR_FLARE_MIN = 0.15;
 const ifrNormal = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random()); // (Box-Muller; Math.random is the sim's seeded one)
-const IFR_ROUTE_ST = { shieldPop: 1 }, IFR_RING_ST = { shieldPop: 1 }, IFR_PELLET_ST = { shieldPop: 1 }, IFR_BURN_ST = { noFx: true, noNum: true, shieldPop: 1 }; // (damage: st.shieldPop; the burn is quiet)
+const IFR_ROUTE_ST = { shieldPop: 1 }, IFR_FIRE_ST = { noFx: true, noNum: true, shieldPop: 1 }, IFR_PELLET_ST = { shieldPop: 1 }, IFR_BURN_ST = { noFx: true, noNum: true, shieldPop: 1 }; // (damage: st.shieldPop; the burn is quiet)
 
 SKILL_TREES.ifr = [
   { id: "meteor", name: "Meteor", tiers: [{ name: "Pebble" }, { name: "Stone" }, { name: "Rock" }, { name: "Boulder" }, { name: "Meteor" }] },
@@ -75,7 +75,7 @@ const ifrCentre = t => { const c = CELLS[t.cell]; return { x: t.x ?? c.x, y: t.y
 function ifrInit(t) {
   if (t.ifrInit0) return;
   for (const k of ["ifrSlot0", "ifrReady", "ifrLaunchCd", "ifrRings", "ifrFs"]) delete t[k]; /* a 6.4 tower's slots */
-  t.ifrInit0 = true; t.ifrCharge = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrFlares = [];
+  t.ifrInit0 = true; t.ifrCharge = 0; t.ifrBalls = []; t.ifrFires = []; t.ifrPellets = []; t.ifrFlares = [];
 }
 function ifrCharge(t, st, dt) { t.ifrCharge = Math.min(1, t.ifrCharge + dt / Math.max(0.01, st.chargeS)); }
 // "Always launch when meteor available" (owner): full + an enemy in range (the tower's targeting) = it flies, aimed at where that enemy
@@ -93,7 +93,7 @@ function stepIfr(t, dt) {
   const st = towerStats(t);
   ifrCharge(t, st, dt);
   ifrLaunch(t, st);
-  stepIfrBalls(t, st, dt); stepIfrRings(t, st, dt); stepIfrPellets(t, st, dt); stepIfrFlares(t, st, dt);
+  stepIfrBalls(t, st, dt); stepIfrFires(t, st, dt); stepIfrPellets(t, st, dt); stepIfrFlares(t, st, dt);
 }
 // ---------- the flight (METEOR, owner 2026-10-20: "meteor only affects en route damage"): every enemy its body touches is hit once for
 // st.routeHit; it lands at its AIM spot whatever happened to the target ----------
@@ -114,42 +114,48 @@ function stepIfrBalls(t, st, dt) {
   }
   keepLive(t.ifrBalls);
 }
-function ifrImpact(t, st, b) { ifrBurst(t, st, b.ax, b.ay, 1, undefined, b.r); } /* (until the fire, plan task 4) */
-// the BURST: a ring from the spot, and pellets out in random directions to the blast radius, enemies there or not (owner, 2026-10-19:
-// "shooting 5 pellets in random directions that each make asterisks"); k: the ring's radius and hit multiplier (1 a ball)
-// THE RING OPENS ON LANDING, with the pellets (owner, 2026-10-20: "pop blast ring on landing of main ball, but reduce visibility of
-// ring" - kept its alpha, drawn thinner: IFR_RING_THIN); from 2026-10-19 it waited for the last pellet's flare
-function ifrRing(t, x, y, R, k, r0 = 0) { /* r0: it opens from the ball's own ring (owner, 2026-10-20) */
-  t.ifrRings.push({ x, y, r: Math.min(r0, R), R, k, hit: [], left: Math.max(0, R - r0) / IFR_RING_V + IFR_RING_FADE /* stays on screen a moment after full size, fading (owner, 2026-10-19); it hits nothing then */ });
+// THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), and the pellets fly
+// (Blk Magic). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)
+function ifrImpact(t, st, b) {
+  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, hold: st.fireLinger, fade: IFR_FIRE_FADE, tick: 0, hit: st.fireHit, left: 1 });
+  ifrPelletBurst(t, st, b.ax, b.ay);
   sfx("ifrblast");
 }
-function ifrBurst(t, st, x, y, k, fs = ifrPelletFlares(st), r0 = 0) {
-  const R = st.blastR * k;
-  ifrRing(t, x, y, R, k, r0);
+// the pellets out in random directions, enemies there or not (owner, 2026-10-19: "shooting 5 pellets in random directions that each make asterisks")
+function ifrPelletBurst(t, st, x, y) {
+  const R = st.blastR, fs = ifrPelletFlares(st);
   for (let i = 0; i < st.pellets; i++) {
-    /* ANY direction, evenly (owner, 2026-10-19: "remove the backwards bias" - it leaned to the core); a RANDOM distance weighted near
-       (IFR_LAND_POW > 1) - since pellets pass through (2026-10-20) this is where every one lands, not just the misses */
+    /* ANY direction, evenly (owner, 2026-10-19: "remove the backwards bias"); a RANDOM distance weighted near (IFR_LAND_POW > 1) */
     const a = Math.random() * 2 * Math.PI, cx = Math.cos(a), cy = Math.sin(a), d = R * IFR_PELLET_REACH * Math.random() ** IFR_LAND_POW;
     t.ifrPellets.push({ x, y, ax: x + cx * d, ay: y + cy * d, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: d / IFR_PELLET_V, flown: 0, age: 0, wait: Math.random() * IFR_PELLET_SPREAD_S, hit: {}, fs: fs[i] }); /* hit: enemy id -> age at its last hit (plain data: G clones) */
   }
 }
-// the RING: expands at IFR_RING_V to R; every enemy it passes takes the blast hit once (full splash - owner: good vs swarm)
-function stepIfrRings(t, st, dt) {
-  if (!t.ifrRings.length) return;
-  for (const q of t.ifrRings) {
-    const grew = q.r < q.R; /* hits only while the ring GROWS: the fade-out touches nothing */
-    q.r = Math.min(q.R, q.r + IFR_RING_V * dt); q.left -= dt;
-    if (!grew) continue;
-    for (const e of G.enemies) {
-      if (e.dead || !e.seen || q.hit.includes(e.id)) continue;
-      const d2 = (e.x - q.x) ** 2 + (e.y - q.y) ** 2;
-      if (d2 > q.r * q.r || d2 > q.R * q.R) continue;
-      q.hit.push(e.id); const amt = st.dmg * q.k;
-      const h0 = hitFrom; HIT_AT.x = q.x; HIT_AT.y = q.y; hitFrom = HIT_AT;
-      try { damage(e, amt, t, false, false, IFR_RING_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
-    }
+// CATCHING FIRE (the flares' rule, the fire's too): an enemy burns only at a tick it was ALSO in the fire at the tick before - what stands
+// in it burns, what runs through it does not (the fast weakness). was / now: ids touching at the last tick / this one (plain data)
+function ifrCatch(was, now, id) { now[id] = 1; return !IFR_CATCH || !!was[id]; }
+// THE FIRE: grows at v to R, then holds (still burning), then fades (hitting nothing); every IFR_FIRE_TICK_S a quiet tick on each enemy
+// inside it (its body within r), popping a shield charge
+function stepIfrFires(t, st, dt) {
+  if (!t.ifrFires || !t.ifrFires.length) return;
+  for (const f of t.ifrFires) {
+    if (f.r < f.R) f.r = Math.min(f.R, f.r + f.v * dt);
+    else if (f.hold > 0) f.hold -= dt;
+    else { f.fade -= dt; if (f.fade <= 0) f.left = 0; continue; }
+    f.tick += dt;
+    if (f.tick < IFR_FIRE_TICK_S) continue;
+    f.tick -= IFR_FIRE_TICK_S; ifrTickFire(t, st, f);
   }
-  keepLive(t.ifrRings);
+  keepLive(t.ifrFires);
+}
+function ifrTickFire(t, st, f) {
+  const was = f.on || IFR_NONE, now = f.on = {}, all = G.enemies, defs = ENEMIES;
+  for (let i = 0; i < all.length; i++) {
+    const e = all[i];
+    if (e.dead || !e.seen) continue;
+    const r = f.r + defs[e.type].size * (e.sizeMul || 1), ex = e.x - f.x, ey = e.y - f.y;
+    if (ex * ex + ey * ey > r * r || !ifrCatch(was, now, e.id)) continue;
+    damage(e, f.hit, t, false, false, IFR_FIRE_ST); onHit(e, t, st, f.hit);
+  }
 }
 // the PELLETS: non-homing, straight out to their random distance, PASSING THROUGH (owner, 2026-10-20: "pellets should always
 // passthrough + deal damage on passthrough based on firaga lvl"): every enemy touched takes the pellet hit, again every IFR_PELLET_REHIT s it stays touching (st.dmg x IFR_PELLET_K
@@ -229,8 +235,7 @@ function ifrTickFlare(t, st, f) {
       const qx = e.x - px, qy = e.y - py; if (qx * qx + qy * qy <= r * r) { hit = true; break; }
     }
     if (!hit) continue;
-    now[e.id] = 1;
-    if (IFR_CATCH && !was[e.id]) continue; /* it burns only if it was on a spoke at the last tick too: a fast enemy crosses between ticks */
+    if (!ifrCatch(was, now, e.id)) continue; /* it burns only if it was on a spoke at the last tick too: a fast enemy crosses between ticks */
     damage(e, amt, t, false, false, IFR_BURN_ST); onHit(e, t, st, amt); /* not quiet=true: damage() lets a shield bounce a quiet hit unpopped; IFR_BURN_ST's noFx + noNum keep it silent (ACD's pools, the same way) */
   }
 }

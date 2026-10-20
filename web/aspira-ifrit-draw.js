@@ -30,13 +30,9 @@ function drawIfrRingAt(x, y, r, a, low) {
     ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
   }
 }
-function drawIfrRings(t, low) {
-  ctx.fillStyle = COL.tifr;
-  for (const q of t.ifrRings) {
-    const grow = q.r / q.R, fade = grow < 1 ? 1 : Math.max(0, q.left / IFR_RING_FADE), a = (0.9 * (1 - grow) + 0.1) * fade;
-    if (!low && grow < 1) { ctx.globalAlpha = IFR_RING_DISC * (1 - grow); ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.fill(); }
-    drawIfrRingAt(q.x, q.y, q.r, a, low);
-  }
+// THE FIRE: the meteor's outline and glow without its black fill, at the fire's radius, fading out at the end (owner, 2026-10-20)
+function drawIfrFires(t, low) {
+  for (const f of t.ifrFires || []) drawIfrRingAt(f.x, f.y, f.r, 0.9 * (f.hold > 0 || f.r < f.R ? 1 : Math.max(0, f.fade / IFR_FIRE_FADE)), low);
 }
 /* the ball LOOKS LIKE THE BLAST (owner, 2026-10-20: "ball is a black circle with ring, on impact, ring starts expanding from current
    size"): a black disc ringed by the blast's glow, IFR_EMBER_R x k across - the area of all its pellets; on the corner as in flight */
@@ -96,7 +92,7 @@ function drawIfr(balls) {
   for (const t of G.towers) {
     if (t.kind !== "ifr" || !t.ifrInit0) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
+    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrFires(t, low); drawIfrEmbers(t, low); }
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
