@@ -814,7 +814,9 @@ fast -2, shield +1, armor -1; focus N=1 @8 pts, 81-89 / 101-109: Meteor VI 4/1/3
 | fire max radius u (Hellfire; floor: the meteor) | 0 40 60 85 110 130 | 160 |
 | fire speed u/s / linger s | 60 .. 180 / .5 .. 3 | 220 / 5 |
 | fire tick x, every 0.05 s (Hellfire) | .1 .15 .3 1 2.5 5 | 15 |
-| pellets / pellet hit x (Blk Magic) | 8 9 11 13 16 20 / .5 .6 .8 1.1 1.6 2.5 | 24 / 4 |
+| pellets / pellet hit x (Blk Magic) | 4 5 6 7 8 10 / .5 .6 .8 1.1 1.6 2.5 (6.5.1: halved, owner "reduce flare counts, increase flare sizes"; were 8 .. 20, VI 24) | 12 / 4 |
+| flare size `IFR_FLARE_K` | 12 (6.5.1: x2; was 6) - solo 0-2 lost; focus 81-89 / 101-109 Meteor 4/1/27/0 / 43/2/87/0, Hellfire 4/11/2/39 / 20/96/79/100, Blk Magic 2/9/0/59 / 12/96/34/100; spread 25/88/55/78 | |
+| fires a tower | uncapped (6.5.1, owner: "dont cap fire stacks"; 6.5.0 capped them at 10) | |
 | flares (Blk Magic): length, width, burn, tick | the 6.4 Hellfire tables | |
 | giant flare | x4 a VI flare's size and hit | |
 

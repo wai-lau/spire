@@ -271,7 +271,7 @@ check("IFR: the fire opens at the meteor's size, grows to its max, burns by catc
   if (r.sold !== true) return "selling the tower with a live fire threw: " + r.sold;
   return "";
 });
-check("IFR: the DAM core power raises every IFR hit; a tower keeps at most IFR_FIRE_MAX live fires", () => {
+check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -283,11 +283,11 @@ check("IFR: the DAM core power raises every IFR hit; a tower keeps at most IFR_F
     out.off = hitOf(); G.power.DAM = 1; out.on = hitOf(); G.power.DAM = 0;
     for (let k = 0; k < 6; k++) upgradeTower(t, "hellfire", true); const st = towerStats(t);
     for (let i = 0; i < 40; i++) ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR });
-    out.fires = t.ifrFires.length; out.max = IFR_FIRE_MAX;
+    out.fires = t.ifrFires.length;
     return out;
   })()`);
   if (!(Math.abs(r.on / r.off - 1.6) < 1e-6)) return "DAM: the meteor's hit went " + r.off + " -> " + r.on + " (expected x1.6)";
-  if (!(r.fires <= r.max)) return r.fires + " live fires on one tower (cap " + r.max + ")";
+  if (r.fires !== 40) return "40 impacts left " + r.fires + " live fires (owner, 2026-10-20: \"dont cap fire stacks\")";
   return "";
 });
 check("IFR: a pellet passes through, hits a body it rides along again, lands where aimed; Blk Magic scales the pellets and flares; Mega Firaga lights one giant flare", () => {
