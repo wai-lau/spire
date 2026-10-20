@@ -686,7 +686,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 
 | Balance rule the owner set (keep when changing numbers) | Checked by |
 |---|---|
-| a lone L1 tower of any kind clears waves 1-11 | `solo`; `WAVE_COUNT_MUL` |
+| a lone L1 tower of any kind clears waves 1-11, losing at most 3 lives (owner, 2026-10-20; was 0) | `solo`; `WAVE_COUNT_MUL` |
 | the Star (wave 12) needs two towers or an upgrade (SOL and ACD may solo it) | `wave1`, `waverep` |
 | every trio of kinds is winnable except the designed deaths (§4.6d) (no kind required) | `trios`, `tribal` |
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |

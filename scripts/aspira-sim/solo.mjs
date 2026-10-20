@@ -61,7 +61,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("solo.mjs")) {
     const pre = rs.map(r => r.pre).join("/"), star = rs.map(r => (r.star === "beaten" ? "W" : r.star === "leaked" ? "l" + r.starLost : "X")).join(" "); // W no leak, l<n> n lost to it, X broke through
     return `${setup.toUpperCase().padEnd(18)} slot ${slot.padEnd(5)} lives lost w1-11 ${pre.padEnd(12)} star ${star}  ${process.env.SOLO_WAVES ? rs.map(r => r.byWave || "-").join(" / ") : rs.map(r => r.worst).filter(Boolean).join(" ")}`;
   };
-  console.log("\n== ALONE, L1 (target: 0 lost on 1-11, the Star breaks through)");
+  console.log("\n== ALONE, L1 (target: at most 3 lost on 1-11 a seed, the Star breaks through - owner, 2026-10-20; was 0)");
   for (const k of K) console.log(line(k));
   console.log("\n== ALONE + ONE UPGRADE (target: the Star beaten)");
   for (const k of K) for (const ax of axes[k]) console.log(line(`${k}+${ax}`));
