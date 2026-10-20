@@ -117,7 +117,7 @@ function stepIfrBalls(t, st, dt) {
       const h0 = hitFrom; HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
       try { damage(e, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
     }
-    if (b.left <= 0) ifrBurst(t, st, b.ax, b.ay, 1, b.fs);
+    if (b.left <= 0) ifrBurst(t, st, b.ax, b.ay, 1, b.fs, IFR_EMBER_R * (b.k || 1)); /* the ring opens from the ball's size */
   }
   keepLive(t.ifrBalls);
 }
@@ -125,13 +125,13 @@ function stepIfrBalls(t, st, dt) {
 // "shooting 5 pellets in random directions that each make asterisks"); k: the ring's radius and hit multiplier (1 a ball)
 // THE RING OPENS ON LANDING, with the pellets (owner, 2026-10-20: "pop blast ring on landing of main ball, but reduce visibility of
 // ring" - kept its alpha, drawn thinner: IFR_RING_THIN); from 2026-10-19 it waited for the last pellet's flare
-function ifrRing(t, x, y, R, k) {
-  t.ifrRings.push({ x, y, r: 0, R, k, hit: [], left: R / IFR_RING_V + IFR_RING_FADE /* stays on screen a moment after full size, fading (owner, 2026-10-19); it hits nothing then */ });
+function ifrRing(t, x, y, R, k, r0 = 0) { /* r0: it opens from the ball's own ring (owner, 2026-10-20) */
+  t.ifrRings.push({ x, y, r: Math.min(r0, R), R, k, hit: [], left: Math.max(0, R - r0) / IFR_RING_V + IFR_RING_FADE /* stays on screen a moment after full size, fading (owner, 2026-10-19); it hits nothing then */ });
   sfx("ifrblast");
 }
-function ifrBurst(t, st, x, y, k, fs = ifrPelletFlares(st)) {
+function ifrBurst(t, st, x, y, k, fs = ifrPelletFlares(st), r0 = 0) {
   const R = st.blastR * k;
-  ifrRing(t, x, y, R, k);
+  ifrRing(t, x, y, R, k, r0);
   for (let i = 0; i < st.pellets; i++) {
     /* ANY direction, evenly (owner, 2026-10-19: "remove the backwards bias" - it leaned to the core); a RANDOM distance weighted near
        (IFR_LAND_POW > 1) - since pellets pass through (2026-10-20) this is where every one lands, not just the misses */
@@ -256,15 +256,13 @@ function stepIfrFlares(t, st, dt) {
 const IFR_EMBER_HALO = 9, IFR_EMBER_R = 4, IFR_EMBER_CORE = 1.5, IFR_TAIL_N = 3, IFR_TAIL_S = 0.05;
 /* the RING is a glow, [width u, alpha] wide faint / mid / bright core, plus a faint disc inside the front */
 const IFR_RING_GLOW = [[22, 0.22, "tifr"], [11, 0.45, "tifr"], [4, 1, "tifr"], [1.5, 0.95, "white"]], IFR_RING_DISC = 0.14, IFR_RING_THIN = 0.5; /* every layer's WIDTH x this (owner, 2026-10-20: "keep opacity, reduce thickness"; for a moment it was the alpha) */ /* + a WHITE core (owner, 2026-10-19) */ /* brighter, wider (owner, 2026-10-19: "more visible"; were [16, 0.14], [8, 0.3], [3, 0.9], disc 0.08) */
-function drawIfrCharge(t, st) {
+function drawIfrCharge(t, st, low) {
   const corners = ifrSlotCorners(t, st.slots);
-  ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
   for (let i = 0; i < corners.length; i++) {
-    const full = i < t.ifrReady, k = full ? 1 : i === t.ifrReady ? t.ifrCharge : 0;
+    const k = i < t.ifrReady ? 1 : i === t.ifrReady ? t.ifrCharge : 0;
     if (k <= 0) continue;
     const c = ifrCorner(t, corners[i]), q = t.ifrFs && t.ifrFs[i], K = q ? q.k : Math.sqrt(st.pellets); /* the ball it launches: IFR_EMBER_R x its k */
-    ctx.beginPath(); ctx.arc(c.x, c.y, IFR_EMBER_R * K * (0.3 + 0.7 * k), 0, 6.283); ctx.fill();
-    if (full) { ctx.fillStyle = COL.white; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(c.x, c.y, IFR_EMBER_CORE * K, 0, 6.283); ctx.fill(); ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9; }
+    drawIfrBlastBall(c.x, c.y, IFR_EMBER_R * K * (0.3 + 0.7 * k), low);
   }
 }
 // an ember's SIZE x IFR_EMBER_*: a pellet's, its flare's mean size over the average flare's (owner, 2026-10-20: "pellet size should be
@@ -289,22 +287,29 @@ function drawIfrEmbers(t, low) {
   ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr;
   for (const p of t.ifrPellets) if (p.wait <= 0) drawIfrEmber(p, ifrEmberK(p.fs), low); /* (wait: not launched yet) */
 }
+// the ring's glow at radius r, alpha a (0.9 = full): IFR_RING_GLOW's layers, the blast's and the ball's alike
+function drawIfrRingAt(x, y, r, a, low) {
+  for (let g = low ? IFR_RING_GLOW.length - 2 : 0; g < IFR_RING_GLOW.length; g++) { /* lowQ: the orange core + the white */
+    ctx.strokeStyle = COL[IFR_RING_GLOW[g][2]]; ctx.lineWidth = IFR_RING_THIN * IFR_RING_GLOW[g][0]; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
+  }
+}
 function drawIfrRings(t, low) {
-  ctx.strokeStyle = COL.tifr; ctx.fillStyle = COL.tifr;
+  ctx.fillStyle = COL.tifr;
   for (const q of t.ifrRings) {
     const grow = q.r / q.R, fade = grow < 1 ? 1 : Math.max(0, q.left / IFR_RING_FADE), a = (0.9 * (1 - grow) + 0.1) * fade;
     if (!low && grow < 1) { ctx.globalAlpha = IFR_RING_DISC * (1 - grow); ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.fill(); }
-    for (let g = low ? IFR_RING_GLOW.length - 2 : 0; g < IFR_RING_GLOW.length; g++) { /* lowQ: the orange core + the white */
-      ctx.strokeStyle = COL[IFR_RING_GLOW[g][2]]; ctx.lineWidth = IFR_RING_THIN * IFR_RING_GLOW[g][0]; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
-      ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke();
-    }
+    drawIfrRingAt(q.x, q.y, q.r, a, low);
   }
 }
-/* the ball: a pellet's ember the area of all its pellets (owner, 2026-10-20; a plain disc before; no line before it - owner, 2026-10-19) */
+/* the ball LOOKS LIKE THE BLAST (owner, 2026-10-20: "ball is a black circle with ring, on impact, ring starts expanding from current
+   size"): a black disc ringed by the blast's glow, IFR_EMBER_R x k across - the area of all its pellets; on the corner as in flight */
+function drawIfrBlastBall(x, y, r, low) {
+  ctx.fillStyle = COL.bg; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
+  drawIfrRingAt(x, y, r, 0.9, low);
+}
 function drawIfrBalls(t, low) {
-  ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr;
-  for (const b of t.ifrBalls) drawIfrEmber(b, b.k ??= ifrBallK(b.fs), low); /* (k cached on the ball: a plain number, G clones) */
-  ctx.lineCap = "butt";
+  for (const b of t.ifrBalls) drawIfrBlastBall(b.x, b.y, IFR_EMBER_R * (b.k ??= ifrBallK(b.fs)), low); /* (k cached on the ball: a plain number, G clones) */
 }
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
@@ -355,7 +360,7 @@ function drawIfr(balls) {
   for (const t of G.towers) {
     if (t.kind !== "ifr" || t.ifrSlot0 == null) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    if (balls) { drawIfrBalls(t, low); drawIfrCharge(t, towerStats(t)); } else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
+    if (balls) { drawIfrBalls(t, low); drawIfrCharge(t, towerStats(t), low); } else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
