@@ -215,6 +215,13 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     const angs = fan.map(b => (Math.atan2(b.vy, b.vx) + 2 * Math.PI) % (2 * Math.PI)).sort((a, b) => a - b); out.maxGap = Math.max(...angs.map((a, i) => (i ? a - angs[i - 1] : a + 2 * Math.PI - angs[angs.length - 1]))) * 180 / Math.PI;
     const w = fan.map(b => b.wait); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
     tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; /* the fan hits nothing here: no new fire */
+    /* its target dies in flight: it flies on to the CORPSE (owner, 2026-10-20: "if target dies, lock on to corpse") and bursts there */
+    for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
+    { const v = held(t, t.x + 140, t.y - 50); egridAt = NaN; t.ifrCharge = 1; ifrLaunch(t, st); stepIfrBalls(t, st, 1 / 60); const vx = v.x, vy = v.y; v.dead = true;
+      const decoy = held(t, t.x - 120, t.y + 40); egridAt = NaN; /* the nearest live enemy: it must NOT re-lock onto it */
+      let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60);
+      out.corpseFire = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - vx, t.ifrFires[0].y - vy) : NaN; out.decoy = 50 - decoy.shield; decoy.dead = true;
+      for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; }
     /* a fan meteor homes within 50 u (and only then), hits for damage only - no fire */
     t.ifrFires.length = 0; const near = held(t, t.x + 150, t.y + 35), far = held(t, t.x + 250, t.y + 90); egridAt = NaN;
     t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
@@ -237,6 +244,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
   if (Math.abs(r.waitMean - 0.5) > 0.12 || r.waitMin < 0 || r.waitMax > 1 || r.waitMax - r.waitMin < 0.1) return "fan release times: mean " + r.waitMean.toFixed(2) + " in [" + r.waitMin.toFixed(2) + ", " + r.waitMax.toFixed(2) + "] (expected a bell round 0.5 s)";
   if (r.firesAfter !== 1) return "fires after the fan flew: " + r.firesAfter + " (only the first impact makes one)";
+  if (!(r.corpseFire < 6) || r.decoy) return "its target died: the burst landed " + r.corpseFire + " u from the corpse, a live decoy took " + r.decoy + " (expected at the corpse, none)";
   if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire) return "a fan meteor: near (35 u) hit " + r.homeNear + ", far (90 u) " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 0)";
   if (!r.fissure || JSON.stringify(r.kids) !== "[-30,30]" || r.kidGen.some(g => g !== 2) || r.cHits !== 1) return "capstone fissure: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen + ", parent's enemy hit " + r.cHits;
   if (!r.offGone || r.offFires || r.offSteps < 5) return "off view: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires;

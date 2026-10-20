@@ -120,31 +120,48 @@ function ifrOnView(x, y, r) {
   }
   return (x - CX) ** 2 + (y - CY) ** 2 < IFR_FLY_R * IFR_FLY_R;
 }
-// HOMING: a meteor keeps its lock (b.lock, an enemy id) while that enemy lives, else locks the nearest one whose body is within IFR_HOME_R;
-// locked, it turns straight at its LED spot at full speed (an instant turn)
-function ifrHome(b, all) {
+// HOMING: a meteor keeps its lock (b.lock, an enemy id) and steers at that enemy's LED spot (an instant turn); unlocked, it locks the nearest
+// enemy whose body is within IFR_HOME_R (the launched one: already locked at launch). If its enemy DIES it flies on to the CORPSE - the
+// last spot it saw it (b.cx, b.cy; owner, 2026-10-20: "if target dies, lock on to corpse") - never re-locking. Returns true on reaching it
+function ifrHome(b, all, dt) {
+  if (b.cx != null) { /* bound for a corpse */
+    const dx = b.cx - b.x, dy = b.cy - b.y, d = Math.hypot(dx, dy), v = Math.hypot(b.vx, b.vy);
+    if (d <= v * dt) { b.x = b.cx; b.y = b.cy; return true; }
+    b.vx = dx / d * v; b.vy = dy / d * v; return false;
+  }
   let e = null;
-  if (b.lock != null) { e = all.find(x => x.id === b.lock && !x.dead) || null; if (!e) b.lock = null; }
+  if (b.lock != null) {
+    e = all.find(x => x.id === b.lock && !x.dead) || null;
+    if (!e) { b.lock = null; if (b.lx != null) { b.cx = b.lx; b.cy = b.ly; return ifrHome(b, all, dt); } }
+  }
   if (!e) {
     let best = Infinity;
     for (const x of all) {
       if (x.dead || !x.seen || x.id === b.skip) continue;
       const d = Math.hypot(x.x - b.x, x.y - b.y) - ENEMIES[x.type].size * (x.sizeMul || 1);
-      if ((!b.gen || d <= IFR_HOME_R) && d < best) { best = d; e = x; } /* the launched meteor: any distance; the fan: within IFR_HOME_R */
+      if (d <= IFR_HOME_R && d < best) { best = d; e = x; }
     }
     if (e) b.lock = e.id;
   }
-  if (!e) return;
+  if (!e) return false;
+  b.lx = e.x; b.ly = e.y; /* where it was last seen alive */
   const v = Math.hypot(b.vx, b.vy), p = ifrLead(b, e, v), d = Math.hypot(p.x - b.x, p.y - b.y) || 1; /* at where it WILL be (the lead), not where it is */
   b.vx = (p.x - b.x) / d * v; b.vy = (p.y - b.y) / d * v;
+  return false;
+}
+// THE FAN: st.forks x IFR_FAN_K meteors round 360 degrees from (x, y), evenly (a random start), each released after a bell-curve delay
+function ifrFan(born, st, x, y, skip) {
+  const n = st.forks * IFR_FAN_K, a0 = Math.random() * 2 * Math.PI;
+  for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, Math.min(2 * IFR_FAN_T, Math.max(0, IFR_FAN_T + IFR_FAN_SD * ifrNormal()))]);
 }
 function stepIfrBalls(t, st, dt) {
   if (!t.ifrBalls.length) return;
   const all = G.enemies, born = [];
   for (const b of t.ifrBalls) {
     if (b.wait > 0) { b.wait -= dt; continue; } /* a fan meteor not released yet */
-    ifrHome(b, all);
-    b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
+    const atCorpse = ifrHome(b, all, dt);
+    if (!atCorpse) { b.x += b.vx * dt; b.y += b.vy * dt; }
+    b.left -= dt;
     let hit = null;
     for (const e of all) { /* every enemy, not projGrid's cell (a few meteors a tower - cheap) */
       if (e.dead || !e.seen || e.id === b.skip) continue;
@@ -156,10 +173,11 @@ function stepIfrBalls(t, st, dt) {
       try { damage(hit, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(hit, t, st, amt);
       b.left = 0;
       if (!b.gen) { /* THE FIRST IMPACT (owner, 2026-10-20: "only first impact causes hellfire"): the fire, the pellets, and the 360-degree fan */
-        b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b);
-        const n = st.forks * IFR_FAN_K, a0 = Math.random() * 2 * Math.PI;
-        for (let i = 0; i < n; i++) born.push([b.x, b.y, a0 + i * 2 * Math.PI / n, hit.id, 1, Math.min(2 * IFR_FAN_T, Math.max(0, IFR_FAN_T + IFR_FAN_SD * ifrNormal()))]);
+        b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, hit.id);
       } else if (st.fissure && b.gen === 1) { const a = Math.atan2(b.vy, b.vx), d = IFR_FISSURE_DEG * Math.PI / 180; born.push([b.x, b.y, a - d, hit.id, 2, 0], [b.x, b.y, a + d, hit.id, 2, 0]); } /* the capstone: a fan meteor's hit fissures */
+    } else if (atCorpse) { /* at its dead target's spot: the launched one bursts there (fire, pellets, the fan); a fan meteor just goes */
+      b.left = 0;
+      if (!b.gen) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); }
     } else if (!ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst */
   }
   keepLive(t.ifrBalls);
