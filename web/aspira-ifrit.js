@@ -20,6 +20,7 @@ const IFR_FIRE_R = [0, 40, 60, 85, 110, 130]; // u radius (VI 160: "6 towers acr
 const IFR_FIRE_V = [60, 80, 100, 120, 150, 180]; // u/s (VI 220)
 const IFR_FIRE_LINGER = [0.5, 1, 1.5, 2, 2.5, 3]; // s at full size, still burning (VI 5)
 const IFR_FIRE_K = [0.1, 0.15, 0.3, 1, 2.5, 5]; // a tick, x TOWERS.ifr.dmg (VI 15)
+const IFR_FIRE_MAX = 10; // live fires a tower at most: the oldest goes (final review 2026-10-20 - Meteor VI + Hellfire V-VI stacked ~11-33 a tower, each scanning every enemy 20x a second)
 let IFR_FIRE_TICK_S = 0.05 /* battery 2026-10-20: 0.2 left Hellfire VI leaking 95% of shields at 101-109 - each tick pops one charge */; const IFR_FIRE_FADE = 0.3, IFR_FIRE_GLOW_S = 1.5, IFR_FIRE_GLOW_K = 3; // (let: the sims sweep the tick) // s between ticks (fixed); s it fades out at the end, hitting nothing; its inner glow rises SLOWLY to GLOW_K x over GLOW_S after impact (owner, 2026-10-20: "after meteor impact, slowly triple the inner glow's opacity")
 const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Blk Magic (Hellfire's until 2026-10-20): a flare beam's length from its centre, u (VI 210, capstone.js - was to the play-box edges, owner 2026-10-19: "looks ridiculous ... maybe half")
 const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Blk Magic: its width, u
@@ -56,11 +57,12 @@ function ifrSkillStats(t, s, b) {
   s.range = b.range * RANGE_BONUS; s.targets = 1;
   // EACH AXIS ITS OWN PART, ITS OWN DAMAGE (owner, 2026-10-20: "axes don't feel unique nor impactful"), every hit x TOWERS.ifr.dmg:
   // Meteor the ball in flight, Hellfire the fire it leaves, Blk Magic the pellets and their flares
-  s.chargeS = IFR_CHARGE_S[m]; s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeHit = b.dmg * IFR_ROUTE_K[m];
-  s.fireR = Math.max(s.ballR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireLinger = IFR_FIRE_LINGER[h]; s.fireHit = b.dmg * IFR_FIRE_K[h];
-  s.pellets = IFR_PELLETS[f]; s.pelletHit = b.dmg * IFR_PELLET_DK[f]; s.giant = f >= CAPSTONE_TIER;
-  s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareHit = b.dmg * IFR_TICK_K[f];
-  s.dmg = s.routeHit; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the en-route hit, meteors a second
+  s.chargeS = IFR_CHARGE_S[m]; s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K[m];
+  s.fireR = Math.max(s.ballR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireLinger = IFR_FIRE_LINGER[h]; s.fireK = IFR_FIRE_K[h];
+  s.pellets = IFR_PELLETS[f]; s.pelletK = IFR_PELLET_DK[f]; s.giant = f >= CAPSTONE_TIER;
+  s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareK = IFR_TICK_K[f];
+  // every hit is st.dmg x its axis's K AT THE HIT, so what towerStats does to dmg after this (the DAM core power, an aura) reaches all of them
+  s.dmg = b.dmg; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
   s.skill = true;
 }
 // ---------- the charge ----------
@@ -91,7 +93,7 @@ function stepIfr(t, dt) {
   stepIfrBalls(t, st, dt); stepIfrFires(t, st, dt); stepIfrPellets(t, st, dt); stepIfrFlares(t, st, dt);
 }
 // ---------- the flight (METEOR, owner 2026-10-20: "meteor only affects en route damage"): every enemy its body touches is hit once for
-// st.routeHit; it lands at its AIM spot whatever happened to the target ----------
+// st.dmg x st.routeK; it lands at its AIM spot whatever happened to the target ----------
 function stepIfrBalls(t, st, dt) {
   if (!t.ifrBalls.length) return;
   const all = G.enemies;
@@ -101,7 +103,7 @@ function stepIfrBalls(t, st, dt) {
       if (e.dead || !e.seen || b.hit.includes(e.id)) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + b.r;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
-      b.hit.push(e.id); const amt = st.routeHit;
+      b.hit.push(e.id); const amt = st.dmg * st.routeK;
       const h0 = hitFrom; HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
       try { damage(e, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
     }
@@ -112,7 +114,8 @@ function stepIfrBalls(t, st, dt) {
 // THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), and the pellets fly
 // (Blk Magic). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)
 function ifrImpact(t, st, b) {
-  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, hold: st.fireLinger, fade: IFR_FIRE_FADE, tick: 0, hit: st.fireHit, left: 1 });
+  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, hold: st.fireLinger, fade: IFR_FIRE_FADE, tick: 0, hit: st.dmg * st.fireK, left: 1 });
+  if (t.ifrFires.length > IFR_FIRE_MAX) t.ifrFires.shift(); /* the oldest goes (perf: each fire scans every enemy each tick) */
   ifrPelletBurst(t, st, b.ax, b.ay);
   if (st.giant) ifrFlare(t, st, b.ax, b.ay, IFR_FLARE_K * IFR_GIANT_K, true); /* MEGA FIRAGA: one giant flare where it struck */
   sfx("ifrblast");
@@ -155,7 +158,7 @@ function ifrTickFire(t, st, f) {
   }
 }
 // the PELLETS: non-homing, straight out to their random distance, PASSING THROUGH (owner, 2026-10-20: "pellets should always
-// passthrough + deal damage on passthrough based on firaga lvl"): every enemy touched takes st.pelletHit (Blk Magic's own), again every
+// passthrough + deal damage on passthrough based on firaga lvl"): every enemy touched takes st.dmg x st.pelletK (Blk Magic's own), again every
 // IFR_PELLET_REHIT s it stays touching, and the pellet flies on; where it lands, a FLARE.
 // It hits nothing until it has flown IFR_PELLET_ARM (it is born on top of whatever stood at the burst spot)
 function stepIfrPellets(t, st, dt) {
@@ -168,7 +171,7 @@ function stepIfrPellets(t, st, dt) {
       if (e.dead || p.age - (p.hit[e.id] ?? -1e9) < IFR_PELLET_REHIT) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + IFR_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
-      p.hit[e.id] = p.age; const amt = st.pelletHit, h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT;
+      p.hit[e.id] = p.age; const amt = st.dmg * st.pelletK, h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT;
       try { damage(e, amt, t, false, false, IFR_PELLET_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
     }
     if (p.left > 0) continue;
@@ -183,7 +186,7 @@ function ifrFlareSizes() { return [ifrFlareS()]; } // one pellet's flare (a list
 function ifrPelletFlares(st) { const out = []; for (let i = 0; i < st.pellets; i++) out.push(ifrFlareSizes()); return out; } // a burst's pellets'
 function ifrFlare(t, st, x, y, s = ifrFlareS(), giant = false) { // giant: Mega Firaga's (size s = IFR_GIANT_K x the max), hitting IFR_GIANT_K x
   if (t.ifrFlares.length >= IFR_FLARE_MAX) { const k = t.ifrFlares.findIndex(f => !f.giant); t.ifrFlares.splice(k < 0 ? 0 : k, 1); } /* the oldest goes - never a giant first */
-  t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, hit: st.flareHit * (giant ? IFR_GIANT_K : 1), giant, edges: false }); /* hit: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
+  t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, hit: st.dmg * st.flareK * (giant ? IFR_GIANT_K : 1), giant, edges: false }); /* hit: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
 }
 // the FLARE: IFR_BEAMS beams from the burst point, a + and a small x (world angles: 3D is a view), burning for
 // `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge (Hellfire VI: the longest beams;
@@ -214,7 +217,7 @@ function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) ou
 let IFR_CATCH = true;
 const IFR_NONE = {};
 function ifrTickFlare(t, st, f) {
-  const ends = ifrBeamEnds(f), half = f.W / 2, amt = f.hit ?? st.flareHit, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
+  const ends = ifrBeamEnds(f), half = f.W / 2, amt = f.hit ?? st.dmg * st.flareK, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
   const all = G.enemies, defs = ENEMIES; /* (locals: a global read in this loop costs more than the arithmetic) */
   const was = f.on || IFR_NONE, now = f.on = {}; /* CATCHING FIRE: who touched a spoke at the last tick (ids - plain data, G clones) */
   for (let i = 0; i < all.length; i++) {

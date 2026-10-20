@@ -49,10 +49,10 @@ const SPEC = {
   // CRR (aspira-car.js): Damage + Rate are a SHOT's and an interceptor's
   car: st => [["Interceptors", st.wing], ["Focus fire", st.focus ? "+" + Math.round(st.focus * 100) + "% / wingmate" : "—"], ["Ammo", st.ammo + " shots"], ["Tether slow", st.tSlow ? Math.round(st.tSlow * 100) + "%" : "—"], ["Tether pulse", st.tK ? dmgUnits(st.dmg * st.tK) + " / " + CRR_TETHER_PULSE + "s" : "—"], ["Chain", st.tChain ? "1 more" : "—"],
     ["Autopilot", st.autopilot ? CRR_BURST_N + " pellets × " + dmgUnits(st.dmg * CRR_BURST_K) : "—"], ["Slow", Math.round(CRR_SLOW * 100) + "% · " + CRR_SLOW_S + "s"], ["Shields", "−" + CRR_BOLTS + " / shot"]],
-  // IFR (aspira-ifrit.js, axes redone 2026-10-20): Damage is the meteor's en-route hit (Meteor's own), Rate meteors a second
-  ifr: st => [["Charge", st.chargeS + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
-    ["Fire", "r" + Math.round(st.fireR) + " · " + st.fireV + "/s"], ["Burn", dmgUnits(st.fireHit) + " / " + IFR_FIRE_TICK_S + "s"], ["Linger", st.fireLinger + "s"],
-    ["Pellets", st.pellets + " × " + dmgUnits(st.pelletHit)], ["Flare", st.beamL + " long · " + st.beamW + " wide"], ["Flare burn", dmgUnits(st.flareHit) + " / " + st.tickS + "s · " + st.burnS + "s"],
+  // IFR (aspira-ifrit.js, axes redone 2026-10-20): Damage is the base every hit multiplies (each axis by its own K), Rate meteors a second
+  ifr: st => [["En route", dmgUnits(st.dmg * st.routeK)], ["Charge", st.chargeS + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
+    ["Fire", "r" + Math.round(st.fireR) + " · " + st.fireV + "/s"], ["Burn", dmgUnits(st.dmg * st.fireK) + " / " + IFR_FIRE_TICK_S + "s"], ["Linger", st.fireLinger + "s"],
+    ["Pellets", st.pellets + " × " + dmgUnits(st.dmg * st.pelletK)], ["Flare", st.beamL + " long · " + st.beamW + " wide"], ["Flare burn", dmgUnits(st.dmg * st.flareK) + " / " + st.tickS + "s · " + st.burnS + "s"],
     ["Mega Firaga", st.giant ? "a giant flare" : "—"]],
   // GRV (aspira-grv.js): at STARTING mass - a sphere grows up to x GRV_MASS_MAX with the damage it deals
   grv: st => [["Nova hit", dmgUnits(st.dmg * st.novaMul)], ["Nova reach", st.novaR], ["Aura size", st.auraR + " × nova dmg (×" + GRV_GROW_MIN + "–" + GRV_GROW_MAX + ")"],
