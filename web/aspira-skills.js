@@ -228,7 +228,7 @@ function skillOptions(t) {
 const withSkill = (t, id) => ({ ...t.skills, [id]: skillOf(t, id) + 1 });
 // the sliders' BASKET (aspira-sliders.js): the price of the tower's NEXT n points, each
 // at its own step of the ladder, and its chart with `add` (axis -> points) pulled on
-const skillPointsCost = (t, n) => { let c = 0; for (let i = 0; i < n; i++) c += Math.round(TOWERS[t.kind].cost * SKILL_STEP_COST[t.lvl - 1 + i]); return c; };
+const skillPointsCost = (t, n) => { if (freeBuild()) return 0; let c = 0; for (let i = 0; i < n; i++) c += Math.round(TOWERS[t.kind].cost * SKILL_STEP_COST[t.lvl - 1 + i]); return c; };
 const withSkills = (t, add) => { const s = { ...t.skills }; for (const [id, n] of Object.entries(add)) if (n) s[id] = (s[id] || 0) + n; return s; };
 
 // ---------- ARC's chart firing ----------

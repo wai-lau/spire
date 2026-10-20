@@ -256,6 +256,19 @@ check("IFR: a pellet passes through, hits a body it rides along again, lands whe
   if (r.triple !== 3 || !(r.jit <= r.jmax + 0.01)) return "Backdraft landed " + r.triple + " flares, up to " + r.jit + " u off (expected 3 within " + r.jmax + ")";
   return "";
 });
+check("auto-move: towers and upgrades are free, and a buy made then bars the leaderboard", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 500; ui.build = "ifr"; autoMove = true; G.autoMove = true;
+    const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
+    upgradeTower(t, "firaga", true); const out = { money: G.money, towers: G.towers.length, lvl: t.lvl, barred: autoBarred(), spent: t.spent };
+    autoMove = false; G.autoMove = false; out.paid = upCost(t) > 0; return out;
+  })()`);
+  if (r.towers !== 1 || r.lvl < 2) return "auto-move: the free tower / upgrade did not happen (towers " + r.towers + ", lvl " + r.lvl + ")";
+  if (r.money < 500 || r.spent !== 0) return "auto-move charged " /* (>=: the first tower starts wave 1, which may pay) */ + (500 - r.money) + "c (spent " + r.spent + ")";
+  if (!r.barred) return "a buy during auto-move did not bar the leaderboard";
+  if (!r.paid) return "prices stayed 0 after auto-move went off";
+  return "";
+});
 check("Temporal Drive: the field draws", () => {
   run(`G = newGame(); G.core = G.core || {}; G.core.freeze = { t: 1, dur: 10 };`);
   const seen = calls(env, ["drawTimeStop"], () => frames(env, 1));

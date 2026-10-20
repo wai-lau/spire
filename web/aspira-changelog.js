@@ -14,6 +14,7 @@ const CHANGELOG = [
     "Ifrit: Mega Firaga's blast hits a quarter harder.",
   ], ne: [], u: [
     "Build cards: marks re-checked with the new Ifrit.",
+    "Auto-move: towers and upgrades are free while it is on; any purchase made then keeps the run off the leaderboard.",
     "Ifrit: each pellet is drawn as big as the flare it will light; the fireball in flight looks like a pellet, as big as all its pellets together.",
   ] },
   { v: "6.3", day: "Oct 19", bu: [

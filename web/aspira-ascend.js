@@ -68,7 +68,7 @@ async function ascSend(ev) {
 // the entry form: a win, or a game over past wave 10
 // AUTO-MOVE BARS THE BOARD (owner, 2026-10-13: "any amount of auto-move disqualifies you from leaderboard"; it was over a minute):
 // any real time with it on this game (G.autoMoveS, aspira-ui.js) - the board shows, the entry form does not
-const autoBarred = () => (G.autoMoveS || 0) > 0;
+const autoBarred = () => (G.autoMoveS || 0) > 0 || !!G.autoBuy; /* + any buy made while auto-move was on (owner, 2026-10-20) */
 function showAscend() {
   const box = ascBox(), won = !!G.won;
   box.hidden = false;

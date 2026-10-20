@@ -45,7 +45,7 @@ function placeTower(p) {
   if (!canPlace(ci)) { float(p.x, p.y, "blocked", "pink"); ui.build = null; return; }
   const cost = towerCost(ui.build);
   if (G.money < cost) { float(p.x, p.y, "need " + cost + "c", "pink"); ui.build = null; return; }
-  G.money -= cost;
+  G.money -= cost; if (freeBuild()) G.autoBuy = true; /* a free buy: no leaderboard (aspira-defs.js freeBuild) */
   const c = CELLS[ci];
   const t = { id: G.id++, kind: ui.build, cell: ci, x: c.x, y: c.y, lvl: 1, cd: 0, mode: DEFAULT_MODE[ui.build], spent: cost };
   G.towers.push(t);
@@ -218,7 +218,7 @@ function upgradeTower(t, choice = null, quiet = false) {
   if (need === "skill") t.skills = { ...t.skills, [choice]: typeof nextStop === "function" ? nextStop(skillOf(t, choice)) : skillOf(t, choice) + 1 };
   if (need === "path") t.path = choice;
   if (need === "form") { t.form = choice; t.mode = UPGRADES[t.kind][t.path].finals[choice].mode || t.mode; } // a form may set targeting (Residue)
-  G.money -= c; t.spent += c; t.lvl += steps;
+  G.money -= c; t.spent += c; t.lvl += steps; if (freeBuild()) G.autoBuy = true; /* (spent += 0: a free level sells for nothing) */
   if (quiet) return;
   sfxFor("up", t.kind);
   ring(t.x, t.y, 64, TOWERS[t.kind].color); refreshPanels();
