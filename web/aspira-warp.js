@@ -315,7 +315,7 @@ function warpEntities() {
       const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
       const h = towerH(t);
       return { x, y, h, col: COL[TOWERS[t.kind].color], pts: c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K, y: y + (p.y - c0.y) * TOWER_K })),
-        top: () => ownColours(() => { up(x, y, () => drawTower(t), h / 2); up(x, y, () => drawIfrTop(t), 0); }), own: true }; /* drawIfrTop: IFR's charge balls on the prism's corners AT THE FLOOR, after the prism (aspira-ifrit.js) */
+        under: () => ownColours(() => up(x, y, () => drawIfrTop(t, false), 0)), top: () => ownColours(() => { up(x, y, () => drawTower(t), h / 2); up(x, y, () => drawIfrTop(t, true), 0); }), own: true }; /* drawIfrTop: IFR's charge balls on the prism's corners AT THE FLOOR - the ones BEHIND it before the prism, the ones in front after (aspira-ifrit.js) */
     });
     CELLS.forEach((c, ci) => {
       if (!cellOpen(ci) || G.towers.some(t => t.cell === ci)) return;
@@ -334,7 +334,7 @@ function warpEntities() {
       post: () => { if (warpBand && warpBand.lo === 0) warpShieldLines(warp.coreWalls.filter(coreFront), COL.white, 1, [CX, CY]); },
       top: () => { up(CX, CY, () => { poly(CX, CY, CORE_R, 6, Math.PI / 6, false); ctx.fillStyle = COL.white; ctx.globalAlpha = 1; ctx.fill(); drawCredits("count"); }, coreH / 2); up(CX, CY, drawCoreHud, coreH / 2); } });
     solids.sort((a, b) => warpProject(a.x, a.y).y - warpProject(b.x, b.y).y);
-    const drawSolid = (o, tops) => { if (o.pre) o.pre(); warpPrism(o); if (tops) o.top(); if (o.post) o.post(); };
+    const drawSolid = (o, tops) => { if (o.pre) o.pre(); if (tops && o.under) o.under(); warpPrism(o); /* under: drawn with the tops, before the prism - so it covers it */ if (tops) o.top(); if (o.post) o.post(); };
     // a TOWER under the boss sky keeps its own colours, as in 2D (owner, 2026-10-09: "colors also buggy on boss spawn" - the
     // top layer's difference flipped them): drawn in the INVERTED palette, so that flip turns it back
     const inSky = o => bossInv.phase !== "off" && (bossInv.full || Math.hypot(o.x - bossInv.x, o.y - bossInv.y) < bossInv.r);
