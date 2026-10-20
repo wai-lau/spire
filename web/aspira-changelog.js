@@ -22,7 +22,8 @@ const CHANGELOG = [
     "Ifrit: Meteor launches ONE meteor that hunts its target down (to its corpse if it dies); where it strikes a fire spreads and a ring of meteors (5, 7, 9, then 12) bursts out, each hunting any enemy that comes near and lighting a flare where it lands; Impact splits each of their hits into two more.",
     "Ifrit: a fire lights flares inside it over its first seconds, more in a wider fire.",
     "Ifrit: the launched meteor no longer vanishes on the way to a far target.",
-    "Ifrit: Blk Magic is now Flare - bigger, hotter, longer flares; its capstone lights three where each meteor lands. The pellets and the giant flare are gone.",
+    "Ifrit: the ring of meteors flies at a quarter of the launched one's speed.",
+    "Ifrit: Blk Magic is now Flare - bigger, hotter, longer flares; its capstone lights three where each meteor lands, and a big flare dead centre of each fire once its flares are lit. The pellets and the giant flare are gone.",
   ], ne: [
     "Shield: pods of 1, 3 and 5 come closer together.",
     "Ifrit: the blast ring is gone; the meteor charges half as often as the balls did, and only one at a time.",

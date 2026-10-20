@@ -28,6 +28,8 @@ const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Flare: its width, u
 const IFR_BURN_S = [1.2, 1.4, 1.6, 2, 2.6, 3.2] /* HALVED, the ticks x2 (owner, 2026-10-19: "reduce duration of spokes and increase damage" - the same burn a flare in half the time); was [2.4 .. 6.4], VI 10 */ /* x2, longer flares (owner, 2026-10-19: "make the flares last longer"), with CATCHING FIRE and faster, harder ticks (countermx 61-69 spread @6pts 4 seeds: 9/69/8/37 swarm/fast/shield/armor); was [1.2, 1.4, 1.6, 2, 2.6, 3.2] - was [1.5, 2, 2.5, 3, 4, 5] (countermx 61-69 spread @6pts, 2026-10-19, pellets in random directions: swarm/fast/shield/armor 8/35/9/56 -> 13/77/23/58 - a short burn: fast is clear of the flares round its old spot before the next tick, a slow body still burns; with the radius, the ball speed or the tick period fast stayed 33-47) */; // Blk Magic: a flare burns this long (VI 10 = EFFECT_MAX_S)
 const IFR_TICK_S = [0.25, 0.25, 0.25, 0.24, 0.23, 0.22] /* untaken 0.54 -> 0.25 (solo.mjs 2026-10-20, after the halved meteor and charge: a lone L1 leaked the wave-4 swarm, 6 lives, whatever the damage - a flare needs two ticks to burn) */ /* stop I faster (axis balance 2026-10-19: the 6-point spread build sits on Hellfire I - shields 35% -> 16% leaked); was [0.54, 0.48, 0.43, 0.36, 0.3, 0.27] - x0.6 with the longer flares (2026-10-19); was [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] - was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Blk Magic: s between burn ticks
 const IFR_TICK_K = [0.41, 1.5, 1.55, 1.6, 1.8, 2.27] /* x0.5 with the flares x3 (sweep 2026-10-19: more ticks to pop shields, less each - armor shrugs them off) */ /* x2 with the flares halved (2026-10-19); was [0.41, 0.6, 0.91, 1.36, 1.52, 2.27], VI 3.78 */ /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
+const IFR_BIG_S = 4 / 3, IFR_BIG_K = 4, IFR_BIG_X = 1 / 9; // the Flare capstone's BIG flare, dead centre of a fire once all its flares are lit (owner, 2026-10-20): size x BIG_S the largest flare, hit x BIG_K, its x BIG_X as long (the old giant flare's)
+const IFR_FAN_V = 0.25; // a fan meteor (and a fissure's) flies at this x the launch speed (owner, 2026-10-20: "quarter the speed of the fissured meteors")
 const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights THREE flares, each up to this far off its spot (owner, 2026-10-20)
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
 // more likely closer to center"; "when hellfire levels up, increase flare count to preserve flare density"): IFR_FIRE_FLARES in a fire of radius
@@ -104,7 +106,8 @@ function stepIfr(t, dt) {
 // meteor bursts there (the fire, the fan) - or until it leaves the VIEW (ifrOnView: what the camera shows, not the play box), gone without a
 // burst. The capstone FISSURES: a hit spawns two meteors IFR_FISSURE_DEG either side of its heading (gen 1: they do not fissure, and skip that enemy) ----------
 function ifrMeteor(t, st, x, y, ang, gen, skip, wait = 0) { // gen 0 the launched one, 1 the fan, 2 a fissure's; wait: s before it leaves
-  t.ifrBalls.push({ x, y, vx: Math.cos(ang) * st.ballV, vy: Math.sin(ang) * st.ballV, r: st.ballR, gen, skip, left: IFR_FLY_S, wait });
+  const v = st.ballV * (gen ? IFR_FAN_V : 1);
+  t.ifrBalls.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, r: st.ballR, gen, skip, left: IFR_FLY_S, wait });
 }
 // is (x, y) in the camera's view (r world units of slack)? 3D: projected onto the canvas; the simulator has no view - within IFR_FLY_R of the core
 function ifrOnView(x, y, r) {
@@ -187,7 +190,7 @@ function stepIfrBalls(t, st, dt) {
 }
 // THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), no flare (owner, 2026-10-20: "no flare on initial meteor hit"). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)
 function ifrImpact(t, st, b) {
-  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, hold: st.fireLinger, fade: IFR_FIRE_FADE, tick: 0, hit: st.dmg * st.fireK, left: 1 });
+  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, hold: st.fireLinger, fade: IFR_FIRE_FADE, tick: 0, hit: st.dmg * st.fireK, big: st.triple, left: 1 });
   sfx("ifrblast");
 }
 // CATCHING FIRE (the flares' rule, the fire's too): an enemy burns only at a tick it was ALSO in the fire at the tick before - what stands
@@ -202,7 +205,8 @@ function stepIfrFires(t, st, dt) {
     if (!f.flq) { const n = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.R / IFR_FIRE_FLARE_R0) ** 2)); f.flq = []; f.age0 = 0; /* its flares' times, a bell round IFR_FIRE_FLARE_T */
       for (let i = 0; i < n; i++) { let v; do v = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * ifrNormal(); while (v < 0); f.flq.push(Math.min(IFR_FIRE_FLARE_MAX_S, v)); } f.flq.sort((a, b) => b - a); }
     f.age0 += dt;
-    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d); } /* inside the fire as it is then */
+    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d);
+      if (!f.flq.length && f.big) ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* inside the fire as it is then; the last one lit, the Flare capstone's BIG flare dead centre */
     if (f.r < f.R) f.r = Math.min(f.R, f.r + f.v * dt);
     else if (f.hold > 0 || f.flq.length) f.hold -= dt; /* full: it lingers - and stays until its last flare is lit */
     else { f.fade -= dt; if (f.fade <= 0) f.left = 0; continue; }
@@ -224,9 +228,9 @@ function ifrTickFire(t, st, f) {
 }
 // a flare's size s (x the Flare length): a normal draw round half the max
 function ifrFlareS() { return IFR_FLARE_K * Math.min(1, Math.max(IFR_FLARE_MIN, IFR_FLARE_MEAN + IFR_FLARE_SD * ifrNormal())); }
-function ifrFlare(t, st, x, y, s = ifrFlareS()) {
-  if (t.ifrFlares.length >= IFR_FLARE_MAX) t.ifrFlares.shift(); /* the oldest goes */
-  t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, hit: st.dmg * st.flareK, xk: IFR_X_K, edges: false }); /* hit: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
+function ifrFlare(t, st, x, y, s = ifrFlareS(), big = false) { // big: the Flare capstone's (hit x IFR_BIG_K, its x IFR_BIG_X as long)
+  if (t.ifrFlares.length >= IFR_FLARE_MAX) { const k = t.ifrFlares.findIndex(q => !q.big); t.ifrFlares.splice(k < 0 ? 0 : k, 1); } /* the oldest goes - never a big one first */
+  t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, hit: st.dmg * st.flareK * (big ? IFR_BIG_K : 1), xk: IFR_X_K * (big ? IFR_BIG_X : 1), big, edges: false }); /* hit: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
 }
 // the FLARE: IFR_BEAMS beams from the burst point, a + and a small x (world angles: 3D is a view), burning for
 // `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge (Hellfire VI: the longest beams;

@@ -211,7 +211,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     out.launched = t.ifrBalls.length; const m0 = t.ifrBalls[0]; m0.vx = -Math.abs(m0.vx); m0.vy = -Math.abs(m0.vy); /* turned AWAY: it must home back */
     let n = 0; while (t.ifrFires.length === 0 && n++ < 600) stepIfrBalls(t, st, 1 / 60);
     out.fires1 = t.ifrFires.length; out.fireAt = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - tgt.x, t.ifrFires[0].y - tgt.y) : NaN;
-    const fan = t.ifrBalls.filter(b => b.gen === 1); out.fan = fan.length; out.want = st.fan;
+    const fan = t.ifrBalls.filter(b => b.gen === 1); out.fan = fan.length; out.want = st.fan; out.fanV = fan.map(b => Math.hypot(b.vx, b.vy) / st.ballV);
     const angs = fan.map(b => (Math.atan2(b.vy, b.vx) + 2 * Math.PI) % (2 * Math.PI)).sort((a, b) => a - b); out.maxGap = Math.max(...angs.map((a, i) => (i ? a - angs[i - 1] : a + 2 * Math.PI - angs[angs.length - 1]))) * 180 / Math.PI;
     const w = Array.from({ length: 2000 }, ifrFanDelay); out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= 1); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
     tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; /* the fan hits nothing here: no new fire */
@@ -248,6 +248,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   })()`);
   if (r.launched !== 1) return "a launch fired " + r.launched + " meteors (expected one)";
   if (r.fires1 !== 1 || !(r.fireAt < 30)) return "the homing meteor: fires " + r.fires1 + ", " + r.fireAt + " u from its target (expected a hit on it, one fire)";
+  if (r.fanV.some(v => Math.abs(v - 0.25) > 1e-9)) return "fan meteors fly at " + r.fanV[0] + " x the launch speed (expected a quarter, owner 2026-10-20)";
   if (r.fan !== r.want || r.want !== 7) return "the impact fan at Meteor I: " + r.fan + " meteors (its st.fan " + r.want + ", expected 7)";
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
   if (!r.fanWaits || Math.abs(r.waitMean - 0.4) > 0.05 || r.waitMin < 0 || r.waitMax > 1 || r.waitMax - r.waitMin < 0.3) return "fan release times: mean " + r.waitMean.toFixed(2) + " in [" + r.waitMin.toFixed(2) + ", " + r.waitMax.toFixed(2) + "] (expected a bell round 0.4 s, sd 0.3)";
@@ -370,7 +371,13 @@ check("IFR flares: none at the first hit; one where each fan meteor lands (three
       const d = t.ifrFlares.map(q => Math.hypot(q.x - CX, q.y - CY));
       const lit = t.ifrFlares.map(q => q.bornT); const srt = lit.slice().sort((a, b) => a - b);
       return { n: t.ifrFlares.length, R: f.R, meanT: lit.reduce((a, b) => a + b, 0) / lit.length, minGap: Math.min(...srt.slice(1).map((v, i) => v - srt[i])), maxD: Math.max(...d), meanD: d.reduce((x, y) => x + y, 0) / d.length, sizes: new Set(t.ifrFlares.map(q => q.L.toFixed(2))).size }; };
-    out.f0 = fire(0); out.f6 = fire(6); out.flareT = IFR_FIRE_FLARE_T; { const z = IFR_FIRE_FLARE_T / IFR_FIRE_FLARE_SD, pdf = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI); let cdf = 0; for (let x = -8; x < z; x += 0.001) cdf += Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI) * 0.001; out.flareMean = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * pdf / cdf; } /* the mean of the bell cut at 0 */
+    out.f0 = fire(0); out.f6 = fire(6);
+    /* the Flare capstone: one BIG flare dead centre of the fire, lit after all its flares */
+    { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f = t.ifrFires[0]; let tm = 0, bigAt = -1, lastSmall = 0;
+      while (f.left > 0 && tm < 20) { const n0 = t.ifrFlares.length; stepIfrFires(t, st, 1 / 60); tm += 1 / 60; for (let q = n0; q < t.ifrFlares.length; q++) { if (t.ifrFlares[q].big) bigAt = tm; else lastSmall = tm; } }
+      const bigs = t.ifrFlares.filter(q => q.big); out.bigN = bigs.length; out.bigAt = bigAt; out.lastSmall = lastSmall;
+      out.bigOff = bigs[0] ? Math.hypot(bigs[0].x - CX, bigs[0].y - CY) : NaN; out.bigL = bigs[0] ? bigs[0].L : NaN; out.bigWant = IFR_BIG_S * IFR_FLARE_K * st.beamL; out.bigHit = bigs[0] && bigs[0].hit; out.bigHitWant = st.dmg * st.flareK * IFR_BIG_K; }
+    { const t = fresh("firaga", 0), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f = t.ifrFires[0]; let tm = 0; while (f.left > 0 && tm < 20) { stepIfrFires(t, st, 1 / 60); tm += 1 / 60; } out.bigN0 = t.ifrFlares.filter(q => q.big).length; } out.flareT = IFR_FIRE_FLARE_T; { const z = IFR_FIRE_FLARE_T / IFR_FIRE_FLARE_SD, pdf = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI); let cdf = 0; for (let x = -8; x < z; x += 0.001) cdf += Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI) * 0.001; out.flareMean = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * pdf / cdf; } /* the mean of the bell cut at 0 */
     return out;
   })()`);
   if (r.firstFlares) return "the first hit lit " + r.firstFlares + " flares (expected none)";
@@ -382,6 +389,7 @@ check("IFR flares: none at the first hit; one where each fan meteor lands (three
     if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD < 0.5 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", nearer the centre)";
     if (f.sizes < 2) return k + ": its flares are all one size";
   }
+  if (r.bigN !== 1 || r.bigN0 !== 0 || !(r.bigOff < 1e-6) || !(r.bigAt >= r.lastSmall) || Math.abs(r.bigL - r.bigWant) > 1e-6 || Math.abs(r.bigHit - r.bigHitWant) > 1e-6) return "the Flare capstone's big flare: " + r.bigN + " (untaken " + r.bigN0 + "), " + r.bigOff + " u off centre, lit at " + r.bigAt + " s after the last flare at " + r.lastSmall + ", L " + r.bigL + " (" + r.bigWant + "), hit " + r.bigHit + " (" + r.bigHitWant + ")";
   const dens0 = r.f0.n / r.f0.R ** 2, dens6 = r.f6.n / r.f6.R ** 2;
   if (Math.abs(dens6 / dens0 - 1) > 0.15) return "flare density: " + r.f0.n + " in r" + r.f0.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected the same density)";
   return "";
