@@ -82,8 +82,8 @@ function ifrLaunch(t, st, dt) {
   if (t.ifrReady <= 0 || t.ifrLaunchCd > 0) return;
   const e = pickTargets(t, st, 1)[0];
   if (!e) return;
-  const c = ifrCorner(t, ifrSlotCorners(t, st.slots)[t.ifrReady - 1]), d = Math.hypot(e.x - c.x, e.y - c.y) || 1;
-  t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, hit: [] }); /* hit: enemy ids struck en route */
+  const c = ifrCorner(t, ifrSlotCorners(t, st.slots)[t.ifrReady - 1]), d = Math.hypot(e.x - c.x, e.y - c.y) || 1, fs = ifrPelletFlares(st);
+  t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, hit: [], fs }); /* hit: enemy ids struck en route; fs: its pellets' flare sizes, rolled now so the ball can be drawn their size */
   t.ifrReady--; t.ifrLaunchCd = IFR_LAUNCH_GAP; t.shots = (t.shots || 0) + 1; sfx("ifr");
   if (t.ifrReady <= 0) t.ifrSlot0 = Math.floor(Math.random() * 6); /* none charged: the next first ball takes a new random corner (owner) */
 }
@@ -108,7 +108,7 @@ function stepIfrBalls(t, st, dt) {
       const h0 = hitFrom; HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
       try { damage(e, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
     }
-    if (b.left <= 0) ifrBurst(t, st, b.ax, b.ay, 1);
+    if (b.left <= 0) ifrBurst(t, st, b.ax, b.ay, 1, b.fs);
   }
   keepLive(t.ifrBalls);
 }
@@ -120,14 +120,14 @@ function ifrRing(t, x, y, R, k) {
   t.ifrRings.push({ x, y, r: 0, R, k, hit: [], left: R / IFR_RING_V + IFR_RING_FADE /* stays on screen a moment after full size, fading (owner, 2026-10-19); it hits nothing then */ });
   sfx("ifrblast");
 }
-function ifrBurst(t, st, x, y, k) {
+function ifrBurst(t, st, x, y, k, fs = ifrPelletFlares(st)) {
   const R = st.blastR * k;
   ifrRing(t, x, y, R, k);
   for (let i = 0; i < st.pellets; i++) {
     /* ANY direction, evenly (owner, 2026-10-19: "remove the backwards bias" - it leaned to the core); a RANDOM distance weighted near
        (IFR_LAND_POW > 1) - since pellets pass through (2026-10-20) this is where every one lands, not just the misses */
     const a = Math.random() * 2 * Math.PI, cx = Math.cos(a), cy = Math.sin(a), d = R * IFR_PELLET_REACH * Math.random() ** IFR_LAND_POW;
-    t.ifrPellets.push({ x, y, ax: x + cx * d, ay: y + cy * d, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: d / IFR_PELLET_V, flown: 0, age: 0, wait: Math.random() * IFR_PELLET_SPREAD_S, hit: {} }); /* hit: enemy id -> age at its last hit (plain data: G clones) */
+    t.ifrPellets.push({ x, y, ax: x + cx * d, ay: y + cy * d, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: d / IFR_PELLET_V, flown: 0, age: 0, wait: Math.random() * IFR_PELLET_SPREAD_S, hit: {}, fs: fs[i] }); /* hit: enemy id -> age at its last hit (plain data: G clones) */
   }
 }
 // the RING: expands at IFR_RING_V to R; every enemy it passes takes the blast hit once (full splash - owner: good vs swarm)
@@ -166,14 +166,19 @@ function stepIfrPellets(t, st, dt) {
       try { damage(e, amt, t, false, false, IFR_PELLET_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
     }
     if (p.left > 0) continue;
-    if (st.backdraft) for (let i = 0; i < IFR_TRIPLE_N; i++) { const a = Math.random() * 2 * Math.PI, d = IFR_TRIPLE_JIT * Math.sqrt(Math.random()); ifrFlare(t, st, p.ax + Math.cos(a) * d, p.ay + Math.sin(a) * d); }
-    else ifrFlare(t, st, p.ax, p.ay);
+    const fs = p.fs || ifrFlareSizes(st);
+    if (st.backdraft) for (let i = 0; i < IFR_TRIPLE_N; i++) { const a = Math.random() * 2 * Math.PI, d = IFR_TRIPLE_JIT * Math.sqrt(Math.random()); ifrFlare(t, st, p.ax + Math.cos(a) * d, p.ay + Math.sin(a) * d, fs[i % fs.length]); }
+    else ifrFlare(t, st, p.ax, p.ay, fs[0]);
   }
   keepLive(t.ifrPellets);
 }
-function ifrFlare(t, st, x, y) {
+// a flare's size s (x the Hellfire length): rolled when its BALL LAUNCHES (owner, 2026-10-20: "pellet size should be relative the size of
+// the flare that it will produce"), so the pellet - and the ball, the area of all its pellets - is drawn to it
+function ifrFlareS() { return IFR_FLARE_K * Math.min(1, Math.max(IFR_FLARE_MIN, IFR_FLARE_MEAN + IFR_FLARE_SD * ifrNormal())); }
+function ifrFlareSizes(st) { const n = st.backdraft ? IFR_TRIPLE_N : 1, out = []; for (let i = 0; i < n; i++) out.push(ifrFlareS()); return out; } // one pellet's flares
+function ifrPelletFlares(st) { const out = []; for (let i = 0; i < st.pellets; i++) out.push(ifrFlareSizes(st)); return out; } // a burst's pellets'
+function ifrFlare(t, st, x, y, s = ifrFlareS()) {
   if (t.ifrFlares.length >= IFR_FLARE_MAX) t.ifrFlares.shift();
-  const s = IFR_FLARE_K * Math.min(1, Math.max(IFR_FLARE_MIN, IFR_FLARE_MEAN + IFR_FLARE_SD * ifrNormal()));
   t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, edges: false }); /* (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
 }
 // the FLARE: IFR_BEAMS beams from the burst point, a + and a small x (world angles: 3D is a view), burning for
@@ -237,7 +242,7 @@ function stepIfrFlares(t, st, dt) {
 }
 // ---------- the look: orange balls growing on the corners, a small ball in flight, a glowing ring, ember pellets, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
-const IFR_BALL_PX = 13, IFR_FLY_PX = 6;
+const IFR_BALL_PX = 13;
 /* a pellet is an EMBER (owner, 2026-10-19: "more visible"): a faint halo, an orange disc, a white core, and a tail of IFR_TAIL_N
    segments behind it at falling alpha. Sized for a phone (the board ~1000 u across 430 px) */
 const IFR_EMBER_HALO = 9, IFR_EMBER_R = 4, IFR_EMBER_CORE = 1.5, IFR_TAIL_N = 3, IFR_TAIL_S = 0.05;
@@ -254,20 +259,27 @@ function drawIfrCharge(t, st) {
     if (full) { ctx.fillStyle = COL.white; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(c.x, c.y, IFR_BALL_PX * 0.35, 0, 6.283); ctx.fill(); ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9; }
   }
 }
-function drawIfrEmbers(t, low) {
-  ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr; ctx.lineWidth = IFR_EMBER_R;
-  for (const p of t.ifrPellets) {
-    if (p.wait > 0) continue; /* not launched yet */
-    if (!low) {
-      for (let k = 0; k < IFR_TAIL_N; k++) {
-        const a = k / IFR_TAIL_N, b = (k + 1) / IFR_TAIL_N; ctx.globalAlpha = 0.6 * (1 - a);
-        ctx.beginPath(); ctx.moveTo(p.x - p.vx * IFR_TAIL_S * a, p.y - p.vy * IFR_TAIL_S * a); ctx.lineTo(p.x - p.vx * IFR_TAIL_S * b, p.y - p.vy * IFR_TAIL_S * b); ctx.stroke();
-      }
-      ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_HALO, 0, 6.283); ctx.fill();
+// an ember's SIZE x IFR_EMBER_*: a pellet's, its flare's mean size over the average flare's (owner, 2026-10-20: "pellet size should be
+// relative the size of the flare that it will produce"); a ball's, the AREA of all its pellets (owner: "meteor should use same visuals
+// as pellet, except have the same area as total pellets") - the root of the summed squares
+function ifrEmberK(fs) { if (!fs) return 1; let a = 0; for (const s of fs) a += s; return a / fs.length / (IFR_FLARE_K * IFR_FLARE_MEAN); }
+function ifrBallK(fs) { if (!fs) return 1; let a = 0; for (const f of fs) a += ifrEmberK(f) ** 2; return Math.sqrt(a); }
+// one ember, k x IFR_EMBER_*: a halo, an orange disc, a white core and its tail (lowQ: disc and core)
+function drawIfrEmber(p, k, low) {
+  if (!low) {
+    ctx.lineWidth = IFR_EMBER_R * k;
+    for (let n = 0; n < IFR_TAIL_N; n++) {
+      const a = n / IFR_TAIL_N, b = (n + 1) / IFR_TAIL_N; ctx.globalAlpha = 0.6 * (1 - a);
+      ctx.beginPath(); ctx.moveTo(p.x - p.vx * IFR_TAIL_S * a, p.y - p.vy * IFR_TAIL_S * a); ctx.lineTo(p.x - p.vx * IFR_TAIL_S * b, p.y - p.vy * IFR_TAIL_S * b); ctx.stroke();
     }
-    ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_R, 0, 6.283); ctx.fill();
-    ctx.fillStyle = COL.white; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_CORE, 0, 6.283); ctx.fill();
+    ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_HALO * k, 0, 6.283); ctx.fill();
   }
+  ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_R * k, 0, 6.283); ctx.fill();
+  ctx.fillStyle = COL.white; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_CORE * k, 0, 6.283); ctx.fill();
+}
+function drawIfrEmbers(t, low) {
+  ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr;
+  for (const p of t.ifrPellets) if (p.wait <= 0) drawIfrEmber(p, ifrEmberK(p.fs), low); /* (wait: not launched yet) */
 }
 function drawIfrRings(t, low) {
   ctx.strokeStyle = COL.tifr; ctx.fillStyle = COL.tifr;
@@ -280,10 +292,11 @@ function drawIfrRings(t, low) {
     }
   }
 }
-/* the ball: a disc, no line before it (owner, 2026-10-19: "remove the line that precedes the ball during launch") */
-function drawIfrBalls(t) {
-  ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
-  for (const b of t.ifrBalls) { ctx.beginPath(); ctx.arc(b.x, b.y, IFR_FLY_PX, 0, 6.283); ctx.fill(); }
+/* the ball: a pellet's ember the area of all its pellets (owner, 2026-10-20; a plain disc before; no line before it - owner, 2026-10-19) */
+function drawIfrBalls(t, low) {
+  ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr;
+  for (const b of t.ifrBalls) drawIfrEmber(b, b.k ??= ifrBallK(b.fs), low); /* (k cached on the ball: a plain number, G clones) */
+  ctx.lineCap = "butt";
 }
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
@@ -334,7 +347,7 @@ function drawIfr(balls) {
   for (const t of G.towers) {
     if (t.kind !== "ifr" || t.ifrSlot0 == null) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    if (balls) { drawIfrBalls(t); drawIfrCharge(t, towerStats(t)); } else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
+    if (balls) { drawIfrBalls(t, low); drawIfrCharge(t, towerStats(t)); } else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
