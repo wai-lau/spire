@@ -1,27 +1,10 @@
 // /spire - IFR, IFRIT: THE LOOK (split from aspira-ifrit.js at the 500-line cap, 2026-10-20) - the charge, the meteor in flight,
-// the fire, the pellets and the flares. Loaded right after aspira-ifrit.js (same global scope; the simulator loads only the logic).
-// ---------- the look: orange balls growing on the corners, a small ball in flight, a glowing ring, ember pellets, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
+// the fire and the flares. Loaded right after aspira-ifrit.js (same global scope; the simulator loads only the logic).
+// ---------- the look: the charge, the meteors, the fire and the flares. Fills, strokes and lines only (the
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
 function drawIfrCharge(t, st, low) {
   if (t.ifrCharge <= 0) return;
   const c = ifrCentre(t); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * t.ifrCharge), true, low); /* grows to the meteor it launches */
-}
-// one ember, k x IFR_EMBER_*: a halo, an orange disc, a yellow core and its tail (lowQ: disc and core)
-function drawIfrEmber(p, k, low) {
-  if (!low) {
-    ctx.lineWidth = IFR_EMBER_R * k;
-    for (let n = 0; n < IFR_TAIL_N; n++) {
-      const a = n / IFR_TAIL_N, b = (n + 1) / IFR_TAIL_N; ctx.globalAlpha = 0.6 * (1 - a);
-      ctx.beginPath(); ctx.moveTo(p.x - p.vx * IFR_TAIL_S * a, p.y - p.vy * IFR_TAIL_S * a); ctx.lineTo(p.x - p.vx * IFR_TAIL_S * b, p.y - p.vy * IFR_TAIL_S * b); ctx.stroke();
-    }
-    ctx.fillStyle = COL.glow; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_HALO * k, 0, 6.283); ctx.fill();
-  }
-  ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_R * k, 0, 6.283); ctx.fill();
-  ctx.fillStyle = COL.yellow; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_CORE * k, 0, 6.283); ctx.fill();
-}
-function drawIfrEmbers(t, low) {
-  ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr;
-  for (const p of t.ifrPellets) if (p.wait <= 0) drawIfrEmber(p, ifrEmberK(p.fs), low); /* (wait: not launched yet) */
 }
 // the ring's glow at radius r, alpha a (0.9 = full): IFR_RING_GLOW's layers, the blast's and the ball's alike
 function drawIfrRingAt(x, y, r, a, low) {
@@ -53,9 +36,9 @@ function drawIfrBalls(t, low) {
   for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, true, low); /* (wait: a fan meteor not released yet) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
-// [1, IFR_FLARE_I_MAX]; Mega Firaga's giant flare IFR_FLARE_I_GIANT - the brightest thing IFR draws
-const IFR_FLARE_I_MAX = 3, IFR_FLARE_I_GIANT = 4.5;
-function ifrFlareI(f) { return f.giant ? IFR_FLARE_I_GIANT : Math.min(IFR_FLARE_I_MAX, Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
+// [1, IFR_FLARE_I_MAX]
+const IFR_FLARE_I_MAX = 3;
+function ifrFlareI(f) { return Math.min(IFR_FLARE_I_MAX, Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
 // IFR_GLOW_BANDS lengths whose alpha falls off toward the tip as 1 - (k / bands)^2 (flat near the centre, fading at the end).
@@ -99,13 +82,13 @@ function drawIfrFlares(t) {
   }
 }
 /* balls true (drawn in skyKeep, aspira-draw.js): the balls in flight (the charge balls: drawIfrTop, on the prism's top), which keep their orange on a
-   boss sky (owner, 2026-10-19: "ifrit balls should stay orange on boss inversion"); else the rings, pellets and spokes, which turn over with it */
+   boss sky (owner, 2026-10-19: "ifrit balls should stay orange on boss inversion"); else the fires and spokes, which turn over with it */
 function drawIfr(balls) {
   const low = typeof lowQ === "function" && lowQ();
   for (const t of G.towers) {
     if (t.kind !== "ifr" || !t.ifrInit0) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrFires(t, low); drawIfrEmbers(t, low); }
+    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrFires(t, low); }
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }

@@ -319,18 +319,17 @@ life and its own damage** - every hit is `TOWERS.ifr.dmg` x that axis's table, n
 |---|---|
 | charge | ONE charge at the tower's centre, drawn before the prism (the tower always covers it); fills over the charge time and waits |
 | launch | full + an enemy in range: ONE meteor, LOCKED onto that enemy from any distance, steering at its LED spot (`ifrLead`); if the enemy dies it flies on to the CORPSE (its last spot) and bursts there as if it had hit - a fan meteor whose enemy dies just goes when it gets there |
-| first impact | the first enemy its body touches takes Meteor's hit; there - and ONLY there (owner, 2026-10-20: "only first impact causes hellfire") - the fire, the pellets, the giant flare, and a 360-degree FAN of `IFR_FORKS` x 6 meteors, evenly spread, each released after a bell-curve delay round 0.5 s |
-| fan meteors | home onto the nearest enemy whose body comes within `IFR_HOME_R` 50 u; their hit is damage only (no fire, no pellets); the capstone (Impact) FISSURES a fan meteor's hit into two at +-30 degrees (skipping that enemy, no further splits). Every meteor flies until it hits or leaves the camera's VIEW (`ifrOnView`; the simulator: 1400 u from the core), gone without a burst |
-| fire | on impact the black fill goes; the outline and glow become the FIRE, opening at the meteor's size and growing to its max (never below the meteor), lingering, then fading (no hits while fading). It burns by **catching fire** (a tick burns only an enemy that was in it at the tick before too - what runs through it does not) in many small ticks (`IFR_FIRE_TICK_S`), each popping one shield charge. Fires stack. Its inner glow rises to 3x over 1.5 s |
-| pellets | fly out in any direction, a random distance (nearer more often) up to `IFR_PELLET_R` x `IFR_PELLET_REACH`, leaving at random times; pass through, hitting what they touch (again every 0.2 s it stays touching); each lights ONE flare where it lands, its ember sized to that flare |
+| first impact | the first enemy its body touches takes Meteor's hit; there - and ONLY there - the FIRE, and a 360-degree FAN of `IFR_FAN` meteors (5 / 7 / 9 / 12), evenly spread, each released after a bell-curve delay (0.4 s, sd 0.3, in [0, 1]). No flare |
+| fan meteors | home onto the nearest enemy whose body comes within `IFR_HOME_R` 50 u; their hit is damage only; where each LANDS (a hit, or its dead target's spot) a FLARE - three within 10 u at the Flare capstone. Meteor's capstone (Impact) FISSURES a fan meteor's hit into two at +-30 degrees (skipping that enemy, no further splits). Every meteor flies until it hits or leaves the camera's VIEW (`ifrOnView`; the simulator: 1400 u from the core), gone without a burst |
+| fire | opens at the meteor's size and grows to its max - never under 16x the meteor (`IFR_FIRE_FLOOR`) - then lingers and fades; burns by **catching fire** in many small ticks (`IFR_FIRE_TICK_S`), each popping a shield charge; fires stack; its inner glow rises to 3x over 1.5 s. Once GROWN it lights `IFR_FIRE_FLARES` 6 flares, as many more as its area is bigger than the untaken fire's (constant density), 0.1 s apart, inside it and nearer the centre more often, each a random size - and it stays until the last is lit |
 | flare | a big + over a tiny x, a random size; burns by catching fire; its glow brightens with its hit (`ifrFlareI`) |
 | look | the meteor: a black disc, an inner glow from 30% at the outline to 0 at 30% of the radius in, the outline glow; in 3D the spokes are GPU glow lines (`fxGlGlowLine`); no gradients on the board context |
 
 | axis | buys | good against (owner) | capstone (VI) |
 |---|---|---|---|
-| Meteor | charge time, speed, meteor size, the en-route hit | all-rounder: fast and armor | Impact: a huge meteor (twice the hex) |
+| Meteor | charge time, speed, meteor size, its hit (gently), the fan's count | all-rounder | Impact: each fan hit fissures into two |
 | Hellfire | the fire: max size, growth speed, tick hit, linger | shield and swarm | a fire six towers across |
-| Blk Magic (id `firaga`; Fire, Fira, Firaga) | pellets: count, pass-through hit; the flares: size, burn, tick | shield and swarm | Mega Firaga: one giant flare where the meteor strikes |
+| Flare (id `firaga`; was Blk Magic) | the flares: size, damage, burn time | shield and swarm | three flares a landing, within 10 u |
 
 ### 4.6d Trio scale (2026-10-16)
 

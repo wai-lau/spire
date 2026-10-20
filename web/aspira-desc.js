@@ -59,15 +59,15 @@ const DESCRIBE = {
       (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; its black centre burns whatever it touches, and the hole grows with the nova's hit and that burn. Nearby holes pull together and merge. It radiates " +
       (r >= 6 ? "pellets and bursts as it fades." : "pellets.");
   },
-  // IFR (owner, 2026-10-20 - each axis its own part): Meteor a faster, bigger, harder meteor (Impact: a huge one); Hellfire the fire it
-  // leaves, wider and longer (its capstone: six towers across); Blk Magic more, harder pellets and flares (Mega Firaga: a giant flare)
+  // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
+  // towers across); Flare the flares - bigger, hotter, longer (its capstone: three a landing)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
-    const n = IFR_FORKS[m];
-    return "Charges at its centre and, the moment it is ready, launches a meteor that hunts down an enemy. Where it strikes, " + n * IFR_FAN_K + " more burst out all round, each hunting any enemy that comes near" + (m >= 6 ? " and splitting in two on a hit" : "") + "; and a fire " +
-      (h ? "spreads" + (h >= 6 ? " six towers wide" : "") + " and lingers" : "flickers") + ", burning what stands in it, and " + IFR_PELLETS[f] +
-      " pellets fly out, burning what they pass; where each lands a flare burns" + (f >= 6 ? ", and a giant flare where the meteor struck." : ".");
+    return "Charges at its centre and launches a meteor that hunts down an enemy. Where it strikes a fire " + (h ? "spreads" + (h >= 6 ? " six towers wide" : "") + " and lingers" : "flickers") +
+      ", burning what stands in it and lighting flares as it grows, and " + IFR_FAN[m] + " meteors burst out all round, each hunting any enemy that comes near" + (m >= 6 ? " and splitting in two on a hit" : "") +
+      "; where each lands a flare burns" + (f >= 6 ? " - three of them." : ".");
   },
+
 
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
