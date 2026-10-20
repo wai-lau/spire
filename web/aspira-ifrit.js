@@ -115,7 +115,7 @@ function stepIfrBalls(t, st, dt) {
 // the BURST: a ring from the spot, and pellets out in random directions to the blast radius, enemies there or not (owner, 2026-10-19:
 // "shooting 5 pellets in random directions that each make asterisks"); k: the ring's radius and hit multiplier (1 a ball)
 // THE RING OPENS ON LANDING, with the pellets (owner, 2026-10-20: "pop blast ring on landing of main ball, but reduce visibility of
-// ring" - IFR_RING_DIM); from 2026-10-19 it waited for the last pellet's flare
+// ring" - kept its alpha, drawn thinner: IFR_RING_THIN); from 2026-10-19 it waited for the last pellet's flare
 function ifrRing(t, x, y, R, k) {
   t.ifrRings.push({ x, y, r: 0, R, k, hit: [], left: R / IFR_RING_V + IFR_RING_FADE /* stays on screen a moment after full size, fading (owner, 2026-10-19); it hits nothing then */ });
   sfx("ifrblast");
@@ -242,7 +242,7 @@ const IFR_BALL_PX = 13, IFR_FLY_PX = 6;
    segments behind it at falling alpha. Sized for a phone (the board ~1000 u across 430 px) */
 const IFR_EMBER_HALO = 9, IFR_EMBER_R = 4, IFR_EMBER_CORE = 1.5, IFR_TAIL_N = 3, IFR_TAIL_S = 0.05;
 /* the RING is a glow, [width u, alpha] wide faint / mid / bright core, plus a faint disc inside the front */
-const IFR_RING_GLOW = [[22, 0.22, "tifr"], [11, 0.45, "tifr"], [4, 1, "tifr"], [1.5, 0.95, "white"]], IFR_RING_DISC = 0.14, IFR_RING_DIM = 0.5; /* DIM: every layer's alpha x this (owner, 2026-10-20: "reduce visibility of ring") */ /* + a WHITE core (owner, 2026-10-19) */ /* brighter, wider (owner, 2026-10-19: "more visible"; were [16, 0.14], [8, 0.3], [3, 0.9], disc 0.08) */
+const IFR_RING_GLOW = [[22, 0.22, "tifr"], [11, 0.45, "tifr"], [4, 1, "tifr"], [1.5, 0.95, "white"]], IFR_RING_DISC = 0.14, IFR_RING_THIN = 0.5; /* every layer's WIDTH x this (owner, 2026-10-20: "keep opacity, reduce thickness"; for a moment it was the alpha) */ /* + a WHITE core (owner, 2026-10-19) */ /* brighter, wider (owner, 2026-10-19: "more visible"; were [16, 0.14], [8, 0.3], [3, 0.9], disc 0.08) */
 function drawIfrCharge(t, st) {
   const corners = ifrSlotCorners(t, st.slots);
   ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9;
@@ -273,9 +273,9 @@ function drawIfrRings(t, low) {
   ctx.strokeStyle = COL.tifr; ctx.fillStyle = COL.tifr;
   for (const q of t.ifrRings) {
     const grow = q.r / q.R, fade = grow < 1 ? 1 : Math.max(0, q.left / IFR_RING_FADE), a = (0.9 * (1 - grow) + 0.1) * fade;
-    if (!low && grow < 1) { ctx.globalAlpha = IFR_RING_DIM * IFR_RING_DISC * (1 - grow); ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.fill(); }
+    if (!low && grow < 1) { ctx.globalAlpha = IFR_RING_DISC * (1 - grow); ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.fill(); }
     for (let g = low ? IFR_RING_GLOW.length - 2 : 0; g < IFR_RING_GLOW.length; g++) { /* lowQ: the orange core + the white */
-      ctx.strokeStyle = COL[IFR_RING_GLOW[g][2]]; ctx.lineWidth = IFR_RING_GLOW[g][0]; ctx.globalAlpha = IFR_RING_DIM * IFR_RING_GLOW[g][1] * a / 0.9;
+      ctx.strokeStyle = COL[IFR_RING_GLOW[g][2]]; ctx.lineWidth = IFR_RING_THIN * IFR_RING_GLOW[g][0]; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
       ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, 6.283); ctx.stroke();
     }
   }
