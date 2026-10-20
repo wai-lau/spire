@@ -23,6 +23,7 @@ const CHANGELOG = [
     "Ifrit: a fire lights flares inside it over its first seconds, more in a wider fire.",
     "Ifrit: the launched meteor no longer vanishes on the way to a far target.",
     "Ifrit: the ring of meteors flies at a quarter of the launched one's speed.",
+    "Ifrit: every flare a little over a third the size; the capstone's big flare the size a Flare-capstone flare was.",
     "Ifrit: Blk Magic is now Flare - bigger, hotter, longer flares; its capstone lights three where each meteor lands, and a big flare dead centre of each fire once its flares are lit. The pellets and the giant flare are gone.",
   ], ne: [
     "Shield: pods of 1, 3 and 5 come closer together.",
