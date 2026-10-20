@@ -379,6 +379,26 @@ check("a lost life: 'X lives left' replaces the interest line", () => {
   return texts.some(t => /^7 lives left$/.test(t)) ? "" : "no '7 lives left' among " + texts.length + " texts";
 });
 
+check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the outline, the fire has no black, flares brighten with their hit", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 1e9; ui.build = "ifr";
+    const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0]; ifrInit(t); const st = towerStats(t), out = {};
+    const rec = fn => { const A = [], F = [], oa = ctx.arc, of = ctx.fill; ctx.arc = function (x, y, r, ...a) { A.push({ r, a: ctx.globalAlpha }); return oa.call(this, x, y, r, ...a); }; ctx.fill = function (...a) { F.push(ctx.fillStyle); return of.apply(this, a); }; try { fn(); } finally { ctx.arc = oa; ctx.fill = of; } return { A, F }; };
+    t.ifrCharge = 0.5; const R = st.ballR * 0.65, c = rec(() => drawIfrTop(t));
+    out.outer = Math.max(...c.A.map(q => q.r)); out.R = R;
+    const inner = c.A.filter(q => q.r < R - 1e-6); out.innerMin = Math.min(...inner.map(q => q.r)) / R; out.innerA = Math.max(...inner.map(q => q.a)); out.innerN = inner.length;
+    t.ifrFires.push({ x: CX, y: CY, r: 40, R: 40, v: 1, hold: 1, fade: IFR_FIRE_FADE, tick: 0, hit: 1, left: 1 });
+    out.fireBlack = rec(() => drawIfrFires(t, false)).F.filter(f => f === COL.bg).length;
+    const ref = TOWERS.ifr.dmg * IFR_TICK_K[0]; out.i1 = ifrFlareI({ hit: ref }); out.i2 = ifrFlareI({ hit: 2 * ref }); out.ig = ifrFlareI({ hit: 99 * ref, giant: true }); out.i0 = ifrFlareI({ hit: ref / 10 });
+    return out;
+  })()`);
+  if (Math.abs(r.outer - r.R) > 1e-6) return "a half charge's outline is r " + r.outer + " (expected 0.65 x the meteor, " + r.R + ")";
+  if (!r.innerN || r.innerMin < 0.7 - 1e-6 || !(r.innerA <= 0.3 + 1e-6 && r.innerA > 0.2)) return "inner glow: " + r.innerN + " rings, deepest at " + r.innerMin + " r, brightest " + r.innerA + " (expected down to 0.7 r, 0.3 at the outline)";
+  if (r.fireBlack) return "the fire drew " + r.fireBlack + " black fills";
+  if (r.i1 !== 1 || r.i2 !== 2 || r.i0 !== 1 || !(r.ig > 3)) return "flare intensity " + [r.i0, r.i1, r.i2, r.ig] + " (expected 1 at or under the untaken hit, 2 at twice it, the giant over the 3 cap)";
+  return "";
+});
 check("IFR: draws its charge, meteors, fires and flares; G clones; selling mid-flight throws nothing", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";

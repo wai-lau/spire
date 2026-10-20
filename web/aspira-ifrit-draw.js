@@ -4,7 +4,7 @@
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
 function drawIfrCharge(t, st, low) {
   if (t.ifrCharge <= 0) return;
-  const c = ifrCentre(t); drawIfrBlastBall(c.x, c.y, st.ballR * (0.3 + 0.7 * t.ifrCharge), low); /* grows to the meteor it launches */
+  const c = ifrCentre(t); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * t.ifrCharge), true, low); /* grows to the meteor it launches */
 }
 // one ember, k x IFR_EMBER_*: a halo, an orange disc, a white core and its tail (lowQ: disc and core)
 function drawIfrEmber(p, k, low) {
@@ -30,19 +30,32 @@ function drawIfrRingAt(x, y, r, a, low) {
     ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
   }
 }
-// THE FIRE: the meteor's outline and glow without its black fill, at the fire's radius, fading out at the end (owner, 2026-10-20)
-function drawIfrFires(t, low) {
-  for (const f of t.ifrFires || []) drawIfrRingAt(f.x, f.y, f.r, 0.9 * (f.hold > 0 || f.r < f.R ? 1 : Math.max(0, f.fade / IFR_FIRE_FADE)), low);
+// THE METEOR (owner, 2026-10-20): a black disc (fill), the blast's outline glow, and an INNER GLOW - "a radial glow from the outline towards
+// the center (it should start at 30%, then fall off to 0% about 30% of the way towards the center)": IFR_INNER_N rings inside the outline,
+// alpha falling from IFR_INNER_A to 0 over IFR_INNER_DEPTH of the radius (stacked strokes - no gradient on the 3D board context). a: x alpha
+const IFR_INNER_A = 0.3, IFR_INNER_DEPTH = 0.3, IFR_INNER_N = 6;
+function drawIfrMeteor(x, y, r, fill, low, a = 1) {
+  if (fill) { ctx.fillStyle = COL.bg; ctx.globalAlpha = 0.95 * a; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
+  const n = low ? 2 : IFR_INNER_N, w = r * IFR_INNER_DEPTH / n;
+  ctx.strokeStyle = COL.tifr; ctx.lineWidth = w;
+  for (let k = 0; k < n; k++) {
+    const u = (k + 0.5) / n; ctx.globalAlpha = IFR_INNER_A * (1 - u) * a;
+    ctx.beginPath(); ctx.arc(x, y, r * (1 - IFR_INNER_DEPTH * u), 0, 6.283); ctx.stroke();
+  }
+  drawIfrRingAt(x, y, r, 0.9 * a, low);
 }
-/* the ball LOOKS LIKE THE BLAST (owner, 2026-10-20: "ball is a black circle with ring, on impact, ring starts expanding from current
-   size"): a black disc ringed by the blast's glow, IFR_EMBER_R x k across - the area of all its pellets; on the corner as in flight */
-function drawIfrBlastBall(x, y, r, low) {
-  ctx.fillStyle = COL.bg; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill();
-  drawIfrRingAt(x, y, r, 0.9, low);
+// THE FIRE: the meteor without its black fill (owner, 2026-10-20: "black fill should disappear on impact, but all other effects
+// remain"), at the fire's radius, fading out at the end
+function drawIfrFires(t, low) {
+  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.hold > 0 || f.r < f.R ? 1 : Math.max(0, f.fade / IFR_FIRE_FADE));
 }
 function drawIfrBalls(t, low) {
-  for (const b of t.ifrBalls) drawIfrBlastBall(b.x, b.y, b.r, low);
+  for (const b of t.ifrBalls) drawIfrMeteor(b.x, b.y, b.r, true, low);
 }
+// A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x its hit over the untaken flare's, kept in
+// [1, IFR_FLARE_I_MAX]; Mega Firaga's giant flare IFR_FLARE_I_GIANT - the brightest thing IFR draws
+const IFR_FLARE_I_MAX = 3, IFR_FLARE_I_GIANT = 4.5;
+function ifrFlareI(f) { return f.giant ? IFR_FLARE_I_GIANT : Math.min(IFR_FLARE_I_MAX, Math.max(1, (f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0]))); }
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
 // IFR_GLOW_BANDS lengths whose alpha falls off toward the tip as 1 - (k / bands)^2 (flat near the centre, fading at the end).
@@ -61,7 +74,7 @@ function drawIfrFlaresGl(t, low) {
       const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { /* lowQ: the orange core + the white one */
-        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], COL[q[2]], q[1] * f * IFR_GLOW_A, t0, t1);
+        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], COL[q[2]], Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c)), t0, t1);
       }
     }
   }
@@ -77,7 +90,7 @@ function drawIfrFlares(t) {
       ctx.strokeStyle = COL[IFR_GLOW[g][2]]; ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
       for (let k = 0; k < IFR_GLOW_BANDS; k++) {
         const a0 = k / IFR_GLOW_BANDS, a1 = (k + 1) / IFR_GLOW_BANDS;
-        ctx.globalAlpha = IFR_GLOW[g][1] * f * IFR_GLOW_A * (1 - a0) ** 3; // fast falloff to the tip (owner, 2026-10-19; was 1 - a0^2)
+        ctx.globalAlpha = Math.min(1, IFR_GLOW[g][1] * f * IFR_GLOW_A * ifrFlareI(c) * (1 - a0) ** 3); // fast falloff to the tip (owner, 2026-10-19; was 1 - a0^2)
         ctx.beginPath();
         for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0 + (x1 - x0) * a0, y0 + (y1 - y0) * a0); ctx.lineTo(x0 + (x1 - x0) * a1, y0 + (y1 - y0) * a1); }
         ctx.stroke();
