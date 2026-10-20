@@ -799,6 +799,25 @@ Spawn gaps: a swarm body every `0.024 / ENEMY_SPEED` s, others 0.8 s, `BOSS_INTR
 
 HP = `enemies.bonus.hp` x `BOSS_HP` x `BOSS_HP_K` 1.4 (not the Star) x `BOSS_FAR` x `BOSS_LANE_HP` 1.107; a boss's shield 0.5 of a shield enemy's charges; size x1.1 .. x2; `FLEET_GAP` 10, `FLEET_TO_BOSS` 0.2; `BOSS_INV_T` 3 s, `BOSS_BAR_R` 400.
 
+### 12.10b IFR at 6.5.0 (2026-10-20, the axes redone)
+
+Index 0 (untaken) .. 5 | VI. x = TOWERS.ifr.dmg (60). Battery: solo.mjs 16 seeds (lone L1 0-3 lives lost on waves 1-11; untuned
+14-22); countermx spread 61-69 @6 pts 4 seeds IFR 28/88/57/78 swarm/fast/shield/armor (6.4.x: 7/59/12/47) - marks swarm +2,
+fast -2, shield +1, armor -1; focus N=1 @8 pts, 81-89 / 101-109: Meteor VI 4/1/30/0 | 50/2/86/0, Hellfire VI 3/11/2/51 |
+17/96/80/100, Blk Magic VI 3/9/0/55 | 10/96/19/100.
+
+| table | 0 .. 5 | VI |
+|---|---|---|
+| charge s (Meteor) | 1.0 .95 .9 .8 .7 .6 | 0.3 |
+| meteor radius u (Meteor) | 27 30 33 37 42 47 | 54 |
+| en-route hit x (Meteor) | 1.5 2 4 10 60 400 | 8000 |
+| fire max radius u (Hellfire; floor: the meteor) | 0 40 60 85 110 130 | 160 |
+| fire speed u/s / linger s | 60 .. 180 / .5 .. 3 | 220 / 5 |
+| fire tick x, every 0.05 s (Hellfire) | .1 .15 .3 1 2.5 5 | 15 |
+| pellets / pellet hit x (Blk Magic) | 8 9 11 13 16 20 / .5 .6 .8 1.1 1.6 2.5 | 24 / 4 |
+| flares (Blk Magic): length, width, burn, tick | the 6.4 Hellfire tables | |
+| giant flare | x4 a VI flare's size and hit | |
+
 ### 12.11 Damage, slows, numbers
 
 `SLOW_KNEE` 0.4, `SLOW_CAP` 0.7, `TOWER_SLOW_MAX` 0.95, `FAST_SLOW_MUL` 2; `VIS_DMG` 2; `POOL_LOD` 24; `DMG_HOLD` 0.1 s, `DMG_FLY` 90 u/s; crit base 10%.

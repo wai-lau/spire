@@ -67,7 +67,7 @@ const CAPSTONE_NUM = [
   [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 16], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
   [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
   // IFR (axes redone 2026-10-20): Meteor a huge meteor (Impact); Hellfire a fire six towers across; Blk Magic the most pellets, the biggest flares and one giant flare (Mega Firaga)
-  [IFR_CHARGE_S, 0.45], [IFR_BALL_V, 540], [IFR_ROUTE_K, 150], [IFR_BALL_RAD, 54], [IFR_FIRE_R, 160], [IFR_FIRE_V, 220], [IFR_FIRE_LINGER, 4], [IFR_FIRE_K, 1.2], [IFR_PELLET_DK, 4], [IFR_BEAM_L, 210], [IFR_BEAM_W, 24], [IFR_BURN_S, 5], [IFR_TICK_S, 0.22], [IFR_TICK_K, 3.78], [IFR_PELLETS, 24],
+  [IFR_CHARGE_S, 0.3], [IFR_BALL_V, 540], [IFR_ROUTE_K, 8000], [IFR_BALL_RAD, 54], [IFR_FIRE_R, 160], [IFR_FIRE_V, 220], [IFR_FIRE_LINGER, 5], [IFR_FIRE_K, 15], [IFR_PELLET_DK, 4], [IFR_BEAM_L, 210], [IFR_BEAM_W, 24], [IFR_BURN_S, 5], [IFR_TICK_S, 0.22], [IFR_TICK_K, 3.78], [IFR_PELLETS, 24],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)

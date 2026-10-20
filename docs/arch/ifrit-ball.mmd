@@ -1,15 +1,16 @@
 stateDiagram-v2
     direction LR
-    [*] --> Charging: a free corner slot
-    Charging --> Charged: ball full (charge time, Meteor)
-    Charged --> Charging: another slot free
-    Charged --> Flight: target in range (one launch every 0.05 s)
-    Flight --> Flight: hits each enemy it passes (en-route hit, Meteor)
-    Flight --> Impact: reaches the aim spot (no lead)
-    Impact --> Ring: ring expands to the blast radius (Firaga)
-    Impact --> Pellets: N pellets at units in the blast (Firaga)
-    Ring --> [*]: one hit each, pops a charge
-    Pellets --> Flare: each bursts where it stops (hit or aim spot)
-    Pellets --> MiniRing: Firaga capstone - a smaller ring too
-    Flare --> [*]: six beams burn for a duration (Hellfire)
-    MiniRing --> [*]
+    [*] --> Charging: at the tower's centre
+    Charging --> Charged: full (charge time, Meteor)
+    Charged --> Flight: an enemy in range (no lead)
+    Flight --> Flight: hits each enemy its body touches (Meteor)
+    Flight --> Impact: reaches the aim spot
+    Impact --> Fire: black fill gone - grows to its max (Hellfire)
+    Impact --> Pellets: fly out, passing through (Blk Magic)
+    Impact --> Giant: Mega Firaga - one giant flare
+    Fire --> Fire: burns what stands in it, many small ticks
+    Fire --> [*]: lingers, then fades
+    Pellets --> Flare: one where each lands
+    Flare --> [*]: burns, brighter the harder it hits
+    Giant --> [*]
+    Charged --> Charging: launched

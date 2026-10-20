@@ -10,6 +10,16 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
+  { v: "6.5", day: "Oct 20", bu: [
+    "Ifrit: Meteor - one meteor at a time, charged at the tower's centre and launched the moment it is ready; Meteor makes it charge faster, fly faster, grow bigger and hit harder on its way (Impact: a huge meteor).",
+    "Ifrit: Hellfire - where the meteor lands a fire spreads out from it and lingers, burning what stands in it in many small ticks, each popping a shield charge; Hellfire makes it wider, faster, hotter and longer (its capstone: six towers across).",
+    "Ifrit: Blk Magic - more pellets, harder as they pass through, and bigger, hotter flares; Mega Firaga lights one giant flare where the meteor strikes.",
+  ], ne: [
+    "Ifrit: the blast ring is gone; the meteor charges half as often as the balls did, and only one at a time.",
+  ], u: [
+    "Ifrit: the meteor glows inside its rim; the fire keeps the glow without the black, brightening as it burns; a flare shines as bright as it hits.",
+    "Build cards: Ifrit's marks re-checked.",
+  ] },
   { v: "6.4", day: "Oct 20", bu: [
     "Ifrit: Mega Firaga's blast hits a quarter harder.",
     "Ifrit: the fireball hits every enemy it is drawn touching.",

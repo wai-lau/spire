@@ -306,27 +306,30 @@ are in ARCHAEOLOGY §4.6c.
 
 The Orbital Relay triples the wing (`relayStats`).
 
-### 4.6e IFR, Ifrit (`web/aspira-ifrit.js`)
+### 4.6e IFR, Ifrit (`web/aspira-ifrit.js`, the look `aspira-ifrit-draw.js`)
 
 The fire aeon of FFX (owner's design, 2026-10-19; "Kilika's hellfire."), orange: **strong vs swarm + shield, neutral to armor,
-weak to fast**. The design and its reasons: `docs/superpowers/specs/2026-10-19-ifrit-tower-design.md`; the numbers: the code.
+weak to fast**. Axes redone 2026-10-20 (owner: "axes don't feel unique nor impactful"): **each axis owns one part of the meteor's
+life and its own damage** - every hit is `TOWERS.ifr.dmg` x that axis's table, none multiplies another's. Design and reasons:
+`docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md` (on the 2026-10-19 spec); the numbers: the code.
 
-![The ball's life](docs/arch/ifrit-ball.svg)
+![The meteor's life](docs/arch/ifrit-ball.svg)
 
 | Part | Rule |
 |---|---|
-| charge | balls grow on the hex's CORNERS, one at a time, always while a slot is free; 1 slot, then 2 (opposite), 3 (a triangle), 6 at the capstone - never 4 or 5. The first corner is random, and re-picked whenever no ball is charged |
-| launch | a charged ball + an enemy in range: one every `IFR_LAUNCH_GAP` 0.05 s, aimed at where it stands NOW (no lead - the fast weakness) |
-| flight | slow; hits what it passes once (the en-route hit) - everything it is DRAWN touching (owner, 2026-10-20: its disc, the area of all its pellets, out to its ring's widest glow; `ifrBallReach`); drawn as the blast, a black disc in the ring's glow, whose ring opens from the ball's size on landing; bursts at its aim spot whatever became of the target |
-| burst | a RING opens the moment the ball lands (2026-10-20; drawn half as thick, `IFR_RING_THIN` 0.5) and expands to the blast radius, hitting each enemy once (full splash: the swarm answer); PELLETS (5 .. 19, halved 2026-10-20) fly out in any direction, landing at up to 1.2x the blast radius, nearer more often (`IFR_LAND_POW`), armed after 16 u, at 100 u/s, leaving at random times over `IFR_PELLET_SPREAD_S` 0.5 s, PASSING THROUGH (2026-10-20): every enemy touched is hit, again every `IFR_PELLET_REHIT` 0.2 s it stays touching; where each lands, a FLARE |
-| flare | a big + over a tiny x (`IFR_BEAMS` 8, `IFR_X_K`; owner, 2026-10-19 - was six spokes), each a random size round half the max (`IFR_FLARE_K` 6, x2 2026-10-20; normal draw); burning for the Hellfire time; **catching fire**: a tick burns only an enemy that touched a spoke at the tick before too - what stands in it burns, what runs through it does not. Each burn tick pops one shield charge |
-| look | balls keep their orange on a boss sky (`skyKeep`); in 3D the spokes are GPU glow lines (shape 7, `fxGlGlowLine`), fading to the tip; the ring a glow that fades out |
+| charge | ONE charge at the tower's centre, drawn before the prism (the tower always covers it); fills over the charge time and waits |
+| launch | full + an enemy in range: it flies at once, aimed at where the enemy stands NOW (no lead - the fast weakness); size fixed at launch |
+| flight | hits every enemy its body touches once (the en-route hit) - Meteor's ONLY damage; lands at its aim spot whatever became of the target |
+| fire | on impact the black fill goes; the outline and glow become the FIRE, opening at the meteor's size and growing to its max (never below the meteor), lingering, then fading (no hits while fading). It burns by **catching fire** (a tick burns only an enemy that was in it at the tick before too - what runs through it does not) in many small ticks (`IFR_FIRE_TICK_S`), each popping one shield charge. Fires stack. Its inner glow rises to 3x over 1.5 s |
+| pellets | fly out in any direction, a random distance (nearer more often) up to `IFR_PELLET_R` x `IFR_PELLET_REACH`, leaving at random times; pass through, hitting what they touch (again every 0.2 s it stays touching); each lights ONE flare where it lands, its ember sized to that flare |
+| flare | a big + over a tiny x, a random size; burns by catching fire; its glow brightens with its hit (`ifrFlareI`) |
+| look | the meteor: a black disc, an inner glow from 30% at the outline to 0 at 30% of the radius in, the outline glow; in 3D the spokes are GPU glow lines (`fxGlGlowLine`); no gradients on the board context |
 
-| axis | buys | capstone (VI) |
-|---|---|---|
-| Meteor | slots, charge, ball speed, the en-route hit | Impact: all six corners, charging as fast as it launches |
-| Hellfire | the flares: longer, wider, harder, faster ticks | Hellfire: spokes to the play box's edges |
-| Blk Magic (id `firaga`; Fire, Fira, Firaga) | the blast: radius, hit, pellets | Mega Firaga: each pellet lands as three flares, a little apart (2026-10-20; was a smaller ring) |
+| axis | buys | good against (owner) | capstone (VI) |
+|---|---|---|---|
+| Meteor | charge time, speed, meteor size, the en-route hit | all-rounder: fast and armor | Impact: a huge meteor (twice the hex) |
+| Hellfire | the fire: max size, growth speed, tick hit, linger | shield and swarm | a fire six towers across |
+| Blk Magic (id `firaga`; Fire, Fira, Firaga) | pellets: count, pass-through hit; the flares: size, burn, tick | shield and swarm | Mega Firaga: one giant flare where the meteor strikes |
 
 ### 4.6d Trio scale (2026-10-16)
 
