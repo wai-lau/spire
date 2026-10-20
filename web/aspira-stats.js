@@ -52,7 +52,7 @@ const SPEC = {
   // IFR (aspira-ifrit.js): Damage is the blast hit, Rate balls a second from one slot
   ifr: st => [["Slots", st.slots], ["Charge", st.chargeS + "s"], ["Ball speed", st.ballV], ["En route", dmgUnits(st.dmg * st.routeK)], ["Blast", "r" + st.blastR], ["Pellets", st.pellets + " × " + dmgUnits(st.dmg * IFR_PELLET_K)],
     ["Flare", (st.hellfire ? "to the edges" : st.beamL + " long") + " · " + st.beamW + " wide"], ["Burn", dmgUnits(st.dmg * st.tickK) + " / " + st.tickS + "s · " + st.burnS + "s"], ["Shields", "−1 / hit, −1 / tick"],
-    ["Backdraft", st.backdraft ? IFR_TRIPLE_N + " flares a pellet" : "—"]],
+    ["Mega Firaga", st.backdraft ? IFR_TRIPLE_N + " flares a pellet" : "—"]],
   // GRV (aspira-grv.js): at STARTING mass - a sphere grows up to x GRV_MASS_MAX with the damage it deals
   grv: st => [["Nova hit", dmgUnits(st.dmg * st.novaMul)], ["Nova reach", st.novaR], ["Aura size", st.auraR + " × nova dmg (×" + GRV_GROW_MIN + "–" + GRV_GROW_MAX + ")"],
     ["Aura slow", Math.round(Math.min(GRV_SLOW_MAX, st.slow) * 100) + "% · core " + (st.horizon ? "90% full" : Math.round(Math.min(GRV_CORE_MAX, Math.min(GRV_SLOW_MAX, st.slow) * GRV_CORE_MUL) * 100) + "%")],

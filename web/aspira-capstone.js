@@ -66,7 +66,7 @@ const CAPSTONE_NUM = [
   // CRR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
   [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 16], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
   [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
-  // IFR: Meteor every corner, charging as fast as it launches (Impact); Hellfire the longest beams (210u - no longer to the board's edges, owner 2026-10-19); Firaga the biggest blast, the most pellets, each landing as three flares (Backdraft)
+  // IFR: Meteor every corner, charging as fast as it launches (Impact); Hellfire the longest beams (210u - no longer to the board's edges, owner 2026-10-19); Blk Magic the biggest blast, the most pellets, each landing as three flares (Mega Firaga)
   [IFR_SLOTS, 6], [IFR_CHARGE_S, 0.1], [IFR_BALL_V, 540], [IFR_ROUTE_K, 150], [IFR_BEAM_L, 210], [IFR_BEAM_W, 24], [IFR_BURN_S, 5], [IFR_TICK_S, 0.22], [IFR_TICK_K, 3.78], [IFR_BLAST_R, 234], [IFR_BLAST_K, 40], [IFR_PELLETS, 48],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
@@ -109,7 +109,7 @@ const CAPSTONE_TIERS = {
   armament: { name: "Autopilot" },
   meteor: { name: "Impact" },
   hellfire: { name: "Hellfire" },
-  firaga: { name: "Backdraft" },
+  firaga: { name: "Mega Firaga" } /* (owner, 2026-10-20; was Backdraft) */,
 };
 for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1 && CAPSTONE_TIERS[ax.id]) ax.tiers.push(CAPSTONE_TIERS[ax.id]);
 ARC_KEEP.push("over one and a half times") /* ARC_VOLTAGE_FALL VI 1.6 (read "twice" - 2026-10-14) */; ARC_RETURN.push("four times");

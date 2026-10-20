@@ -326,7 +326,7 @@ weak to fast**. The design and its reasons: `docs/superpowers/specs/2026-10-19-i
 |---|---|---|
 | Meteor | slots, charge, ball speed, the en-route hit | Impact: all six corners, charging as fast as it launches |
 | Hellfire | the flares: longer, wider, harder, faster ticks | Hellfire: spokes to the play box's edges |
-| Firaga | the blast: radius, hit, pellets | Backdraft: each pellet lands as three flares, a little apart (2026-10-20; was a smaller ring) |
+| Blk Magic (id `firaga`; Fire, Fira, Firaga) | the blast: radius, hit, pellets | Mega Firaga: each pellet lands as three flares, a little apart (2026-10-20; was a smaller ring) |
 
 ### 4.6d Trio scale (2026-10-16)
 

@@ -133,7 +133,7 @@ const STAT_SECTIONS = {
   sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Refraction", ["Refract"]], ["Breach", ["Breach", "Bleed", "Shrapnel"]]],
   car: [["Hangar", ["Interceptors", "Focus fire"]], ["Tether", ["Tether slow", "Tether pulse", "Chain"]], ["Armament", ["Damage", "Rate", "Ammo", "Autopilot", "Slow", "Shields"]]],
   grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Aura size", "Aura slow", "Armor strip"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]]],
-  ifr: [["Meteor", ["Slots", "Charge", "Ball speed", "En route", "Rate", "Range"]], ["Hellfire", ["Flare", "Burn"]], ["Firaga", ["Damage", "Blast", "Pellets", "Backdraft", "Shields"]]],
+  ifr: [["Meteor", ["Slots", "Charge", "Ball speed", "En route", "Rate", "Range"]], ["Hellfire", ["Flare", "Burn"]], ["Blk Magic", ["Damage", "Blast", "Pellets", "Mega Firaga", "Shields"]]],
   acd: [["Jets", ["Corrode", "Builds", "Peak", "Jets", "Carry", "Jet slow", "Shields", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
 function cardStats(t, pv) {
