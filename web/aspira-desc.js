@@ -64,7 +64,7 @@ const DESCRIBE = {
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
     const n = IFR_FORKS[m];
-    return "Charges at its centre and, the moment it is ready, launches " + (n > 1 ? "a fan of " + n + " meteors" : "a meteor") + " ahead of an enemy; each flies on until it strikes one" + (m >= 6 ? " and splits into two more" : "") + ". Where a meteor strikes a fire " +
+    return "Charges at its centre and, the moment it is ready, launches a meteor that hunts down an enemy. Where it strikes, " + n * IFR_FAN_K + " more burst out all round, each hunting any enemy that comes near" + (m >= 6 ? " and splitting in two on a hit" : "") + "; and a fire " +
       (h ? "spreads" + (h >= 6 ? " six towers wide" : "") + " and lingers" : "flickers") + ", burning what stands in it, and " + IFR_PELLETS[f] +
       " pellets fly out, burning what they pass; where each lands a flare burns" + (f >= 6 ? ", and a giant flare where the meteor struck." : ".");
   },
