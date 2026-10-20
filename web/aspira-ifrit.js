@@ -67,13 +67,21 @@ function ifrSlotCorners(t, n) {
   if (n >= 2) return [a, (a + 3) % 6];
   return [a];
 }
-function ifrInit(t) { if (t.ifrSlot0 == null) { t.ifrSlot0 = Math.floor(Math.random() * 6); t.ifrCharge = 0; t.ifrReady = 0; t.ifrLaunchCd = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrFlares = []; } }
+function ifrInit(t) { if (t.ifrSlot0 == null) { t.ifrSlot0 = Math.floor(Math.random() * 6); t.ifrCharge = 0; t.ifrReady = 0; t.ifrLaunchCd = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrFlares = []; } t.ifrFs ||= []; }
 // ALWAYS CHARGING while a slot is free (owner): the ball under way fills over chargeS, then waits in its slot; the next starts at once
 function ifrCharge(t, st, dt) {
   if (t.ifrReady >= st.slots) { t.ifrCharge = 0; return; }
   t.ifrCharge += dt / Math.max(0.01, st.chargeS);
   while (t.ifrCharge >= 1 && t.ifrReady < st.slots) { t.ifrCharge -= 1; t.ifrReady++; }
   if (t.ifrReady >= st.slots) t.ifrCharge = 0;
+  for (let i = 0; i <= Math.min(t.ifrReady, st.slots - 1); i++) ifrSlotBall(t, st, i);
+}
+// a slot's ball, its pellets' flares ROLLED AS IT CHARGES (owner, 2026-10-20: "IFR charge ball should be the size of the launch ball"):
+// { fs, k } - k its drawn size (ifrBallK), the same on the corner and in flight. Re-rolled if the pellet count changed (an upgrade)
+function ifrSlotBall(t, st, i) {
+  const q = t.ifrFs[i];
+  if (q && q.fs.length === st.pellets) return q;
+  const fs = ifrPelletFlares(st); return (t.ifrFs[i] = { fs, k: ifrBallK(fs) });
 }
 // a launch: a charged ball + an enemy in range (the tower's targeting), one every IFR_LAUNCH_GAP s; aimed at the enemy's spot NOW,
 // never led (the fast weakness). The ball leaves from the slot's corner (the last filled)
@@ -82,8 +90,9 @@ function ifrLaunch(t, st, dt) {
   if (t.ifrReady <= 0 || t.ifrLaunchCd > 0) return;
   const e = pickTargets(t, st, 1)[0];
   if (!e) return;
-  const c = ifrCorner(t, ifrSlotCorners(t, st.slots)[t.ifrReady - 1]), d = Math.hypot(e.x - c.x, e.y - c.y) || 1, fs = ifrPelletFlares(st);
-  t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, hit: [], fs }); /* hit: enemy ids struck en route; fs: its pellets' flare sizes, rolled now so the ball can be drawn their size */
+  const c = ifrCorner(t, ifrSlotCorners(t, st.slots)[t.ifrReady - 1]), d = Math.hypot(e.x - c.x, e.y - c.y) || 1, { fs, k } = ifrSlotBall(t, st, t.ifrReady - 1);
+  t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, hit: [], fs, k }); /* hit: enemy ids struck en route; fs: its pellets' flare sizes, rolled now so the ball can be drawn their size */
+  t.ifrFs.splice(t.ifrReady - 1, 1); /* the slots above it (the one charging) step down with ifrReady */
   t.ifrReady--; t.ifrLaunchCd = IFR_LAUNCH_GAP; t.shots = (t.shots || 0) + 1; sfx("ifr");
   if (t.ifrReady <= 0) t.ifrSlot0 = Math.floor(Math.random() * 6); /* none charged: the next first ball takes a new random corner (owner) */
 }
@@ -242,7 +251,6 @@ function stepIfrFlares(t, st, dt) {
 }
 // ---------- the look: orange balls growing on the corners, a small ball in flight, a glowing ring, ember pellets, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
-const IFR_BALL_PX = 13;
 /* a pellet is an EMBER (owner, 2026-10-19: "more visible"): a faint halo, an orange disc, a white core, and a tail of IFR_TAIL_N
    segments behind it at falling alpha. Sized for a phone (the board ~1000 u across 430 px) */
 const IFR_EMBER_HALO = 9, IFR_EMBER_R = 4, IFR_EMBER_CORE = 1.5, IFR_TAIL_N = 3, IFR_TAIL_S = 0.05;
@@ -254,9 +262,9 @@ function drawIfrCharge(t, st) {
   for (let i = 0; i < corners.length; i++) {
     const full = i < t.ifrReady, k = full ? 1 : i === t.ifrReady ? t.ifrCharge : 0;
     if (k <= 0) continue;
-    const c = ifrCorner(t, corners[i]);
-    ctx.beginPath(); ctx.arc(c.x, c.y, IFR_BALL_PX * (0.3 + 0.7 * k), 0, 6.283); ctx.fill();
-    if (full) { ctx.fillStyle = COL.white; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(c.x, c.y, IFR_BALL_PX * 0.35, 0, 6.283); ctx.fill(); ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9; }
+    const c = ifrCorner(t, corners[i]), q = t.ifrFs && t.ifrFs[i], K = q ? q.k : Math.sqrt(st.pellets); /* the ball it launches: IFR_EMBER_R x its k */
+    ctx.beginPath(); ctx.arc(c.x, c.y, IFR_EMBER_R * K * (0.3 + 0.7 * k), 0, 6.283); ctx.fill();
+    if (full) { ctx.fillStyle = COL.white; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(c.x, c.y, IFR_EMBER_CORE * K, 0, 6.283); ctx.fill(); ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.9; }
   }
 }
 // an ember's SIZE x IFR_EMBER_*: a pellet's, its flare's mean size over the average flare's (owner, 2026-10-20: "pellet size should be
