@@ -216,6 +216,11 @@ check("IFR meteors: fork across 60 degrees, fly on until the FIRST enemy they to
     for (let i = 0; i < 60 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60);
     out.a = 5 - a.shield; out.b = 5 - b2.shield; out.fireAt = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - a.x, t.ifrFires[0].y - a.y) : NaN; out.fires = t.ifrFires.length;
     a.dead = b2.dead = true;
+    /* HOMING (owner, 2026-10-20): an enemy whose body comes within 50 u of a meteor's path is locked and hit; one 90 u off it is not */
+    { const near = held(t, t.x + 150, t.y + 35), far = held(t, t.x + 250, t.y + 90); egridAt = NaN; t.ifrFires.length = 0;
+      t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 0, skip: null, left: 10 });
+      for (let i = 0; i < 120 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60);
+      out.homeNear = 5 - near.shield; out.homeFar = 5 - far.shield; near.dead = far.dead = true; }
     /* off screen: it flies on until it leaves the box, then goes without a burst */
     t.ifrFires.length = 0; t.ifrPellets.length = 0; t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 0, skip: null, left: 10 });
     let n = 0; while (t.ifrBalls.length && n++ < 2000) stepIfrBalls(t, st, 1 / 60); out.offGone = t.ifrBalls.length === 0; out.offFires = t.ifrFires.length; out.offSteps = n;
@@ -230,6 +235,7 @@ check("IFR meteors: fork across 60 degrees, fly on until the FIRST enemy they to
   if (r.n !== r.forks || r.n % 2 !== 1 || r.n < 3) return "Meteor I launched " + r.n + " meteors (its forks " + r.forks + ": an odd number, 3+)";
   if (Math.abs(r.spread - 60) > 0.5 || r.mid > 0.5) return "the fork spans " + r.spread.toFixed(1) + " degrees, middle " + r.mid.toFixed(1) + " off the target (expected 60, 0)";
   if (r.a !== 1 || r.b !== 0 || r.fires !== 1 || !(r.fireAt < 20)) return "no pass-through: front body hit " + r.a + ", the one behind " + r.b + ", fires " + r.fires + " (" + r.fireAt + " u from the hit)";
+  if (r.homeNear !== 1 || r.homeFar !== 0) return "homing: an enemy 35 u off the path took " + r.homeNear + " hits (1), one 90 u off " + r.homeFar + " (0)";
   if (!r.offGone || r.offFires || r.offSteps < 30) return "off screen: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires + " (expected gone, no burst)";
   if (!r.fissure || JSON.stringify(r.kids) !== "[-30,30]" || r.kidGen.some(g => g !== 1)) return "Meteor VI fissure: " + r.fissure + ", kids " + JSON.stringify(r.kids) + " gen " + r.kidGen;
   if (r.cHits !== 1) return "the fissured meteors hit their parent's enemy again: " + r.cHits + " charges";

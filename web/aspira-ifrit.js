@@ -14,6 +14,7 @@ const IFR_CHARGE_S = [2.0, 1.9, 1.8, 1.6, 1.4, 1.2] /* x2 (owner, 2026-10-20: "f
 const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
 const IFR_ROUTE_K = [1.5, 2, 2.5, 3, 4, 5] /* FLATTER (owner, 2026-10-20: "meteor should increase damage less" - with the fork and one burst a meteor); was [1.5, 2, 4, 10, 60, 400] VI 8000 */ /* AXES REDONE (2026-10-20): x TOWERS.ifr.dmg, Meteor's own - was x the Blk Magic blast hit, [0.25, 0.5, 1, 4, 10, 60] VI 150 */; // Meteor: the en-route hit, its ONLY damage
 const IFR_FORKS = [1, 3, 3, 3, 5, 5]; // Meteor: meteors a launch, an odd number fanned evenly across IFR_FORK_DEG, the middle at the target (owner, 2026-10-20: "fork at launch into an odd number of copies of itself across an angle of 60deg"; VI 5 + the fissure)
+const IFR_HOME_R = 50; // HOMING (owner, 2026-10-20: "start homing in on target at 50u"): an enemy whose body comes within this of a meteor is locked and the meteor steers straight at it
 const IFR_FORK_DEG = 60, IFR_FISSURE_DEG = 30, IFR_FLY_S = 10, IFR_FLY_R = 1400; // the capstone's two fissure meteors fly this far either side of the one that hit; a meteor's longest flight (s); the simulator's 'off screen' (no view): this far from the core
 const IFR_BALL_RAD = [2.7, 3, 3.3, 3.7, 4.2, 4.7] /* x0.2 (owner, 2026-10-20: "reduce meteor size to 20% of current"; was [13.5 .. 23.5] VI 27) */ /* HALVED (owner, 2026-10-20: "meteor is also too big, halve all the current sizes"); was [27 .. 47] VI 54 */; // Meteor: the meteor's radius, u (solo.mjs 2026-10-20: the hex's width across untaken - half of it leaked the wave-4 swarm, 15 lives; owner: "twice the size" of it at VI: 54, capstone.js)
 // Hellfire: THE FIRE the meteor leaves (owner, 2026-10-20) - it opens at the meteor's size, grows at FIRE_V to FIRE_R (never below IFR_FIRE_FLOOR x the meteor), burns by catching fire every IFR_FIRE_TICK_S for FIRE_K x TOWERS.ifr.dmg a tick ("small ticks, many"), lingers FIRE_LINGER s at full size
@@ -118,10 +119,29 @@ function ifrOnView(x, y, r) {
   }
   return (x - CX) ** 2 + (y - CY) ** 2 < IFR_FLY_R * IFR_FLY_R;
 }
+// HOMING: a meteor keeps its lock (b.lock, an enemy id) while that enemy lives, else locks the nearest one whose body is within IFR_HOME_R;
+// locked, it turns straight at it at full speed (an instant turn)
+function ifrHome(b, all) {
+  let e = null;
+  if (b.lock != null) { e = all.find(x => x.id === b.lock && !x.dead) || null; if (!e) b.lock = null; }
+  if (!e) {
+    let best = Infinity;
+    for (const x of all) {
+      if (x.dead || !x.seen || x.id === b.skip) continue;
+      const d = Math.hypot(x.x - b.x, x.y - b.y) - ENEMIES[x.type].size * (x.sizeMul || 1);
+      if (d <= IFR_HOME_R && d < best) { best = d; e = x; }
+    }
+    if (e) b.lock = e.id;
+  }
+  if (!e) return;
+  const v = Math.hypot(b.vx, b.vy), d = Math.hypot(e.x - b.x, e.y - b.y) || 1;
+  b.vx = (e.x - b.x) / d * v; b.vy = (e.y - b.y) / d * v;
+}
 function stepIfrBalls(t, st, dt) {
   if (!t.ifrBalls.length) return;
   const all = G.enemies, born = [];
   for (const b of t.ifrBalls) {
+    ifrHome(b, all);
     b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
     let hit = null;
     for (const e of all) { /* every enemy, not projGrid's cell (a few meteors a tower - cheap) */
