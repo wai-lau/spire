@@ -318,8 +318,8 @@ life and its own damage** - every hit is `TOWERS.ifr.dmg` x that axis's table, n
 | Part | Rule |
 |---|---|
 | charge | ONE charge at the tower's centre, drawn before the prism (the tower always covers it); fills over the charge time and waits |
-| launch | full + an enemy in range: it flies at once, aimed at where the enemy stands NOW (no lead - the fast weakness); size fixed at launch |
-| flight | hits every enemy its body touches once (the en-route hit) - Meteor's ONLY damage; lands at its aim spot whatever became of the target |
+| launch | full + an enemy in range: a FAN of `IFR_FORKS` meteors (an odd number) across 60 degrees, the middle one LED at the target (`ifrLead`, 2026-10-20) |
+| flight | each flies straight until the FIRST enemy its body touches - that one takes Meteor's hit and the meteor bursts there (no pass-through) - or until it leaves the camera's VIEW (`ifrOnView`; the simulator: 1400 u from the core), gone without a burst. Capstone (Impact): a hit FISSURES into two meteors 30 degrees either side, which skip that enemy and do not fissure |
 | fire | on impact the black fill goes; the outline and glow become the FIRE, opening at the meteor's size and growing to its max (never below the meteor), lingering, then fading (no hits while fading). It burns by **catching fire** (a tick burns only an enemy that was in it at the tick before too - what runs through it does not) in many small ticks (`IFR_FIRE_TICK_S`), each popping one shield charge. Fires stack. Its inner glow rises to 3x over 1.5 s |
 | pellets | fly out in any direction, a random distance (nearer more often) up to `IFR_PELLET_R` x `IFR_PELLET_REACH`, leaving at random times; pass through, hitting what they touch (again every 0.2 s it stays touching); each lights ONE flare where it lands, its ember sized to that flare |
 | flare | a big + over a tiny x, a random size; burns by catching fire; its glow brightens with its hit (`ifrFlareI`) |

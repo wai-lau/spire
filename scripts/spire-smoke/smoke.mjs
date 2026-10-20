@@ -201,29 +201,38 @@ check("IFR: one charge at its centre, launched the moment it is full and a targe
   if (r.rAfter !== r.r) return "upgrading mid-flight changed a live meteor's size: " + r.r + " -> " + r.rAfter;
   return "";
 });
-check("IFR: a meteor lands where it was aimed (its target gone), a fire opens, pellets fly, a flare burns", () => {
+check("IFR meteors: fork across 60 degrees, fly on until the FIRST enemy they touch (no pass-through) or off screen, burst there; the capstone fissures into two at +-30", () => {
   const r = run(`(() => {
-    G = newGame(); G.money = 1e9; ui.build = "ifr";
-    const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = G.towers[0]; for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true); // Backdraft: three flares a pellet
-    const hold = () => { for (const x of G.enemies) x.stunT = 1e9; step(1 / 30); }; // wave 1 held at the gate: it walked into range and took the first ball
-    for (let i = 0; i < 90; i++) hold(); // a ball charged
-    const e = ifrNear("shield", t, 120), f = ifrNear("shield", t, 120); e.shield = 5; f.shield = 5; const ex = e.x, ey = e.y;
-    const fp = pathAt(0, e.s + 4, 0); f.s = e.s + 4; f.x = fp.x; f.y = fp.y; // f 4 u down the lane (ifrNear at 125 u picked another lane point)
-    hold(); const ball = t.ifrBalls[0]; if (!ball) return { noBall: true };
-    const aimedAt = Math.hypot(ball.ax - ex, ball.ay - ey) < 1 || Math.hypot(ball.ax - f.x, ball.ay - f.y) < 1;
-    e.dead = true; e.gone = true; // the target dies in flight (f, 4 u down the lane, stays)
-    let n = 0; while (t.ifrBalls.length && n++ < 200) hold();
-    const out = { aimed: aimedAt, fires: t.ifrFires.length, pellets: t.ifrPellets.length };
-    for (let i = 0; i < 120; i++) { hold(); out.fires = Math.max(out.fires, t.ifrFires.length); } // pellets land, the ring opens (last) and passes f, flares tick (120: IFR_PELLET_V 100 since 2026-10-20)
-    out.fShield = f.shield; out.flares = t.ifrFlares.length; out.fHits = f.shield < 5;
+    const fresh = m => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < m; k++) upgradeTower(t, "meteor", true); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
+    const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 5; e.stunT = 1e9; return e; };
+    const out = {};
+    /* the fork: n meteors, the middle at the target, the outer two 30 degrees off it */
+    let t = fresh(1); let st = towerStats(t); const tgt = held(t, t.x + 100, t.y); egridAt = NaN; t.ifrCharge = 1; ifrLaunch(t, st);
+    const angs = t.ifrBalls.map(b => Math.atan2(b.vy, b.vx)).sort((a, b) => a - b); out.n = angs.length; out.forks = st.forks;
+    out.spread = (angs[angs.length - 1] - angs[0]) * 180 / Math.PI; out.mid = Math.abs(angs[(angs.length - 1) / 2]) * 180 / Math.PI;
+    /* no pass-through: a body in the way stops it; the one behind is untouched */
+    t = fresh(0); st = towerStats(t); const a = held(t, t.x + 60, t.y), b2 = held(t, t.x + 90, t.y); egridAt = NaN;
+    t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 0, skip: null, left: 10 });
+    for (let i = 0; i < 60 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60);
+    out.a = 5 - a.shield; out.b = 5 - b2.shield; out.fireAt = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - a.x, t.ifrFires[0].y - a.y) : NaN; out.fires = t.ifrFires.length;
+    a.dead = b2.dead = true;
+    /* off screen: it flies on until it leaves the box, then goes without a burst */
+    t.ifrFires.length = 0; t.ifrPellets.length = 0; t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 0, skip: null, left: 10 });
+    let n = 0; while (t.ifrBalls.length && n++ < 2000) stepIfrBalls(t, st, 1 / 60); out.offGone = t.ifrBalls.length === 0; out.offFires = t.ifrFires.length; out.offSteps = n;
+    /* the capstone fissure: a hit spawns two meteors 30 degrees either side of its heading, which do not hit that enemy again or fissure */
+    t = fresh(6); st = towerStats(t); out.fissure = st.fissure; const c = held(t, t.x + 60, t.y); egridAt = NaN;
+    t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 0, skip: null, left: 10 });
+    for (let i = 0; i < 60 && t.ifrBalls.length === 1; i++) stepIfrBalls(t, st, 1 / 60);
+    out.kids = t.ifrBalls.map(k => Math.round(Math.atan2(k.vy, k.vx) * 180 / Math.PI)).sort((x, y) => x - y); out.kidGen = t.ifrBalls.map(k => k.gen);
+    stepIfrBalls(t, st, 1 / 60); out.cHits = 5 - c.shield;
     return out;
   })()`);
-  if (r.noBall) return "no ball launched";
-  if (!r.aimed) return "the ball was not aimed at the target's spot at launch";
-  if (r.fires < 1) return "no fire where the meteor landed (target gone)";
-  if (!(r.pellets >= 1 || r.flares >= 1)) return "no pellets / flares after the burst";
-  if (!r.fHits) return "the second enemy inside the blast lost no shield charge";
+  if (r.n !== r.forks || r.n % 2 !== 1 || r.n < 3) return "Meteor I launched " + r.n + " meteors (its forks " + r.forks + ": an odd number, 3+)";
+  if (Math.abs(r.spread - 60) > 0.5 || r.mid > 0.5) return "the fork spans " + r.spread.toFixed(1) + " degrees, middle " + r.mid.toFixed(1) + " off the target (expected 60, 0)";
+  if (r.a !== 1 || r.b !== 0 || r.fires !== 1 || !(r.fireAt < 20)) return "no pass-through: front body hit " + r.a + ", the one behind " + r.b + ", fires " + r.fires + " (" + r.fireAt + " u from the hit)";
+  if (!r.offGone || r.offFires || r.offSteps < 30) return "off screen: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires + " (expected gone, no burst)";
+  if (!r.fissure || JSON.stringify(r.kids) !== "[-30,30]" || r.kidGen.some(g => g !== 1)) return "Meteor VI fissure: " + r.fissure + ", kids " + JSON.stringify(r.kids) + " gen " + r.kidGen;
+  if (r.cHits !== 1) return "the fissured meteors hit their parent's enemy again: " + r.cHits + " charges";
   return "";
 });
 check("IFR: a flare's burn pops one charge ON a beam, none off it; pellets fly outward in different directions, each stopping by the blast radius", () => {
@@ -271,15 +280,16 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
     for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - 0.9 * st.range); if (d < bd) { bd = d; bs = s; } }
     e.s = bs; const p0 = pathAt(0, bs, 0); e.x = p0.x; e.y = p0.y; e.seen = true; e.hp = e.max = 1e9; e.armor = 0; e.shield = 0; e.jit = 0; e.spd = 1;
     for (const x of G.enemies) if (x !== e) x.dead = true; t.ifrCharge = 1; step(1 / 60); const b = t.ifrBalls[0]; if (!b) return { noBall: true };
-    out.aimOff = Math.hypot(b.ax - e.x, b.ay - e.y); /* from where it stands at launch */ let n = 0; while (t.ifrBalls.length && n++ < 600) step(1 / 60);
-    out.miss = Math.hypot(b.ax - e.x, b.ay - e.y); out.r = b.r; out.hit = b.hit.includes(e.id);
+    const mid = t.ifrBalls.reduce((m, q) => Math.abs(Math.atan2(q.vy, q.vx) - Math.atan2(e.y - q.y, e.x - q.x)) < Math.abs(Math.atan2(m.vy, m.vx) - Math.atan2(e.y - m.y, e.x - m.x)) ? q : m, b);
+    out.aimOff = Math.abs(Math.atan2(mid.vy, mid.vx) - Math.atan2(e.y - mid.y, e.x - mid.x)) * 180 / Math.PI; /* degrees off the enemy's spot at launch: led */ let n = 0; while (t.ifrBalls.length && n++ < 600) step(1 / 60);
+    out.r = b.r; const f0 = t.ifrFires[0]; out.hit = !!f0 && Math.hypot(f0.x - e.x, f0.y - e.y) < 30; out.miss = f0 ? Math.hypot(f0.x - e.x, f0.y - e.y) : NaN;
     out.glow2d = IFR_GLOW[0][0]; out.glowGl = IFR_GLOW_GL[0][0];
     out.whites = [IFR_RING_GLOW, IFR_GLOW, IFR_GLOW_GL].flat().filter(q => q[2] === "white").length;
     { const F = [], of = ctx.fill; ctx.fill = function (...a) { F.push(ctx.fillStyle); return of.apply(this, a); }; try { drawIfrEmber({ x: CX, y: CY, vx: 1, vy: 0 }, 1, false); } finally { ctx.fill = of; } out.emberWhite = F.filter(f => f === COL.white).length; }
     return out;
   })()`);
   if (r.noBall) return "no meteor launched at a charged tower with a target";
-  if (!(r.aimOff > 1)) return "the meteor was aimed at the enemy's spot now (" + r.aimOff.toFixed(1) + " u off), not ahead of it";
+  if (!(r.aimOff > 0.5)) return "the meteor was aimed at the enemy's spot now (" + r.aimOff.toFixed(2) + " degrees off), not ahead of it";
   if (!r.hit) return "a led meteor missed its target: landed " + r.miss.toFixed(1) + " u from it (its radius " + r.r + ")";
   if (r.glow2d > 1 || r.glowGl > 0.5) return "the flare glow is wider than its hit band: 2D " + r.glow2d + " x W, GL half-width " + r.glowGl + " x W";
   if (r.whites || r.emberWhite) return "IFR still draws white: " + r.whites + " glow layers, " + r.emberWhite + " ember fills (owner, 2026-10-20: \"no white\")";
@@ -319,11 +329,11 @@ check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () 
     const t = G.towers[0]; ifrInit(t); const out = {};
     const hitOf = () => { const amts = [], d0 = damage; damage = (e, amt, ...a) => { amts.push(amt); return d0(e, amt, ...a); };
       try { const st = towerStats(t), e = ifrNear("shield", t, 60); e.shield = 0; egridAt = NaN; t.ifrBalls.length = 0;
-        t.ifrBalls.push({ x: e.x, y: e.y, ax: e.x + 500, ay: e.y, vx: 1, vy: 0, left: 500, r: st.ballR, hit: [] }); stepIfrBalls(t, st, 1 / 30); e.dead = true; } finally { damage = d0; }
+        t.ifrBalls.push({ x: e.x, y: e.y, vx: 1, vy: 0, left: 10, r: st.ballR, gen: 0, skip: null }); stepIfrBalls(t, st, 1 / 30); e.dead = true; } finally { damage = d0; }
       return amts[0]; };
     out.off = hitOf(); G.power.DAM = 1; out.on = hitOf(); G.power.DAM = 0;
     for (let k = 0; k < 6; k++) upgradeTower(t, "hellfire", true); const st = towerStats(t);
-    for (let i = 0; i < 40; i++) ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR });
+    t.ifrFires.length = 0; for (let i = 0; i < 40; i++) ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR });
     out.fires = t.ifrFires.length;
     return out;
   })()`);

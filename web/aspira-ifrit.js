@@ -1,6 +1,6 @@
 // /spire - IFR, IFRIT (owner's design 2026-10-19, axes redone 2026-10-20 - the fire aeon of FFX, orange): strong against swarm +
 // shield, NEUTRAL to armor, weak to fast. ONE charge fills at the tower's centre; full + an enemy in range = a launch, aimed at the
-// spot it will reach (led, 2026-10-20). EACH AXIS ITS OWN PART AND ITS OWN DAMAGE (x TOWERS.ifr.dmg): METEOR the meteor in flight - charge time,
+// spot it will reach (led, 2026-10-20), forked across 60 degrees, each bursting on the first enemy it touches. EACH AXIS ITS OWN PART AND ITS OWN DAMAGE (x TOWERS.ifr.dmg): METEOR the meteor in flight - charge time,
 // speed, size, the en-route hit on every enemy its body touches (Impact: a huge meteor); HELLFIRE the FIRE it leaves - opening at the
 // meteor's size, growing to its max, burning what stands in it by catching fire in small, many ticks, lingering (its capstone: six
 // towers across); BLK MAGIC the PELLETS that fly out (passing through, hitting) and the FLARES they light where they land - a big +
@@ -12,7 +12,9 @@
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const IFR_CHARGE_S = [2.0, 1.9, 1.8, 1.6, 1.4, 1.2] /* x2 (owner, 2026-10-20: "fire rate is too high, halve it, double damage" - TOWERS.ifr.dmg 60 -> 120); was [1.0 .. 0.6] VI 0.3 */ /* AXES REDONE (owner, 2026-10-20: "greatly lower initial meteor fire rate and increase damage"; one charge, no slots); was [0.5, 0.5, 0.5, 0.45, 0.4, 0.35] VI 0.1 */; // Meteor: s to fill THE charge (VI capstone.js)
 const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
-const IFR_ROUTE_K = [1.5, 2, 4, 10, 60, 400] /* AXES REDONE (2026-10-20): x TOWERS.ifr.dmg, Meteor's own - was x the Blk Magic blast hit, [0.25, 0.5, 1, 4, 10, 60] VI 150 */; // Meteor: the en-route hit, its ONLY damage
+const IFR_ROUTE_K = [1.5, 2, 2.5, 3, 4, 5] /* FLATTER (owner, 2026-10-20: "meteor should increase damage less" - with the fork and one burst a meteor); was [1.5, 2, 4, 10, 60, 400] VI 8000 */ /* AXES REDONE (2026-10-20): x TOWERS.ifr.dmg, Meteor's own - was x the Blk Magic blast hit, [0.25, 0.5, 1, 4, 10, 60] VI 150 */; // Meteor: the en-route hit, its ONLY damage
+const IFR_FORKS = [1, 3, 3, 3, 5, 5]; // Meteor: meteors a launch, an odd number fanned evenly across IFR_FORK_DEG, the middle at the target (owner, 2026-10-20: "fork at launch into an odd number of copies of itself across an angle of 60deg"; VI 5 + the fissure)
+const IFR_FORK_DEG = 60, IFR_FISSURE_DEG = 30, IFR_FLY_S = 10, IFR_FLY_R = 1400; // the capstone's two fissure meteors fly this far either side of the one that hit; a meteor's longest flight (s); the simulator's 'off screen' (no view): this far from the core
 const IFR_BALL_RAD = [2.7, 3, 3.3, 3.7, 4.2, 4.7] /* x0.2 (owner, 2026-10-20: "reduce meteor size to 20% of current"; was [13.5 .. 23.5] VI 27) */ /* HALVED (owner, 2026-10-20: "meteor is also too big, halve all the current sizes"); was [27 .. 47] VI 54 */; // Meteor: the meteor's radius, u (solo.mjs 2026-10-20: the hex's width across untaken - half of it leaked the wave-4 swarm, 15 lives; owner: "twice the size" of it at VI: 54, capstone.js)
 // Hellfire: THE FIRE the meteor leaves (owner, 2026-10-20) - it opens at the meteor's size, grows at FIRE_V to FIRE_R (never below IFR_FIRE_FLOOR x the meteor), burns by catching fire every IFR_FIRE_TICK_S for FIRE_K x TOWERS.ifr.dmg a tick ("small ticks, many"), lingers FIRE_LINGER s at full size
 const IFR_FIRE_FLOOR = 16; // the fire's max is never under this x the meteor's radius - with no Hellfire too (owner, 2026-10-20: "even with no hellfire bought, fire should start at 16x meteor size"; was 1x)
@@ -56,6 +58,7 @@ function ifrSkillStats(t, s, b) {
   s.range = b.range * RANGE_BONUS; s.targets = 1;
   // EACH AXIS ITS OWN PART, ITS OWN DAMAGE (owner, 2026-10-20: "axes don't feel unique nor impactful"), every hit x TOWERS.ifr.dmg:
   // Meteor the ball in flight, Hellfire the fire it leaves, Blk Magic the pellets and their flares
+  s.forks = IFR_FORKS[m]; s.fissure = m >= CAPSTONE_TIER;
   s.chargeS = IFR_CHARGE_S[m]; s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K[m];
   s.fireR = Math.max(s.ballR * IFR_FIRE_FLOOR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireLinger = IFR_FIRE_LINGER[h]; s.fireK = IFR_FIRE_K[h];
   s.pellets = IFR_PELLETS[f]; s.pelletK = IFR_PELLET_DK[f]; s.giant = f >= CAPSTONE_TIER;
@@ -89,8 +92,8 @@ function ifrLaunch(t, st) {
   if (t.ifrCharge < 1) return;
   const e = pickTargets(t, st, 1)[0];
   if (!e) return;
-  const c = ifrCentre(t), a = ifrLead(c, e, st.ballV), d = Math.hypot(a.x - c.x, a.y - c.y) || 1;
-  t.ifrBalls.push({ x: c.x, y: c.y, ax: a.x, ay: a.y, vx: (a.x - c.x) / d * st.ballV, vy: (a.y - c.y) / d * st.ballV, left: d / st.ballV, r: st.ballR, hit: [] }); /* hit: enemy ids struck en route */
+  const c = ifrCentre(t), a = ifrLead(c, e, st.ballV), mid = Math.atan2(a.y - c.y, a.x - c.x), n = st.forks, step = n > 1 ? IFR_FORK_DEG * Math.PI / 180 / (n - 1) : 0;
+  for (let i = 0; i < n; i++) ifrMeteor(t, st, c.x, c.y, mid + (i - (n - 1) / 2) * step, 0, null); /* THE FORK: n meteors, the middle at the (led) target */
   t.ifrCharge = 0; t.shots = (t.shots || 0) + 1; sfx("ifr");
 }
 function stepIfr(t, dt) {
@@ -100,24 +103,41 @@ function stepIfr(t, dt) {
   ifrLaunch(t, st);
   stepIfrBalls(t, st, dt); stepIfrFires(t, st, dt); stepIfrPellets(t, st, dt); stepIfrFlares(t, st, dt);
 }
-// ---------- the flight (METEOR, owner 2026-10-20: "meteor only affects en route damage"): every enemy its body touches is hit once for
-// st.dmg x st.routeK; it lands at its AIM spot whatever happened to the target ----------
+// ---------- the flight (METEOR, owner 2026-10-20: "meteor should no longer pass through, they should just explode on first hit ... they
+// should keep going until hit or offscreen"): straight on until the FIRST enemy its body touches - that one takes st.dmg x st.routeK and the
+// meteor bursts there (the fire, the pellets) - or until it leaves the VIEW (ifrOnView: what the camera shows, not the play box), gone without a
+// burst. The capstone FISSURES: a hit spawns two meteors IFR_FISSURE_DEG either side of its heading (gen 1: they do not fissure, and skip that enemy) ----------
+function ifrMeteor(t, st, x, y, ang, gen, skip) {
+  t.ifrBalls.push({ x, y, vx: Math.cos(ang) * st.ballV, vy: Math.sin(ang) * st.ballV, r: st.ballR, gen, skip, left: IFR_FLY_S });
+}
+// is (x, y) in the camera's view (r world units of slack)? 3D: projected onto the canvas; the simulator has no view - within IFR_FLY_R of the core
+function ifrOnView(x, y, r) {
+  if (typeof warp !== "undefined" && warp && warp.gl && typeof warpProject === "function" && typeof warpScreen === "function") {
+    const p = warpProject(x, y, 0), sc = warpScreen(), m = r * (cam.k || 1) * (p.s || 1);
+    if (sc.w > 0 && sc.h > 0) return p.s > 0 && p.x >= -m && p.x <= sc.w + m && p.y >= -m && p.y <= sc.h + m;
+  }
+  return (x - CX) ** 2 + (y - CY) ** 2 < IFR_FLY_R * IFR_FLY_R;
+}
 function stepIfrBalls(t, st, dt) {
   if (!t.ifrBalls.length) return;
-  const all = G.enemies;
+  const all = G.enemies, born = [];
   for (const b of t.ifrBalls) {
-    const s = Math.min(dt, b.left); b.x += b.vx * s; b.y += b.vy * s; b.left -= dt; /* s: the landing frame stops at the aim spot, never hit-tests past it */
-    for (const e of all) { /* every enemy, not projGrid's cell: a meteor is wider than a cell's pad (one or two a tower - cheap) */
-      if (e.dead || !e.seen || b.hit.includes(e.id)) continue;
+    b.x += b.vx * dt; b.y += b.vy * dt; b.left -= dt;
+    let hit = null;
+    for (const e of all) { /* every enemy, not projGrid's cell (a few meteors a tower - cheap) */
+      if (e.dead || !e.seen || e.id === b.skip) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + b.r;
-      if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
-      b.hit.push(e.id); const amt = st.dmg * st.routeK;
-      const h0 = hitFrom; HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
-      try { damage(e, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
+      if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 <= r * r) { hit = e; break; }
     }
-    if (b.left <= 0) ifrImpact(t, st, b);
+    if (hit) {
+      const amt = st.dmg * st.routeK, h0 = hitFrom; HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
+      try { damage(hit, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(hit, t, st, amt);
+      b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); b.left = 0;
+      if (st.fissure && !b.gen) { const a = Math.atan2(b.vy, b.vx), d = IFR_FISSURE_DEG * Math.PI / 180; born.push([b.x, b.y, a - d, hit.id], [b.x, b.y, a + d, hit.id]); }
+    } else if (!ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst */
   }
   keepLive(t.ifrBalls);
+  for (const [x, y, a, id] of born) ifrMeteor(t, st, x, y, a, 1, id);
 }
 // THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), and the pellets fly
 // (Blk Magic). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)

@@ -63,7 +63,8 @@ const DESCRIBE = {
   // leaves, wider and longer (its capstone: six towers across); Blk Magic more, harder pellets and flares (Mega Firaga: a giant flare)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
-    return "Charges one meteor at its centre and lobs it at an enemy the moment it is ready, " + (m >= 6 ? "a huge one, " : "") + "burning what it passes. Where it lands a fire " +
+    const n = IFR_FORKS[m];
+    return "Charges at its centre and, the moment it is ready, launches " + (n > 1 ? "a fan of " + n + " meteors" : "a meteor") + " ahead of an enemy; each flies on until it strikes one" + (m >= 6 ? " and splits into two more" : "") + ". Where a meteor strikes a fire " +
       (h ? "spreads" + (h >= 6 ? " six towers wide" : "") + " and lingers" : "flickers") + ", burning what stands in it, and " + IFR_PELLETS[f] +
       " pellets fly out, burning what they pass; where each lands a flare burns" + (f >= 6 ? ", and a giant flare where the meteor struck." : ".");
   },
