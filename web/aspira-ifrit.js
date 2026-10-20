@@ -23,7 +23,7 @@ const IFR_TICK_K = [0.41, 0.6, 0.91, 1.36, 1.52, 2.27] /* x0.5 with the flares x
 const IFR_BLAST_R = [117, 150, 150, 150, 169, 195] /* stop I 117 -> 150 (marks rule, 2026-10-19: every tower needs checks on 2 types - swarm 14% was too near the seven-tower mean for one; 10% at 150) - x1.3: bigger and more visible (owner, 2026-10-19: "make the initial explosion slower and bigger and more visible"); was [90, 90, 100, 115, 130, 150], base 90, was 80 (solo.mjs 2026-10-19, after the random pellets and the slow ticks: a lone L1 1/0/0 -> 0/0/0, 5 seeds 1/0/0/2/2 -> 0/0/0/0/2 - a single wave-4 swarm body now and then) */ /* was [60 .. 130] VI 160 (solo.mjs 2026-10-19, ball 360 + a 1 s charge: a lone L1 0/2/0 -> 0/0/0, every L1 pair with IFR beats the Star on every slot pair) */; // Firaga: the ring's reach, u
 const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 12, 22] /* AXIS BALANCE (2026-10-19): Firaga's top stops up (101-109 mean leak 82 -> 78); was [1.5, 2.25, 3.45, 5.25, 9, 15] */ /* was [1, 1.5, 2.3, 3.5, 6, 10] VI 18 (countermx 61-69 spread @6pts, 2026-10-19: leaked swarm/fast/shield/armor 27/91/42/100 -> 18/75/23/90) */; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [5, 6, 8, 10, 14, 19] /* HALVED (owner, 2026-10-20: "still too many pellets, halve the counts" - they pass through and re-hit now); was [10, 12, 15, 20, 28, 38] */ /* DOUBLED, each flare a random size (owner, 2026-10-19: "double the number of pellets (and hellfires) but add size jitter"; were 5 .. 21, VI 24) */ /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
-const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 210 /* FASTER than the pellets (IFR_PELLET_V 100), x1.25 (owner, 2026-10-19: "the initial explosion is faster than the pellets"); was 140, 220, 600 */, IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
+const IFR_LAUNCH_GAP = 0.05, IFR_RING_V = 210 /* FASTER than the pellets (IFR_PELLET_V 100), x1.25 (owner, 2026-10-19: "the initial explosion is faster than the pellets"); was 140, 220, 600 */, IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25; // s between launches; the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
 const IFR_PELLET_SPREAD_S = 0.5; // s: a burst's pellets leave at random times over this (owner, 2026-10-20: "randomize the pellet launch times over 0.5s")
 const IFR_PELLET_REHIT = 0.2; // s: a pellet still touching an enemy it hit hits it again this often (a slow pellet riding along a body hits it several times)
 const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
@@ -103,15 +103,18 @@ function stepIfr(t, dt) {
   ifrLaunch(t, st, dt);
   stepIfrBalls(t, st, dt); stepIfrRings(t, st, dt); stepIfrPellets(t, st, dt); stepIfrFlares(t, st, dt);
 }
+// the ball HITS WHAT IT VISIBLY TOUCHES (owner, 2026-10-20): its drawn disc (IFR_EMBER_R x k) and the outer edge of its ring's widest glow
+function ifrBallReach(b) { return IFR_EMBER_R * (b.k ??= ifrBallK(b.fs)) + IFR_RING_THIN * IFR_RING_GLOW[0][0] / 2; }
 // ---------- the flight: slow, small, hitting what it passes; it bursts at its AIM spot whatever happened to the target ----------
 function stepIfrBalls(t, st, dt) {
   if (!t.ifrBalls.length) return;
-  const g = projGrid();
+  const all = G.enemies;
   for (const b of t.ifrBalls) {
     const s = Math.min(dt, b.left); b.x += b.vx * s; b.y += b.vy * s; b.left -= dt; /* s: the burst frame stops at the aim spot, never hit-tests past it */
-    for (const e of enemiesNear(b.x, b.y, g)) {
-      if (e.dead || b.hit.includes(e.id)) continue;
-      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + IFR_BALL_R;
+    const R = ifrBallReach(b);
+    for (const e of all) { /* every enemy, not projGrid's cell: the drawn ball is wider than a cell's pad (a few balls a tower - cheap) */
+      if (e.dead || !e.seen || b.hit.includes(e.id)) continue;
+      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + R;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
       b.hit.push(e.id); const amt = st.dmg * st.routeK;
       const h0 = hitFrom; HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;

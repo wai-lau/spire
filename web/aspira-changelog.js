@@ -12,6 +12,7 @@
 const CHANGELOG = [
   { v: "6.4", day: "Oct 20", bu: [
     "Ifrit: Mega Firaga's blast hits a quarter harder.",
+    "Ifrit: the fireball hits every enemy it is drawn touching.",
   ], ne: [], u: [
     "Build cards: marks re-checked with the new Ifrit.",
     "Auto-move: towers and upgrades are free while it is on; any purchase made then keeps the run off the leaderboard.",
