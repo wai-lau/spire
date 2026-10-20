@@ -139,6 +139,23 @@ run(`function ifrNear(type, t, dist) {
   for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
   const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e6; e.armor = 0; e.shield = 0; return e;
 }`);
+check("spacing (owner, 2026-10-20): armor units twice as far apart, fast units three times, shield pods half the gap", () => {
+  const r = run(`(() => {
+    G = newGame(); const out = {};
+    const a = FORMS.armor.slots(6); out.armorPitch = Math.abs(a[1][0] - a[0][0]);
+    const f = FORMS.fast.slots(2); out.fastSide = Math.abs(f[1][0] - f[0][0]);
+    const lanes = { shield: 0, fast: 0 };
+    const w = { n: 1, list: ["shield", "shield", "shield", "shield", "shield", "shield", "shield", "shield"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w];
+    stepSpawns(1e-6); out.shieldGap = w.timer * ENEMY_SPEED; out.shieldIdx = w.idx;
+    const w2 = { n: 1, list: ["fast", "fast", "fast", "fast"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w2];
+    stepSpawns(1e-6); out.fastBehind = w2.timer * ENEMIES.fast.speed * ENEMY_SPEED;
+    return out;
+  })()`);
+  if (Math.abs(r.armorPitch - 72) > 1e-6) return "armor lattice pitch " + r.armorPitch + " (expected 72, twice 36)";
+  if (Math.abs(r.fastSide - 78) > 1e-6 || Math.abs(r.fastBehind - 78) > 0.01) return "fast pairs " + r.fastSide + " across, " + r.fastBehind + " behind (expected 78 both, three times 26)";
+  if (r.shieldIdx !== 5 || Math.abs(r.shieldGap - 5 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected 5 x 0.4 = 2, half the old 4)";
+  return "";
+});
 check("IFR: each axis scales only its own numbers", () => {
   const r = run(`(() => {
     const F = { meteor: ["chargeS", "ballV", "ballR", "routeK"], hellfire: ["fireR", "fireV", "fireLinger", "fireK"], firaga: ["pellets", "pelletK", "beamL", "beamW", "burnS", "tickS", "flareK", "giant"] };

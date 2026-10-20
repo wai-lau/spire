@@ -413,16 +413,16 @@ cycle was 10 when they were tuned); `WAVE_COUNT_MUL` keys are real waves.
 
 ### 5.3 Spawning and formations
 
-Each lane copy spawns in order (swarm bodies close together, other types 0.8 s apart,
+Each lane copy spawns in order (swarm bodies close together, shield pods half the others' gap (2026-10-20), other types 0.8 s apart,
 formations at once); a boss arrives 2 s into its wave with its voice line. A formation is a
 sideways offset and a head start laid across the lane at its heading, fading inside
 `FORM_FADE_R` of the core.
 
 | type | formation |
 |---|---|
-| fast | side-by-side pairs, **spinning flat about their midpoint** |
+| fast | side-by-side pairs, **spinning flat about their midpoint**; pairs spread 3x (2026-10-20) |
 | shield | Vs of 5, then a V of 3, then singles; counts round up to fill lanes |
-| armor | one tight lattice 3 abreast, a short last row centred; always whole rows over 2 lanes |
+| armor | one lattice 3 abreast, units twice as far apart (2026-10-20; a boss's armor fleet keeps the old pitch), a short last row centred; always whole rows over 2 lanes |
 | swarm | none: a wander (`e.jit`) that funnels in near the core |
 
 ### 5.4 Bosses

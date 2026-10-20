@@ -133,7 +133,7 @@ function fleetForm(e, R) {
       return [side * d * w, -(R + FLEET_GAP + L * FLEET_LAYER + d * V_BACK)];
     }),
     armor: m => { // a lattice ARMOR_W wide round the boss: the middle row's centre is the boss itself
-      const P = Math.max(ARMOR_PITCH, R + ENEMIES.armor.size + FLEET_GAP), out = [];
+      const P = Math.max(ARMOR_FLEET_PITCH, R + ENEMIES.armor.size + FLEET_GAP), out = [];
       for (let ring = 0; out.length < m; ring++) for (const row of ring ? [ring, -ring] : [0]) for (let c = 0; c < ARMOR_W && out.length < m; c++) {
         const col = c - (ARMOR_W - 1) / 2;
         if (!row && !col) continue; // the boss's own place

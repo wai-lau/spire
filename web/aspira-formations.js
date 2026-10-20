@@ -14,9 +14,12 @@ const V_SMALL = 3, vFits = () => true;
 // FAST: PAIRS side by side, FAST_PAIR apart, spinning about their midpoint (owner, 2026-10-11: "for fast, make them
 // come in pairs and spin also"); each pair FAST_PAIR behind the one before - a square ladder (owner: "side by side
 // distance equal to distance prev and next ... a little smaller"; was 30 across and ~114 between pairs)
-const FAST_PAIR = 26;
+const FAST_PAIR = 78; // x3 (owner, 2026-10-20: "for fast waves, triple the distance between fast units"; was 26)
 // ARMOR: one tight SQUARE lattice per lane copy, ARMOR_W abreast, rows ARMOR_PITCH apart - the same as the columns
-const ARMOR_W = 3, ARMOR_PITCH = 36;
+const ARMOR_W = 3, ARMOR_PITCH = 72, ARMOR_FLEET_PITCH = 36; // ARMOR_PITCH x2 (owner, 2026-10-20: "double the distance between armor units"; was 36); a boss's armor fleet keeps the old 36 (aspira-bosses.js)
+// SHIELDS: the gap after each pod (a V of 5, 3 or a lone 1), per member - halved (owner, 2026-10-20: "bring the distance between
+// shield units closer together (distance between pods of 1 3 5)"; was 0.8, the rest's)
+const SHIELD_POD_GAP = 0.4;
 // THE SPIN (owner, 2026-10-11: "rotate about the center unit's axis (spin around them)", then "don't make shields do
 // the spinning, make armor do the spinning"): a formation turns FLAT on the board about its CENTRE - the lattice's
 // middle, or the boss its escorts surround - one radian every FORM_SPIN[type] world units it travels; the members orbit
