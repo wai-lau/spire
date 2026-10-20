@@ -17,7 +17,7 @@ const CHANGELOG = [
     "Ifrit: Blk Magic - more pellets, harder as they pass through, and bigger, hotter flares; Mega Firaga lights one giant flare where the meteor strikes.",
     "Ifrit: half as many pellets and flares, each flare twice the size.",
     "Ifrit: Hellfire and Blk Magic hit much harder from their first purchase; Hellfire's capstone fire lingers longer.",
-    "Ifrit: the meteor leads its target; it is half the size and charges half as often, each hit twice as hard.",
+    "Ifrit: the meteor leads its target; it is a tenth the size and charges half as often, each hit twice as hard.",
     "Ifrit: Mega Firaga's giant flare is a third the size, its small cross much smaller.",
   ], ne: [
     "Shield: pods of 1, 3 and 5 come closer together.",

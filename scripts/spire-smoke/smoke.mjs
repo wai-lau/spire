@@ -173,7 +173,7 @@ check("IFR: each axis scales only its own numbers", () => {
   const F = { meteor: ["chargeS", "ballV", "ballR", "routeK", "fireR"], hellfire: ["fireR", "fireV", "fireLinger", "fireK"], firaga: ["pellets", "pelletK", "beamL", "beamW", "burnS", "tickS", "flareK", "giant"] };
   for (const ax of Object.keys(F)) { const stray = r.moved[ax].filter(k => !F[ax].includes(k)); if (stray.length) return ax + " moved another axis's numbers: " + stray; if (!r.moved[ax].length) return ax + " moved nothing"; }
   if (r.base.fireR !== r.base.ballR) return "Hellfire 0: the fire's max " + r.base.fireR + " is not the meteor's size " + r.base.ballR;
-  if (r.vi.meteor.ballR !== 27) return "Meteor VI meteor radius " + r.vi.meteor.ballR + " (expected 27: halved, owner 2026-10-20)";
+  if (Math.abs(r.vi.meteor.ballR - 5.4) > 1e-9) return "Meteor VI meteor radius " + r.vi.meteor.ballR + " (expected 5.4: 20% of 27, owner 2026-10-20)";
   if (r.vi.hellfire.fireR !== 160) return "Hellfire VI fire radius " + r.vi.hellfire.fireR + " (expected 160)";
   if (r.base.giant || !r.vi.firaga.giant) return "the giant flare is not Blk Magic VI's alone";
   if (!r.live.length || r.kept.length) return "a save keeps IFR live keys: " + r.kept + " (live: " + r.live + ")";
@@ -272,7 +272,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
     e.s = bs; const p0 = pathAt(0, bs, 0); e.x = p0.x; e.y = p0.y; e.seen = true; e.hp = e.max = 1e9; e.armor = 0; e.shield = 0; e.jit = 0; e.spd = 1;
     for (const x of G.enemies) if (x !== e) x.dead = true; t.ifrCharge = 1; step(1 / 60); const b = t.ifrBalls[0]; if (!b) return { noBall: true };
     out.aimOff = Math.hypot(b.ax - e.x, b.ay - e.y); /* from where it stands at launch */ let n = 0; while (t.ifrBalls.length && n++ < 600) step(1 / 60);
-    out.miss = Math.hypot(b.ax - e.x, b.ay - e.y); out.r = b.r;
+    out.miss = Math.hypot(b.ax - e.x, b.ay - e.y); out.r = b.r; out.hit = b.hit.includes(e.id);
     out.glow2d = IFR_GLOW[0][0]; out.glowGl = IFR_GLOW_GL[0][0];
     out.whites = [IFR_RING_GLOW, IFR_GLOW, IFR_GLOW_GL].flat().filter(q => q[2] === "white").length;
     { const F = [], of = ctx.fill; ctx.fill = function (...a) { F.push(ctx.fillStyle); return of.apply(this, a); }; try { drawIfrEmber({ x: CX, y: CY, vx: 1, vy: 0 }, 1, false); } finally { ctx.fill = of; } out.emberWhite = F.filter(f => f === COL.white).length; }
@@ -280,7 +280,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   })()`);
   if (r.noBall) return "no meteor launched at a charged tower with a target";
   if (!(r.aimOff > 1)) return "the meteor was aimed at the enemy's spot now (" + r.aimOff.toFixed(1) + " u off), not ahead of it";
-  if (!(r.miss < r.r)) return "a led meteor landed " + r.miss.toFixed(1) + " u from its target (its radius " + r.r + ")";
+  if (!r.hit) return "a led meteor missed its target: landed " + r.miss.toFixed(1) + " u from it (its radius " + r.r + ")";
   if (r.glow2d > 1 || r.glowGl > 0.5) return "the flare glow is wider than its hit band: 2D " + r.glow2d + " x W, GL half-width " + r.glowGl + " x W";
   if (r.whites || r.emberWhite) return "IFR still draws white: " + r.whites + " glow layers, " + r.emberWhite + " ember fills (owner, 2026-10-20: \"no white\")";
   if (r.chargeS !== 2 || r.dmg !== 120) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 2 and 120: half the fire rate, twice the damage)";
@@ -496,7 +496,7 @@ check("IFR: a shielded enemy in a flare catches fire, then loses one charge a ti
     for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); out.afterTicks = e.shield; /* 3 ticks: the first lights it (CATCHING FIRE), the next two burn */
     return out;
   })()`);
-  if (r.ballR !== 27) return "Impact gives a meteor of radius " + r.ballR + ", not 27";
+  if (Math.abs(r.ballR - 5.4) > 1e-9) return "Impact gives a meteor of radius " + r.ballR + ", not 5.4";
   if (r.afterTicks !== 7) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 7: the first tick only lights it), enemy " + r.dist + " u out";
   return "";
 });
