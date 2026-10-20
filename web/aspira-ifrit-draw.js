@@ -34,12 +34,12 @@ function drawIfrRingAt(x, y, r, a, low) {
 // the center (it should start at 30%, then fall off to 0% about 30% of the way towards the center)": IFR_INNER_N rings inside the outline,
 // alpha falling from IFR_INNER_A to 0 over IFR_INNER_DEPTH of the radius (stacked strokes - no gradient on the 3D board context). a: x alpha
 const IFR_INNER_A = 0.3, IFR_INNER_DEPTH = 0.3, IFR_INNER_N = 6;
-function drawIfrMeteor(x, y, r, fill, low, a = 1) {
+function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1) { // inner: x the inner glow's alpha (a fire's rise)
   if (fill) { ctx.fillStyle = COL.bg; ctx.globalAlpha = 0.95 * a; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
   const n = low ? 2 : IFR_INNER_N, w = r * IFR_INNER_DEPTH / n;
   ctx.strokeStyle = COL.tifr; ctx.lineWidth = w;
   for (let k = 0; k < n; k++) {
-    const u = (k + 0.5) / n; ctx.globalAlpha = IFR_INNER_A * (1 - u) * a;
+    const u = (k + 0.5) / n; ctx.globalAlpha = Math.min(1, IFR_INNER_A * (1 - u) * a * inner);
     ctx.beginPath(); ctx.arc(x, y, r * (1 - IFR_INNER_DEPTH * u), 0, 6.283); ctx.stroke();
   }
   drawIfrRingAt(x, y, r, 0.9 * a, low);
@@ -47,7 +47,7 @@ function drawIfrMeteor(x, y, r, fill, low, a = 1) {
 // THE FIRE: the meteor without its black fill (owner, 2026-10-20: "black fill should disappear on impact, but all other effects
 // remain"), at the fire's radius, fading out at the end
 function drawIfrFires(t, low) {
-  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.hold > 0 || f.r < f.R ? 1 : Math.max(0, f.fade / IFR_FIRE_FADE));
+  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.hold > 0 || f.r < f.R ? 1 : Math.max(0, f.fade / IFR_FIRE_FADE), 1 + (IFR_FIRE_GLOW_K - 1) * Math.min(1, (f.age || 0) / IFR_FIRE_GLOW_S));
 }
 function drawIfrBalls(t, low) {
   for (const b of t.ifrBalls) drawIfrMeteor(b.x, b.y, b.r, true, low);
