@@ -165,7 +165,7 @@ check("IFR: a ball bursts where it was aimed (its target gone), the ring hits on
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = G.towers[0]; for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true); // Backdraft: pellets burst into rings too
+    const t = G.towers[0]; for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true); // Backdraft: three flares a pellet
     const hold = () => { for (const x of G.enemies) x.stunT = 1e9; step(1 / 30); }; // wave 1 held at the gate: it walked into range and took the first ball
     for (let i = 0; i < 90; i++) hold(); // a ball charged
     const e = ifrNear("shield", t, 120), f = ifrNear("shield", t, 120); e.shield = 5; f.shield = 5; const ex = e.x, ey = e.y;
@@ -175,7 +175,7 @@ check("IFR: a ball bursts where it was aimed (its target gone), the ring hits on
     e.dead = true; e.gone = true; // the target dies in flight (f, 4 u down the lane, stays)
     let n = 0; while (t.ifrBalls.length && n++ < 200) hold();
     const out = { aimed: aimedAt, rings: t.ifrRings.length, pellets: t.ifrPellets.length };
-    for (let i = 0; i < 90; i++) hold(); // the ring passes f, pellets land, flares tick
+    for (let i = 0; i < 120; i++) { hold(); out.rings = Math.max(out.rings, t.ifrRings.length); } // pellets land, the ring opens (last) and passes f, flares tick (120: IFR_PELLET_V 100 since 2026-10-20)
     out.fShield = f.shield; out.flares = t.ifrFlares.length; out.fHits = f.shield < 5;
     return out;
   })()`);
@@ -207,10 +207,11 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     // spot on its own heading and stops (a flare) no further than the blast radius + a frame
     for (const e of G.enemies) e.dead = true; fresh(); t.ifrFlares.length = 0;
     t.ifrRings.length = 0; ifrBurst(t, st, cx, cy, 1); const ps = t.ifrPellets.slice(); out.ringEarly = t.ifrRings.length;
+    out.waitMax = Math.max(...ps.map(p => p.wait)); out.waitSpread = new Set(ps.map(p => p.wait.toFixed(3))).size; out.spreadS = IFR_PELLET_SPREAD_S; for (const p of ps) p.wait = 0; /* launch times spread (owner, 2026-10-20); zeroed so one step moves every pellet */
     out.fired = ps.length; out.want = st.pellets; out.headings = new Set(ps.map(p => Math.atan2(p.vy, p.vx).toFixed(3))).size;
     const d0 = ps.map(p => Math.hypot(p.x - cx, p.y - cy)); stepIfrPellets(t, st, 1 / 30);
     out.outward = ps.every((p, i) => Math.hypot(p.x - cx, p.y - cy) > d0[i]); out.flying = t.ifrPellets.length;
-    for (let i = 0; i < 60 && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
+    for (let i = 0; i < 120 /* (IFR_PELLET_V 100 since 2026-10-20) */ && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
     out.left = t.ifrPellets.length; out.flares = t.ifrFlares.length; out.ringAfter = t.ifrRings.length; /* THE RING COMES LAST (owner, 2026-10-19) */
     out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = st.blastR * IFR_PELLET_REACH + IFR_PELLET_V / 30;
     return out;
@@ -221,9 +222,38 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
   if (r.ring !== 1 || r.ringsLeft) return "a plain ring took " + r.ring + " charges (expected exactly 1), rings left " + r.ringsLeft;
   if (r.fired !== r.want) return "an empty burst fired " + r.fired + " pellets (expected " + r.want + ")";
   if (r.headings < 2) return "every pellet flew on the same heading";
+  if (r.waitSpread < 2 || !(r.waitMax <= r.spreadS)) return "pellet launch times not spread over " + r.spreadS + " s (distinct " + r.waitSpread + ", max " + r.waitMax + ")";
   if (!r.outward || r.flying < 1) return "the pellets did not fly outward from the burst (outward " + r.outward + ", flying " + r.flying + ")";
   if (r.left || r.flares !== r.fired) return "pellets left " + r.left + ", flares " + r.flares + " of " + r.fired;
   if (!(r.reach <= r.maxReach)) return "a pellet stopped " + Math.round(r.reach) + " u out, past the blast radius x IFR_PELLET_REACH + a frame (" + Math.round(r.maxReach) + ")";
+  return "";
+});
+check("IFR: a pellet passes through, hits a body it rides along again, lands where aimed; Backdraft lands three flares", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 1e9; ui.build = "ifr";
+    const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0]; ifrInit(t); const out = {};
+    const held = (x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; return e; };
+    const shot = (st, d) => { t.ifrPellets.length = 0; t.ifrFlares.length = 0; t.ifrPellets.push({ x: CX, y: CY, ax: CX + d, ay: CY, vx: IFR_PELLET_V, vy: 0, left: d / IFR_PELLET_V, flown: 0, age: 0, burst: null, hit: {} }); };
+    // two held bodies on one pellet's line: it passes through the first, hits the second, lands at its aim
+    let st = towerStats(t); const a = held(CX + 40, CY), b = held(CX + 80, CY); egridAt = NaN;
+    shot(st, 120); for (let i = 0; i < 60 && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
+    out.a = 50 - a.shield; out.b = 50 - b.shield; out.flares = t.ifrFlares.length; out.land = t.ifrFlares[0] ? t.ifrFlares[0].x - CX : NaN;
+    a.dead = b.dead = true;
+    // RE-HIT: a body moved along with the pellet stays on it - hit more than once
+    const c = held(CX + 30, CY); egridAt = NaN; shot(st, 200);
+    for (let i = 0; i < 30; i++) { stepIfrPellets(t, st, 1 / 30); if (t.ifrPellets[0]) { c.x = t.ifrPellets[0].x; egridAt = NaN; } }
+    out.ride = 50 - c.shield; c.dead = true;
+    // Backdraft: three flares per landed pellet, near its aim
+    for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true); st = towerStats(t);
+    shot(st, 60); for (let i = 0; i < 60 && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
+    out.triple = t.ifrFlares.length; out.jmax = IFR_TRIPLE_JIT; out.jit = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - CX - 60, f.y - CY)));
+    return out;
+  })()`);
+  if (!(r.a >= 1 && r.b >= 1)) return "a pellet through two bodies popped " + r.a + " and " + r.b + " (expected 1+ each: it passes through)";
+  if (r.flares !== 1 || Math.abs(r.land - 120) > 1) return "the pellet did not land one flare at its aim (flares " + r.flares + ", at " + r.land + ")";
+  if (!(r.ride >= 2)) return "a body riding along with a pellet was hit " + r.ride + " times (expected 2+)";
+  if (r.triple !== 3 || !(r.jit <= r.jmax + 0.01)) return "Backdraft landed " + r.triple + " flares, up to " + r.jit + " u off (expected 3 within " + r.jmax + ")";
   return "";
 });
 check("Temporal Drive: the field draws", () => {
@@ -320,7 +350,7 @@ check("IFR: a shielded enemy in a flare catches fire, then loses one charge a ti
   return "";
 });
 /* worst case: 40 Hellfire-VI flares tick in the SAME frame (in play each ticks on its own phase); about 2.4 ms of it is damage()/onHit on ~200 hit enemies, which any tower pays - the guard is for the traversal (~3 ms), a regression to all-flares x all-enemies */
-check("IFR: 200 enemies and 40 Hellfire flares tick under 8 ms", () => {
+check("IFR: 200 enemies and 40 Hellfire flares tick under 16 ms", () => {
   run(`G = newGame(); G.money = 1e9; ui.build = "ifr";
     { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); }
     { const t = G.towers[0]; ifrInit(t); for (let k = 0; k < 6; k++) upgradeTower(t, "hellfire", true);
@@ -331,7 +361,7 @@ check("IFR: 200 enemies and 40 Hellfire flares tick under 8 ms", () => {
   for (let i = 0; i < 10; i++) { const t0 = performance.now(); run("{ const t = G.towers[0], st = towerStats(t); stepIfrFlares(t, st, st.tickS); }"); ms = Math.min(ms, performance.now() - t0); }
   console.log("  hellfire tick " + ms.toFixed(1) + " ms");
   if (!run("G.enemies.some(e => e.hp < 1e6)")) return "Hellfire ticks hit nothing";
-  return ms < 8 ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms";
+  return ms < 16 /* was 8 (owner, 2026-10-20): the droplet now measures 9-18 ms on code that passed - box drift, not a regression; 16 still catches a 2x */ ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms";
 });
 check("the slow-log report builds and sends (perfSend - it runs from the frame loop every 3 min: a throw there froze the game, 6.1.1-6.1.7)", () => {
   run(`G = newGame(); { const v = document.querySelector(".asp-ver span"); v.parentNode = document.createElement("div"); } perf.act.playing = [5, 0];`); // (the fake DOM's span has no parent; some play, so it builds the whole report)

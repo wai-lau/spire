@@ -5,8 +5,8 @@
 // expands to the blast radius hitting everything it passes once, and PELLETS fly out in random directions to the blast radius (owner, 2026-10-19);
 // where a pellet stops it bursts into a burning FLARE - a big + over a tiny x (owner, 2026-10-19; was a six-beam star), quiet ticks that pop
 // a shield charge. Meteor: slots, charge rate, ball speed, en-route hit (Impact: 6 slots,
-// charging as fast as it launches). Hellfire: the flare (Hellfire VI: the longest beams). Firaga: the blast and the pellet count (Backdraft VI: a pellet bursts into a
-// smaller ring too). Loaded after aspira-car.js (the simulator too); towerStats calls ifrSkillStats, the tower loop stepIfr,
+// charging as fast as it launches). Hellfire: the flare (Hellfire VI: the longest beams). Firaga: the blast and the pellet count (Backdraft VI: a pellet lands as THREE flares,
+// a little apart - owner, 2026-10-20). Loaded after aspira-car.js (the simulator too); towerStats calls ifrSkillStats, the tower loop stepIfr,
 // drawSceneTop drawIfr. Every list on the tower holds plain objects (ids and coordinates, never enemy refs): autosave clones G.
 // Spec: docs/superpowers/specs/2026-10-19-ifrit-tower-design.md
 
@@ -23,10 +23,13 @@ const IFR_TICK_K = [0.41, 0.6, 0.91, 1.36, 1.52, 2.27] /* x0.5 with the flares x
 const IFR_BLAST_R = [117, 150, 150, 150, 169, 195] /* stop I 117 -> 150 (marks rule, 2026-10-19: every tower needs checks on 2 types - swarm 14% was too near the seven-tower mean for one; 10% at 150) - x1.3: bigger and more visible (owner, 2026-10-19: "make the initial explosion slower and bigger and more visible"); was [90, 90, 100, 115, 130, 150], base 90, was 80 (solo.mjs 2026-10-19, after the random pellets and the slow ticks: a lone L1 1/0/0 -> 0/0/0, 5 seeds 1/0/0/2/2 -> 0/0/0/0/2 - a single wave-4 swarm body now and then) */ /* was [60 .. 130] VI 160 (solo.mjs 2026-10-19, ball 360 + a 1 s charge: a lone L1 0/2/0 -> 0/0/0, every L1 pair with IFR beats the Star on every slot pair) */; // Firaga: the ring's reach, u
 const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 12, 22] /* AXIS BALANCE (2026-10-19): Firaga's top stops up (101-109 mean leak 82 -> 78); was [1.5, 2.25, 3.45, 5.25, 9, 15] */ /* was [1, 1.5, 2.3, 3.5, 6, 10] VI 18 (countermx 61-69 spread @6pts, 2026-10-19: leaked swarm/fast/shield/armor 27/91/42/100 -> 18/75/23/90) */; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [10, 12, 15, 20, 28, 38] /* DOUBLED, each flare a random size (owner, 2026-10-19: "double the number of pellets (and hellfires) but add size jitter"; were 5 .. 21, VI 24) */ /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
-const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 210 /* FASTER than the pellets (IFR_PELLET_V 170), x1.25 (owner, 2026-10-19: "the initial explosion is faster than the pellets"); was 140, 220, 600 */, IFR_PELLET_V = 170 /* was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25, IFR_MINI_K = 0.5; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit; Backdraft's mini ring x radius and x hit
+const IFR_LAUNCH_GAP = 0.05, IFR_BALL_R = 10, IFR_RING_V = 210 /* FASTER than the pellets (IFR_PELLET_V 100), x1.25 (owner, 2026-10-19: "the initial explosion is faster than the pellets"); was 140, 220, 600 */, IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25; // s between launches; the ball's hit radius (+ the enemy's size); the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
+const IFR_PELLET_SPREAD_S = 0.5; // s: a burst's pellets leave at random times over this (owner, 2026-10-20: "randomize the pellet launch times over 0.5s")
+const IFR_PELLET_REHIT = 0.2; // s: a pellet still touching an enemy it hit hits it again this often (a slow pellet riding along a body hits it several times)
 const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
 let IFR_PELLET_REACH = 1.2; /* x3, landing NEAR more often than far (IFR_LAND_POW) (owner, 2026-10-19: "triple the range that the pellets can end up in ... make the probability of landing closer be higher") */ // a pellet flies this x the blast radius (owner, 2026-10-19: "reduce pellet range" 1.0 -> 0.6, then "further reduce spread" -> 0.4 - its flare lands nearer the burst, on the crowd; was the whole radius). let: the simulator sweeps it
-const IFR_FLARE_MAX = 120; // live flares a tower at most: the oldest goes (perf; 60 before the pellets doubled)
+const IFR_FLARE_MAX = 240; // live flares a tower at most: the oldest goes (perf; 120 before Backdraft's triple flare, 60 before the pellets doubled)
+const IFR_TRIPLE_N = 3, IFR_TRIPLE_JIT = 14; // Backdraft (Firaga VI, owner 2026-10-20: "triple flare, small position jitter"): flares a landed pellet, each up to JIT u off the spot
 // a flare's SIZE (owner, 2026-10-19): a normal draw round half the max (mean IFR_FLARE_MEAN, sd IFR_FLARE_SD, kept in [IFR_FLARE_MIN, 1])
 // times IFR_FLARE_K x the Hellfire tier's length and width; a pellet lands at IFR_PELLET_REACH x the blast radius x u^IFR_LAND_POW (u uniform:
 // a power over 1 lands more of them near). let: the balance runs sweep IFR_FLARE_K and IFR_LAND_POW
@@ -110,21 +113,22 @@ function stepIfrBalls(t, st, dt) {
   keepLive(t.ifrBalls);
 }
 // the BURST: a ring from the spot, and pellets out in random directions to the blast radius, enemies there or not (owner, 2026-10-19:
-// "shooting 5 pellets in random directions that each make asterisks"); k: 1 a ball, IFR_MINI_K a Backdraft pellet
+// "shooting 5 pellets in random directions that each make asterisks"); k: the ring's radius and hit multiplier (1 a ball)
 // THE RING COMES LAST (owner, 2026-10-19: "move the initial explosion to after all the hellfires have started"): a ball's pellets fly
-// first and its ring opens once the last of them has stopped (its flare lit) - p.burst counts them down; a Backdraft mini ring is at once
+// first and its ring opens once the last of them has stopped (its flare lit) - p.burst counts them down
 function ifrRing(t, x, y, R, k) {
   t.ifrRings.push({ x, y, r: 0, R, k, hit: [], left: R / IFR_RING_V + IFR_RING_FADE /* stays on screen a moment after full size, fading (owner, 2026-10-19); it hits nothing then */ });
   sfx("ifrblast");
 }
 function ifrBurst(t, st, x, y, k) {
   const R = st.blastR * k;
-  if (k < 1 || !st.pellets) { ifrRing(t, x, y, R, k); return; } /* a mini ring sends no pellets */
+  if (!st.pellets) { ifrRing(t, x, y, R, k); return; }
   const burst = { x, y, R, k, n: st.pellets };
   for (let i = 0; i < st.pellets; i++) {
-    /* ANY direction, evenly (owner, 2026-10-19: "remove the backwards bias" - it leaned to the core); a distance weighted near (IFR_LAND_POW) */
+    /* ANY direction, evenly (owner, 2026-10-19: "remove the backwards bias" - it leaned to the core); a RANDOM distance weighted near
+       (IFR_LAND_POW > 1) - since pellets pass through (2026-10-20) this is where every one lands, not just the misses */
     const a = Math.random() * 2 * Math.PI, cx = Math.cos(a), cy = Math.sin(a), d = R * IFR_PELLET_REACH * Math.random() ** IFR_LAND_POW;
-    t.ifrPellets.push({ x, y, ax: x + cx * d, ay: y + cy * d, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: d / IFR_PELLET_V, flown: 0, burst });
+    t.ifrPellets.push({ x, y, ax: x + cx * d, ay: y + cy * d, vx: cx * IFR_PELLET_V, vy: cy * IFR_PELLET_V, left: d / IFR_PELLET_V, flown: 0, age: 0, wait: Math.random() * IFR_PELLET_SPREAD_S, burst, hit: {} }); /* hit: enemy id -> age at its last hit (plain data: G clones) */
   }
 }
 // the RING: expands at IFR_RING_V to R; every enemy it passes takes the blast hit once (full splash - owner: good vs swarm)
@@ -145,27 +149,27 @@ function stepIfrRings(t, st, dt) {
   }
   keepLive(t.ifrRings);
 }
-// the PELLETS: non-homing, straight out to the blast radius; the first enemy touched stops one (a hit), else it stops at the end of
-// its reach (owner: "a missed pellet bursts where it was aimed"); where it stops, a FLARE - and at Backdraft a smaller ring too. It hits
-// nothing until it has flown IFR_PELLET_ARM (it is born on top of whatever stood at the burst spot)
+// the PELLETS: non-homing, straight out to their random distance, PASSING THROUGH (owner, 2026-10-20: "pellets should always
+// passthrough + deal damage on passthrough based on firaga lvl"): every enemy touched takes the pellet hit, again every IFR_PELLET_REHIT s it stays touching (st.dmg x IFR_PELLET_K
+// - st.dmg is the Firaga blast hit, so it grows with the tier), and the pellet flies on; where it lands, a FLARE (three at Backdraft).
+// It hits nothing until it has flown IFR_PELLET_ARM (it is born on top of whatever stood at the burst spot)
 function stepIfrPellets(t, st, dt) {
   if (!t.ifrPellets.length) return;
   const g = projGrid();
   for (const p of t.ifrPellets) {
-    p.x += p.vx * dt; p.y += p.vy * dt; p.left -= dt; p.flown += IFR_PELLET_V * dt;
-    let sx = p.ax, sy = p.ay, stop = p.left <= 0;
+    if (p.wait > 0) { p.wait -= dt; continue; } /* not launched yet (IFR_PELLET_SPREAD_S) */
+    const s = Math.min(dt, p.left); p.x += p.vx * s; p.y += p.vy * s; p.left -= dt; p.flown += IFR_PELLET_V * s; p.age += dt; /* s: the landing frame stops at the aim spot */
     for (const e of p.flown < IFR_PELLET_ARM ? GRID_NONE : enemiesNear(p.x, p.y, g)) {
-      if (e.dead) continue;
+      if (e.dead || p.age - (p.hit[e.id] ?? -1e9) < IFR_PELLET_REHIT) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + IFR_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
-      const amt = st.dmg * IFR_PELLET_K, h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT;
+      p.hit[e.id] = p.age; const amt = st.dmg * IFR_PELLET_K, h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT;
       try { damage(e, amt, t, false, false, IFR_PELLET_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
-      sx = p.x; sy = p.y; stop = true; break;
     }
-    if (!stop) continue;
-    p.left = 0; ifrFlare(t, st, sx, sy);
+    if (p.left > 0) continue;
+    if (st.backdraft) for (let i = 0; i < IFR_TRIPLE_N; i++) { const a = Math.random() * 2 * Math.PI, d = IFR_TRIPLE_JIT * Math.sqrt(Math.random()); ifrFlare(t, st, p.ax + Math.cos(a) * d, p.ay + Math.sin(a) * d); }
+    else ifrFlare(t, st, p.ax, p.ay);
     if (p.burst && --p.burst.n === 0) ifrRing(t, p.burst.x, p.burst.y, p.burst.R, p.burst.k); // the last flare lit: the ring
-    // if (st.backdraft) ifrBurst(t, st, sx, sy, IFR_MINI_K); no extra ring on backdraft visually too much
   }
   keepLive(t.ifrPellets);
 }
@@ -255,6 +259,7 @@ function drawIfrCharge(t, st) {
 function drawIfrEmbers(t, low) {
   ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr; ctx.lineWidth = IFR_EMBER_R;
   for (const p of t.ifrPellets) {
+    if (p.wait > 0) continue; /* not launched yet */
     if (!low) {
       for (let k = 0; k < IFR_TAIL_N; k++) {
         const a = k / IFR_TAIL_N, b = (k + 1) / IFR_TAIL_N; ctx.globalAlpha = 0.6 * (1 - a);

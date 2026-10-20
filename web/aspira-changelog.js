@@ -16,10 +16,14 @@ const CHANGELOG = [
     "Sol: every beam passes through to the enemies along its line, carrying 35% of the hit, up to 125% with Breach; each of those hits breaches in full.",
     "Sol: Focus and Refraction hit far harder at their last purchases.",
     "Carrier: every Carrier's tether slows a little; Tether runs on to a second enemy from its first purchase; interceptors fly faster and open fire sooner.",
+    "Ifrit: pellets pass through every enemy in their way (harder with each Firaga purchase), and fly on to land at a random distance, most of them near; they fly slower, hitting an enemy again every 0.2 s they stay on it, and leave the blast at random times over half a second.",
+    "Ifrit: Backdraft (Firaga's capstone) lands each pellet as three flares, a little apart.",
   ], ne: [
     "Sol: fires 25% slower, each shot a third harder (the same damage a second); its refraction cone is much narrower.",
     "Carrier: fewer, harder volleys and bolts - fewer shield charges popped.",
+    "Ifrit: fewer pellets at Firaga II-VI (12, 15, 20, 28, 38 - were 18, 24, 30, 36, 42); a pellet no longer bursts into a small ring of its own.",
   ], u: [
+    "Ifrit: Firaga's tier V is named Mega Firaga (was Pyre).",
     "Desktop: the mouse wheel zooms the board in and out; it starts zoomed out a little.", "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
     "Changes: Ifrit has its own heading.",
     "Enemies: off screen they are drawn at 20%, fading in over a second as they come on screen.",

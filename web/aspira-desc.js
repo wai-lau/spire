@@ -61,7 +61,7 @@ const DESCRIBE = {
       (r >= 6 ? "pellets and bursts as it fades." : "pellets.");
   },
   // IFR (owner, 2026-10-19): Meteor more slots, faster, harder on the way (Impact: all six corners); Hellfire the burning flare
-  // of six beams (Hellfire VI: to the edges of the board); Firaga a bigger blast, more pellets (Backdraft: a pellet bursts too)
+  // of six beams (Hellfire VI: to the edges of the board); Firaga a bigger blast, more pellets (Backdraft: three flares a pellet)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
     return "Charges " + IFR_BALLS[IFR_SLOTS[m]] + " on its corners and lobs each slowly at an enemy, burning what it passes. Where it lands a ring of fire bursts outward and " +
