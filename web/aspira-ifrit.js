@@ -259,13 +259,12 @@ function stepIfrFlares(t, st, dt) {
 const IFR_EMBER_HALO = 9, IFR_EMBER_R = 4, IFR_EMBER_CORE = 1.5, IFR_TAIL_N = 3, IFR_TAIL_S = 0.05;
 /* the RING is a glow, [width u, alpha] wide faint / mid / bright core, plus a faint disc inside the front */
 const IFR_RING_GLOW = [[22, 0.22, "tifr"], [11, 0.45, "tifr"], [4, 1, "tifr"], [1.5, 0.95, "white"]], IFR_RING_DISC = 0.14, IFR_RING_THIN = 0.5; /* every layer's WIDTH x this (owner, 2026-10-20: "keep opacity, reduce thickness"; for a moment it was the alpha) */ /* + a WHITE core (owner, 2026-10-19) */ /* brighter, wider (owner, 2026-10-19: "more visible"; were [16, 0.14], [8, 0.3], [3, 0.9], disc 0.08) */
-function drawIfrCharge(t, st, low, keep) { // keep(c): this corner's ball is drawn now (drawIfrTop's depth split)
+function drawIfrCharge(t, st, low) {
   const corners = ifrSlotCorners(t, st.slots);
   for (let i = 0; i < corners.length; i++) {
     const k = i < t.ifrReady ? 1 : i === t.ifrReady ? t.ifrCharge : 0;
     if (k <= 0) continue;
     const c = ifrCorner(t, corners[i]);
-    if (keep && !keep(c)) continue;
     const q = t.ifrFs && t.ifrFs[i], K = q ? q.k : Math.sqrt(st.pellets); /* the ball it launches: IFR_EMBER_R x its k */
     drawIfrBlastBall(c.x, c.y, IFR_EMBER_R * K * (0.3 + 0.7 * k), low);
   }
@@ -369,12 +368,11 @@ function drawIfr(balls) {
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
-// the CHARGE BALLS WITH THE PRISM (owner, 2026-10-20: "it should be centered on the corner of the hexagon where it meets the floor ... the
-// tower should occlude it if it's behind"): drawn with the tower (aspira-warp.js, warpEntities, at floor height), each centred on a
-// corner of the prism's floor hex - front false: the corners BEHIND the tower's centre on screen (farther, up the screen), drawn before
-// the prism so it covers them; true: the ones in front, after it. In the tower's own colours, as the tower (ownColours)
-function drawIfrTop(t, front) {
+// the CHARGE BALLS UNDER THE PRISM (owner, 2026-10-20: "centered on the corner of the hexagon where it meets the floor ... always tower
+// occludes balls"): drawn with the tower (aspira-warp.js, warpEntities' `under`, at floor height, BEFORE the prism), each centred on a
+// corner of the prism's floor hex. In the tower's own colours, as the tower (ownColours)
+function drawIfrTop(t) {
   if (t.kind !== "ifr" || t.ifrSlot0 == null) return;
-  const low = typeof lowQ === "function" && lowQ(), y0 = warpProject(t.x ?? CELLS[t.cell].x, t.y ?? CELLS[t.cell].y).y;
-  ctx.lineCap = "butt"; drawIfrCharge(t, towerStats(t), low, c => (warpProject(c.x, c.y).y >= y0) === front); ctx.globalAlpha = 1;
+  const low = typeof lowQ === "function" && lowQ();
+  ctx.lineCap = "butt"; drawIfrCharge(t, towerStats(t), low); ctx.globalAlpha = 1;
 }

@@ -315,7 +315,7 @@ function warpEntities() {
       const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
       const h = towerH(t);
       return { x, y, h, col: COL[TOWERS[t.kind].color], pts: c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K, y: y + (p.y - c0.y) * TOWER_K })),
-        under: () => ownColours(() => up(x, y, () => drawIfrTop(t, false), 0)), top: () => ownColours(() => { up(x, y, () => drawTower(t), h / 2); up(x, y, () => drawIfrTop(t, true), 0); }), own: true }; /* drawIfrTop: IFR's charge balls on the prism's corners AT THE FLOOR - the ones BEHIND it before the prism, the ones in front after (aspira-ifrit.js) */
+        under: () => ownColours(() => up(x, y, () => drawIfrTop(t), 0)), top: () => ownColours(() => up(x, y, () => drawTower(t), h / 2)), own: true }; /* drawIfrTop: IFR's charge balls on the prism's corners AT THE FLOOR, before the prism - the tower always covers them (aspira-ifrit.js) */
     });
     CELLS.forEach((c, ci) => {
       if (!cellOpen(ci) || G.towers.some(t => t.cell === ci)) return;

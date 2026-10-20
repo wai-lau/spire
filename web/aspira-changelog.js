@@ -16,7 +16,7 @@ const CHANGELOG = [
   ], ne: [], u: [
     "Build cards: marks re-checked with the new Ifrit.",
     "Auto-move: towers and upgrades are free while it is on; any purchase made then keeps the run off the leaderboard.",
-    "Ifrit: each pellet is drawn as big as the flare it will light; the fireball is a black disc in a ring of fire, as big as all its pellets together, drawn over the tower on its corners as in flight, and its blast ring opens from it.",
+    "Ifrit: each pellet is drawn as big as the flare it will light; the fireball is a black disc in a ring of fire, as big as all its pellets together, on the tower's corners as in flight, and its blast ring opens from it.",
   ] },
   { v: "6.3", day: "Oct 19", bu: [
     "Arc: Voltage - a kill passes its leftover damage on to the nearest enemy, more hops at each purchase.",
