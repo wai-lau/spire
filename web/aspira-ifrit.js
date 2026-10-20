@@ -292,7 +292,7 @@ function drawIfrBalls(t) {
 // smooth aura gradients while IFR spokes cannot? fix") each spoke is instead two GLOW LINES on the GPU (shape 7, aspira-fxgl.js):
 // a halo and a narrow core, each brightest on its centre line and clear at its edge, fading as 1 - t^2 to the tip - smooth, no
 // bands. IFR_GLOW_GL: [half-width x the beam width, alpha, colour]. lowQ keeps the core only, both ways
-const IFR_GLOW = [[1.6, 0.12, "tifr"], [0.8, 0.28, "tifr"], [0.25, 0.85, "tifr"], [0.08, 0.9, "white"]], IFR_GLOW_BANDS = 6, IFR_GLOW_A = 0.2275; /* a WHITE core in the orange (owner, 2026-10-19); IFR_GLOW_A: every spoke starts at 22.75% (owner, 2026-10-19: 65%, x0.7, then x0.5) */
+const IFR_GLOW = [[1.6, 0.12, "tifr"], [0.8, 0.28, "tifr"], [0.25, 0.85, "tifr"], [0.08, 0.9, "white"]], IFR_GLOW_BANDS = 6, IFR_GLOW_A = 0.11375; /* x0.5 (owner, 2026-10-20: "reduce flare opacity by 50%"; was 0.2275) */ /* a WHITE core in the orange (owner, 2026-10-19); IFR_GLOW_A: every spoke starts at 22.75% (owner, 2026-10-19: 65%, x0.7, then x0.5) */
 const IFR_GLOW_GL = [[0.8, 0.5, "tifr"], [0.2, 0.95, "tifr"], [0.06, 0.95, "white"]];
 /* 3D, drawn through the GPU stand-in (glCtx, aspira-glctx.js - the real canvas keeps it as __glc): each spoke stops at a tower's edge like any
    beam (trimToTowers), its t range kept so the fade still runs over the whole spoke */

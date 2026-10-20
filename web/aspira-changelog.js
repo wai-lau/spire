@@ -26,6 +26,7 @@ const CHANGELOG = [
   ], u: [
     "Ifrit: the Firaga axis is now Blk Magic, its purchases Fire, Fira, Firaga, Mega Firaga.",
     "Ifrit: the blast ring opens the moment the fireball lands, and is drawn thinner.",
+    "Ifrit: flares half as bright.",
     "Tower cards: no Shields row where a hit takes the usual one charge (Freeze, Acid, Ifrit; Sol only when a beam takes more).",
     "Desktop: the mouse wheel zooms the board in and out; it starts zoomed out a little.", "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
     "Changes: Ifrit has its own heading.",
