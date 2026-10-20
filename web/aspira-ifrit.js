@@ -367,9 +367,9 @@ function drawIfr(balls) {
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
-// the CHARGE BALLS on the TOP of the tower's prism (owner, 2026-10-20: "ball occlusion is wrong ... I want the center of the balls to be on
-// the corners"): drawn with the tower (aspira-warp.js, warpEntities' top, raised to it), each centred on a corner of the top hex - drawn
-// on the floor they sat under the prism, hidden by it and off its corners. In the tower's own colours, as the tower (ownColours)
+// the CHARGE BALLS AFTER THE PRISM (owner, 2026-10-20: "ball occlusion is wrong ... it should be centered on the corner of the hexagon
+// where it meets the floor"): drawn with the tower (aspira-warp.js, warpEntities' top, at floor height), each centred on a corner of the
+// prism's floor hex - drawn with the moving layer they sat under the prism, hidden by it. In the tower's own colours, as the tower (ownColours)
 function drawIfrTop(t) {
   if (t.kind !== "ifr" || t.ifrSlot0 == null) return;
   const low = typeof lowQ === "function" && lowQ();
