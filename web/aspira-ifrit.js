@@ -11,7 +11,6 @@
 // Spec: docs/superpowers/specs/2026-10-19-ifrit-tower-design.md
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const IFR_SLOTS = [1, 2, 2, 3, 3, 3]; // Meteor: charge slots on the hex corners - 1, 2 (opposite), 3 (a triangle); VI all 6 (owner: "skip 4 and 5")
 const IFR_CHARGE_S = [2.0, 1.8, 1.6, 1.4, 1.2, 1.0] /* AXES REDONE (owner, 2026-10-20: "greatly lower initial meteor fire rate and increase damage"; one charge, no slots); was [0.5, 0.5, 0.5, 0.45, 0.4, 0.35] VI 0.1 */; // Meteor: s to fill THE charge (VI capstone.js)
 const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
 const IFR_ROUTE_K = [1.5, 2, 4, 10, 25, 60] /* AXES REDONE (2026-10-20): x TOWERS.ifr.dmg, Meteor's own - was x the Blk Magic blast hit, [0.25, 0.5, 1, 4, 10, 60] VI 150 */; // Meteor: the en-route hit, its ONLY damage
@@ -33,7 +32,7 @@ const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 12, 22] /* AXIS BALANCE (2026-10-19)
 const IFR_PELLETS = [5, 6, 8, 10, 14, 19] /* HALVED (owner, 2026-10-20: "still too many pellets, halve the counts" - they pass through and re-hit now); was [10, 12, 15, 20, 28, 38] */ /* DOUBLED, each flare a random size (owner, 2026-10-19: "double the number of pellets (and hellfires) but add size jitter"; were 5 .. 21, VI 24) */ /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
 const IFR_PELLET_DK = [0.3, 0.45, 0.7, 1, 1.6, 2.5]; // Blk Magic: a pellet's pass-through hit, x TOWERS.ifr.dmg (owner, 2026-10-20: "pellets should also deal damage en route, scaled by blk magic"; VI 4)
 const IFR_GIANT_K = 4; // Mega Firaga (Blk Magic VI, owner 2026-10-20): ONE giant flare at the impact spot, its size and hit x a VI flare's
-const IFR_LAUNCH_GAP = 0.05, IFR_RING_V = 210 /* FASTER than the pellets (IFR_PELLET_V 100), x1.25 (owner, 2026-10-19: "the initial explosion is faster than the pellets"); was 140, 220, 600 */, IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25; // s between launches; the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
+const IFR_RING_V = 210 /* FASTER than the pellets (IFR_PELLET_V 100), x1.25 (owner, 2026-10-19: "the initial explosion is faster than the pellets"); was 140, 220, 600 */, IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_RING_FADE = 0.15, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25; // s between launches; the ring's speed u/s; a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
 const IFR_PELLET_SPREAD_S = 0.5; // s: a burst's pellets leave at random times over this (owner, 2026-10-20: "randomize the pellet launch times over 0.5s")
 const IFR_PELLET_REHIT = 0.2; // s: a pellet still touching an enemy it hit hits it again this often (a slow pellet riding along a body hits it several times)
 const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
@@ -65,80 +64,57 @@ function ifrSkillStats(t, s, b) {
   s.pellets = IFR_PELLETS[f]; s.pelletHit = b.dmg * IFR_PELLET_DK[f]; s.giant = f >= CAPSTONE_TIER;
   s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareHit = b.dmg * IFR_TICK_K[f];
   // (the old shape, read by the code Tasks 3-5 of the 2026-10-20 plan replace; gone with it)
-  s.slots = IFR_SLOTS[m]; s.routeK = IFR_ROUTE_K[m]; s.tickK = IFR_TICK_K[f]; s.blastR = IFR_BLAST_R[f]; s.blastK = IFR_BLAST_K[f]; s.backdraft = s.giant;
+  s.routeK = IFR_ROUTE_K[m]; s.tickK = IFR_TICK_K[f]; s.blastR = IFR_BLAST_R[f]; s.blastK = IFR_BLAST_K[f]; s.backdraft = s.giant;
   s.dmg = b.dmg * s.blastK; s.rate = 1 / s.chargeS;
   s.skill = true;
 }
-// ---------- the corners and the charge ----------
-// a corner of the tower's drawn hex (the slot's pts shrunk to TOWER_K) at the tower's CURRENT spot (drawTower moves the hex the same way)
-function ifrCorner(t, k) { const c = CELLS[t.cell], p = c.pts[k % 6]; return { x: (t.x ?? c.x) + (p.x - c.x) * TOWER_K, y: (t.y ?? c.y) + (p.y - c.y) * TOWER_K }; }
-// the corners n slots use (owner, 2026-10-19): 1 = the FIRST corner (ifrSlot0), 2 = + the opposite, 3 = every other corner, 6 = all.
-// The first corner is random, picked at the first step (ifrInit) and again whenever the last charged ball leaves (ifrLaunch -
-// owner: "the first ball should spawn on a random corner whenever there are no charged balls"); the pattern follows from it
-function ifrSlotCorners(t, n) {
-  const a = t.ifrSlot0 ?? 0;
-  if (n >= 6) return [0, 1, 2, 3, 4, 5];
-  if (n >= 3) return [a, (a + 2) % 6, (a + 4) % 6];
-  if (n >= 2) return [a, (a + 3) % 6];
-  return [a];
+// ---------- the charge ----------
+// ONE CHARGE (owner, 2026-10-20: "always one charge ... charge is centered on the hexagon formed by intersection of tower and floor"):
+// it fills over chargeS at the tower's centre and waits there, full, until an enemy is in range
+const ifrCentre = t => { const c = CELLS[t.cell]; return { x: t.x ?? c.x, y: t.y ?? c.y }; };
+function ifrInit(t) {
+  if (t.ifrInit0) return;
+  for (const k of ["ifrSlot0", "ifrReady", "ifrLaunchCd", "ifrRings", "ifrFs"]) delete t[k]; /* a 6.4 tower's slots */
+  t.ifrInit0 = true; t.ifrCharge = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrFlares = [];
 }
-function ifrInit(t) { if (t.ifrSlot0 == null) { t.ifrSlot0 = Math.floor(Math.random() * 6); t.ifrCharge = 0; t.ifrReady = 0; t.ifrLaunchCd = 0; t.ifrBalls = []; t.ifrRings = []; t.ifrPellets = []; t.ifrFlares = []; } t.ifrFs ||= []; }
-// ALWAYS CHARGING while a slot is free (owner): the ball under way fills over chargeS, then waits in its slot; the next starts at once
-function ifrCharge(t, st, dt) {
-  if (t.ifrReady >= st.slots) { t.ifrCharge = 0; return; }
-  t.ifrCharge += dt / Math.max(0.01, st.chargeS);
-  while (t.ifrCharge >= 1 && t.ifrReady < st.slots) { t.ifrCharge -= 1; t.ifrReady++; }
-  if (t.ifrReady >= st.slots) t.ifrCharge = 0;
-  for (let i = 0; i <= Math.min(t.ifrReady, st.slots - 1); i++) ifrSlotBall(t, st, i);
-}
-// a slot's ball, its pellets' flares ROLLED AS IT CHARGES (owner, 2026-10-20: "IFR charge ball should be the size of the launch ball"):
-// { fs, k } - k its drawn size (ifrBallK), the same on the corner and in flight. Re-rolled if the pellet count changed (an upgrade)
-function ifrSlotBall(t, st, i) {
-  const q = t.ifrFs[i];
-  if (q && q.fs.length === st.pellets) return q;
-  const fs = ifrPelletFlares(st); return (t.ifrFs[i] = { fs, k: ifrBallK(fs) });
-}
-// a launch: a charged ball + an enemy in range (the tower's targeting), one every IFR_LAUNCH_GAP s; aimed at the enemy's spot NOW,
-// never led (the fast weakness). The ball leaves from the slot's corner (the last filled)
-function ifrLaunch(t, st, dt) {
-  t.ifrLaunchCd = Math.max(0, t.ifrLaunchCd - dt);
-  if (t.ifrReady <= 0 || t.ifrLaunchCd > 0) return;
+function ifrCharge(t, st, dt) { t.ifrCharge = Math.min(1, t.ifrCharge + dt / Math.max(0.01, st.chargeS)); }
+// "Always launch when meteor available" (owner): full + an enemy in range (the tower's targeting) = it flies, aimed at where that enemy
+// stands NOW, never led (the fast weakness); its size is fixed at launch
+function ifrLaunch(t, st) {
+  if (t.ifrCharge < 1) return;
   const e = pickTargets(t, st, 1)[0];
   if (!e) return;
-  const c = ifrCorner(t, ifrSlotCorners(t, st.slots)[t.ifrReady - 1]), d = Math.hypot(e.x - c.x, e.y - c.y) || 1, { fs, k } = ifrSlotBall(t, st, t.ifrReady - 1);
-  t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, hit: [], fs, k }); /* hit: enemy ids struck en route; fs: its pellets' flare sizes, rolled now so the ball can be drawn their size */
-  t.ifrFs.splice(t.ifrReady - 1, 1); /* the slots above it (the one charging) step down with ifrReady */
-  t.ifrReady--; t.ifrLaunchCd = IFR_LAUNCH_GAP; t.shots = (t.shots || 0) + 1; sfx("ifr");
-  if (t.ifrReady <= 0) t.ifrSlot0 = Math.floor(Math.random() * 6); /* none charged: the next first ball takes a new random corner (owner) */
+  const c = ifrCentre(t), d = Math.hypot(e.x - c.x, e.y - c.y) || 1;
+  t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, r: st.ballR, hit: [] }); /* hit: enemy ids struck en route */
+  t.ifrCharge = 0; t.shots = (t.shots || 0) + 1; sfx("ifr");
 }
 function stepIfr(t, dt) {
   ifrInit(t);
   const st = towerStats(t);
   ifrCharge(t, st, dt);
-  ifrLaunch(t, st, dt);
+  ifrLaunch(t, st);
   stepIfrBalls(t, st, dt); stepIfrRings(t, st, dt); stepIfrPellets(t, st, dt); stepIfrFlares(t, st, dt);
 }
-// the ball HITS WHAT IT VISIBLY TOUCHES (owner, 2026-10-20): its drawn disc (IFR_EMBER_R x k) and the outer edge of its ring's widest glow
-function ifrBallReach(b) { return IFR_EMBER_R * (b.k ??= ifrBallK(b.fs)) + IFR_RING_THIN * IFR_RING_GLOW[0][0] / 2; }
-// ---------- the flight: slow, small, hitting what it passes; it bursts at its AIM spot whatever happened to the target ----------
+// ---------- the flight (METEOR, owner 2026-10-20: "meteor only affects en route damage"): every enemy its body touches is hit once for
+// st.routeHit; it lands at its AIM spot whatever happened to the target ----------
 function stepIfrBalls(t, st, dt) {
   if (!t.ifrBalls.length) return;
   const all = G.enemies;
   for (const b of t.ifrBalls) {
-    const s = Math.min(dt, b.left); b.x += b.vx * s; b.y += b.vy * s; b.left -= dt; /* s: the burst frame stops at the aim spot, never hit-tests past it */
-    const R = ifrBallReach(b);
-    for (const e of all) { /* every enemy, not projGrid's cell: the drawn ball is wider than a cell's pad (a few balls a tower - cheap) */
+    const s = Math.min(dt, b.left); b.x += b.vx * s; b.y += b.vy * s; b.left -= dt; /* s: the landing frame stops at the aim spot, never hit-tests past it */
+    for (const e of all) { /* every enemy, not projGrid's cell: a meteor is wider than a cell's pad (one or two a tower - cheap) */
       if (e.dead || !e.seen || b.hit.includes(e.id)) continue;
-      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + R;
+      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + b.r;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
-      b.hit.push(e.id); const amt = st.dmg * st.routeK;
+      b.hit.push(e.id); const amt = st.routeHit;
       const h0 = hitFrom; HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
       try { damage(e, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
     }
-    if (b.left <= 0) ifrBurst(t, st, b.ax, b.ay, 1, b.fs, IFR_EMBER_R * (b.k || 1)); /* the ring opens from the ball's size */
+    if (b.left <= 0) ifrImpact(t, st, b);
   }
   keepLive(t.ifrBalls);
 }
+function ifrImpact(t, st, b) { ifrBurst(t, st, b.ax, b.ay, 1, undefined, b.r); } /* (until the fire, plan task 4) */
 // the BURST: a ring from the spot, and pellets out in random directions to the blast radius, enemies there or not (owner, 2026-10-19:
 // "shooting 5 pellets in random directions that each make asterisks"); k: the ring's radius and hit multiplier (1 a ball)
 // THE RING OPENS ON LANDING, with the pellets (owner, 2026-10-20: "pop blast ring on landing of main ball, but reduce visibility of

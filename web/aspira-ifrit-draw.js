@@ -3,14 +3,8 @@
 // ---------- the look: orange balls growing on the corners, a small ball in flight, a glowing ring, ember pellets, and the flares - a wide faint beam with a bright hairline, fading as they burn. Fills, strokes and lines only (the
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
 function drawIfrCharge(t, st, low) {
-  const corners = ifrSlotCorners(t, st.slots);
-  for (let i = 0; i < corners.length; i++) {
-    const k = i < t.ifrReady ? 1 : i === t.ifrReady ? t.ifrCharge : 0;
-    if (k <= 0) continue;
-    const c = ifrCorner(t, corners[i]);
-    const q = t.ifrFs && t.ifrFs[i], K = q ? q.k : Math.sqrt(st.pellets); /* the ball it launches: IFR_EMBER_R x its k */
-    drawIfrBlastBall(c.x, c.y, IFR_EMBER_R * K * (0.3 + 0.7 * k), low);
-  }
+  if (t.ifrCharge <= 0) return;
+  const c = ifrCentre(t); drawIfrBlastBall(c.x, c.y, st.ballR * (0.3 + 0.7 * t.ifrCharge), low); /* grows to the meteor it launches */
 }
 // one ember, k x IFR_EMBER_*: a halo, an orange disc, a white core and its tail (lowQ: disc and core)
 function drawIfrEmber(p, k, low) {
@@ -51,7 +45,7 @@ function drawIfrBlastBall(x, y, r, low) {
   drawIfrRingAt(x, y, r, 0.9, low);
 }
 function drawIfrBalls(t, low) {
-  for (const b of t.ifrBalls) drawIfrBlastBall(b.x, b.y, IFR_EMBER_R * (b.k ??= ifrBallK(b.fs)), low); /* (k cached on the ball: a plain number, G clones) */
+  for (const b of t.ifrBalls) drawIfrBlastBall(b.x, b.y, b.r, low);
 }
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
@@ -100,7 +94,7 @@ function drawIfrFlares(t) {
 function drawIfr(balls) {
   const low = typeof lowQ === "function" && lowQ();
   for (const t of G.towers) {
-    if (t.kind !== "ifr" || t.ifrSlot0 == null) continue;
+    if (t.kind !== "ifr" || !t.ifrInit0) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
     if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
   }
@@ -110,7 +104,7 @@ function drawIfr(balls) {
 // occludes balls"): drawn with the tower (aspira-warp.js, warpEntities' `under`, at floor height, BEFORE the prism), each centred on a
 // corner of the prism's floor hex. In the tower's own colours, as the tower (ownColours)
 function drawIfrTop(t) {
-  if (t.kind !== "ifr" || t.ifrSlot0 == null) return;
+  if (t.kind !== "ifr" || !t.ifrInit0) return;
   const low = typeof lowQ === "function" && lowQ();
   ctx.lineCap = "butt"; drawIfrCharge(t, towerStats(t), low); ctx.globalAlpha = 1;
 }

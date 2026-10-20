@@ -163,26 +163,25 @@ check("IFR: each axis scales only its own numbers", () => {
   if (r.oldOk !== true) return "a cleaned IFR threw on resume: " + r.oldOk;
   return "";
 });
-check("IFR: charges on its corners, holds one ball at base, launches at a target in range, re-picks its first corner once empty", () => {
+check("IFR: one charge at its centre, launched the moment it is full and a target is in range", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e6; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = G.towers[0], out = {};
-    for (let i = 0; i < 150; i++) { for (const e of G.enemies) e.stunT = 1e9; step(1 / 30); } // 5 s: one ball charged, a second cannot start (1 slot); wave 1 is held at the gate, out of range
-    out.slot0 = t.ifrSlot0; out.corners = ifrSlotCorners(t, 3); // the corner is picked on the tower's first step (ifrInit)
-    out.ready = t.ifrReady; out.charge = t.ifrCharge;
-    const c = ifrCorner(t, t.ifrSlot0); out.onCorner = Math.abs(Math.hypot(c.x - t.x, c.y - t.y) - CELL_S * TOWER_K) < 1;
-    ifrNear("armor", t, 100);
-    const rnd = Math.random; Math.random = () => 0.99; try { step(1 / 30); } finally { Math.random = rnd; } /* the launch empties the slots: corner 5 */
-    out.readyAfter = t.ifrReady; out.balls = (t.ifrBalls || []).length; out.slot0After = t.ifrSlot0;
+    const t = G.towers[0], st = towerStats(t), out = { ballR: st.ballR };
+    for (let i = 0; i < 90; i++) { for (const e of G.enemies) e.stunT = 1e9; step(1 / 30); } // 3 s: charged (2 s untaken), wave 1 held at the gate, out of range
+    out.charge = t.ifrCharge; out.ballsBefore = t.ifrBalls.length;
+    ifrNear("armor", t, 100); step(1 / 30);
+    const b = t.ifrBalls[0]; out.balls = t.ifrBalls.length; out.chargeAfter = t.ifrCharge;
+    if (b) { out.fromCentre = Math.hypot(b.x - b.vx / 30 - t.x, b.y - b.vy / 30 - t.y); out.r = b.r; }
+    for (let k = 0; k < 6; k++) upgradeTower(t, "meteor", true); /* mid-flight: the ball keeps its launch-time size */
+    step(1 / 30); out.rAfter = t.ifrBalls[0] ? t.ifrBalls[0].r : out.r;
     return out;
   })()`);
-  if (!(r.slot0 >= 0 && r.slot0 < 6)) return "no corner picked at build: " + r.slot0;
-  if (JSON.stringify(r.corners.map(c => (c - r.slot0 + 6) % 6).sort()) !== "[0,2,4]") return "3 slots are not every other corner: " + r.corners;
-  if (!r.onCorner) return "the slot is not on the hex corner";
-  if (r.ready !== 1 || r.charge !== 0) return "after 5 s: ready " + r.ready + " charge " + r.charge + " (expected 1 ball, the second not charging)";
-  if (r.readyAfter !== 0 || r.balls !== 1) return "no launch at a target in range: ready " + r.readyAfter + " balls " + r.balls;
-  if (r.slot0After !== 5) return "the empty tower did not re-pick its first corner (Math.random 0.99 -> 5, got " + r.slot0After + ")";
+  if (r.charge !== 1 || r.ballsBefore) return "after 3 s with no target: charge " + r.charge + ", balls " + r.ballsBefore + " (expected a full charge, held)";
+  if (r.balls !== 1 || r.chargeAfter >= 1) return "no single launch at a target in range: balls " + r.balls + ", charge after " + r.chargeAfter;
+  if (!(r.fromCentre < 0.5)) return "the meteor left " + r.fromCentre + " u from the tower's centre";
+  if (r.r !== r.ballR) return "the meteor's radius " + r.r + " is not the Meteor size " + r.ballR;
+  if (r.rAfter !== r.r) return "upgrading mid-flight changed a live meteor's size: " + r.r + " -> " + r.rAfter;
   return "";
 });
 check("IFR: a ball bursts where it was aimed (its target gone), the ring hits once, pellets fly, a flare burns", () => {
@@ -370,19 +369,19 @@ check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flig
   const sold = run(`(() => { try { const t = G.towers[0]; G.money += sellValue(t); G.towers = G.towers.filter(x => x !== t); ui.sel = null; for (let i = 0; i < 30; i++) step(1 / 30); return "ok"; } catch (e) { return String(e); } })()`); // what the card's sell button does (aspira-sliders.js)
   return sold === "ok" ? "" : "sell threw: " + sold;
 });
-check("IFR: a shielded enemy in a flare catches fire, then loses one charge a tick; the ring pops one; Impact gives six slots", () => {
+check("IFR: a shielded enemy in a flare catches fire, then loses one charge a tick; Impact gives a huge meteor", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
     const t = G.towers[0]; for (let k = 0; k < 6; k++) upgradeTower(t, "meteor", true);
-    const st = towerStats(t), out = { slots: st.slots };
+    const st = towerStats(t), out = { ballR: st.ballR };
     ifrInit(t); const e = ifrNear("shield", t, 400); e.shield = 9; egridAt = NaN; /* out of the tower's range: no ball, only the flare below touches it */
     out.dist = Math.round(Math.hypot(e.x - t.x, e.y - t.y));
     t.ifrFlares.push({ x: e.x - 40, y: e.y, L: 80, W: 12, life: 3, left: 3, tick: 0, edges: false }); /* 40 u left of it: the 0-degree beam runs through its body */
     for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); out.afterTicks = e.shield; /* 3 ticks: the first lights it (CATCHING FIRE), the next two burn */
     return out;
   })()`);
-  if (r.slots !== 6) return "Impact gives " + r.slots + " slots, not 6";
+  if (r.ballR !== 54) return "Impact gives a meteor of radius " + r.ballR + ", not 54";
   if (r.afterTicks !== 7) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 7: the first tick only lights it), enemy " + r.dist + " u out";
   return "";
 });
