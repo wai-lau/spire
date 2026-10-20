@@ -418,7 +418,7 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
   if (!r.innerN || r.innerMin < 0.7 - 1e-6 || !(r.innerA <= 0.3 + 1e-6 && r.innerA > 0.2)) return "inner glow: " + r.innerN + " rings, deepest at " + r.innerMin + " r, brightest " + r.innerA + " (expected down to 0.7 r, 0.3 at the outline)";
   if (r.fireBlack) return "the fire drew " + r.fireBlack + " black fills";
   if (Math.abs(r.gEnd / r.g0 - 3) > 1e-6 || Math.abs(r.gLate - r.gEnd) > 1e-6 || !(r.gMid > r.g0 && r.gMid < r.gEnd)) return "the fire's inner glow after impact: " + [r.g0, r.gMid, r.gEnd, r.gLate] + " (expected rising slowly to 3x, then held)";
-  if (r.i1 !== 1 || r.i2 !== 2 || r.i0 !== 1 || !(r.ig > 3)) return "flare intensity " + [r.i0, r.i1, r.i2, r.ig] + " (expected 1 at or under the untaken hit, 2 at twice it, the giant over the 3 cap)";
+  if (r.i1 !== 1 || !(r.i2 > r.i1 && r.i2 <= 3) || r.i0 !== 1 || !(r.ig > 3)) return "flare intensity " + [r.i0, r.i1, r.i2, r.ig] + " (expected 1 at or under the untaken hit, brighter at twice it, the giant over the 3 cap)";
   return "";
 });
 check("IFR: draws its charge, meteors, fires and flares; G clones; selling mid-flight throws nothing", () => {

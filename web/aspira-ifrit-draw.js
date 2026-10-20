@@ -52,10 +52,10 @@ function drawIfrFires(t, low) {
 function drawIfrBalls(t, low) {
   for (const b of t.ifrBalls) drawIfrMeteor(b.x, b.y, b.r, true, low);
 }
-// A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x its hit over the untaken flare's, kept in
+// A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [1, IFR_FLARE_I_MAX]; Mega Firaga's giant flare IFR_FLARE_I_GIANT - the brightest thing IFR draws
 const IFR_FLARE_I_MAX = 3, IFR_FLARE_I_GIANT = 4.5;
-function ifrFlareI(f) { return f.giant ? IFR_FLARE_I_GIANT : Math.min(IFR_FLARE_I_MAX, Math.max(1, (f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0]))); }
+function ifrFlareI(f) { return f.giant ? IFR_FLARE_I_GIANT : Math.min(IFR_FLARE_I_MAX, Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
 // IFR_GLOW_BANDS lengths whose alpha falls off toward the tip as 1 - (k / bands)^2 (flat near the centre, fading at the end).

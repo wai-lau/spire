@@ -15,6 +15,7 @@ const CHANGELOG = [
     "Ifrit: Hellfire - where the meteor lands a fire spreads out from it and lingers, burning what stands in it in many small ticks, each popping a shield charge; Hellfire makes it wider, faster, hotter and longer (its capstone: six towers across).",
     "Ifrit: Blk Magic - more pellets, harder as they pass through, and bigger, hotter flares; Mega Firaga lights one giant flare where the meteor strikes.",
     "Ifrit: half as many pellets and flares, each flare twice the size.",
+    "Ifrit: Hellfire and Blk Magic hit much harder from their first purchase; Hellfire's capstone fire lingers longer.",
   ], ne: [
     "Ifrit: the blast ring is gone; the meteor charges half as often as the balls did, and only one at a time.",
   ], u: [
