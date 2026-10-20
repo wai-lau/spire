@@ -213,7 +213,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     out.fires1 = t.ifrFires.length; out.fireAt = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - tgt.x, t.ifrFires[0].y - tgt.y) : NaN;
     const fan = t.ifrBalls.filter(b => b.gen === 1); out.fan = fan.length; out.want = st.fan; out.fanV = fan.map(b => Math.hypot(b.vx, b.vy) / st.ballV);
     const angs = fan.map(b => (Math.atan2(b.vy, b.vx) + 2 * Math.PI) % (2 * Math.PI)).sort((a, b) => a - b); out.maxGap = Math.max(...angs.map((a, i) => (i ? a - angs[i - 1] : a + 2 * Math.PI - angs[angs.length - 1]))) * 180 / Math.PI;
-    const w = Array.from({ length: 2000 }, ifrFanDelay); out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= 1); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
+    const w = Array.from({ length: 2000 }, () => ifrFanDelay(IFR_FAN[0])); const w4 = Array.from({ length: 2000 }, () => ifrFanDelay(4 * IFR_FAN[0])); out.wait4Mean = w4.reduce((a, b) => a + b, 0) / w4.length; out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= IFR_FAN_MAX_S * Math.sqrt(st.fan / IFR_FAN[0]) + 1e-9); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
     tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; /* the fan hits nothing here: no new fire */
     /* the LAUNCHED meteor never goes silently (owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening"): locked, the
        view does not cull it (its seen target may sit where the camera does not reach), and out of time it bursts where it is */
@@ -251,6 +251,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (r.fanV.some(v => Math.abs(v - 0.25) > 1e-9)) return "fan meteors fly at " + r.fanV[0] + " x the launch speed (expected a quarter, owner 2026-10-20)";
   if (r.fan !== r.want || r.want !== 7) return "the impact fan at Meteor I: " + r.fan + " meteors (its st.fan " + r.want + ", expected 7)";
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
+  if (Math.abs(r.wait4Mean / r.waitMean - 2) > 0.15) return "a fan 4x as big releases over " + (r.wait4Mean / r.waitMean).toFixed(2) + "x the time (expected 2: the root of the count)";
   if (!r.fanWaits || Math.abs(r.waitMean - 0.4) > 0.05 || r.waitMin < 0 || r.waitMax > 1 || r.waitMax - r.waitMin < 0.3) return "fan release times: mean " + r.waitMean.toFixed(2) + " in [" + r.waitMin.toFixed(2) + ", " + r.waitMax.toFixed(2) + "] (expected a bell round 0.4 s, sd 0.3)";
   if (r.firesAfter !== 1) return "fires after the fan flew: " + r.firesAfter + " (only the first impact makes one)";
   if (r.culledFire !== 1 || r.timeoutFire !== 1) return "the launched meteor went silently: with the view seeing nothing it burst " + r.culledFire + " times, out of time " + r.timeoutFire + " (expected 1, 1)";
@@ -315,7 +316,7 @@ check("IFR: the fire opens at the meteor's size, grows to its max, burns by catc
     t = fresh(6); st = towerStats(t); f = land(t, st); const r0 = f.r;
     const grow = (st.fireR - r0) / st.fireV; let tm = 0; while (f.r < f.R && tm < 10) { stepIfrFires(t, st, 1 / 30); tm += 1 / 30; }
     out.R6 = f.R; out.grow = tm; out.growWant = grow;
-    const life = st.fireLinger + IFR_FIRE_FADE; /* (Hellfire VI: its flares are all lit within IFR_FIRE_FLARE_MAX_S of the impact, long before its linger ends) */ let tl = 0; while (t.ifrFires.length && tl < 20) { stepIfrFires(t, st, 1 / 30); tl += 1 / 30; }
+    const life = st.fireLinger + IFR_FIRE_FADE; /* at the least: it lingers, and longer while its flares are still to be lit */ let tl = 0, lastLit = 0; while (t.ifrFires.length && tl < 60) { const n0 = t.ifrFlares.length; stepIfrFires(t, st, 1 / 30); tl += 1 / 30; if (t.ifrFlares.length > n0) lastLit = tl; } out.lastLit = lastLit;
     out.life = tl; out.lifeWant = life;
     land(t, st); try { G.towers = G.towers.filter(x => x !== t); for (let i = 0; i < 5; i++) step(1 / 30); out.sold = true; } catch (e) { out.sold = String(e); } /* sold with a live fire */
     return out;
@@ -325,7 +326,7 @@ check("IFR: the fire opens at the meteor's size, grows to its max, burns by catc
   if (r.far !== 0) return "an enemy outside the fire lost " + r.far;
   if (r.R6 !== 160) return "Hellfire VI fire grows to " + r.R6 + " (expected 160)";
   if (Math.abs(r.grow - r.growWant) > 1 / 30 + 1e-6) return "the fire took " + r.grow.toFixed(3) + " s to grow (expected " + r.growWant.toFixed(3) + ")";
-  if (Math.abs(r.life - r.lifeWant) > 2 / 30 + 1e-6) return "the full fire lasted " + r.life.toFixed(3) + " s (expected linger + fade " + r.lifeWant.toFixed(3) + ")";
+  if (!(r.life >= r.lifeWant - 2 / 30) || !(r.life >= r.lastLit + 0.3 - 2 / 30)) return "the full fire lasted " + r.life.toFixed(3) + " s (at the least linger + fade " + r.lifeWant.toFixed(3) + ", and past its last flare at " + r.lastLit.toFixed(2) + ")";
   if (r.sold !== true) return "selling the tower with a live fire threw: " + r.sold;
   return "";
 });
@@ -385,7 +386,7 @@ check("IFR flares: none at the first hit; one where each fan meteor lands (three
   if (r.land6.n !== 3 || !(r.land6.jit <= r.jmax + 30)) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 3, within " + r.jmax + " u)";
   for (const [k, f] of [["Hellfire 0", r.f0], ["Hellfire VI", r.f6]]) {
     if (!(f.n >= 6)) return k + ": a grown fire lit " + f.n + " flares (6 at the least)";
-    if (f.n >= 40 && (Math.abs(f.meanT - r.flareMean) > 0.3 || !(f.minGap < 0.1))) return k + ": " + f.n + " flares lit at mean " + f.meanT.toFixed(2) + " s, closest " + f.minGap.toFixed(3) + " s apart (expected a bell round " + r.flareT + " s - mean " + r.flareMean.toFixed(2) + " with the draws under 0 drawn again, some under 0.1 s apart)";
+    if (f.n >= 40 && (Math.abs(f.meanT - r.flareMean * Math.sqrt(f.n / 6)) > 0.3 * Math.sqrt(f.n / 6) || !(f.minGap < 0.1))) return k + ": " + f.n + " flares lit at mean " + f.meanT.toFixed(2) + " s, closest " + f.minGap.toFixed(3) + " s apart (expected a bell round " + r.flareT + " s - mean " + r.flareMean.toFixed(2) + " with the draws under 0 drawn again, some under 0.1 s apart)";
     if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD < 0.5 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", nearer the centre)";
     if (f.sizes < 2) return k + ": its flares are all one size";
   }

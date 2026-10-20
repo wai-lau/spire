@@ -149,9 +149,10 @@ function ifrHome(b, all, dt) {
 // THE FAN: st.fan meteors round 360 degrees from (x, y), evenly (a random start), each released after a bell-curve delay
 function ifrFan(born, st, x, y, skip) {
   const n = st.fan, a0 = Math.random() * 2 * Math.PI;
-  for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, ifrFanDelay()]);
+  for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, ifrFanDelay(n)]);
 }
-const ifrFanDelay = () => Math.min(IFR_FAN_MAX_S, Math.max(0, IFR_FAN_T + IFR_FAN_SD * ifrNormal())); // a fan meteor's release: the bell
+// a fan meteor's release: the bell, its mean, sd and cap all x the root of the fan's size over the untaken one's (owner, 2026-10-20: "spread them out more in time, the more of them there are")
+const ifrFanDelay = n => { const k = Math.sqrt(n / IFR_FAN[0]); return Math.min(IFR_FAN_MAX_S * k, Math.max(0, k * (IFR_FAN_T + IFR_FAN_SD * ifrNormal()))); };
 // a FAN meteor lands (a hit, or its dead target's spot): a flare there - THREE within IFR_TRIPLE_JIT at the Flare capstone
 function ifrLandFlares(t, st, x, y) {
   if (!st.triple) { ifrFlare(t, st, x, y); return; }
@@ -203,7 +204,8 @@ function stepIfrFires(t, st, dt) {
   for (const f of t.ifrFires) {
     f.age = (f.age || 0) + dt; /* (the look: the inner glow's rise) */
     if (!f.flq) { const n = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.R / IFR_FIRE_FLARE_R0) ** 2)); f.flq = []; f.age0 = 0; /* its flares' times, a bell round IFR_FIRE_FLARE_T */
-      for (let i = 0; i < n; i++) { let v; do v = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * ifrNormal(); while (v < 0); f.flq.push(Math.min(IFR_FIRE_FLARE_MAX_S, v)); } f.flq.sort((a, b) => b - a); }
+      const k = Math.sqrt(n / IFR_FIRE_FLARES); /* more flares, spread wider: x the root of the count (owner, 2026-10-20) */
+      for (let i = 0; i < n; i++) { let v; do v = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * ifrNormal(); while (v < 0); f.flq.push(k * Math.min(IFR_FIRE_FLARE_MAX_S, v)); } f.flq.sort((a, b) => b - a); }
     f.age0 += dt;
     while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d);
       if (!f.flq.length && f.big) ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* inside the fire as it is then; the last one lit, the Flare capstone's BIG flare dead centre */

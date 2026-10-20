@@ -20,7 +20,7 @@ const CHANGELOG = [
     "Ifrit: the meteor leads its target; it is a tenth the size and charges half as often; Meteor's hit grows far less with each purchase.",
     "Ifrit: Mega Firaga's giant flare is a third the size, its small cross much smaller.",
     "Ifrit: Meteor launches ONE meteor that hunts its target down (to its corpse if it dies); where it strikes a fire spreads and a ring of meteors (5, 7, 9, then 12) bursts out, each hunting any enemy that comes near and lighting a flare where it lands; Impact splits each of their hits into two more.",
-    "Ifrit: a fire lights flares inside it over its first seconds, more in a wider fire.",
+    "Ifrit: a fire lights flares inside it over its first seconds, more in a wider fire; the more flares or meteors, the longer they take to come.",
     "Ifrit: the launched meteor no longer vanishes on the way to a far target.",
     "Ifrit: the ring of meteors flies at a quarter of the launched one's speed.",
     "Ifrit: every flare a little over a third the size; the capstone's big flare the size a Flare-capstone flare was.",
