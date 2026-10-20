@@ -230,6 +230,12 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
       let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60);
       out.corpseFire = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - vx, t.ifrFires[0].y - vy) : NaN; out.decoy = 50 - decoy.shield; decoy.dead = true;
       for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; }
+    /* a SPAWNED meteor hits nothing for its first IFR_ARM_U (owner, 2026-10-20: "spawned meteors don't hit for min 50u") - then it does */
+    { t.ifrFires.length = 0; t.ifrFlares.length = 0; const v = held(t, t.x + 30, t.y); egridAt = NaN;
+      t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV * IFR_FAN_V, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
+      const w = held(t, t.x + 20, t.y + 25); egridAt = NaN; let k = 0, bent = 0; /* w: in homing reach from the start - no turn before 50 u (owner: "no homing for first 50") */
+      while (t.ifrBalls.length && Math.hypot(t.ifrBalls[0].x - t.x, t.ifrBalls[0].y - t.y) < 45 && k++ < 600) { stepIfrBalls(t, st, 1 / 60); if (t.ifrBalls[0] && Math.abs(t.ifrBalls[0].vy) > 1e-9) bent++; }
+      out.armEarly = 50 - v.shield + 50 - w.shield; out.bent = bent; w.dead = true; k = 0; while (t.ifrBalls.length && k++ < 1200) stepIfrBalls(t, st, 1 / 60); out.armLate = 50 - v.shield; v.dead = true; t.ifrBalls.length = 0; t.ifrFlares.length = 0; }
     /* a fan meteor homes within 50 u (and only then), hits for damage only - no fire */
     t.ifrFires.length = 0; const near = held(t, t.x + 150, t.y + 35), far = held(t, t.x + 250, t.y + 90); egridAt = NaN;
     t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
@@ -256,6 +262,8 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (r.firesAfter !== 1) return "fires after the fan flew: " + r.firesAfter + " (only the first impact makes one)";
   if (r.culledFire !== 1 || r.timeoutFire !== 1) return "the launched meteor went silently: with the view seeing nothing it burst " + r.culledFire + " times, out of time " + r.timeoutFire + " (expected 1, 1)";
   if (!(r.corpseFire < 6) || r.decoy) return "its target died: the burst landed " + r.corpseFire + " u from the corpse, a live decoy took " + r.decoy + " (expected at the corpse, none)";
+  if (r.bent) return "a spawned meteor turned (homed) " + r.bent + " steps in its first 45 u (expected straight)";
+  if (r.armEarly !== 0 || r.armLate !== 1) return "a spawned meteor 30 u from an enemy hit it " + r.armEarly + " times in its first 45 u (expected 0), " + r.armLate + " after (expected 1)";
   if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire) return "a fan meteor: near (35 u) hit " + r.homeNear + ", far (90 u) " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 0)";
   if (!r.fissure || JSON.stringify(r.kids) !== "[-30,30]" || r.kidGen.some(g => g !== 2) || r.cHits !== 1) return "capstone fissure: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen + ", parent's enemy hit " + r.cHits;
   if (!r.offGone || r.offFires || r.offSteps < 5) return "off view: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires;

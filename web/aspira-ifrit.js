@@ -29,6 +29,7 @@ const IFR_BURN_S = [1.2, 1.4, 1.6, 2, 2.6, 3.2] /* HALVED, the ticks x2 (owner, 
 const IFR_TICK_S = [0.25, 0.25, 0.25, 0.24, 0.23, 0.22] /* untaken 0.54 -> 0.25 (solo.mjs 2026-10-20, after the halved meteor and charge: a lone L1 leaked the wave-4 swarm, 6 lives, whatever the damage - a flare needs two ticks to burn) */ /* stop I faster (axis balance 2026-10-19: the 6-point spread build sits on Hellfire I - shields 35% -> 16% leaked); was [0.54, 0.48, 0.43, 0.36, 0.3, 0.27] - x0.6 with the longer flares (2026-10-19); was [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] - was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Blk Magic: s between burn ticks
 const IFR_TICK_K = [0.41, 1.5, 1.55, 1.6, 1.8, 2.27] /* x0.5 with the flares x3 (sweep 2026-10-19: more ticks to pop shields, less each - armor shrugs them off) */ /* x2 with the flares halved (2026-10-19); was [0.41, 0.6, 0.91, 1.36, 1.52, 2.27], VI 3.78 */ /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
 const IFR_BIG_S = 4 / 3, IFR_BIG_K = 4, IFR_BIG_X = 1 / 9; // the Flare capstone's BIG flare, dead centre of a fire once all its flares are lit (owner, 2026-10-20): size x BIG_S the largest flare, hit x BIG_K, its x BIG_X as long (the old giant flare's)
+const IFR_ARM_U = 50; // a SPAWNED meteor (fan, fissure) flies straight and hits nothing until it has flown this far (owner, 2026-10-20: "spawned meteors don't hit for 50u", "no homing for first 50")
 const IFR_FAN_V = 0.25; // a fan meteor (and a fissure's) flies at this x the launch speed (owner, 2026-10-20: "quarter the speed of the fissured meteors")
 const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights THREE flares, each up to this far off its spot (owner, 2026-10-20)
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
@@ -163,11 +164,11 @@ function stepIfrBalls(t, st, dt) {
   const all = G.enemies, born = [];
   for (const b of t.ifrBalls) {
     if (b.wait > 0) { b.wait -= dt; continue; } /* a fan meteor not released yet */
-    const atCorpse = ifrHome(b, all, dt);
-    if (!atCorpse) { b.x += b.vx * dt; b.y += b.vy * dt; }
+    const armed = !b.gen || (b.flown || 0) >= IFR_ARM_U, atCorpse = armed && ifrHome(b, all, dt); /* a spawned one flies straight, unarmed, for its first IFR_ARM_U */
+    if (!atCorpse) { b.x += b.vx * dt; b.y += b.vy * dt; b.flown = (b.flown || 0) + Math.hypot(b.vx, b.vy) * dt; }
     b.left -= dt;
     let hit = null;
-    for (const e of all) { /* every enemy, not projGrid's cell (a few meteors a tower - cheap) */
+    if (armed) for (const e of all) { /* every enemy, not projGrid's cell (a few meteors a tower - cheap); a spawned one only once armed */
       if (e.dead || !e.seen || e.id === b.skip) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + b.r;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 <= r * r) { hit = e; break; }
