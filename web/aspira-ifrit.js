@@ -356,14 +356,22 @@ function drawIfrFlares(t) {
     }
   }
 }
-/* balls true (drawn in skyKeep, aspira-draw.js): the charge balls on the corners and the balls in flight, which keep their orange on a
+/* balls true (drawn in skyKeep, aspira-draw.js): the balls in flight (the charge balls: drawIfrTop, on the prism's top), which keep their orange on a
    boss sky (owner, 2026-10-19: "ifrit balls should stay orange on boss inversion"); else the rings, pellets and spokes, which turn over with it */
 function drawIfr(balls) {
   const low = typeof lowQ === "function" && lowQ();
   for (const t of G.towers) {
     if (t.kind !== "ifr" || t.ifrSlot0 == null) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    if (balls) { drawIfrBalls(t, low); drawIfrCharge(t, towerStats(t), low); } else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
+    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrRings(t, low); drawIfrEmbers(t, low); }
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
+}
+// the CHARGE BALLS on the TOP of the tower's prism (owner, 2026-10-20: "ball occlusion is wrong ... I want the center of the balls to be on
+// the corners"): drawn with the tower (aspira-warp.js, warpEntities' top, raised to it), each centred on a corner of the top hex - drawn
+// on the floor they sat under the prism, hidden by it and off its corners. In the tower's own colours, as the tower (ownColours)
+function drawIfrTop(t) {
+  if (t.kind !== "ifr" || t.ifrSlot0 == null) return;
+  const low = typeof lowQ === "function" && lowQ();
+  ctx.lineCap = "butt"; drawIfrCharge(t, towerStats(t), low); ctx.globalAlpha = 1;
 }
