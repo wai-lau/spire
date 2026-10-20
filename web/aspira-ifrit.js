@@ -1,14 +1,13 @@
-// /spire - IFR, IFRIT (owner's design, 2026-10-19 - the fire aeon of FFX, orange): strong against swarm + shield, NEUTRAL to
-// armor, weak to fast. It CHARGES balls on its hex corners (one slot at base, 2, 3, then all 6 at the capstone) and is never idle
-// while a slot is free; a charged ball + an enemy in range = a launch, one every IFR_LAUNCH_GAP s. The ball flies SLOWLY at the
-// enemy's spot at launch (no lead: a fast enemy walks out from under it), hitting what it passes through; where it lands a RING
-// expands to the blast radius hitting everything it passes once, and PELLETS fly out in random directions to the blast radius (owner, 2026-10-19);
-// where a pellet stops it bursts into a burning FLARE - a big + over a tiny x (owner, 2026-10-19; was a six-beam star), quiet ticks that pop
-// a shield charge. Meteor: slots, charge rate, ball speed, en-route hit (Impact: 6 slots,
-// charging as fast as it launches). Hellfire: the flare (Hellfire VI: the longest beams). Firaga: the blast and the pellet count (Backdraft VI: a pellet lands as THREE flares,
-// a little apart - owner, 2026-10-20). Loaded after aspira-car.js (the simulator too); towerStats calls ifrSkillStats, the tower loop stepIfr,
-// drawSceneTop drawIfr. Every list on the tower holds plain objects (ids and coordinates, never enemy refs): autosave clones G.
-// Spec: docs/superpowers/specs/2026-10-19-ifrit-tower-design.md
+// /spire - IFR, IFRIT (owner's design 2026-10-19, axes redone 2026-10-20 - the fire aeon of FFX, orange): strong against swarm +
+// shield, NEUTRAL to armor, weak to fast. ONE charge fills at the tower's centre; full + an enemy in range = a launch, aimed at the
+// enemy's spot then (no lead). EACH AXIS ITS OWN PART AND ITS OWN DAMAGE (x TOWERS.ifr.dmg): METEOR the meteor in flight - charge time,
+// speed, size, the en-route hit on every enemy its body touches (Impact: a huge meteor); HELLFIRE the FIRE it leaves - opening at the
+// meteor's size, growing to its max, burning what stands in it by catching fire in small, many ticks, lingering (its capstone: six
+// towers across); BLK MAGIC the PELLETS that fly out (passing through, hitting) and the FLARES they light where they land - a big +
+// over a small x (Mega Firaga: one giant flare where the meteor struck). Loaded after aspira-car.js (the simulator too); the look is
+// aspira-ifrit-draw.js. towerStats calls ifrSkillStats, the tower loop stepIfr. Every list on the tower holds plain objects (ids and
+// coordinates, never enemy refs): autosave clones G.
+// Spec: docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md (on 2026-10-19-ifrit-tower-design.md)
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const IFR_CHARGE_S = [2.0, 1.8, 1.6, 1.4, 1.2, 1.0] /* AXES REDONE (owner, 2026-10-20: "greatly lower initial meteor fire rate and increase damage"; one charge, no slots); was [0.5, 0.5, 0.5, 0.45, 0.4, 0.35] VI 0.1 */; // Meteor: s to fill THE charge (VI capstone.js)
@@ -27,18 +26,16 @@ const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Blk Magic: its width, u
 const IFR_BURN_S = [1.2, 1.4, 1.6, 2, 2.6, 3.2] /* HALVED, the ticks x2 (owner, 2026-10-19: "reduce duration of spokes and increase damage" - the same burn a flare in half the time); was [2.4 .. 6.4], VI 10 */ /* x2, longer flares (owner, 2026-10-19: "make the flares last longer"), with CATCHING FIRE and faster, harder ticks (countermx 61-69 spread @6pts 4 seeds: 9/69/8/37 swarm/fast/shield/armor); was [1.2, 1.4, 1.6, 2, 2.6, 3.2] - was [1.5, 2, 2.5, 3, 4, 5] (countermx 61-69 spread @6pts, 2026-10-19, pellets in random directions: swarm/fast/shield/armor 8/35/9/56 -> 13/77/23/58 - a short burn: fast is clear of the flares round its old spot before the next tick, a slow body still burns; with the radius, the ball speed or the tick period fast stayed 33-47) */; // Blk Magic: a flare burns this long (VI 10 = EFFECT_MAX_S)
 const IFR_TICK_S = [0.54, 0.38, 0.37, 0.36, 0.3, 0.27] /* stop I faster (axis balance 2026-10-19: the 6-point spread build sits on Hellfire I - shields 35% -> 16% leaked); was [0.54, 0.48, 0.43, 0.36, 0.3, 0.27] - x0.6 with the longer flares (2026-10-19); was [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] - was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Blk Magic: s between burn ticks
 const IFR_TICK_K = [0.41, 0.6, 0.91, 1.36, 1.52, 2.27] /* x0.5 with the flares x3 (sweep 2026-10-19: more ticks to pop shields, less each - armor shrugs them off) */ /* x2 with the flares halved (2026-10-19); was [0.41, 0.6, 0.91, 1.36, 1.52, 2.27], VI 3.78 */ /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
-const IFR_BLAST_R = [117, 150, 150, 150, 169, 195] /* stop I 117 -> 150 (marks rule, 2026-10-19: every tower needs checks on 2 types - swarm 14% was too near the seven-tower mean for one; 10% at 150) - x1.3: bigger and more visible (owner, 2026-10-19: "make the initial explosion slower and bigger and more visible"); was [90, 90, 100, 115, 130, 150], base 90, was 80 (solo.mjs 2026-10-19, after the random pellets and the slow ticks: a lone L1 1/0/0 -> 0/0/0, 5 seeds 1/0/0/2/2 -> 0/0/0/0/2 - a single wave-4 swarm body now and then) */ /* was [60 .. 130] VI 160 (solo.mjs 2026-10-19, ball 360 + a 1 s charge: a lone L1 0/2/0 -> 0/0/0, every L1 pair with IFR beats the Star on every slot pair) */; // Firaga: the ring's reach, u
-const IFR_BLAST_K = [1.5, 2.25, 3.45, 5.25, 12, 22] /* AXIS BALANCE (2026-10-19): Firaga's top stops up (101-109 mean leak 82 -> 78); was [1.5, 2.25, 3.45, 5.25, 9, 15] */ /* was [1, 1.5, 2.3, 3.5, 6, 10] VI 18 (countermx 61-69 spread @6pts, 2026-10-19: leaked swarm/fast/shield/armor 27/91/42/100 -> 18/75/23/90) */; // Firaga: the blast hit, x TOWERS.ifr.dmg
 const IFR_PELLETS = [5, 6, 8, 10, 14, 19] /* HALVED (owner, 2026-10-20: "still too many pellets, halve the counts" - they pass through and re-hit now); was [10, 12, 15, 20, 28, 38] */ /* DOUBLED, each flare a random size (owner, 2026-10-19: "double the number of pellets (and hellfires) but add size jitter"; were 5 .. 21, VI 24) */ /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
 const IFR_PELLET_DK = [0.3, 0.45, 0.7, 1, 1.6, 2.5]; // Blk Magic: a pellet's pass-through hit, x TOWERS.ifr.dmg (owner, 2026-10-20: "pellets should also deal damage en route, scaled by blk magic"; VI 4)
 const IFR_GIANT_K = 4; // Mega Firaga (Blk Magic VI, owner 2026-10-20): ONE giant flare at the impact spot, its size and hit x a VI flare's
-const IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_PELLET_HIT = 4, IFR_PELLET_K = 0.25; // a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
+const IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_PELLET_HIT = 4; // a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
+const IFR_PELLET_R = 150; // u: the pellets' reach before IFR_PELLET_REACH - fixed, the old blast radius (2026-10-20: the fire's size is Hellfire's, the pellets Blk Magic's)
 const IFR_PELLET_SPREAD_S = 0.5; // s: a burst's pellets leave at random times over this (owner, 2026-10-20: "randomize the pellet launch times over 0.5s")
 const IFR_PELLET_REHIT = 0.2; // s: a pellet still touching an enemy it hit hits it again this often (a slow pellet riding along a body hits it several times)
 const IFR_PELLET_ARM = 16; // u a pellet flies before it can hit (about a body): born at the burst spot, it would else stop on the enemy standing there, and nothing would fly or miss (owner, 2026-10-19)
 let IFR_PELLET_REACH = 1.2; /* x3, landing NEAR more often than far (IFR_LAND_POW) (owner, 2026-10-19: "triple the range that the pellets can end up in ... make the probability of landing closer be higher") */ // a pellet flies this x the blast radius (owner, 2026-10-19: "reduce pellet range" 1.0 -> 0.6, then "further reduce spread" -> 0.4 - its flare lands nearer the burst, on the crowd; was the whole radius). let: the simulator sweeps it
 const IFR_FLARE_MAX = 240; // live flares a tower at most: the oldest goes (perf; 120 before Backdraft's triple flare, 60 before the pellets doubled)
-const IFR_TRIPLE_N = 3, IFR_TRIPLE_JIT = 14; // Backdraft (Firaga VI, owner 2026-10-20: "triple flare, small position jitter"): flares a landed pellet, each up to JIT u off the spot
 // a flare's SIZE (owner, 2026-10-19): a normal draw round half the max (mean IFR_FLARE_MEAN, sd IFR_FLARE_SD, kept in [IFR_FLARE_MIN, 1])
 // times IFR_FLARE_K x the Hellfire tier's length and width; a pellet lands at IFR_PELLET_REACH x the blast radius x u^IFR_LAND_POW (u uniform:
 // a power over 1 lands more of them near). let: the balance runs sweep IFR_FLARE_K and IFR_LAND_POW
@@ -63,9 +60,7 @@ function ifrSkillStats(t, s, b) {
   s.fireR = Math.max(s.ballR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireLinger = IFR_FIRE_LINGER[h]; s.fireHit = b.dmg * IFR_FIRE_K[h];
   s.pellets = IFR_PELLETS[f]; s.pelletHit = b.dmg * IFR_PELLET_DK[f]; s.giant = f >= CAPSTONE_TIER;
   s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareHit = b.dmg * IFR_TICK_K[f];
-  // (the old shape, read by the code Tasks 3-5 of the 2026-10-20 plan replace; gone with it)
-  s.routeK = IFR_ROUTE_K[m]; s.tickK = IFR_TICK_K[f]; s.blastR = IFR_BLAST_R[f]; s.blastK = IFR_BLAST_K[f]; s.backdraft = s.giant;
-  s.dmg = b.dmg * s.blastK; s.rate = 1 / s.chargeS;
+  s.dmg = s.routeHit; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the en-route hit, meteors a second
   s.skill = true;
 }
 // ---------- the charge ----------
@@ -119,11 +114,12 @@ function stepIfrBalls(t, st, dt) {
 function ifrImpact(t, st, b) {
   (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, hold: st.fireLinger, fade: IFR_FIRE_FADE, tick: 0, hit: st.fireHit, left: 1 });
   ifrPelletBurst(t, st, b.ax, b.ay);
+  if (st.giant) ifrFlare(t, st, b.ax, b.ay, IFR_FLARE_K * IFR_GIANT_K, true); /* MEGA FIRAGA: one giant flare where it struck */
   sfx("ifrblast");
 }
 // the pellets out in random directions, enemies there or not (owner, 2026-10-19: "shooting 5 pellets in random directions that each make asterisks")
 function ifrPelletBurst(t, st, x, y) {
-  const R = st.blastR, fs = ifrPelletFlares(st);
+  const R = IFR_PELLET_R, fs = ifrPelletFlares(st); /* out to IFR_PELLET_R x IFR_PELLET_REACH, whatever the fire's size (Blk Magic's own) */
   for (let i = 0; i < st.pellets; i++) {
     /* ANY direction, evenly (owner, 2026-10-19: "remove the backwards bias"); a RANDOM distance weighted near (IFR_LAND_POW > 1) */
     const a = Math.random() * 2 * Math.PI, cx = Math.cos(a), cy = Math.sin(a), d = R * IFR_PELLET_REACH * Math.random() ** IFR_LAND_POW;
@@ -158,8 +154,8 @@ function ifrTickFire(t, st, f) {
   }
 }
 // the PELLETS: non-homing, straight out to their random distance, PASSING THROUGH (owner, 2026-10-20: "pellets should always
-// passthrough + deal damage on passthrough based on firaga lvl"): every enemy touched takes the pellet hit, again every IFR_PELLET_REHIT s it stays touching (st.dmg x IFR_PELLET_K
-// - st.dmg is the Firaga blast hit, so it grows with the tier), and the pellet flies on; where it lands, a FLARE (three at Backdraft).
+// passthrough + deal damage on passthrough based on firaga lvl"): every enemy touched takes st.pelletHit (Blk Magic's own), again every
+// IFR_PELLET_REHIT s it stays touching, and the pellet flies on; where it lands, a FLARE.
 // It hits nothing until it has flown IFR_PELLET_ARM (it is born on top of whatever stood at the burst spot)
 function stepIfrPellets(t, st, dt) {
   if (!t.ifrPellets.length) return;
@@ -171,24 +167,22 @@ function stepIfrPellets(t, st, dt) {
       if (e.dead || p.age - (p.hit[e.id] ?? -1e9) < IFR_PELLET_REHIT) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + IFR_PELLET_HIT;
       if ((e.x - p.x) ** 2 + (e.y - p.y) ** 2 > r * r) continue;
-      p.hit[e.id] = p.age; const amt = st.dmg * IFR_PELLET_K, h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT;
+      p.hit[e.id] = p.age; const amt = st.pelletHit, h0 = hitFrom; HIT_AT.x = e.x - p.vx; HIT_AT.y = e.y - p.vy; hitFrom = HIT_AT;
       try { damage(e, amt, t, false, false, IFR_PELLET_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
     }
     if (p.left > 0) continue;
-    const fs = p.fs || ifrFlareSizes(st);
-    if (st.backdraft) for (let i = 0; i < IFR_TRIPLE_N; i++) { const a = Math.random() * 2 * Math.PI, d = IFR_TRIPLE_JIT * Math.sqrt(Math.random()); ifrFlare(t, st, p.ax + Math.cos(a) * d, p.ay + Math.sin(a) * d, fs[i % fs.length]); }
-    else ifrFlare(t, st, p.ax, p.ay, fs[0]);
+    ifrFlare(t, st, p.ax, p.ay, (p.fs || ifrFlareSizes())[0]);
   }
   keepLive(t.ifrPellets);
 }
 // a flare's size s (x the Hellfire length): rolled when its BALL LAUNCHES (owner, 2026-10-20: "pellet size should be relative the size of
 // the flare that it will produce"), so the pellet - and the ball, the area of all its pellets - is drawn to it
 function ifrFlareS() { return IFR_FLARE_K * Math.min(1, Math.max(IFR_FLARE_MIN, IFR_FLARE_MEAN + IFR_FLARE_SD * ifrNormal())); }
-function ifrFlareSizes(st) { const n = st.backdraft ? IFR_TRIPLE_N : 1, out = []; for (let i = 0; i < n; i++) out.push(ifrFlareS()); return out; } // one pellet's flares
-function ifrPelletFlares(st) { const out = []; for (let i = 0; i < st.pellets; i++) out.push(ifrFlareSizes(st)); return out; } // a burst's pellets'
-function ifrFlare(t, st, x, y, s = ifrFlareS()) {
-  if (t.ifrFlares.length >= IFR_FLARE_MAX) t.ifrFlares.shift();
-  t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, edges: false }); /* (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
+function ifrFlareSizes() { return [ifrFlareS()]; } // one pellet's flare (a list: the ember's size reads it)
+function ifrPelletFlares(st) { const out = []; for (let i = 0; i < st.pellets; i++) out.push(ifrFlareSizes()); return out; } // a burst's pellets'
+function ifrFlare(t, st, x, y, s = ifrFlareS(), giant = false) { // giant: Mega Firaga's (size s = IFR_GIANT_K x the max), hitting IFR_GIANT_K x
+  if (t.ifrFlares.length >= IFR_FLARE_MAX) { const k = t.ifrFlares.findIndex(f => !f.giant); t.ifrFlares.splice(k < 0 ? 0 : k, 1); } /* the oldest goes - never a giant first */
+  t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, hit: st.flareHit * (giant ? IFR_GIANT_K : 1), giant, edges: false }); /* hit: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
 }
 // the FLARE: IFR_BEAMS beams from the burst point, a + and a small x (world angles: 3D is a view), burning for
 // `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge (Hellfire VI: the longest beams;
@@ -219,7 +213,7 @@ function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) ou
 let IFR_CATCH = true;
 const IFR_NONE = {};
 function ifrTickFlare(t, st, f) {
-  const ends = ifrBeamEnds(f), half = f.W / 2, amt = st.dmg * st.tickK, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
+  const ends = ifrBeamEnds(f), half = f.W / 2, amt = f.hit ?? st.flareHit, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
   const all = G.enemies, defs = ENEMIES; /* (locals: a global read in this loop costs more than the arithmetic) */
   const was = f.on || IFR_NONE, now = f.on = {}; /* CATCHING FIRE: who touched a spoke at the last tick (ids - plain data, G clones) */
   for (let i = 0; i < all.length; i++) {

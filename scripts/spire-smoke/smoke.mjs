@@ -232,7 +232,7 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; pellets fly o
     out.outward = ps.every((p, i) => Math.hypot(p.x - cx, p.y - cy) > d0[i]); out.flying = t.ifrPellets.length;
     for (let i = 0; i < 120 /* (IFR_PELLET_V 100 since 2026-10-20) */ && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
     out.left = t.ifrPellets.length; out.flares = t.ifrFlares.length; 
-    out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = st.blastR * IFR_PELLET_REACH + IFR_PELLET_V / 30;
+    out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = IFR_PELLET_R * IFR_PELLET_REACH + IFR_PELLET_V / 30;
     return out;
   })()`);
   if (r.lit !== 0 || r.on !== 1) return "the enemy on the 90-degree beam lost " + r.lit + " charges at its first tick (expected 0: it only catches fire) and " + r.on + " after two (expected exactly 1)";
@@ -271,7 +271,7 @@ check("IFR: the fire opens at the meteor's size, grows to its max, burns by catc
   if (r.sold !== true) return "selling the tower with a live fire threw: " + r.sold;
   return "";
 });
-check("IFR: a pellet passes through, hits a body it rides along again, lands where aimed; Backdraft lands three flares", () => {
+check("IFR: a pellet passes through, hits a body it rides along again, lands where aimed; Blk Magic scales the pellets and flares; Mega Firaga lights one giant flare", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -287,16 +287,28 @@ check("IFR: a pellet passes through, hits a body it rides along again, lands whe
     const c = held(CX + 30, CY); egridAt = NaN; shot(st, 200);
     for (let i = 0; i < 30; i++) { stepIfrPellets(t, st, 1 / 30); if (t.ifrPellets[0]) { c.x = t.ifrPellets[0].x; egridAt = NaN; } }
     out.ride = 50 - c.shield; c.dead = true;
-    // Backdraft: three flares per landed pellet, near its aim
-    for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true); st = towerStats(t);
-    shot(st, 60); for (let i = 0; i < 60 && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
-    out.triple = t.ifrFlares.length; out.jmax = IFR_TRIPLE_JIT; out.jit = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - CX - 60, f.y - CY)));
+    // Blk Magic: its own pellet and flare hits; Mega Firaga: one giant flare at the impact spot, besides one flare a landed pellet
+    out.hit0 = st.pelletHit; out.flare0 = st.flareHit;
+    for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true); st = towerStats(t); out.hit6 = st.pelletHit; out.flare6 = st.flareHit;
+    for (const e of G.enemies) e.dead = true; egridAt = NaN; t.ifrPellets.length = 0; t.ifrFlares.length = 0; t.ifrFires.length = 0;
+    ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); out.want = st.pellets + 1;
+    for (let i = 0; i < 200 && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
+    const gs = t.ifrFlares.filter(f => f.giant); out.mflares = t.ifrFlares.length; out.giants = gs.length;
+    out.giantAt = gs[0] ? Math.hypot(gs[0].x - CX, gs[0].y - CY) : NaN; out.giantL = gs[0] ? gs[0].L : NaN; out.giantWant = IFR_GIANT_K * IFR_FLARE_K * st.beamL;
+    out.biggest = Math.max(...t.ifrFlares.filter(f => !f.giant).map(f => f.L));
+    /* a flare ticks for its own hit */
+    const amts = [], d0 = damage; damage = (e, amt, ...a) => { amts.push(amt); return d0(e, amt, ...a); };
+    try { const g = gs[0], v = held(g.x + 5, g.y); t.ifrFlares.length = 0; t.ifrFlares.push(g); /* the giant alone */ v.shield = 0; egridAt = NaN; for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); } finally { damage = d0; }
+    out.ticks = amts; out.giantHit = gs[0] && gs[0].hit;
     return out;
   })()`);
   if (!(r.a >= 1 && r.b >= 1)) return "a pellet through two bodies popped " + r.a + " and " + r.b + " (expected 1+ each: it passes through)";
   if (r.flares !== 1 || Math.abs(r.land - 120) > 1) return "the pellet did not land one flare at its aim (flares " + r.flares + ", at " + r.land + ")";
   if (!(r.ride >= 2)) return "a body riding along with a pellet was hit " + r.ride + " times (expected 2+)";
-  if (r.triple !== 3 || !(r.jit <= r.jmax + 0.01)) return "Backdraft landed " + r.triple + " flares, up to " + r.jit + " u off (expected 3 within " + r.jmax + ")";
+  if (!(r.hit6 > r.hit0) || !(r.flare6 > r.flare0)) return "Blk Magic did not raise the pellet / flare hit: " + [r.hit0, r.hit6, r.flare0, r.flare6];
+  if (r.mflares !== r.want || r.giants !== 1) return "Mega Firaga landed " + r.mflares + " flares, " + r.giants + " giant (expected " + r.want + ", 1)";
+  if (!(r.giantAt < 0.01) || Math.abs(r.giantL - r.giantWant) > 0.01 || !(r.giantL > r.biggest)) return "the giant flare: " + r.giantAt + " u off the impact, L " + r.giantL + " (expected " + r.giantWant + ", above every other " + r.biggest + ")";
+  if (!r.ticks.length || r.ticks.some(a => a !== r.giantHit)) return "the giant flare ticked " + r.ticks + " (expected its own hit " + r.giantHit + ")";
   return "";
 });
 check("auto-move: towers and upgrades are free, and a buy made then bars the leaderboard", () => {
@@ -367,13 +379,13 @@ check("a lost life: 'X lives left' replaces the interest line", () => {
   return texts.some(t => /^7 lives left$/.test(t)) ? "" : "no '7 lives left' among " + texts.length + " texts";
 });
 
-check("IFR: draws its charge balls, rings and flares; G clones; selling mid-flight throws nothing", () => {
+check("IFR: draws its charge, meteors, fires and flares; G clones; selling mid-flight throws nothing", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
     const t = G.towers[0]; for (let i = 0; i < 90; i++) step(1 / 30);
     ifrNear("swarm", t, 90);
-    for (let i = 0; i < 60; i++) step(1 / 30);
+    for (let i = 0; i < 30; i++) step(1 / 30); /* 1 s: the meteor has landed, its fire and pellets live */
     const out = { live: t.ifrBalls.length + t.ifrFires.length + t.ifrPellets.length + t.ifrFlares.length };
     const fn = v => typeof v === "function" || (v && typeof v === "object" && !Array.isArray(v) && Object.getPrototypeOf(v) !== Object.prototype) || (v && typeof v === "object" && Object.values(v).some(fn)); // a function or a non-plain object anywhere in G breaks the autosave's structured clone
     out.cloned = !fn({ t: [t.ifrBalls, t.ifrFires, t.ifrPellets, t.ifrFlares] });
@@ -418,10 +430,10 @@ check("IFR: 200 enemies and 30 stacked Hellfire VI fires tick under 16 ms", () =
   return ms < 16 ? "" : "30 fires over 200 enemies took " + ms.toFixed(1) + " ms a tick";
 });
 /* worst case: 40 Hellfire-VI flares tick in the SAME frame (in play each ticks on its own phase); about 2.4 ms of it is damage()/onHit on ~200 hit enemies, which any tower pays - the guard is for the traversal (~3 ms), a regression to all-flares x all-enemies */
-check("IFR: 200 enemies and 40 Hellfire flares tick under 16 ms", () => {
+check("IFR: 200 enemies and 40 Blk Magic VI flares tick under 16 ms", () => {
   run(`G = newGame(); G.money = 1e9; ui.build = "ifr";
     { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); }
-    { const t = G.towers[0]; ifrInit(t); for (let k = 0; k < 6; k++) upgradeTower(t, "hellfire", true);
+    { const t = G.towers[0]; ifrInit(t); for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true);
       for (let i = 0; i < 200; i++) { spawnEnemy("swarm", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.s = entryS(0) + i * 3; const p = pathAt(0, e.s, 0); e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e6; } egridAt = NaN;
       for (let i = 0; i < 40; i++) t.ifrFlares.push({ x: CX - 300 + i * 15, y: CY - 200 + i * 10, L: 140, W: 24, life: 10, left: 10, tick: 0, edges: true }); }`);
   run("{ const t = G.towers[0], st = towerStats(t); for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); }"); /* warm the JIT first, as a running game is */
