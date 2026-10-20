@@ -15,7 +15,6 @@ const FRZ_MOONS = ["", " A moon copies it.", " Two moons copy it.", " Three moon
 const SOL_RAYS = ["A ray", "Two rays", "Three rays", "Four rays", "Five rays", "Eight rays"];
 const SOL_REFRACT = ["refracting on to one more enemy", "refracting on to three more enemies", "refracting on to six more enemies", "refracting on to ten more enemies", "refracting on to thirteen more enemies", "refracting through every enemy ahead"];
 const ACD_JETS = ["Two", "Three", "Four", "Six", "Seven", "Eight"]; // acidic terms, never heat (owner)
-const IFR_BALLS = ["", "a ball", "two balls", "three balls", "", "", "six balls"]; // by SLOT count (IFR_SLOTS: 1 2 3, capstone 6)
 const DESCRIBE = {
   // "Arcs fork on hit, each jump carrying half the hit." -> Conductivity: chain once and / into
   // three / twin; Voltage: most of .. all of (its harder hit is a stat row); Capacitance: the charge sentence (owner's words)
@@ -60,13 +59,15 @@ const DESCRIBE = {
       (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; its black centre burns whatever it touches, and the hole grows with the nova's hit and that burn. Nearby holes pull together and merge. It radiates " +
       (r >= 6 ? "pellets and bursts as it fades." : "pellets.");
   },
-  // IFR (owner, 2026-10-19): Meteor more slots, faster, harder on the way (Impact: all six corners); Hellfire the burning flare
-  // of six beams (Hellfire VI: to the edges of the board); Blk Magic a bigger blast, more pellets (Mega Firaga: three flares a pellet)
+  // IFR (owner, 2026-10-20 - each axis its own part): Meteor a faster, bigger, harder meteor (Impact: a huge one); Hellfire the fire it
+  // leaves, wider and longer (its capstone: six towers across); Blk Magic more, harder pellets and flares (Mega Firaga: a giant flare)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
-    return "Charges " + IFR_BALLS[IFR_SLOTS[m]] + " on its corners and lobs each slowly at an enemy, burning what it passes. Where it lands a ring of fire bursts outward and " +
-      IFR_PELLETS[f] + " pellets fly out in every direction, most landing near; where each stops a flare - a big plus over a small cross, of random size - burns" + (f >= 6 ? ", and the pellet bursts into a smaller ring." : ".");
+    return "Charges one meteor at its centre and lobs it at an enemy the moment it is ready, " + (m >= 6 ? "a huge one, " : "") + "burning what it passes. Where it lands a fire " +
+      (h ? "spreads" + (h >= 6 ? " six towers wide" : "") + " and lingers" : "flickers") + ", burning what stands in it, and " + IFR_PELLETS[f] +
+      " pellets fly out, burning what they pass; where each lands a flare burns" + (f >= 6 ? ", and a giant flare where the meteor struck." : ".");
   },
+
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
 // (the per-tier `desc` / `base` sentences in SKILL_TREES were never shown once these existed, and had drifted; removed 2026-10-14)

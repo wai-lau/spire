@@ -139,6 +139,30 @@ run(`function ifrNear(type, t, dist) {
   for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
   const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e6; e.armor = 0; e.shield = 0; return e;
 }`);
+check("IFR: each axis scales only its own numbers", () => {
+  const r = run(`(() => {
+    const F = { meteor: ["chargeS", "ballV", "ballR", "routeHit"], hellfire: ["fireR", "fireV", "fireLinger", "fireHit"], firaga: ["pellets", "pelletHit", "beamL", "beamW", "burnS", "tickS", "flareHit", "giant"] };
+    const all = [].concat(...Object.values(F));
+    const fresh = ax => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; if (ax) for (let k = 0; k < 6; k++) upgradeTower(t, ax, true); return t; };
+    const pick = st => Object.fromEntries(all.map(k => [k, st[k]]));
+    const base = pick(towerStats(fresh())), out = { base, moved: {}, vi: {} };
+    for (const ax of Object.keys(F)) { const st = towerStats(fresh(ax)); out.vi[ax] = pick(st); out.moved[ax] = all.filter(k => st[k] !== base[k]); }
+    /* a save keeps none of IFR's live state (a 6.4 save's keys included): runClean drops every ifr* key a live tower carries, and the tower rebuilds */
+    const old = fresh(); for (let i = 0; i < 90; i++) step(1 / 30); out.live = Object.keys(old).filter(k => /^ifr/.test(k));
+    runClean(G); out.kept = Object.keys(old).filter(k => /^ifr/.test(k));
+    try { for (let i = 0; i < 30; i++) step(1 / 30); out.oldOk = true; } catch (e) { out.oldOk = String(e); }
+    return out;
+  })()`);
+  const F = { meteor: ["chargeS", "ballV", "ballR", "routeHit", "fireR"], hellfire: ["fireR", "fireV", "fireLinger", "fireHit"], firaga: ["pellets", "pelletHit", "beamL", "beamW", "burnS", "tickS", "flareHit", "giant"] };
+  for (const ax of Object.keys(F)) { const stray = r.moved[ax].filter(k => !F[ax].includes(k)); if (stray.length) return ax + " moved another axis's numbers: " + stray; if (!r.moved[ax].length) return ax + " moved nothing"; }
+  if (r.base.fireR !== r.base.ballR) return "Hellfire 0: the fire's max " + r.base.fireR + " is not the meteor's size " + r.base.ballR;
+  if (r.vi.meteor.ballR !== 54) return "Meteor VI meteor radius " + r.vi.meteor.ballR + " (expected 54)";
+  if (r.vi.hellfire.fireR !== 160) return "Hellfire VI fire radius " + r.vi.hellfire.fireR + " (expected 160)";
+  if (r.base.giant || !r.vi.firaga.giant) return "the giant flare is not Blk Magic VI's alone";
+  if (!r.live.length || r.kept.length) return "a save keeps IFR live keys: " + r.kept + " (live: " + r.live + ")";
+  if (r.oldOk !== true) return "a cleaned IFR threw on resume: " + r.oldOk;
+  return "";
+});
 check("IFR: charges on its corners, holds one ball at base, launches at a target in range, re-picks its first corner once empty", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e6; ui.build = "ifr";
