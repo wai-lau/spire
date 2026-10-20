@@ -6,7 +6,7 @@ function drawIfrCharge(t, st, low) {
   if (t.ifrCharge <= 0) return;
   const c = ifrCentre(t); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * t.ifrCharge), true, low); /* grows to the meteor it launches */
 }
-// one ember, k x IFR_EMBER_*: a halo, an orange disc, a white core and its tail (lowQ: disc and core)
+// one ember, k x IFR_EMBER_*: a halo, an orange disc, a yellow core and its tail (lowQ: disc and core)
 function drawIfrEmber(p, k, low) {
   if (!low) {
     ctx.lineWidth = IFR_EMBER_R * k;
@@ -14,10 +14,10 @@ function drawIfrEmber(p, k, low) {
       const a = n / IFR_TAIL_N, b = (n + 1) / IFR_TAIL_N; ctx.globalAlpha = 0.6 * (1 - a);
       ctx.beginPath(); ctx.moveTo(p.x - p.vx * IFR_TAIL_S * a, p.y - p.vy * IFR_TAIL_S * a); ctx.lineTo(p.x - p.vx * IFR_TAIL_S * b, p.y - p.vy * IFR_TAIL_S * b); ctx.stroke();
     }
-    ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_HALO * k, 0, 6.283); ctx.fill();
+    ctx.fillStyle = COL.glow; ctx.globalAlpha = 0.25; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_HALO * k, 0, 6.283); ctx.fill();
   }
   ctx.fillStyle = COL.tifr; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_R * k, 0, 6.283); ctx.fill();
-  ctx.fillStyle = COL.white; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_CORE * k, 0, 6.283); ctx.fill();
+  ctx.fillStyle = COL.yellow; ctx.globalAlpha = 0.95; ctx.beginPath(); ctx.arc(p.x, p.y, IFR_EMBER_CORE * k, 0, 6.283); ctx.fill();
 }
 function drawIfrEmbers(t, low) {
   ctx.lineCap = "round"; ctx.strokeStyle = COL.tifr;
@@ -37,7 +37,7 @@ const IFR_INNER_A = 0.3, IFR_INNER_DEPTH = 0.3, IFR_INNER_N = 6;
 function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1) { // inner: x the inner glow's alpha (a fire's rise)
   if (fill) { ctx.fillStyle = COL.bg; ctx.globalAlpha = 0.95 * a; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
   const n = low ? 2 : IFR_INNER_N, w = r * IFR_INNER_DEPTH / n;
-  ctx.strokeStyle = COL.tifr; ctx.lineWidth = w;
+  ctx.strokeStyle = COL.glow; ctx.lineWidth = w; /* ember red-orange inside the rim (the fire colours, 2026-10-20) */
   for (let k = 0; k < n; k++) {
     const u = (k + 0.5) / n; ctx.globalAlpha = Math.min(1, IFR_INNER_A * (1 - u) * a * inner);
     ctx.beginPath(); ctx.arc(x, y, r * (1 - IFR_INNER_DEPTH * u), 0, 6.283); ctx.stroke();
@@ -63,8 +63,8 @@ function ifrFlareI(f) { return f.giant ? IFR_FLARE_I_GIANT : Math.min(IFR_FLARE_
 // smooth aura gradients while IFR spokes cannot? fix") each spoke is instead two GLOW LINES on the GPU (shape 7, aspira-fxgl.js):
 // a halo and a narrow core, each brightest on its centre line and clear at its edge, fading as 1 - t^2 to the tip - smooth, no
 // bands. IFR_GLOW_GL: [half-width x the beam width, alpha, colour]. lowQ keeps the core only, both ways
-const IFR_GLOW = [[1.6, 0.12, "tifr"], [0.8, 0.28, "tifr"], [0.25, 0.85, "tifr"], [0.08, 0.9, "white"]], IFR_GLOW_BANDS = 6, IFR_GLOW_A = 0.11375; /* x0.5 (owner, 2026-10-20: "reduce flare opacity by 50%"; was 0.2275) */ /* a WHITE core in the orange (owner, 2026-10-19); IFR_GLOW_A: every spoke starts at 22.75% (owner, 2026-10-19: 65%, x0.7, then x0.5) */
-const IFR_GLOW_GL = [[0.8, 0.5, "tifr"], [0.2, 0.95, "tifr"], [0.06, 0.95, "white"]];
+const IFR_GLOW = [[1, 0.12, "glow"], [0.5, 0.28, "tifr"], [0.16, 0.85, "orange"], [0.05, 0.9, "yellow"]] /* the widest layer = the beam's hit band W (owner, 2026-10-20: "the glow should only be as wide as the hitbox"; was 1.6, 0.8, 0.25, 0.08) */, IFR_GLOW_BANDS = 6, IFR_GLOW_A = 0.11375; /* x0.5 (owner, 2026-10-20: "reduce flare opacity by 50%"; was 0.2275) */ /* a WHITE core in the orange (owner, 2026-10-19); IFR_GLOW_A: every spoke starts at 22.75% (owner, 2026-10-19: 65%, x0.7, then x0.5) */
+const IFR_GLOW_GL = [[0.5, 0.5, "glow"], [0.125, 0.95, "orange"], [0.0375, 0.95, "yellow"]]; /* fire colours, no white (owner, 2026-10-20) */ /* half-widths: the widest = W / 2, the hit band (was 0.8, 0.2, 0.06) */
 /* 3D, drawn through the GPU stand-in (glCtx, aspira-glctx.js - the real canvas keeps it as __glc): each spoke stops at a tower's edge like any
    beam (trimToTowers), its t range kept so the fade still runs over the whole spoke */
 function drawIfrFlaresGl(t, low) {

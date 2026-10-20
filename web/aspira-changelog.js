@@ -16,9 +16,12 @@ const CHANGELOG = [
     "Ifrit: Blk Magic - more pellets, harder as they pass through, and bigger, hotter flares; Mega Firaga lights one giant flare where the meteor strikes.",
     "Ifrit: half as many pellets and flares, each flare twice the size.",
     "Ifrit: Hellfire and Blk Magic hit much harder from their first purchase; Hellfire's capstone fire lingers longer.",
+    "Ifrit: the meteor leads its target; it is half the size and charges half as often, each hit twice as hard.",
+    "Ifrit: Mega Firaga's giant flare is a third the size, its small cross much smaller.",
   ], ne: [
     "Ifrit: the blast ring is gone; the meteor charges half as often as the balls did, and only one at a time.",
   ], u: [
+    "Ifrit: fire colours - ember red, orange, marigold and pale yellow, no white; a flare's glow is only as wide as what it burns.",
     "Ifrit: the meteor glows inside its rim; the fire keeps the glow without the black, brightening as it burns; a flare shines as bright as it hits.",
     "Build cards: Ifrit's marks re-checked.",
   ] },

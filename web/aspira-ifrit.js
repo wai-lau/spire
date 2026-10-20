@@ -1,6 +1,6 @@
 // /spire - IFR, IFRIT (owner's design 2026-10-19, axes redone 2026-10-20 - the fire aeon of FFX, orange): strong against swarm +
 // shield, NEUTRAL to armor, weak to fast. ONE charge fills at the tower's centre; full + an enemy in range = a launch, aimed at the
-// enemy's spot then (no lead). EACH AXIS ITS OWN PART AND ITS OWN DAMAGE (x TOWERS.ifr.dmg): METEOR the meteor in flight - charge time,
+// spot it will reach (led, 2026-10-20). EACH AXIS ITS OWN PART AND ITS OWN DAMAGE (x TOWERS.ifr.dmg): METEOR the meteor in flight - charge time,
 // speed, size, the en-route hit on every enemy its body touches (Impact: a huge meteor); HELLFIRE the FIRE it leaves - opening at the
 // meteor's size, growing to its max, burning what stands in it by catching fire in small, many ticks, lingering (its capstone: six
 // towers across); BLK MAGIC the PELLETS that fly out (passing through, hitting) and the FLARES they light where they land - a big +
@@ -10,10 +10,10 @@
 // Spec: docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md (on 2026-10-19-ifrit-tower-design.md)
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const IFR_CHARGE_S = [1.0, 0.95, 0.9, 0.8, 0.7, 0.6] /* AXES REDONE (owner, 2026-10-20: "greatly lower initial meteor fire rate and increase damage"; one charge, no slots); was [0.5, 0.5, 0.5, 0.45, 0.4, 0.35] VI 0.1 */; // Meteor: s to fill THE charge (VI capstone.js)
+const IFR_CHARGE_S = [2.0, 1.9, 1.8, 1.6, 1.4, 1.2] /* x2 (owner, 2026-10-20: "fire rate is too high, halve it, double damage" - TOWERS.ifr.dmg 60 -> 120); was [1.0 .. 0.6] VI 0.3 */ /* AXES REDONE (owner, 2026-10-20: "greatly lower initial meteor fire rate and increase damage"; one charge, no slots); was [0.5, 0.5, 0.5, 0.45, 0.4, 0.35] VI 0.1 */; // Meteor: s to fill THE charge (VI capstone.js)
 const IFR_BALL_V = [360, 390, 420, 450, 480, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
 const IFR_ROUTE_K = [1.5, 2, 4, 10, 60, 400] /* AXES REDONE (2026-10-20): x TOWERS.ifr.dmg, Meteor's own - was x the Blk Magic blast hit, [0.25, 0.5, 1, 4, 10, 60] VI 150 */; // Meteor: the en-route hit, its ONLY damage
-const IFR_BALL_RAD = [27, 30, 33, 37, 42, 47]; // Meteor: the meteor's radius, u (solo.mjs 2026-10-20: the hex's width across untaken - half of it leaked the wave-4 swarm, 15 lives; owner: "twice the size" of it at VI: 54, capstone.js)
+const IFR_BALL_RAD = [13.5, 15, 16.5, 18.5, 21, 23.5] /* HALVED (owner, 2026-10-20: "meteor is also too big, halve all the current sizes"); was [27 .. 47] VI 54 */; // Meteor: the meteor's radius, u (solo.mjs 2026-10-20: the hex's width across untaken - half of it leaked the wave-4 swarm, 15 lives; owner: "twice the size" of it at VI: 54, capstone.js)
 // Hellfire: THE FIRE the meteor leaves (owner, 2026-10-20) - it opens at the meteor's size, grows at FIRE_V to FIRE_R (never below the meteor: untaken
 // it does not grow), burns by catching fire every IFR_FIRE_TICK_S for FIRE_K x TOWERS.ifr.dmg a tick ("small ticks, many"), lingers FIRE_LINGER s at full size
 const IFR_FIRE_R = [0, 60, 60, 85, 110, 130]; // u radius (VI 160: "6 towers across", capstone.js)
@@ -24,11 +24,11 @@ let IFR_FIRE_TICK_S = 0.05 /* battery 2026-10-20: 0.2 left Hellfire VI leaking 9
 const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Blk Magic (Hellfire's until 2026-10-20): a flare beam's length from its centre, u (VI 210, capstone.js - was to the play-box edges, owner 2026-10-19: "looks ridiculous ... maybe half")
 const IFR_BEAM_W = [10, 12, 14, 16, 18, 20]; // Blk Magic: its width, u
 const IFR_BURN_S = [1.2, 1.4, 1.6, 2, 2.6, 3.2] /* HALVED, the ticks x2 (owner, 2026-10-19: "reduce duration of spokes and increase damage" - the same burn a flare in half the time); was [2.4 .. 6.4], VI 10 */ /* x2, longer flares (owner, 2026-10-19: "make the flares last longer"), with CATCHING FIRE and faster, harder ticks (countermx 61-69 spread @6pts 4 seeds: 9/69/8/37 swarm/fast/shield/armor); was [1.2, 1.4, 1.6, 2, 2.6, 3.2] - was [1.5, 2, 2.5, 3, 4, 5] (countermx 61-69 spread @6pts, 2026-10-19, pellets in random directions: swarm/fast/shield/armor 8/35/9/56 -> 13/77/23/58 - a short burn: fast is clear of the flares round its old spot before the next tick, a slow body still burns; with the radius, the ball speed or the tick period fast stayed 33-47) */; // Blk Magic: a flare burns this long (VI 10 = EFFECT_MAX_S)
-const IFR_TICK_S = [0.54, 0.38, 0.37, 0.36, 0.3, 0.27] /* stop I faster (axis balance 2026-10-19: the 6-point spread build sits on Hellfire I - shields 35% -> 16% leaked); was [0.54, 0.48, 0.43, 0.36, 0.3, 0.27] - x0.6 with the longer flares (2026-10-19); was [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] - was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Blk Magic: s between burn ticks
+const IFR_TICK_S = [0.25, 0.25, 0.25, 0.24, 0.23, 0.22] /* untaken 0.54 -> 0.25 (solo.mjs 2026-10-20, after the halved meteor and charge: a lone L1 leaked the wave-4 swarm, 6 lives, whatever the damage - a flare needs two ticks to burn) */ /* stop I faster (axis balance 2026-10-19: the 6-point spread build sits on Hellfire I - shields 35% -> 16% leaked); was [0.54, 0.48, 0.43, 0.36, 0.3, 0.27] - x0.6 with the longer flares (2026-10-19); was [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] - was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Blk Magic: s between burn ticks
 const IFR_TICK_K = [0.41, 1.5, 1.55, 1.6, 1.8, 2.27] /* x0.5 with the flares x3 (sweep 2026-10-19: more ticks to pop shields, less each - armor shrugs them off) */ /* x2 with the flares halved (2026-10-19); was [0.41, 0.6, 0.91, 1.36, 1.52, 2.27], VI 3.78 */ /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
 const IFR_PELLETS = [4, 5, 6, 7, 8, 10] /* HALVED with the flares x2 (owner, 2026-10-20: "reduce flare counts, increase flare sizes" - a pellet lights one flare); was [8, 9, 11, 13, 16, 20] VI 24 */ /* HALVED (owner, 2026-10-20: "still too many pellets, halve the counts" - they pass through and re-hit now); was [10, 12, 15, 20, 28, 38] */ /* DOUBLED, each flare a random size (owner, 2026-10-19: "double the number of pellets (and hellfires) but add size jitter"; were 5 .. 21, VI 24) */ /* base 5 (owner, 2026-10-19: "start off by shooting 5 pellets"); was [5 .. 10] VI 12 (countermx 61-69 spread @6pts, 2026-10-19, when pellets flew at what stood in the blast: a pellet pops a shield and lights a flare; with the tick at x3 the period, x5 the hit: 20/69/39/51 -> 17/58/19/35) */; // Firaga: pellets a burst
 const IFR_PELLET_DK = [0.5, 1.5, 1.6, 1.7, 2, 2.5]; // Blk Magic: a pellet's pass-through hit, x TOWERS.ifr.dmg (owner, 2026-10-20: "pellets should also deal damage en route, scaled by blk magic"; VI 4)
-const IFR_GIANT_K = 4; // Mega Firaga (Blk Magic VI, owner 2026-10-20): ONE giant flare at the impact spot, its size and hit x a VI flare's
+const IFR_GIANT_K = 4, IFR_GIANT_S = 4 / 3, IFR_GIANT_X = 1 / 9; // Mega Firaga (Blk Magic VI, owner 2026-10-20): ONE giant flare at the impact spot - its hit x GIANT_K a VI flare's, its size x GIANT_S the largest ("way too big, 1/3 of that size"; was x4), its x GIANT_X as long as a flare's ("shrink the x to 1/3 of 1/3")
 const IFR_PELLET_V = 100 /* was 170 (owner, 2026-10-20: "slow down the pellets so that they have a chance to hit the same enemy more than once") - was 300 (owner, 2026-10-19: "make the hellfire pellets more visible and slower") */, IFR_PELLET_HIT = 4; // a pellet's speed and hit pad; a pellet hit x the blast hit (x Firaga's blastK: the passthrough hit grows with the tier)
 const IFR_PELLET_R = 150; // u: the pellets' reach before IFR_PELLET_REACH - fixed, the old blast radius (2026-10-20: the fire's size is Hellfire's, the pellets Blk Magic's)
 const IFR_PELLET_SPREAD_S = 0.5; // s: a burst's pellets leave at random times over this (owner, 2026-10-20: "randomize the pellet launch times over 0.5s")
@@ -74,14 +74,23 @@ function ifrInit(t) {
   t.ifrInit0 = true; t.ifrCharge = 0; t.ifrBalls = []; t.ifrFires = []; t.ifrPellets = []; t.ifrFlares = [];
 }
 function ifrCharge(t, st, dt) { t.ifrCharge = Math.min(1, t.ifrCharge + dt / Math.max(0.01, st.chargeS)); }
-// "Always launch when meteor available" (owner): full + an enemy in range (the tower's targeting) = it flies, aimed at where that enemy
-// stands NOW, never led (the fast weakness); its size is fixed at launch
+// "Always launch when meteor available" (owner): full + an enemy in range (the tower's targeting) = it flies, LED (owner, 2026-10-20:
+// "fire the meteor with lead"; never led before - it was the fast weakness): aimed where the enemy will be when it lands; its size is fixed at launch
+// where e will be when a meteor from c at speed v reaches it: its spot on its lane IFR_LEAD_N flight times on (its current offset from the lane kept)
+const IFR_LEAD_N = 3;
+function ifrLead(c, e, v) {
+  const sp = typeof effSpeed === "function" && !(e.stunT > 0) ? effSpeed(e) : 0;
+  if (!(sp > 0) || e.pi == null) return { x: e.x, y: e.y };
+  const p0 = pathAt(e.pi, e.s, e.ang), ox = e.x - p0.x, oy = e.y - p0.y; let a = { x: e.x, y: e.y };
+  for (let i = 0; i < IFR_LEAD_N; i++) { const T = Math.hypot(a.x - c.x, a.y - c.y) / v, q = pathAt(e.pi, e.s + sp * T, e.ang); a = { x: q.x + ox, y: q.y + oy }; }
+  return a;
+}
 function ifrLaunch(t, st) {
   if (t.ifrCharge < 1) return;
   const e = pickTargets(t, st, 1)[0];
   if (!e) return;
-  const c = ifrCentre(t), d = Math.hypot(e.x - c.x, e.y - c.y) || 1;
-  t.ifrBalls.push({ x: c.x, y: c.y, ax: e.x, ay: e.y, vx: (e.x - c.x) / d * st.ballV, vy: (e.y - c.y) / d * st.ballV, left: d / st.ballV, r: st.ballR, hit: [] }); /* hit: enemy ids struck en route */
+  const c = ifrCentre(t), a = ifrLead(c, e, st.ballV), d = Math.hypot(a.x - c.x, a.y - c.y) || 1;
+  t.ifrBalls.push({ x: c.x, y: c.y, ax: a.x, ay: a.y, vx: (a.x - c.x) / d * st.ballV, vy: (a.y - c.y) / d * st.ballV, left: d / st.ballV, r: st.ballR, hit: [] }); /* hit: enemy ids struck en route */
   t.ifrCharge = 0; t.shots = (t.shots || 0) + 1; sfx("ifr");
 }
 function stepIfr(t, dt) {
@@ -115,7 +124,7 @@ function stepIfrBalls(t, st, dt) {
 function ifrImpact(t, st, b) {
   (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, hold: st.fireLinger, fade: IFR_FIRE_FADE, tick: 0, hit: st.dmg * st.fireK, left: 1 });
   ifrPelletBurst(t, st, b.ax, b.ay);
-  if (st.giant) ifrFlare(t, st, b.ax, b.ay, IFR_FLARE_K * IFR_GIANT_K, true); /* MEGA FIRAGA: one giant flare where it struck */
+  if (st.giant) ifrFlare(t, st, b.ax, b.ay, IFR_FLARE_K * IFR_GIANT_S, true); /* MEGA FIRAGA: one giant flare where it struck */
   sfx("ifrblast");
 }
 // the pellets out in random directions, enemies there or not (owner, 2026-10-19: "shooting 5 pellets in random directions that each make asterisks")
@@ -184,7 +193,7 @@ function ifrFlareSizes() { return [ifrFlareS()]; } // one pellet's flare (a list
 function ifrPelletFlares(st) { const out = []; for (let i = 0; i < st.pellets; i++) out.push(ifrFlareSizes()); return out; } // a burst's pellets'
 function ifrFlare(t, st, x, y, s = ifrFlareS(), giant = false) { // giant: Mega Firaga's (size s = IFR_GIANT_K x the max), hitting IFR_GIANT_K x
   if (t.ifrFlares.length >= IFR_FLARE_MAX) { const k = t.ifrFlares.findIndex(f => !f.giant); t.ifrFlares.splice(k < 0 ? 0 : k, 1); } /* the oldest goes - never a giant first */
-  t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, hit: st.dmg * st.flareK * (giant ? IFR_GIANT_K : 1), giant, edges: false }); /* hit: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
+  t.ifrFlares.push({ x, y, L: st.beamL * s, W: st.beamW * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: st.burnS, left: st.burnS, tick: 0, hit: st.dmg * st.flareK * (giant ? IFR_GIANT_K : 1), giant, xk: IFR_X_K * (giant ? IFR_GIANT_X : 1), edges: false }); /* hit: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
 }
 // the FLARE: IFR_BEAMS beams from the burst point, a + and a small x (world angles: 3D is a view), burning for
 // `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge (Hellfire VI: the longest beams;
@@ -204,7 +213,7 @@ function ifrBeamEnd(x, y, a, len, edges) {
   }
   return [x, y, x + c * len, y + s * len];
 }
-function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 4, k % 2 ? f.L * IFR_X_K : f.L, f.edges)); return out; } // (even k: the +, odd: the x)
+function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 4, k % 2 ? f.L * (f.xk ?? IFR_X_K) : f.L, f.edges)); return out; } // (even k: the +, odd: the x)
 // a flare's tick: every live on-screen enemy whose body touches ANY of its beams takes one quiet tick (one hit a flare a tick, on
 // two beams too). Exact, not sampled: a cheap radius reject (a flare that cannot reach the enemy), then point-to-segment on its
 // beams. 40 Hellfire-VI flares x 200 enemies x 6 beams is ~50k dot products, under the smoke's budget (2026-10-19; the grid
@@ -245,11 +254,11 @@ function stepIfrFlares(t, st, dt) {
   keepLive(t.ifrFlares);
 }
 // ---------- sizes the logic shares with the look (aspira-ifrit-draw.js): the ember, the ring's glow ----------
-/* a pellet is an EMBER (owner, 2026-10-19: "more visible"): a faint halo, an orange disc, a white core, and a tail of IFR_TAIL_N
+/* a pellet is an EMBER (owner, 2026-10-19: "more visible"): a faint halo, an orange disc, a yellow core, and a tail of IFR_TAIL_N
    segments behind it at falling alpha. Sized for a phone (the board ~1000 u across 430 px) */
 const IFR_EMBER_HALO = 9, IFR_EMBER_R = 4, IFR_EMBER_CORE = 1.5, IFR_TAIL_N = 3, IFR_TAIL_S = 0.05;
 /* the RING is a glow, [width u, alpha] wide faint / mid / bright core, plus a faint disc inside the front */
-const IFR_RING_GLOW = [[22, 0.22, "tifr"], [11, 0.45, "tifr"], [4, 1, "tifr"], [1.5, 0.95, "white"]], IFR_RING_DISC = 0.14, IFR_RING_THIN = 0.5; /* every layer's WIDTH x this (owner, 2026-10-20: "keep opacity, reduce thickness"; for a moment it was the alpha) */ /* + a WHITE core (owner, 2026-10-19) */ /* brighter, wider (owner, 2026-10-19: "more visible"; were [16, 0.14], [8, 0.3], [3, 0.9], disc 0.08) */
+const IFR_RING_GLOW = [[22, 0.22, "glow"], [11, 0.45, "tifr"], [4, 1, "orange"], [1.5, 0.95, "yellow"]] /* FIRE COLOURS, no white (owner, 2026-10-20: a flame photo, "no white"): ember red-orange out, IFR orange, marigold, pale yellow core; was tifr x3 + white */, IFR_RING_DISC = 0.14, IFR_RING_THIN = 0.5; /* every layer's WIDTH x this (owner, 2026-10-20: "keep opacity, reduce thickness"; for a moment it was the alpha) */ /* + a WHITE core (owner, 2026-10-19) */ /* brighter, wider (owner, 2026-10-19: "more visible"; were [16, 0.14], [8, 0.3], [3, 0.9], disc 0.08) */
 // an ember's SIZE x IFR_EMBER_*: a pellet's, its flare's mean size over the average flare's (owner, 2026-10-20: "pellet size should be
 // relative the size of the flare that it will produce"); a ball's, the AREA of all its pellets (owner: "meteor should use same visuals
 // as pellet, except have the same area as total pellets") - the root of the summed squares
