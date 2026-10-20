@@ -59,7 +59,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("countermx.mjs")
   const jobs = [];
   for (const [from, to, points] of WINDOWS) for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) for (const type of TYPES) for (let seed = 1; seed <= SEEDS; seed++) for (const mates of TRIO ? TRIOS(kind) : [null]) jobs.push({ kind, build, type, from, to, seed, points, mates });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true });
-  console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at V + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds: % LEAKED`);
+  console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at ${["-", "I", "II", "III", "IV", "V", "VI"][snapStop(Math.min(POINTS, STOPS[STOPS.length - 1]))]} + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds: % LEAKED`);
   for (const [from, to, points] of WINDOWS) {
     console.log(`\nwaves ${from}-${to} (${points} pts)`.padEnd(26) + TYPES.map(t => t.padStart(8)).join(""));
     for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) {

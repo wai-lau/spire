@@ -10,6 +10,11 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
+  { v: "6.4", day: "Oct 20", bu: [
+    "Ifrit: Mega Firaga's blast hits a quarter harder.",
+  ], ne: [], u: [
+    "Build cards: marks re-checked with the new Ifrit.",
+  ] },
   { v: "6.3", day: "Oct 19", bu: [
     "Arc: Voltage - a kill passes its leftover damage on to the nearest enemy, more hops at each purchase.",
     "Arc: Capacitance - chain reactions from its first purchase: an enemy a discharge kills goes off too, and the bursts reach further each purchase.",
