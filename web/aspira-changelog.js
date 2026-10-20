@@ -24,6 +24,7 @@ const CHANGELOG = [
     "Ifrit: fewer pellets at Blk Magic II-VI (12, 15, 20, 28, 38 - were 18, 24, 30, 36, 42); a pellet no longer bursts into a small ring of its own.",
   ], u: [
     "Ifrit: the Firaga axis is now Blk Magic, its purchases Fire, Fira, Firaga, Mega Firaga.",
+    "Tower cards: no Shields row where a hit takes the usual one charge (Freeze, Acid, Ifrit; Sol only when a beam takes more).",
     "Desktop: the mouse wheel zooms the board in and out; it starts zoomed out a little.", "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
     "Changes: Ifrit has its own heading.",
     "Enemies: off screen they are drawn at 20%, fading in over a second as they come on screen.",
