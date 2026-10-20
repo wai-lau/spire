@@ -18,12 +18,14 @@ const CHANGELOG = [
     "Carrier: every Carrier's tether slows a little; Tether runs on to a second enemy from its first purchase; interceptors fly faster and open fire sooner.",
     "Ifrit: pellets pass through every enemy in their way (harder with each Blk Magic purchase), and fly on to land at a random distance, most of them near; they fly slower, hitting an enemy again every 0.2 s they stay on it, and leave the blast at random times over half a second.",
     "Ifrit: Mega Firaga (the Blk Magic capstone) lands each pellet as three flares, a little apart.",
+    "Ifrit: flares twice the size.",
   ], ne: [
     "Sol: fires 25% slower, each shot a third harder (the same damage a second); its refraction cone is much narrower.",
     "Carrier: fewer, harder volleys and bolts - fewer shield charges popped.",
-    "Ifrit: fewer pellets at Blk Magic II-VI (12, 15, 20, 28, 38 - were 18, 24, 30, 36, 42); a pellet no longer bursts into a small ring of its own.",
+    "Ifrit: half the pellets (5, 6, 8, 10, 14, 19 - were 10, 18, 24, 30, 36, 42); a pellet no longer bursts into a small ring of its own.",
   ], u: [
     "Ifrit: the Firaga axis is now Blk Magic, its purchases Fire, Fira, Firaga, Mega Firaga.",
+    "Ifrit: the blast ring opens the moment the fireball lands, and is fainter.",
     "Tower cards: no Shields row where a hit takes the usual one charge (Freeze, Acid, Ifrit; Sol only when a beam takes more).",
     "Desktop: the mouse wheel zooms the board in and out; it starts zoomed out a little.", "Build cards: marks updated - Arc one check vs fast; Carrier a check vs swarm and an x vs fast.",
     "Changes: Ifrit has its own heading.",

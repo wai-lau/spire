@@ -212,13 +212,13 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it; a plain ring 
     const d0 = ps.map(p => Math.hypot(p.x - cx, p.y - cy)); stepIfrPellets(t, st, 1 / 30);
     out.outward = ps.every((p, i) => Math.hypot(p.x - cx, p.y - cy) > d0[i]); out.flying = t.ifrPellets.length;
     for (let i = 0; i < 120 /* (IFR_PELLET_V 100 since 2026-10-20) */ && t.ifrPellets.length; i++) stepIfrPellets(t, st, 1 / 30);
-    out.left = t.ifrPellets.length; out.flares = t.ifrFlares.length; out.ringAfter = t.ifrRings.length; /* THE RING COMES LAST (owner, 2026-10-19) */
+    out.left = t.ifrPellets.length; out.flares = t.ifrFlares.length; 
     out.reach = Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - cx, f.y - cy))); out.maxReach = st.blastR * IFR_PELLET_REACH + IFR_PELLET_V / 30;
     return out;
   })()`);
   if (r.lit !== 0 || r.on !== 1) return "the enemy on the 90-degree beam lost " + r.lit + " charges at its first tick (expected 0: it only catches fire) and " + r.on + " after two (expected exactly 1)";
   if (r.off !== 0) return "the enemy off every beam lost " + r.off + " charges";
-  if (r.ringEarly !== 0 || r.ringAfter !== 1) return "a ball's ring opened " + (r.ringEarly ? "with its pellets still flying" : "never, or twice (" + r.ringAfter + ")") + " - it waits for the last flare";
+  if (r.ringEarly !== 1) return "a ball's burst opened " + r.ringEarly + " rings (expected 1, at once: the ring opens on landing since 2026-10-20)";
   if (r.ring !== 1 || r.ringsLeft) return "a plain ring took " + r.ring + " charges (expected exactly 1), rings left " + r.ringsLeft;
   if (r.fired !== r.want) return "an empty burst fired " + r.fired + " pellets (expected " + r.want + ")";
   if (r.headings < 2) return "every pellet flew on the same heading";
