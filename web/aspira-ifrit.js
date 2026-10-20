@@ -31,8 +31,8 @@ const IFR_TICK_K = [0.41, 1.5, 1.55, 1.6, 1.8, 2.27] /* x0.5 with the flares x3 
 const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights THREE flares, each up to this far off its spot (owner, 2026-10-20)
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
 // more likely closer to center"; "when hellfire levels up, increase flare count to preserve flare density"): IFR_FIRE_FLARES in a fire of radius
-// IFR_FIRE_FLARE_R0, as many more as its area is bigger, IFR_FIRE_FLARE_GAP s apart, at R x u^IFR_LAND_POW from its centre
-const IFR_FIRE_FLARES = 6, IFR_FIRE_FLARE_R0 = 43.2 /* the untaken fire: 16 x the untaken meteor */, IFR_FIRE_FLARE_GAP = 0.1;
+// IFR_FIRE_FLARE_R0, as many more as its area is bigger, at r x u^IFR_LAND_POW from its centre (r: the fire's radius as each is lit)
+const IFR_FIRE_FLARES = 6, IFR_FIRE_FLARE_R0 = 43.2 /* the untaken fire: 16 x the untaken meteor */, IFR_FIRE_FLARE_T = 1, IFR_FIRE_FLARE_SD = 1 /* owner, 2026-10-20: "spread 1s" (was 0.3) */, IFR_FIRE_FLARE_MAX_S = 4; // each flare's time: a bell round FLARE_T s after the impact, sd FLARE_SD, a draw under 0 drawn again, at most FLARE_MAX_S (owner, 2026-10-20: "bell curve the flare landing around the first second of the fire (allow multiple to be spawned closer together than 0.1s)"; was one each 0.1 s once grown)
 const IFR_FLARE_MAX = 240; // live flares a tower at most: the oldest goes (perf; 120 before Backdraft's triple flare, 60 before the pellets doubled)
 // a flare's SIZE (owner, 2026-10-19): a normal draw round half the max (mean IFR_FLARE_MEAN, sd IFR_FLARE_SD, kept in [IFR_FLARE_MIN, 1])
 // times IFR_FLARE_K x the Flare tier's length and width; IFR_LAND_POW > 1 puts a fire's flares nearer its centre more often (u^POW, u uniform)
@@ -146,8 +146,9 @@ function ifrHome(b, all, dt) {
 // THE FAN: st.fan meteors round 360 degrees from (x, y), evenly (a random start), each released after a bell-curve delay
 function ifrFan(born, st, x, y, skip) {
   const n = st.fan, a0 = Math.random() * 2 * Math.PI;
-  for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, Math.min(IFR_FAN_MAX_S, Math.max(0, IFR_FAN_T + IFR_FAN_SD * ifrNormal()))]);
+  for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, ifrFanDelay()]);
 }
+const ifrFanDelay = () => Math.min(IFR_FAN_MAX_S, Math.max(0, IFR_FAN_T + IFR_FAN_SD * ifrNormal())); // a fan meteor's release: the bell
 // a FAN meteor lands (a hit, or its dead target's spot): a flare there - THREE within IFR_TRIPLE_JIT at the Flare capstone
 function ifrLandFlares(t, st, x, y) {
   if (!st.triple) { ifrFlare(t, st, x, y); return; }
@@ -178,7 +179,8 @@ function stepIfrBalls(t, st, dt) {
     } else if (atCorpse) { /* at its dead target's spot: the launched one bursts there (fire, the fan); a fan meteor just goes */
       b.left = 0;
       if (!b.gen) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } else ifrLandFlares(t, st, b.x, b.y);
-    } else if (!ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst */
+    } else if (!b.gen && b.left <= 0) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } /* the launched one never goes silently: out of time, it bursts where it is */
+    else if ((b.gen || (b.lock == null && b.cx == null)) && !ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst - never the launched one while it hunts (its seen target may sit where the camera does not reach; owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening") */
   }
   keepLive(t.ifrBalls);
   for (const [x, y, a, id, gen, wait] of born) ifrMeteor(t, st, x, y, a, gen, id, wait);
@@ -197,10 +199,12 @@ function stepIfrFires(t, st, dt) {
   if (!t.ifrFires || !t.ifrFires.length) return;
   for (const f of t.ifrFires) {
     f.age = (f.age || 0) + dt; /* (the look: the inner glow's rise) */
-    if (f.r < f.R) { f.r = Math.min(f.R, f.r + f.v * dt); if (f.r >= f.R) { f.fl = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.R / IFR_FIRE_FLARE_R0) ** 2)); f.flT = 0; } }
-    if (f.fl > 0) { f.flT -= dt; while (f.flT <= 0 && f.fl > 0) { const a = Math.random() * 2 * Math.PI, d = f.R * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d); f.fl--; f.flT += IFR_FIRE_FLARE_GAP; } }
-    if (f.r < f.R) { /* growing */ }
-    else if (f.hold > 0 || f.fl > 0) f.hold -= dt; /* full: it lingers - and stays until its last flare is lit */
+    if (!f.flq) { const n = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.R / IFR_FIRE_FLARE_R0) ** 2)); f.flq = []; f.age0 = 0; /* its flares' times, a bell round IFR_FIRE_FLARE_T */
+      for (let i = 0; i < n; i++) { let v; do v = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * ifrNormal(); while (v < 0); f.flq.push(Math.min(IFR_FIRE_FLARE_MAX_S, v)); } f.flq.sort((a, b) => b - a); }
+    f.age0 += dt;
+    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d); } /* inside the fire as it is then */
+    if (f.r < f.R) f.r = Math.min(f.R, f.r + f.v * dt);
+    else if (f.hold > 0 || f.flq.length) f.hold -= dt; /* full: it lingers - and stays until its last flare is lit */
     else { f.fade -= dt; if (f.fade <= 0) f.left = 0; continue; }
     f.tick += dt;
     if (f.tick < IFR_FIRE_TICK_S) continue;
