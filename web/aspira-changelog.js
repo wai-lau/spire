@@ -10,6 +10,16 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
+  { v: "6.6", day: "Oct 20", bu: [
+    "Ifrit: Meteor's hits grow far harder at its last purchases; its meteors hunt from much further off.",
+    "Ifrit: Hellfire's fire flares hit harder up the tree, over a wider fire at the top.",
+    "Ifrit: Flare's flares burn longer at the top.",
+    "Ifrit: charges a little faster with no Meteor bought, and reaches a little further.",
+  ], ne: [
+    "Ifrit: fewer meteors in the ring at Meteor's top purchases.",
+  ], u: [
+    "Build cards: Ifrit's marks re-checked.",
+  ] },
   { v: "6.5", day: "Oct 20", bu: [
     "Armor: its blocks spread out, twice as far between units; fast pairs three times as far apart; a shield V three times as wide and deep.",
     "Ifrit: Meteor - one meteor at a time, charged at the tower's centre and launched the moment it is ready; Meteor makes it charge faster, fly faster, grow bigger and hit harder on its way (Impact: a huge meteor).",
