@@ -221,16 +221,28 @@ function ifrCatch(was, now, id) { now[id] = 1; return !IFR_CATCH || !!was[id]; }
 // that grows at v to R from the meteor's size and lights its flares inside it as it grows (the UNTAKEN Flare's - "scaled independently from
 // flare level ... level 0 flares, but much more numerous"), each at a time from a bell round IFR_FIRE_FLARE_T; it goes with its last flare
 // (and the Flare capstone's big one, dead centre)
+// THE RING HITS (owner, 2026-10-21: "make the hellfire ring do damage (lets say 3x hellfire flare hit)"): as the circle grows, each
+// enemy it reaches takes ONE hit of IFR_RING_HIT_K x a fire flare's (ifrFlare's hf hit), once a fire (f.hitIds - plain data)
+const IFR_RING_HIT_K = 3;
+function ifrRingHit(t, st, f) {
+  const amt = IFR_RING_HIT_K * st.dmg * IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K * (f.hk ?? 1), had = (f.hitIds ||= {});
+  for (const e of G.enemies) {
+    if (e.dead || !e.seen || had[e.id]) continue;
+    const r = f.r + ENEMIES[e.type].size * (e.sizeMul || 1), dx = e.x - f.x, dy = e.y - f.y;
+    if (dx * dx + dy * dy > r * r) continue;
+    had[e.id] = 1; damage(e, amt, t); onHit(e, t, st, amt);
+  }
+}
 function stepIfrFires(t, st, dt) {
   if (!t.ifrFires || !t.ifrFires.length) return;
   for (const f of t.ifrFires) {
     if (!f.flq) { const n = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.dens || 1) * (f.R / IFR_FIRE_FLARE_R0) ** 2)); f.flq = []; f.age0 = 0; /* its flares' times, a bell round IFR_FIRE_FLARE_T */
       const w = f.win ?? IFR_FIRE_WINDOW_S; for (let i = 0; i < n; i++) f.flq.push(Math.min(w, Math.max(0, w / 2 + w / 4 * ifrNormal()))); f.flq.sort((a, b) => b - a); } /* ALL within its meteor's flare's life (f.win), a bell round its middle */
     f.age0 += dt;
-    if (f.r < f.R) f.r = Math.min(f.R, f.r + f.v * dt);
-    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true, f.hk ?? 1);
+    if (f.r < f.R) { f.r = Math.min(f.R, f.r + f.v * dt); ifrRingHit(t, st, f); }
+    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; const fl = ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true, f.hk ?? 1); f.until = Math.max(f.until || 0, f.age0 + ((fl && fl.life) || 0)); /* (fl: a stand-in may return nothing) */
       if (!f.flq.length && f.big) ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* inside the fire as it is then; the last one lit, the Flare capstone's BIG flare dead centre */
-    if (!f.flq.length && f.r >= f.R) f.left = 0; /* its last flare lit: it goes */
+    if (!f.flq.length && f.r >= f.R && f.age0 >= (f.until || 0)) f.left = 0; /* its last flare OUT: it goes (owner, 2026-10-21: "hellfire ring should remain on screen until all hellfire flares have gone out") */
   }
   keepLive(t.ifrFires);
 }
@@ -241,6 +253,7 @@ function ifrFlare(t, st, x, y, s = ifrFlareS(), big = false, hf = false, hk = 1)
   const f = { x, y, L: L * s, W: W * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life, left: life, tick: hf ? Math.random() * IFR_HF_TICK : 0, tickS: hf ? IFR_HF_TICK : st.tickS, cont: hf,
     hit: st.dmg * (hf ? IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K * hk : st.flareK) * (big ? IFR_BIG_K : 1), xk: IFR_X_K * (big ? IFR_BIG_X : 1), big, hf, edges: false }; t.ifrFlares.push(f); /* hit, tick: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
   if (hf) ifrTickFlare(t, st, f); /* the fire's flare strikes ONCE, as it appears */
+  return f;
 }
 // the FLARE: IFR_BEAMS beams from the burst point, a + and a small x (world angles: 3D is a view), burning for
 // `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge (Hellfire VI: the longest beams;

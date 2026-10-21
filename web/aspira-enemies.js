@@ -95,7 +95,9 @@ function drawEnemy(e, solid) {
   if (e.charged || e.charge) { // ARC's Static charge: a border in ARC's colour just outside the outline (owner) - ONE PER CHARGE held (Capacitance, 2026-10-08)
     ctx.strokeStyle = COL[TOWERS.arc.color]; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.6; // ARC's colour, whatever it is - thin and faint (owner, 2026-10-08: "reduce intensity")
     const n = e.charge ? Math.min(5, e.charge.list.length) : 1;
-    for (let k = 0; k < n; k++) { poly(e.x, e.y, size + 4 + 3 * k, d.sides, e.rot, false); ctx.stroke(); }
+    // ALWAYS an UPWARD TRIANGLE (owner, 2026-10-21: "arc capacitance outline should always be an upward triangle"; was the enemy's own
+    // shape, turning with it), its INNER radius where the old border sat - so the body stays inside: the corners at twice that
+    for (let k = 0; k < n; k++) { poly(e.x, e.y, 2 * (size + 4 + 3 * k), 3, -Math.PI / 2, false); ctx.stroke(); }
     ctx.globalAlpha = 1;
   }
   if (e.stunT > 0) {

@@ -31,7 +31,7 @@ function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1) { // fill: false, t
 // the meteor without its black fill at the fire's radius, as it grows - the look only (stepIfrFires still draws and burns nothing)
 const IFR_FIRE_A = 0.2;
 function drawIfrFires(t, low) {
-  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, IFR_FIRE_A);
+  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2); // grown, it stays at half till its flares are out (owner, 2026-10-21)
 }
 function drawIfrBalls(t, low) {
   for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_ARM_HIT_U) : 1); /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */

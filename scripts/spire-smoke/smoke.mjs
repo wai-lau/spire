@@ -371,7 +371,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   if (r.chargeS !== 1.55 || r.dmg !== 120) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.55 and 120)";
   return "";
 });
-check("IFR: the fire (Hellfire, its circle drawn at 20% - it burns nothing itself) opens at the meteor's size, grows to its max, lights its flares and goes", () => {
+check("IFR: the fire (Hellfire, its circle drawn at 20%, then 10%) opens at the meteor's size, its ring hits each enemy once, grows to its max, lights its flares and goes when they are out", () => {
   const r = run(`(() => {
     const fresh = h => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < h; k++) upgradeTower(t, "hellfire", true); ifrInit(t); return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; return e; };
@@ -383,16 +383,16 @@ check("IFR: the fire (Hellfire, its circle drawn at 20% - it burns nothing itsel
     const grow = (st.fireR - r0) / st.fireV; let tm = 0; while (f.r < f.R && tm < 10) { stepIfrFires(t, st, 1 / 30); tm += 1 / 30; }
     out.R6 = f.R; out.grow = tm; out.growWant = grow;
     let tl = 0, lastLit = 0; while (t.ifrFires.length && tl < 60) { const q0 = f.flq ? f.flq.length : -1; stepIfrFires(t, st, 1 / 30); tl += 1 / 30; if (f.flq && f.flq.length !== q0) lastLit = tl; }
-    out.goneAfter = tl - lastLit; out.drawn = typeof drawIfrFires === "function" && IFR_FIRE_A === 0.2;
+    out.goneAfter = tl - lastLit; out.until = f.until; out.goneAt = tm + tl; /* (f.age0 counts from impact: the growth, then this loop) */ out.drawn = typeof drawIfrFires === "function" && IFR_FIRE_A === 0.2;
     ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); try { G.towers = G.towers.filter(x => x !== t); for (let i = 0; i < 5; i++) step(1 / 30); out.sold = true; } catch (e) { out.sold = String(e); }
     return out;
   })()`);
   if (r.r0 !== r.ballR || Math.abs(r.R0 - 16 * r.ballR) > 1e-9) return "Hellfire 0: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + ", then 16x it)";
-  if (r.fireHits) return "the fire itself hit an enemy " + r.fireHits + " times (owner, 2026-10-20: the ring is gone - only its flares burn)";
+  if (r.fireHits !== 1) return "the fire's ring hit an enemy " + r.fireHits + " times (expected once: owner, 2026-10-21, \"3x hellfire flare hit\")";
   if (!r.drawn) return "the fire's circle is not drawn at 20% (drawIfrFires, IFR_FIRE_A; owner 2026-10-21)";
   if (r.R6 !== 180) return "Hellfire VI fire grows to " + r.R6 + " (expected 180)";
   if (Math.abs(r.grow - r.growWant) > 1 / 30 + 1e-6) return "the fire took " + r.grow.toFixed(3) + " s to grow (expected " + r.growWant.toFixed(3) + ")";
-  if (!(r.goneAfter < 0.1)) return "the fire stayed " + r.goneAfter.toFixed(2) + " s after its last flare (it goes with it)";
+  if (!(r.until >= 0) || Math.abs(r.goneAt - r.until) > 1 / 30 + 1e-6 || r.goneAfter < 0.1) return "the fire went at " + r.goneAt.toFixed(2) + " s, its last flare out at " + r.until + " (owner, 2026-10-21: it stays till its flares are out)";
   if (r.sold !== true) return "selling the tower with a live fire threw: " + r.sold;
   return "";
 });
