@@ -161,6 +161,17 @@ function drawTower(t, ghost) {
   if (hasSkills(t)) boardChart(t, x, y, ghost ? 0.55 : 1, c0); // ALWAYS the triangle, never the label (owner; was from the first point)
   else text(towerAb(t), x, y + 1, TOWER_LABEL_PX, b.color, false, true);
   ctx.restore(); ctx.globalAlpha = 1;
+  if (!ghost) drawPickOutline(t, x, y, b.color);
+}
+// THE CLICKABLE AREA, DOTTED (owner, 2026-10-21: "for towers, add a dotted outline around the top layer's solid outline in order to
+// indicate the clickable area"): exactly what a press hits (aspira-pick.js) - in 3D the hex grown by PICK_GROW (towerPts), in 2D
+// towerPick's circle
+const PICK_DASH = [3, 4], PICK_A = 0.45;
+function drawPickOutline(t, x, y, color) {
+  ctx.save(); ctx.strokeStyle = COL[color]; ctx.globalAlpha = PICK_A; ctx.lineWidth = 1.2; ctx.setLineDash(PICK_DASH); ctx.beginPath();
+  if (phoneOn3d()) towerPts({ ...t, x, y }, PICK_GROW).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  else ctx.arc(x, y, CELL_S * PICK_GROW, 0, 6.283);
+  ctx.closePath(); ctx.stroke(); ctx.restore();
 }
 // one sprite per kind + level + colours + zoom + the hex's turn (Horizon orbits
 // the slots), drawn exactly as the tower used to be drawn each frame
