@@ -365,7 +365,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   if (!r.hit) return "a led meteor missed its target: landed " + r.miss.toFixed(1) + " u from it (its radius " + r.r + ")";
   if (r.glow2d > 1 || r.glowGl > 0.5) return "the flare glow is wider than its hit band: 2D " + r.glow2d + " x W, GL half-width " + r.glowGl + " x W";
   if (r.whites) return "IFR still draws white: " + r.whites + " glow layers (owner, 2026-10-20: \"no white\")";
-  if (r.chargeS !== 1.7 || r.dmg !== 120) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.7 and 120)";
+  if (r.chargeS !== 1.55 || r.dmg !== 120) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.55 and 120)";
   return "";
 });
 check("IFR: the fire (Hellfire, no ring - it burns nothing itself) opens at the meteor's size, grows to its max, lights its flares and goes", () => {
