@@ -24,7 +24,7 @@ const CHANGELOG = [
     "Ifrit: the launched meteor no longer vanishes on the way to a far target.",
     "Ifrit: Hellfire's fire lingers half as long.",
     "Ifrit: flares shine much brighter, most of all with no Flare bought.",
-    "Ifrit: the ring of meteors flies at a quarter of the launched one's speed, straight for its first 50 and harmless - fading in - for its first 100; they are a quarter the size, with a yellow core, and burst on their own somewhere round 400 out.",
+    "Ifrit: the ring of meteors flies at a quarter of the launched one's speed, straight for its first 50 and harmless - fading in - for its first 100; they are a quarter the size, with a yellow core, and burst on their own round 200 out (150 to 300).",
     "Ifrit: smaller flares - at Flare's capstone no bigger than they were at its third purchase, its first flares twice as big as that would make them, the levels between closer together; the capstone's big flare keeps its size.",
     "Ifrit: Blk Magic is now Flare - bigger, hotter, longer flares; its capstone lights three where each meteor lands, and a big flare dead centre of each fire once its flares are lit. The pellets and the giant flare are gone.",
   ], ne: [
