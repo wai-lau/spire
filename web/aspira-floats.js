@@ -48,8 +48,18 @@ function dmgNumber(e, label, size, color, src, grey = 0) {
 // the window ends, and windows keep running while hits do. (Replaced the 2026-10-13 slow-motion tick split: at any speed a lone hit
 // shows whole, at once, and a stream reads as one number every half second.) A SHIELD POP is the exception: every one shows its own "0" at once (damage(), aspira-game.js).
 const DMG_SUM_S = 0.5, dmgSums = new Map();
+// ONE VOLLEY, ONE NUMBER (owner, 2026-10-21: "for SOL, when multiple beams hit at the same time, show cumulative damage"): inside
+// dmgBatch(fn) every dmgSum is HELD, summed by enemy and colour, and goes out as one dmgSum each when fn is done (SOL's beams: rayHit)
+let dmgHold = null;
+function dmgBatch(fn) {
+  if (dmgHold) return fn();
+  const h = (dmgHold = new Map());
+  try { return fn(); } finally { dmgHold = null; for (const q of h.values()) dmgSum(q.e, q.amt, q.size, q.color, q.src, q.size > 0 ? q.grey / q.size : 0); }
+}
 function dmgSum(e, amt, size, color, src, grey = 0) {
-  const key = e.id + "|" + color, now = performance.now(), b = dmgSums.get(key);
+  const key = e.id + "|" + color;
+  if (dmgHold) { const q = dmgHold.get(key); if (q) { q.amt += amt; q.size += size; q.grey += grey * size; } else dmgHold.set(key, { e, amt, size, color, src: src ? { x: src.x ?? e.x, y: src.y ?? e.y } : null, grey: grey * size }); return; }
+  const now = performance.now(), b = dmgSums.get(key);
   if (b && b.g === G) { b.amt += amt; b.size += size; b.grey += grey * size; return; }
   dmgNumber(e, String(dmgUnits(amt)), size, color, src, grey);
   // the window's source as a COPY: callers reuse one point (HIT_AT) or a throwaway

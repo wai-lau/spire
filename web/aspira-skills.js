@@ -452,11 +452,15 @@ const SOL_CONE_LIFE = 0.6; // game seconds (1x runs 2 game s a real s): long eno
 // its opacity falls with the cube of the time left, and with DISTANCE from the
 // tower - full at the source, gone by SOL_CONE_FADE of its length (owner)
 const SOL_CONE_FADE = 0.8;
-function drawCone(f, k) {
-  if (typeof fxGlCone === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { fxGlCone(f, 0.5 * k * k * k); return; } // 3D: by the GPU (aspira-glctx.js)
+// TWICE AS LONG AND TWICE AS STRONG (owner, 2026-10-21: "double opacity and length of SOL cones (should still fade to 0 by the end)"):
+// every cone drawn SOL_CONE_LEN_K x its length at SOL_CONE_A (was 0.5), still clear by SOL_CONE_FADE of the way out
+const SOL_CONE_LEN_K = 2, SOL_CONE_A = 1;
+function drawCone(f0, k) {
+  const f = { ...f0, len: f0.len * SOL_CONE_LEN_K }, a = Math.min(1, SOL_CONE_A * k * k * k);
+  if (typeof fxGlCone === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { fxGlCone(f, a); return; } // 3D: by the GPU (aspira-glctx.js)
   const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.len * SOL_CONE_FADE);
   g.addColorStop(0, COL[f.color]); g.addColorStop(1, "transparent");
-  ctx.fillStyle = g; ctx.globalAlpha = 0.5 * k * k * k;
+  ctx.fillStyle = g; ctx.globalAlpha = a;
   ctx.beginPath(); ctx.moveTo(f.x, f.y);
   ctx.arc(f.x, f.y, f.len, f.a - f.half, f.a + f.half); ctx.closePath(); ctx.fill();
 }
