@@ -56,11 +56,25 @@ check("play box: portrait is centred, landscape is it turned 90 degrees", () => 
 
 check("lanes: a landscape pick is the portrait pick turned 90 degrees", () => {
   const p = boot({}, { w: 390, h: 844 }), w = boot({}, { w: 1280, h: 800 });
-  for (const [pi, k, n] of [[0, 1, 1], [1, 2, 3], [2, 3, 7], [3, 5, 12], [5, 6, 20], [8, 2, 31]]) {
+  for (const [pi, k, n] of [[0, 1, 2], [1, 2, 3], [2, 3, 7], [3, 5, 12], [5, 6, 20], [8, 2, 31]]) { // (not wave 1 alone: it turns to the build hint - next check)
     const a = p.run(`laneBestTurn(${pi}, ${k}, ${n})`), b = w.run(`laneBestTurn(${pi}, ${k}, ${n})`), per = Math.PI * 2 / k;
     const d = (((b - a - Math.PI / 2) % per) + per) % per;
     if (Math.min(d, per - d) > 1e-6) return `pi ${pi} k ${k} n ${n}: portrait ${a.toFixed(4)}, landscape ${b.toFixed(4)}`;
   }
+});
+
+check("wave 1 rides ONE lane, turned for the longest run past the build hint's slot (owner, 2026-10-21)", () => {
+  for (const view of [{ w: 390, h: 844 }, { w: 1280, h: 800 }]) {
+    const e = boot({}, view);
+    const r = e.run(`(() => { G = newGame(); G.started = true; sendWave(); const c = hintCell(), ks = Object.keys(TOWERS), R = ks.reduce((a, k) => a + TOWERS[k].range, 0) / ks.length * RANGE_BONUS;
+      const angs = [...new Set(G.spawns.map(w => w.ang.toFixed(4)))], pi = G.spawns[0].lanes[G.spawns[0].list[0]];
+      const inLen = a => { let prev = null, len = 0; for (const q of PATHS[pi].pts) { const p = rotAbout(q, a), on = Math.hypot(p.x - c.x, p.y - c.y) <= R; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; } return len; };
+      let best = 0; for (let i = 0; i < LANE_TURNS; i++) best = Math.max(best, inLen(i / LANE_TURNS * Math.PI * 2));
+      return { angs, got: inLen(G.spawns[0].ang), best, hint: [c.x, c.y] }; })()`);
+    if (r.angs.length !== 1) return view.w + "px: wave 1 on " + r.angs.length + " lane copies (expected 1)";
+    if (!(r.got >= 0.97 * r.best)) return view.w + "px: wave 1's lane runs " + r.got.toFixed(0) + " u past the hint slot, the best turn " + r.best.toFixed(0);
+  }
+  return "";
 });
 
 const env = boot();

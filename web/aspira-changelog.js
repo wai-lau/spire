@@ -17,6 +17,8 @@ const CHANGELOG = [
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",
     "Ifrit: Hellfire stars are bright cores with almost no glow; the Hellfire ring glows twice as wide and a touch fainter.",
+    "The first wave comes down one lane, the one that runs longest past the build hint.",
+    "Upgrade-ready chevrons are back on the floor tiles, half the size and still.",
     "Wide end screen: the two columns sit together, Play again right under the wave you reached, and the lives-lost list fills the rest.",
   ] },
   { v: "6.8", day: "Oct 21", bu: [

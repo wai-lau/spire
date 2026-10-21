@@ -155,7 +155,7 @@ function sendWave() {
     // six directions, one per rotated copy of the lane)
     const boss = G.wave % STAR_EVERY === 0;
     // FORMATIONS stay whole (aspira-formations.js): shields split only into whole Vs, armor into whole rows
-    const want = boss ? bossSplit(G.wave) : formSplit(list[0], list.length, G.wave);
+    const want = boss ? bossSplit(G.wave) : firstOne(G.wave) ? 1 : formSplit(list[0], list.length, G.wave);
     const k = Math.min(list.length, want), per = Math.floor(list.length / k), share = list[0] === "swarm"; // swarm: the remainder SHARED out, one more on the first lanes
     for (let j = 0, at = 0; j < k; j++) {
       const len = share ? per + (j < list.length - per * k ? 1 : 0) : per, part = list.slice(at, at + len); at += len;
@@ -204,7 +204,7 @@ const LANE_LEAD = 3;
 function laneSoon() {
   const n = G.wave + 1;
   if (!G.started || G.over || !(G.nextIn > 0 && G.nextIn <= LANE_LEAD) || n % STAR_EVERY === 0 || (typeof bossUp === "function" && bossUp())) return [];
-  const p = wavePlan(n, G.lastType), pi = laneMap(n)[p.type], k = Math.min(p.count, formSplit(p.type, p.count, n)), a = 1 - G.nextIn / LANE_LEAD;
+  const p = wavePlan(n, G.lastType), pi = laneMap(n)[p.type], k = firstOne(n) ? 1 : Math.min(p.count, formSplit(p.type, p.count, n)), a = 1 - G.nextIn / LANE_LEAD;
   return Array.from({ length: k }, (_, j) => ({ pi, ang: (laneBestTurn(pi, k, n) + (j / k) * Math.PI * 2) % (Math.PI * 2), color: ENEMIES[p.type].color, n, star: false, swarm: p.type === "swarm", alive: 0, a }));
 }
 function activeLanes() {
@@ -319,9 +319,28 @@ function laneTurnScores(pi, k) {
   };
   setTimeout(tick, 2000);
 })();
+// the game turns lanes to the screen (not the simulator's player, unless SIM_REAL_LANES - REAL_LANES=1)
+const realLanes = () => !((typeof AUTO_POS !== "undefined" && AUTO_POS && !(typeof SIM_REAL_LANES !== "undefined" && SIM_REAL_LANES)) || typeof phoneInside !== "function");
+// THE FIRST WAVE MEETS THE BUILD HINT (owner, 2026-10-21: "have the first fast wave come from the side that spends the most time within the
+// tower with the build hint (on widescreen left side)"): wave 1 rides ONE lane copy, turned so the most of it lies within FIRST_HINT_R of the
+// hint's slot (the top-left open one - drawSlotArrow, aspira-chooser.js); FIRST_HINT_R the towers' mean reach
+const firstOne = n => n === 1 && realLanes();
+function hintCell() { let c = null; CELLS.forEach((cell, ci) => { if (cellOpen(ci) && (!c || cell.y < c.y - 1 || (Math.abs(cell.y - c.y) <= 1 && cell.x < c.x))) c = cell; }); return c; }
+function firstTurn(pi) {
+  const c = hintCell(); if (!c) return null;
+  const ks = Object.keys(TOWERS), R = ks.reduce((a, k) => a + TOWERS[k].range, 0) / ks.length * RANGE_BONUS, pts = PATHS[pi].pts;
+  let best = 0, bl = -1;
+  for (let i = 0; i < LANE_TURNS; i++) {
+    const a = i / LANE_TURNS * Math.PI * 2; let prev = null, len = 0;
+    for (let q = 0; q < pts.length; q += 3) { const p = rotAbout(pts[q], a), on = Math.hypot(p.x - c.x, p.y - c.y) <= R; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
+    if (len > bl) { bl = len; best = a; }
+  }
+  return best;
+}
 function laneBestTurn(pi, k, n) {
   const base = laneTurn(n) + (typeof BOX_WIDE !== "undefined" && BOX_WIDE ? Math.PI / 2 : 0); // landscape = the portrait pick turned the box's quarter turn (rotAbout sense)
-  if ((typeof AUTO_POS !== "undefined" && AUTO_POS && !(typeof SIM_REAL_LANES !== "undefined" && SIM_REAL_LANES)) || typeof phoneInside !== "function" || !PATHS[pi]) return base; // (SIM_REAL_LANES: the simulator turns them as the game does - REAL_LANES=1)
+  if (!realLanes() || !PATHS[pi]) return base;
+  if (n === 1 && k === 1) { const f = firstTurn(pi); if (f !== null) return f; }
   const sc = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS;
   const flat = Math.min(...sc.map(s => s.spread)) + LANE_EVEN_SLACK * Math.max(...sc.map(s => s.total)), even = sc.filter(s => s.spread <= flat);
   const best = Math.max(...even.map(s => s.total));
