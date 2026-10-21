@@ -59,9 +59,10 @@ function drawIfrFlaresGl(t, low) {
   }
 }
 // a flare layer's colour: the fire's flares glow BRIGHT RED outside (the palette's threat red) round an ORANGE core (owner, 2026-10-20: "bright red
-// cores", then "this red should be the outer color, and the orange the inner color"); a meteor's keep the fire colours
-const IFR_HF_COL = { glow: "threat", yellow: "tifr" };
-const ifrFlareCol = (key, f) => COL[(f.hf && IFR_HF_COL[key]) || key];
+// cores", then "this red should be the outer color, and the orange the inner color") - and a METEOR's burn WHITE-hot at the core, yellow round
+// it ("make non-hellfire flares more white" - the one place IFR draws white since "no white", 2026-10-20)
+const IFR_HF_COL = { glow: "threat", yellow: "tifr" }, IFR_MAIN_COL = { yellow: "white", orange: "yellow" };
+const ifrFlareCol = (key, f) => COL[(f.hf ? IFR_HF_COL[key] : IFR_MAIN_COL[key]) || key];
 function drawIfrFlares(t) {
   if (!t.ifrFlares.length) return;
   const low = typeof lowQ === "function" && lowQ();
