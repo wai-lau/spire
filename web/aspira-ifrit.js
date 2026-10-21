@@ -38,6 +38,7 @@ const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights TH
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
 // more likely closer to center"; "when hellfire levels up, increase flare count to preserve flare density"): IFR_FIRE_FLARES in a fire of radius
 // IFR_FIRE_FLARE_R0, as many more as its area is bigger, at r x u^IFR_LAND_POW from its centre (r: the fire's radius as each is lit)
+const IFR_FIRE_WINDOW_S = 2, IFR_FIRE_WINDOW_SD = 0.5; // a fire lights ALL its flares within this, a bell round 1 s (owner, 2026-10-20: "IFR hellfire lasts way too long, condense all flare spawn times to 2s"; they spread over ~8 s at Hellfire VI before - the count's root x IFR_FIRE_TIME_K, now unused)
 let IFR_FIRE_TIME_K = 0.5; // BATTERY 6.6.0: 0.25 -> 0.5 (owner: "spread hellfire across more time" - weaker against fast). (let: the sims sweep it) // every fire flare's time x this - "the hellfire flares are spread over too much time, condense the hellfire ones into a quarter of the time" (owner, 2026-10-20)
 // Hellfire: its fire flares' hit x this (VI 1) - Hellfire's own damage lever (battery 2026-10-20; the owner: balance Hellfire by its flare density and damage)
 const IFR_FIRE_HK = [1, 1, 1, 3, 4.5, 6] /* BATTERY 6.6.0 (2026-10-20): Hellfire's own hit; VI 10 */;
@@ -217,8 +218,7 @@ function stepIfrFires(t, st, dt) {
   if (!t.ifrFires || !t.ifrFires.length) return;
   for (const f of t.ifrFires) {
     if (!f.flq) { const n = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.dens || 1) * (f.R / IFR_FIRE_FLARE_R0) ** 2)); f.flq = []; f.age0 = 0; /* its flares' times, a bell round IFR_FIRE_FLARE_T */
-      const k = Math.sqrt(n / IFR_FIRE_FLARES); /* more flares, spread wider: x the root of the count (owner, 2026-10-20) */
-      for (let i = 0; i < n; i++) { let v; do v = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * ifrNormal(); while (v < 0); f.flq.push(IFR_FIRE_TIME_K * k * Math.min(IFR_FIRE_FLARE_MAX_S, v)); } f.flq.sort((a, b) => b - a); }
+      for (let i = 0; i < n; i++) f.flq.push(Math.min(IFR_FIRE_WINDOW_S, Math.max(0, IFR_FIRE_WINDOW_S / 2 + IFR_FIRE_WINDOW_SD * ifrNormal()))); f.flq.sort((a, b) => b - a); } /* ALL within IFR_FIRE_WINDOW_S, a bell round its middle */
     f.age0 += dt;
     if (f.r < f.R) f.r = Math.min(f.R, f.r + f.v * dt);
     while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true);

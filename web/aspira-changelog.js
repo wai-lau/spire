@@ -12,6 +12,7 @@
 const CHANGELOG = [
   { v: "6.6", day: "Oct 20", bu: [
     "Ifrit: Meteor's hits grow far harder at its last purchases; its meteors hunt from much further off.",
+    "Ifrit: Hellfire's fire lights all its flares within two seconds of the strike.",
     "Ifrit: Hellfire's fire flares hit harder up the tree, over a wider fire at the top.",
     "Ifrit: Flare's flares burn longer at the top.",
     "Ifrit: charges a little faster with no Meteor bought, and reaches a little further.",

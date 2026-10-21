@@ -433,7 +433,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
       const lit = [], of = ifrFlare; let tm = 0; ifrFlare = function (t2, st2, x, y, sz, big, hf) { if (hf) lit.push({ x, y, t: tm }); return of.apply(this, arguments); };
       try { while ((f.left > 0) && tm < 60) { stepIfrFires(t, st, 1 / 60); tm += 1 / 60; } } finally { ifrFlare = of; }
       const d = lit.map(q => Math.hypot(q.x - CX, q.y - CY)), ts = lit.map(q => q.t).sort((a, b) => a - b);
-      return { n: lit.length, R: f.R, meanT: ts.reduce((a, b) => a + b, 0) / ts.length, minGap: Math.min(...ts.slice(1).map((v, i) => v - ts[i])), maxD: Math.max(...d), meanD: d.reduce((x, y) => x + y, 0) / d.length, sizes: new Set(t.ifrFlares.filter(q => q.hf).map(q => q.L.toFixed(2))).size, dens: st.fireDens }; };
+      return { n: lit.length, R: f.R, lastT: ts[ts.length - 1] || 0, meanT: ts.reduce((a, b) => a + b, 0) / ts.length, minGap: Math.min(...ts.slice(1).map((v, i) => v - ts[i])), maxD: Math.max(...d), meanD: d.reduce((x, y) => x + y, 0) / d.length, sizes: new Set(t.ifrFlares.filter(q => q.hf).map(q => q.L.toFixed(2))).size, dens: st.fireDens }; };
     out.f0 = fire(0); out.f3 = fire(3); out.f6 = fire(6); out.base = IFR_FIRE_FLARES; out.timeK = IFR_FIRE_TIME_K;
     /* the fire's flares are the UNTAKEN Flare's, whatever Flare's level (owner, 2026-10-20), and not the meteors' brighter kind */
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
@@ -454,7 +454,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (r.land6.n !== 3 || !(r.land6.jit <= r.jmax + 30)) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 3, within " + r.jmax + " u)";
   for (const [k, f] of [["Hellfire 0", r.f0], ["Hellfire VI", r.f6]]) {
     if (!(f.n >= 1)) return k + ": a grown fire lit " + f.n + " flares (1 at the least)";
-    if (f.n >= 40 && (Math.abs(f.meanT - r.timeK * r.flareMean * Math.sqrt(f.n / r.base)) > 0.32 * r.timeK * Math.sqrt(f.n / r.base) || !(f.minGap < 0.1))) return k + ": " + f.n + " flares lit at mean " + f.meanT.toFixed(2) + " s, closest " + f.minGap.toFixed(3) + " s apart (expected x" + r.timeK + " a bell round " + r.flareT + " s - mean " + (r.timeK * r.flareMean).toFixed(2) + " with the draws under 0 drawn again, some under 0.1 s apart)";
+    if (f.n >= 1 && (f.lastT > 2 + 1e-6 || (f.n >= 40 && (Math.abs(f.meanT - 1) > 0.2 || !(f.minGap < 0.1))))) return k + ": " + f.n + " flares lit by " + f.lastT.toFixed(2) + " s, mean " + f.meanT.toFixed(2) + " (owner, 2026-10-20: all within 2 s - a bell round 1 s)";
     if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD < 0.5 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", nearer the centre)";
     if (f.n >= 5 && f.sizes < 2) return k + ": its flares are all one size";
   }
