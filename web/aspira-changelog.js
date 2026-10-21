@@ -16,6 +16,7 @@ const CHANGELOG = [
     "Gravity: every pellet is its own size - a quarter to four times the hit, the streak and the glow, the same damage overall.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",
+    "Ifrit: Hellfire stars are bright cores with almost no glow; the Hellfire ring glows twice as wide and a touch fainter.",
     "Wide end screen: the two columns sit together, Play again right under the wave you reached, and the lives-lost list fills the rest.",
   ] },
   { v: "6.8", day: "Oct 21", bu: [
