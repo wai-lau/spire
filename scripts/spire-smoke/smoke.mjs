@@ -235,6 +235,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
       t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV * IFR_FAN_V, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
       const w = held(t, t.x + 20, t.y + 25); egridAt = NaN; let k = 0, bent = 0; /* w: in homing reach from the start - no turn before 50 u (owner: "no homing for first 50") */
       while (t.ifrBalls.length && Math.hypot(t.ifrBalls[0].x - t.x, t.ifrBalls[0].y - t.y) < 45 && k++ < 600) { stepIfrBalls(t, st, 1 / 60); if (t.ifrBalls[0] && Math.abs(t.ifrBalls[0].vy) > 1e-9) bent++; }
+      while (t.ifrBalls.length && (t.ifrBalls[0].flown || 0) < 95 && k++ < 1200) stepIfrBalls(t, st, 1 / 60); /* homing from 50 u, hitting only from 100 u (owner, 2026-10-20) */
       out.armEarly = 50 - v.shield + 50 - w.shield; out.bent = bent; w.dead = true; k = 0; while (t.ifrBalls.length && k++ < 1200) stepIfrBalls(t, st, 1 / 60); out.armLate = 50 - v.shield; v.dead = true; t.ifrBalls.length = 0; t.ifrFlares.length = 0; }
     /* a fan meteor homes within 50 u (and only then), hits for damage only - no fire */
     t.ifrFires.length = 0; const near = held(t, t.x + 150, t.y + 35), far = held(t, t.x + 250, t.y + 90); egridAt = NaN;
@@ -368,9 +369,9 @@ check("IFR flares: none at the first hit; one where each fan meteor lands (three
     for (let i = 0; i < 60 && !t.ifrFires.length; i++) stepIfrBalls(t, st, 1 / 60);
     out.firstFlares = t.ifrFlares.length; a.dead = true;
     /* a fan meteor's landing: one flare there; at the Flare capstone three, within IFR_TRIPLE_JIT */
-    const land = (t, st) => { t.ifrFlares.length = 0; t.ifrBalls.length = 0; const v = held(t, t.x + 60, t.y); egridAt = NaN;
+    const land = (t, st) => { t.ifrFlares.length = 0; t.ifrBalls.length = 0; const v = held(t, t.x + 150, t.y); egridAt = NaN; /* past IFR_ARM_HIT_U */
       t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
-      for (let i = 0; i < 60 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); v.dead = true;
+      for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); v.dead = true;
       return { n: t.ifrFlares.length, jit: Math.max(...t.ifrFlares.map(f => Math.hypot(f.x - v.x, f.y - v.y))) }; };
     out.land0 = land(t, st); t = fresh("firaga", 6); st = towerStats(t); out.land6 = land(t, st); out.jmax = IFR_TRIPLE_JIT;
     /* the fire's flares, at Hellfire 0 and 6 */
