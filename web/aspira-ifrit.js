@@ -38,6 +38,7 @@ const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights TH
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
 // more likely closer to center"; "when hellfire levels up, increase flare count to preserve flare density"): IFR_FIRE_FLARES in a fire of radius
 // IFR_FIRE_FLARE_R0, as many more as its area is bigger, at r x u^IFR_LAND_POW from its centre (r: the fire's radius as each is lit)
+const IFR_FIRE_TIME_K = 0.25; // every fire flare's time x this - "the hellfire flares are spread over too much time, condense the hellfire ones into a quarter of the time" (owner, 2026-10-20)
 const IFR_FIRE_DENS = [1, 1.25, 1.5, 1.75, 2, 2.5]; // Hellfire: its flares' density x this (VI 3) - "density of hellfire flares should increase as hellfire is levelled" (owner, 2026-10-20)
 const IFR_HF_LIFE = 0.5, IFR_HF_MIN = 0.1, ifrHfS = () => IFR_FLARE_K * (IFR_HF_MIN + (1 - IFR_HF_MIN) * Math.random()); // the fire's flares: each burns 0.5 s, a size drawn evenly from 10% to 100% of the largest (owner, 2026-10-20: "hellfire flares should have a 10-100% size jitter ... they should only last 0.5 seconds each just very numerous and frequent")
 const IFR_FIRE_FLARES = 12 /* (owner, 2026-10-20: "much more numerous" -> 18, then "reduce the number of hellfire flares" with the jitter: 12 my call; was 6) */, IFR_FIRE_FLARE_R0 = 43.2 /* the untaken fire: 16 x the untaken meteor */, IFR_FIRE_FLARE_T = 1, IFR_FIRE_FLARE_SD = 1 /* owner, 2026-10-20: "spread 1s" (was 0.3) */, IFR_FIRE_FLARE_MAX_S = 4; // each flare's time: a bell round FLARE_T s after the impact, sd FLARE_SD, a draw under 0 drawn again, at most FLARE_MAX_S (owner, 2026-10-20: "bell curve the flare landing around the first second of the fire (allow multiple to be spawned closer together than 0.1s)"; was one each 0.1 s once grown)
@@ -214,7 +215,7 @@ function stepIfrFires(t, st, dt) {
   for (const f of t.ifrFires) {
     if (!f.flq) { const n = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.dens || 1) * (f.R / IFR_FIRE_FLARE_R0) ** 2)); f.flq = []; f.age0 = 0; /* its flares' times, a bell round IFR_FIRE_FLARE_T */
       const k = Math.sqrt(n / IFR_FIRE_FLARES); /* more flares, spread wider: x the root of the count (owner, 2026-10-20) */
-      for (let i = 0; i < n; i++) { let v; do v = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * ifrNormal(); while (v < 0); f.flq.push(k * Math.min(IFR_FIRE_FLARE_MAX_S, v)); } f.flq.sort((a, b) => b - a); }
+      for (let i = 0; i < n; i++) { let v; do v = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * ifrNormal(); while (v < 0); f.flq.push(IFR_FIRE_TIME_K * k * Math.min(IFR_FIRE_FLARE_MAX_S, v)); } f.flq.sort((a, b) => b - a); }
     f.age0 += dt;
     if (f.r < f.R) f.r = Math.min(f.R, f.r + f.v * dt);
     while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true);

@@ -419,7 +419,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (r.land6.n !== 3 || !(r.land6.jit <= r.jmax + 30)) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 3, within " + r.jmax + " u)";
   for (const [k, f] of [["Hellfire 0", r.f0], ["Hellfire VI", r.f6]]) {
     if (!(f.n >= r.base)) return k + ": a grown fire lit " + f.n + " flares (" + r.base + " at the least)";
-    if (f.n >= 40 && (Math.abs(f.meanT - r.flareMean * Math.sqrt(f.n / r.base)) > 0.3 * Math.sqrt(f.n / r.base) || !(f.minGap < 0.1))) return k + ": " + f.n + " flares lit at mean " + f.meanT.toFixed(2) + " s, closest " + f.minGap.toFixed(3) + " s apart (expected a bell round " + r.flareT + " s - mean " + r.flareMean.toFixed(2) + " with the draws under 0 drawn again, some under 0.1 s apart)";
+    if (f.n >= 40 && (Math.abs(f.meanT - 0.25 * r.flareMean * Math.sqrt(f.n / r.base)) > 0.08 * Math.sqrt(f.n / r.base) || !(f.minGap < 0.1))) return k + ": " + f.n + " flares lit at mean " + f.meanT.toFixed(2) + " s, closest " + f.minGap.toFixed(3) + " s apart (expected a quarter of a bell round " + r.flareT + " s - mean " + (0.25 * r.flareMean).toFixed(2) + " with the draws under 0 drawn again, some under 0.1 s apart)";
     if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD < 0.5 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", nearer the centre)";
     if (f.sizes < 2) return k + ": its flares are all one size";
   }
