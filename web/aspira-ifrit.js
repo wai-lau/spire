@@ -38,13 +38,15 @@ const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights TH
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
 // more likely closer to center"; "when hellfire levels up, increase flare count to preserve flare density"): IFR_FIRE_FLARES in a fire of radius
 // IFR_FIRE_FLARE_R0, as many more as its area is bigger, at r x u^IFR_LAND_POW from its centre (r: the fire's radius as each is lit)
-const IFR_FIRE_WINDOW_S = 2, IFR_FIRE_WINDOW_SD = 0.5; // a fire lights ALL its flares within this, a bell round 1 s (owner, 2026-10-20: "IFR hellfire lasts way too long, condense all flare spawn times to 2s"; they spread over ~8 s at Hellfire VI before - the count's root x IFR_FIRE_TIME_K, now unused)
+const IFR_FIRE_WINDOW_S = 2, IFR_FIRE_WINDOW_SD = 0.5; // (a fire with no window of its own) a fire lights ALL its flares within this, a bell round 1 s (owner, 2026-10-20: "IFR hellfire lasts way too long, condense all flare spawn times to 2s"; they spread over ~8 s at Hellfire VI before - the count's root x IFR_FIRE_TIME_K, now unused)
 let IFR_FIRE_TIME_K = 0.5; // BATTERY 6.6.0: 0.25 -> 0.5 (owner: "spread hellfire across more time" - weaker against fast). (let: the sims sweep it) // every fire flare's time x this - "the hellfire flares are spread over too much time, condense the hellfire ones into a quarter of the time" (owner, 2026-10-20)
 // Hellfire: its fire flares' hit x this (VI 1) - Hellfire's own damage lever (battery 2026-10-20; the owner: balance Hellfire by its flare density and damage)
 const IFR_FIRE_HK = [1, 1, 1, 3, 4.5, 6] /* BATTERY 6.6.0 (2026-10-20): Hellfire's own hit; VI 10 */;
 const IFR_FIRE_DENS = [1, 1.25, 1.5, 1.75, 2.7, 3.96] /* BATTERY 6.6.0 (2026-10-20): denser at the top, thinned to hold the count over the wider fire; VI 7.9 */; // Hellfire: its flares' density x this (VI 3) - "density of hellfire flares should increase as hellfire is levelled" (owner, 2026-10-20)
 const IFR_HF_FK = [1, 1.1, 1.2, 1.3, 1.4, 1.5]; // Flare: the FIRE's flares' hit x this (VI 1.6; their glow follows the root of the hit, ~x1.26 at VI) - "levelling flare should also raise hellfire damage slightly and increase opacity/brightness slightly" (owner, 2026-10-20)
-let IFR_HF_LIFE = Math.min(EFFECT_MAX_S, 0.55 * 20) /* x20 (owner, 2026-10-20: "for hellfire, reduce the number of flares by 20x, make them last 20x longer"), capped by "no effect should last more than 10s" - 10 s; was 0.55 (battery), 0.3 */, IFR_HF_MIN = 0.1, ifrHfS = () => IFR_FLARE_K * (IFR_HF_MIN + (1 - IFR_HF_MIN) * Math.random()); // the fire's flares: each burns 0.5 s, a size drawn evenly from 10% to 100% of the largest (owner, 2026-10-20: "hellfire flares should have a 10-100% size jitter ... they should only last 0.5 seconds each just very numerous and frequent")
+const IFR_HF_HIT_K = 2, ifrHfLife = () => 0.2 + 2.8 * Math.random(); // a FIRE flare HITS ONCE as it appears - x HIT_K its untaken tick, what the old 0.5 s burn dealt - and shows 0.2-3 s, harmless (owner, 2026-10-20: "they should just appear and hit instead of burn, they should each last 0.2-3 seconds")
+const IFR_HF_TICK = 0.05; // a FIRE flare ticks this often, each tick that share of its untaken tick's hit (the same burn a second) - "increase tick rate as much as possible" (owner, 2026-10-20): every step cost ~70 ms a frame with 700 flares; 0.05 with staggered phases is what a frame affords
+let IFR_HF_LIFE = Math.min(EFFECT_MAX_S, 0.55 * 20) / 20 /* /20 again (owner, 2026-10-20: "shorten by 20x"): 0.5 s */ /* x20 (owner, 2026-10-20: "for hellfire, reduce the number of flares by 20x, make them last 20x longer"), capped by "no effect should last more than 10s" - 10 s; was 0.55 (battery), 0.3 */, IFR_HF_MIN = 0.1, ifrHfS = () => IFR_FLARE_K * (IFR_HF_MIN + (1 - IFR_HF_MIN) * Math.random()); // the fire's flares: each burns 0.5 s, a size drawn evenly from 10% to 100% of the largest (owner, 2026-10-20: "hellfire flares should have a 10-100% size jitter ... they should only last 0.5 seconds each just very numerous and frequent")
 let IFR_FIRE_FLARES = 12 / 20 /* /20 (owner, 2026-10-20, with the flares x20 longer): 0.6 - an untaken fire lights one; was 12 */ /* (owner, 2026-10-20: "much more numerous" -> 18, then "reduce the number of hellfire flares" with the jitter: 12 my call; was 6) */, IFR_FIRE_FLARE_R0 = 43.2 /* the untaken fire: 16 x the untaken meteor */, IFR_FIRE_FLARE_T = 1, IFR_FIRE_FLARE_SD = 1 /* owner, 2026-10-20: "spread 1s" (was 0.3) */, IFR_FIRE_FLARE_MAX_S = 4; // each flare's time: a bell round FLARE_T s after the impact, sd FLARE_SD, a draw under 0 drawn again, at most FLARE_MAX_S (owner, 2026-10-20: "bell curve the flare landing around the first second of the fire (allow multiple to be spawned closer together than 0.1s)"; was one each 0.1 s once grown)
 // (no cap on live flares - owner, 2026-10-20: "actually no cap"; IFR_FLARE_MAX 240 dropped the oldest)
 // a flare's SIZE (owner, 2026-10-19): a normal draw round half the max (mean IFR_FLARE_MEAN, sd IFR_FLARE_SD, kept in [IFR_FLARE_MIN, 1])
@@ -189,12 +191,12 @@ function stepIfrBalls(t, st, dt) {
       b.left = 0;
       if (!b.gen) { /* THE FIRST IMPACT (owner, 2026-10-20: "only first impact causes hellfire"): the fire and the 360-degree fan */
         b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, hit.id);
-      } else ifrLandFlares(t, st, b.x, b.y);
+      } else { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b, false); }
       if (b.gen === 1 && st.fissure) { const a = Math.atan2(b.vy, b.vx), d = IFR_FISSURE_DEG * Math.PI / 180; born.push([b.x, b.y, a - d, hit.id, 2, 0], [b.x, b.y, a + d, hit.id, 2, 0]); } /* the capstone: a fan meteor's hit fissures */
     } else if (atCorpse) { /* at its dead target's spot: the launched one bursts there (fire, the fan); a fan meteor just goes */
       b.left = 0;
-      if (!b.gen) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } else ifrLandFlares(t, st, b.x, b.y);
-    } else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; ifrLandFlares(t, st, b.x, b.y); } /* its fuse: it bursts mid-flight */
+      b.ax = b.x; b.ay = b.y; if (!b.gen) { ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } else ifrImpact(t, st, b, false);
+    } else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b, false); } /* its fuse: it bursts mid-flight */
     else if (!b.gen && b.left <= 0) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } /* the launched one never goes silently: out of time, it bursts where it is */
     else if ((b.gen || (b.lock == null && b.cx == null)) && !ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst - never the launched one while it hunts (its seen target may sit where the camera does not reach; owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening") */
   }
@@ -202,10 +204,15 @@ function stepIfrBalls(t, st, dt) {
   for (const [x, y, a, id, gen, wait] of born) ifrMeteor(t, st, x, y, a, gen, id, wait);
 }
 // THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), no flare (owner, 2026-10-20: "no flare on initial meteor hit"). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)
-function ifrImpact(t, st, b) {
-  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens, big: st.triple, left: 1 });
+// EVERY METEOR'S landing (owner, 2026-10-20: "all meteors, main incl, each create their own hellfire"): a flare, and a Hellfire of its own -
+// lighting its small flares across that flare's life ("hellfire lasts the lifetime of the flare"), each Hellfire 1 / sqrt(1 + the fan) as
+// dense and as hot ("since there are more hellfires, reduce damage and density to keep similar dps"). main: the launched one (the sound, and
+// the Flare capstone's big centre flare)
+function ifrImpact(t, st, b, main = true) {
+  const hk = 1 / Math.sqrt(1 + st.fan);
+  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens * hk, hk, win: st.burnS, big: main && st.triple, left: 1 });
   ifrLandFlares(t, st, b.ax, b.ay); /* every meteor lights a flare where it strikes, the first too (owner, 2026-10-20) */
-  sfx("ifrblast");
+  if (main) sfx("ifrblast");
 }
 // CATCHING FIRE (the flares' rule, the fire's too): an enemy burns only at a tick it was ALSO in the fire at the tick before - what stands
 // in it burns, what runs through it does not (the fast weakness). was / now: ids touching at the last tick / this one (plain data)
@@ -218,10 +225,10 @@ function stepIfrFires(t, st, dt) {
   if (!t.ifrFires || !t.ifrFires.length) return;
   for (const f of t.ifrFires) {
     if (!f.flq) { const n = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.dens || 1) * (f.R / IFR_FIRE_FLARE_R0) ** 2)); f.flq = []; f.age0 = 0; /* its flares' times, a bell round IFR_FIRE_FLARE_T */
-      for (let i = 0; i < n; i++) f.flq.push(Math.min(IFR_FIRE_WINDOW_S, Math.max(0, IFR_FIRE_WINDOW_S / 2 + IFR_FIRE_WINDOW_SD * ifrNormal()))); f.flq.sort((a, b) => b - a); } /* ALL within IFR_FIRE_WINDOW_S, a bell round its middle */
+      const w = f.win ?? IFR_FIRE_WINDOW_S; for (let i = 0; i < n; i++) f.flq.push(Math.min(w, Math.max(0, w / 2 + w / 4 * ifrNormal()))); f.flq.sort((a, b) => b - a); } /* ALL within its meteor's flare's life (f.win), a bell round its middle */
     f.age0 += dt;
     if (f.r < f.R) f.r = Math.min(f.R, f.r + f.v * dt);
-    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true);
+    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true, f.hk ?? 1);
       if (!f.flq.length && f.big) ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* inside the fire as it is then; the last one lit, the Flare capstone's BIG flare dead centre */
     if (!f.flq.length && f.r >= f.R) f.left = 0; /* its last flare lit: it goes */
   }
@@ -229,10 +236,11 @@ function stepIfrFires(t, st, dt) {
 }
 // a flare's size s (x the Flare length): a normal draw round half the max
 function ifrFlareS() { return IFR_FLARE_K * Math.min(1, Math.max(IFR_FLARE_MIN, IFR_FLARE_MEAN + IFR_FLARE_SD * ifrNormal())); }
-function ifrFlare(t, st, x, y, s = ifrFlareS(), big = false, hf = false) { // big: the Flare capstone's (hit x IFR_BIG_K, its x IFR_BIG_X as long); hf: the fire's - the UNTAKEN Flare's size, burn, tick and hit, whatever Flare's level
-  const L = hf ? IFR_BEAM_L[0] : st.beamL, W = hf ? IFR_BEAM_W[0] : st.beamW, life = hf ? IFR_HF_LIFE : st.burnS;
-  t.ifrFlares.push({ x, y, L: L * s, W: W * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life, left: life, tick: 0, tickS: hf ? IFR_TICK_S[0] : st.tickS,
-    hit: st.dmg * (hf ? IFR_TICK_K[0] * st.hfK * st.fireHK : st.flareK) * (big ? IFR_BIG_K : 1), xk: IFR_X_K * (big ? IFR_BIG_X : 1), big, hf, edges: false }); /* hit, tick: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
+function ifrFlare(t, st, x, y, s = ifrFlareS(), big = false, hf = false, hk = 1) { // hk: a fire flare's hit x its Hellfire's share // big: the Flare capstone's (hit x IFR_BIG_K, its x IFR_BIG_X as long); hf: the fire's - the UNTAKEN Flare's size, burn, tick and hit, whatever Flare's level
+  const L = hf ? IFR_BEAM_L[0] : st.beamL, W = hf ? IFR_BEAM_W[0] : st.beamW, life = hf ? ifrHfLife() : st.burnS;
+  const f = { x, y, L: L * s, W: W * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life, left: life, tick: hf ? Math.random() * IFR_HF_TICK : 0, tickS: hf ? IFR_HF_TICK : st.tickS, cont: hf,
+    hit: st.dmg * (hf ? IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K * hk : st.flareK) * (big ? IFR_BIG_K : 1), xk: IFR_X_K * (big ? IFR_BIG_X : 1), big, hf, edges: false }; t.ifrFlares.push(f); /* hit, tick: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
+  if (hf) ifrTickFlare(t, st, f); /* the fire's flare strikes ONCE, as it appears */
 }
 // the FLARE: IFR_BEAMS beams from the burst point, a + and a small x (world angles: 3D is a view), burning for
 // `life` - every tickS a QUIET tick on each enemy touching a beam, popping one shield charge (Hellfire VI: the longest beams;
@@ -262,8 +270,8 @@ function ifrBeamEnds(f) { const out = []; for (let k = 0; k < IFR_BEAMS; k++) ou
 // weakness (owner's design) was gone (countermx 61-69: fast 30% leaked, armor 77%). let: the simulator can switch it off
 let IFR_CATCH = false; // OFF (owner, 2026-10-20: "just don't require lit for either flares"): every tick burns what touches a spoke
 const IFR_NONE = {};
-function ifrTickFlare(t, st, f) {
-  const ends = ifrBeamEnds(f), half = f.W / 2, amt = f.hit ?? st.dmg * st.flareK, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
+function ifrTickFlare(t, st, f, k = 1) { // k: x the flare's hit (a burning fire flare's step share of its tick)
+  const ends = ifrBeamEnds(f), half = f.W / 2, amt = (f.hit ?? st.dmg * st.flareK) * k, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
   const all = G.enemies, defs = ENEMIES; /* (locals: a global read in this loop costs more than the arithmetic) */
   const was = f.on || IFR_NONE, now = f.on = {}; /* CATCHING FIRE: who touched a spoke at the last tick (ids - plain data, G clones) */
   for (let i = 0; i < all.length; i++) {
@@ -287,6 +295,7 @@ function stepIfrFlares(t, st, dt) {
   if (!t.ifrFlares.length) return;
   for (const f of t.ifrFlares) {
     f.left -= dt; f.tick += dt;
+    if (f.hf) continue; /* a fire flare struck as it appeared - it only shows now */
     const ts = f.tickS || st.tickS; if (f.tick < ts) continue;
     f.tick -= ts; ifrTickFlare(t, st, f);
   }
