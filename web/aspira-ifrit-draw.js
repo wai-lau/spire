@@ -53,11 +53,13 @@ function drawIfrFlaresGl(t, low) {
       const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { /* lowQ: the orange core + the white one */
-        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], COL[q[2]], Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c)), t0, t1);
+        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c)), t0, t1);
       }
     }
   }
 }
+// a flare layer's colour: the fire's flares burn with a BRIGHT RED core (owner, 2026-10-20: "visually make hellfire stars have bright red cores") - the palette's threat red
+const ifrFlareCol = (key, f) => COL[f.hf && key === "yellow" ? "threat" : key];
 function drawIfrFlares(t) {
   if (!t.ifrFlares.length) return;
   const low = typeof lowQ === "function" && lowQ();
@@ -66,7 +68,7 @@ function drawIfrFlares(t) {
   for (const c of t.ifrFlares) {
     const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c);
     for (let g = low ? IFR_GLOW.length - 2 : 0; g < IFR_GLOW.length; g++) {
-      ctx.strokeStyle = COL[IFR_GLOW[g][2]]; ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
+      ctx.strokeStyle = ifrFlareCol(IFR_GLOW[g][2], c); ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
       for (let k = 0; k < IFR_GLOW_BANDS; k++) {
         const a0 = k / IFR_GLOW_BANDS, a1 = (k + 1) / IFR_GLOW_BANDS;
         ctx.globalAlpha = Math.min(1, IFR_GLOW[g][1] * f * IFR_GLOW_A * ifrFlareI(c) * (1 - a0) ** 3); // fast falloff to the tip (owner, 2026-10-19; was 1 - a0^2)

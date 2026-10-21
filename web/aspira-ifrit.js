@@ -39,7 +39,7 @@ const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights TH
 // more likely closer to center"; "when hellfire levels up, increase flare count to preserve flare density"): IFR_FIRE_FLARES in a fire of radius
 // IFR_FIRE_FLARE_R0, as many more as its area is bigger, at r x u^IFR_LAND_POW from its centre (r: the fire's radius as each is lit)
 const IFR_FIRE_DENS = [1, 1.25, 1.5, 1.75, 2, 2.5]; // Hellfire: its flares' density x this (VI 3) - "density of hellfire flares should increase as hellfire is levelled" (owner, 2026-10-20)
-const IFR_HF_LIFE = 0.5, IFR_HF_MIN = 0.1; // the fire's flares: each burns 0.5 s, a size drawn evenly from 10% to 100% of the largest (owner, 2026-10-20: "hellfire flares should have a 10-100% size jitter ... they should only last 0.5 seconds each just very numerous and frequent")
+const IFR_HF_LIFE = 0.5, IFR_HF_MIN = 0.1, ifrHfS = () => IFR_FLARE_K * (IFR_HF_MIN + (1 - IFR_HF_MIN) * Math.random()); // the fire's flares: each burns 0.5 s, a size drawn evenly from 10% to 100% of the largest (owner, 2026-10-20: "hellfire flares should have a 10-100% size jitter ... they should only last 0.5 seconds each just very numerous and frequent")
 const IFR_FIRE_FLARES = 12 /* (owner, 2026-10-20: "much more numerous" -> 18, then "reduce the number of hellfire flares" with the jitter: 12 my call; was 6) */, IFR_FIRE_FLARE_R0 = 43.2 /* the untaken fire: 16 x the untaken meteor */, IFR_FIRE_FLARE_T = 1, IFR_FIRE_FLARE_SD = 1 /* owner, 2026-10-20: "spread 1s" (was 0.3) */, IFR_FIRE_FLARE_MAX_S = 4; // each flare's time: a bell round FLARE_T s after the impact, sd FLARE_SD, a draw under 0 drawn again, at most FLARE_MAX_S (owner, 2026-10-20: "bell curve the flare landing around the first second of the fire (allow multiple to be spawned closer together than 0.1s)"; was one each 0.1 s once grown)
 const IFR_FLARE_MAX = 240; // live flares a tower at most: the oldest goes (perf; 120 before Backdraft's triple flare, 60 before the pellets doubled)
 // a flare's SIZE (owner, 2026-10-19): a normal draw round half the max (mean IFR_FLARE_MEAN, sd IFR_FLARE_SD, kept in [IFR_FLARE_MIN, 1])
@@ -217,7 +217,7 @@ function stepIfrFires(t, st, dt) {
       for (let i = 0; i < n; i++) { let v; do v = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * ifrNormal(); while (v < 0); f.flq.push(k * Math.min(IFR_FIRE_FLARE_MAX_S, v)); } f.flq.sort((a, b) => b - a); }
     f.age0 += dt;
     if (f.r < f.R) f.r = Math.min(f.R, f.r + f.v * dt);
-    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, IFR_FLARE_K * (IFR_HF_MIN + (1 - IFR_HF_MIN) * Math.random()), false, true);
+    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random() ** IFR_LAND_POW; ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true);
       if (!f.flq.length && f.big) ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* inside the fire as it is then; the last one lit, the Flare capstone's BIG flare dead centre */
     if (!f.flq.length && f.r >= f.R) f.left = 0; /* its last flare lit: it goes */
   }
