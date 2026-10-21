@@ -67,7 +67,7 @@ const CAPSTONE_NUM = [
   [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 16], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
   [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
   // IFR (axes redone 2026-10-20): Meteor a fan of 12 that fissures (Impact); Hellfire a fire six towers across; Flare the biggest, hottest, longest flares, three a landing
-  [IFR_CHARGE_S, 0.6], [IFR_BALL_V, 540], [IFR_ROUTE_K, 6], [IFR_FAN, 12], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 160], [IFR_FIRE_V, 220], [IFR_FIRE_DENS, 3], [IFR_HF_FK, 1.6], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 5], [IFR_TICK_S, 0.2], [IFR_TICK_K, 3.78],
+  [IFR_CHARGE_S, 0.6], [IFR_BALL_V, 540], [IFR_ROUTE_K, 6], [IFR_FAN, 12], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 160], [IFR_FIRE_V, 220], [IFR_FIRE_DENS, 3], [IFR_FIRE_HK, 1], [IFR_HF_FK, 1.6], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 5], [IFR_TICK_S, 0.2], [IFR_TICK_K, 3.78],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)
@@ -78,7 +78,7 @@ const CAPSTONE_MOVE = {
   acd: { corrosion: [1, 1], spray: [1.5, 1] /* VI: range, not a hotter carry (owner, 2026-10-12; was 1.25) */, contagion: [1, 2.1] },
   car: { hangar: [1, 1], launch: [1, 1], armament: [1, 1] },
   grv: { void: [1.15, 1], supernova: [1.25, 1], radiation: [1, 2.2] },
-  ifr: { meteor: [1.6, 1], hellfire: [1.4, 1], firaga: [1, 3] },
+  ifr: { meteor: [1.3, 1], hellfire: [1, 1], firaga: [1, 1.8] }, /* (owner, 2026-10-20: smaller; were 1.6 / 1.4 / 3) */
 };
 for (const [kind, axes] of Object.entries(CAPSTONE_MOVE)) {
   for (const [id, m] of Object.entries(axes)) {

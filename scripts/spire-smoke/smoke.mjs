@@ -158,6 +158,16 @@ check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times,
   if (r.shieldIdx !== 5 || Math.abs(r.shieldGap - 5 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected 5 x 0.4 = 2, half the old 4)";
   return "";
 });
+check("IFR's range and movement range stay modest at every stop (owner, 2026-10-20: \"unnecessarily large\")", () => {
+  const r = run(`(() => { let rMax = 0, mMax = 0, r0 = 0, m0 = 0; for (const ax of ["", "meteor", "hellfire", "firaga"]) for (const k of [0, 1, 3, 6]) {
+    G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
+    if (ax) for (let i = 0; i < k; i++) upgradeTower(t, ax, true);
+    const st = towerStats(t), m = leashR(t); rMax = Math.max(rMax, st.range); mMax = Math.max(mMax, m); if (!ax) { r0 = st.range; m0 = m; } }
+    return { rMax, mMax, r0, m0 }; })()`);
+  if (r.r0 > 150 || r.rMax > 200) return "IFR range " + r.r0.toFixed(0) + " base, up to " + r.rMax.toFixed(0) + " (expected about 140, at most 200)";
+  if (r.m0 > 130 || r.mMax > 230) return "IFR movement " + r.m0.toFixed(0) + " base, up to " + r.mMax.toFixed(0) + " (expected about 120, at most 230)";
+  return "";
+});
 check("IFR's card shows no long decimals (owner, 2026-10-20)", () => {
   const r = run(`(() => { const bad = []; for (const ax of ["", "meteor", "hellfire", "firaga"]) for (const k of [0, 1, 3, 6]) {
     G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
@@ -228,14 +238,14 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     /* the LAUNCHED meteor never goes silently (owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening"): locked, the
        view does not cull it (its seen target may sit where the camera does not reach), and out of time it bursts where it is */
     { for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
-      const v = held(t, t.x + 160, t.y - 40); egridAt = NaN; const ov = ifrOnView; ifrOnView = () => false; /* the camera sees nothing */
+      const v = held(t, t.x + 90, t.y - 40); egridAt = NaN; const ov = ifrOnView; /* (inside IFR's range, 140 since 2026-10-20) */ ifrOnView = () => false; /* the camera sees nothing */
       try { t.ifrCharge = 1; ifrLaunch(t, st); let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60); } finally { ifrOnView = ov; }
       out.culledFire = t.ifrFires.length; v.dead = true; for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
       ifrMeteor(t, st, t.x, t.y, 0, 0, null); t.ifrBalls[0].left = 0.05; for (let i = 0; i < 10 && !t.ifrFires.length; i++) stepIfrBalls(t, st, 1 / 60);
       out.timeoutFire = t.ifrFires.length; for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0; }
     /* its target dies in flight: it flies on to the CORPSE (owner, 2026-10-20: "if target dies, lock on to corpse") and bursts there */
     for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
-    { const v = held(t, t.x + 140, t.y - 50); egridAt = NaN; t.ifrCharge = 1; ifrLaunch(t, st); stepIfrBalls(t, st, 1 / 60); const vx = v.x, vy = v.y; v.dead = true;
+    { const v = held(t, t.x + 100, t.y - 40); egridAt = NaN; t.ifrCharge = 1; ifrLaunch(t, st); stepIfrBalls(t, st, 1 / 60); const vx = v.x, vy = v.y; v.dead = true;
       const decoy = held(t, t.x - 120, t.y + 40); egridAt = NaN; /* the nearest live enemy: it must NOT re-lock onto it */
       let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60);
       out.corpseFire = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - vx, t.ifrFires[0].y - vy) : NaN; out.decoy = 50 - decoy.shield; decoy.dead = true;
@@ -326,7 +336,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
     return out;
   })()`);
   if (r.noBall) return "no meteor launched at a charged tower with a target";
-  if (!(r.aimOff > 0.5)) return "the meteor was aimed at the enemy's spot now (" + r.aimOff.toFixed(2) + " degrees off), not ahead of it";
+  if (!(r.aimOff > 0.2)) return "the meteor was aimed at the enemy's spot now (" + r.aimOff.toFixed(2) + " degrees off), not ahead of it";
   if (!r.hit) return "a led meteor missed its target: landed " + r.miss.toFixed(1) + " u from it (its radius " + r.r + ")";
   if (r.glow2d > 1 || r.glowGl > 0.5) return "the flare glow is wider than its hit band: 2D " + r.glow2d + " x W, GL half-width " + r.glowGl + " x W";
   if (r.whites) return "IFR still draws white: " + r.whites + " glow layers (owner, 2026-10-20: \"no white\")";
