@@ -175,14 +175,14 @@ function bossFleet(e, n) {
         const m = G.enemies[G.enemies.length - 1], r = ENEMIES[k].size;
         m.max = Math.floor(m.max * BOSS_HEFT); m.hp = m.max; // an escort twice as tough too (BOSS_HEFT)
         if (slots) { // its place in the formation: across the lane, and ahead (+) or behind (-) the boss's spot
-          m.form = true; m.lat = slots[c][0]; m.s = e.s + slots[c][1]; m.ahead = slots[c][1]; m.aheadC = 0;
+          m.form = true; m.lat = slots[c][0]; m.s = e.s + formS(slots[c][1]); m.ahead = slots[c][1]; m.aheadC = 0;
           reach[0] = Math.max(reach[0], slots[c][1] + r); reach[1] = Math.max(reach[1], -slots[c][1] + r);
         } else {
           // on its TRACK across the lane, spaced so NOTHING OVERLAPS (owner, 2026-10-09): ahead, behind, ahead... of the boss's
           // spot, each clearing the one before it on its track by FLEET_GAP
           const tk = i % T, side = FLEET_BEHIND[e.arcana] ? 1 : Math.floor(i / T) % 2, tr = track[tk], lat = (tk - (T - 1) / 2) * FLEET_TRACK_W;
           tr[side] += FLEET_GAP * (FLEET_TIGHT[e.arcana] ?? 1) + r; const ahead = (side ? -1 : 1) * tr[side]; tr[side] += r;
-          m.form = true; m.lat = lat; m.s = e.s + ahead; m.ahead = ahead; m.aheadC = 0;
+          m.form = true; m.lat = lat; m.s = e.s + formS(ahead); m.ahead = ahead; m.aheadC = 0;
           reach[0] = Math.max(reach[0], tr[0]); reach[1] = Math.max(reach[1], tr[1]);
         }
         // in FORMATION: at the boss's own pace, so the spacing holds (a fast escort behind would run through it)

@@ -139,7 +139,7 @@ run(`function ifrNear(type, t, dist) {
   for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
   const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e6; e.armor = 0; e.shield = 0; return e;
 }`);
-check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times, shield pods half the gap, a shield V 3x; wave 1 fast at half speed (2026-10-21)", () => {
+check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times, shield pods half the gap, a shield V a third (2026-10-21); wave 1 fast at half speed (2026-10-21)", () => {
   const r = run(`(() => {
     G = newGame(); const out = {};
     const a = FORMS.armor.slots(6); out.armorPitch = Math.abs(a[1][0] - a[0][0]); out.armorRow = Math.abs(a[3][1] - a[0][1]);
@@ -154,7 +154,7 @@ check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times,
     return out;
   })()`);
   if (Math.abs(r.armorPitch - 72) > 1e-6 || Math.abs(r.armorRow - 72) > 1e-6) return "armor lattice " + r.armorPitch + " across, " + r.armorRow + " between rows (expected 72 both: back from 216, owner 2026-10-20 - its outer columns walked out of reach)";
-  if (Math.abs(r.vLat - 72) > 1e-6 || Math.abs(r.vBack - 84) > 1e-6) return "a shield V steps " + r.vLat + " across, " + r.vBack + " back (expected 72, 84: x3)";
+  if (Math.abs(r.vLat - 24) > 1e-6 || Math.abs(r.vBack - 28) > 1e-6) return "a shield V steps " + r.vLat + " across, " + r.vBack + " back (expected 24, 28: a third, owner 2026-10-21)";
   if (Math.abs(r.fastSide - 78) > 1e-6 || Math.abs(r.fastBehind - 78) > 0.01) return "fast pairs " + r.fastSide + " across, " + r.fastBehind + " behind (expected 78 both, three times 26)";
   if (Math.abs(r.firstSpd - 0.5) > 1e-9 || Math.abs(r.laterSpd - 1) > 1e-9) return "wave 1 fast at x" + r.firstSpd + ", wave 2 at x" + r.laterSpd + " (expected x0.5, x1: owner 2026-10-21 \"halve the speed of the first fast wave\")";
   if (r.shieldIdx !== 5 || Math.abs(r.shieldGap - 5 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected 5 x 0.4 = 2, half the old 4)";
@@ -675,6 +675,23 @@ check("Temporal Drive stops Strength dead; a tower's slow still takes 40% on her
   })()`);
   if (!(r.core >= 1 - 1e-9)) return "Temporal Drive slowed Strength to " + r.core + " (expected a full stop, 1)";
   if (!(r.tower < 0.5 * 0.4 + 1e-9)) return "a tower's 0.5 slow on Strength came to " + r.tower + " (expected at most 0.2)";
+  return "";
+});
+check("formations reach their spacing in the 1x zone (owner, 2026-10-21: \"they get compressed as they slow down\")", () => {
+  const r = run(`(() => {
+    G = newGame(); G.enemies = [];
+    const w = { n: 30, list: ["shield", "shield", "shield"], lanes: { shield: 0 }, ang: 0, idx: 1, timer: 0 }; formSpawn(w, "shield");
+    const [a, b] = [G.enemies[0], G.enemies[1]], born = b.s - a.s; // the leader (ahead V_BACK) vs a wingmate (0)
+    // a reach circle round the lane past both: stepEnemies runs them at OFF_SCREEN_SPEED until each is in it
+    // one tower: its reach is the 1x zone (stepEnemies runs them at OFF_SCREEN_SPEED until each is on screen and in it)
+    G.money = 1e6; ui.build = "arc"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null;
+    for (const e of G.enemies) { e.hp = e.max = 1e12; e.armor = 0; e.shield = 0; }
+    let i = 0; for (; i < 20000 && !G.enemies.every(e => e.seen && inReach(e, reachCircles())); i++) stepEnemies(1 / 60);
+    return { born, now: a.s - b.s, inA: inReach(a, reachCircles()), inB: inReach(b, reachCircles()) };
+  })()`);
+  if (Math.abs(r.born - 3 * 28) > 1e-6 && Math.abs(-r.born - 3 * 28) > 1e-6) return "a V's rows spawned " + r.born + " apart along the lane (expected 3 x V_BACK = 84, closing to 28)";
+  if (!(r.inA && r.inB)) return "the test V never reached the 1x zone";
+  if (Math.abs(r.now - 28) > 3) return "in the 1x zone the V's rows are " + r.now.toFixed(1) + " apart (expected V_BACK 28)";
   return "";
 });
 check("damage numbers (owner, 2026-10-21): a lone hit shows at once; more within 0.5 s sum into one number at the window's end", () => {

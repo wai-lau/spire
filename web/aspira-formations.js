@@ -6,7 +6,7 @@
 const FORM_FADE_R = 160;
 // SHIELDS: Vs of V_N - a leader, then pairs fanned back and out (owner, 2026-10-11: "fast in lines, Vs for shields";
 // fast flew the Vs for an afternoon and now come single file)
-const V_N = 5, V_LAT = 72, V_BACK = 84; // x3 (owner, 2026-10-20: "triple the distance between shield units (within wing)"; was 24, 28)
+const V_N = 5, V_LAT = 24, V_BACK = 28; // a third (owner, 2026-10-21: "shield units, 1/3 the distance between a pods wingmates"; was 72, 84 - tripled 2026-10-20 from these)
 // ...and Vs of V_SMALL (owner, 2026-10-12: "for shield, allow groups for 3, not just 5"): a lane's shields fly as Vs of
 // 5 where the rest still splits into 3s and 5s, else 3 - so any count vFits fills whole Vs
 // and LONE shields too (owner, 2026-10-12: "allow shield waves of 1 3 and 5"): any count fits now - 5s, then a 3, then 1s
@@ -76,6 +76,11 @@ const laneCount = (type, count, k) => {
   if (type === "swarm") return Math.max(1, Math.round(count / (k / SWARM_K))) * (k / SWARM_K); // to the NEAREST lane-full: rounded down, wave 7 brought 6 to wave 1's 12 (2026-10-12)
   const unit = FORM_GROUP[type] || 1; return Math.floor(count / (k * unit)) * k * unit || count;
 };
+// THE SPACING IS FOR THE 1x ZONE (owner, 2026-10-21: "the unit spacing is weird ... they get compressed as they slow down / The
+// formations should have a target spacing for when they enter the 1x zone"): an enemy runs OFF_SCREEN_SPEED x until it is on screen
+// and in a tower's reach (stepEnemies), so a gap ALONG the lane shrinks by that much as the front one slows first. Every slot's head
+// start is laid down that much longer (formS) and closes to its slot on the way in; the spawn timer's gaps are already in time
+const formS = ahead => ahead * OFF_SCREEN_SPEED;
 // from stepSpawns: spawn the next formation of `type` from wave part w at once; returns how many it took (0: none)
 function formSpawn(w, type) {
   const f = FORMS[type];
@@ -87,7 +92,7 @@ function formSpawn(w, type) {
   for (let i = 0; i < m; i++) {
     spawnEnemy(type, w.n, w.lanes[type], w.ang || 0);
     const e = G.enemies[G.enemies.length - 1];
-    e.form = true; e.lat = slots[i][0]; e.ahead = slots[i][1]; e.aheadC = mid; e.s += e.ahead; // aheadC: the formation's centre
+    e.form = true; e.lat = slots[i][0]; e.ahead = slots[i][1]; e.aheadC = mid; e.s += formS(e.ahead); // aheadC: the formation's centre
   }
   w.idx += m - 1;
   return m;

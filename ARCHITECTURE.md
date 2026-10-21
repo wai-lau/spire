@@ -564,6 +564,10 @@ towers, core, enemies, shields and text are flat layers over the floor (`warpEnt
 only the board, ranges, beams and effects ride the picture. Enemy tracers taper along the
 lane; beam width is log of the hit; the screen shakes on a core hit.
 
+**Formation spacing is for the 1x zone.** An enemy runs `OFF_SCREEN_SPEED` (3x) until it is on screen and in a tower's reach, so
+a gap along the lane shrinks 3x as the front one slows first. Slot head starts are laid down 3x long (`formS`, formations and
+boss fleets) and close to their slot on the way in; the spawn timer's gaps are in time and already close to theirs.
+
 **Drawn size is not hit size.** Enemies, towers and the core draw at 0.8 of their game size
 (`DRAW_ALL`, `TOWER_DRAW_K`, `CORE_DRAW_K` in `aspira-defs.js`); hits, clicks, drags and
 spacing still read `ENEMIES[type].size`, `TOWER_K` and `CORE_R`. A swarmer's 50-300% size roll
