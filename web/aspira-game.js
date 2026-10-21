@@ -87,7 +87,7 @@ function spawnEnemy(type, n, pi, ang = 0) {
     // swarm bounty must hold; money is shown rounded down)
     bounty: bountyBase(eqWave(n)) * d.bounty * (d.star ? 1 : earlyX(n)), // (aspira-waves.js) slowF: 0, slowT: 0, stunT: 0, markT: 0, markMul: 1,
   });
-  G.enemies[G.enemies.length - 1].sizeMul = (1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earlyHpX(type, n) / (enemyHp(type, 1) / earlyHpX(type, 1)))) * (type === "swarm" ? jit : 1); // GROWS WITH LOG HP (owner, 2026-10-13: "initial unit size should scale logarithmically with unit hp"): x1 on wave 1, about x2 by 119; a swarmer x its HP share too, 50-300% (owner, 2026-10-12)
+  G.enemies[G.enemies.length - 1].sizeMul = (1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earlyHpX(type, n) / (enemyHp(type, 1) / earlyHpX(type, 1)))) * (type === "swarm" ? jit : 1); if (type === "swarm") G.enemies[G.enemies.length - 1].drawJit = swarmDrawJit(jit); // GROWS WITH LOG HP (owner, 2026-10-13: "initial unit size should scale logarithmically with unit hp"): x1 on wave 1, about x2 by 119; a swarmer x its HP share too, 50-300% (owner, 2026-10-12)
   if (type === "bonus") bossSpawn(G.enemies[G.enemies.length - 1], n); // which boss (aspira-bosses.js)
 }
 

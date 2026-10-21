@@ -105,7 +105,7 @@ function hitFlash(e, r, m, color, life) {
 // bigger the fewer remain - the last one biggest of all, with a white flash
 const SHIELD_BREAK_N = 5;
 function shieldBreak(e) {
-  const k = 1 - e.shield / SHIELD_BREAK_N, r = ENEMIES[e.type].size * (e.sizeMul || 1) * (DRAW_SIZE[e.type] || 1); // k: 0.2 at 4 left .. 1 at none
+  const k = 1 - e.shield / SHIELD_BREAK_N, r = ENEMIES[e.type].size * (e.sizeMul || 1) * drawSizeK(e); // k: 0.2 at 4 left .. 1 at none
   // (no blue shockwave ring any more - owner, 2026-10-18: "get rid of the blue circle that appears when shield pops")
   burst(e.x, e.y, "cyan", Math.round(8 + 22 * k));
   if (e.shield <= 0) { ring(e.x, e.y, r * 7, "white", 0.45, true); burst(e.x, e.y, "white", 24); }

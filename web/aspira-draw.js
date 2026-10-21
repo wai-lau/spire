@@ -151,6 +151,7 @@ function drawTower(t, ghost) {
   // draw of a late-game frame (profiled 2026-10-05). Stamped here 1:1 with the
   // canvas's pixels, then the label on top.
   const sp = towerSprite(t.kind, shownLvl(t), c0), w = sp.width / cam.k; // a chart tower's 9 points drawn as 4 glows
+  ctx.save(); ctx.translate(x, y); ctx.scale(TOWER_DRAW_K, TOWER_DRAW_K); ctx.translate(-x, -y); // drawn smaller, clicked the same (aspira-defs.js)
   ctx.globalAlpha = ghost ? 0.55 : 1;
   ctx.drawImage(sp, x - w / 2, y - w / 2, w, w);
   // as BIG as fits (owner): every label is 3 monospace letters, 1.5 em wide, and
@@ -159,7 +160,7 @@ function drawTower(t, ghost) {
   // (owner, 2026-10-06; boardChart, aspira-skills.js) - the build at a glance
   if (hasSkills(t)) boardChart(t, x, y, ghost ? 0.55 : 1, c0); // ALWAYS the triangle, never the label (owner; was from the first point)
   else text(towerAb(t), x, y + 1, TOWER_LABEL_PX, b.color, false, true);
-  ctx.globalAlpha = 1;
+  ctx.restore(); ctx.globalAlpha = 1;
 }
 // one sprite per kind + level + colours + zoom + the hex's turn (Horizon orbits
 // the slots), drawn exactly as the tower used to be drawn each frame

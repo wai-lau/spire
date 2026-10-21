@@ -86,7 +86,7 @@ function drawRelayHex3d() {
   const arm = typeof ui !== "undefined" && ui.relayArm; // ARMED: every tower flashes its hexagon, "tap one" (drawRelayArm's look, in 3D)
   if ((!G.core && !arm) || !warp.ent) return;
   const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes(), b = blinkWave();
-  const hex = (t, k) => { const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y; g.beginPath(); c0.pts.forEach((q, i) => { const p = warpProject(x + (q.x - c0.x) * TOWER_K * k, y + (q.y - c0.y) * TOWER_K * k, 0); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); }); g.closePath(); g.stroke(); };
+  const hex = (t, k) => { const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y; g.beginPath(); c0.pts.forEach((q, i) => { const p = warpProject(x + (q.x - c0.x) * TOWER_K * TOWER_DRAW_K * k, y + (q.y - c0.y) * TOWER_K * TOWER_DRAW_K * k, 0); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); }); g.closePath(); g.stroke(); };
   g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.strokeStyle = COL.white; g.lineJoin = "round"; g.shadowColor = COL.white;
   for (const t of G.towers) {
     if (arm) { g.globalAlpha = 0.3 + 0.7 * b; g.lineWidth = 3 * px; g.shadowBlur = 10 * px; hex(t, RELAY_HEX_OUT); continue; }

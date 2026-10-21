@@ -151,13 +151,7 @@ const autoWaiting = () => {
     try { localStorage.setItem("spire.autowait", autoWait ? "1" : "0"); } catch (e) { /* not remembered */ }
   }, "asp-autowait");
   btn.setAttribute("role", "checkbox");
-  // AUTO-MOVE (autoGlide, aspira-positioning.js): turning it ON takes a second tap within SELL_ARM_MS - it disqualifies the game
-  // (owner, 2026-10-13: "require confirmation to activate"); off is one tap
-  const mvb = button(row, "asp-check", "", () => {
-    if (!autoMove && !mvb.dataset.armed) { mvb.dataset.armed = "1"; setTimeout(() => { delete mvb.dataset.armed; }, SELL_ARM_MS); return; }
-    delete mvb.dataset.armed; autoMove = !autoMove; G.autoMove = autoMove; // (this game only: aspira-positioning.js)
-  }, "asp-automove");
-  mvb.setAttribute("role", "checkbox");
+  ascBoxes(); // auto-move + free builds, under the title (aspira-ascend.js)
   updateQuality(); /* the board's 3D layers show (aspira-quality.js) */
 })();
 // the checkbox as an SVG, not a font glyph (owner: the glyph sat off-centre
@@ -171,10 +165,8 @@ function updateAutoWait() {
   const btn = $("asp-autowait"), html = (autoWait ? ICON_CHECKED : ICON_UNCHECKED) + "<span>auto-wait</span>"; // the box bigger than the words (owner)
   if (btn.dataset.html !== html) { btn.dataset.html = html; btn.innerHTML = html; btn.setAttribute("aria-checked", String(autoWait)); }
   btn.classList.toggle("on", autoWaiting()); // lit while it is holding the game at 1/2x
-  const mv = $("asp-automove"), mh = (autoMove ? ICON_CHECKED : ICON_UNCHECKED) + "<span>" + (mv.dataset.armed ? "NO LEADERBOARD (tap again to confirm)" : "auto-move") /* (owner, 2026-10-17; was "tap again") */ + "</span>" +
-    (autoBarred() || mv.dataset.armed ? '<span class="asp-amt">(DQ)</span>' : ""); // used this game: (DQ) beside it; armed: what a second tap costs (owner, 2026-10-13)
-  mv.hidden = !best.ascended; // ASCENDANTS only (owner, 2026-10-13: "non-ascendants do not get that checkbox")
-  if (mv.dataset.html !== mh) { mv.dataset.html = mh; mv.innerHTML = mh; mv.setAttribute("aria-checked", String(autoMove)); }
+  ascCheck("asp-automove", autoMove, "auto-move", (G.autoMoveS || 0) > 0);
+  ascCheck("asp-freebuild", freeMode, "free towers/upgrades", !!G.autoBuy);
 }
 
 // the sound toggle is an ICON (owner: was "sound on"/"sound off"): a speaker
@@ -427,7 +419,7 @@ function showOverlay(title, body, btn) {
 }
 $("asp-spend-btn").onclick = () => { if (spend.onClose) spend.onClose(); }; // the spend bar's cancel / close (aspira-chooser.js)
 $("asp-ov-btn").onclick = () => {
-  if (G.over) { G = newGame(); autoMove = false; fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null; refreshPanels(); }
+  if (G.over) { G = newGame(); autoMove = false; freeMode = false; fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null; refreshPanels(); }
   // no intro (owner): the overlay is only the game-over card; the first tower starts wave 1
   $("asp-ov").hidden = true;
 };

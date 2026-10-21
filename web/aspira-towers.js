@@ -432,7 +432,7 @@ function drawUpPlus() { // over the towers (render, aspira-draw.js), so a tower 
     if (!upReady(t)) continue;
     const c = CELLS[t.cell], col = COL[TOWERS[t.kind].color];
     ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = 0.2 + 0.7 * upPulse(now); // the hex FLASHES with the chevron, in more outlines the higher the tower (moved here from drawLeash, which turns over with the boss sky)
-    for (let i = 0; i < upRings(t); i++) { towerHex(c, TOWER_K * (1 + UP_RING_K * i)); ctx.stroke(); }
+    for (let i = 0; i < upRings(t); i++) { towerHex(c, TOWER_K * TOWER_DRAW_K * (1 + UP_RING_K * i)); ctx.stroke(); }
     ctx.globalAlpha = 0.25 + 0.75 * upPulse(now); upArrow(c.x, c.y, UP_PLUS_PX, col);
   }
   ctx.globalAlpha = 1;

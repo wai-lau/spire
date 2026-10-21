@@ -90,3 +90,29 @@ function showAscendants() {
   box.innerHTML = ASC_TITLE + '<div id="asp-asc-board"></div>';
   ascLoad();
 }
+
+// THE ASCENDANT BOXES (moved from aspira-ui.js, 2026-10-21): built once by autoWaitBox, drawn by updateAutoWait
+function ascBoxes() {
+  // the ASCENDANT-only boxes sit UNDER THE TITLE (owner, 2026-10-21: "move those checkboxes under ASCENDANT"), one each
+  const asc = document.createElement("div");
+  asc.className = "asp-row asp-autowait asp-ascboxes";
+  document.querySelector(".asp-buildcol").append(asc); // (the title is the column's last child)
+  // AUTO-MOVE (autoGlide, aspira-positioning.js) and FREE builds (freeBuild, aspira-defs.js): turning either ON takes a second
+  // tap within SELL_ARM_MS - it disqualifies the game (owner, 2026-10-13: "require confirmation to activate"); off is one tap
+  const armBox = (id, on, flip) => {
+    const b = button(asc, "asp-check", "", () => {
+      if (!on() && !b.dataset.armed) { b.dataset.armed = "1"; setTimeout(() => { delete b.dataset.armed; }, SELL_ARM_MS); return; }
+      delete b.dataset.armed; flip();
+    }, id);
+    b.setAttribute("role", "checkbox");
+  };
+  armBox("asp-automove", () => autoMove, () => { autoMove = !autoMove; G.autoMove = autoMove; }); // (this game only: aspira-positioning.js)
+  armBox("asp-freebuild", () => freeMode, () => { freeMode = !freeMode; G.freeMode = freeMode; });
+}
+// one ASCENDANT box: (DQ) beside it once used this game; armed, what a second tap costs (owner, 2026-10-13; "NO LEADERBOARD", 2026-10-17)
+function ascCheck(id, on, label, used) {
+  const b = $(id), h = (on ? ICON_CHECKED : ICON_UNCHECKED) + "<span>" + (b.dataset.armed ? "NO LEADERBOARD (tap again to confirm)" : label) + "</span>" +
+    (used || b.dataset.armed ? '<span class="asp-amt">(DQ)</span>' : "");
+  b.hidden = !best.ascended; // ASCENDANTS only (owner, 2026-10-13: "non-ascendants do not get that checkbox")
+  if (b.dataset.html !== h) { b.dataset.html = h; b.innerHTML = h; b.setAttribute("aria-checked", String(on)); }
+}

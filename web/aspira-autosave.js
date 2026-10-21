@@ -70,12 +70,12 @@ function runOffer(saved) {
 }
 function runResume(saved) {
   try {
-    G = runClean(saved.G); runSavedAt = G.wave; autoMove = !!G.autoMove; // (auto-move is the game's own; runClean also drops leashHint - a page-clock stamp that kept the movement rings on for hours, owner 2026-10-16)
+    G = runClean(saved.G); runSavedAt = G.wave; autoMove = !!G.autoMove; freeMode = !!G.freeMode; // (auto-move is the game's own; runClean also drops leashHint - a page-clock stamp that kept the movement rings on for hours, owner 2026-10-16)
     fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null;
     if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 });
     refreshPanels();
     return true;
-  } catch (e) { G = newGame(); autoMove = false; refreshPanels(); return false; } // a save the game can no longer read: a fresh one
+  } catch (e) { G = newGame(); autoMove = false; freeMode = false; refreshPanels(); return false; } // a save the game can no longer read: a fresh one
 }
 // (a save from before RUN_META has no meta: its whole run is read, once - the next save writes one)
 runDo("readonly", s => s.get(RUN_META)).then(m => m || runDo("readonly", s => s.get(RUN_KEY)))

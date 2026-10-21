@@ -257,7 +257,7 @@ function drawCredits(part) {
     // while a leak's ring BOUNCES out (threatBounces, aspira-threat.js) the core shows the LIVES left, in pink (owner, 2026-10-13)
     const hurt = typeof threatBounces !== "undefined" && threatBounces.length > 0;
     if (hurt) { // the number alone, as large as fits inside the core's hexagon ("font as large as would fit in the hexagon")
-      const L = String(G.lives), inR = CORE_R * Math.cos(Math.PI / 6); // the hex's inner radius
+      const L = String(G.lives), inR = CORE_R * CORE_DRAW_K * Math.cos(Math.PI / 6); // the hex's inner radius
       ctx.font = "100px " + CANVAS_FONT;
       const px = Math.floor(Math.min(1.45 * inR, 1.8 * inR * 100 / ctx.measureText(L).width));
       ctx.font = "bold " + px + "px " + CANVAS_FONT; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";

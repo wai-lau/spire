@@ -370,7 +370,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   if (r.chargeS !== 1.55 || r.dmg !== 120) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.55 and 120)";
   return "";
 });
-check("IFR: the fire (Hellfire, no ring - it burns nothing itself) opens at the meteor's size, grows to its max, lights its flares and goes", () => {
+check("IFR: the fire (Hellfire, its circle drawn at 20% - it burns nothing itself) opens at the meteor's size, grows to its max, lights its flares and goes", () => {
   const r = run(`(() => {
     const fresh = h => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < h; k++) upgradeTower(t, "hellfire", true); ifrInit(t); return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; return e; };
@@ -382,13 +382,13 @@ check("IFR: the fire (Hellfire, no ring - it burns nothing itself) opens at the 
     const grow = (st.fireR - r0) / st.fireV; let tm = 0; while (f.r < f.R && tm < 10) { stepIfrFires(t, st, 1 / 30); tm += 1 / 30; }
     out.R6 = f.R; out.grow = tm; out.growWant = grow;
     let tl = 0, lastLit = 0; while (t.ifrFires.length && tl < 60) { const q0 = f.flq ? f.flq.length : -1; stepIfrFires(t, st, 1 / 30); tl += 1 / 30; if (f.flq && f.flq.length !== q0) lastLit = tl; }
-    out.goneAfter = tl - lastLit; out.drawn = typeof drawIfrFires === "function";
+    out.goneAfter = tl - lastLit; out.drawn = typeof drawIfrFires === "function" && IFR_FIRE_A === 0.2;
     ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); try { G.towers = G.towers.filter(x => x !== t); for (let i = 0; i < 5; i++) step(1 / 30); out.sold = true; } catch (e) { out.sold = String(e); }
     return out;
   })()`);
   if (r.r0 !== r.ballR || Math.abs(r.R0 - 16 * r.ballR) > 1e-9) return "Hellfire 0: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + ", then 16x it)";
   if (r.fireHits) return "the fire itself hit an enemy " + r.fireHits + " times (owner, 2026-10-20: the ring is gone - only its flares burn)";
-  if (r.drawn) return "the fire is still drawn (drawIfrFires)";
+  if (!r.drawn) return "the fire's circle is not drawn at 20% (drawIfrFires, IFR_FIRE_A; owner 2026-10-21)";
   if (r.R6 !== 180) return "Hellfire VI fire grows to " + r.R6 + " (expected 180)";
   if (Math.abs(r.grow - r.growWant) > 1 / 30 + 1e-6) return "the fire took " + r.grow.toFixed(3) + " s to grow (expected " + r.growWant.toFixed(3) + ")";
   if (!(r.goneAfter < 0.1)) return "the fire stayed " + r.goneAfter.toFixed(2) + " s after its last flare (it goes with it)";
@@ -474,17 +474,21 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (Math.abs(dens6 / dens3 / (r.f6.dens / r.f3.dens) - 1) > 0.15 || !(r.f6.dens > r.f3.dens)) return "flare density: " + r.f3.n + " in r" + r.f3.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected " + (r.f6.dens / r.f3.dens).toFixed(2) + "x denser - owner 2026-10-20: denser as Hellfire levels)";
   return "";
 });
-check("auto-move: towers and upgrades are free, and a buy made then bars the leaderboard", () => {
+check("free builds (own box, owner 2026-10-21): towers and upgrades are free, a buy made then bars the leaderboard; auto-move alone charges", () => {
   const r = run(`(() => {
-    G = newGame(); G.money = 500; ui.build = "ifr"; autoMove = true; G.autoMove = true;
+    G = newGame(); G.money = 500; ui.build = "ifr"; freeMode = true; G.freeMode = true;
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
     upgradeTower(t, "firaga", true); const out = { money: G.money, towers: G.towers.length, lvl: t.lvl, barred: autoBarred(), spent: t.spent };
-    autoMove = false; G.autoMove = false; out.paid = upCost(t) > 0; return out;
+    freeMode = false; G.freeMode = false; out.paid = upCost(t) > 0;
+    autoMove = true; out.moveFree = upCost(t) === 0; autoMove = false;
+    out.boxes = !!document.getElementById("asp-automove") && !!document.getElementById("asp-freebuild"); return out;
   })()`);
-  if (r.towers !== 1 || r.lvl < 2) return "auto-move: the free tower / upgrade did not happen (towers " + r.towers + ", lvl " + r.lvl + ")";
-  if (r.money < 500 || r.spent !== 0) return "auto-move charged " /* (>=: the first tower starts wave 1, which may pay) */ + (500 - r.money) + "c (spent " + r.spent + ")";
-  if (!r.barred) return "a buy during auto-move did not bar the leaderboard";
-  if (!r.paid) return "prices stayed 0 after auto-move went off";
+  if (r.towers !== 1 || r.lvl < 2) return "free builds: the free tower / upgrade did not happen (towers " + r.towers + ", lvl " + r.lvl + ")";
+  if (r.money < 500 || r.spent !== 0) return "free builds charged " /* (>=: the first tower starts wave 1, which may pay) */ + (500 - r.money) + "c (spent " + r.spent + ")";
+  if (!r.barred) return "a buy during free builds did not bar the leaderboard";
+  if (!r.paid) return "prices stayed 0 after free builds went off";
+  if (r.moveFree) return "auto-move alone still made builds free (split, owner 2026-10-21)";
+  if (!r.boxes) return "the auto-move and free-build boxes are not both there";
   return "";
 });
 check("Temporal Drive: the field draws", () => {

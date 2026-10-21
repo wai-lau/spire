@@ -61,9 +61,10 @@ function warpWalls(pieces, cy, front, hh, col, a0) {
 function coreWallPieces() {
   G.lifeFlash = G.lifeFlash || [];
   G.lifeSegs = syncSegs(G.lifeSegs || [], Math.max(0, G.lives), 6, G.lifeFlash);
-  const out = segPieces(CX, CY, G.lifeSegs, 6, Math.PI / 6, CORE_R, LIFE_GAP), lvl = Math.round(coreLvl() / CORE_TIERS), o = LIFE_GAP * LIFE_RINGS / CORE_R;
-  for (let r = 1; r <= lvl; r++) out.push(...hexPieces(CX, CY, CORE_R * (1 + o + LEVEL_GAP * r) * shieldPulse(), 6, Math.PI / 6, r));
-  if (corePicks() > 0) out.push(...hexPieces(CX, CY, CORE_R * (1 + o + LEVEL_GAP * (lvl + 1) + 0.08 * Math.sin(performance.now() / 400)), 6, Math.PI / 6, 1));
+  const cr = CORE_R * CORE_DRAW_K; // the rings hug the core as DRAWN (aspira-defs.js); its click area is coreOuterR (aspira-pick.js)
+  const out = segPieces(CX, CY, G.lifeSegs, 6, Math.PI / 6, cr, LIFE_GAP), lvl = Math.round(coreLvl() / CORE_TIERS), o = LIFE_GAP * LIFE_RINGS / cr;
+  for (let r = 1; r <= lvl; r++) out.push(...hexPieces(CX, CY, cr * (1 + o + LEVEL_GAP * r) * shieldPulse(), 6, Math.PI / 6, r));
+  if (corePicks() > 0) out.push(...hexPieces(CX, CY, cr * (1 + o + LEVEL_GAP * (lvl + 1) + 0.08 * Math.sin(performance.now() / 400)), 6, Math.PI / 6, 1));
   return out;
 }
 // an enemy's shield segments, round its die

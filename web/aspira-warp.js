@@ -314,7 +314,7 @@ function warpEntities() {
     const solids = G.towers.map(t => {
       const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
       const h = towerH(t);
-      return { x, y, h, col: COL[TOWERS[t.kind].color], pts: c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K, y: y + (p.y - c0.y) * TOWER_K })),
+      return { x, y, h, col: COL[TOWERS[t.kind].color], pts: c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })),
         under: () => ownColours(() => up(x, y, () => drawIfrTop(t), 0)), top: () => ownColours(() => up(x, y, () => drawTower(t), h / 2)), own: true }; /* drawIfrTop: IFR's charge balls on the prism's corners AT THE FLOOR, before the prism - the tower always covers them (aspira-ifrit.js) */
     });
     CELLS.forEach((c, ci) => {
@@ -326,13 +326,13 @@ function warpEntities() {
     });
     const coreH = coreH3d();
     warp.lightZ = coreH / 2; // the dice are lit from the core's top (aspira-solids.js)
-    solids.push({ x: CX, y: CY, h: coreH, col: COL.white, pts: Array.from({ length: 6 }, (_, i) => ({ x: CX + CORE_R * Math.cos(Math.PI / 6 + i * Math.PI / 3), y: CY + CORE_R * Math.sin(Math.PI / 6 + i * Math.PI / 3) })),
+    solids.push({ x: CX, y: CY, h: coreH, col: COL.white, pts: Array.from({ length: 6 }, (_, i) => ({ x: CX + CORE_R * CORE_DRAW_K * Math.cos(Math.PI / 6 + i * Math.PI / 3), y: CY + CORE_R * CORE_DRAW_K * Math.sin(Math.PI / 6 + i * Math.PI / 3) })),
       // the core's SHIELDS (its life and level rings) stand on the FLOOR (owner: "core shields on plane level") as walls,
       // the ones behind the core before its prism and the ones in front after (aspira-walls.js); the top is the plain
       // white hex and the credits
       // its shields IN FRONT go over its walls (owner, 2026-10-09: "core outline should not draw over shields"); the ones behind stay under
       post: () => { if (warpBand && warpBand.lo === 0) warpShieldLines(warp.coreWalls.filter(coreFront), COL.white, 1, [CX, CY]); },
-      top: () => { up(CX, CY, () => { poly(CX, CY, CORE_R, 6, Math.PI / 6, false); ctx.fillStyle = COL.white; ctx.globalAlpha = 1; ctx.fill(); drawCredits("count"); }, coreH / 2); up(CX, CY, drawCoreHud, coreH / 2); } });
+      top: () => { up(CX, CY, () => { poly(CX, CY, CORE_R * CORE_DRAW_K, 6, Math.PI / 6, false); ctx.fillStyle = COL.white; ctx.globalAlpha = 1; ctx.fill(); drawCredits("count"); }, coreH / 2); up(CX, CY, drawCoreHud, coreH / 2); } });
     solids.sort((a, b) => warpProject(a.x, a.y).y - warpProject(b.x, b.y).y);
     const drawSolid = (o, tops) => { if (o.pre) o.pre(); if (tops && o.under) o.under(); warpPrism(o); /* under: drawn with the tops, before the prism - so it covers it */ if (tops) o.top(); if (o.post) o.post(); };
     // a TOWER under the boss sky keeps its own colours, as in 2D (owner, 2026-10-09: "colors also buggy on boss spawn" - the

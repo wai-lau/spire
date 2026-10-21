@@ -27,6 +27,12 @@ function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1) { // fill: false, t
   }
   drawIfrRingAt(x, y, r, 0.9 * a, low);
 }
+// THE FIRE'S CIRCLE, back at IFR_FIRE_A (owner, 2026-10-21: "visually restore the hellfire circle at 20% opacity"; gone 2026-10-20):
+// the meteor without its black fill at the fire's radius, as it grows - the look only (stepIfrFires still draws and burns nothing)
+const IFR_FIRE_A = 0.2;
+function drawIfrFires(t, low) {
+  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, IFR_FIRE_A);
+}
 function drawIfrBalls(t, low) {
   for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_ARM_HIT_U) : 1); /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
@@ -89,7 +95,7 @@ function drawIfr(balls) {
   for (const t of G.towers) {
     if (t.kind !== "ifr" || !t.ifrInit0) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); }
+    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrFires(t, low); }
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
