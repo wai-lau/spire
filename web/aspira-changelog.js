@@ -15,6 +15,7 @@ const CHANGELOG = [
     "Sol: two rays from the start, ten at Focus III.",
     "Carrier: more ammo and a harder shot before its upgrades.",
     "Acid: twice the ticks, each half as hard - it eats shields faster.",
+    "The first fast wave comes in at half speed.",
     "Ifrit: charges a little faster with no Meteor bought.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",

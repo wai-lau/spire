@@ -154,5 +154,31 @@
    "shield": 0,
    "armor": 0
   }
+ },
+ "ifr": {
+  "spread": {
+   "swarm": 85,
+   "fast": 95,
+   "shield": 97,
+   "armor": 100
+  },
+  "meteor": {
+   "swarm": 33,
+   "fast": 34,
+   "shield": 14,
+   "armor": 2
+  },
+  "hellfire": {
+   "swarm": 18,
+   "fast": 64,
+   "shield": 41,
+   "armor": 100
+  },
+  "firaga": {
+   "swarm": 7,
+   "fast": 9,
+   "shield": 5,
+   "armor": 33
+  }
  }
 }

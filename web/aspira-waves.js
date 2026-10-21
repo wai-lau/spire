@@ -31,6 +31,9 @@ function challengeNext() { if (!afterBoss()) return; G.challenged = G.wave; send
 // the first four waves are FIXED (owner, 2026-10-02): swarm, shield, armor,
 // fast - one of each, to meet them in turn; from wave 5 a random type, never
 // the one before
+// the FIRST fast wave (wave 1) at half speed (owner, 2026-10-21: "halve the speed of the first fast wave"); its pairs keep
+// their FAST_PAIR spacing (the spawn timer stretches with it, aspira-game.js)
+const FIRST_FAST_SPD = 0.5;
 const UNLOCK = ["fast", "shield", "armor", "swarm"]; // FAST opens (owner, 2026-10-17: "Replace the first wave with an equivalent fast wave"); swarm moved to wave 4, the slot fast had - each keeps its type balance (TYPE_COUNT_MUL); was swarm, shield, armor, fast
 const STAR_EVERY = 12; // a boss every 12 waves (owner, 2026-10-12: "add 2 waves before each boss"; was 10) - the star rides waves 10, 20, 30... (owner, 2026-10-02; was every wave from 3)
 // Waves are the SAME every game (owner, 2026-10-02): type, lane split, star

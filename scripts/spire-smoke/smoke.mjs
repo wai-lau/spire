@@ -139,7 +139,7 @@ run(`function ifrNear(type, t, dist) {
   for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
   const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e6; e.armor = 0; e.shield = 0; return e;
 }`);
-check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times, shield pods half the gap, a shield V 3x", () => {
+check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times, shield pods half the gap, a shield V 3x; wave 1 fast at half speed (2026-10-21)", () => {
   const r = run(`(() => {
     G = newGame(); const out = {};
     const a = FORMS.armor.slots(6); out.armorPitch = Math.abs(a[1][0] - a[0][0]); out.armorRow = Math.abs(a[3][1] - a[0][1]);
@@ -149,12 +149,14 @@ check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times,
     const w = { n: 1, list: ["shield", "shield", "shield", "shield", "shield", "shield", "shield", "shield"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w];
     stepSpawns(1e-6); out.shieldGap = w.timer * ENEMY_SPEED; out.shieldIdx = w.idx;
     const w2 = { n: 1, list: ["fast", "fast", "fast", "fast"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w2];
-    stepSpawns(1e-6); out.fastBehind = w2.timer * ENEMIES.fast.speed * ENEMY_SPEED;
+    stepSpawns(1e-6); out.fastBehind = w2.timer * ENEMIES.fast.speed * ENEMY_SPEED * FIRST_FAST_SPD; // wave 1 runs at FIRST_FAST_SPD
+    G.enemies = []; spawnEnemy("fast", 1, 0, 0); spawnEnemy("fast", 2, 0, 0); out.firstSpd = G.enemies[0].spd / lateK(1, "fast"); out.laterSpd = G.enemies[1].spd / lateK(2, "fast");
     return out;
   })()`);
   if (Math.abs(r.armorPitch - 72) > 1e-6 || Math.abs(r.armorRow - 72) > 1e-6) return "armor lattice " + r.armorPitch + " across, " + r.armorRow + " between rows (expected 72 both: back from 216, owner 2026-10-20 - its outer columns walked out of reach)";
   if (Math.abs(r.vLat - 72) > 1e-6 || Math.abs(r.vBack - 84) > 1e-6) return "a shield V steps " + r.vLat + " across, " + r.vBack + " back (expected 72, 84: x3)";
   if (Math.abs(r.fastSide - 78) > 1e-6 || Math.abs(r.fastBehind - 78) > 0.01) return "fast pairs " + r.fastSide + " across, " + r.fastBehind + " behind (expected 78 both, three times 26)";
+  if (Math.abs(r.firstSpd - 0.5) > 1e-9 || Math.abs(r.laterSpd - 1) > 1e-9) return "wave 1 fast at x" + r.firstSpd + ", wave 2 at x" + r.laterSpd + " (expected x0.5, x1: owner 2026-10-21 \"halve the speed of the first fast wave\")";
   if (r.shieldIdx !== 5 || Math.abs(r.shieldGap - 5 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected 5 x 0.4 = 2, half the old 4)";
   return "";
 });
