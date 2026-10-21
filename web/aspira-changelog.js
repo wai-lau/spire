@@ -39,6 +39,7 @@ const CHANGELOG = [
     "Ifrit: fire colours - ember red, orange, marigold and pale yellow, no white; a flare's glow is only as wide as what it burns.",
     "Ifrit: the meteor glows inside its rim; the fire keeps the glow without the black, brightening as it burns; a flare shines as bright as it hits.",
     "Build cards: Ifrit's marks re-checked.",
+    "Game over on a wide screen: the top players on the left, the rest on the right.",
   ] },
   { v: "6.4", day: "Oct 20", bu: [
     "Ifrit: Mega Firaga's blast hits a quarter harder.",

@@ -46,3 +46,17 @@
 #asp-asc > * { flex-shrink: 0; }
 #asp-asc > #asp-asc-board { flex: 1 1 0; min-height: 0; }
 #asp #asp-ov-btn { margin-top: var(--space-3); } /* Play again UNDER the leak list (owner, 2026-10-19; was between the stats and it) */
+/* WIDE SCREENS: two columns (owner, 2026-10-20: "score screen on wide screen, two columns, one for top players + initials left, and everything
+   else right") - the board and its initials form fill the left, the title, stats, leak list and Play again stack on the right */
+@media (orientation: landscape) and (width >= 700px) {
+  #asp-ov:has(> #asp-asc:not([hidden])) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    justify-items: center;
+    gap: var(--space-4) var(--space-8);
+  }
+  #asp-ov > #asp-asc:not([hidden]) { grid-column: 1; grid-row: 1 / -1; align-self: stretch; min-height: 0; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > :not(#asp-asc) { grid-column: 2; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-leaks { align-self: stretch; min-height: 0; }
+}
