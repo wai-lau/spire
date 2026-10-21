@@ -14,7 +14,7 @@ const CHANGELOG = [
     "Freeze: a faster, colder aura before its Temperature upgrades.",
     "Sol: two rays from the start, ten at Focus III.",
     "Carrier: more ammo and a harder shot before its upgrades.",
-    "Acid: three times the ticks, each a third as hard - it eats shields far faster.",
+    "Acid: twice the ticks, each half as hard - it eats shields faster.",
     "Ifrit: charges a little faster with no Meteor bought.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",
