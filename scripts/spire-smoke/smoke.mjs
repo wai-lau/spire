@@ -241,6 +241,14 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
       while (t.ifrBalls.length && Math.hypot(t.ifrBalls[0].x - t.x, t.ifrBalls[0].y - t.y) < 45 && k++ < 600) { stepIfrBalls(t, st, 1 / 60); if (t.ifrBalls[0] && Math.abs(t.ifrBalls[0].vy) > 1e-9) bent++; }
       while (t.ifrBalls.length && (t.ifrBalls[0].flown || 0) < 95 && k++ < 1200) stepIfrBalls(t, st, 1 / 60); /* homing from 50 u, hitting only from 100 u (owner, 2026-10-20) */
       out.armEarly = 50 - v.shield + 50 - w.shield; out.bent = bent; w.dead = true; k = 0; while (t.ifrBalls.length && k++ < 1200) stepIfrBalls(t, st, 1 / 60); out.armLate = 50 - v.shield; v.dead = true; t.ifrBalls.length = 0; t.ifrFlares.length = 0; }
+    /* a SPAWNED meteor bursts on its own somewhere round 400 u out (owner, 2026-10-20: "a chance of exploding as it travels ... bell curve
+       explosions around 400u away"): no enemy anywhere - it flies, then bursts (a flare) at its fuse distance */
+    { for (const e of G.enemies) e.dead = true; t.ifrBalls.length = 0; t.ifrFlares.length = 0; const d = [];
+      for (let i = 0; i < 40; i++) { t.ifrBalls.push({ x: CX, y: CY, vx: st.ballV * IFR_FAN_V, vy: 0, r: 2, gen: 1, skip: null, left: 30, wait: 0, fuse: ifrFuse() }); }
+      const fs = t.ifrBalls.map(b => b.fuse); let k = 0; const ov = ifrOnView; ifrOnView = () => true;
+      try { while (t.ifrBalls.length && k++ < 4000) stepIfrBalls(t, st, 1 / 60); } finally { ifrOnView = ov; }
+      out.fuseMean = fs.reduce((a, b) => a + b, 0) / fs.length; out.fuseFlares = t.ifrFlares.length; out.fuseLeft = t.ifrBalls.length;
+      out.fuseAt = t.ifrFlares.map(f => Math.hypot(f.x - CX, f.y - CY)); t.ifrFlares.length = 0; }
     /* a fan meteor homes within 50 u (and only then), hits for damage only - no fire */
     t.ifrFires.length = 0; const near = held(t, t.x + 150, t.y + 35), far = held(t, t.x + 250, t.y + 90); egridAt = NaN;
     t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
@@ -270,6 +278,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (!(r.corpseFire < 6) || r.decoy) return "its target died: the burst landed " + r.corpseFire + " u from the corpse, a live decoy took " + r.decoy + " (expected at the corpse, none)";
   if (r.bent) return "a spawned meteor turned (homed) " + r.bent + " steps in its first 45 u (expected straight)";
   if (r.armEarly !== 0 || r.armLate !== 1) return "a spawned meteor 30 u from an enemy hit it " + r.armEarly + " times in its first 45 u (expected 0), " + r.armLate + " after (expected 1)";
+  if (Math.abs(r.fuseMean - 400) > 50 || r.fuseFlares !== 40 || r.fuseLeft || r.fuseAt.some(d => d < 100)) return "spawned meteors' fuses: mean " + r.fuseMean.toFixed(0) + " u, " + r.fuseFlares + " burst of 40, " + r.fuseLeft + " still flying (expected a bell round 400 u, every one bursting, none inside 100 u)";
   if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire) return "a fan meteor: near (35 u) hit " + r.homeNear + ", far (90 u) " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 0)";
   if (!r.fissure || JSON.stringify(r.kids) !== "[-30,30]" || r.kidGen.some(g => g !== 2) || r.cHits !== 1) return "capstone fissure: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen + ", parent's enemy hit " + r.cHits;
   if (!r.offGone || r.offFires || r.offSteps < 5) return "off view: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires;

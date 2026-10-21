@@ -30,6 +30,8 @@ const IFR_TICK_S = [0.25, 0.25, 0.25, 0.24, 0.23, 0.22] /* untaken 0.54 -> 0.25 
 const IFR_TICK_K = [0.41, 1.5, 1.55, 1.6, 1.8, 2.27] /* x0.5 with the flares x3 (sweep 2026-10-19: more ticks to pop shields, less each - armor shrugs them off) */ /* x2 with the flares halved (2026-10-19); was [0.41, 0.6, 0.91, 1.36, 1.52, 2.27], VI 3.78 */ /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
 const IFR_BIG_S = 4 / 3, IFR_BIG_K = 4, IFR_BIG_X = 1 / 9; // the Flare capstone's BIG flare, dead centre of a fire once all its flares are lit (owner, 2026-10-20): size x BIG_S the largest flare, hit x BIG_K, its x BIG_X as long (the old giant flare's)
 const IFR_ARM_U = 50, IFR_ARM_HIT_U = 100; // a SPAWNED meteor (fan, fissure) flies straight for its first ARM_U, then homes, and hits nothing until it has flown ARM_HIT_U (owner, 2026-10-20: "no homing for first 50", "100u instead of 50u for the non-hit")
+const IFR_FUSE_U = 400, IFR_FUSE_SD = 100; // a SPAWNED meteor's FUSE: unspent, it bursts (a flare) once it has flown a distance drawn from a bell round FUSE_U, sd FUSE_SD, never under IFR_ARM_HIT_U (owner, 2026-10-20: "a chance of exploding as it travels, time bell curve explosions around 400u away")
+const ifrFuse = () => Math.max(IFR_ARM_HIT_U, IFR_FUSE_U + IFR_FUSE_SD * ifrNormal());
 const IFR_FAN_V = 0.25, IFR_FAN_R = 0.25; // FAN_R: a spawned meteor's size (and reach) x the launched one's (owner, 2026-10-20: "1/2 the size", then "change the core to yellow and make it smaller again" - a quarter, a yellow core) // a fan meteor (and a fissure's) flies at this x the launch speed (owner, 2026-10-20: "quarter the speed of the fissured meteors")
 const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights THREE flares, each up to this far off its spot (owner, 2026-10-20)
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
@@ -108,7 +110,7 @@ function stepIfr(t, dt) {
 // burst. The capstone FISSURES: a hit spawns two meteors IFR_FISSURE_DEG either side of its heading (gen 1: they do not fissure, and skip that enemy) ----------
 function ifrMeteor(t, st, x, y, ang, gen, skip, wait = 0) { // gen 0 the launched one, 1 the fan, 2 a fissure's; wait: s before it leaves
   const v = st.ballV * (gen ? IFR_FAN_V : 1);
-  t.ifrBalls.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, r: st.ballR * (gen ? IFR_FAN_R : 1), gen, skip, left: IFR_FLY_S, wait });
+  t.ifrBalls.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, r: st.ballR * (gen ? IFR_FAN_R : 1), gen, skip, left: IFR_FLY_S, wait, fuse: gen ? ifrFuse() : null });
 }
 // is (x, y) in the camera's view (r world units of slack)? 3D: projected onto the canvas; the simulator has no view - within IFR_FLY_R of the core
 function ifrOnView(x, y, r) {
@@ -184,7 +186,8 @@ function stepIfrBalls(t, st, dt) {
     } else if (atCorpse) { /* at its dead target's spot: the launched one bursts there (fire, the fan); a fan meteor just goes */
       b.left = 0;
       if (!b.gen) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } else ifrLandFlares(t, st, b.x, b.y);
-    } else if (!b.gen && b.left <= 0) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } /* the launched one never goes silently: out of time, it bursts where it is */
+    } else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; ifrLandFlares(t, st, b.x, b.y); } /* its fuse: it bursts mid-flight */
+    else if (!b.gen && b.left <= 0) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } /* the launched one never goes silently: out of time, it bursts where it is */
     else if ((b.gen || (b.lock == null && b.cx == null)) && !ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst - never the launched one while it hunts (its seen target may sit where the camera does not reach; owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening") */
   }
   keepLive(t.ifrBalls);
