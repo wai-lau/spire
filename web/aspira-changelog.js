@@ -19,6 +19,7 @@ const CHANGELOG = [
     "Ifrit: the Hellfire circle is back, faint.",
     "Temporal Drive now stops Strength dead.",
     "Formations arrive at their real spacing: they no longer bunch up as they slow down near your towers. Shield Vs are tighter.",
+    "No enemy appears mid-board any more: every formation walks in from the edge.",
     "Ifrit: charges a little faster with no Meteor bought.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",

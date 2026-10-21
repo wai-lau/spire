@@ -76,11 +76,12 @@ const laneCount = (type, count, k) => {
   if (type === "swarm") return Math.max(1, Math.round(count / (k / SWARM_K))) * (k / SWARM_K); // to the NEAREST lane-full: rounded down, wave 7 brought 6 to wave 1's 12 (2026-10-12)
   const unit = FORM_GROUP[type] || 1; return Math.floor(count / (k * unit)) * k * unit || count;
 };
-// THE SPACING IS FOR THE 1x ZONE (owner, 2026-10-21: "the unit spacing is weird ... they get compressed as they slow down / The
-// formations should have a target spacing for when they enter the 1x zone"): an enemy runs OFF_SCREEN_SPEED x until it is on screen
-// and in a tower's reach (stepEnemies), so a gap ALONG the lane shrinks by that much as the front one slows first. Every slot's head
-// start is laid down that much longer (formS) and closes to its slot on the way in; the spawn timer's gaps are already in time
-const formS = ahead => ahead * OFF_SCREEN_SPEED;
+// THE SPACING IS FOR THE 1x ZONE, AND NOTHING POPS IN (owner, 2026-10-21: "they get compressed as they slow down / The formations
+// should have a target spacing for when they enter the 1x zone"; then "armor units feel like they teleport in / ensure that no unit
+// does that"): a formation's FRONT spawns at the entry and the rest wait BEHIND it off the board (G.fleetQ, as a boss's fleet does -
+// queueFleet, aspira-bosses.js), walking in at 1x while the board runs OFF_SCREEN_SPEED x: each gap opens by that much on the way
+// in and closes back to its slot in a tower's reach. The next group waits the formation's length longer, so the gap between
+// groups lands where it did
 // from stepSpawns: spawn the next formation of `type` from wave part w at once; returns how many it took (0: none)
 function formSpawn(w, type) {
   const f = FORMS[type];
@@ -92,8 +93,11 @@ function formSpawn(w, type) {
   for (let i = 0; i < m; i++) {
     spawnEnemy(type, w.n, w.lanes[type], w.ang || 0);
     const e = G.enemies[G.enemies.length - 1];
-    e.form = true; e.lat = slots[i][0]; e.ahead = slots[i][1]; e.aheadC = mid; e.s += formS(e.ahead); // aheadC: the formation's centre
+    e.form = true; e.lat = slots[i][0]; e.ahead = slots[i][1]; e.aheadC = mid; e.s += e.ahead; // aheadC: the formation's centre
   }
+  const back = Math.max(...slots.map(q => q[1])), mem = G.enemies.slice(-m), s0 = entryS(mem[0].pi);
+  for (const e of mem) { e.s -= back; if (e.s < s0 - 0.01) { G.enemies.splice(G.enemies.indexOf(e), 1); G.fleetQ.push(e); } } // (stepFleetQ)
+  if (back > 0) w.timer += back / Math.max(1, effSpeed(mem[0])); // the formation's length, walked in at 1x
   w.idx += m - 1;
   return m;
 }

@@ -564,9 +564,11 @@ towers, core, enemies, shields and text are flat layers over the floor (`warpEnt
 only the board, ranges, beams and effects ride the picture. Enemy tracers taper along the
 lane; beam width is log of the hit; the screen shakes on a core hit.
 
-**Formation spacing is for the 1x zone.** An enemy runs `OFF_SCREEN_SPEED` (3x) until it is on screen and in a tower's reach, so
-a gap along the lane shrinks 3x as the front one slows first. Slot head starts are laid down 3x long (`formS`, formations and
-boss fleets) and close to their slot on the way in; the spawn timer's gaps are in time and already close to theirs.
+**Formation spacing is for the 1x zone, and nothing pops in.** An enemy runs `OFF_SCREEN_SPEED` (3x) until it is on screen and in
+a tower's reach, so a gap along the lane shrinks 3x as the front one slows first. A formation's FRONT spawns at the entry and the
+rest wait behind it off the board in `G.fleetQ`, walking in at 1x (as a boss's fleet does, `queueFleet`): each gap opens 3x on the
+way in and closes back to its slot in reach. The next group waits the formation's length longer. Smoke: no enemy of any wave
+type or boss fleet first appears more than a step past the entry.
 
 **Drawn size is not hit size.** Enemies, towers and the core draw at 0.8 of their game size
 (`DRAW_ALL`, `TOWER_DRAW_K`, `CORE_DRAW_K` in `aspira-defs.js`); hits, clicks, drags and

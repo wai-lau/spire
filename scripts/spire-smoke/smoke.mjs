@@ -147,7 +147,7 @@ check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times,
     const f = FORMS.fast.slots(2); out.fastSide = Math.abs(f[1][0] - f[0][0]);
     const lanes = { shield: 0, fast: 0 };
     const w = { n: 1, list: ["shield", "shield", "shield", "shield", "shield", "shield", "shield", "shield"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w];
-    stepSpawns(1e-6); out.shieldGap = w.timer * ENEMY_SPEED; out.shieldIdx = w.idx;
+    G.fleetQ = []; stepSpawns(1e-6); const lead = G.enemies.find(e => e.ahead > 0); out.shieldLag = 2 * V_BACK / Math.max(1, effSpeed(lead)) * ENEMY_SPEED; out.shieldGap = w.timer * ENEMY_SPEED - out.shieldLag; out.shieldIdx = w.idx; out.shieldQueued = G.fleetQ.length;
     const w2 = { n: 1, list: ["fast", "fast", "fast", "fast"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w2];
     stepSpawns(1e-6); out.fastBehind = w2.timer * ENEMIES.fast.speed * ENEMY_SPEED * FIRST_FAST_SPD; // wave 1 runs at FIRST_FAST_SPD
     G.enemies = []; spawnEnemy("fast", 1, 0, 0); spawnEnemy("fast", 2, 0, 0); out.firstSpd = G.enemies[0].spd / lateK(1, "fast"); out.laterSpd = G.enemies[1].spd / lateK(2, "fast");
@@ -158,6 +158,7 @@ check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times,
   if (Math.abs(r.fastSide - 78) > 1e-6 || Math.abs(r.fastBehind - 78) > 0.01) return "fast pairs " + r.fastSide + " across, " + r.fastBehind + " behind (expected 78 both, three times 26)";
   if (Math.abs(r.firstSpd - 0.5) > 1e-9 || Math.abs(r.laterSpd - 1) > 1e-9) return "wave 1 fast at x" + r.firstSpd + ", wave 2 at x" + r.laterSpd + " (expected x0.5, x1: owner 2026-10-21 \"halve the speed of the first fast wave\")";
   if (r.shieldIdx !== 5 || Math.abs(r.shieldGap - 5 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected 5 x 0.4 = 2, half the old 4)";
+  if (r.shieldQueued !== 4) return "a V of 5: " + r.shieldQueued + " wingmates wait off the board (expected 4 - only the leader spawns on it)";
   return "";
 });
 check("IFR's range and movement range stay modest at every stop (owner, 2026-10-20: \"unnecessarily large\")", () => {
@@ -680,19 +681,36 @@ check("Temporal Drive stops Strength dead; a tower's slow still takes 40% on her
 check("formations reach their spacing in the 1x zone (owner, 2026-10-21: \"they get compressed as they slow down\")", () => {
   const r = run(`(() => {
     G = newGame(); G.enemies = [];
-    const w = { n: 30, list: ["shield", "shield", "shield"], lanes: { shield: 0 }, ang: 0, idx: 1, timer: 0 }; formSpawn(w, "shield");
-    const [a, b] = [G.enemies[0], G.enemies[1]], born = b.s - a.s; // the leader (ahead V_BACK) vs a wingmate (0)
-    // a reach circle round the lane past both: stepEnemies runs them at OFF_SCREEN_SPEED until each is in it
-    // one tower: its reach is the 1x zone (stepEnemies runs them at OFF_SCREEN_SPEED until each is on screen and in it)
+    const w = { n: 30, list: ["shield", "shield", "shield"], lanes: { shield: 0 }, ang: 0, idx: 1, timer: 0 }; G.fleetQ = []; formSpawn(w, "shield");
+    const all = [...G.enemies, ...G.fleetQ], a = all.find(e => e.ahead > 0), b = all.find(e => !e.ahead), s0 = entryS(a.pi);
+    const born = Math.max(...all.map(e => e.s)) - s0; // the front ON the entry: nothing spawns inside the board
     G.money = 1e6; ui.build = "arc"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null;
-    for (const e of G.enemies) { e.hp = e.max = 1e12; e.armor = 0; e.shield = 0; }
-    let i = 0; for (; i < 20000 && !G.enemies.every(e => e.seen && inReach(e, reachCircles())); i++) stepEnemies(1 / 60);
-    return { born, now: a.s - b.s, inA: inReach(a, reachCircles()), inB: inReach(b, reachCircles()) };
+    for (const e of all) { e.hp = e.max = 1e12; e.armor = 0; e.shield = 0; }
+    let i = 0; for (; i < 20000 && !all.every(e => G.enemies.includes(e) && e.seen && inReach(e, reachCircles())); i++) { stepFleetQ(1 / 60); stepEnemies(1 / 60); }
+    const inA = inReach(a, reachCircles()), inB = inReach(b, reachCircles());
+    return { born, now: a.s - b.s, inA, inB };
   })()`);
-  if (Math.abs(r.born - 3 * 28) > 1e-6 && Math.abs(-r.born - 3 * 28) > 1e-6) return "a V's rows spawned " + r.born + " apart along the lane (expected 3 x V_BACK = 84, closing to 28)";
+  if (Math.abs(r.born) > 1e-6) return "a V's front spawned " + r.born + " past the entry (owner, 2026-10-21: no unit pops in)";
   if (!(r.inA && r.inB)) return "the test V never reached the 1x zone";
   if (Math.abs(r.now - 28) > 3) return "in the 1x zone the V's rows are " + r.now.toFixed(1) + " apart (expected V_BACK 28)";
   return "";
+});
+check("no unit pops in: every enemy of every wave type and every boss fleet first appears at the entry, within a step (owner, 2026-10-21)", () => {
+  const r = run(`(() => {
+    const bad = [];
+    // full-size formations of every type (early waves send one a lane: no lattice), then every boss wave with its fleet
+    const tries = [...["armor", "shield", "fast", "swarm"].map(t => [t, 60]), ...[12, 24, 36, 48, 60, 72, 84, 96, 108, 120].map(n => ["boss", n])];
+    for (const [type, n] of tries) {
+      G = newGame(); G.started = true; G.fleetQ = []; const known = new Set();
+      if (type === "boss") { G.wave = n - 1; sendWave(); } else G.spawns = [{ n, list: Array(12).fill(type), lanes: { [type]: 0 }, ang: 0, idx: 0, timer: 0 }];
+      for (let i = 0; i < 4000 && (G.spawns.length || G.fleetQ.length); i++) {
+        stepSpawns(1 / 60); stepFleetQ(1 / 60);
+        for (const e of G.enemies) { if (known.has(e.id)) continue; known.add(e.id); const over = e.s - entryS(e.pi); if (over > 5) bad.push(e.type + "@w" + n + " +" + Math.round(over)); }
+      }
+    }
+    return bad.slice(0, 6);
+  })()`);
+  return r.length ? "units spawned past the entry: " + r.join(", ") : "";
 });
 check("damage numbers (owner, 2026-10-21): a lone hit shows at once; more within 0.5 s sum into one number at the window's end", () => {
   const r = run(`(() => {
