@@ -260,6 +260,9 @@ its yellow front collapses inward, hitting each enemy it passes once. The HOLE i
 **The aura** deals NO damage. It slows (never the shielded; a fast enemy's slow is not doubled, GRV being weak to it) in two
 rings, the core far harder than the rim, and strips POSITIVE armor like Corrosion, graded by distance (strongest at the
 centre, weakest at the edge: `GRV_STRIP_IN` / `GRV_STRIP_OUT`). It is drawn as a radial band, clear at the centre and the edge.
+**GRV is support** (owner, 2026-10-21): the aura's slow is `GRV_AHEAD_K` x on an enemy already PAST the hole along its lane, and
+x (1 + `GRV_MISS_K` x its missing HP share); every enemy in the aura glides ACROSS its lane toward the hole (`GRV_LAT_V` u/s, never
+past the hole's line - `e.pull`, a world offset added in stepEnemies) and eases back `GRV_LAT_BACK` s after it leaves.
 
 **Radiation.** Every hole sprays **pellets**: projectiles that fly out in a random direction and hit the first enemy they
 touch, or nothing; each pops a shield charge like any hit, kept sparse so GRV stays weak to shields. The rate is the old

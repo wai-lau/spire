@@ -216,7 +216,9 @@ function stepSphere(sp, t, st, dt) {
       const inIn = d2 <= inner * inner, slow = inIn ? core : outer;
       if (inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.hdmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy NOT doubled like other slows - GRV is weak to fast
-      applySlow(e, e.type === "fast" ? slow / FAST_SLOW_MUL : slow, GRV_TICK * 1.5, "grv:" + t.id);
+      const lane = grvLane(e, sp), sk = (1 + GRV_MISS_K * (1 - Math.max(0, e.hp / (e.max || 1)))) * (lane.ahead ? GRV_AHEAD_K : 1);
+      applySlow(e, (e.type === "fast" ? slow / FAST_SLOW_MUL : slow) * sk, GRV_TICK * 1.5, "grv:" + t.id);
+      grvPullTo(e, lane);
     }
   }
   // EVAPORATION, by its circumference - and RADIATION paced by it (owner, 2026-10-16: "make sure the pellet output is the same, just
@@ -231,6 +233,31 @@ function stepSphere(sp, t, st, dt) {
   while (sp.pel >= w) { sp.pel -= w; grvPellet(sp, t, st, grvAuraR(sp, st) * GRV_PELLET_REACH, w); }
   // Hawking: a last burst as it goes
   if (sp.mass <= 0 && st.hawking) for (let i = 0; i < GRV_HAWKING_N; i++) grvPellet(sp, t, st, st.auraR * GRV_PELLET_REACH * 1.5);
+}
+// GRV IS SUPPORT (owner, 2026-10-21: "For units that are ahead of the bh, it should slow way more, and also, pull units towards it in a
+// direction perpendicular to the lane / In addition, the slow should affect units more depending on % missing HP / This makes GRV more
+// supporty"): the aura's slow x GRV_AHEAD_K on an enemy already PAST the hole along its lane, x (1 + GRV_MISS_K x its missing HP share);
+// and every enemy in the aura is drawn ACROSS its lane toward the hole at GRV_LAT_V u/s (e.pull: a world offset, never past the hole's
+// line), easing back onto its lane GRV_LAT_BACK s after it leaves (grvPullStep, stepEnemies)
+const GRV_AHEAD_K = 2.5, GRV_MISS_K = 1, GRV_LAT_V = 60, GRV_LAT_BACK = 1;
+const GRV_LN = { x: 0, y: 0 }, GRV_LQ = { x: 0, y: 0 };
+function grvLane(e, sp) { // the lane's heading at e: is it past the hole, and how far across is the hole
+  const a = pathAtInto(e.pi, e.s, e.ang, GRV_LN), b = pathAtInto(e.pi, e.s + 3, e.ang, GRV_LQ), tx = b.x - a.x, ty = b.y - a.y, L = Math.hypot(tx, ty) || 1;
+  const ux = tx / L, uy = ty / L, hx = sp.x - e.x, hy = sp.y - e.y;
+  return { ahead: hx * ux + hy * uy < 0, nx: -uy, ny: ux, across: hx * -uy + hy * ux };
+}
+function grvPullTo(e, lane) { // each aura tick: which way, and how far to the hole's line (it GLIDES there - grvPullStep, every step)
+  e.pull ||= [0, 0]; const sg = Math.sign(lane.across); e.pullDir = [lane.nx * sg, lane.ny * sg]; e.pullLeft = Math.abs(lane.across); e.pullT = GRV_TICK * 1.5;
+}
+function grvPullStep(e, dt) { // from stepEnemies: the offset this step, easing home once no hole holds it
+  if ((e.pullT = (e.pullT || 0) - dt) > 0) {
+    const d = Math.min(e.pullLeft || 0, GRV_LAT_V * dt * (effSpeed(e) > 0 ? 1 : 0)); e.pullLeft -= d; /* (stopped - a stun, Temporal Drive - it holds still) */
+    if (e.pullDir) { e.pull[0] += e.pullDir[0] * d; e.pull[1] += e.pullDir[1] * d; }
+    return e.pull;
+  }
+  const k = Math.exp(-dt / GRV_LAT_BACK); e.pull[0] *= k; e.pull[1] *= k;
+  if (Math.abs(e.pull[0]) + Math.abs(e.pull[1]) < 0.05) e.pull = null;
+  return e.pull;
 }
 // a PELLET is a projectile (owner, 2026-10-15: "I want pellets to be able to miss, not beams"): out from the sphere in a random
 // direction at GRV_PELLET_V, hitting the FIRST enemy it touches - or nothing, fading at `reach`

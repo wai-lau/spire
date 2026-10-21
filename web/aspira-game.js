@@ -399,7 +399,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
     }
     const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)
     if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js) - which sets p whole, so no pathAt first (perf)
-    e.x = p.x; e.y = p.y;
+    const pl = e.pull ? grvPullStep(e, dt) : null; e.x = p.x + (pl ? pl[0] : 0); e.y = p.y + (pl ? pl[1] : 0); // + GRV's sideways pull (aspira-grv.js)
     // no free spin: one corner points along the lane, nose first
     if (FACING) {
       const ahead = pathAtInto(e.pi, e.s + 3, e.ang, FORM_Q); // (scratch: formOffset is done with it)

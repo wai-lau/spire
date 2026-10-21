@@ -15,4 +15,6 @@ const swarmDrawJit = j => (SWARM_DRAW_LO + (j - SWARM_JIT_LO) / (SWARM_JIT_HI - 
 // towers and the core DRAWN 20% smaller the same way: their hit, click and drag areas (TOWER_K, CORE_R) stay
 const TOWER_DRAW_K = 0.8, CORE_DRAW_K = 0.8;
 const drawSizeK = e => (DRAW_SIZE[e.type] || 1) * (e.drawJit || 1) * DRAW_ALL;
-const shieldBase = (e, size) => size / (SHIELD_BODY[e.type] || 1) + SHIELD_OUT; // the shield's inner radius round a body drawn at size
+// shields DRAWN 35% smaller and 20% fainter (owner, 2026-10-21: "reduce shield opacity by 20% / reduce shield size by 35%")
+const SHIELD_DRAW_K = 0.65, SHIELD_DRAW_A = 0.8;
+const shieldBase = (e, size) => (size / (SHIELD_BODY[e.type] || 1) + SHIELD_OUT) * SHIELD_DRAW_K; // the shield's inner radius round a body drawn at size

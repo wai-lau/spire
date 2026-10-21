@@ -22,6 +22,8 @@ const CHANGELOG = [
     "No enemy appears mid-board any more: every formation walks in from the edge.",
     "Arc: a charged enemy's outline is always an upward triangle.",
     "Upgrade-ready chevrons stand on top of the tower in 3D, instead of hiding under it.",
+    "Shields are drawn smaller and fainter.",
+    "Gravity: the black hole slows enemies that slip past it far harder, slows the wounded more, and pulls enemies sideways toward it.",
     "Ifrit: charges a little faster with no Meteor bought.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",

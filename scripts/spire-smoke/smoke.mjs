@@ -712,6 +712,23 @@ check("no unit pops in: every enemy of every wave type and every boss fleet firs
   })()`);
   return r.length ? "units spawned past the entry: " + r.join(", ") : "";
 });
+check("GRV support (owner, 2026-10-21): the aura slows harder past the hole and on the hurt, and draws enemies across the lane toward it", () => {
+  const r = run(`(() => {
+    G = newGame(); const s0 = entryS(0) + 300, at = pathAt(0, s0, 0);
+    const mk = (ds, hpK) => { spawnEnemy("armor", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.s = s0 + ds; const p = pathAt(0, e.s, 0); e.x = p.x; e.y = p.y; e.seen = true; e.shield = 0; e.hp = e.max * hpK; return e; };
+    const sp = { x: at.x, y: at.y }, behind = mk(-20, 1), past = mk(20, 1), hurt = mk(-20, 0.2);
+    const k = e => { const l = grvLane(e, sp); return (1 + GRV_MISS_K * (1 - e.hp / e.max)) * (l.ahead ? GRV_AHEAD_K : 1); };
+    // the pull: a hole 40 u off the lane, beside an enemy - it glides across toward it, never past
+    const l0 = grvLane(behind, sp), off = { x: behind.x + l0.nx * 40, y: behind.y + l0.ny * 40 }, l1 = grvLane(behind, off);
+    const bx = behind.x, by = behind.y; let moved = 0; for (let i = 0; i < 120; i++) { if (i % 15 === 0) grvPullTo(behind, grvLane(behind, off)); const p = grvPullStep(behind, 1 / 60); behind.x = bx + p[0]; behind.y = by + p[1]; moved = Math.hypot(p[0], p[1]); } /* (as stepEnemies: its place carries the pull; the aura ticks every GRV_TICK) */
+    return { kb: k(behind), kp: k(past), kh: k(hurt), aheadB: grvLane(behind, sp).ahead, aheadP: grvLane(past, sp).ahead, moved };
+  })()`);
+  if (r.aheadB || !r.aheadP) return "past-the-hole reads wrong (behind " + r.aheadB + ", past " + r.aheadP + ")";
+  if (!(Math.abs(r.kp / r.kb - 2.5) < 1e-9)) return "past the hole the slow is x" + (r.kp / r.kb) + " (expected x2.5)";
+  if (!(Math.abs(r.kh - 1.8) < 1e-9)) return "at 20% HP the slow is x" + r.kh + " (expected x1.8: 1 + 80% missing)";
+  if (!(r.moved > 30 && r.moved <= 40 + 1e-6)) return "the pull moved it " + r.moved.toFixed(1) + " u toward a hole 40 u across (expected most of the way, never past)";
+  return "";
+});
 check("damage numbers (owner, 2026-10-21): a lone hit shows at once; more within 0.5 s sum into one number at the window's end", () => {
   const r = run(`(() => {
     G = newGame(); dmgLive = []; dmgSums.clear(); spawnEnemy("armor", 5, 0, 0); const e = G.enemies[0], t = { x: 0, y: 0, id: 1 };
