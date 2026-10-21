@@ -10,6 +10,15 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
+  { v: "6.7", day: "Oct 21", bu: [
+    "Freeze: a faster, colder aura before its Temperature upgrades.",
+    "Sol: two rays from the start, ten at Focus III.",
+    "Carrier: more ammo and a harder shot before its upgrades.",
+    "Acid: three times the ticks, each a third as hard - it eats shields far faster.",
+    "Ifrit: charges a little faster with no Meteor bought.",
+  ], ne: [], u: [
+    "Build cards: every tower's marks re-checked.",
+  ] },
   { v: "6.6", day: "Oct 20", bu: [
     "Ifrit: Meteor's hits grow far harder at its last purchases; its meteors hunt from much further off.",
     "Ifrit: every meteor that lands, the ring's too, starts a Hellfire of its own; its flares flash in over the life of that meteor's flare, each striking once as it appears and fading over 0.2 to 3 seconds.",
