@@ -38,7 +38,7 @@ const GRV_HAWKING_N = 12; // Radiation VI (Hawking): a spent sphere's last burst
 const GRV_TICK = 0.25, GRV_FRONT_T = 0.2; // the nova's collapse, s (0.12 outward, then inward: a touch longer to read)
 // THREE NOVAS (owner, 2026-10-18: "triple the nova (3x damage from this change), i.e. 3 novas in quick succession, then the bh forms"):
 // GRV_NOVA_N fronts, one every GRV_NOVA_GAP s, each hitting every enemy it sweeps once; the hole opens after the last
-const GRV_NOVA_N = 3, GRV_NOVA_GAP = 0.3;
+const GRV_NOVA_N = 1, GRV_NOVA_GAP = 0.3, GRV_NOVA_K = 3; // ONE nova at THREE times the hit (owner, 2026-10-21: "change the initial ring to 1 ring again, except triple damage"; three since 2026-10-18)
 const novaLocal = age => { const k = Math.min(GRV_NOVA_N - 1, Math.floor(age / GRV_NOVA_GAP)); return [k, age - k * GRV_NOVA_GAP]; }; // [which nova, its own age]
 const GRV_NOVA_END = (GRV_NOVA_N - 1) * GRV_NOVA_GAP + GRV_FRONT_T; // the nova GONE (collapsed into its centre) - only then the centre and aura (owner: "finish exploding before growing the circle")
 // the nova's front: from its reach INWARD, ACCELERATING (owner, 2026-10-15: "explode inwards instead of outwards, accelerating")
@@ -74,7 +74,7 @@ function grvSkillStats(t, s, b) {
 
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
 const grvMassK = sp => Math.max(0, Math.min(sp.cap || GRV_MASS_MAX, sp.mass));
-const grvAuraBase = (sp, st) => st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW_MIN, Math.sqrt((sp.novaDealt || 0) / GRV_NOVA_N / Math.max(1e-6, st.dmg))));
+const grvAuraBase = (sp, st) => st.auraR * Math.min(GRV_GROW_MAX, Math.max(GRV_GROW_MIN, Math.sqrt((sp.novaDealt || 0) / GRV_NOVA_N / GRV_NOVA_K / Math.max(1e-6, st.dmg))));
 function grvAuraR(sp, st) {
   if (!sp.apm) return grvAuraBase(sp, st); // (the nova still sweeping: its size is still being decided)
   const r = Math.min(st.auraR * GRV_R_MAX, Math.sqrt(sp.apm * Math.max(0, sp.mass))); // capped (owner, 2026-10-16: "Perf issues as inversion circle gets very large / Limit size?" - merged areas added without end)
@@ -194,7 +194,7 @@ function stepSphere(sp, t, st, dt) {
       if (e.dead || !e.seen || sp.hit.has(e.id) || d2 > st.novaR * st.novaR || d2 < r * r) continue;
       sp.hit.add(e.id);
       if (st.hyper && e.armor > 0) e.armor -= e.armor * GRV_HYPER_STRIP; // Hypernova: half the real armor, at once
-      const amt = st.dmg * st.novaMul, dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
+      const amt = st.dmg * st.novaMul * GRV_NOVA_K, dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
       sp.novaDealt = (sp.novaDealt || 0) + (e.dead ? amt : dealt); // (sets the aura's size: a KILL counts the whole hit - overkill on a
       // weak enemy is not a weak nova; a hit a shield swallowed counts nothing)
       if (dealt > 0) grvFloat(sp, e, grvLastHit); // the nova's number: the WHOLE hit, overkill too (grvLastHit)
@@ -265,9 +265,13 @@ function grvPullStep(e, dt) { // from stepEnemies: the offset this step, easing 
 // 10 ms a frame to draw): each new one carries w pellets' hit and w times fewer are sent - every pellet hits or misses on its own
 // flight, so the damage EXPECTED is the same, only lumpier
 const GRV_PEL_SOFT = 80; // w = (in flight / this) squared past it: ~200 a tower at most (linear, 150: still ~500)
+// EACH PELLET ITS OWN SIZE (owner, 2026-10-21: "for the GRV pellets, jitter the length, opacity, and damage (correlated) between 25% and
+// 400% (same dps)"): one roll j = 0.25 + 3.75 u^4 (u uniform) - 25% .. 400%, its MEAN exactly 1, so the damage a second holds - sets its
+// hit (x j), its streak (x j) and its opacity (GRV_PEL_A x j, to 1)
+const GRV_PEL_J = () => 0.25 + 3.75 * Math.random() ** 4, GRV_PEL_A = 0.5;
 function grvPellet(sp, t, st, reach, w = 1) {
-  const a = Math.random() * 6.283;
-  (t.pellets ||= []).push({ sp, x: sp.x, y: sp.y, vx: Math.cos(a) * GRV_PELLET_V, vy: Math.sin(a) * GRV_PELLET_V, left: reach / GRV_PELLET_V, dmg: st.hdmg * st.pelletK * w });
+  const a = Math.random() * 6.283, j = GRV_PEL_J();
+  (t.pellets ||= []).push({ sp, x: sp.x, y: sp.y, vx: Math.cos(a) * GRV_PELLET_V, vy: Math.sin(a) * GRV_PELLET_V, left: reach / GRV_PELLET_V, dmg: st.hdmg * st.pelletK * w * j, j });
 }
 // the PROJECTILE GRID (perf, owner 2026-10-16: "do some perf work on the new towers" - at wave 89 three GRVs' ~360 pellets each tested
 // every enemy, every step: 3.2 ms a frame): each living enemy listed in every GRID_S cell its body (+ GRID_PAD) touches, built
@@ -325,12 +329,19 @@ function stepPellets(t, st, dt) {
 }
 
 // ---------- the PELLETS, drawn: a short coral streak along each one's flight ----------
-const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 2.2; // s of flight the streak spans; its width
+const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 2.2, GRV_PEL_BANDS = 4; // s of flight the streak spans; its width
 function drawGrvPellets() {
   ctx.strokeStyle = COL.violet; ctx.lineCap = "round"; ctx.lineWidth = GRV_PELLET_PX; /* GRV purple (owner, 2026-10-15) */ ctx.globalAlpha = 1;
-  ctx.beginPath(); // ONE path, one stroke for them all (perf: a stroke each was most of drawGrv's 4 ms a frame at wave 89)
-  for (const t of G.towers) for (const p of t.pellets || []) { ctx.moveTo(p.x - p.vx * GRV_PELLET_TAIL, p.y - p.vy * GRV_PELLET_TAIL); ctx.lineTo(p.x, p.y); }
-  ctx.stroke();
+  // ONE path a band of opacity (perf: a stroke each was most of drawGrv's 4 ms a frame at wave 89): GRV_PEL_BANDS steps of GRV_PEL_A x j
+  for (let b = 0; b < GRV_PEL_BANDS; b++) {
+    ctx.globalAlpha = (b + 1) / GRV_PEL_BANDS; ctx.beginPath();
+    for (const t of G.towers) for (const p of t.pellets || []) {
+      const j = p.j || 1; if (Math.min(GRV_PEL_BANDS - 1, Math.floor(Math.min(1, GRV_PEL_A * j) * GRV_PEL_BANDS - 1e-9)) !== b) continue;
+      ctx.moveTo(p.x - p.vx * GRV_PELLET_TAIL * j, p.y - p.vy * GRV_PELLET_TAIL * j); ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
 }
 
 // ---------- the nova's damage numbers fly INWARD, toward the sphere (owner) ----------
