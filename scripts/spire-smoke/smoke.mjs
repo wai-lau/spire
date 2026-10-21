@@ -215,7 +215,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     out.launched = t.ifrBalls.length; const m0 = t.ifrBalls[0]; m0.vx = -Math.abs(m0.vx); m0.vy = -Math.abs(m0.vy); /* turned AWAY: it must home back */
     let n = 0; while (t.ifrFires.length === 0 && n++ < 600) stepIfrBalls(t, st, 1 / 60);
     out.fires1 = t.ifrFires.length; out.fireAt = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - tgt.x, t.ifrFires[0].y - tgt.y) : NaN;
-    const fan = t.ifrBalls.filter(b => b.gen === 1); out.fan = fan.length; out.want = st.fan; out.fanV = fan.map(b => Math.hypot(b.vx, b.vy) / st.ballV);
+    const fan = t.ifrBalls.filter(b => b.gen === 1); out.fan = fan.length; out.want = st.fan; out.fanR = fan.map(b => b.r / st.ballR); out.fanV = fan.map(b => Math.hypot(b.vx, b.vy) / st.ballV);
     const angs = fan.map(b => (Math.atan2(b.vy, b.vx) + 2 * Math.PI) % (2 * Math.PI)).sort((a, b) => a - b); out.maxGap = Math.max(...angs.map((a, i) => (i ? a - angs[i - 1] : a + 2 * Math.PI - angs[angs.length - 1]))) * 180 / Math.PI;
     const w = Array.from({ length: 2000 }, () => ifrFanDelay(IFR_FAN[0])); const w4 = Array.from({ length: 2000 }, () => ifrFanDelay(4 * IFR_FAN[0])); out.wait4Mean = w4.reduce((a, b) => a + b, 0) / w4.length; out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= IFR_FAN_MAX_S * Math.sqrt(st.fan / IFR_FAN[0]) + 1e-9); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
     tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; /* the fan hits nothing here: no new fire */
@@ -259,6 +259,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   })()`);
   if (r.launched !== 1) return "a launch fired " + r.launched + " meteors (expected one)";
   if (r.fires1 !== 1 || !(r.fireAt < 30)) return "the homing meteor: fires " + r.fires1 + ", " + r.fireAt + " u from its target (expected a hit on it, one fire)";
+  if (r.fanR.some(k => Math.abs(k - 0.5) > 1e-9)) return "fan meteors are " + r.fanR[0] + " x the launched one's size (expected half, owner 2026-10-20)";
   if (r.fanV.some(v => Math.abs(v - 0.25) > 1e-9)) return "fan meteors fly at " + r.fanV[0] + " x the launch speed (expected a quarter, owner 2026-10-20)";
   if (r.fan !== r.want || r.want !== 7) return "the impact fan at Meteor I: " + r.fan + " meteors (its st.fan " + r.want + ", expected 7)";
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
@@ -491,6 +492,7 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
     /* a SPAWNED meteor fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
     const ballA = flown => { t.ifrBalls.length = 0; t.ifrBalls.push({ x: CX, y: CY, vx: 1, vy: 0, r: 10, gen: 1, flown, left: 1, wait: 0 }); return Math.max(...rec(() => drawIfrBalls(t, false)).A.map(q => q.a)); };
     out.fadeA = [ballA(0), ballA(IFR_ARM_HIT_U / 2), ballA(IFR_ARM_HIT_U), ballA(3 * IFR_ARM_HIT_U)]; t.ifrBalls.length = 0;
+    t.ifrBalls.push({ x: CX, y: CY, vx: 1, vy: 0, r: 10, gen: 1, flown: 500, left: 1, wait: 0 }); out.fanBlack = rec(() => drawIfrBalls(t, false)).F.filter(f => f === COL.bg).length; t.ifrBalls.length = 0;
     const glowA = age => { t.ifrFires[0].age = age; return Math.max(...rec(() => drawIfrFires(t, false)).A.filter(q => q.r < 40 - 1e-6).map(q => q.a)); };
     out.g0 = glowA(0); out.gEnd = glowA(IFR_FIRE_GLOW_S); out.gLate = glowA(IFR_FIRE_GLOW_S * 5); out.gMid = glowA(IFR_FIRE_GLOW_S / 2);
     const ref = TOWERS.ifr.dmg * IFR_TICK_K[0]; out.i1 = ifrFlareI({ hit: ref }); out.i2 = ifrFlareI({ hit: 2 * ref }); out.i0 = ifrFlareI({ hit: ref / 10 });
@@ -499,6 +501,7 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
   if (Math.abs(r.outer - r.R) > 1e-6) return "a half charge's outline is r " + r.outer + " (expected 0.65 x the meteor, " + r.R + ")";
   if (!r.innerN || r.innerMin < 0.7 - 1e-6 || !(r.innerA <= 0.3 + 1e-6 && r.innerA > 0.2)) return "inner glow: " + r.innerN + " rings, deepest at " + r.innerMin + " r, brightest " + r.innerA + " (expected down to 0.7 r, 0.3 at the outline)";
   if (r.fireBlack) return "the fire drew " + r.fireBlack + " black fills";
+  if (r.fanBlack) return "a spawned meteor drew a black core (owner, 2026-10-20: none)";
   if (!(r.fadeA[0] < 0.01 && r.fadeA[1] > 0.3 && r.fadeA[1] < 0.7 * r.fadeA[2] && Math.abs(r.fadeA[2] - r.fadeA[3]) < 1e-9)) return "a spawned meteor's alpha at 0 / 50 / 100 / 300 u: " + r.fadeA.map(a => a.toFixed(2)) + " (expected fading in to full at 100)";
   if (Math.abs(r.gEnd / r.g0 - 3) > 1e-6 || Math.abs(r.gLate - r.gEnd) > 1e-6 || !(r.gMid > r.g0 && r.gMid < r.gEnd)) return "the fire's inner glow after impact: " + [r.g0, r.gMid, r.gEnd, r.gLate] + " (expected rising slowly to 3x, then held)";
   if (r.i1 !== 3 || !(r.i2 > r.i1 && r.i2 <= 6) || r.i0 !== 3) return "flare intensity " + [r.i0, r.i1, r.i2] + " (expected 3 at or under the untaken hit - much more visible, owner 2026-10-20 - brighter at twice it, capped at 6)";

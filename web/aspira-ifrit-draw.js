@@ -33,7 +33,7 @@ function drawIfrFires(t, low) {
   for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.hold > 0 || f.r < f.R ? 1 : Math.max(0, f.fade / IFR_FIRE_FADE), 1 + (IFR_FIRE_GLOW_K - 1) * Math.min(1, (f.age || 0) / IFR_FIRE_GLOW_S));
 }
 function drawIfrBalls(t, low) {
-  for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_ARM_HIT_U) : 1); /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
+  for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, !b.gen, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_ARM_HIT_U) : 1); /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)
