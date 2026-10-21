@@ -488,6 +488,9 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
     const inner = c.A.filter(q => q.r < R - 1e-6); out.innerMin = Math.min(...inner.map(q => q.r)) / R; out.innerA = Math.max(...inner.map(q => q.a)); out.innerN = inner.length;
     t.ifrFires.push({ x: CX, y: CY, r: 40, R: 40, v: 1, hold: 1, fade: IFR_FIRE_FADE, tick: 0, hit: 1, left: 1 });
     out.fireBlack = rec(() => drawIfrFires(t, false)).F.filter(f => f === COL.bg).length;
+    /* a SPAWNED meteor fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
+    const ballA = flown => { t.ifrBalls.length = 0; t.ifrBalls.push({ x: CX, y: CY, vx: 1, vy: 0, r: 10, gen: 1, flown, left: 1, wait: 0 }); return Math.max(...rec(() => drawIfrBalls(t, false)).A.map(q => q.a)); };
+    out.fadeA = [ballA(0), ballA(IFR_ARM_HIT_U / 2), ballA(IFR_ARM_HIT_U), ballA(3 * IFR_ARM_HIT_U)]; t.ifrBalls.length = 0;
     const glowA = age => { t.ifrFires[0].age = age; return Math.max(...rec(() => drawIfrFires(t, false)).A.filter(q => q.r < 40 - 1e-6).map(q => q.a)); };
     out.g0 = glowA(0); out.gEnd = glowA(IFR_FIRE_GLOW_S); out.gLate = glowA(IFR_FIRE_GLOW_S * 5); out.gMid = glowA(IFR_FIRE_GLOW_S / 2);
     const ref = TOWERS.ifr.dmg * IFR_TICK_K[0]; out.i1 = ifrFlareI({ hit: ref }); out.i2 = ifrFlareI({ hit: 2 * ref }); out.i0 = ifrFlareI({ hit: ref / 10 });
@@ -496,6 +499,7 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
   if (Math.abs(r.outer - r.R) > 1e-6) return "a half charge's outline is r " + r.outer + " (expected 0.65 x the meteor, " + r.R + ")";
   if (!r.innerN || r.innerMin < 0.7 - 1e-6 || !(r.innerA <= 0.3 + 1e-6 && r.innerA > 0.2)) return "inner glow: " + r.innerN + " rings, deepest at " + r.innerMin + " r, brightest " + r.innerA + " (expected down to 0.7 r, 0.3 at the outline)";
   if (r.fireBlack) return "the fire drew " + r.fireBlack + " black fills";
+  if (!(r.fadeA[0] < 0.01 && r.fadeA[1] > 0.3 && r.fadeA[1] < 0.7 * r.fadeA[2] && Math.abs(r.fadeA[2] - r.fadeA[3]) < 1e-9)) return "a spawned meteor's alpha at 0 / 50 / 100 / 300 u: " + r.fadeA.map(a => a.toFixed(2)) + " (expected fading in to full at 100)";
   if (Math.abs(r.gEnd / r.g0 - 3) > 1e-6 || Math.abs(r.gLate - r.gEnd) > 1e-6 || !(r.gMid > r.g0 && r.gMid < r.gEnd)) return "the fire's inner glow after impact: " + [r.g0, r.gMid, r.gEnd, r.gLate] + " (expected rising slowly to 3x, then held)";
   if (r.i1 !== 1 || !(r.i2 > r.i1 && r.i2 <= 3) || r.i0 !== 1) return "flare intensity " + [r.i0, r.i1, r.i2] + " (expected 1 at or under the untaken hit, brighter at twice it, capped at 3)";
   return "";
