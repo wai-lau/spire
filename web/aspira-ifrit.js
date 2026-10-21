@@ -82,7 +82,7 @@ const ifrCentre = t => { const c = CELLS[t.cell]; return { x: t.x ?? c.x, y: t.y
 function ifrInit(t) {
   if (t.ifrInit0) return;
   for (const k of ["ifrSlot0", "ifrReady", "ifrLaunchCd", "ifrRings", "ifrFs"]) delete t[k]; /* a 6.4 tower's slots */
-  t.ifrInit0 = true; t.ifrCharge = 0; t.ifrBalls = []; t.ifrFires = []; t.ifrFlares = [];
+  t.ifrInit0 = true; t.ifrCharge = 1; /* built CHARGED - no wind-up before its first meteor (owner, 2026-10-20) */ t.ifrBalls = []; t.ifrFires = []; t.ifrFlares = [];
 }
 function ifrCharge(t, st, dt) { t.ifrCharge = Math.min(1, t.ifrCharge + dt / Math.max(0.01, st.chargeS)); }
 // "Always launch when meteor available" (owner): full + an enemy in range (the tower's targeting) = it flies, LED (owner, 2026-10-20:

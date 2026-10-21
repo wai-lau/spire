@@ -22,7 +22,7 @@ function plagueRadius(l, st) {
 }
 // a new line's FIRST tick lands ACD_FIRST_S in, not a whole tick (owner, 2026-10-13: "start ticking asap", then "make acd wait
 // 1/16 s instead of being instant")
-const ACD_FIRST_S = 1 / 16, acdFirstTick = st => Math.max(0, 1 / st.rate - ACD_FIRST_S);
+const ACD_FIRST_S = 0 /* owner, 2026-10-20: "towers, other than SOL should have 0 windup before shooting their first attack" (was 1/16) */, acdFirstTick = st => Math.max(0, 1 / st.rate - ACD_FIRST_S);
 function acdLines(t, st) {
   const r2 = st.range ** 2, inRange = e => !e.dead && (e.x - t.x) ** 2 + (e.y - t.y) ** 2 <= r2;
   // Chain Reaction (st.carry): a line whose enemy DIED hands that share of its ramp to the next new line

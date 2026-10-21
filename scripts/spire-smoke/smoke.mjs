@@ -176,6 +176,24 @@ check("IFR's card shows no long decimals (owner, 2026-10-20)", () => {
     return bad; })()`);
   return r.length ? "long decimals on the IFR card: " + [...new Set(r)].slice(0, 4).join(" | ") : "";
 });
+check("towers but SOL attack in their first frame - no wind-up (owner, 2026-10-20)", () => {
+  const r = run(`(() => { const out = {};
+    for (const kind of ["arc", "acd", "grv", "car", "ifr"]) {
+      G = newGame(); G.money = 1e9; ui.build = kind; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
+      for (const e of G.enemies) e.dead = true;
+      const e = ifrNear("shield", t, 50); e.shield = 0; e.hp = e.max = 1e9; egridAt = NaN; const hp0 = e.hp;
+      step(1 / 60);
+      out[kind] = { cd: t.cd, hit: e.hp < hp0, balls: (t.ifrBalls || []).length, out: (t.icp || []).some(i => i.state !== "home"), spheres: (t.spheres || []).length };
+    }
+    return out; })()`);
+  const bad = [];
+  if (!(r.arc.cd > 0 || r.arc.hit)) bad.push("ARC");
+  if (!r.acd.hit) bad.push("ACD (no hit)");
+  if (!(r.grv.cd > 0.06 || r.grv.spheres)) bad.push("GRV");
+  if (!r.car.out) bad.push("CRR (nothing launched)");
+  if (!r.ifr.balls) bad.push("IFR (no meteor)");
+  return bad.length ? "no attack in the first frame: " + bad.join(", ") : "";
+});
 check("IFR: each axis scales only its own numbers", () => {
   const r = run(`(() => {
     const F = { meteor: ["chargeS", "ballV", "ballR", "routeK"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple", "hfK"] };
