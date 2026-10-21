@@ -194,6 +194,13 @@ check("towers but SOL attack in their first frame - no wind-up (owner, 2026-10-2
   if (!r.ifr.balls) bad.push("IFR (no meteor)");
   return bad.length ? "no attack in the first frame: " + bad.join(", ") : "";
 });
+check("FRZ moons: at most 3 moons, at most 3 moonlets each, at every stop; the top stops hit harder instead (owner, 2026-10-20)", () => {
+  const r = run(`(() => { const out = []; for (const k of [0, 1, 3, 6]) { G = newGame(); G.money = 1e9; ui.build = "frz"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
+    for (let i = 0; i < k; i++) upgradeTower(t, "moons", true); const st = towerStats(t); out.push({ n: st.moonN, sub: st.subN, hit: st.moonHit, srcs: frzSources(t, st).length }); } return out; })()`);
+  for (const q of r) if (q.n > 3 || q.sub > 3) return "FRZ moons: " + q.n + " moons, " + q.sub + " moonlets each (max 3 and 3)";
+  const top = r[r.length - 1]; if (!(top.hit > 2)) return "FRZ moons VI hit x" + top.hit + " (expected the top stops to hit harder)";
+  return "";
+});
 check("IFR: each axis scales only its own numbers", () => {
   const r = run(`(() => {
     const F = { meteor: ["chargeS", "ballV", "ballR", "routeK"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple", "hfK"] };

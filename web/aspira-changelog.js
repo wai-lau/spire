@@ -23,6 +23,7 @@ const CHANGELOG = [
     "Ifrit: Hellfire's fire has no ring and burns nothing itself; it lights many small, short flares of every size, glowing red round an orange core, inside it in quick succession - more in a wider fire, denser with each Hellfire purchase and a little hotter and brighter with each Flare purchase; the more flares or meteors, the longer they take to come.",
     "Ifrit: a shorter range and a shorter leash - its meteors hunt their targets down anyway.",
     "Ifrit: Hellfire's fire lights far fewer flares, each burning much longer.",
+    "Freeze: Moons top out at three moons with three moonlets each; their auras burn harder at the last two purchases instead.",
     "All towers but Sol: no wait before the first attack - Ifrit is built charged, Acid's jets bite at once.",
     "Ifrit: flares burn whatever touches them from their first tick - nothing has to stand in them first.",
     "Ifrit: every meteor lights a flare where it strikes, the first one too; a meteor's flare burns far brighter than the fire's, white-hot at its core.",

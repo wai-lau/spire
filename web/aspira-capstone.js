@@ -52,9 +52,9 @@ const CAPSTONE_NUM = [
   // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit; Capacitance eight charges
   [ARC_VOLTAGE_DMG, 51.6 /* the spread hit (aspira-skills.js ARC_SIDE_DMG; was 69.9) */], [ARC_VOLTAGE_FALL, 1.6], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
   [ARC_CONDUCTIVITY, { s: 6 /* was 6 - the ARC nerf, 2026-10-11; trimmed and restored with the axis balance, 2026-10-18 */, j: 4, f: 4, r: 3, d: 3.5, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 1.0625 /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
-  // FRZ: Temp a far deeper chill; Rime the fastest, deepest rings; Moons FOUR moons, each with four small moons
+  // FRZ: Temp a far deeper chill; Rime the fastest, deepest rings; Moons three moons with three moonlets each, burning far harder (capped 2026-10-20)
   [FRZ_TEMP_SLOW, 0.67], [FRZ_TEMP_TICK, 0.0495], [FRZ_BRITTLE, 9.0185], [FRZ_RIME, 0.9], [FRZ_RIME_BITE, 300], [FRZ_RIME_PERIOD, 0.1925] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 1.2],
-  [FRZ_MOON_COUNT, 5], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 6],
+  [FRZ_MOON_COUNT, 3], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 3], [FRZ_MOON_HIT, 2.75] /* (owner, 2026-10-20: max 3 and 3; were 5 and 6) */,
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
   [SOL_BEAMS, 25], [SOL_FOCUS_DMG, 5.2], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, Infinity], [SOL_REFRACTION_DMG, 32.1675],
   [SOL_CONE_BY, 12], [SOL_HOP, 1], [SOL_CRITMUL, 33], [SOL_PIERCE, 1.25], [SOL_BREACH_ARMOR, 3216], [SOL_REFRACT_POP, 0], [SOL_BREACH_CRIT, 0],
@@ -114,7 +114,7 @@ const CAPSTONE_TIERS = {
 for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1 && CAPSTONE_TIERS[ax.id]) ax.tiers.push(CAPSTONE_TIERS[ax.id]);
 ARC_KEEP.push("over one and a half times") /* ARC_VOLTAGE_FALL VI 1.6 (read "twice" - 2026-10-14) */; ARC_RETURN.push("four times");
 ARC_CHARGES.push("six charges", "seven charges", "eight charges"); // indexed by the charge COUNT (ARC_CAPACITANCE[z].n)
-FRZ_MOONS.push(" Five moons copy it, each with six moonlets.");
+FRZ_MOONS.push(" Three moons copy it, each with three moonlets, all burning far harder.");
 SOL_RAYS.push("Twelve rays");
 SOL_REFRACT.push("refracting through every enemy in two opposite cones");
 ACD_JETS.push("Eleven");
