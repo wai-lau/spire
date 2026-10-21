@@ -33,7 +33,7 @@ function drawIfrBalls(t, low) {
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)
 const IFR_FLARE_I0 = 3, IFR_FLARE_I_MAX = 6;
-const IFR_FLARE_MAIN_K = 2; // a METEOR's flare (not the fire's) x this - "make non-hellfire flares more opaque and intense" (owner, 2026-10-20)
+const IFR_FLARE_MAIN_K = 3 /* 2 -> 3 (owner, 2026-10-20: "make the non-hellfire stars brighter") */; // a METEOR's flare (not the fire's) x this - "make non-hellfire flares more opaque and intense" (owner, 2026-10-20)
 function ifrFlareI(f) { return (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
@@ -58,8 +58,10 @@ function drawIfrFlaresGl(t, low) {
     }
   }
 }
-// a flare layer's colour: the fire's flares burn with a BRIGHT RED core (owner, 2026-10-20: "visually make hellfire stars have bright red cores") - the palette's threat red
-const ifrFlareCol = (key, f) => COL[f.hf && key === "yellow" ? "threat" : key];
+// a flare layer's colour: the fire's flares glow BRIGHT RED outside (the palette's threat red) round an ORANGE core (owner, 2026-10-20: "bright red
+// cores", then "this red should be the outer color, and the orange the inner color"); a meteor's keep the fire colours
+const IFR_HF_COL = { glow: "threat", yellow: "tifr" };
+const ifrFlareCol = (key, f) => COL[(f.hf && IFR_HF_COL[key]) || key];
 function drawIfrFlares(t) {
   if (!t.ifrFlares.length) return;
   const low = typeof lowQ === "function" && lowQ();
