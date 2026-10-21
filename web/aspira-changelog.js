@@ -10,27 +10,34 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
+  { v: "6.8", day: "Oct 21", bu: [
+    "Gravity: the black hole slows enemies that slip past it far harder, slows the wounded more, and pulls enemies sideways toward it. It holds armor again.",
+    "Ifrit: the Hellfire circle is back and grows three times as fast. It hits each enemy it reaches once (3x a Hellfire flare), and stays, fainter, until its flares are out.",
+    "Ifrit: Hellfire stars glow less but burn brighter, spread evenly through the fire.",
+    "Ifrit: charges faster; Meteor III hits half as hard - armor is its weak spot now.",
+    "Arc: a charged enemy's outline is always an upward triangle.",
+  ], ne: [], u: [
+    "Build cards: every tower's marks re-checked.",
+    "Every shield pop shows its own 0.",
+    "Shields are drawn smaller and fainter.",
+    "Towers show a dotted outline of the area you can tap or drag.",
+    "Upgrade-ready chevrons stand on top of the tower in 3D, instead of hiding under it.",
+  ] },
   { v: "6.7", day: "Oct 21", bu: [
     "Freeze: a faster, colder aura before its Temperature upgrades.",
     "Sol: two rays from the start, ten at Focus III.",
     "Carrier: more ammo and a harder shot before its upgrades.",
     "Acid: twice the ticks, each half as hard - it eats shields faster.",
     "The first fast wave comes in at half speed.",
-    "Ifrit: the Hellfire circle is back and grows three times as fast. It hits each enemy it reaches once (3x a Hellfire flare), and stays, fainter, until its flares are out.",
     "Temporal Drive now stops Strength dead.",
     "Formations arrive at their real spacing: they no longer bunch up as they slow down near your towers. Shield Vs are tighter.",
     "No enemy appears mid-board any more: every formation walks in from the edge.",
-    "Arc: a charged enemy's outline is always an upward triangle.",
-    "Upgrade-ready chevrons stand on top of the tower in 3D, instead of hiding under it.",
-    "Shields are drawn smaller and fainter.",
-    "Towers show a dotted outline of the area you can tap or drag.",
-    "Gravity: the black hole slows enemies that slip past it far harder, slows the wounded more, and pulls enemies sideways toward it.",
     "Ifrit: charges a little faster with no Meteor bought.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",
     "Enemies, towers and the core are drawn smaller; swarm sizes vary less. Towers are as easy to tap and drag as before.",
     "Ascendants: auto-move and free towers/upgrades are two separate boxes, under the title.",
-    "Damage numbers: a single hit shows at once; fast hits and burns add up into one number every half second. Every shield pop still shows its own 0.",
+    "Damage numbers: a single hit shows at once; fast hits and burns add up into one number every half second.",
   ] },
   { v: "6.6", day: "Oct 20", bu: [
     "Ifrit: Meteor's hits grow far harder at its last purchases; its meteors hunt from much further off.",

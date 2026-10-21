@@ -59,7 +59,7 @@ function drawIfrFlaresGl(t, low) {
       const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { /* lowQ: the orange core + the white one */
-        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c)), t0, t1);
+        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), t0, t1);
       }
     }
   }
@@ -69,6 +69,10 @@ function drawIfrFlaresGl(t, low) {
 // it ("make non-hellfire flares more white" - the one place IFR draws white since "no white", 2026-10-20)
 const IFR_HF_COL = { glow: "threat", yellow: "tifr" }, IFR_MAIN_COL = { yellow: "white", orange: "yellow" };
 const ifrFlareCol = (key, f) => COL[(f.hf ? IFR_HF_COL[key] : IFR_MAIN_COL[key]) || key];
+// a FIRE flare's layers: its outer glow IFR_HF_GLOW_K as strong, the rest IFR_HF_OPAQ x (owner, 2026-10-21: "reduce the amount of glow on the
+// hellfire stars but increase the opacity") - the look only: sizes stay (owner-locked, 2026-10-20)
+const IFR_HF_GLOW_K = 0.4, IFR_HF_OPAQ = 1.6;
+const ifrLayerK = (key, f) => (f.hf ? (key === "glow" ? IFR_HF_GLOW_K : IFR_HF_OPAQ) : 1);
 function drawIfrFlares(t) {
   if (!t.ifrFlares.length) return;
   const low = typeof lowQ === "function" && lowQ();
@@ -80,7 +84,7 @@ function drawIfrFlares(t) {
       ctx.strokeStyle = ifrFlareCol(IFR_GLOW[g][2], c); ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
       for (let k = 0; k < IFR_GLOW_BANDS; k++) {
         const a0 = k / IFR_GLOW_BANDS, a1 = (k + 1) / IFR_GLOW_BANDS;
-        ctx.globalAlpha = Math.min(1, IFR_GLOW[g][1] * f * IFR_GLOW_A * ifrFlareI(c) * (1 - a0) ** 3); // fast falloff to the tip (owner, 2026-10-19; was 1 - a0^2)
+        ctx.globalAlpha = Math.min(1, IFR_GLOW[g][1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(IFR_GLOW[g][2], c) * (1 - a0) ** 3); // fast falloff to the tip (owner, 2026-10-19; was 1 - a0^2)
         ctx.beginPath();
         for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0 + (x1 - x0) * a0, y0 + (y1 - y0) * a0); ctx.lineTo(x0 + (x1 - x0) * a1, y0 + (y1 - y0) * a1); }
         ctx.stroke();
