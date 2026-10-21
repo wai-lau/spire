@@ -20,7 +20,7 @@ const CHANGELOG = [
     "Ifrit: the meteor leads its target; it is a tenth the size and charges half as often; Meteor's hit grows far less with each purchase.",
     "Ifrit: Mega Firaga's giant flare is a third the size, its small cross much smaller.",
     "Ifrit: Meteor launches ONE meteor that hunts its target down (to its corpse if it dies); where it strikes a fire spreads and a ring of meteors (5, 7, 9, then 12) bursts out, each hunting any enemy that comes near and lighting a flare where it lands; Impact splits each of their hits into two more.",
-    "Ifrit: Hellfire's fire has no ring and burns nothing itself; it lights many small, short flares of every size, glowing red round an orange core, inside it in quick succession - more in a wider fire, denser with each Hellfire purchase; the more flares or meteors, the longer they take to come.",
+    "Ifrit: Hellfire's fire has no ring and burns nothing itself; it lights many small, short flares of every size, glowing red round an orange core, inside it in quick succession - more in a wider fire, denser with each Hellfire purchase and a little hotter and brighter with each Flare purchase; the more flares or meteors, the longer they take to come.",
     "Ifrit: flares burn whatever touches them from their first tick - nothing has to stand in them first.",
     "Ifrit: every meteor lights a flare where it strikes, the first one too; a meteor's flare burns far brighter than the fire's, white-hot at its core.",
     "Ifrit: the launched meteor no longer vanishes on the way to a far target.",
