@@ -139,7 +139,7 @@ run(`function ifrNear(type, t, dist) {
   for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
   const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e6; e.armor = 0; e.shield = 0; return e;
 }`);
-check("spacing (owner, 2026-10-20): armor units 6x (2 then 3), fast units three times, shield pods half the gap, a shield V 3x; the fire lingers half as long", () => {
+check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times, shield pods half the gap, a shield V 3x; the fire lingers half as long", () => {
   const r = run(`(() => {
     G = newGame(); const out = {};
     const a = FORMS.armor.slots(6); out.armorPitch = Math.abs(a[1][0] - a[0][0]); out.armorRow = Math.abs(a[3][1] - a[0][1]);
@@ -153,7 +153,7 @@ check("spacing (owner, 2026-10-20): armor units 6x (2 then 3), fast units three 
     stepSpawns(1e-6); out.fastBehind = w2.timer * ENEMIES.fast.speed * ENEMY_SPEED;
     return out;
   })()`);
-  if (Math.abs(r.armorPitch - 216) > 1e-6 || Math.abs(r.armorRow - 216) > 1e-6) return "armor lattice " + r.armorPitch + " across, " + r.armorRow + " between rows (expected 216 both: x3, owner 2026-10-20)";
+  if (Math.abs(r.armorPitch - 72) > 1e-6 || Math.abs(r.armorRow - 72) > 1e-6) return "armor lattice " + r.armorPitch + " across, " + r.armorRow + " between rows (expected 72 both: back from 216, owner 2026-10-20 - its outer columns walked out of reach)";
   if (Math.abs(r.vLat - 72) > 1e-6 || Math.abs(r.vBack - 84) > 1e-6) return "a shield V steps " + r.vLat + " across, " + r.vBack + " back (expected 72, 84: x3)";
   if (JSON.stringify(r.linger) !== JSON.stringify([0.25, 1, 1, 1, 1.25, 1.5, 3.5])) return "fire linger " + JSON.stringify(r.linger) + " (expected half: [.25 1 1 1 1.25 1.5] VI 3.5)";
   if (Math.abs(r.fastSide - 78) > 1e-6 || Math.abs(r.fastBehind - 78) > 0.01) return "fast pairs " + r.fastSide + " across, " + r.fastBehind + " behind (expected 78 both, three times 26)";

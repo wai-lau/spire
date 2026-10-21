@@ -11,7 +11,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "6.5", day: "Oct 20", bu: [
-    "Armor: its blocks spread out, six times as far between units; fast pairs three times as far apart; a shield V three times as wide and deep.",
+    "Armor: its blocks spread out, twice as far between units; fast pairs three times as far apart; a shield V three times as wide and deep.",
     "Ifrit: Meteor - one meteor at a time, charged at the tower's centre and launched the moment it is ready; Meteor makes it charge faster, fly faster, grow bigger and hit harder on its way (Impact: a huge meteor).",
     "Ifrit: Hellfire - where the meteor lands a fire spreads out from it and lingers, burning what stands in it in many small ticks, each popping a shield charge; Hellfire makes it wider, faster, hotter and longer (its capstone: six towers across).",
     "Ifrit: Blk Magic - more pellets, harder as they pass through, and bigger, hotter flares; Mega Firaga lights one giant flare where the meteor strikes.",
