@@ -8,7 +8,7 @@
 // for the other towers; FRZ + L1 ARC + L1 SOL, waves 20-30) - the first
 // guesses were 2-4x too strong; range moves little so "colder" reads as colder
 // early-game balance 2026-10-06: +0.03 on every tier (FRZ stays a pure SUPPORT tower - owner)
-const FRZ_TEMP_SLOW = [0.4, 0.41, 0.42, 0.43, 0.44, 0.534]; /* V +0.094, VI +0.12 (steeper late tiers, tuned 2026-10-17) */ // a small ramp (overnight fit 2026-10-08: even a flat 0.4 overshot - Temp's reach is the next lever) // weakened (owner, 2026-10-08; isolation: Temp V 438% team, leaks 660 -> 56); was .43 .46 .5 .54 .58 // the aura's range is in SKILL_MOVE
+const FRZ_TEMP_SLOW = [0.45, 0.45, 0.45, 0.45, 0.45, 0.534] /* BATTERY 6.7.0 (2026-10-20): untaken 0.4 -> 0.45 (and I-V to match) */; /* V +0.094, VI +0.12 (steeper late tiers, tuned 2026-10-17) */ // a small ramp (overnight fit 2026-10-08: even a flat 0.4 overshot - Temp's reach is the next lever) // weakened (owner, 2026-10-08; isolation: Temp V 438% team, leaks 660 -> 56); was .43 .46 .5 .54 .58 // the aura's range is in SKILL_MOVE
 // Temp's TEAM hook (owner, 2026-10-07: FRZ's chart was flat, 97-103%): an enemy
 // its aura touches turns BRITTLE - while slowed it takes x FRZ_BRITTLE from every
 // tower (damage(), which already reads e.brittle; drawStatus shows the crack)
@@ -31,7 +31,7 @@ const FRZ_RIME = [0, 0.02, 0.035, 0.3, 0.425, 0.9]; // HALVED with the period (o
 const FRZ_RIME_PERIOD = [1, 1, 0.85, 0.385, 0.33, 0.275] /* halved (owner, 2026-10-14; was 2 2 1.7 1.4 1.2 1) */, FRZ_MOON_BY = [0.6, 0.85, 0.86, 1.5438, 1.5438, 1.5438]; /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
 // TEMP CONDUCTS FASTER (owner, 2026-10-11: "make temp conduct faster"): each Temp tier shortens the aura's TICK (s) -
 // the same bite each tick, so more damage and more shield pops a second (capstone VI in aspira-capstone.js)
-const FRZ_TEMP_TICK = [0.5, 0.44, 0.39, 0.34, 0.2188, 0.0976]; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
+const FRZ_TEMP_TICK = [0.35, 0.34, 0.33, 0.32, 0.2188, 0.0976] /* BATTERY 6.7.0 (2026-10-20): untaken 0.5 -> 0.35 and I-III to match - a lone L1 FRZ lost 3-10 on waves 1-11 after the 6.5 spacing (armor 2x, fast 3x) */; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
 const FRZ_TICK = 0.5, FRZ_RIME_GROW = 2.4; // a Rime ring takes FRZ_RIME_GROW game s to reach the edge (owner: much slower; was 0.6)
 const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit of slow (owner: thicker the colder) // an aura slow outlasts one step only: it is gone the moment the enemy leaves
 function frzSkillStats(t, s, b) {
