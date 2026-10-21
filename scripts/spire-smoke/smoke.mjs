@@ -571,14 +571,14 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
     out.outer = Math.max(...c.A.map(q => q.r)); out.R = R;
     const inner = c.A.filter(q => q.r < R - 1e-6); out.innerMin = Math.min(...inner.map(q => q.r)) / R; out.innerA = Math.max(...inner.map(q => q.a)); out.innerN = inner.length;
     out.hfBright = ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] * IFR_HF_FK[6] }) > ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] });
-    out.coreHf = ifrFlareCol("yellow", { hf: true }) === COL.tifr; out.coreMain = ifrFlareCol("yellow", {}) === COL.white && ifrFlareCol("orange", {}) === COL.yellow; out.haloHf = ifrFlareCol("glow", { hf: true }) === COL.threat; out.mainK = IFR_FLARE_MAIN_K;
+    out.coreHf = ifrFlareCol("orange", { hf: true }) === COL.threat && ifrFlareCol("yellow", { hf: true }) === COL.orange; /* red to the core, the thinnest line orange (owner, 2026-10-21) */ out.coreMain = ifrFlareCol("yellow", {}) === COL.white && ifrFlareCol("orange", {}) === COL.yellow; out.haloHf = ifrFlareCol("glow", { hf: true }) === COL.threat; out.mainK = IFR_FLARE_MAIN_K;
     const ref = TOWERS.ifr.dmg * IFR_TICK_K[0]; out.i1 = ifrFlareI({ hit: ref, hf: true }); out.i2 = ifrFlareI({ hit: 2 * ref, hf: true }); out.i0 = ifrFlareI({ hit: ref / 10, hf: true });
     return out;
   })()`);
   if (Math.abs(r.outer - r.R) > 1e-6) return "a half charge's outline is r " + r.outer + " (expected 0.65 x the meteor, " + r.R + ")";
   if (!r.innerN || r.innerMin < 0.7 - 1e-6 || !(r.innerA <= 0.3 + 1e-6 && r.innerA > 0.2)) return "inner glow: " + r.innerN + " rings, deepest at " + r.innerMin + " r, brightest " + r.innerA + " (expected down to 0.7 r, 0.3 at the outline)";
   if (!r.hfBright) return "a fire flare from a higher Flare level is not brighter (owner, 2026-10-20)";
-  if (!r.coreHf || !r.coreMain || !r.haloHf || r.mainK !== 3) return "flare colours: the fire's orange core " + r.coreHf + ", red halo " + r.haloHf + ", a meteor's white core (yellow round it) " + r.coreMain + ", meteor flares x" + r.mainK + " (owner, 2026-10-20: red outside, orange inside; meteor flares brighter)";
+  if (!r.coreHf || !r.coreMain || !r.haloHf || r.mainK !== 3) return "flare colours: the fire's red core (orange centre line) " + r.coreHf + ", red halo " + r.haloHf + ", a meteor's white core (yellow round it) " + r.coreMain + ", meteor flares x" + r.mainK + " (owner, 2026-10-21: make sure it's red; 2026-10-20 red outside, orange inside; meteor flares brighter)";
   if (r.i1 !== 3 || !(r.i2 > r.i1 && r.i2 <= 6) || r.i0 !== 3) return "flare intensity " + [r.i0, r.i1, r.i2] + " (expected 3 at or under the untaken hit - much more visible, owner 2026-10-20 - brighter at twice it, capped at 6)";
   return "";
 });

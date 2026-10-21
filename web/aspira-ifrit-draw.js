@@ -68,12 +68,12 @@ function drawIfrFlaresGl(t, low) {
 // a flare layer's colour: the fire's flares glow BRIGHT RED outside (the palette's threat red) round an ORANGE core (owner, 2026-10-20: "bright red
 // cores", then "this red should be the outer color, and the orange the inner color") - and a METEOR's burn WHITE-hot at the core, yellow round
 // it ("make non-hellfire flares more white" - the one place IFR draws white since "no white", 2026-10-20)
-const IFR_HF_COL = { glow: "threat", yellow: "tifr" }, IFR_MAIN_COL = { yellow: "white", orange: "yellow" };
+const IFR_HF_COL = { glow: "threat", tifr: "threat", orange: "threat", yellow: "orange" } /* RED through the core, only the thinnest line orange (owner, 2026-10-21: "make sure it's red") */, IFR_MAIN_COL = { yellow: "white", orange: "yellow" };
 const ifrFlareCol = (key, f) => COL[(f.hf ? IFR_HF_COL[key] : IFR_MAIN_COL[key]) || key];
 // a FIRE flare's layers: its outer glow IFR_HF_GLOW_K as strong, the rest IFR_HF_OPAQ x (owner, 2026-10-21: "reduce the amount of glow on the
 // hellfire stars but increase the opacity") - the look only: sizes stay (owner-locked, 2026-10-20)
 // then (same day) "much less glow, double core opacity": the glow 0.4 -> 0.1, the core (orange and yellow) 1.6 -> 3.2; the mid layer 1.6
-const IFR_HF_GLOW_K = 0.1, IFR_HF_OPAQ = 1.6, IFR_HF_CORE = 3.2;
+const IFR_HF_GLOW_K = 0.3, IFR_HF_OPAQ = 1.6, IFR_HF_CORE = 3.2; // glow 0.1 -> 0.3 (owner, 2026-10-21, the smaller flares faint: "A, make sure it's red")
 const ifrLayerK = (key, f) => (f.hf ? (key === "glow" ? IFR_HF_GLOW_K : key === "orange" || key === "yellow" ? IFR_HF_CORE : IFR_HF_OPAQ) : 1);
 function drawIfrFlares(t) {
   if (!t.ifrFlares.length) return;
