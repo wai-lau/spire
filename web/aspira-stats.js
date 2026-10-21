@@ -52,7 +52,7 @@ const SPEC = {
   // IFR (aspira-ifrit.js, axes redone 2026-10-20): Damage is the base every hit multiplies (each axis by its own K), Rate meteors a second
   ifr: st => [["Meteors", "1 + a fan of " + st.fan + (st.fissure ? " · fissure" : "")], ["Hit", dmgUnits(st.dmg * st.routeK)], ["Charge", st.chargeS + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
     ["Fire", "r" + Math.round(st.fireR) + " · " + st.fireV + "/s"], ["Burn", dmgUnits(st.dmg * st.fireK) + " / " + IFR_FIRE_TICK_S + "s"], ["Linger", st.fireLinger + "s"],
-    ["Flare", st.beamL + " long · " + st.beamW + " wide"], ["Flare burn", dmgUnits(st.dmg * st.flareK) + " / " + st.tickS + "s · " + st.burnS + "s"],
+    ["Flare", Math.round(st.beamL) + " long · " + Math.round(st.beamW) + " wide"], ["Flare burn", dmgUnits(st.dmg * st.flareK) + " / " + st.tickS + "s · " + st.burnS + "s"],
     ["Flare capstone", st.triple ? "3 flares a landing" : "—"]],
   // GRV (aspira-grv.js): at STARTING mass - a sphere grows up to x GRV_MASS_MAX with the damage it deals
   grv: st => [["Nova hit", dmgUnits(st.dmg * st.novaMul)], ["Nova reach", st.novaR], ["Aura size", st.auraR + " × nova dmg (×" + GRV_GROW_MIN + "–" + GRV_GROW_MAX + ")"],

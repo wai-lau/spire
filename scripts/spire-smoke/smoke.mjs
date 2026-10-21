@@ -160,6 +160,14 @@ check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times,
   if (r.shieldIdx !== 5 || Math.abs(r.shieldGap - 5 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected 5 x 0.4 = 2, half the old 4)";
   return "";
 });
+check("IFR's card shows no long decimals (owner, 2026-10-20)", () => {
+  const r = run(`(() => { const bad = []; for (const ax of ["", "meteor", "hellfire", "firaga"]) for (const k of [0, 1, 3, 6]) {
+    G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
+    if (ax) for (let i = 0; i < k; i++) upgradeTower(t, ax, true);
+    for (const [label, v] of SPEC.ifr(towerStats(t))) if (/\\d\\.\\d{3,}/.test(String(v))) bad.push(label + ": " + v); }
+    return bad; })()`);
+  return r.length ? "long decimals on the IFR card: " + [...new Set(r)].slice(0, 4).join(" | ") : "";
+});
 check("IFR: each axis scales only its own numbers", () => {
   const r = run(`(() => {
     const F = { meteor: ["chargeS", "ballV", "ballR", "routeK"], hellfire: ["fireR", "fireV", "fireLinger", "fireK"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple"] };
