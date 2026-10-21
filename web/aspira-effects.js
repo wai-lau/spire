@@ -4,7 +4,7 @@
 // RPR's charge-up: a thin line to the target it is reloading for, fading in
 // as the reload fills (alpha ~ progress^2), so the shot is telegraphed.
 // It deals nothing; the damage comes with the bright flash on firing.
-const SOL_AIM_DEG = 30, SOL_AIM_EVERY = 0.2;
+const SOL_AIM_DEG = 30, SOL_AIM_EVERY = 0.2, SOL_AIM_SLIDE = 0.15; // SLIDE: s, the eased turn to a new aim
 function drawAims() {
   ctx.lineCap = "round"; ctx.lineWidth = 0.8;
   for (const t of G.towers) {
@@ -26,7 +26,10 @@ function drawAims() {
         drawCone({ x: t.x, y: t.y, a: Math.atan2(l.e.y - t.y, l.e.x - t.x), half, len: d * 1.6, color: col }, al); // to SOL_CONE_A at full charge
         const now = performance.now();
         if (!(l.aimAt > now - SOL_AIM_EVERY * 1000)) { l.aimAt = now; l.aimDir = solConeDir(t, st, l.e, real); }
-        drawCone({ x: l.e.x, y: l.e.y, a: l.aimDir, half, len: d, color: col }, al);
+        // it SLIDES to a new aim, the short way round (owner, 2026-10-21: "when cone orientation updates, slide the cone, don't teleport")
+        const dt = Math.min(0.1, (now - (l.aimShownAt || now)) / 1000), off = Math.atan2(Math.sin(l.aimDir - (l.aimShown ?? l.aimDir)), Math.cos(l.aimDir - (l.aimShown ?? l.aimDir)));
+        l.aimShown = (l.aimShown ?? l.aimDir) + off * (1 - Math.exp(-dt / SOL_AIM_SLIDE)); l.aimShownAt = now;
+        drawCone({ x: l.e.x, y: l.e.y, a: l.aimShown, half, len: d, color: col }, al);
         ctx.strokeStyle = COL[TOWERS[t.kind].color];
       }
       ctx.globalAlpha = 0.32 + 0.32 * p * p; // never below half its full strength (owner)
