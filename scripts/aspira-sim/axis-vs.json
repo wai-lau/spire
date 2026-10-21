@@ -3,182 +3,182 @@
   "spread": {
    "swarm": 0,
    "fast": 0,
-   "shield": 0,
-   "armor": 85
+   "shield": 1,
+   "armor": 100
   },
   "conductivity": {
    "swarm": 0,
-   "fast": 0,
+   "fast": 3,
    "shield": 0,
-   "armor": 89
+   "armor": 100
   },
   "voltage": {
-   "swarm": 0,
-   "fast": 0,
-   "shield": 0,
-   "armor": 89
+   "swarm": 11,
+   "fast": 74,
+   "shield": 98,
+   "armor": 100
   },
   "capacitance": {
-   "swarm": 0,
-   "fast": 0,
-   "shield": 0,
-   "armor": 89
+   "swarm": 14,
+   "fast": 94,
+   "shield": 85,
+   "armor": 100
   }
  },
  "frz": {
   "spread": {
-   "swarm": 1,
-   "fast": 13,
-   "shield": 71,
-   "armor": 48
+   "swarm": 15,
+   "fast": 90,
+   "shield": 98,
+   "armor": 97
   },
   "temp": {
-   "swarm": 0,
-   "fast": 0,
-   "shield": 19,
-   "armor": 0
+   "swarm": 3,
+   "fast": 12,
+   "shield": 63,
+   "armor": 69
   },
   "rime": {
-   "swarm": 3,
-   "fast": 33,
-   "shield": 87,
-   "armor": 62
+   "swarm": 11,
+   "fast": 86,
+   "shield": 98,
+   "armor": 94
   },
   "moons": {
-   "swarm": 1,
-   "fast": 28,
-   "shield": 62,
-   "armor": 85
+   "swarm": 3,
+   "fast": 53,
+   "shield": 98,
+   "armor": 95
   }
  },
  "sol": {
   "spread": {
-   "swarm": 2,
-   "fast": 0,
-   "shield": 0,
-   "armor": 0
+   "swarm": 76,
+   "fast": 86,
+   "shield": 97,
+   "armor": 59
   },
   "focus": {
-   "swarm": 22,
-   "fast": 6,
-   "shield": 0,
-   "armor": 0
+   "swarm": 83,
+   "fast": 84,
+   "shield": 79,
+   "armor": 33
   },
   "refraction": {
-   "swarm": 1,
-   "fast": 0,
-   "shield": 0,
-   "armor": 0
+   "swarm": 70,
+   "fast": 87,
+   "shield": 98,
+   "armor": 60
   },
   "breach": {
-   "swarm": 2,
-   "fast": 2,
-   "shield": 2,
-   "armor": 0
+   "swarm": 83,
+   "fast": 89,
+   "shield": 98,
+   "armor": 48
   }
  },
  "acd": {
   "spread": {
-   "swarm": 9,
-   "fast": 63,
-   "shield": 11,
-   "armor": 1
+   "swarm": 90,
+   "fast": 94,
+   "shield": 88,
+   "armor": 70
   },
   "corrosion": {
-   "swarm": 2,
-   "fast": 6,
-   "shield": 2,
-   "armor": 0
+   "swarm": 8,
+   "fast": 26,
+   "shield": 69,
+   "armor": 6
   },
   "spray": {
-   "swarm": 0,
-   "fast": 1,
-   "shield": 0,
-   "armor": 0
+   "swarm": 10,
+   "fast": 21,
+   "shield": 54,
+   "armor": 9
   },
   "contagion": {
-   "swarm": 1,
-   "fast": 100,
-   "shield": 1,
-   "armor": 11
+   "swarm": 20,
+   "fast": 71,
+   "shield": 48,
+   "armor": 51
   }
  },
  "grv": {
   "spread": {
-   "swarm": 5,
-   "fast": 92,
-   "shield": 73,
-   "armor": 8
+   "swarm": 89,
+   "fast": 97,
+   "shield": 98,
+   "armor": 87
   },
   "void": {
-   "swarm": 35,
-   "fast": 100,
-   "shield": 87,
-   "armor": 33
+   "swarm": 6,
+   "fast": 20,
+   "shield": 74,
+   "armor": 0
   },
   "supernova": {
    "swarm": 0,
-   "fast": 6,
-   "shield": 3,
+   "fast": 3,
+   "shield": 39,
    "armor": 0
   },
   "radiation": {
-   "swarm": 1,
-   "fast": 13,
-   "shield": 29,
-   "armor": 2
+   "swarm": 0,
+   "fast": 1,
+   "shield": 36,
+   "armor": 0
   }
  },
  "car": {
   "spread": {
-   "swarm": 18,
-   "fast": 6,
-   "shield": 0,
-   "armor": 17
+   "swarm": 63,
+   "fast": 78,
+   "shield": 83,
+   "armor": 67
   },
   "hangar": {
-   "swarm": 19,
-   "fast": 9,
-   "shield": 0,
-   "armor": 1
+   "swarm": 23,
+   "fast": 35,
+   "shield": 69,
+   "armor": 35
   },
   "launch": {
-   "swarm": 1,
-   "fast": 1,
-   "shield": 0,
-   "armor": 27
+   "swarm": 76,
+   "fast": 74,
+   "shield": 89,
+   "armor": 57
   },
   "armament": {
-   "swarm": 8,
-   "fast": 1,
-   "shield": 0,
+   "swarm": 63,
+   "fast": 43,
+   "shield": 97,
    "armor": 0
   }
  },
  "ifr": {
   "spread": {
-   "swarm": 85,
+   "swarm": 74,
    "fast": 95,
-   "shield": 97,
+   "shield": 98,
    "armor": 100
   },
   "meteor": {
-   "swarm": 33,
-   "fast": 34,
-   "shield": 14,
-   "armor": 2
+   "swarm": 30,
+   "fast": 33,
+   "shield": 5,
+   "armor": 1
   },
   "hellfire": {
-   "swarm": 18,
-   "fast": 64,
-   "shield": 41,
+   "swarm": 10,
+   "fast": 50,
+   "shield": 34,
    "armor": 100
   },
   "firaga": {
    "swarm": 7,
    "fast": 9,
-   "shield": 5,
-   "armor": 33
+   "shield": 2,
+   "armor": 20
   }
  }
 }

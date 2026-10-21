@@ -20,6 +20,7 @@ const CHANGELOG = [
     "The first wave comes down one lane, the one that runs longest past the build hint.",
     "Upgrade-ready chevrons are back on the floor tiles, half the size and still.",
     "Every tower is drawn in its build card's colour: Freeze and Carrier paler, Gravity a lighter purple.",
+    "Sol: its charging cone starts wide and sweeps in to its real width, and the bend off the target lines up with it before the shot.",
     "Wide end screen: the two columns sit together, Play again right under the wave you reached, and the lives-lost list fills the rest.",
   ] },
   { v: "6.8", day: "Oct 21", bu: [
