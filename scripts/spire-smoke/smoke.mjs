@@ -729,6 +729,15 @@ check("GRV support (owner, 2026-10-21): the aura slows harder past the hole and 
   if (!(r.moved > 30 && r.moved <= 40 + 1e-6)) return "the pull moved it " + r.moved.toFixed(1) + " u toward a hole 40 u across (expected most of the way, never past)";
   return "";
 });
+check("every shield pop shows its own 0 at once, quiet hits too (owner, 2026-10-21)", () => {
+  const r = run(`(() => {
+    G = newGame(); dmgLive = []; dmgSums.clear(); spawnEnemy("shield", 20, 0, 0); const e = G.enemies[0]; e.seen = true; e.shield = 5;
+    const t = { x: 0, y: 0, id: 1, kind: "ifr" }; for (let i = 0; i < 3; i++) damage(e, 10, t, false, false, IFR_BURN_ST);
+    return { zeros: dmgLive.filter(f => f.text === "0").length, left: e.shield };
+  })()`);
+  if (r.left !== 2) return "3 quiet hits left " + r.left + " charges (expected 2)";
+  return r.zeros === 3 ? "" : "3 shield pops showed " + r.zeros + " zeros (expected 3)";
+});
 check("damage numbers (owner, 2026-10-21): a lone hit shows at once; more within 0.5 s sum into one number at the window's end", () => {
   const r = run(`(() => {
     G = newGame(); dmgLive = []; dmgSums.clear(); spawnEnemy("armor", 5, 0, 0); const e = G.enemies[0], t = { x: 0, y: 0, id: 1 };

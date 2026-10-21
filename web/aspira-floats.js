@@ -46,7 +46,7 @@ function dmgNumber(e, label, size, color, src, grey = 0) {
 // (for burn and fast hits like hellfire) for single hits, show immediately"): an enemy's first hit of a colour (its tower's ink; a crit
 // white) shows AT ONCE; what lands on it in that colour over the next DMG_SUM_S REAL seconds is summed into ONE number, shown when
 // the window ends, and windows keep running while hits do. (Replaced the 2026-10-13 slow-motion tick split: at any speed a lone hit
-// shows whole, at once, and a stream reads as one number every half second.)
+// shows whole, at once, and a stream reads as one number every half second.) A SHIELD POP is the exception: every one shows its own "0" at once (damage(), aspira-game.js).
 const DMG_SUM_S = 0.5, dmgSums = new Map();
 function dmgSum(e, amt, size, color, src, grey = 0) {
   const key = e.id + "|" + color, now = performance.now(), b = dmgSums.get(key);
