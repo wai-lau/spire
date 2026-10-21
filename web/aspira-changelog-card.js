@@ -22,17 +22,16 @@ function openChangelog() {
   if (!card) {
     card = document.createElement("div");
     card.id = "asp-log"; card.className = "asp-deck asp-log";
-    // a day's lines GROUPED BY WHAT THEY CHANGE (owner, 2026-10-16: "group differently, all ATC changes go together, all swarm changes
-    // go together / Drop the buff and nerf categories"): a tower, an enemy type, the bosses, the core, else Other - headings only
-    // where a day has more than one line (owner, 2026-10-14). bu / ne / u still hold the lines; u (Perf/UI) lines stay a size smaller
-    const day = d => {
-      const all = [...(d.bu || []), ...(d.ne || []), ...(d.u || [])], ui = new Set(d.u || []);
-      const li = (i, name) => "<li" + (ui.has(i) ? ' class="asp-log-ui"' : "") + ">" + (name ? i.replace(new RegExp("^" + name + ":\\s*"), "") : i) + "</li>"; // under its heading, a line's own "Subject:" is dropped
-      if (all.length < 2) return "<h3>" + d.v + " · " + d.day + "</h3><ul>" + all.map(i => li(i)).join("") + "</ul>";
-      const by = new Map(LOG_SUBJECTS.map(([name]) => [name, []]));
-      for (const i of all) by.get(logSubject(i)).push(i);
-      return "<h3>" + d.v + " · " + d.day + "</h3>" + [...by].filter(([, is]) => is.length).map(([name, is]) => "<h4>" + name + "</h4><ul>" + is.map(i => li(i, name)).join("") + "</ul>").join("");
-    };
+    // each entry in THREE SECTIONS (owner, 2026-10-21: "For the changelog, split each section into Balance Perf and UI"; grouped by
+    // subject 2026-10-16 .. 21): Balance / Perf / UI headings, each section's lines in LOG_SUBJECTS order (stable) so one tower's sit
+    // together, the "Subject:" lead in bold; Perf and UI a size smaller (asp-log-ui)
+    const SECTIONS = [["Balance", "b"], ["Perf", "p"], ["UI", "u"]];
+    const rank = new Map(LOG_SUBJECTS.map(([name], k) => [name, k]));
+    const li = (i, small) => { const m = i.match(/^([^:]{1,40}):\s*(.*)$/); return "<li" + (small ? ' class="asp-log-ui"' : "") + ">" + (m ? "<b>" + m[1] + ":</b> " + m[2] : i) + "</li>"; };
+    const day = d => "<h3>" + d.v + " · " + d.day + "</h3>" + SECTIONS.map(([name, k]) => {
+      const is = (d[k] || []).map((i, n) => [i, n]).sort((a, b) => (rank.get(logSubject(a[0])) - rank.get(logSubject(b[0]))) || a[1] - b[1]).map(x => x[0]);
+      return is.length ? "<h4>" + name + "</h4><ul>" + is.map(i => li(i, k !== "b")).join("") + "</ul>" : "";
+    }).join("");
     card.innerHTML = '<h2>changes</h2><div class="asp-log-list">' + CHANGELOG.map(day).join("") + "</div>";
     button(card, "asp-primary", "close", closeChangelog);
     document.querySelector(".asp-board").appendChild(card);
