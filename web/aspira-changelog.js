@@ -21,6 +21,7 @@ const CHANGELOG = [
     "Formations arrive at their real spacing: they no longer bunch up as they slow down near your towers. Shield Vs are tighter.",
     "No enemy appears mid-board any more: every formation walks in from the edge.",
     "Arc: a charged enemy's outline is always an upward triangle.",
+    "Upgrade-ready chevrons stand on top of the tower in 3D, instead of hiding under it.",
     "Ifrit: charges a little faster with no Meteor bought.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",

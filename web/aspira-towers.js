@@ -432,10 +432,17 @@ function drawUpPlus() { // over the towers (render, aspira-draw.js), so a tower 
     if (!upReady(t)) continue;
     const c = CELLS[t.cell], col = COL[TOWERS[t.kind].color];
     ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = 0.2 + 0.7 * upPulse(now); // the hex FLASHES with the chevron, in more outlines the higher the tower (moved here from drawLeash, which turns over with the boss sky)
-    for (let i = 0; i < upRings(t); i++) { towerHex(c, TOWER_K * TOWER_DRAW_K * (1 + UP_RING_K * i)); ctx.stroke(); }
-    ctx.globalAlpha = 0.25 + 0.75 * upPulse(now); upArrow(c.x, c.y, UP_PLUS_PX, col);
+    for (let i = 0; i < upRings(t); i++) { towerHex(c, TOWER_K * (1 + UP_RING_K * i)); ctx.stroke(); } // the floor TILE, the size of a slot's (not the drawn tower's)
+    if (!phoneOn3d()) { ctx.globalAlpha = 0.25 + 0.75 * upPulse(now); upArrow(c.x, c.y, UP_PLUS_PX, col); } // 3D: on the tower's top instead (drawUpTop)
   }
   ctx.globalAlpha = 1;
+}
+// THE CHEVRON IN 3D (owner, 2026-10-21: "fix the upgrade chevrons ... the ones on the floor"): on the floor it sat UNDER a home tower's prism;
+// now on the prism's top, just beyond it, bobbing like the build arrow (drawSlotArrow, aspira-chooser.js). From warpEntities' tower top
+function drawUpTop(t, x, y) {
+  if (!upReady(t)) return;
+  const now = performance.now() / 1000, col = COL[TOWERS[t.kind].color];
+  ctx.globalAlpha = 0.25 + 0.75 * upPulse(now); upArrow(x, y - ARROW_GAP - UP_PLUS_PX / 2 + ARROW_BOB * Math.sin(now * 1000 / 220), UP_PLUS_PX, col); ctx.globalAlpha = 1;
 }
 function drawLeash() {
   ctx.save();
