@@ -667,6 +667,16 @@ check("a wave's card: tapping a wave opens its stats - no NaN, no zero rows - on
   }
   return "";
 });
+check("Temporal Drive stops Strength dead; a tower's slow still takes 40% on her (owner, 2026-10-21)", () => {
+  const r = run(`(() => {
+    G = newGame(); spawnEnemy("bonus", 36, 0, 0); const e = G.enemies[0]; e.arcana = "strength"; e.seen = true; e.shield = 0;
+    applySlow(e, 1, 5, "core:time"); const core = e.slowF; e.slows = {}; sumSlows(e);
+    applySlow(e, 0.5, 5, 7); return { core, tower: e.slowF };
+  })()`);
+  if (!(r.core >= 1 - 1e-9)) return "Temporal Drive slowed Strength to " + r.core + " (expected a full stop, 1)";
+  if (!(r.tower < 0.5 * 0.4 + 1e-9)) return "a tower's 0.5 slow on Strength came to " + r.tower + " (expected at most 0.2)";
+  return "";
+});
 check("damage numbers (owner, 2026-10-21): a lone hit shows at once; more within 0.5 s sum into one number at the window's end", () => {
   const r = run(`(() => {
     G = newGame(); dmgLive = []; dmgSums.clear(); spawnEnemy("armor", 5, 0, 0); const e = G.enemies[0], t = { x: 0, y: 0, id: 1 };

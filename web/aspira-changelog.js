@@ -17,6 +17,7 @@ const CHANGELOG = [
     "Acid: twice the ticks, each half as hard - it eats shields faster.",
     "The first fast wave comes in at half speed.",
     "Ifrit: the Hellfire circle is back, faint.",
+    "Temporal Drive now stops Strength dead.",
     "Ifrit: charges a little faster with no Meteor bought.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",
