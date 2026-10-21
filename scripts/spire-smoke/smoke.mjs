@@ -399,11 +399,12 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
       try { while ((f.left > 0) && tm < 60) { stepIfrFires(t, st, 1 / 60); tm += 1 / 60; } } finally { ifrFlare = of; }
       const d = lit.map(q => Math.hypot(q.x - CX, q.y - CY)), ts = lit.map(q => q.t).sort((a, b) => a - b);
       return { n: lit.length, R: f.R, meanT: ts.reduce((a, b) => a + b, 0) / ts.length, minGap: Math.min(...ts.slice(1).map((v, i) => v - ts[i])), maxD: Math.max(...d), meanD: d.reduce((x, y) => x + y, 0) / d.length, sizes: new Set(t.ifrFlares.filter(q => q.hf).map(q => q.L.toFixed(2))).size, dens: st.fireDens }; };
-    out.f0 = fire(0); out.f3 = fire(3); out.f6 = fire(6);
+    out.f0 = fire(0); out.f3 = fire(3); out.f6 = fire(6); out.base = IFR_FIRE_FLARES;
     /* the fire's flares are the UNTAKEN Flare's, whatever Flare's level (owner, 2026-10-20), and not the meteors' brighter kind */
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
       for (let i = 0; i < 600 && t.ifrFires.length; i++) stepIfrFires(t, st, 1 / 60); const hf = t.ifrFlares.filter(q => q.hf);
       out.hfN = hf.length; out.hfL = Math.max(...hf.map(q => q.L)); out.hfLmax = IFR_FLARE_K * IFR_BEAM_L[0] + 1e-6; out.hfHit = hf[0] && hf[0].hit; out.hfHitWant = st.dmg * IFR_TICK_K[0];
+      const k0 = hf.map(q => q.L / (IFR_FLARE_K * IFR_BEAM_L[0])); out.hfKmin = Math.min(...k0); out.hfKmax = Math.max(...k0); out.hfLife = [...new Set(hf.map(q => q.life))];
       out.iHf = hf[0] ? ifrFlareI(hf[0]) : NaN; ifrFlare(t, st, CX, CY); const m = t.ifrFlares[t.ifrFlares.length - 1]; out.iMain = ifrFlareI({ ...m, hit: hf[0].hit }); }
     /* the Flare capstone: one BIG flare dead centre of the fire, lit after all its flares */
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f = t.ifrFires[0]; let tm = 0, bigAt = -1, lastSmall = 0;
@@ -417,14 +418,15 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (r.land0.n !== 1 || !(r.land0.jit < 30)) return "a fan meteor's landing lit " + r.land0.n + " flares, " + r.land0.jit + " u off (expected 1 there)";
   if (r.land6.n !== 3 || !(r.land6.jit <= r.jmax + 30)) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 3, within " + r.jmax + " u)";
   for (const [k, f] of [["Hellfire 0", r.f0], ["Hellfire VI", r.f6]]) {
-    if (!(f.n >= 18)) return k + ": a grown fire lit " + f.n + " flares (18 at the least)";
-    if (f.n >= 40 && (Math.abs(f.meanT - r.flareMean * Math.sqrt(f.n / 18)) > 0.3 * Math.sqrt(f.n / 18) || !(f.minGap < 0.1))) return k + ": " + f.n + " flares lit at mean " + f.meanT.toFixed(2) + " s, closest " + f.minGap.toFixed(3) + " s apart (expected a bell round " + r.flareT + " s - mean " + r.flareMean.toFixed(2) + " with the draws under 0 drawn again, some under 0.1 s apart)";
+    if (!(f.n >= r.base)) return k + ": a grown fire lit " + f.n + " flares (" + r.base + " at the least)";
+    if (f.n >= 40 && (Math.abs(f.meanT - r.flareMean * Math.sqrt(f.n / r.base)) > 0.3 * Math.sqrt(f.n / r.base) || !(f.minGap < 0.1))) return k + ": " + f.n + " flares lit at mean " + f.meanT.toFixed(2) + " s, closest " + f.minGap.toFixed(3) + " s apart (expected a bell round " + r.flareT + " s - mean " + r.flareMean.toFixed(2) + " with the draws under 0 drawn again, some under 0.1 s apart)";
     if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD < 0.5 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", nearer the centre)";
     if (f.sizes < 2) return k + ": its flares are all one size";
   }
   if (Math.abs(r.beamVI[0] - 100) > 1e-6 || Math.abs(r.beamVI[1] - 16) > 1e-6 || Math.abs(r.beam0[0] - 2 * 50 * 100 / 210) > 1e-6 || Math.abs(r.beam0[1] - 2 * 10 * 16 / 24) > 1e-6 || !r.mono) return "Flare tables: VI " + r.beamVI + ", untaken " + r.beam0 + ", rising " + r.mono + " (expected VI 100 x 16, untaken doubled to 47.6 x 13.3, the rest between - owner 2026-10-20)";
   if (r.bigN !== 1 || r.bigN0 !== 0 || !(r.bigOff < 1e-6) || !(r.bigAt >= r.lastSmall) || Math.abs(r.bigL - r.bigWant) > 1e-6 || Math.abs(r.bigHit - r.bigHitWant) > 1e-6) return "the Flare capstone's big flare: " + r.bigN + " (untaken " + r.bigN0 + "), " + r.bigOff + " u off centre, lit at " + r.bigAt + " s after the last flare at " + r.lastSmall + ", L " + r.bigL + " (" + r.bigWant + "), hit " + r.bigHit + " (" + r.bigHitWant + ")";
-  if (!(r.hfN >= 18) || !(r.hfL <= r.hfLmax) || Math.abs(r.hfHit - r.hfHitWant) > 1e-6) return "at Flare VI the fire lit " + r.hfN + " flares up to " + r.hfL + " long, hitting " + r.hfHit + " (expected 18+ untaken flares: at most " + r.hfLmax + ", hitting " + r.hfHitWant + ")";
+  if (!(r.hfN >= r.base) || !(r.hfL <= r.hfLmax) || Math.abs(r.hfHit - r.hfHitWant) > 1e-6) return "at Flare VI the fire lit " + r.hfN + " flares up to " + r.hfL + " long, hitting " + r.hfHit + " (expected " + r.base + "+ untaken flares: at most " + r.hfLmax + ", hitting " + r.hfHitWant + ")";
+  if (!(r.hfKmin >= 0.1 - 1e-9 && r.hfKmin < 0.3 && r.hfKmax <= 1 + 1e-9 && r.hfKmax > 0.8) || JSON.stringify(r.hfLife) !== "[0.5]") return "the fire's flares: sizes " + r.hfKmin.toFixed(2) + ".." + r.hfKmax.toFixed(2) + " of the largest, burn " + r.hfLife + " s (expected 10-100% and 0.5 s - owner 2026-10-20)";
   if (!(r.iMain > r.iHf)) return "a meteor's flare (" + r.iMain + ") is not brighter than a fire's (" + r.iHf + ") at the same hit (owner, 2026-10-20: more opaque and intense)";
   const dens0 = r.f0.n / r.f0.R ** 2, dens3 = r.f3.n / r.f3.R ** 2;
   if (Math.abs(dens3 / dens0 / (r.f3.dens / r.f0.dens) - 1) > 0.15 || !(r.f3.dens > r.f0.dens)) return "flare density: " + r.f0.n + " in r" + r.f0.R + " vs " + r.f3.n + " in r" + r.f3.R + " (3 buys: expected " + r.f3.dens / r.f0.dens + "x denser - owner 2026-10-20: denser as Hellfire levels)";
