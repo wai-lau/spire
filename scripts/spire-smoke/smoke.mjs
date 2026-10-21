@@ -168,7 +168,7 @@ check("IFR's card shows no long decimals (owner, 2026-10-20)", () => {
 });
 check("IFR: each axis scales only its own numbers", () => {
   const r = run(`(() => {
-    const F = { meteor: ["chargeS", "ballV", "ballR", "routeK"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple"] };
+    const F = { meteor: ["chargeS", "ballV", "ballR", "routeK"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple", "hfK"] };
     const all = [].concat(...Object.values(F));
     const fresh = ax => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; if (ax) for (let k = 0; k < 6; k++) upgradeTower(t, ax, true); return t; };
     const pick = st => Object.fromEntries(all.map(k => [k, st[k]]));
@@ -180,7 +180,7 @@ check("IFR: each axis scales only its own numbers", () => {
     try { for (let i = 0; i < 30; i++) step(1 / 30); out.oldOk = true; } catch (e) { out.oldOk = String(e); }
     return out;
   })()`);
-  const F = { meteor: ["chargeS", "ballV", "ballR", "routeK", "fireR"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple"] };
+  const F = { meteor: ["chargeS", "ballV", "ballR", "routeK", "fireR"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple", "hfK"] };
   for (const ax of Object.keys(F)) { const stray = r.moved[ax].filter(k => !F[ax].includes(k)); if (stray.length) return ax + " moved another axis's numbers: " + stray; if (!r.moved[ax].length) return ax + " moved nothing"; }
   if (Math.abs(r.base.fireR - 16 * r.base.ballR) > 1e-9) return "Hellfire 0: the fire's max " + r.base.fireR + " is not 16x the meteor's size " + r.base.ballR + " (owner, 2026-10-20)";
   if (Math.abs(r.vi.meteor.ballR - 5.4) > 1e-9) return "Meteor VI meteor radius " + r.vi.meteor.ballR + " (expected 5.4: 20% of 27, owner 2026-10-20)";
@@ -403,7 +403,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
     /* the fire's flares are the UNTAKEN Flare's, whatever Flare's level (owner, 2026-10-20), and not the meteors' brighter kind */
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
       for (let i = 0; i < 600 && t.ifrFires.length; i++) stepIfrFires(t, st, 1 / 60); const hf = t.ifrFlares.filter(q => q.hf);
-      out.hfN = hf.length; out.hfL = Math.max(...hf.map(q => q.L)); out.hfLmax = IFR_FLARE_K * IFR_BEAM_L[0] + 1e-6; out.hfHit = hf[0] && hf[0].hit; out.hfHitWant = st.dmg * IFR_TICK_K[0];
+      out.hfN = hf.length; out.hfL = Math.max(...hf.map(q => q.L)); out.hfLmax = IFR_FLARE_K * IFR_BEAM_L[0] + 1e-6; out.hfHit = hf[0] && hf[0].hit; out.hfHitWant = st.dmg * IFR_TICK_K[0] * st.hfK; out.hfK = st.hfK;
       const k0 = Array.from({ length: 2000 }, () => ifrHfS() / IFR_FLARE_K); out.hfShapes = hf.every(q => q.L / (IFR_FLARE_K * IFR_BEAM_L[0]) <= 1 + 1e-9); out.hfKmin = Math.min(...k0); out.hfKmax = Math.max(...k0); out.hfLife = [...new Set(hf.map(q => q.life))]; out.hfTick = [...new Set(hf.map(q => q.tickS))]; out.tick0 = IFR_TICK_S[0];
       out.iHf = hf[0] ? ifrFlareI(hf[0]) : NaN; ifrFlare(t, st, CX, CY); const m = t.ifrFlares[t.ifrFlares.length - 1]; out.iMain = ifrFlareI({ ...m, hit: hf[0].hit }); }
     /* the Flare capstone: one BIG flare dead centre of the fire, lit after all its flares */
@@ -427,6 +427,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (r.bigN !== 1 || r.bigN0 !== 0 || !(r.bigOff < 1e-6) || !(r.bigAt >= r.lastSmall) || Math.abs(r.bigL - r.bigWant) > 1e-6 || Math.abs(r.bigHit - r.bigHitWant) > 1e-6) return "the Flare capstone's big flare: " + r.bigN + " (untaken " + r.bigN0 + "), " + r.bigOff + " u off centre, lit at " + r.bigAt + " s after the last flare at " + r.lastSmall + ", L " + r.bigL + " (" + r.bigWant + "), hit " + r.bigHit + " (" + r.bigHitWant + ")";
   if (!(r.hfN >= r.base) || !(r.hfL <= r.hfLmax) || Math.abs(r.hfHit - r.hfHitWant) > 1e-6) return "at Flare VI the fire lit " + r.hfN + " flares up to " + r.hfL + " long, hitting " + r.hfHit + " (expected " + r.base + "+ untaken flares: at most " + r.hfLmax + ", hitting " + r.hfHitWant + ")";
   if (!r.hfShapes || !(r.hfKmin >= 0.1 - 1e-9 && r.hfKmin < 0.12 && r.hfKmax <= 1 + 1e-9 && r.hfKmax > 0.98) || JSON.stringify(r.hfLife) !== "[0.3]" || JSON.stringify(r.hfTick) !== JSON.stringify([r.tick0])) return "the fire's flares: sizes " + r.hfKmin.toFixed(2) + ".." + r.hfKmax.toFixed(2) + " of the largest, burn " + r.hfLife + " s, tick " + r.hfTick + " (expected 10-100%, 0.3 s - owner 2026-10-20 - on the untaken tick " + r.tick0 + ")";
+  if (!(r.hfK > 1.3 && r.hfK < 2)) return "Flare VI raises the fire's flares x" + r.hfK + " (expected slightly - owner 2026-10-20)";
   if (!(r.iMain > r.iHf)) return "a meteor's flare (" + r.iMain + ") is not brighter than a fire's (" + r.iHf + ") at the same hit (owner, 2026-10-20: more opaque and intense)";
   const dens0 = r.f0.n / r.f0.R ** 2, dens3 = r.f3.n / r.f3.R ** 2;
   if (Math.abs(dens3 / dens0 / (r.f3.dens / r.f0.dens) - 1) > 0.15 || !(r.f3.dens > r.f0.dens)) return "flare density: " + r.f0.n + " in r" + r.f0.R + " vs " + r.f3.n + " in r" + r.f3.R + " (3 buys: expected " + r.f3.dens / r.f0.dens + "x denser - owner 2026-10-20: denser as Hellfire levels)";
@@ -509,12 +510,14 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
     t.ifrCharge = 0.5; const R = st.ballR * 0.65, c = rec(() => drawIfrTop(t));
     out.outer = Math.max(...c.A.map(q => q.r)); out.R = R;
     const inner = c.A.filter(q => q.r < R - 1e-6); out.innerMin = Math.min(...inner.map(q => q.r)) / R; out.innerA = Math.max(...inner.map(q => q.a)); out.innerN = inner.length;
+    out.hfBright = ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] * IFR_HF_FK[6] }) > ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] });
     out.coreHf = ifrFlareCol("yellow", { hf: true }) === COL.tifr; out.coreMain = ifrFlareCol("yellow", {}) === COL.white && ifrFlareCol("orange", {}) === COL.yellow; out.haloHf = ifrFlareCol("glow", { hf: true }) === COL.threat; out.mainK = IFR_FLARE_MAIN_K;
     const ref = TOWERS.ifr.dmg * IFR_TICK_K[0]; out.i1 = ifrFlareI({ hit: ref, hf: true }); out.i2 = ifrFlareI({ hit: 2 * ref, hf: true }); out.i0 = ifrFlareI({ hit: ref / 10, hf: true });
     return out;
   })()`);
   if (Math.abs(r.outer - r.R) > 1e-6) return "a half charge's outline is r " + r.outer + " (expected 0.65 x the meteor, " + r.R + ")";
   if (!r.innerN || r.innerMin < 0.7 - 1e-6 || !(r.innerA <= 0.3 + 1e-6 && r.innerA > 0.2)) return "inner glow: " + r.innerN + " rings, deepest at " + r.innerMin + " r, brightest " + r.innerA + " (expected down to 0.7 r, 0.3 at the outline)";
+  if (!r.hfBright) return "a fire flare from a higher Flare level is not brighter (owner, 2026-10-20)";
   if (!r.coreHf || !r.coreMain || !r.haloHf || r.mainK !== 3) return "flare colours: the fire's orange core " + r.coreHf + ", red halo " + r.haloHf + ", a meteor's white core (yellow round it) " + r.coreMain + ", meteor flares x" + r.mainK + " (owner, 2026-10-20: red outside, orange inside; meteor flares brighter)";
   if (r.i1 !== 3 || !(r.i2 > r.i1 && r.i2 <= 6) || r.i0 !== 3) return "flare intensity " + [r.i0, r.i1, r.i2] + " (expected 3 at or under the untaken hit - much more visible, owner 2026-10-20 - brighter at twice it, capped at 6)";
   return "";
