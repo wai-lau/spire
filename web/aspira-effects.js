@@ -23,7 +23,7 @@ function drawAims() {
         // and the FIRST REFRACTION cone sweeps in with it off the target, the way the shot will bend ("so it looks like the shots are
         // getting lined up and fired": solConeDir, re-aimed SOL_AIM_EVERY s at most)
         const real = (st.cone || SOL_CONE) * Math.PI / 180, half = Math.max(real, SOL_AIM_DEG * Math.PI / 180) * (1 - p) + real * p, al = Math.cbrt(p), col = TOWERS[t.kind].color;
-        drawCone({ x: t.x, y: t.y, a: Math.atan2(l.e.y - t.y, l.e.x - t.x), half, len: d * 1.6, color: col }, al); // to full opacity at full charge (SOL_CONE_A)
+        drawCone({ x: t.x, y: t.y, a: Math.atan2(l.e.y - t.y, l.e.x - t.x), half, len: d * 1.6, color: col }, al); // to SOL_CONE_A at full charge
         const now = performance.now();
         if (!(l.aimAt > now - SOL_AIM_EVERY * 1000)) { l.aimAt = now; l.aimDir = solConeDir(t, st, l.e, real); }
         drawCone({ x: l.e.x, y: l.e.y, a: l.aimDir, half, len: d, color: col }, al);
