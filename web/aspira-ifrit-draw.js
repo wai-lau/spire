@@ -17,8 +17,8 @@ function drawIfrRingAt(x, y, r, a, low) {
 // the center (it should start at 30%, then fall off to 0% about 30% of the way towards the center)": IFR_INNER_N rings inside the outline,
 // alpha falling from IFR_INNER_A to 0 over IFR_INNER_DEPTH of the radius (stacked strokes - no gradient on the 3D board context). a: x alpha
 const IFR_INNER_A = 0.3, IFR_INNER_DEPTH = 0.3, IFR_INNER_N = 6;
-function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1) { // inner: x the inner glow's alpha (a fire's rise)
-  if (fill) { ctx.fillStyle = COL.bg; ctx.globalAlpha = 0.95 * a; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
+function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1) { // fill: false, true (the black core) or a colour; inner: x the inner glow's alpha (a fire's rise)
+  if (fill) { ctx.fillStyle = fill === true ? COL.bg : fill; ctx.globalAlpha = 0.95 * a; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
   const n = low ? 2 : IFR_INNER_N, w = r * IFR_INNER_DEPTH / n;
   ctx.strokeStyle = COL.glow; ctx.lineWidth = w; /* ember red-orange inside the rim (the fire colours, 2026-10-20) */
   for (let k = 0; k < n; k++) {
@@ -33,7 +33,7 @@ function drawIfrFires(t, low) {
   for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.hold > 0 || f.r < f.R ? 1 : Math.max(0, f.fade / IFR_FIRE_FADE), 1 + (IFR_FIRE_GLOW_K - 1) * Math.min(1, (f.age || 0) / IFR_FIRE_GLOW_S));
 }
 function drawIfrBalls(t, low) {
-  for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, !b.gen, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_ARM_HIT_U) : 1); /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
+  for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_ARM_HIT_U) : 1); /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)
