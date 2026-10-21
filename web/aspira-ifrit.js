@@ -19,7 +19,7 @@ const IFR_BALL_RAD = [2.7, 3, 3.3, 3.7, 4.2, 4.7] /* x0.2 (owner, 2026-10-20: "r
 // Hellfire: THE FIRE the meteor leaves (owner, 2026-10-20; no ring, no burn - stepIfrFires): it opens at the meteor's size, grows at FIRE_V to FIRE_R (never below IFR_FIRE_FLOOR x the meteor) ("small ticks, many"), lingers FIRE_LINGER s at full size
 const IFR_FIRE_FLOOR = 16; // the fire's max is never under this x the meteor's radius - with no Hellfire too (owner, 2026-10-20: "even with no hellfire bought, fire should start at 16x meteor size"; was 1x)
 const IFR_FIRE_R = [0, 60, 60, 85, 120, 160] /* BATTERY 6.6.0 (2026-10-20): owner: "spread hellfire across more time and space"; VI 180 */; // u radius (VI 160: "6 towers across", capstone.js)
-const IFR_FIRE_V = [60, 80, 100, 120, 150, 180]; // u/s (VI 220)
+const IFR_FIRE_V = [180, 240, 300, 360, 450, 540]; // u/s (VI 660) - x3 (owner, 2026-10-21: "triple hellfire expansion speed"; was 60 .. 180, VI 220)
 // FLARE SIZES (owner, 2026-10-20; LOCKED - no size change without asking): the capstone (VI) is the old III, 100 x 16 ("don't make flares
 // larger than the current one for III"); the untaken flare is twice its scaled size ("double the size of the bottom end, squeeze the others
 // between") and the stops between keep their places, squeezed into the range left (ifrSqueeze). The old scale: 50 .. 140 (VI 210) x 10 .. 20 (VI 24)
@@ -223,7 +223,7 @@ function ifrCatch(was, now, id) { now[id] = 1; return !IFR_CATCH || !!was[id]; }
 // (and the Flare capstone's big one, dead centre)
 // THE RING HITS (owner, 2026-10-21: "make the hellfire ring do damage (lets say 3x hellfire flare hit)"): as the circle grows, each
 // enemy it reaches takes ONE hit of IFR_RING_HIT_K x a fire flare's (ifrFlare's hf hit), once a fire (f.hitIds - plain data)
-const IFR_RING_HIT_K = 3;
+let IFR_RING_HIT_K = 3; // (let: the simulator sweeps it - 2026-10-21: 0 .. 3 moved IFR's spread marks by 2 points at most)
 function ifrRingHit(t, st, f) {
   const amt = IFR_RING_HIT_K * st.dmg * IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K * (f.hk ?? 1), had = (f.hitIds ||= {});
   for (const e of G.enemies) {

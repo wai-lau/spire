@@ -16,7 +16,7 @@ const CHANGELOG = [
     "Carrier: more ammo and a harder shot before its upgrades.",
     "Acid: twice the ticks, each half as hard - it eats shields faster.",
     "The first fast wave comes in at half speed.",
-    "Ifrit: the Hellfire circle is back. It hits each enemy it reaches once (3x a Hellfire flare), and stays, fainter, until its flares are out.",
+    "Ifrit: the Hellfire circle is back and grows three times as fast. It hits each enemy it reaches once (3x a Hellfire flare), and stays, fainter, until its flares are out.",
     "Temporal Drive now stops Strength dead.",
     "Formations arrive at their real spacing: they no longer bunch up as they slow down near your towers. Shield Vs are tighter.",
     "No enemy appears mid-board any more: every formation walks in from the edge.",
