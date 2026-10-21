@@ -27,18 +27,14 @@ function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1) { // fill: false, t
   }
   drawIfrRingAt(x, y, r, 0.9 * a, low);
 }
-// THE FIRE: the meteor without its black fill (owner, 2026-10-20: "black fill should disappear on impact, but all other effects
-// remain"), at the fire's radius, fading out at the end
-function drawIfrFires(t, low) {
-  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.hold > 0 || f.r < f.R ? 1 : Math.max(0, f.fade / IFR_FIRE_FADE), 1 + (IFR_FIRE_GLOW_K - 1) * Math.min(1, (f.age || 0) / IFR_FIRE_GLOW_S));
-}
 function drawIfrBalls(t, low) {
   for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_ARM_HIT_U) : 1); /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)
 const IFR_FLARE_I0 = 3, IFR_FLARE_I_MAX = 6;
-function ifrFlareI(f) { return Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
+const IFR_FLARE_MAIN_K = 2; // a METEOR's flare (not the fire's) x this - "make non-hellfire flares more opaque and intense" (owner, 2026-10-20)
+function ifrFlareI(f) { return (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
 // each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
 // IFR_GLOW_BANDS lengths whose alpha falls off toward the tip as 1 - (k / bands)^2 (flat near the centre, fading at the end).
@@ -88,7 +84,7 @@ function drawIfr(balls) {
   for (const t of G.towers) {
     if (t.kind !== "ifr" || !t.ifrInit0) continue;
     ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrFires(t, low); }
+    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); }
   }
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }

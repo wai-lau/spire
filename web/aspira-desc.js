@@ -63,8 +63,8 @@ const DESCRIBE = {
   // towers across); Flare the flares - bigger, hotter, longer (its capstone: three a landing)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
-    return "Charges at its centre and launches a meteor that hunts down an enemy. Where it strikes a fire " + (h ? "spreads" + (h >= 6 ? " six towers wide" : "") + " and lingers" : "flickers") +
-      ", burning what stands in it and lighting flares as it grows, and " + IFR_FAN[m] + " meteors burst out all round, each hunting any enemy that comes near" + (m >= 6 ? " and splitting in two on a hit" : "") +
+    return "Charges at its centre and launches a meteor that hunts down an enemy. Where it strikes a flare burns, a fire " + (h ? "spreads" + (h >= 6 ? " six towers wide" : "") : "flickers") +
+      ", lighting many small flares as it grows, and " + IFR_FAN[m] + " meteors burst out all round, each hunting any enemy that comes near" + (m >= 6 ? " and splitting in two on a hit" : "") +
       "; where each lands a flare burns" + (f >= 6 ? " - three of them." : ".");
   },
 
