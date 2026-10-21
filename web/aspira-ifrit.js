@@ -40,9 +40,9 @@ const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights TH
 // IFR_FIRE_FLARE_R0, as many more as its area is bigger, at r x u^IFR_LAND_POW from its centre (r: the fire's radius as each is lit)
 const IFR_FIRE_TIME_K = 0.25; // every fire flare's time x this - "the hellfire flares are spread over too much time, condense the hellfire ones into a quarter of the time" (owner, 2026-10-20)
 const IFR_FIRE_DENS = [1, 1.25, 1.5, 1.75, 2, 2.5]; // Hellfire: its flares' density x this (VI 3) - "density of hellfire flares should increase as hellfire is levelled" (owner, 2026-10-20)
-const IFR_HF_LIFE = 0.5, IFR_HF_MIN = 0.1, ifrHfS = () => IFR_FLARE_K * (IFR_HF_MIN + (1 - IFR_HF_MIN) * Math.random()); // the fire's flares: each burns 0.5 s, a size drawn evenly from 10% to 100% of the largest (owner, 2026-10-20: "hellfire flares should have a 10-100% size jitter ... they should only last 0.5 seconds each just very numerous and frequent")
+const IFR_HF_LIFE = 0.3 /* owner, 2026-10-20: "last 0.3s instead" (was 0.5) */, IFR_HF_TICK = 0.15 /* two ticks in its life - the first catches, the second burns (at 0.25 it would never burn) */, IFR_HF_MIN = 0.1, ifrHfS = () => IFR_FLARE_K * (IFR_HF_MIN + (1 - IFR_HF_MIN) * Math.random()); // the fire's flares: each burns 0.5 s, a size drawn evenly from 10% to 100% of the largest (owner, 2026-10-20: "hellfire flares should have a 10-100% size jitter ... they should only last 0.5 seconds each just very numerous and frequent")
 const IFR_FIRE_FLARES = 12 /* (owner, 2026-10-20: "much more numerous" -> 18, then "reduce the number of hellfire flares" with the jitter: 12 my call; was 6) */, IFR_FIRE_FLARE_R0 = 43.2 /* the untaken fire: 16 x the untaken meteor */, IFR_FIRE_FLARE_T = 1, IFR_FIRE_FLARE_SD = 1 /* owner, 2026-10-20: "spread 1s" (was 0.3) */, IFR_FIRE_FLARE_MAX_S = 4; // each flare's time: a bell round FLARE_T s after the impact, sd FLARE_SD, a draw under 0 drawn again, at most FLARE_MAX_S (owner, 2026-10-20: "bell curve the flare landing around the first second of the fire (allow multiple to be spawned closer together than 0.1s)"; was one each 0.1 s once grown)
-const IFR_FLARE_MAX = 240; // live flares a tower at most: the oldest goes (perf; 120 before Backdraft's triple flare, 60 before the pellets doubled)
+// (no cap on live flares - owner, 2026-10-20: "actually no cap"; IFR_FLARE_MAX 240 dropped the oldest)
 // a flare's SIZE (owner, 2026-10-19): a normal draw round half the max (mean IFR_FLARE_MEAN, sd IFR_FLARE_SD, kept in [IFR_FLARE_MIN, 1])
 // times IFR_FLARE_K x the Flare tier's length and width; IFR_LAND_POW > 1 puts a fire's flares nearer its centre more often (u^POW, u uniform)
 // a power over 1 lands more of them near). let: the balance runs sweep IFR_FLARE_K and IFR_LAND_POW
@@ -227,9 +227,8 @@ function stepIfrFires(t, st, dt) {
 // a flare's size s (x the Flare length): a normal draw round half the max
 function ifrFlareS() { return IFR_FLARE_K * Math.min(1, Math.max(IFR_FLARE_MIN, IFR_FLARE_MEAN + IFR_FLARE_SD * ifrNormal())); }
 function ifrFlare(t, st, x, y, s = ifrFlareS(), big = false, hf = false) { // big: the Flare capstone's (hit x IFR_BIG_K, its x IFR_BIG_X as long); hf: the fire's - the UNTAKEN Flare's size, burn, tick and hit, whatever Flare's level
-  if (t.ifrFlares.length >= IFR_FLARE_MAX) { const k = t.ifrFlares.findIndex(q => !q.big); t.ifrFlares.splice(k < 0 ? 0 : k, 1); } /* the oldest goes - never a big one first */
   const L = hf ? IFR_BEAM_L[0] : st.beamL, W = hf ? IFR_BEAM_W[0] : st.beamW, life = hf ? IFR_HF_LIFE : st.burnS;
-  t.ifrFlares.push({ x, y, L: L * s, W: W * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life, left: life, tick: 0, tickS: hf ? IFR_TICK_S[0] : st.tickS,
+  t.ifrFlares.push({ x, y, L: L * s, W: W * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life, left: life, tick: 0, tickS: hf ? IFR_HF_TICK : st.tickS,
     hit: st.dmg * (hf ? IFR_TICK_K[0] : st.flareK) * (big ? IFR_BIG_K : 1), xk: IFR_X_K * (big ? IFR_BIG_X : 1), big, hf, edges: false }); /* hit, tick: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
 }
 // the FLARE: IFR_BEAMS beams from the burst point, a + and a small x (world angles: 3D is a view), burning for
