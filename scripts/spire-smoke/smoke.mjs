@@ -305,7 +305,7 @@ check("IFR: a flare's burn pops one charge ON a beam, none off it", () => {
     on.dead = off.dead = true; t.ifrFlares.length = 0;
     return out;
   })()`);
-  if (r.lit !== 0 || r.on !== 1) return "the enemy on the 90-degree beam lost " + r.lit + " charges at its first tick (expected 0: it only catches fire) and " + r.on + " after two (expected exactly 1)";
+  if (r.lit !== 1 || r.on !== 2) return "the enemy on the 90-degree beam lost " + r.lit + " charges at its first tick and " + r.on + " after two (expected 1, 2: no catching fire - owner 2026-10-20: \"don't require lit for either flares\")";
   if (r.off !== 0) return "the enemy off every beam lost " + r.off + " charges";
   return "";
 });
@@ -404,7 +404,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
       for (let i = 0; i < 600 && t.ifrFires.length; i++) stepIfrFires(t, st, 1 / 60); const hf = t.ifrFlares.filter(q => q.hf);
       out.hfN = hf.length; out.hfL = Math.max(...hf.map(q => q.L)); out.hfLmax = IFR_FLARE_K * IFR_BEAM_L[0] + 1e-6; out.hfHit = hf[0] && hf[0].hit; out.hfHitWant = st.dmg * IFR_TICK_K[0];
-      const k0 = Array.from({ length: 2000 }, () => ifrHfS() / IFR_FLARE_K); out.hfShapes = hf.every(q => q.L / (IFR_FLARE_K * IFR_BEAM_L[0]) <= 1 + 1e-9); out.hfKmin = Math.min(...k0); out.hfKmax = Math.max(...k0); out.hfLife = [...new Set(hf.map(q => q.life))]; out.hfTick = [...new Set(hf.map(q => q.tickS))];
+      const k0 = Array.from({ length: 2000 }, () => ifrHfS() / IFR_FLARE_K); out.hfShapes = hf.every(q => q.L / (IFR_FLARE_K * IFR_BEAM_L[0]) <= 1 + 1e-9); out.hfKmin = Math.min(...k0); out.hfKmax = Math.max(...k0); out.hfLife = [...new Set(hf.map(q => q.life))]; out.hfTick = [...new Set(hf.map(q => q.tickS))]; out.tick0 = IFR_TICK_S[0];
       out.iHf = hf[0] ? ifrFlareI(hf[0]) : NaN; ifrFlare(t, st, CX, CY); const m = t.ifrFlares[t.ifrFlares.length - 1]; out.iMain = ifrFlareI({ ...m, hit: hf[0].hit }); }
     /* the Flare capstone: one BIG flare dead centre of the fire, lit after all its flares */
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f = t.ifrFires[0]; let tm = 0, bigAt = -1, lastSmall = 0;
@@ -426,7 +426,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (Math.abs(r.beamVI[0] - 100) > 1e-6 || Math.abs(r.beamVI[1] - 16) > 1e-6 || Math.abs(r.beam0[0] - 2 * 50 * 100 / 210) > 1e-6 || Math.abs(r.beam0[1] - 2 * 10 * 16 / 24) > 1e-6 || !r.mono) return "Flare tables: VI " + r.beamVI + ", untaken " + r.beam0 + ", rising " + r.mono + " (expected VI 100 x 16, untaken doubled to 47.6 x 13.3, the rest between - owner 2026-10-20)";
   if (r.bigN !== 1 || r.bigN0 !== 0 || !(r.bigOff < 1e-6) || !(r.bigAt >= r.lastSmall) || Math.abs(r.bigL - r.bigWant) > 1e-6 || Math.abs(r.bigHit - r.bigHitWant) > 1e-6) return "the Flare capstone's big flare: " + r.bigN + " (untaken " + r.bigN0 + "), " + r.bigOff + " u off centre, lit at " + r.bigAt + " s after the last flare at " + r.lastSmall + ", L " + r.bigL + " (" + r.bigWant + "), hit " + r.bigHit + " (" + r.bigHitWant + ")";
   if (!(r.hfN >= r.base) || !(r.hfL <= r.hfLmax) || Math.abs(r.hfHit - r.hfHitWant) > 1e-6) return "at Flare VI the fire lit " + r.hfN + " flares up to " + r.hfL + " long, hitting " + r.hfHit + " (expected " + r.base + "+ untaken flares: at most " + r.hfLmax + ", hitting " + r.hfHitWant + ")";
-  if (!r.hfShapes || !(r.hfKmin >= 0.1 - 1e-9 && r.hfKmin < 0.12 && r.hfKmax <= 1 + 1e-9 && r.hfKmax > 0.98) || JSON.stringify(r.hfLife) !== "[0.3]" || JSON.stringify(r.hfTick) !== "[0.15]") return "the fire's flares: sizes " + r.hfKmin.toFixed(2) + ".." + r.hfKmax.toFixed(2) + " of the largest, burn " + r.hfLife + " s, tick " + r.hfTick + " (expected 10-100%, 0.3 s - owner 2026-10-20 - and a 0.15 s tick: two ticks, the second burns)";
+  if (!r.hfShapes || !(r.hfKmin >= 0.1 - 1e-9 && r.hfKmin < 0.12 && r.hfKmax <= 1 + 1e-9 && r.hfKmax > 0.98) || JSON.stringify(r.hfLife) !== "[0.3]" || JSON.stringify(r.hfTick) !== JSON.stringify([r.tick0])) return "the fire's flares: sizes " + r.hfKmin.toFixed(2) + ".." + r.hfKmax.toFixed(2) + " of the largest, burn " + r.hfLife + " s, tick " + r.hfTick + " (expected 10-100%, 0.3 s - owner 2026-10-20 - on the untaken tick " + r.tick0 + ")";
   if (!(r.iMain > r.iHf)) return "a meteor's flare (" + r.iMain + ") is not brighter than a fire's (" + r.iHf + ") at the same hit (owner, 2026-10-20: more opaque and intense)";
   const dens0 = r.f0.n / r.f0.R ** 2, dens3 = r.f3.n / r.f3.R ** 2;
   if (Math.abs(dens3 / dens0 / (r.f3.dens / r.f0.dens) - 1) > 0.15 || !(r.f3.dens > r.f0.dens)) return "flare density: " + r.f0.n + " in r" + r.f0.R + " vs " + r.f3.n + " in r" + r.f3.R + " (3 buys: expected " + r.f3.dens / r.f0.dens + "x denser - owner 2026-10-20: denser as Hellfire levels)";
@@ -541,7 +541,7 @@ check("IFR: draws its charge, meteors, fires and flares; G clones; selling mid-f
   const sold = run(`(() => { try { const t = G.towers[0]; G.money += sellValue(t); G.towers = G.towers.filter(x => x !== t); ui.sel = null; for (let i = 0; i < 30; i++) step(1 / 30); return "ok"; } catch (e) { return String(e); } })()`); // what the card's sell button does (aspira-sliders.js)
   return sold === "ok" ? "" : "sell threw: " + sold;
 });
-check("IFR: a shielded enemy in a flare catches fire, then loses one charge a tick; Impact gives a huge meteor", () => {
+check("IFR: a shielded enemy in a flare loses one charge a tick; Impact gives a huge meteor", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -554,7 +554,7 @@ check("IFR: a shielded enemy in a flare catches fire, then loses one charge a ti
     return out;
   })()`);
   if (Math.abs(r.ballR - 5.4) > 1e-9) return "Impact gives a meteor of radius " + r.ballR + ", not 5.4";
-  if (r.afterTicks !== 7) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 7: the first tick only lights it), enemy " + r.dist + " u out";
+  if (r.afterTicks !== 6) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 6: every tick burns), enemy " + r.dist + " u out";
   return "";
 });
 check("IFR: no cap on live flares (owner, 2026-10-20: \"actually no cap\"); a frame of 700 fire flares (random tick phases) over 200 enemies stays under 12 ms", () => {
