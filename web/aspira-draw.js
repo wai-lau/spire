@@ -163,14 +163,14 @@ function drawTower(t, ghost) {
   ctx.restore(); ctx.globalAlpha = 1;
   if (!ghost) drawPickOutline(t, x, y, b.color);
 }
-// THE CLICKABLE AREA, DOTTED (owner, 2026-10-21: "for towers, add a dotted outline around the top layer's solid outline in order to
-// indicate the clickable area"): exactly what a press hits (aspira-pick.js) - in 3D the hex grown by PICK_GROW (towerPts), in 2D
-// towerPick's circle
-const PICK_DASH = [3, 4], PICK_A = 0.45;
+// THE DRAG OUTLINE, DOTTED (owner, 2026-10-21: "for towers, add a dotted outline around the top layer's solid outline in order to indicate
+// the clickable area"; then "50% more opaque, and like <10u away from the tower / thickness should be same as tower outline"): a hex
+// PICK_OUT u outside the DRAWN tower, at the tower outline's width (TOWER_LINE, drawn x TOWER_DRAW_K). The press area itself is still
+// aspira-pick.js's (PICK_GROW - wider than this)
+const PICK_DASH = [3, 4], PICK_A = 0.675, PICK_OUT = 8;
 function drawPickOutline(t, x, y, color) {
-  ctx.save(); ctx.strokeStyle = COL[color]; ctx.globalAlpha = PICK_A; ctx.lineWidth = 1.2; ctx.setLineDash(PICK_DASH); ctx.beginPath();
-  if (phoneOn3d()) towerPts({ ...t, x, y }, PICK_GROW).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-  else ctx.arc(x, y, CELL_S * PICK_GROW, 0, 6.283);
+  ctx.save(); ctx.strokeStyle = COL[color]; ctx.globalAlpha = PICK_A; ctx.lineWidth = TOWER_LINE * TOWER_DRAW_K; ctx.setLineDash(PICK_DASH); ctx.beginPath();
+  towerPts({ ...t, x, y }, TOWER_DRAW_K + PICK_OUT / (CELL_S * TOWER_K)).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
   ctx.closePath(); ctx.stroke(); ctx.restore();
 }
 // one sprite per kind + level + colours + zoom + the hex's turn (Horizon orbits
