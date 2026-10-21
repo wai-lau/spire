@@ -10,14 +10,9 @@
 // u = UI, shown as three headed sections; each line "Subject: Sentence." in sentence case (subjects shown by logSubject: a tower,
 // an enemy type ...); a group with nothing in it is left out
 const CHANGELOG = [
-  { v: "6.10", day: "Oct 21", b: [
-    "Ifrit: Each fire lights at least six Hellfire flares, together as hard as before.",
-    "Ifrit: Charges a little faster.",
-    "Build cards: Ifrit's marks re-checked.",
-  ], u: [
-    "Ifrit: Hellfire flares are smaller, more even in size, and each shows for half a second.",
-    "Ifrit: Ring meteors fade in within their first 25.",
-  ] },
+  { v: "6.10", day: "Oct 21", b: ["Ifrit: Each fire lights at least six Hellfire flares, together as hard as before.",
+    "Ifrit: Charges a little faster.", "Build cards: Ifrit's marks re-checked."], u: [
+    "Ifrit: Hellfire flares are smaller, more even in size, and each shows for half a second.", "Ifrit: Ring meteors fade in within their first 25."] },
   { v: "6.9", day: "Oct 21", b: [
     "Gravity: One nova a shot at triple strength; a black hole every third shot, as big as three merged.",
     "Gravity: The pull draws enemies back to the middle of their lane; the slow ignores missing health.",
