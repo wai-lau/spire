@@ -324,7 +324,7 @@ const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 const GRV_AURA_A = 0.3; // the aura band's peak, mid-radius (owner: "clear, 30%, clear")
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
-  dmgNumber(e, String(dmgUnits(amt)), amt, dmgInk("grv"), sp);
+  dmgSum(e, amt, amt, dmgInk("grv"), sp);
 }
 
 // ---------- the look: yellow front, the aura's gradient band, the black sphere, the inward numbers ----------

@@ -667,6 +667,20 @@ check("a wave's card: tapping a wave opens its stats - no NaN, no zero rows - on
   }
   return "";
 });
+check("damage numbers (owner, 2026-10-21): a lone hit shows at once; more within 0.5 s sum into one number at the window's end", () => {
+  const r = run(`(() => {
+    G = newGame(); dmgLive = []; dmgSums.clear(); spawnEnemy("armor", 5, 0, 0); const e = G.enemies[0], t = { x: 0, y: 0, id: 1 };
+    dmgTick(e, 7, 7, "white", t, 0); const first = dmgLive.length;
+    dmgTick(e, 5, 5, "white", t, 0); dmgTick(e, 6, 6, "white", t, 0); const held = dmgLive.length;
+    for (const b of dmgSums.values()) b.until = 0; drainTicks(); const after = dmgLive.length, label = fx[fx.length - 1].text;
+    for (const b of dmgSums.values()) b.until = 0; drainTicks(); return { first, held, after, label, left: dmgSums.size };
+  })()`);
+  if (r.first !== 1) return "the first hit showed " + r.first + " numbers (expected 1, at once)";
+  if (r.held !== 1) return "hits inside the window showed at once (" + r.held + " numbers)";
+  if (r.after !== 2 || String(r.label) !== "11") return "the window's sum: " + r.after + " numbers, last " + r.label + " (expected 2, \"11\")";
+  if (r.left !== 0) return "a quiet window did not end the run";
+  return "";
+});
 check("game over shows the overlay and the Ascendants board, no entry", () => {
   run(`G = newGame(); gameOver();`);
   const ov = env.dom.byId("asp-ov"), asc = env.dom.byId("asp-asc");

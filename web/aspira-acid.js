@@ -285,7 +285,7 @@ function stepPuddles(t, st, dt) {
   t.poolSumT = (t.poolSumT ?? POOL_SUM_S) - dt;
   if (t.poolSumT > 0 || !t.poolAcc) return;
   t.poolSumT += POOL_SUM_S;
-  for (const [e, d] of t.poolAcc) dmgNumber(e, String(dmgUnits(d)), d, dmgInk("acd"), t);
+  for (const [e, d] of t.poolAcc) dmgSum(e, d, d, dmgInk("acd"), t);
   t.poolAcc.clear();
 }
 // LATE-GAME LAG (owner, 2026-10-12: "make late game acid pools less laggy"): a capstone Contagion keeps 300+ pools, each of

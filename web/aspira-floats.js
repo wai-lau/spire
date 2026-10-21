@@ -42,13 +42,30 @@ function dmgNumber(e, label, size, color, src, grey = 0) {
   f.v = size; dmgLive.push(f);
 }
 
-// SLOW-MOTION TICKS (owner, 2026-10-13: "when game speed is slow, the damage on tick logic should speed up so that the numbers
-// come out at about the same rate" - display only, so shields and armor take each tick as ever - "keep that display damage
-// rate", one a TICK_SHOW_S real s): at speed x a TICKING tower's tick (ACD, FRZ - `rate` a game second) spans 1 / (rate x) real
-// seconds; when that is longer than TICK_SHOW_S its number is cut into that many smaller ones, shown TICK_SHOW_S apart
-const tickQ = [], TICK_SPLIT_MAX = 8, TICK_SHOW_S = 0.5;
-// the FIRST tick a tower lands on an enemy shows whole, at once; only the ones after are split (owner, 2026-10-13: "start ticking
-// asap", "only sample after first tick")
+// HALF-SECOND SUMS (owner, 2026-10-21: "for damage numbers, popups should sum to the latest 0.5s of damage regardless of hit speed
+// (for burn and fast hits like hellfire) for single hits, show immediately"): an enemy's first hit of a colour (its tower's ink; a crit
+// white) shows AT ONCE; what lands on it in that colour over the next DMG_SUM_S REAL seconds is summed into ONE number, shown when
+// the window ends, and windows keep running while hits do. (Replaced the 2026-10-13 slow-motion tick split: at any speed a lone hit
+// shows whole, at once, and a stream reads as one number every half second.)
+const DMG_SUM_S = 0.5, dmgSums = new Map();
+function dmgSum(e, amt, size, color, src, grey = 0) {
+  const key = e.id + "|" + color, now = performance.now(), b = dmgSums.get(key);
+  if (b && b.g === G) { b.amt += amt; b.size += size; b.grey += grey * size; return; }
+  dmgNumber(e, String(dmgUnits(amt)), size, color, src, grey);
+  // the window's source as a COPY: callers reuse one point (HIT_AT) or a throwaway
+  dmgSums.set(key, { e, color, src: src ? { x: src.x ?? e.x, y: src.y ?? e.y } : null, amt: 0, size: 0, grey: 0, until: now + DMG_SUM_S * 1000, g: G });
+}
+function dmgTick(e, amt, raw, color, t, grey) { dmgSum(e, amt, raw, color, t, grey); } // (rate: the old split's - no longer read)
+function drainTicks() {
+  if (!dmgSums.size) return;
+  const now = performance.now();
+  for (const [key, b] of dmgSums) {
+    if (b.until > now) continue;
+    if (b.g !== G || !(b.amt > 0)) { dmgSums.delete(key); continue; } // a quiet window ends the run (or a new game)
+    dmgNumber(b.e, String(dmgUnits(b.amt)), b.size, b.color, b.src, b.size > 0 ? b.grey / b.size : 0);
+    b.amt = 0; b.size = 0; b.grey = 0; b.until = now + DMG_SUM_S * 1000;
+  }
+}
 // WHERE A HIT CAME FROM (owner, 2026-10-16: "Make all damage numbers go in the direction the beam/dmg was coming from, a lot of them
 // will still be same as tower"): a damage number flies away from this point while it is set (fromHit), else from its tower -
 // an ARC hop's last enemy, a SOL refraction's, the drip or pool that burned it, the shattered or discharging enemy, the pellet's way
@@ -59,19 +76,6 @@ function fromHit(p, fn) { const o = hitFrom; hitFrom = p; try { return fn(); } f
 const HIT_AT = { x: 0, y: 0 };
 // a projectile list, the spent ones dropped IN PLACE and in order (perf: .filter made a new array a list a step)
 function keepLive(list) { let j = 0; for (let i = 0; i < list.length; i++) if (list[i].left > 0) list[j++] = list[i]; list.length = j; return list; }
-function dmgTick(e, amt, raw, color, t, grey, rate) {
-  const first = t && rate > 0 && !(e.ticked ||= new Set()).has(t.id);
-  if (first) e.ticked.add(t.id);
-  const sp = typeof speedX === "function" ? Math.max(speedX(), 0.01) : 1, k = rate > 0 && !first ? Math.min(TICK_SPLIT_MAX, Math.round(1 / (rate * sp * TICK_SHOW_S))) : 1;
-  if (k <= 1) { dmgNumber(e, String(dmgUnits(amt)), raw, color, t, grey); return; }
-  const now = performance.now();
-  for (let i = 0; i < k; i++) tickQ.push({ e, label: String(dmgUnits(amt / k)), size: raw / k, color, t, grey, at: now + i * TICK_SHOW_S * 1000 });
-}
-function drainTicks() {
-  if (!tickQ.length) return;
-  const now = performance.now();
-  for (let i = 0; i < tickQ.length;) { const q = tickQ[i]; if (q.at > now) { i++; continue; } dmgNumber(q.e, q.label, q.size, q.color, q.t, q.grey); tickQ.splice(i, 1); }
-}
 
 // vy: upward drift (units/s); long-lived floats drift slowly so they stay on screen
 // every pop-up has the black outline + dark glow (owner); `under` marks the

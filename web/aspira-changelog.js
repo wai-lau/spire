@@ -22,6 +22,7 @@ const CHANGELOG = [
     "Build cards: every tower's marks re-checked.",
     "Enemies, towers and the core are drawn smaller; swarm sizes vary less. Towers are as easy to tap and drag as before.",
     "Ascendants: auto-move and free towers/upgrades are two separate boxes, under the title.",
+    "Damage numbers: a single hit shows at once; fast hits and burns add up into one number every half second.",
   ] },
   { v: "6.6", day: "Oct 20", bu: [
     "Ifrit: Meteor's hits grow far harder at its last purchases; its meteors hunt from much further off.",
