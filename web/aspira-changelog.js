@@ -16,6 +16,7 @@ const CHANGELOG = [
     "Gravity: every pellet is its own size - a quarter to four times the hit, the streak and the glow, the same damage overall.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",
+    "Wide end screen: the two columns sit together, Play again right under the wave you reached, and the lives-lost list fills the rest.",
   ] },
   { v: "6.8", day: "Oct 21", bu: [
     "Gravity: the black hole slows enemies that slip past it far harder, slows the wounded more, and pulls enemies sideways toward it. It holds armor again.",

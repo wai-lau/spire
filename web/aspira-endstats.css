@@ -52,11 +52,22 @@
   #asp-ov:has(> #asp-asc:not([hidden])) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
     justify-items: center;
     gap: var(--space-4) var(--space-8);
   }
   #asp-ov > #asp-asc:not([hidden]) { grid-column: 1; grid-row: 1 / -1; align-self: stretch; min-height: 0; }
   #asp-ov:has(> #asp-asc:not([hidden])) > :not(#asp-asc) { grid-column: 2; }
   #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-leaks { align-self: stretch; min-height: 0; }
+  /* (owner, 2026-10-21) the two columns ALMOST TOUCH in the centre: each hugs the middle line; Play again right under "Reached wave X";
+     the leak list FILLS what is left, scrolling inside itself (no three-row cap here) */
+  #asp-ov:has(> #asp-asc:not([hidden])) { column-gap: var(--space-3); }
+  #asp-ov > #asp-asc:not([hidden]) { justify-self: end; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > :not(#asp-asc) { justify-self: start; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-title { grid-row: 1; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-text { grid-row: 2; }
+  #asp #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-btn { grid-row: 3; margin-top: 0; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-stats { grid-row: 4; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-leaks { grid-row: 5; margin-top: 0; }
+  #asp-ov:has(> #asp-asc:not([hidden])) .asp-end-waves { max-height: none; }
 }
