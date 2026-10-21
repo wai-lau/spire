@@ -104,7 +104,8 @@ function grvNovaSpot(t, st) {
 }
 function novaAt(t, st, e) {
   const p0 = pathAt(e.pi, e.s, e.ang || 0), p1 = pathAt(e.pi, e.s + effSpeed(e) * GRV_LEAD_S, e.ang || 0);
-  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0 });
+  const bh = (t.grvShots = (t.grvShots || 0) + 1) % GRV_BH_EVERY === 0; // (grvBank: only every GRV_BH_EVERY-th shot leaves a hole)
+  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0, bh });
   return true;
 }
 // one hit from a sphere: the damage it really dealt feeds its mass
@@ -168,6 +169,16 @@ function grvPull(t, st, dt) {
 // should be exponential with size"): fed by the damage it deals, a big merged hole in a thick wave gained as fast as it lost; its
 // evaporation now grows EXPONENTIALLY with its size (stepSphere), so a giant burns off whatever it eats
 const GRV_FADE_S = 2; const GRV_EVAP_EXP = 0.5; /* steeper (owner, 2026-10-16; was 0.25) */ // evaporation x e^(0.5 (R - 1)) for a hole R base auras across: R 3 ~x2.7, R 5 ~x7.4, R 9 ~x55 its old pace
+// A HOLE EVERY GRV_BH_EVERY SHOTS (owner, 2026-10-21: "Change GRV to only spawn a BH every 3 hits (but make that BH as if 3 of today's BH
+// were combined)"): every shot's nova hits as ever; a shot that leaves no hole BANKS what its hole would have been (t.grvBank: area, mass,
+// cap, nova damage - grvMerge's sums) and goes as its nova ends; the next hole takes the bank in as it opens. True: this sphere is gone
+const GRV_BH_EVERY = 3;
+function grvBank(sp, t) {
+  const b = (t.grvBank ||= { area: 0, mass: 0, cap: 0, nova: 0 });
+  if (sp.bh === false) { b.area += sp.apm * sp.mass; b.mass += sp.mass; b.cap += sp.cap || GRV_MASS_MAX; b.nova += sp.novaDealt || 0; sp.merged = true; sp.mass = 0; return true; }
+  if (b.mass > 0) { const m = sp.mass + b.mass; sp.apm = (sp.apm * sp.mass + b.area) / m; sp.mass = m; sp.cap = (sp.cap || GRV_MASS_MAX) + b.cap; sp.novaDealt = (sp.novaDealt || 0) + b.nova; t.grvBank = null; }
+  return false;
+}
 function grvMerge(big, small) {
   const m = big.mass + small.mass, w = small.mass / Math.max(1e-6, m);
   big.x += (small.x - big.x) * w; big.y += (small.y - big.y) * w; // to the pair's centre of mass, momentum kept
@@ -182,7 +193,7 @@ function grvMerge(big, small) {
 function stepSphere(sp, t, st, dt) {
   if (sp.merged) return; // taken in by a bigger one (grvPull): no Hawking burst, nothing
   sp.age += dt;
-  if (!sp.auraSnd && sp.age >= GRV_NOVA_END) { sp.auraSnd = true; sfx("grvaura"); sp.apm = grvAuraBase(sp, st) ** 2 / Math.max(1e-6, sp.mass); } // its AREA per mass, fixed as it opens // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
+  if (!sp.auraSnd && sp.age >= GRV_NOVA_END) { sp.auraSnd = true; sp.apm = grvAuraBase(sp, st) ** 2 / Math.max(1e-6, sp.mass); if (grvBank(sp, t)) return; sfx("grvaura"); } // its AREA per mass, fixed as it opens // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
   // the NOVA: the yellow front sweeps out; each enemy it reaches takes the hit once
   const [nk, na] = novaLocal(sp.age);
   if (nk !== sp.novaK && sp.age < GRV_NOVA_END) { sp.novaK = nk; sp.hit.clear(); sp.nova = grvNovaSpot(t, st) || { x: sp.x, y: sp.y }; } // a fresh front hits everyone again, where it catches the most
@@ -216,7 +227,7 @@ function stepSphere(sp, t, st, dt) {
       const inIn = d2 <= inner * inner, slow = inIn ? core : outer;
       if (inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.hdmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy NOT doubled like other slows - GRV is weak to fast
-      const lane = grvLane(e, sp), sk = (1 + GRV_MISS_K * (1 - Math.max(0, e.hp / (e.max || 1)))) * (lane.ahead ? GRV_AHEAD_K : 1);
+      const lane = grvLane(e, sp), sk = lane.ahead ? GRV_AHEAD_K : 1;
       applySlow(e, (e.type === "fast" ? slow / FAST_SLOW_MUL : slow) * sk, GRV_TICK * 1.5, "grv:" + t.id);
       grvPullTo(e, lane);
     }
@@ -234,17 +245,17 @@ function stepSphere(sp, t, st, dt) {
   // Hawking: a last burst as it goes
   if (sp.mass <= 0 && st.hawking) for (let i = 0; i < GRV_HAWKING_N; i++) grvPellet(sp, t, st, st.auraR * GRV_PELLET_REACH * 1.5);
 }
-// GRV IS SUPPORT (owner, 2026-10-21: "For units that are ahead of the bh, it should slow way more, and also, pull units towards it in a
-// direction perpendicular to the lane / In addition, the slow should affect units more depending on % missing HP / This makes GRV more
-// supporty"): the aura's slow x GRV_AHEAD_K on an enemy already PAST the hole along its lane, x (1 + GRV_MISS_K x its missing HP share);
-// and every enemy in the aura is drawn ACROSS its lane toward the hole at GRV_LAT_V u/s (e.pull: a world offset, never past the hole's
-// line), easing back onto its lane GRV_LAT_BACK s after it leaves (grvPullStep, stepEnemies)
-const GRV_AHEAD_K = 2.5, GRV_MISS_K = 1, GRV_LAT_V = 60, GRV_LAT_BACK = 1;
+// GRV IS SUPPORT (owner, 2026-10-21: "For units that are ahead of the bh, it should slow way more, and also, pull units ... perpendicular
+// to the lane"): the aura's slow x GRV_AHEAD_K on an enemy already PAST the hole along its lane; and every enemy in the aura is drawn ACROSS
+// its lane toward the lane's CENTRE line (same day: "only pull towards the center of the lane instead of towards the BH") at GRV_LAT_V u/s
+// (e.pull: a world offset, never past it), easing back GRV_LAT_BACK s after it leaves (grvPullStep, stepEnemies). (The slow by missing
+// HP, x 1 + its share, lived a few hours: owner, "remove the thing with GRV slowing based on missing HP")
+const GRV_AHEAD_K = 2.5, GRV_LAT_V = 60, GRV_LAT_BACK = 1;
 const GRV_LN = { x: 0, y: 0 }, GRV_LQ = { x: 0, y: 0 };
-function grvLane(e, sp) { // the lane's heading at e: is it past the hole, and how far across is the hole
+function grvLane(e, sp) { // the lane's heading at e: is it past the hole, and how far across is the lane's CENTRE line
   const a = pathAtInto(e.pi, e.s, e.ang, GRV_LN), b = pathAtInto(e.pi, e.s + 3, e.ang, GRV_LQ), tx = b.x - a.x, ty = b.y - a.y, L = Math.hypot(tx, ty) || 1;
-  const ux = tx / L, uy = ty / L, hx = sp.x - e.x, hy = sp.y - e.y;
-  return { ahead: hx * ux + hy * uy < 0, nx: -uy, ny: ux, across: hx * -uy + hy * ux };
+  const ux = tx / L, uy = ty / L, hx = sp.x - e.x, hy = sp.y - e.y, cx = a.x - e.x, cy = a.y - e.y;
+  return { ahead: hx * ux + hy * uy < 0, nx: -uy, ny: ux, across: cx * -uy + cy * ux };
 }
 function grvPullTo(e, lane) { // each aura tick: which way, and how far to the hole's line (it GLIDES there - grvPullStep, every step)
   e.pull ||= [0, 0]; const sg = Math.sign(lane.across); e.pullDir = [lane.nx * sg, lane.ny * sg]; e.pullLeft = Math.abs(lane.across); e.pullT = GRV_TICK * 1.5;

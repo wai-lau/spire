@@ -242,7 +242,7 @@ weak to the other two; GRV takes **swarm + armor** and is weak to **fast + shiel
 aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*` tokens). The constants and the numbers it started from are in
 ARCHAEOLOGY §4.6b.
 
-**The attack.** Every fire is **three novas** (`GRV_NOVA_N`, `GRV_NOVA_GAP` s apart, owner 2026-10-18) and then a hole; there is no
+**The attack.** Every fire is **one nova** at `GRV_NOVA_K` (3x) the hit (owner 2026-10-21; three novas 2026-10-18 .. 21), and every **`GRV_BH_EVERY`-th** (3rd) leaves a hole holding all three shots' mass, area and nova damage (`grvBank`, grvMerge's sums; owner 2026-10-21); there is no
 projectile. Each nova lands on the enemy in range whose nova reach holds the most enemies, ties to the targeting mode (`grvNovaSpot`);
 its yellow front collapses inward, hitting each enemy it passes once. The HOLE is born where the target will be a moment on
 (`GRV_LEAD_S`, along its lane at its pace now, slows and stuns counted), so the enemy walks into it. After the last nova a
@@ -261,8 +261,9 @@ its yellow front collapses inward, hitting each enemy it passes once. The HOLE i
 rings, the core far harder than the rim, and strips POSITIVE armor like Corrosion, graded by distance (strongest at the
 centre, weakest at the edge: `GRV_STRIP_IN` / `GRV_STRIP_OUT`). It is drawn as a radial band, clear at the centre and the edge.
 **GRV is support** (owner, 2026-10-21): the aura's slow is `GRV_AHEAD_K` x on an enemy already PAST the hole along its lane, and
-x (1 + `GRV_MISS_K` x its missing HP share); every enemy in the aura glides ACROSS its lane toward the hole (`GRV_LAT_V` u/s, never
-past the hole's line - `e.pull`, a world offset added in stepEnemies) and eases back `GRV_LAT_BACK` s after it leaves.
+every enemy in the aura glides ACROSS its lane toward the lane's CENTRE line (`GRV_LAT_V` u/s, never past it - `e.pull`, a world
+offset added in stepEnemies), easing back `GRV_LAT_BACK` s after it leaves. Pellets each roll 25-400% (mean 1) for hit, streak and
+opacity together (`GRV_PEL_J`).
 
 **Radiation.** Every hole sprays **pellets**: projectiles that fly out in a random direction and hit the first enemy they
 touch, or nothing; each pops a shield charge like any hit, kept sparse so GRV stays weak to shields. The rate is the old

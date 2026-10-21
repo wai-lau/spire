@@ -10,6 +10,13 @@
 // smaller font size than balance"): bu = Buffs (good for the player), ne = Nerfs (bad for the player), u = Perf/UI - SHOWN by subject since
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
+  { v: "6.9", day: "Oct 21", bu: [
+    "Gravity: one nova a shot at triple strength, and a black hole only every third shot - but as big as three merged.",
+    "Gravity: the pull now draws enemies back to the middle of their lane; the slow no longer depends on missing health.",
+    "Gravity: every pellet is its own size - a quarter to four times the hit, the streak and the glow, the same damage overall.",
+  ], ne: [], u: [
+    "Build cards: every tower's marks re-checked.",
+  ] },
   { v: "6.8", day: "Oct 21", bu: [
     "Gravity: the black hole slows enemies that slip past it far harder, slows the wounded more, and pulls enemies sideways toward it. It holds armor again.",
     "Ifrit: the Hellfire circle is back and grows three times as fast. It hits each enemy it reaches once (3x a Hellfire flare), and stays, fainter, until its flares are out.",
