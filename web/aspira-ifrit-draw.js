@@ -33,8 +33,9 @@ const IFR_FIRE_A = 0.16, IFR_FIRE_W = 2; // its glow TWICE as wide, a little fai
 function drawIfrFires(t, low) {
   for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2, 1, IFR_FIRE_W); // grown, it stays at half till its flares are out (owner, 2026-10-21)
 }
+const IFR_FADE_IN_U = 25;
 function drawIfrBalls(t, low) {
-  for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_ARM_HIT_U) : 1); /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
+  for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1); /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)

@@ -447,7 +447,7 @@ function solOutOfSight(t, st, a, b) {
     get y() { const dx = b.x - a.x, dy = b.y - a.y; return b.y + dy / (Math.hypot(dx, dy) || 1) * SOL_OUT_LEN; } };
   beam(b, far, TOWERS[t.kind].color, RAY_BEAM_LIFE, 3, st.dmg, true);
 }
-const SOL_CONE_LIFE = 0.6; // game seconds (1x runs 2 game s a real s): long enough to see the cubic fade
+const SOL_CONE_LIFE = 0.6; // game seconds (1x runs BASE_SPEED 0.8 game s a real s): long enough to see the cubic fade
 // UI (drawFx): the Refract light cone, a faint wedge that fades FAST (owner):
 // its opacity falls with the cube of the time left, and with DISTANCE from the
 // tower - full at the source, gone by SOL_CONE_FADE of its length (owner)
