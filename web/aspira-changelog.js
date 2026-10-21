@@ -11,7 +11,7 @@
 // 2026-10-16 (logSubject: a tower, an enemy type ...), Buffs / Nerfs no longer headed; start a line "Subject: ..." to place it
 const CHANGELOG = [
   { v: "6.5", day: "Oct 20", bu: [
-    "Armor: its blocks spread out, twice as far between units; fast pairs three times as far apart.",
+    "Armor: its blocks spread out, six times as far between units; fast pairs three times as far apart; a shield V three times as wide and deep.",
     "Ifrit: Meteor - one meteor at a time, charged at the tower's centre and launched the moment it is ready; Meteor makes it charge faster, fly faster, grow bigger and hit harder on its way (Impact: a huge meteor).",
     "Ifrit: Hellfire - where the meteor lands a fire spreads out from it and lingers, burning what stands in it in many small ticks, each popping a shield charge; Hellfire makes it wider, faster, hotter and longer (its capstone: six towers across).",
     "Ifrit: Blk Magic - more pellets, harder as they pass through, and bigger, hotter flares; Mega Firaga lights one giant flare where the meteor strikes.",
@@ -22,6 +22,7 @@ const CHANGELOG = [
     "Ifrit: Meteor launches ONE meteor that hunts its target down (to its corpse if it dies); where it strikes a fire spreads and a ring of meteors (5, 7, 9, then 12) bursts out, each hunting any enemy that comes near and lighting a flare where it lands; Impact splits each of their hits into two more.",
     "Ifrit: a fire lights flares inside it over its first seconds, more in a wider fire; the more flares or meteors, the longer they take to come.",
     "Ifrit: the launched meteor no longer vanishes on the way to a far target.",
+    "Ifrit: Hellfire's fire lingers half as long.",
     "Ifrit: the ring of meteors flies at a quarter of the launched one's speed, straight for its first 50 and harmless for its first 100.",
     "Ifrit: every flare a little over a third the size; the capstone's big flare the size a Flare-capstone flare was.",
     "Ifrit: Blk Magic is now Flare - bigger, hotter, longer flares; its capstone lights three where each meteor lands, and a big flare dead centre of each fire once its flares are lit. The pellets and the giant flare are gone.",

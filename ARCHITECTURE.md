@@ -421,8 +421,8 @@ sideways offset and a head start laid across the lane at its heading, fading ins
 | type | formation |
 |---|---|
 | fast | side-by-side pairs, **spinning flat about their midpoint**; pairs spread 3x (2026-10-20) |
-| shield | Vs of 5, then a V of 3, then singles; counts round up to fill lanes |
-| armor | one lattice 3 abreast, units twice as far apart (2026-10-20; a boss's armor fleet keeps the old pitch), a short last row centred; always whole rows over 2 lanes |
+| shield | Vs of 5, then a V of 3, then singles; counts round up to fill lanes; a V's units 3x as far apart as before (2026-10-20) |
+| armor | one lattice 3 abreast, units 216 u apart both ways (x6 on 2026-10-20; a boss's armor fleet keeps the old 36), a short last row centred; always whole rows over 2 lanes |
 | swarm | none: a wander (`e.jit`) that funnels in near the core |
 
 ### 5.4 Bosses

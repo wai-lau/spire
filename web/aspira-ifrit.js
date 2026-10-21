@@ -20,7 +20,7 @@ const IFR_BALL_RAD = [2.7, 3, 3.3, 3.7, 4.2, 4.7] /* x0.2 (owner, 2026-10-20: "r
 const IFR_FIRE_FLOOR = 16; // the fire's max is never under this x the meteor's radius - with no Hellfire too (owner, 2026-10-20: "even with no hellfire bought, fire should start at 16x meteor size"; was 1x)
 const IFR_FIRE_R = [0, 60, 60, 85, 110, 130]; // u radius (VI 160: "6 towers across", capstone.js)
 const IFR_FIRE_V = [60, 80, 100, 120, 150, 180]; // u/s (VI 220)
-const IFR_FIRE_LINGER = [0.5, 2, 2, 2, 2.5, 3]; // s at full size, still burning (VI 5)
+const IFR_FIRE_LINGER = [0.25, 1, 1, 1, 1.25, 1.5]; /* HALVED (owner, 2026-10-20: "make hellfire circle last only 1/2 as long"; was [0.5, 2, 2, 2, 2.5, 3] VI 7) */ // s at full size, still burning (VI 3.5)
 const IFR_FIRE_K = [0.1, 0.6, 0.7, 1, 2.5, 5]; // a tick, x TOWERS.ifr.dmg (VI 15)
 let IFR_FIRE_TICK_S = 0.05 /* battery 2026-10-20: 0.2 left Hellfire VI leaking 95% of shields at 101-109 - each tick pops one charge */; const IFR_FIRE_FADE = 0.3, IFR_FIRE_GLOW_S = 1.5, IFR_FIRE_GLOW_K = 3; // (let: the sims sweep the tick) // s between ticks (fixed); s it fades out at the end, hitting nothing; its inner glow rises SLOWLY to GLOW_K x over GLOW_S after impact (owner, 2026-10-20: "after meteor impact, slowly triple the inner glow's opacity")
 const IFR_BEAM_L = [50, 65, 80, 100, 120, 140]; // Flare (Hellfire's until 2026-10-20): a flare beam's length from its centre, u (VI 210, capstone.js - was to the play-box edges, owner 2026-10-19: "looks ridiculous ... maybe half")

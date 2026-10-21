@@ -6,7 +6,7 @@
 const FORM_FADE_R = 160;
 // SHIELDS: Vs of V_N - a leader, then pairs fanned back and out (owner, 2026-10-11: "fast in lines, Vs for shields";
 // fast flew the Vs for an afternoon and now come single file)
-const V_N = 5, V_LAT = 24, V_BACK = 28;
+const V_N = 5, V_LAT = 72, V_BACK = 84; // x3 (owner, 2026-10-20: "triple the distance between shield units (within wing)"; was 24, 28)
 // ...and Vs of V_SMALL (owner, 2026-10-12: "for shield, allow groups for 3, not just 5"): a lane's shields fly as Vs of
 // 5 where the rest still splits into 3s and 5s, else 3 - so any count vFits fills whole Vs
 // and LONE shields too (owner, 2026-10-12: "allow shield waves of 1 3 and 5"): any count fits now - 5s, then a 3, then 1s
@@ -16,7 +16,7 @@ const V_SMALL = 3, vFits = () => true;
 // distance equal to distance prev and next ... a little smaller"; was 30 across and ~114 between pairs)
 const FAST_PAIR = 78; // x3 (owner, 2026-10-20: "for fast waves, triple the distance between fast units"; was 26)
 // ARMOR: one tight SQUARE lattice per lane copy, ARMOR_W abreast, rows ARMOR_PITCH apart - the same as the columns
-const ARMOR_W = 3, ARMOR_PITCH = 72, ARMOR_FLEET_PITCH = 36; // ARMOR_PITCH x2 (owner, 2026-10-20: "double the distance between armor units"; was 36); a boss's armor fleet keeps the old 36 (aspira-bosses.js)
+const ARMOR_W = 3, ARMOR_PITCH = 216, ARMOR_FLEET_PITCH = 36; // ARMOR_PITCH x2 then x3 (owner, 2026-10-20: "double the distance between armor units", then "triple the distance between armor units (both axes)"; was 36, 72); a boss's armor fleet keeps the old 36 (aspira-bosses.js)
 // SHIELDS: the gap after each pod (a V of 5, 3 or a lone 1), per member - halved (owner, 2026-10-20: "bring the distance between
 // shield units closer together (distance between pods of 1 3 5)"; was 0.8, the rest's)
 const SHIELD_POD_GAP = 0.4;
