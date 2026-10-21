@@ -18,7 +18,7 @@ const CHANGELOG = [
     "Arc: a charged enemy's outline is always an upward triangle.",
   ], ne: [], u: [
     "Build cards: every tower's marks re-checked.",
-    "Every shield pop shows its own 0.",
+    "Every shield pop shows its own 0, half the size it was.",
     "Shields are drawn smaller and fainter.",
     "Towers show a dotted outline of the area you can tap or drag.",
     "Upgrade-ready chevrons stand on top of the tower in 3D, instead of hiding under it.",

@@ -17,14 +17,14 @@ let dmgLive = []; // the live damage-number floats, each carrying its hit size `
 // SIZED BY THE HIT AGAINST ALL DAMAGE A SECOND (owner, 2026-10-18: "damage number sizing should be based on a ratio of hitdamage/totaldps";
 // was against the biggest hit yet): G.dps, every tower's numbered damage a game second, smoothed over DPS_TAU s (stepFx); a hit of
 // DMG_DPS_K x that is full size
-const DPS_TAU = 3, DMG_DPS_K = 0.5;
+const DPS_TAU = 3, DMG_DPS_K = 0.5, DMG_POP_K = 0.5;
 const DMG_SIZE_EXP = 0.7, DMG_PX_MIN = 10, DMG_PX_SPAN = 28, DMG_FLY = 90; // DMG_FLY: units/s away from the hitter (owner: "make all damage numbers fly off more", was 30)
 // src: the tower that dealt it - the number flies AWAY from it (owner, 2026-10-09: "instead of having them fly upwards,
 // have them fly in the direction away from the source of damage"); none: upward, as before
 // grey: the share of the hit armor took (0..1) - the number is drawn that far from white toward Silver (dmgColor)
 function dmgNumber(e, label, size, color, src, grey = 0) {
   G.dmgAcc = (G.dmgAcc || 0) + size; // (into the running damage a second: stepFx)
-  const rel = label === "0" && color === "cyan" ? 1 : Math.min(1, size / Math.max(1, G.dps || 0) / DMG_DPS_K) ** DMG_SIZE_EXP; // a SHIELD POP's 0 always full size (owner, 2026-10-18)
+  const pop = label === "0" && color === "cyan", rel = pop ? 1 : Math.min(1, size / Math.max(1, G.dps || 0) / DMG_DPS_K) ** DMG_SIZE_EXP; // a SHIELD POP's 0 always full size (owner, 2026-10-18)...
   if (dmgLive.length >= DMG_MAX) {
     dmgLive = dmgLive.filter(f => f.t < f.life);
     if (dmgLive.length >= DMG_MAX) {
@@ -35,7 +35,7 @@ function dmgNumber(e, label, size, color, src, grey = 0) {
       dmgLive.splice(lo, 1);
     }
   }
-  float(e.x + (Math.random() - 0.5) * 24, e.y - 14, label, color, Math.round(DMG_PX_MIN + DMG_PX_SPAN * rel), 0.8 + 1.2 * rel, 1, DMG_FLY, true);
+  float(e.x + (Math.random() - 0.5) * 24, e.y - 14, label, color, Math.round((DMG_PX_MIN + DMG_PX_SPAN * rel) * (pop ? DMG_POP_K : 1)), 0.8 + 1.2 * rel, 1, DMG_FLY, true); // ...at DMG_POP_K of it (owner, 2026-10-21: "shield 0s should be 50% of current size")
   fx[fx.length - 1].grey = grey;
   const f = fx[fx.length - 1], sx = src ? e.x - (src.x ?? e.x) : 0, sy = src ? e.y - (src.y ?? e.y) : 0, sl = Math.hypot(sx, sy);
   if (sl) { f.x = e.x; f.y = e.y; f.vx = DMG_FLY * sx / sl; f.vy = -DMG_FLY * sy / sl; } // (vy is UP: y -= vy)
