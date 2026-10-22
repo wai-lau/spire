@@ -352,9 +352,9 @@ function warpEntities() {
     // still makes towers look weird for a sec" - a difference over a see-through layer whitens every soft edge and glow): while
     // the sky spreads, each is drawn straight in its flipped colours instead - a tower its own, the rest the inverted palette
     const spreading = skyOn() && !skyPal();
-    const drawTop = tops => { for (const o of solids) if (spreading && inSky(o) && !o.own) withPalette(() => drawSolid(o, tops)); else if (spreading) drawSolid(o, tops); else if (o.own && inSky(o)) skyOwn(o, () => drawSolid(o, tops)); else drawSolid(o, tops); };
+    const drawTop = (tops, own) => { for (const o of solids) if (!!o.own !== own) continue; else if (spreading && inSky(o) && !o.own) withPalette(() => drawSolid(o, tops)); else if (spreading) drawSolid(o, tops); else if (o.own && inSky(o)) skyOwn(o, () => drawSolid(o, tops)); else drawSolid(o, tops); };
     return () => { /* part B: the towers, the core and every pop-up text - drawn after the phone frame, the leash rings and the sky's difference, as the top layer was composited over them */
-    warpBands(above => drawTop(above));
+    warpBands(above => drawTop(above, false)); { const e = ctx; ctx = warpTowCtx(); try { warpBands(above => drawTop(above, true)); } finally { ctx = e; } } // the TOWERS on their own layer, above the wave list and the boxes (warpTowCtx, aspira-fog.js)
     warp.hulls = solids.filter(o => o.own && o.geo).map(o => [...o.geo.B, ...o.geo.T]); // the towers' outlines on screen: next frame's bell clears the beams under them (hullUniforms, aspira-fog.js)
     const pop = (x, y, fn, far) => { const P = warpProject(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); ctx.save(); fn(); ctx.restore(); };
     /* the numbers (hundreds a frame) go through popRun: no save / restore each (the whole pass has one) and no point object each - every text sets its own font, fill and alpha (perf) */

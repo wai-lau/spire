@@ -60,6 +60,16 @@ function warpBands(draw, between) {
   warpBand = null;
 }
 // (3D layer helpers, moved from aspira-warp.js at its 500-line cap)
+// THE TOWERS ON TOP (owner, 2026-10-22: "for the wave indicator, towers should appear above it / tower should appear above ascendant powers and
+// the checkboxes too"): the towers' prisms are drawn on #asp-tow, a layer of their own over the wave list, the powers and the boxes (CSS
+// z-index: theirs is --z-raised) and under the cards and the end screen; cleared and handed back each frame (warpEntities' part B)
+function warpTowCtx() {
+  if (!warp.tow) { const c = document.createElement("canvas"); c.id = "asp-tow"; c.setAttribute("aria-hidden", "true"); warp.ent.after(c); warp.tow = c; }
+  const c = warp.tow, e = warp.ent;
+  if (c.width !== e.width || c.height !== e.height) { c.width = e.width; c.height = e.height; }
+  const x = c.getContext("2d"); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height); ctxDefaults(x);
+  return x;
+}
 // the overlay's context, its transforms and shadow blurs scaled by warp.entScale (set once on the context)
 function entCtx(c) {
   const x = c.getContext("2d");
