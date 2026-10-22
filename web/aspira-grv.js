@@ -228,7 +228,7 @@ function stepSphere(sp, t, st, dt) {
       if (inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.hdmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy NOT doubled like other slows - GRV is weak to fast
       const lane = grvLane(e, sp), sk = lane.ahead ? GRV_AHEAD_K : 1;
-      applySlow(e, (e.type === "fast" ? slow / FAST_SLOW_MUL : slow) * sk, GRV_TICK * 1.5, "grv:" + t.id);
+      applySlow(e, (e.type === "fast" ? slow / FAST_SLOW_MUL : slow) * sk * grvSizeK(e), GRV_TICK * 1.5, "grv:" + t.id);
       grvPullTo(e, lane);
     }
   }
@@ -251,6 +251,10 @@ function stepSphere(sp, t, st, dt) {
 // (e.pull: a world offset, never past it), easing back GRV_LAT_BACK s after it leaves (grvPullStep, stepEnemies). (The slow by missing
 // HP, x 1 + its share, lived a few hours: owner, "remove the thing with GRV slowing based on missing HP")
 const GRV_AHEAD_K = 2.5, GRV_LAT_V = 60, GRV_LAT_BACK = 1;
+// SMALLER ENEMIES SLOWED MORE (owner, 2026-10-21: "I wanted the slow to affect smaller enemies more" / "just grv slow"): the aura's
+// slow x GRV_SIZE_REF over the body's size, held to GRV_SIZE_MIN .. GRV_SIZE_MAX - swarm (6) x2, fast (12) x1, armor (15) x0.8, bosses x0.5
+const GRV_SIZE_REF = 12, GRV_SIZE_MIN = 0.5, GRV_SIZE_MAX = 2;
+const grvSizeK = e => Math.max(GRV_SIZE_MIN, Math.min(GRV_SIZE_MAX, GRV_SIZE_REF / (ENEMIES[e.type].size * (e.sizeMul || 1))));
 const GRV_LN = { x: 0, y: 0 }, GRV_LQ = { x: 0, y: 0 };
 function grvLane(e, sp) { // the lane's heading at e: is it past the hole, and how far across is the lane's CENTRE line
   const a = pathAtInto(e.pi, e.s, e.ang, GRV_LN), b = pathAtInto(e.pi, e.s + 3, e.ang, GRV_LQ), tx = b.x - a.x, ty = b.y - a.y, L = Math.hypot(tx, ty) || 1;

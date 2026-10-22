@@ -742,6 +742,11 @@ check("GRV support (owner, 2026-10-21): the aura slows harder past the hole, and
   if (!(Math.abs(r.back) < 10)) return "after the pull it sits " + r.back.toFixed(1) + " u off the lane's centre";
   return "";
 });
+check("GRV: the aura slows smaller enemies more (owner, 2026-10-21)", () => {
+  const r = run(`(() => { const k = t => grvSizeK({ type: t }); return { swarm: k("swarm"), fast: k("fast"), armor: k("armor"), boss: grvSizeK({ type: "bonus", sizeMul: 2 }) }; })()`);
+  if (!(r.swarm === 2 && r.fast === 1 && r.armor < 1 && r.boss === 0.5)) return "size factors " + JSON.stringify(r) + " (expected swarm 2, fast 1, armor < 1, boss 0.5)";
+  return "";
+});
 check("GRV: a hole every 3 shots, holding all three's mass (owner, 2026-10-21)", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "grv"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null; const t = G.towers[0], st = towerStats(t);
