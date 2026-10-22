@@ -375,6 +375,7 @@ const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // a sphere's numbers are ORDINARY damage numbers, FLYING OFF THE ENEMY hit, away from the hole (owner, 2026-10-16: "damage
 // numbers coming from rads should be shown flying off of the enemy (all damage numbers should) instead of coming out of the bh")
 const GRV_AURA_A = 0.3, GRV_AURA_CAP = 0.5; // the aura band's peak, mid-radius (owner: "clear, 30%, clear"); OVERLAPPING auras together at most GRV_AURA_CAP (owner, 2026-10-22: "max opacity should be 50%" / "yes cap overlapping") - each of n overlapping ones at 1 - (1 - CAP)^(1/n) at most, so all n stacked reach CAP
+const GRV_RING_OUT = 0.5; // the reach rings run out to half the aura (drawSphere)
 const grvAuraA = n => Math.min(GRV_AURA_A, 1 - Math.pow(1 - GRV_AURA_CAP, 1 / Math.max(1, n)));
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
@@ -403,7 +404,9 @@ function drawSphere(sp, st, auraA = GRV_AURA_A) {
     // permafrost"): a thin glowing ring out from the centre to the edge every GRV_RING_S, fading as it goes
     const f = (sp.age % GRV_RING_S) / GRV_RING_S;
     ctx.strokeStyle = COL.violet; ctx.lineWidth = 1.5; ctx.shadowColor = COL.violet; ctx.shadowBlur = 12 * cam.k;
-    ctx.globalAlpha = 0.45 * (1 - f * 0.6); ctx.beginPath(); ctx.arc(sp.x, sp.y, ar * f, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0;
+    // ...CONDENSED to the inner half, fading fast (owner, 2026-10-22: "condense glow rings to halfway out and fade opacity faster towards edge /
+    // thinking ~0 around halfway out / (only visual)"): out to GRV_RING_OUT of the reach, its alpha (1 - f)^2 - ~0 by then (was to the edge, x 1 - 0.6 f)
+    ctx.globalAlpha = 0.45 * (1 - f) ** 2; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar * GRV_RING_OUT * f, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0;
   }
   if (sp.age < GRV_NOVA_END) { // the NOVA: a thick ring collapsing INWARD, accelerating, GRV purple slowly turning white (owner)
     const p = Math.min(1, novaLocal(sp.age)[1] / GRV_FRONT_T), r = grvNovaR(sp, st), w = Math.min(r, st.novaR * GRV_NOVA_W);
