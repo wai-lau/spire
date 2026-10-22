@@ -36,7 +36,7 @@ are this repo's gitignored `data/aspira-sfx/`.
   result of a balance battery run should result in a new minor version"; a new day is NOT one: "stop doing the new day new
   minor thing"); anything else bumps PATCH (semver major.minor.patch; the third number is "patch", never "tiny"). ARCHITECTURE.md §9.4.
 - **Every balance patch refreshes the build card's checks and x's** (`VS_MARKS`, owner 2026-10-18): run
-  `SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car node scripts/aspira-sim/countermx.mjs 2 > cmx.out` on the patched code, then
+  `SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out` on the patched code, then
   `python3 scripts/aspira-sim/marks.py cmx.out --write`, and ship the new marks with the patch. ARCHITECTURE.md §7.2.
 - **Every tower beats or at least helps against two or more enemy types** (owner, 2026-10-19; a check of any size counts): `marks.py` prints `RULE FAIL` for a tower with checks on one
   type alone - fix it with balance, never by editing the marks.

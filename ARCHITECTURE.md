@@ -339,10 +339,19 @@ life and its own damage** - every hit is `TOWERS.ifr.dmg` x that axis's table, n
 
 Owner, 2026-10-15: "scale all trios up and down for each winning group they are in for a factor of how much better/worse they
 are". Every trio is played to wave 120 by the smart saver (perfect play, both powers, a few seeds: `tribal.mjs`); a trio's score
-= 120 + lives left on a win, else the wave reached. A **designed death** (ARC+FRZ+CRR, SOL+ACD+CRR, ARC+ACD+GRV, FRZ+SOL+GRV:
-the trio has no answer to one enemy type, by the six-tower square) that DIES is neutral; one that wins counts like any other.
+= 120 + lives left on a win, else the wave reached. A **designed death** is a trio MISSING A COUNTER: no tower in it has a check
+(a build-card mark above 0, `VS_MARKS`) on some enemy type (owner, 2026-10-21: "trios designed to lose are the ones missing a
+counter"). `triscale.py` reads the list off the marks, so it moves with every marks refresh; at 6.11 (seven towers) it is nine:
+
+| Missing | Trios |
+|---|---|
+| armor | ARC+FRZ+CRR, ARC+FRZ+IFR, ARC+CRR+IFR, FRZ+CRR+IFR |
+| swarm | SOL+ACD+CRR, SOL+ACD+IFR, SOL+CRR+IFR, ACD+CRR+IFR |
+| fast | SOL+ACD+GRV |
+
+One that DIES is neutral; one that wins counts like any other.
 A kind's factor = the geometric mean, over the trios it is in, of (mean score / trio score) (`triscale.py`), applied to
-`TOWERS[k].dmg` and squared to converge faster. **Every other trio is winnable; these four are the exception** (pillar 2).
+`TOWERS[k].dmg` and squared to converge faster. **Every other trio is winnable; the designed deaths are the exception** (pillar 2).
 
 Round 3 shipped on 2026-10-16, after the ATC rework: `dmg` is now ACD 34.32, CRR 15, FRZ 16.68, SOL 61.54, GRV 24.38, ARC 24
 (`defs.js`). GRV was left alone in round 3 (x0.9 broke ARC+GRV and GRV+GRV on the Star) and so was ARC (its factor is about
