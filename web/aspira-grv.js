@@ -374,9 +374,26 @@ function mixRgb(a, b, f) {
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // a sphere's numbers are ORDINARY damage numbers, FLYING OFF THE ENEMY hit, away from the hole (owner, 2026-10-16: "damage
 // numbers coming from rads should be shown flying off of the enemy (all damage numbers should) instead of coming out of the bh")
-const GRV_AURA_A = 0.3, GRV_AURA_CAP = 0.5; // the aura band's peak, mid-radius (owner: "clear, 30%, clear"); OVERLAPPING auras together at most GRV_AURA_CAP (owner, 2026-10-22: "max opacity should be 50%" / "yes cap overlapping") - each of n overlapping ones at 1 - (1 - CAP)^(1/n) at most, so all n stacked reach CAP
+// the aura band's peak, mid-radius (owner: "clear, 30%, clear") - EVERY aura at GRV_AURA_A, and where auras OVERLAP at most GRV_AURA_CAP
+// together (owner, 2026-10-22: "max opacity should be 50%", "individual auras should always be at 30 / just cap overlap"): the overlapping
+// ones are laid on a scratch layer at A / CAP each and that layer on the board at CAP - one alone is A, stacked they near CAP, never past it
+const GRV_AURA_A = 0.3, GRV_AURA_CAP = 0.5;
+let grvAuraCv = null;
+function grvAura(x, sp, ar, a) { // one aura's gradient disc on context x at alpha a
+  const g = x.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, ar);
+  g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
+  x.globalAlpha = a; x.fillStyle = g; x.beginPath(); x.arc(sp.x, sp.y, ar, 0, 6.283); x.fill();
+}
+function grvAurasCapped(list) { // [[sp, ar]] that overlap: through the scratch layer, under the board's own transform
+  const real = ctx.canvas.getContext("2d"), m = real.getTransform(), c = grvAuraCv ||= document.createElement("canvas");
+  if (c.width !== real.canvas.width || c.height !== real.canvas.height) { c.width = real.canvas.width; c.height = real.canvas.height; }
+  const x = c.getContext("2d"); if (!x) return false;
+  x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, c.width, c.height); x.setTransform(m);
+  for (const [sp, ar] of list) grvAura(x, sp, ar, GRV_AURA_A / GRV_AURA_CAP);
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = GRV_AURA_CAP; ctx.drawImage(c, 0, 0); ctx.restore();
+  return true;
+}
 const GRV_RING_OUT = 0.5; // the reach rings run out to half the aura (drawSphere)
-const grvAuraA = n => Math.min(GRV_AURA_A, 1 - Math.pow(1 - GRV_AURA_CAP, 1 / Math.max(1, n)));
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
   dmgSum(e, amt, amt, dmgInk("grv"), sp);
@@ -390,16 +407,16 @@ function drawGrv() {
     const st = towerStats(t, true);
     for (const sp of t.spheres) all.push([sp, st, grvAuraNow(sp, st)]);
   }
-  for (const [sp, st, ar] of all) drawSphere(sp, st, grvAuraA(all.reduce((n, [q, , qr]) => n + (q === sp || Math.hypot(q.x - sp.x, q.y - sp.y) < ar + qr ? 1 : 0), 0))); // (n: the auras overlapping this one, itself too)
+  const over = all.filter(([sp, , ar]) => ar > 1 && all.some(([q, , qr]) => q !== sp && qr > 1 && Math.hypot(q.x - sp.x, q.y - sp.y) < ar + qr));
+  const capped = over.length > 1 && grvAurasCapped(over.map(([sp, , ar]) => [sp, ar])); // (the lone ones are drawn by drawSphere, at A)
+  for (const [sp, st] of all) drawSphere(sp, st, capped && over.some(o => o[0] === sp) ? 0 : GRV_AURA_A);
   drawGrvPellets();
   ctx.globalAlpha = 1;
 }
 function drawSphere(sp, st, auraA = GRV_AURA_A) {
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
-  if (ar > 1) { // the aura: clear at the sphere, GRV_AURA_A at mid-radius, clear at the edge
-    const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, ar);
-    g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
-    ctx.globalAlpha = auraA; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar, 0, 6.283); ctx.fill();
+  if (ar > 1) { // the aura: clear at the sphere, GRV_AURA_A at mid-radius, clear at the edge (auraA 0: drawn capped with its overlaps - drawGrv)
+    if (auraA > 0) grvAura(ctx, sp, ar, auraA);
     // its REACH, shown like Permafrost's rings (owner, 2026-10-16: "for bh aura, show range of aura using a range indicator similar to
     // permafrost"): a thin glowing ring out from the centre to the edge every GRV_RING_S, fading as it goes
     const f = (sp.age % GRV_RING_S) / GRV_RING_S;
