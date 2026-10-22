@@ -45,7 +45,7 @@ void main() {
 }`;
 const WARP_FS = `
 precision mediump float;
-uniform sampler2D tex, dyn, fxt; /* dyn: the moving layer, premultiplied, over the board (aspira-warplayers.js); fxt: the hits over both (aspira-fxgl.js) */ uniform vec2 edge; uniform vec3 gridCol; uniform vec4 grid; // grid: ring, spoke angle, far, alpha
+uniform sampler2D tex, dyn, fxt, lit; uniform float litA; /* lit: the lanes fading in, premultiplied, over the board at litA (laneFadeBind); dyn: the moving layer, premultiplied, over the board (aspira-warplayers.js); fxt: the hits over both (aspira-fxgl.js) */ uniform vec2 edge; uniform vec3 gridCol; uniform vec4 grid; // grid: ring, spoke angle, far, alpha
 uniform float towers, onBoard, op, neck, bgA, invR, fold, hskip; uniform vec3 bgCol, shape; // shape: the funnel's head rim, foot (world units), power // op: the whole bell SEMI-TRANSPARENT, nothing occluded (owner)
 varying vec2 uv; varying float sh, rr, th;
 float line(float d, float wd) { return 1.0 - smoothstep(wd * 0.5, wd * 1.5, d); }
@@ -68,7 +68,7 @@ void main() {
   gk = max(ring, spoke * smoothstep(20.0, 60.0, rr)) * grid.w * (0.5 + 0.5 * smoothstep(towers, towers + 30.0, rr)) * fade; }
   gk *= 1.0 - board * (1.0 - onBoard); // faint over the board itself: the lanes stay readable
   vec3 col = vec3(0.0); if (board > 0.0) { /* the three layers are read only where the board is (elsewhere col is 0 whatever they hold - perf) */
-  vec4 dv = texture2D(dyn, uv), fv = texture2D(fxt, uv); if (hskip < 0.5 || fv.a + fv.r + fv.g + fv.b > 0.0) fv *= 1.0 - hullCover(gl_FragCoord.xy); /* the towers' outline test only where the effects layer has something (a loop of 36 edges a pixel otherwise) */ vec3 raw = (texture2D(tex, uv).rgb * (1.0 - dv.a) + dv.rgb) * (1.0 - fv.a) + fv.rgb;
+  vec4 dv = texture2D(dyn, uv), fv = texture2D(fxt, uv); if (hskip < 0.5 || fv.a + fv.r + fv.g + fv.b > 0.0) fv *= 1.0 - hullCover(gl_FragCoord.xy); /* the towers' outline test only where the effects layer has something (a loop of 36 edges a pixel otherwise) */ vec4 lv = texture2D(lit, uv) * litA; vec3 raw = ((texture2D(tex, uv).rgb * (1.0 - lv.a) + lv.rgb) * (1.0 - dv.a) + dv.rgb) * (1.0 - fv.a) + fv.rgb;
   // a BOSS SKY inverts the board (white ground, dark ink): back to the plain palette here, or its white reads as ink and the bell turns into a grey
   // slab (owner, 2026-10-09) - only INSIDE the sky's circle round the core (invR, world units; the 2D view inverts exactly there): a guess by colour flipped every white beam and orange ring
   if (rr < invR) raw = 1.0 - raw;

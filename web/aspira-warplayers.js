@@ -54,9 +54,9 @@ function warpRender() {
 function warpBoardSig(now) {
   const live = typeof litLanes === "function" ? litLanes() : [];
   let fading = false;
-  const lanes = laneHold(live).map(u => {
+  const lanes = laneHold(typeof laneSplit === "function" ? laneSplit(live).board : live).map(u => { // (a lane fading in on the fade layer is not the board's)
     const t0 = laneSeen.get(u.pi + ":" + u.ang);
-    if (!u.star && laneFadeMs() && (t0 === undefined || now - t0 < laneFadeMs())) fading = true;
+    if (!u.star && !laneFadeGl() && laneFadeMs() && (t0 === undefined || now - t0 < laneFadeMs())) fading = true;
     return u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + u.n + ":" + litLevel(u.a, u.star);
   }).join(",");
   return G.wave + "|" + bossInv.phase + "|" + lanes + (fading ? "|" + Math.floor(now / WARP_STAT_MS) : "");
@@ -70,18 +70,18 @@ function warpLayersBind(gl, u) {
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, warp.tex);
   if (warp.bmp) { /* the snapshot resolved off the frame: only this upload is left, from decoded pixels */
     const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.bmp); const ms = performance.now() - t0;
-    warp.bmp.close(); warp.bmp = null;
+    warp.bmp.close(); warp.bmp = null; warp.boardLanes = warp.bmpLanes; // (the lanes in that board are on the GPU now: laneSplit)
     if (typeof perfBoardUp === "function") perfBoardUp("bmp", ms);
   }
   /* a stalling device (an Apple GPU blocks ~40-50 ms in texImage2D(canvas)) snapshots the board with createImageBitmap, which resolves off the frame, and uploads it a frame or so later; the bell shows the old board till then */
   const bmpOk = warpUpSlow >= 3 && warp.statUp === warp.tex && typeof createImageBitmap === "function";
   if (bmpOk) {
     if (warp.statNew && !warp.bmpP) {
-      warp.bmpP = performance.now(); warp.statNew = false;
+      warp.bmpP = performance.now(); warp.statNew = false; warp.bmpLanes = warp.statLanes;
       createImageBitmap(cv).then(b => { if (typeof perfBoardUp === "function") perfBoardUp("bmpWait", performance.now() - warp.bmpP); warp.bmpP = 0; warp.bmp = b; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
     }
   } else if (warp.statNew || warp.statUp !== warp.tex) {
-    const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); const ms = performance.now() - t0; warp.statNew = false; warp.statUp = warp.tex;
+    const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); const ms = performance.now() - t0; warp.statNew = false; warp.statUp = warp.tex; warp.boardLanes = warp.statLanes;
     if (typeof perfBoardUp === "function") perfBoardUp(warp.statWhy || "first", ms);
     /* an Apple GPU blocks ~40 ms in this call (slow logs, iPhone: 98% of the frames after one were over 40 ms): such a device (3 uploads over 20 ms) redraws and resends the board a quarter as often */
     if (ms > 20 && ++warpUpSlow >= 3) WARP_STAT_MS = 600;
@@ -96,6 +96,22 @@ function warpLayersBind(gl, u) {
   }
   gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, typeof fxGl !== "undefined" && fxGl.tex ? fxGl.tex : warp.dynTex); // the hits (aspira-fxgl.js)
   gl.activeTexture(gl.TEXTURE0);
+  laneFadeBind(gl, u);
   gl.uniform1i(u("tex"), 0); gl.uniform1i(u("dyn"), 1); gl.uniform1i(u("fxt"), 2);
   hullUniforms(gl, u, warp.cv.height); // the towers' outlines: no beam under one (aspira-fog.js)
+}
+// the lanes FADING IN (laneFadeLayer, aspira-lanes.js) onto texture unit 3, sent up only when which lanes they are changes; the shader lays
+// it over the board at litA, set every frame - a smooth fade for one upload (owner, 2026-10-22)
+function laneFadeBind(gl, u) {
+  gl.activeTexture(gl.TEXTURE3);
+  if (!warp.litTex) {
+    warp.litTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, warp.litTex);
+    for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)); warp.litSig = ""; // (clear till a lane fades in)
+  } else gl.bindTexture(gl.TEXTURE_2D, warp.litTex);
+  let L = null;
+  if (typeof laneFadeLayer === "function" && warp.texCam) { const c0 = { ...cam }; Object.assign(cam, warp.texCam); try { L = laneFadeLayer(); } catch (err) { L = null; laneFail(err); } finally { Object.assign(cam, c0); } }
+  if (L && L.sig !== warp.litSig) { gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, L.cv); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); warp.litSig = L.sig; }
+  gl.uniform1i(u("lit"), 3); gl.uniform1f(u("litA"), L ? L.a : 0);
+  warp.litOk = u("lit") !== null && u("litA") !== null;
 }

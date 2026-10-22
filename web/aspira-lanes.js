@@ -101,7 +101,7 @@ function laneFail(err) {
 function blit(c) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(c, 0, 0); ctx.restore(); }
 const laneSeen = new Map(), LANE_FADE_IN_MS = 2000;
 /* a device whose board upload stalls (warpUpSlow, aspira-warplayers.js) gets its lanes at full brightness at once: the fade-in was most of its board resends (14 of 19 a wave) */
-const laneFadeMs = () => (typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 0 : LANE_FADE_IN_MS);
+const laneFadeMs = () => (!laneFadeGl() && typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 0 : LANE_FADE_IN_MS); // (the GPU fade layer costs such a device one upload, not a resend a step)
 const LIT_MIN_MS = 200;
 const LIT_STEPS = 16;
 /* the lane brightness a board redraw is keyed on: 16 steps; on a device whose board upload stalls just lit or not (the lane then keeps the brightness it had when it lit - one redraw as a wave starts, one as it ends) */
@@ -119,10 +119,9 @@ function laneHold(live) {
 const SWARM_LANE_A = 0.25; // (halved again - owner, 2026-10-12; was 0.5) a swarm's lanes at half strength: it rides 10-12 of them (aspira-formations.js)
 const LIT_LINE_A = 0.75, LIT_LINE_W = 2.4, LIT_HAZE_A = 0.07, LIT_GLOW_A = 0.34;
 const BOSS_LANE_W = 3.5, BOSS_LANE_HALO_W = 22, BOSS_LANE_HALO_A = 0.06, BOSS_LANE_K = 1.5; // a boss lane: x widths, its glow (world px), x brightness (owner, 2026-10-09: "make boss lanes half as intense"; was 3)
-function drawLaneStrokes(live) {
-  const S = laneSet(), { laneCv, lctx, glowCv, gctx, baseCv, bctx } = S;
-  // forget lanes that went dark, so they fade in again next time
-  for (const key of laneSeen.keys()) if (!live.some(u => u.pi + ":" + u.ang === key)) laneSeen.delete(key);
+function drawLaneStrokes(all) {
+  const S = laneSet(), { laneCv, lctx, glowCv, gctx, baseCv, bctx } = S, live = laneSplit(all).board; // (a lane still fading in is the fade layer's - laneFadeLayer)
+  const holds = set => { if (typeof warp !== "undefined") warp.statLanes = set; }; // the lanes this board holds (on the GPU once it is sent up: warp.boardLanes)
   const key = [cv.width, cv.height, cam.k, cam.ox, cam.oy].join();
   if (key !== S.baseKey) {
     S.baseKey = key;
@@ -131,16 +130,8 @@ function drawLaneStrokes(live) {
     for (const path of PATHS) bctx.stroke(path.p2d);
     laneMask(bctx);
   }
-  if (!live.length) { S.litKey = ""; blit(baseCv); return; }
-  const now = performance.now();
-  for (const u of live) {
-    if (u.swarm) u.a *= SWARM_LANE_A; // twice the lanes, each fainter (owner, 2026-10-12)
-    if (u.star) continue; // a boss lane has its own fade (litLanes)
-    // a lane FADES IN over LANE_FADE_IN_MS of REAL time, whatever the game speed (owner)
-    const key = u.pi + ":" + u.ang;
-    if (!laneSeen.has(key)) laneSeen.set(key, now);
-    { const fm = laneFadeMs(); if (fm) u.a *= Math.min(1, (now - laneSeen.get(key)) / fm); }
-  }
+  if (!live.length) { S.litKey = ""; holds(new Set()); blit(baseCv); return; }
+  const now = performance.now(); // (the swarm share and the fade-in are litLanes')
   // the lit layers are REBUILT only when what they show changes - which lanes,
   // their colours, their brightness to 1/LIT_STEPS, the camera; otherwise last
   // frame's finished layers are blitted again (profiled 2026-10-05: rebuilding
@@ -151,13 +142,20 @@ function drawLaneStrokes(live) {
   const camSig = [cv.width, cv.height, cam.k, cam.ox, cam.oy].join();
   const sig = camSig + "|" +
     laneHold(live).map(u => u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + (u.star ? 1 : 0) + ":" + litLevel(u.a, u.star)).join(",");
-  if (sig === S.litKey || (camSig === S.litCam && now - S.litAt < LIT_MIN_MS)) { blitLanes(S); return; }
+  if (sig === S.litKey || (camSig === S.litCam && now - S.litAt < LIT_MIN_MS)) { holds(S.litLanes || new Set()); blitLanes(S); return; } // (what the cached layers hold, not what was asked)
   S.litKey = ""; // until the layers are whole (laneFail)
   // each lane IN USE lit in its rider's colour - drawn rotated when a split
   // wave rides a rotated copy of it (u.ang)
   laneLayer(laneCv, lctx, cv.width, cv.height);
   laneLayer(glowCv, gctx, cv.width, cv.height);
-  for (const u of live) {
+  strokeLit(lctx, gctx, live);
+  applyMask(gctx, GLOW_FALLOFF);
+  applyMask(lctx, 1);
+  S.litKey = sig; S.litCam = camSig; S.litAt = now; S.litLanes = new Set(live.map(laneKeyOf)); holds(S.litLanes);
+  S.comboKey = ""; blitLanes(S);
+}
+function strokeLit(lctx, gctx, list) { // each lane IN USE lit in its rider's colour, at u.a, onto the line and glow layers (unmasked)
+  for (const u of list) {
     lctx.save(); gctx.save();
     for (const x of [lctx, gctx]) { x.translate(CX, CY); x.rotate(u.ang); x.translate(-CX, -CY); }
     // the bonus STAR's lane burns three times as bright as the rest (owner),
@@ -176,10 +174,6 @@ function drawLaneStrokes(live) {
     lctx.globalAlpha = (u.star ? 0.3 * k : LIT_LINE_A) * u.a; lctx.lineWidth = u.star ? 1.4 * w : LIT_LINE_W; lctx.stroke(PATHS[u.pi].lit2d);
     lctx.restore();
   }
-  applyMask(gctx, GLOW_FALLOFF);
-  applyMask(lctx, 1);
-  S.litKey = sig; S.litCam = camSig; S.litAt = now;
-  S.comboKey = ""; blitLanes(S);
 }
 // the faint base, the glow and the lit lines laid onto ONE cached layer whenever any of them changes, and that blitted:
 // one full-canvas draw a frame instead of three (perf, 2026-10-09; source-over is associative, so the same picture)
@@ -232,9 +226,56 @@ function litLanes() {
   if (bossInv.phase === "in") k = clamp01((since - BOSS_INV_T) / BOSS_LANE_FADE);
   else if (bossInv.phase === "out") { k = 1 - clamp01(since / BOSS_LANE_FADE); if (!stars.length && k > 0) live.push(...bossLanes.map(u => ({ ...u }))); }
   else bossLanes = [];
-  for (const u of live) if (u.star) u.a *= k;
+  for (const u of live) { u.a0 = u.a; if (u.star) u.a *= k; }
   bossLaneRise(live);
+  // EACH LANE'S FADE-IN, u.f 0..1 (u.a0 its brightness without it): an ordinary lane over LANE_FADE_IN_MS of REAL time from when it is
+  // first seen, whatever the game speed (owner); a boss lane by its sky (above); swarm lanes at SWARM_LANE_A (owner, 2026-10-12)
+  const now = performance.now(), fm = laneFadeMs();
+  for (const key of laneSeen.keys()) if (!live.some(u => u.pi + ":" + u.ang === key)) laneSeen.delete(key); // gone dark: fades in again next time
+  for (const u of live) {
+    if (u.swarm) { u.a *= SWARM_LANE_A; u.a0 *= SWARM_LANE_A; }
+    u.rise = !(u.star && bossInv.phase === "out"); // (a boss lane fading OUT stays on the board, stepped)
+    if (u.star) { u.f = u.a0 > 0 ? Math.min(1, u.a / u.a0) : 1; continue; }
+    const key = u.pi + ":" + u.ang; if (!laneSeen.has(key)) laneSeen.set(key, now);
+    u.f = fm ? Math.min(1, (now - laneSeen.get(key)) / fm) : 1; u.a = u.a0 * u.f;
+  }
   return live.filter(u => !u.star || u.a > 0);
+}
+// SMOOTH FADE-IN (owner, 2026-10-22: "boss lane fades in in steps, want it to be a smooth fade in / same with all lanes actually"): lanes
+// were painted into the board picture, re-sent to the GPU at most every WARP_STAT_MS (600 ms on an iPhone, where each send stalls ~40 ms) at
+// 1/LIT_STEPS of brightness - a 1-2 s fade showed as a few steps. In 3D a lane still FADING IN is drawn instead, at full brightness, on its
+// own FADE LAYER - sent up once - and the bell's shader lays it over the board at the fade's brightness every frame (litA); once whole it goes
+// to the board, and leaves the fade layer only when that board is on the GPU (warp.boardLanes), so it never blinks out between the two.
+// One brightness for the layer: the lanes fading together light together (a wave's copies, a boss's lanes) - it is the least of theirs
+const laneFadeGl = () => typeof warp !== "undefined" && warp.litOk === true; // the bell's shader takes the fade layer (warpLayersBind)
+const laneKeyOf = u => u.pi + ":" + u.ang.toFixed(3) + ":" + u.color;
+function laneSplit(live) {
+  if (!laneFadeGl()) return { board: live, fade: [] };
+  const have = warp.boardLanes || new Set(), board = [], fade = [];
+  for (const u of live) (u.rise && u.f < 1 ? fade : board).push(u);
+  for (const u of board) if (u.rise && !have.has(laneKeyOf(u))) fade.push(u); // whole, but its board not up yet: both, till it is
+  return { board, fade };
+}
+const laneFadeL = { sig: "" };
+function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (nothing fading in)
+  if (!laneFadeGl()) return null;
+  const { fade } = laneSplit(litLanes());
+  if (!fade.length) return null;
+  const a = Math.min(...fade.map(u => u.f)), sig = [cv.width, cv.height, cam.k, cam.ox, cam.oy, COL.bg].join() + "|" + fade.map(u => laneKeyOf(u) + ":" + (u.star ? 1 : 0) + ":" + litLevel(u.a0, u.star)).join(",");
+  if (sig !== laneFadeL.sig) {
+    const S = laneSet(), { laneCv, lctx, glowCv, gctx } = S, L = laneFadeL; // (the board's own line and glow layers as scratch: the board rebuilds its own next time)
+    S.litKey = ""; L.sig = "";
+    laneLayer(laneCv, lctx, cv.width, cv.height); laneLayer(glowCv, gctx, cv.width, cv.height);
+    strokeLit(lctx, gctx, fade.map(u => ({ ...u, a: u.a0 })));
+    applyMask(gctx, GLOW_FALLOFF); applyMask(lctx, 1);
+    L.cv ||= document.createElement("canvas");
+    const x = L.cv.getContext("2d"); if (!x) throw new Error("lane fade: no 2d context");
+    if (L.cv.width !== cv.width || L.cv.height !== cv.height) { L.cv.width = cv.width; L.cv.height = cv.height; }
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, L.cv.width, L.cv.height);
+    x.drawImage(glowCv, 0, 0); x.drawImage(laneCv, 0, 0);
+    L.sig = sig;
+  }
+  return { cv: laneFadeL.cv, sig: laneFadeL.sig, a };
 }
 // a boss lane only ever BRIGHTENS at 1/BOSS_LANE_FADE a second, from 0 when it is new (2026-10-10, the owner's
 // iPhone: it flashed full a frame before its fade) - so no jump in what feeds it can show as a flash
