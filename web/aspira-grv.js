@@ -374,7 +374,8 @@ function mixRgb(a, b, f) {
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // a sphere's numbers are ORDINARY damage numbers, FLYING OFF THE ENEMY hit, away from the hole (owner, 2026-10-16: "damage
 // numbers coming from rads should be shown flying off of the enemy (all damage numbers should) instead of coming out of the bh")
-const GRV_AURA_A = 0.15; // the aura band's peak, mid-radius - half (owner, 2026-10-22: "reduce GRV aura opacity, max opacity should be 50%"; was 0.3, "clear, 30%, clear")
+const GRV_AURA_A = 0.3, GRV_AURA_CAP = 0.5; // the aura band's peak, mid-radius (owner: "clear, 30%, clear"); OVERLAPPING auras together at most GRV_AURA_CAP (owner, 2026-10-22: "max opacity should be 50%" / "yes cap overlapping") - each of n overlapping ones at 1 - (1 - CAP)^(1/n) at most, so all n stacked reach CAP
+const grvAuraA = n => Math.min(GRV_AURA_A, 1 - Math.pow(1 - GRV_AURA_CAP, 1 / Math.max(1, n)));
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
   dmgSum(e, amt, amt, dmgInk("grv"), sp);
@@ -382,21 +383,22 @@ function grvFloat(sp, e, amt) {
 
 // ---------- the look: yellow front, the aura's gradient band, the black sphere, the inward numbers ----------
 function drawGrv() {
-  const now = performance.now() / 1000;
+  const now = performance.now() / 1000, all = [];
   for (const t of G.towers) {
     if (t.kind !== "grv" || !t.spheres) continue;
     const st = towerStats(t, true);
-    for (const sp of t.spheres) drawSphere(sp, st);
+    for (const sp of t.spheres) all.push([sp, st, grvAuraNow(sp, st)]);
   }
+  for (const [sp, st, ar] of all) drawSphere(sp, st, grvAuraA(all.reduce((n, [q, , qr]) => n + (q === sp || Math.hypot(q.x - sp.x, q.y - sp.y) < ar + qr ? 1 : 0), 0))); // (n: the auras overlapping this one, itself too)
   drawGrvPellets();
   ctx.globalAlpha = 1;
 }
-function drawSphere(sp, st) {
+function drawSphere(sp, st, auraA = GRV_AURA_A) {
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
   if (ar > 1) { // the aura: clear at the sphere, GRV_AURA_A at mid-radius, clear at the edge
     const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, ar);
     g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
-    ctx.globalAlpha = GRV_AURA_A; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar, 0, 6.283); ctx.fill();
+    ctx.globalAlpha = auraA; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar, 0, 6.283); ctx.fill();
     // its REACH, shown like Permafrost's rings (owner, 2026-10-16: "for bh aura, show range of aura using a range indicator similar to
     // permafrost"): a thin glowing ring out from the centre to the edge every GRV_RING_S, fading as it goes
     const f = (sp.age % GRV_RING_S) / GRV_RING_S;
