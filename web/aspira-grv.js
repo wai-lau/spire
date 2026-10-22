@@ -374,7 +374,7 @@ function mixRgb(a, b, f) {
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // a sphere's numbers are ORDINARY damage numbers, FLYING OFF THE ENEMY hit, away from the hole (owner, 2026-10-16: "damage
 // numbers coming from rads should be shown flying off of the enemy (all damage numbers should) instead of coming out of the bh")
-const GRV_AURA_A = 0.3; // the aura band's peak, mid-radius (owner: "clear, 30%, clear")
+const GRV_AURA_A = 0.15; // the aura band's peak, mid-radius - half (owner, 2026-10-22: "reduce GRV aura opacity, max opacity should be 50%"; was 0.3, "clear, 30%, clear")
 function grvFloat(sp, e, amt) {
   if (typeof INSTANT_COINS !== "undefined" && INSTANT_COINS) return; // (the simulator draws nothing)
   dmgSum(e, amt, amt, dmgInk("grv"), sp);
@@ -393,7 +393,7 @@ function drawGrv() {
 }
 function drawSphere(sp, st) {
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
-  if (ar > 1) { // the aura: clear at the sphere, 30% at mid-radius, clear at the edge
+  if (ar > 1) { // the aura: clear at the sphere, GRV_AURA_A at mid-radius, clear at the edge
     const g = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, ar);
     g.addColorStop(0, "transparent"); for (const [f, k] of GRV_BANDS) g.addColorStop(f, COL[k]); g.addColorStop(1, "transparent");
     ctx.globalAlpha = GRV_AURA_A; ctx.fillStyle = g; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar, 0, 6.283); ctx.fill();

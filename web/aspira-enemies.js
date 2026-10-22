@@ -22,11 +22,15 @@ function drawStarTrail(e, size) {
   const lp = PATHS[e.pi].pts, ca = Math.cos(e.ang || 0), sa = Math.sin(e.ang || 0);
   let j;
   { let lo = 0, hi = lp.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (lp[m].s <= e.s) lo = m; else hi = m; } j = lo; }
+  // FOLLOWS THE BODY OFF ITS SPOT (owner, 2026-10-22: "tracers should follow enemies when moved by gravity"): a formation member's tail is laid
+  // from its formation spot, so a GRV pull (or any shove) left it behind - the whole tail shifts by how far the body is off that spot
+  let fx = 0, fy = 0;
+  if (e.form) { const q = { x: 0, y: 0 }; formOffset(e, q, e.s); fx = e.x - q.x; fy = e.y - q.y; if (!Number.isFinite(fx) || !Number.isFinite(fy)) fx = fy = 0; }
   for (let d = 0; d <= tail; d += TRAIL_STEP) {
     const sd = Math.max(0, e.s - d);
     // a FORMATION's member (aspira-formations.js): each point laid across the lane AT that point, with the roll there -
     // a fixed shift taken at the head drifted off the body wherever the lane curves or the V rolls (owner, 2026-10-11)
-    if (e.form) { const q = { x: 0, y: 0 }; formOffset(e, q, sd); pts.push(q); continue; } // (formOffset sets q whole: no pathAt first - perf)
+    if (e.form) { const q = { x: 0, y: 0 }; formOffset(e, q, sd); q.x += fx; q.y += fy; pts.push(q); continue; } // (formOffset sets q whole: no pathAt first - perf) // + fx, fy: off its formation spot
     while (j > 0 && lp[j].s > sd) j--;
     const a = lp[j], b = lp[Math.min(lp.length - 1, j + 1)], f = sd >= b.s ? 1 : Math.max(0, (sd - a.s) / (b.s - a.s || 1));
     const px = a.x + (b.x - a.x) * f - CX, py = a.y + (b.y - a.y) * f - CY;
