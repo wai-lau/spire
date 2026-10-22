@@ -282,10 +282,13 @@ function drawCredits(part) {
 // turns of a group's lane (its k split copies with it), keep those whose copies' on-screen lengths differ least (spread =
 // longest - shortest, within LANE_EVEN_SLACK of the biggest total); of those, the ones keeping within LANE_TURN_SLACK of the
 // most lane on the screen (total) - and of those, the nearest the wave's usual turn, so the waves still come round from new
-// directions. k = 1 has no spread, so it is just the old most-on-screen rule. Scores cached per lane, split, screen and box.
+// directions. k = 1 has no spread, so it is just the old most-on-screen rule. Scores cached per lane and split.
+// ONE PICK FOR BOTH VIEWS (owner, 2026-10-22: "all lanes should be the same orientation between the two views / just rotate them
+// alongside the board"): scored on the PORTRAIT box in world units (BOX_SHORT x BOX_LONG round the core), never the screen - so the
+// pick is the same on every device and view, and the landscape box gets it turned the box's quarter turn (laneBestTurn).
 // The simulator (no screen) keeps laneTurn
 const LANE_TURNS = 72, LANE_TURN_SLACK = 0.005, LANE_EVEN_SLACK = 0.02, laneTurnCache = new Map(); /* finer (owner, 2026-10-18: "the lanes are rotated about the core such that as much of it is visible as possible"): 5-degree turns, within 0.5% of the best (was 24 turns, 2%) */
-const laneTurnKey = (pi, k) => pi + "|" + k + "|" + innerWidth + "x" + innerHeight + "|" + (typeof q3d === "function" && q3d() ? 3 : 2) + "|" + (typeof BOX_WIDE !== "undefined" && BOX_WIDE ? "w" : "p");
+const laneTurnKey = (pi, k) => pi + "|" + k, inPortraitBox = p => Math.abs(p.x - CX) <= BOX_SHORT && Math.abs(p.y - CY) <= BOX_LONG;
 function laneTurnScores(pi, k) {
   const pts = PATHS[pi].pts, key = laneTurnKey(pi, k);
   let sc = laneTurnCache.get(key);
@@ -296,7 +299,7 @@ function laneTurnScores(pi, k) {
     for (let j = 0; j < k; j++) {
       const a = i / LANE_TURNS * Math.PI * 2 + (j / k) * Math.PI * 2;
       let prev = null, len = 0, entry = null;
-      for (let q = 0; q < pts.length; q += 6) { const p = rotAbout(pts[q], a), on = phoneInside(p.x, p.y); if (on && !entry) entry = p; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
+      for (let q = 0; q < pts.length; q += 6) { const p = rotAbout(pts[q], a), on = inPortraitBox(p); if (on && !entry) entry = p; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
       total += len; lo = Math.min(lo, len); hi = Math.max(hi, len);
       const ax = !entry ? "" : Math.abs(entry.y - CY) > Math.abs(entry.x - CX) ? "v" : "h"; axis = axis === null || axis === ax ? ax : ""; // the side every copy comes on screen from: v top/bottom, h left/right, "" mixed
     }
@@ -339,18 +342,17 @@ function firstTurn(pi) {
   return best;
 }
 // ARMOR DOWN THE LONG AXIS (owner, 2026-10-22: "for vertical screen, armour should come from top + bottom / for horizontal, sides"): an
-// armor wave's turns are only those whose copies all come on screen from the box's long ends (portrait top/bottom, landscape left/right);
-// the rules above pick among them. (The even-copies rule, 2026-10-19, had sent portrait armor in from the sides: the 3D tilt makes a
-// top copy look longer than a bottom one, so no top/bottom turn was even enough.) Any turn when none qualifies
+// armor wave's turns are only those whose copies all come into the portrait box from its top/bottom (turned with the box, the sides in
+// landscape); the rules above pick among them. Any turn when none qualifies
 function laneBestTurn(pi, k, n, type) {
-  const base = laneTurn(n) + (typeof BOX_WIDE !== "undefined" && BOX_WIDE ? Math.PI / 2 : 0); // landscape = the portrait pick turned the box's quarter turn (rotAbout sense)
-  if (!realLanes() || !PATHS[pi]) return base;
+  const wide = typeof BOX_WIDE !== "undefined" && BOX_WIDE ? Math.PI / 2 : 0, base = laneTurn(n); // landscape = the portrait pick turned the box's quarter turn (rotAbout sense)
+  if (!realLanes() || !PATHS[pi]) return base + wide;
   if (n === 1 && k === 1) { const f = firstTurn(pi); if (f !== null) return f; }
-  const all = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS, long = typeof BOX_WIDE !== "undefined" && BOX_WIDE ? "h" : "v";
-  const sc = type === "armor" && all.some(s => s.axis === long) ? all.map(s => (s.axis === long ? s : { spread: Infinity, total: 0 })) : all; // (index = turn: the others kept as never-picks)
+  const all = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS;
+  const sc = type === "armor" && all.some(s => s.axis === "v") ? all.map(s => (s.axis === "v" ? s : { spread: Infinity, total: 0 })) : all; // (index = turn: the others kept as never-picks)
   const flat = Math.min(...sc.map(s => s.spread)) + LANE_EVEN_SLACK * Math.max(...sc.map(s => s.total)), even = sc.filter(s => s.spread <= flat);
   const best = Math.max(...even.map(s => s.total));
   let pick = base, gap = Infinity;
   sc.forEach((s, i) => { if (s.spread > flat || s.total < best * (1 - LANE_TURN_SLACK)) return; const t = i * step, d = Math.abs(((t - base) % (Math.PI * 2) + 3 * Math.PI) % (Math.PI * 2) - Math.PI); if (d < gap) { gap = d; pick = t; } });
-  return pick;
+  return pick + wide;
 }
