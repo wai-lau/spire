@@ -109,9 +109,9 @@ function ascBoxes() {
   armBox("asp-automove", () => autoMove, () => { autoMove = !autoMove; G.autoMove = autoMove; }); // (this game only: aspira-positioning.js)
   armBox("asp-freebuild", () => freeMode, () => { freeMode = !freeMode; G.freeMode = freeMode; });
 }
-// one ASCENDANT box: (DQ) beside it once used this game; armed, what a second tap costs (owner, 2026-10-13; "NO LEADERBOARD", 2026-10-17)
+// one ASCENDANT box: (DQ) beside it once used this game; armed, "really? (DQ)" (owner, 2026-10-22: "after first tap show really? (DQ)"; was "NO LEADERBOARD (tap again to confirm)", 2026-10-17)
 function ascCheck(id, on, label, used) {
-  const b = $(id), h = (on ? ICON_CHECKED : ICON_UNCHECKED) + "<span>" + (b.dataset.armed ? "NO LEADERBOARD (tap again to confirm)" : label) + "</span>" +
+  const b = $(id), h = (on ? ICON_CHECKED : ICON_UNCHECKED) + "<span>" + (b.dataset.armed ? "really?" : label) + "</span>" +
     (used || b.dataset.armed ? '<span class="asp-amt">(DQ)</span>' : "");
   b.hidden = !best.ascended; // ASCENDANTS only (owner, 2026-10-13: "non-ascendants do not get that checkbox")
   if (b.dataset.html !== h) { b.dataset.html = h; b.innerHTML = h; b.setAttribute("aria-checked", String(on)); }
