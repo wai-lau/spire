@@ -487,7 +487,8 @@ Every type is as hard as every other against the average trio in each section (o
 trios beat comfortably is too weak, and is made harder - never the score. A forced-type game (`typepower.mjs`,
 `typecal.mjs`: every wave one type, a boss wave an ordinary one of it) measures a type alone. The rewinding smart
 saver saturates there (it won armor at 18/18 lives with HP x4 or no armor at all), so difficulty is read off the
-greedy player's lives lost and the HP multiplier where it breaks.
+greedy player's lives lost and the HP multiplier where it breaks. A second stat, KILL TIME (owner, 2026-10-22): each kill's time
+still to walk to the core at the enemy's unslowed pace, averaged - the further out a type dies, the easier it is.
 
 ## 6. Damage model and statuses
 

@@ -25,5 +25,7 @@ if (isMainThread && process.argv[1].endsWith("breakpoint.mjs")) {
     console.log("  x".padEnd(8) + BANDS.map(b => b.padStart(9)).join(""));
     KS.forEach((k, i) => console.log(`  ${k}`.padEnd(8) + row[i].map(v => v.toFixed(1).padStart(9)).join("")));
     console.log("  break".padEnd(8) + brk.map(v => String(v).padStart(9)).join(""));
+    const kt = KS.map(k => { const g = res.filter((r, i) => jobs[i].type === type && jobs[i].typeHp === `${type}:${k}`); return BANDS.map((_, j) => { const v = g.map(r => r.bands[j].kt).filter(x => x != null); return v.length ? v.reduce((s, x) => s + x, 0) / v.length : NaN; }); });
+    KS.forEach((k, i) => console.log(`  kill-t ${k}`.padEnd(14) + kt[i].map(v => (v.toFixed(1) + "s").padStart(9)).join(""))); // seconds to the core at the kill, mean over games (higher = killed further out)
   }
 }
