@@ -63,6 +63,19 @@ check("lanes: a landscape pick is the portrait pick turned 90 degrees", () => {
   }
 });
 
+check("armor comes on screen down the box's long axis: portrait top/bottom, landscape the sides (owner, 2026-10-22)", () => {
+  for (const view of [{ w: 430, h: 932 }, { w: 1280, h: 800 }]) {
+    const e = boot({}, view);
+    const r = e.run(`(() => { const bad = [];
+      for (const n of [2, 5, 13, 26, 41]) { G = newGame(); G.started = true; G.wave = n - 1; WAVE_TYPE_FORCE[n] = "armor"; sendWave();
+        for (const s of G.spawns) { const p = PATHS[s.lanes.armor].pts.map(q => rotAbout(q, s.ang)).find(q => phoneInside(q.x, q.y)); if (!p) continue;
+          const v = Math.abs(p.y - CY) > Math.abs(p.x - CX); if (v === !!BOX_WIDE) bad.push(n + (v ? " top/bottom" : " side")); } }
+      return bad.join(", "); })()`);
+    if (r) return view.w + "px: armor wave " + r;
+  }
+  return "";
+});
+
 check("wave 1 rides ONE lane, turned for the longest run past the build hint's slot (owner, 2026-10-21)", () => {
   for (const view of [{ w: 390, h: 844 }, { w: 1280, h: 800 }]) {
     const e = boot({}, view);

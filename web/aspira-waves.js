@@ -153,14 +153,14 @@ function sendWave() {
     // the lane split comes from the wave number; even parts (wavePlan rounded the count down to fit)
     // (a boss wave takes its split from the boss: the Devil's six come from
     // six directions, one per rotated copy of the lane)
-    const boss = G.wave % STAR_EVERY === 0;
+    const boss = !!ENEMIES[list[0]].star; // (the boss LIST, not the wave number: typepower.mjs plays an ordinary wave in a boss's place)
     // FORMATIONS stay whole (aspira-formations.js): shields split only into whole Vs, armor into whole rows
     const want = boss ? bossSplit(G.wave) : firstOne(G.wave) ? 1 : formSplit(list[0], list.length, G.wave);
     const k = Math.min(list.length, want), per = Math.floor(list.length / k), share = list[0] === "swarm"; // swarm: the remainder SHARED out, one more on the first lanes
     for (let j = 0, at = 0; j < k; j++) {
       const len = share ? per + (j < list.length - per * k ? 1 : 0) : per, part = list.slice(at, at + len); at += len;
       if (!part.length) continue;
-      const ang = (laneBestTurn(lanes[list[0]], k, G.wave) + (j / k) * Math.PI * 2) % (Math.PI * 2); // laneBestTurn: the most even copies, then the most lane, then nearest the usual turn; then the split
+      const ang = (laneBestTurn(lanes[list[0]], k, G.wave, list[0]) + (j / k) * Math.PI * 2) % (Math.PI * 2); // laneBestTurn: the most even copies, then the most lane, then nearest the usual turn; then the split
       // a boss arrives BOSS_INTRO s into its wave, after its warning (owner)
       G.spawns.push({ n: G.wave, list: part, lanes, ang, idx: 0, timer: boss ? BOSS_INTRO : 0 });
       // each lane copy remembers how many it was sent, for its brightness
@@ -205,7 +205,7 @@ function laneSoon() {
   const n = G.wave + 1;
   if (!G.started || G.over || !(G.nextIn > 0 && G.nextIn <= LANE_LEAD) || n % STAR_EVERY === 0 || (typeof bossUp === "function" && bossUp())) return [];
   const p = wavePlan(n, G.lastType), pi = laneMap(n)[p.type], k = firstOne(n) ? 1 : Math.min(p.count, formSplit(p.type, p.count, n)), a = 1 - G.nextIn / LANE_LEAD;
-  return Array.from({ length: k }, (_, j) => ({ pi, ang: (laneBestTurn(pi, k, n) + (j / k) * Math.PI * 2) % (Math.PI * 2), color: ENEMIES[p.type].color, n, star: false, swarm: p.type === "swarm", alive: 0, a }));
+  return Array.from({ length: k }, (_, j) => ({ pi, ang: (laneBestTurn(pi, k, n, p.type) + (j / k) * Math.PI * 2) % (Math.PI * 2), color: ENEMIES[p.type].color, n, star: false, swarm: p.type === "swarm", alive: 0, a }));
 }
 function activeLanes() {
   const out = new Map(), totals = G.laneTotals || {};
@@ -292,14 +292,15 @@ function laneTurnScores(pi, k) {
   if (sc) return sc;
   sc = [];
   for (let i = 0; i < LANE_TURNS; i++) {
-    let total = 0, lo = Infinity, hi = 0;
+    let total = 0, lo = Infinity, hi = 0, axis = null;
     for (let j = 0; j < k; j++) {
       const a = i / LANE_TURNS * Math.PI * 2 + (j / k) * Math.PI * 2;
-      let prev = null, len = 0;
-      for (let q = 0; q < pts.length; q += 6) { const p = rotAbout(pts[q], a), on = phoneInside(p.x, p.y); if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
+      let prev = null, len = 0, entry = null;
+      for (let q = 0; q < pts.length; q += 6) { const p = rotAbout(pts[q], a), on = phoneInside(p.x, p.y); if (on && !entry) entry = p; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
       total += len; lo = Math.min(lo, len); hi = Math.max(hi, len);
+      const ax = !entry ? "" : Math.abs(entry.y - CY) > Math.abs(entry.x - CX) ? "v" : "h"; axis = axis === null || axis === ax ? ax : ""; // the side every copy comes on screen from: v top/bottom, h left/right, "" mixed
     }
-    sc.push({ spread: hi - lo, total });
+    sc.push({ spread: hi - lo, total, axis });
   }
   laneTurnCache.set(key, sc);
   return sc;
@@ -337,11 +338,16 @@ function firstTurn(pi) {
   }
   return best;
 }
-function laneBestTurn(pi, k, n) {
+// ARMOR DOWN THE LONG AXIS (owner, 2026-10-22: "for vertical screen, armour should come from top + bottom / for horizontal, sides"): an
+// armor wave's turns are only those whose copies all come on screen from the box's long ends (portrait top/bottom, landscape left/right);
+// the rules above pick among them. (The even-copies rule, 2026-10-19, had sent portrait armor in from the sides: the 3D tilt makes a
+// top copy look longer than a bottom one, so no top/bottom turn was even enough.) Any turn when none qualifies
+function laneBestTurn(pi, k, n, type) {
   const base = laneTurn(n) + (typeof BOX_WIDE !== "undefined" && BOX_WIDE ? Math.PI / 2 : 0); // landscape = the portrait pick turned the box's quarter turn (rotAbout sense)
   if (!realLanes() || !PATHS[pi]) return base;
   if (n === 1 && k === 1) { const f = firstTurn(pi); if (f !== null) return f; }
-  const sc = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS;
+  const all = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS, long = typeof BOX_WIDE !== "undefined" && BOX_WIDE ? "h" : "v";
+  const sc = type === "armor" && all.some(s => s.axis === long) ? all.map(s => (s.axis === long ? s : { spread: Infinity, total: 0 })) : all; // (index = turn: the others kept as never-picks)
   const flat = Math.min(...sc.map(s => s.spread)) + LANE_EVEN_SLACK * Math.max(...sc.map(s => s.total)), even = sc.filter(s => s.spread <= flat);
   const best = Math.max(...even.map(s => s.total));
   let pick = base, gap = Infinity;
