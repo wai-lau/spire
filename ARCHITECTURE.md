@@ -472,6 +472,23 @@ wave waits for the sky to close. It costs nothing per pixel: 2D draws the frame 
 inverted palette (`withPalette`), 3D blends one triangle in GL (`warpFlip`); only the
 spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**
 
+### 5.6 The four sections (difficulty design, owner 2026-10-22)
+
+The waves fall into four sections, each with its own bar. A section passes when the sim's test holds over all 35 trios.
+
+| waves | section | the bar | the sim's test |
+|---|---|---|---|
+| 1-24 | early | easy; the four types about equally hard | every type: the average trio loses ~0 lives, and the types break at the same HP multiplier (`breakpoint.mjs`) |
+| 25-60 | mid | harder, beaten with good micro even upgrading at random | the random player (`randomAxis`) clears it with every trio |
+| 61-96 | late | lost by random upgrades or bad tower synergy | the random player dies in it, and so do the trios missing a counter; a good trio played well lives |
+| 97-120 | end | a coherent strategy, good micro, and every credit banked from interest spent | the player that spends all wins narrowly; one that keeps its bank (`econ: "hoard"`) loses |
+
+Every type is as hard as every other against the average trio in each section (owner, 2026-10-21): a type most
+trios beat comfortably is too weak, and is made harder - never the score. A forced-type game (`typepower.mjs`,
+`typecal.mjs`: every wave one type, a boss wave an ordinary one of it) measures a type alone. The rewinding smart
+saver saturates there (it won armor at 18/18 lives with HP x4 or no armor at all), so difficulty is read off the
+greedy player's lives lost and the HP multiplier where it breaks.
+
 ## 6. Damage model and statuses
 
 `damage(e, amt, tower, quiet, crit, st)`, in order:
