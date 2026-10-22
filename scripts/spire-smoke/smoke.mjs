@@ -76,17 +76,18 @@ check("armor comes on screen down the box's long axis: portrait top/bottom, land
   return "";
 });
 
-check("wave 1 rides ONE lane, turned for the longest run past the build hint's slot (owner, 2026-10-21)", () => {
+check("wave 1 rides ONE lane: in portrait from the top, past the build hint's slot; landscape the same turned with the board (owner, 2026-10-21/22)", () => {
+  const got = {};
   for (const view of [{ w: 390, h: 844 }, { w: 1280, h: 800 }]) {
     const e = boot({}, view);
-    const r = e.run(`(() => { G = newGame(); G.started = true; sendWave(); const c = hintCell(), ks = Object.keys(TOWERS), R = ks.reduce((a, k) => a + TOWERS[k].range, 0) / ks.length * RANGE_BONUS;
-      const angs = [...new Set(G.spawns.map(w => w.ang.toFixed(4)))], pi = G.spawns[0].lanes[G.spawns[0].list[0]];
-      const inLen = a => { let prev = null, len = 0; for (const q of PATHS[pi].pts) { const p = rotAbout(q, a), on = Math.hypot(p.x - c.x, p.y - c.y) <= R; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; } return len; };
-      let best = 0; for (let i = 0; i < LANE_TURNS; i++) best = Math.max(best, inLen(i / LANE_TURNS * Math.PI * 2));
-      return { angs, got: inLen(G.spawns[0].ang), best, hint: [c.x, c.y] }; })()`);
-    if (r.angs.length !== 1) return view.w + "px: wave 1 on " + r.angs.length + " lane copies (expected 1)";
-    if (!(r.got >= 0.97 * r.best)) return view.w + "px: wave 1's lane runs " + r.got.toFixed(0) + " u past the hint slot, the best turn " + r.best.toFixed(0);
+    got[view.w] = e.run(`(() => { G = newGame(); G.started = true; sendWave(); const s = G.spawns, pi = s[0].lanes[s[0].list[0]];
+      const entry = PATHS[pi].pts.map(q => rotAbout(q, s[0].ang)).find(q => phoneInside(q.x, q.y));
+      return { copies: new Set(s.map(w => w.ang.toFixed(4))).size, ang: s[0].ang, top: !!entry && CY - entry.y > Math.abs(entry.x - CX) }; })()`);
+    if (got[view.w].copies !== 1) return view.w + "px: wave 1 on " + got[view.w].copies + " lane copies (expected 1)";
   }
+  if (!got[390].top) return "portrait wave 1 does not come in from the top";
+  const d = (((got[1280].ang - got[390].ang - Math.PI / 2) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  if (Math.min(d, Math.PI * 2 - d) > 1e-6) return "landscape wave 1 is not the portrait turn + 90 degrees";
   return "";
 });
 

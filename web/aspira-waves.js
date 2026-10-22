@@ -326,20 +326,24 @@ function laneTurnScores(pi, k) {
 // the game turns lanes to the screen (not the simulator's player, unless SIM_REAL_LANES - REAL_LANES=1)
 const realLanes = () => !((typeof AUTO_POS !== "undefined" && AUTO_POS && !(typeof SIM_REAL_LANES !== "undefined" && SIM_REAL_LANES)) || typeof phoneInside !== "function");
 // THE FIRST WAVE MEETS THE BUILD HINT (owner, 2026-10-21: "have the first fast wave come from the side that spends the most time within the
-// tower with the build hint (on widescreen left side)"): wave 1 rides ONE lane copy, turned so the most of it lies within FIRST_HINT_R of the
-// hint's slot (the top-left open one - drawSlotArrow, aspira-chooser.js); FIRST_HINT_R the towers' mean reach
+// tower with the build hint"): wave 1 rides ONE lane copy, turned so the most of it lies within the towers' mean reach of the hint's slot
+// (the top-left open one - drawSlotArrow, aspira-chooser.js) - FROM THE TOP in portrait (owner, 2026-10-22: "wave 1 portrait to come from
+// top"), and like every lane worked out in the portrait frame and turned with the board in landscape (laneBestTurn adds the quarter turn)
 const firstOne = n => n === 1 && realLanes();
 function hintCell() { let c = null; CELLS.forEach((cell, ci) => { if (cellOpen(ci) && (!c || cell.y < c.y - 1 || (Math.abs(cell.y - c.y) <= 1 && cell.x < c.x))) c = cell; }); return c; }
-function firstTurn(pi) {
-  const c = hintCell(); if (!c) return null;
+function firstTurn(pi) { // the turn in the PORTRAIT frame
+  const wide = typeof BOX_WIDE !== "undefined" && BOX_WIDE;
+  let c = null; CELLS.forEach((cell, ci) => { if (!cellOpen(ci)) return; const q = wide ? rotAbout(cell, -Math.PI / 2) : cell; if (!c || q.y < c.y - 1 || (Math.abs(q.y - c.y) <= 1 && q.x < c.x)) c = q; }); // the portrait hint slot (hintCell, unturned)
+  if (!c) return null;
   const ks = Object.keys(TOWERS), R = ks.reduce((a, k) => a + TOWERS[k].range, 0) / ks.length * RANGE_BONUS, pts = PATHS[pi].pts;
-  let best = 0, bl = -1;
+  let best = null, bl = -1, any = 0, al = -1;
   for (let i = 0; i < LANE_TURNS; i++) {
-    const a = i / LANE_TURNS * Math.PI * 2; let prev = null, len = 0;
-    for (let q = 0; q < pts.length; q += 3) { const p = rotAbout(pts[q], a), on = Math.hypot(p.x - c.x, p.y - c.y) <= R; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
-    if (len > bl) { bl = len; best = a; }
+    const a = i / LANE_TURNS * Math.PI * 2; let prev = null, len = 0, entry = null;
+    for (let q = 0; q < pts.length; q += 3) { const p = rotAbout(pts[q], a), on = Math.hypot(p.x - c.x, p.y - c.y) <= R; if (!entry && inPortraitBox(p)) entry = p; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
+    if (len > al) { al = len; any = a; }
+    if (entry && CY - entry.y > Math.abs(entry.x - CX) && len > bl) { bl = len; best = a; } // comes into the box through its top
   }
-  return best;
+  return best ?? any;
 }
 // ARMOR DOWN THE LONG AXIS (owner, 2026-10-22: "for vertical screen, armour should come from top + bottom / for horizontal, sides"): an
 // armor wave's turns are only those whose copies all come into the portrait box from its top/bottom (turned with the box, the sides in
@@ -347,7 +351,7 @@ function firstTurn(pi) {
 function laneBestTurn(pi, k, n, type) {
   const wide = typeof BOX_WIDE !== "undefined" && BOX_WIDE ? Math.PI / 2 : 0, base = laneTurn(n); // landscape = the portrait pick turned the box's quarter turn (rotAbout sense)
   if (!realLanes() || !PATHS[pi]) return base + wide;
-  if (n === 1 && k === 1) { const f = firstTurn(pi); if (f !== null) return f; }
+  if (n === 1 && k === 1) { const f = firstTurn(pi); if (f !== null) return f + wide; }
   const all = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS;
   const sc = type === "armor" && all.some(s => s.axis === "v") ? all.map(s => (s.axis === "v" ? s : { spread: Infinity, total: 0 })) : all; // (index = turn: the others kept as never-picks)
   const flat = Math.min(...sc.map(s => s.spread)) + LANE_EVEN_SLACK * Math.max(...sc.map(s => s.total)), even = sc.filter(s => s.spread <= flat);
