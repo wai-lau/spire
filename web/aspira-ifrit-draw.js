@@ -7,9 +7,9 @@ function drawIfrCharge(t, st, low) {
   const c = ifrCentre(t); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * t.ifrCharge), true, low); /* grows to the meteor it launches */
 }
 // the ring's glow at radius r, alpha a (0.9 = full): IFR_RING_GLOW's layers, the blast's and the ball's alike
-function drawIfrRingAt(x, y, r, a, low, wk = 1) { // wk: x every layer's width (the fire's ring: IFR_FIRE_W)
+function drawIfrRingAt(x, y, r, a, low, wk = 1, cols = null) { // wk: x every layer's width (the fire's ring: IFR_FIRE_W); cols: a layer colour map (the fire's: IFR_HF_COL)
   for (let g = low ? IFR_RING_GLOW.length - 2 : 0; g < IFR_RING_GLOW.length; g++) { /* lowQ: the orange core + the white */
-    ctx.strokeStyle = COL[IFR_RING_GLOW[g][2]]; ctx.lineWidth = IFR_RING_THIN * IFR_RING_GLOW[g][0] * wk; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
+    ctx.strokeStyle = COL[(cols && cols[IFR_RING_GLOW[g][2]]) || IFR_RING_GLOW[g][2]]; ctx.lineWidth = IFR_RING_THIN * IFR_RING_GLOW[g][0] * wk; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
     ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
   }
 }
@@ -17,21 +17,21 @@ function drawIfrRingAt(x, y, r, a, low, wk = 1) { // wk: x every layer's width (
 // the center (it should start at 30%, then fall off to 0% about 30% of the way towards the center)": IFR_INNER_N rings inside the outline,
 // alpha falling from IFR_INNER_A to 0 over IFR_INNER_DEPTH of the radius (stacked strokes - no gradient on the 3D board context). a: x alpha
 const IFR_INNER_A = 0.3, IFR_INNER_DEPTH = 0.3, IFR_INNER_N = 6;
-function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1, wk = 1) { // fill: false, true (the black core) or a colour; inner: x the inner glow's alpha (a fire's rise)
+function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1, wk = 1, cols = null) { // fill: false, true (the black core) or a colour; inner: x the inner glow's alpha (a fire's rise)
   if (fill) { ctx.fillStyle = fill === true ? COL.bg : fill; ctx.globalAlpha = 0.95 * a; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
   const n = low ? 2 : IFR_INNER_N, w = r * IFR_INNER_DEPTH / n;
-  ctx.strokeStyle = COL.glow; ctx.lineWidth = w; /* ember red-orange inside the rim (the fire colours, 2026-10-20) */
+  ctx.strokeStyle = COL[(cols && cols.glow) || "glow"]; ctx.lineWidth = w; /* ember red-orange inside the rim (the fire colours, 2026-10-20) */
   for (let k = 0; k < n; k++) {
     const u = (k + 0.5) / n; ctx.globalAlpha = Math.min(1, IFR_INNER_A * (1 - u) * a * inner);
     ctx.beginPath(); ctx.arc(x, y, r * (1 - IFR_INNER_DEPTH * u), 0, 6.283); ctx.stroke();
   }
-  drawIfrRingAt(x, y, r, 0.9 * a, low, wk);
+  drawIfrRingAt(x, y, r, 0.9 * a, low, wk, cols);
 }
 // THE FIRE'S CIRCLE, back at IFR_FIRE_A (owner, 2026-10-21: "visually restore the hellfire circle at 20% opacity"; gone 2026-10-20):
 // the meteor without its black fill at the fire's radius, as it grows - the look only (stepIfrFires still draws and burns nothing)
 const IFR_FIRE_A = 0.16, IFR_FIRE_W = 2; // its glow TWICE as wide, a little fainter (owner, 2026-10-21: "on the ring, double glow width, slightly reduce opacity"; was 0.2, x1)
 function drawIfrFires(t, low) {
-  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2, 1, IFR_FIRE_W); // grown, it stays at half till its flares are out (owner, 2026-10-21)
+  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2, 1, IFR_FIRE_W, IFR_HF_COL); /* RED, its flares' colours (owner, 2026-10-22: "hellfire's fire ring should be red") */ // grown, it stays at half till its flares are out (owner, 2026-10-21)
 }
 const IFR_FADE_IN_U = 25;
 function drawIfrBalls(t, low) {
