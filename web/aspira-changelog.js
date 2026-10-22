@@ -10,7 +10,7 @@
 // u = UI, shown as three headed sections; each line "Subject: Sentence." in sentence case (subjects shown by logSubject: a tower,
 // an enemy type ...); a group with nothing in it is left out
 const CHANGELOG = [
-  { v: "6.11", day: "Oct 21", b: ["Gravity: Its slow is stronger on smaller enemies: double on swarm, half on bosses.", "Build cards: Gravity's marks re-checked; Ifrit's marks shown."], u: ["Leaderboard: The free towers/upgrades box is called Hax.", "Armor: Comes in from the top and bottom on a tall screen, from the sides on a wide one.", "Lanes: The same on every screen; a wide screen shows them turned with the board.", "Waves: Wave 1 comes onto a tall screen from the top, a wide one from the left."] },
+  { v: "6.11", day: "Oct 21", b: ["Gravity: Its slow is stronger on smaller enemies: double on swarm, half on bosses.", "Build cards: Gravity's marks re-checked; Ifrit's marks shown."], u: ["Leaderboard: The free towers/upgrades box is called Hax.", "Armor: Comes in from the top and bottom on a tall screen, from the sides on a wide one.", "Lanes: The same on every screen; a wide screen shows them turned with the board.", "Waves: Wave 1 comes onto a tall screen from the top, a wide one from the left.", "Carrier: A touch darker blue, apart from Freeze."] },
   { v: "6.10", day: "Oct 21", b: ["Ifrit: Each fire lights at least six Hellfire flares, together as hard as before.",
     "Ifrit: Charges a little faster.", "Build cards: Ifrit's marks re-checked."], u: [ "Ifrit: Hellfire flares are red, smaller, more even in size, and each shows for half a second.", "Ifrit: Ring meteors fade in within their first 25."] },
   { v: "6.9", day: "Oct 21", b: [
