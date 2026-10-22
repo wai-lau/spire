@@ -53,3 +53,19 @@ function pickAt(ev) {
   return Math.hypot(w.x - CX, w.y - CY) <= coreOuterR() ? { core: true } : null;
 }
 const pickTower = ev => { const s = pickAt(ev); return s && s.t; };
+// TOWERS OVER THE OVERLAYS TAKE THE FINGER (owner, 2026-10-22: "the towers are on top, but i need them to be draggable and clickable"): a
+// press that lands on the wave list, the powers or the boxes ON a tower (drawn over them since 6.11.12, #asp-tow) goes to the board: the
+// canvas gets the same pointerdown (and so captures the pointer - the drag and the tap are the board's), the overlay none of it, nor its click
+const OVER_SEL = ".asp-left, .asp-bottom";
+const overTower = ev => ev.target !== cv && ev.target && ev.target.closest && ev.target.closest(OVER_SEL) && pickTower(ev);
+let overTookAt = -1e9;
+(function overlayPass() {
+  const root = document.getElementById("asp"); if (!root) return;
+  root.addEventListener("pointerdown", ev => {
+    if (!ev.isTrusted || !overTower(ev)) return;
+    ev.stopPropagation(); ev.preventDefault(); overTookAt = performance.now();
+    cv.dispatchEvent(new PointerEvent("pointerdown", ev));
+  }, true);
+  root.addEventListener("touchstart", ev => { const t = ev.touches[0]; if (t && t.target !== cv && t.target.closest && t.target.closest(OVER_SEL) && pickTower(t)) ev.preventDefault(); }, { capture: true, passive: false }); // (no list scroll under a held tower)
+  root.addEventListener("click", ev => { if (ev.target !== cv && performance.now() - overTookAt < 1500) { ev.stopPropagation(); ev.preventDefault(); overTookAt = -1e9; } }, true); // (the overlay's click after it)
+})();
