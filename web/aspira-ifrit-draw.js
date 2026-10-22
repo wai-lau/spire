@@ -53,8 +53,9 @@ const IFR_GLOW = [[1, 0.12, "glow"], [0.5, 0.28, "tifr"], [0.16, 0.85, "orange"]
 const IFR_GLOW_GL = [[0.5, 0.5, "glow"], [0.125, 0.95, "orange"], [0.0375, 0.95, "yellow"]]; /* fire colours, no white (owner, 2026-10-20) */ /* half-widths: the widest = W / 2, the hit band (was 0.8, 0.2, 0.06) */
 /* 3D, drawn through the GPU stand-in (glCtx, aspira-glctx.js - the real canvas keeps it as __glc): each spoke stops at a tower's edge like any
    beam (trimToTowers), its t range kept so the fade still runs over the whole spoke */
-function drawIfrFlaresGl(t, low) {
+function drawIfrFlaresGl(t, low, hf) {
   for (const c of t.ifrFlares) {
+    if (!c.hf !== !hf) continue;
     const f = Math.max(0, c.left / c.life);
     for (const [x0, y0, x1, y1] of ifrBeamEnds(c)) {
       const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
@@ -75,12 +76,13 @@ const ifrFlareCol = (key, f) => COL[(f.hf ? IFR_HF_COL[key] : IFR_MAIN_COL[key])
 // then (same day) "much less glow, double core opacity": the glow 0.4 -> 0.1, the core (orange and yellow) 1.6 -> 3.2; the mid layer 1.6
 const IFR_HF_GLOW_K = 0.3, IFR_HF_OPAQ = 1.6, IFR_HF_CORE = 3.2; // glow 0.1 -> 0.3 (owner, 2026-10-21, the smaller flares faint: "A, make sure it's red")
 const ifrLayerK = (key, f) => (f.hf ? (key === "glow" ? IFR_HF_GLOW_K : key === "orange" || key === "yellow" ? IFR_HF_CORE : IFR_HF_OPAQ) : 1);
-function drawIfrFlares(t) {
+function drawIfrFlares(t, hf) { // hf: the fire's flares only, else the meteors' only
   if (!t.ifrFlares.length) return;
   const low = typeof lowQ === "function" && lowQ();
-  if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { drawIfrFlaresGl(t, low); return; } /* ctx IS the stand-in (glCtx) */
+  if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { drawIfrFlaresGl(t, low, hf); return; } /* ctx IS the stand-in (glCtx) */
   ctx.strokeStyle = COL.tifr;
   for (const c of t.ifrFlares) {
+    if (!c.hf !== !hf) continue;
     const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c);
     for (let g = low ? IFR_GLOW.length - 2 : 0; g < IFR_GLOW.length; g++) {
       ctx.strokeStyle = ifrFlareCol(IFR_GLOW[g][2], c); ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
@@ -98,11 +100,12 @@ function drawIfrFlares(t) {
    boss sky (owner, 2026-10-19: "ifrit balls should stay orange on boss inversion"); else the fires and spokes, which turn over with it */
 function drawIfr(balls) {
   const low = typeof lowQ === "function" && lowQ();
-  for (const t of G.towers) {
-    if (t.kind !== "ifr" || !t.ifrInit0) continue;
-    ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    if (balls) drawIfrBalls(t, low); else { drawIfrFlares(t); drawIfrFires(t, low); }
-  }
+  // HELLFIRE ON TOP (owner, 2026-10-22: "render hellfire flares and circle above the other flares"): every IFR's meteor flares first, then every
+  // fire's circle and its flares
+  const ifrs = G.towers.filter(t => t.kind === "ifr" && t.ifrInit0);
+  ctx.lineCap = "butt"; ctx.lineJoin = "round";
+  if (balls) { for (const t of ifrs) drawIfrBalls(t, low); }
+  else { for (const t of ifrs) drawIfrFlares(t, false); for (const t of ifrs) { drawIfrFlares(t, true); drawIfrFires(t, low); } } // (the circle over its own flares, as before)
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
 // the CHARGE BALLS UNDER THE PRISM (owner, 2026-10-20: "centered on the corner of the hexagon where it meets the floor ... always tower
