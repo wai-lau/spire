@@ -165,8 +165,8 @@ function updateAutoWait() {
   const btn = $("asp-autowait"), html = (autoWait ? ICON_CHECKED : ICON_UNCHECKED) + "<span>auto-wait</span>"; // the box bigger than the words (owner)
   if (btn.dataset.html !== html) { btn.dataset.html = html; btn.innerHTML = html; btn.setAttribute("aria-checked", String(autoWait)); }
   btn.classList.toggle("on", autoWaiting()); // lit while it is holding the game at 1/2x
-  ascCheck("asp-automove", autoMove, "auto-move", (G.autoMoveS || 0) > 0);
-  ascCheck("asp-freebuild", freeMode, "hax", !!G.autoBuy); // free towers/upgrades (owner, 2026-10-22: "Rename free towers checkbox to Hax", then "Hax with lowercase h")
+  ascCheck("asp-automove", autoMove, "move-hax", (G.autoMoveS || 0) > 0); // auto-move (owner, 2026-10-22: "Rename auto-move to move-hax")
+  ascCheck("asp-freebuild", freeMode, "cred-hax", !!G.autoBuy); // free towers/upgrades (owner, 2026-10-22: "Rename free towers checkbox to Hax", "Hax with lowercase h", then "hax to cred-hax")
 }
 
 // the sound toggle is an ICON (owner: was "sound on"/"sound off"): a speaker
