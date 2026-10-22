@@ -76,18 +76,14 @@ check("armor comes on screen down the box's long axis: portrait top/bottom, land
   return "";
 });
 
-check("wave 1 rides ONE lane: in portrait from the top, past the build hint's slot; landscape the same turned with the board (owner, 2026-10-21/22)", () => {
-  const got = {};
-  for (const view of [{ w: 390, h: 844 }, { w: 1280, h: 800 }]) {
-    const e = boot({}, view);
-    got[view.w] = e.run(`(() => { G = newGame(); G.started = true; sendWave(); const s = G.spawns, pi = s[0].lanes[s[0].list[0]];
-      const entry = PATHS[pi].pts.map(q => rotAbout(q, s[0].ang)).find(q => phoneInside(q.x, q.y));
-      return { copies: new Set(s.map(w => w.ang.toFixed(4))).size, ang: s[0].ang, top: !!entry && CY - entry.y > Math.abs(entry.x - CX) }; })()`);
-    if (got[view.w].copies !== 1) return view.w + "px: wave 1 on " + got[view.w].copies + " lane copies (expected 1)";
+check("wave 1 rides ONE lane past the build hint's slot: onto the screen from the top in portrait, the left in landscape (owner, 2026-10-21/22)", () => {
+  for (const [view, want] of [[{ w: 390, h: 844 }, "top"], [{ w: 1280, h: 800 }, "left"]]) {
+    const r = boot({}, view).run(`(() => { G = newGame(); G.started = true; sendWave(); const s = G.spawns, pi = s[0].lanes[s[0].list[0]];
+      const pts = PATHS[pi].pts.map(q => rotAbout(q, s[0].ang)), i = pts.findIndex(q => phoneInside(q.x, q.y));
+      return { copies: new Set(s.map(w => w.ang.toFixed(4))).size, from: i > 0 ? screenSide(pts[i - 1]) : "none" }; })()`);
+    if (r.copies !== 1) return view.w + "px: wave 1 on " + r.copies + " lane copies (expected 1)";
+    if (r.from !== want) return view.w + "px: wave 1 comes onto the screen from the " + r.from + " (expected " + want + ")";
   }
-  if (!got[390].top) return "portrait wave 1 does not come in from the top";
-  const d = (((got[1280].ang - got[390].ang - Math.PI / 2) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  if (Math.min(d, Math.PI * 2 - d) > 1e-6) return "landscape wave 1 is not the portrait turn + 90 degrees";
   return "";
 });
 

@@ -327,22 +327,32 @@ function laneTurnScores(pi, k) {
 const realLanes = () => !((typeof AUTO_POS !== "undefined" && AUTO_POS && !(typeof SIM_REAL_LANES !== "undefined" && SIM_REAL_LANES)) || typeof phoneInside !== "function");
 // THE FIRST WAVE MEETS THE BUILD HINT (owner, 2026-10-21: "have the first fast wave come from the side that spends the most time within the
 // tower with the build hint"): wave 1 rides ONE lane copy, turned so the most of it lies within the towers' mean reach of the hint's slot
-// (the top-left open one - drawSlotArrow, aspira-chooser.js) - FROM THE TOP in portrait (owner, 2026-10-22: "wave 1 portrait to come from
-// top"), and like every lane worked out in the portrait frame and turned with the board in landscape (laneBestTurn adds the quarter turn)
-const firstOne = n => n === 1 && realLanes();
+// (the top-left open one - drawSlotArrow, aspira-chooser.js), among the turns that come onto the SCREEN through its TOP in portrait and
+// its LEFT in landscape (owner, 2026-10-22: "in portrait from top / landscape from left" - wave 1 alone is not turned with the board)
+const firstOne = n => n === 1 && realLanes(), firstTurnCache = new Map();
 function hintCell() { let c = null; CELLS.forEach((cell, ci) => { if (cellOpen(ci) && (!c || cell.y < c.y - 1 || (Math.abs(cell.y - c.y) <= 1 && cell.x < c.x))) c = cell; }); return c; }
-function firstTurn(pi) { // the turn in the PORTRAIT frame
-  const wide = typeof BOX_WIDE !== "undefined" && BOX_WIDE;
-  let c = null; CELLS.forEach((cell, ci) => { if (!cellOpen(ci)) return; const q = wide ? rotAbout(cell, -Math.PI / 2) : cell; if (!c || q.y < c.y - 1 || (Math.abs(q.y - c.y) <= 1 && q.x < c.x)) c = q; }); // the portrait hint slot (hintCell, unturned)
-  if (!c) return null;
+function screenSide(p) { // the screen edge a point just off the screen lies past (3D: in the view's pixels; past the horizon is the top)
+  const side = (b, x, y) => { const dx = x < b.x0 ? b.x0 - x : x > b.x1 ? x - b.x1 : 0, dy = y < b.y0 ? b.y0 - y : y > b.y1 ? y - b.y1 : 0; return dy >= dx ? (y < b.y0 ? "top" : "bottom") : x < b.x0 ? "left" : "right"; };
+  if (!phoneOn3d()) return side(phoneBox(), p.x, p.y);
+  return fitView(() => viewCam(() => { const s = warpProject(p.x, p.y, 0); return s.s > 0 ? side(phoneRect3d(), s.x, s.y) : "top"; }));
+}
+function firstTurn(pi) {
+  const c = hintCell(); if (!c) return null;
+  const want = typeof BOX_WIDE !== "undefined" && BOX_WIDE ? "left" : "top", key = pi + "|" + want + "|" + innerWidth + "x" + innerHeight + "|" + c.x + "," + c.y;
+  if (firstTurnCache.has(key)) return firstTurnCache.get(key); // (laneSoon asks every frame of the lead)
   const ks = Object.keys(TOWERS), R = ks.reduce((a, k) => a + TOWERS[k].range, 0) / ks.length * RANGE_BONUS, pts = PATHS[pi].pts;
   let best = null, bl = -1, any = 0, al = -1;
   for (let i = 0; i < LANE_TURNS; i++) {
-    const a = i / LANE_TURNS * Math.PI * 2; let prev = null, len = 0, entry = null;
-    for (let q = 0; q < pts.length; q += 3) { const p = rotAbout(pts[q], a), on = Math.hypot(p.x - c.x, p.y - c.y) <= R; if (!entry && inPortraitBox(p)) entry = p; if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null; }
+    const a = i / LANE_TURNS * Math.PI * 2; let prev = null, len = 0, from = null, last = null;
+    for (let q = 0; q < pts.length; q += 3) {
+      const p = rotAbout(pts[q], a), on = Math.hypot(p.x - c.x, p.y - c.y) <= R;
+      if (!from && phoneInside(p.x, p.y)) from = last ? screenSide(last) : "top"; last = p;
+      if (on && prev) len += Math.hypot(p.x - prev.x, p.y - prev.y); prev = on ? p : null;
+    }
     if (len > al) { al = len; any = a; }
-    if (entry && CY - entry.y > Math.abs(entry.x - CX) && len > bl) { bl = len; best = a; } // comes into the box through its top
+    if (from === want && len > bl) { bl = len; best = a; }
   }
+  firstTurnCache.set(key, best ?? any);
   return best ?? any;
 }
 // ARMOR DOWN THE LONG AXIS (owner, 2026-10-22: "for vertical screen, armour should come from top + bottom / for horizontal, sides"): an
@@ -351,7 +361,7 @@ function firstTurn(pi) { // the turn in the PORTRAIT frame
 function laneBestTurn(pi, k, n, type) {
   const wide = typeof BOX_WIDE !== "undefined" && BOX_WIDE ? Math.PI / 2 : 0, base = laneTurn(n); // landscape = the portrait pick turned the box's quarter turn (rotAbout sense)
   if (!realLanes() || !PATHS[pi]) return base + wide;
-  if (n === 1 && k === 1) { const f = firstTurn(pi); if (f !== null) return f + wide; }
+  if (n === 1 && k === 1) { const f = firstTurn(pi); if (f !== null) return f; } // (the screen's own turn: not turned with the board)
   const all = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS;
   const sc = type === "armor" && all.some(s => s.axis === "v") ? all.map(s => (s.axis === "v" ? s : { spread: Infinity, total: 0 })) : all; // (index = turn: the others kept as never-picks)
   const flat = Math.min(...sc.map(s => s.spread)) + LANE_EVEN_SLACK * Math.max(...sc.map(s => s.total)), even = sc.filter(s => s.spread <= flat);
