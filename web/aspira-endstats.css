@@ -41,6 +41,8 @@
    title, stats and Play again leave, each scrolling inside itself; since 2026-10-19 the leak list is three rows (.asp-end-waves) and the board takes the rest */
 #asp-ov { overflow: hidden; justify-content: flex-start; }
 #asp-ov > * { flex-shrink: 0; }
+#asp-ov-right { display: contents; } /* (one block only on a wide screen - below; on a phone its items are the overlay's own) */
+#asp-ov-right > * { flex-shrink: 0; }
 #asp-ov > #asp-asc:not([hidden]) { flex: 1 1 0; min-height: 0; } /* (#asp-asc is a flex column already - aspira-ascend.css) */
 #asp-ov-leaks { margin-top: var(--space-3); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; pointer-events: auto; }
 #asp-asc > * { flex-shrink: 0; }
@@ -49,25 +51,25 @@
 /* WIDE SCREENS: two columns (owner, 2026-10-20: "score screen on wide screen, two columns, one for top players + initials left, and everything
    else right") - the board and its initials form fill the left, the title, stats, leak list and Play again stack on the right */
 @media (orientation: landscape) and (width >= 700px) {
+  /* (owner, 2026-10-22: "center the two columns so that the gap is centered / but for the right col, center within the col") - two equal
+     halves, each hugging the centre line (the gap dead centre); the right column is ONE block (#asp-ov-right) at the line, its items centred
+     on each other, the block centred top to bottom when it is shorter than the screen and its leak list scrolling when it is not */
   #asp-ov:has(> #asp-asc:not([hidden])) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto auto auto auto minmax(0, max-content) minmax(0, 1fr); /* a spacer each end: a short leak list leaves the column CENTRED (owner, 2026-10-22: "center vertically if leakboard is not long enough") */
-    justify-items: center;
-    gap: var(--space-4) var(--space-8);
+    grid-template-rows: minmax(0, 1fr);
+    column-gap: var(--space-3);
   }
-  #asp-ov > #asp-asc:not([hidden]) { grid-column: 1; grid-row: 1 / -1; align-self: stretch; min-height: 0; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > :not(#asp-asc) { grid-column: 2; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-leaks { align-self: stretch; min-height: 0; }
-  /* (owner, 2026-10-21) the two columns ALMOST TOUCH in the centre: each hugs the middle line; Play again right under "Reached wave X";
-     the leak list FILLS what is left, scrolling inside itself (no three-row cap here) */
-  #asp-ov:has(> #asp-asc:not([hidden])) { column-gap: var(--space-3); }
-  #asp-ov > #asp-asc:not([hidden]) { justify-self: end; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > :not(#asp-asc) { justify-self: center; } /* CENTRED in their column (owner, 2026-10-22: "keep the elements in the right side of the scoreboard centered horizontally"; was start, hugging the middle) */
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-title { grid-row: 2; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-text { grid-row: 3; }
-  #asp #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-btn { grid-row: 4; margin-top: 0; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-stats { grid-row: 5; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-leaks { grid-row: 6; margin-top: 0; }
+  #asp-ov > #asp-asc:not([hidden]) { grid-column: 1; grid-row: 1; justify-self: end; align-self: stretch; min-height: 0; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-right {
+    grid-column: 2; grid-row: 1; justify-self: start; align-self: center; max-height: 100%; min-height: 0;
+    display: flex; flex-direction: column; align-items: center; gap: var(--space-4);
+  }
+  #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-title { order: 1; }
+  #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-text { order: 2; }
+  #asp #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-btn { order: 3; margin-top: 0; } /* Play again right under "Reached wave X" (owner, 2026-10-21) */
+  #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-stats { order: 4; }
+  #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-leaks { order: 5; margin-top: 0; flex-shrink: 1; min-height: 0; }
   #asp-ov:has(> #asp-asc:not([hidden])) .asp-end-waves { max-height: none; }
 }
+

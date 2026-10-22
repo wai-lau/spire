@@ -8,7 +8,7 @@ const ASC_URL = "/api/spire/ascendants", ASC_SHOW = 10, ASC_MIN_WAVE = 11;
 const ASC_TITLE = '<p class="asp-asc-title">Top players</p>';
 function ascBox() {
   let el = $("asp-asc");
-  if (!el) { el = document.createElement("div"); el.id = "asp-asc"; $("asp-ov-title").before(el); } // ABOVE the title, where the leaks were (owner, 2026-10-19: "swap location of scores and waves"; was below Play again, 2026-10-11)
+  if (!el) { el = document.createElement("div"); el.id = "asp-asc"; $("asp-ov-right").before(el); } // ABOVE the title, where the leaks were (owner, 2026-10-19: "swap location of scores and waves"; was below Play again, 2026-10-11)
   return el;
 }
 const ascTeam = () => [...new Set(G.towers.filter(t => !t.isCore).map(t => t.kind))];
