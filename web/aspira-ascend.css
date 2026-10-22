@@ -43,6 +43,10 @@
 .asp-asc-gold { color: hsl(var(--orange-hsl)); }
 .asp-asc-green { color: hsl(var(--green-hsl)); }
 .asp-asc-mine td:first-child { text-decoration: underline; }
+.asp-asc-pending td { border-block: var(--space-px) solid currentcolor; } /* YOUR row, the form in it (owner, 2026-10-22) - framed in its own colour */
+.asp-asc-pending td:first-child { text-decoration: none; }
+.asp-asc-pending #asp-asc-form { align-items: center; }
+.asp-asc-pending #asp-asc-in { font-size: inherit; padding-bottom: 0; }
 .asp-asc-k[data-kind="arc"] { color: hsl(var(--asp-arc-hsl)); }
 .asp-asc-k[data-kind="frz"] { color: hsl(var(--asp-frz-hsl)); }
 .asp-asc-k[data-kind="sol"] { color: hsl(var(--asp-solar-hsl)); }

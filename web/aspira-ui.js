@@ -422,6 +422,10 @@ $("asp-ov-btn").onclick = () => {
   if (G.over) { G = newGame(); autoMove = false; freeMode = false; fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null; refreshPanels(); }
   // no intro (owner): the overlay is only the game-over card; the first tower starts wave 1
   $("asp-ov").hidden = true;
+  // CLOSE EVERYTHING OF THE END SCREEN (owner, 2026-10-22: "close the thing when players click play again"): the board and its form, and the
+  // initials field's focus - else a phone keeps its keyboard up over the new game
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  if (typeof hideAscend === "function") hideAscend();
 };
 
 document.addEventListener("keydown", ev => {

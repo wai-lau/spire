@@ -22,10 +22,21 @@ function ascTeamCell(td, team) {
     td.append(s);
   });
 }
-function ascBoard(entries, mine) {
+// YOUR ROW BEFORE YOU SIGN IT (owner, 2026-10-22: "for the input of the initials, load scoreboard scrolled to center their score, highlight
+// their row / and have the underscore and enter glyph appear where the initials are"): the entry form sits IN the board, in a highlighted row
+// at the rank this game would take (wins by lives, then the rest by wave - the server's order), the board scrolled to centre it
+let ascForm = null;
+function ascPendingAt(entries, e) {
+  const key = x => (ascWon(x) ? [1, x.lives] : [0, x.wave]);
+  const [w, v] = key(e);
+  const i = entries.findIndex(x => { const [xw, xv] = key(x); return xw < w || (xw === w && xv < v); });
+  return i < 0 ? entries.length : i;
+}
+function ascBoard(entries, mine, pending = null) {
   const board = $("asp-asc-board");
   if (!board) return;
   board.textContent = "";
+  if (pending) { entries = entries.slice(); entries.splice(ascPendingAt(entries, pending), 0, pending); }
   if (!entries.length) { board.textContent = "No one on the board yet."; return; }
   const table = document.createElement("table");
   table.className = "asp-asc-table";
@@ -33,8 +44,8 @@ function ascBoard(entries, mine) {
   // the leaderboard to be scrollable"); your own row scrolled into view
   for (const e of entries) {
     const tr = table.insertRow();
-    tr.className = (ascWon(e) ? "asp-asc-gold" : "asp-asc-green") + (mine && e.ts === mine.ts && e.initials === mine.initials ? " asp-asc-mine" : "");
-    tr.insertCell().textContent = e.initials;
+    tr.className = (ascWon(e) ? "asp-asc-gold" : "asp-asc-green") + (e === pending ? " asp-asc-mine asp-asc-pending" : mine && e.ts === mine.ts && e.initials === mine.initials ? " asp-asc-mine" : "");
+    const ic = tr.insertCell(); if (e === pending && ascForm) ic.append(ascForm); else ic.textContent = e.initials;
     ascTeamCell(tr.insertCell(), e.team);
     tr.insertCell().textContent = ascWon(e) ? e.lives + " lives" : "wave " + e.wave;
     tr.insertCell().textContent = ascDate(e.ts);
@@ -45,10 +56,11 @@ function ascBoard(entries, mine) {
   const rows = table.rows;
   board.style.maxHeight = ""; /* the board takes the end screen's spare height and scrolls inside it (aspira-endstats.css; owner, 2026-10-18 - was ASC_SHOW rows tall) */
   const me = table.querySelector(".asp-asc-mine");
-  if (me && rows.length > ASC_SHOW) board.scrollTop = Math.max(0, me.offsetTop - rows[0].offsetTop - board.clientHeight / 2);
+  if (me) board.scrollTop = Math.max(0, me.offsetTop - rows[0].offsetTop - (board.clientHeight - me.offsetHeight) / 2); // CENTRED on your row
+  if (pending && ascForm) { const inp = $("asp-asc-in"); if (inp && !inp.disabled) try { inp.focus({ preventScroll: true }); } catch (_e) { /* (an old browser: no options) */ } }
 }
-async function ascLoad() {
-  try { const r = await fetch(ASC_URL); if (r.ok) ascBoard((await r.json()).entries || []); } catch (_e) { ascBoard([]); }
+async function ascLoad(pending = null) {
+  try { const r = await fetch(ASC_URL); if (r.ok) ascBoard((await r.json()).entries || [], null, pending); } catch (_e) { ascBoard([], null, pending); }
 }
 async function ascSend(ev) {
   if (autoBarred()) { if (ev) ev.preventDefault(); return; } // (autoBarred, below)
@@ -61,7 +73,7 @@ async function ascSend(ev) {
     const r = await fetch(ASC_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (!r.ok) throw new Error(r.status === 429 ? "Too many posts - try later." : "Could not save.");
     const res = await r.json();
-    $("asp-asc-form").hidden = true; note.textContent = initials + (won ? " has ascended." : " is on the board.");
+    if (ascForm) ascForm.remove(); ascForm = null; note.textContent = initials + (won ? " has ascended." : " is on the board.");
     ascBoard(res.entries || [], res.entry);
   } catch (e) { note.textContent = e.message; input.disabled = false; }
 }
@@ -76,10 +88,12 @@ function showAscend() {
   box.innerHTML = ASC_TITLE + '<form id="asp-asc-form"><input id="asp-asc-in" class="' + (won ? "asp-asc-gold" : "asp-asc-green") + '" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" aria-label="your initials">' +
     '<button class="asp-primary" type="submit"' + (won ? ">ascend" : ' aria-label="post">\u21B5') + '</button></form><p id="asp-asc-note">' +
     (won ? "Leave your initials among the Ascendants." : "Wave " + G.wave + " - leave your initials on the board.") + '</p><div id="asp-asc-board"></div>';
+  ascForm = $("asp-asc-form"); // (here till the board loads; then ascBoard moves it into YOUR row - and here it stays if the board cannot load)
   const input = $("asp-asc-in");
   input.oninput = () => { input.value = input.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3); };
-  $("asp-asc-form").onsubmit = ascSend;
-  ascLoad();
+  ascForm.onsubmit = ascSend;
+  const verEl = document.querySelector(".asp-ver span");
+  ascLoad({ initials: "", team: ascTeam(), lives: Math.max(0, G.lives), won, wave: won ? WIN_WAVE : G.wave, ts: Date.now() / 1000, ver: verEl ? verEl.textContent.trim() : "" });
 }
 function hideAscend() { const el = $("asp-asc"); if (el) el.hidden = true; }
 // a game over: the entry form past wave 10, else the board alone (owner, 2026-10-11: "on any game over screen show leaderboard")

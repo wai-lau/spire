@@ -52,7 +52,7 @@
   #asp-ov:has(> #asp-asc:not([hidden])) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto auto auto minmax(0, max-content) minmax(0, 1fr); /* a spacer each end: a short leak list leaves the column CENTRED (owner, 2026-10-22: "center vertically if leakboard is not long enough") */
     justify-items: center;
     gap: var(--space-4) var(--space-8);
   }
@@ -63,11 +63,11 @@
      the leak list FILLS what is left, scrolling inside itself (no three-row cap here) */
   #asp-ov:has(> #asp-asc:not([hidden])) { column-gap: var(--space-3); }
   #asp-ov > #asp-asc:not([hidden]) { justify-self: end; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > :not(#asp-asc) { justify-self: start; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-title { grid-row: 1; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-text { grid-row: 2; }
-  #asp #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-btn { grid-row: 3; margin-top: 0; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-stats { grid-row: 4; }
-  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-leaks { grid-row: 5; margin-top: 0; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > :not(#asp-asc) { justify-self: center; } /* CENTRED in their column (owner, 2026-10-22: "keep the elements in the right side of the scoreboard centered horizontally"; was start, hugging the middle) */
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-title { grid-row: 2; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-text { grid-row: 3; }
+  #asp #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-btn { grid-row: 4; margin-top: 0; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-stats { grid-row: 5; }
+  #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-leaks { grid-row: 6; margin-top: 0; }
   #asp-ov:has(> #asp-asc:not([hidden])) .asp-end-waves { max-height: none; }
 }
