@@ -178,8 +178,8 @@ const PATHS = [];
 // amount of time to reach the core without auto wait"; "more twist near center"): extra winding at rate (1 - r/TWIST_R)^TWIST_P / r,
 // so it starts from nothing at TWIST_R and is tightest at the core - each lane TWIST_S x its rider's speed longer: the time the
 // enemy wait added (its last 0.5 s walked at x0.125 = 4 s). SMOOTHED (owner, 2026-10-23: "For lane twist, smooth out the change"): rate
-// (1 - r/TWIST_R)^TWIST_P / (r + TWIST_SOFT), from 320 out, linear, softened at the core (was 140, cubed, / r: straight, then a knot at the core). Each pair's rider (TYPE_PAIR, aspira-waves.js; pair 5 spare as 3)
-const TWIST_R = 320, TWIST_P = 1, TWIST_SOFT = 30, TWIST_S = 3.5, TWIST_SUB = 8, PAIR_RIDER = ["armor", "bonus", "swarm", "shield", "fast", "shield"];
+// (1 - r/TWIST_R)^TWIST_P / (r + TWIST_SOFT), from 420 out, linear, softened at the core (owner, 2026-10-23: "smooth lane curves a bit more"; was 320, soft 30) (was 140, cubed, / r: straight, then a knot at the core). Each pair's rider (TYPE_PAIR, aspira-waves.js; pair 5 spare as 3)
+const TWIST_R = 420, TWIST_P = 1, TWIST_SOFT = 60, TWIST_S = 3.5, TWIST_SUB = 8, PAIR_RIDER = ["armor", "bonus", "swarm", "shield", "fast", "shield"];
 const PAIR_V = j => ENEMIES[PAIR_RIDER[j]].speed * ENEMY_SPEED;
 let ENEMY_SPEED = 1.125; // 2026-10-11: the short lanes (owner: "reduce speed also"; was 1.5, briefly 1.875) // let: the simulator sweeps it (the lanes keep 1.125's twist)
 

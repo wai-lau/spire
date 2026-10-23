@@ -478,7 +478,7 @@ function step(dt) {
 const WIN_WAVE = 120; // the 10th boss (a boss every STAR_EVERY 12 since 2026-10-12; was 100)
 function winGame() {
   G.over = true; G.won = true;
-  best.ascended = true; // the title reads ASCENDANT from now on (owner; aspira-ui.js)
+  best.ascended = true; // (the title read ASCENDANT from then on until 2026-10-23 - the boss name now, aspira-ui.js)
   addScore(G.lives * 1000);
   if (G.score > best.score) best.score = G.score;
   if (G.wave > best.wave) best.wave = G.wave;

@@ -273,11 +273,10 @@ function updateHud() {
   // the upcoming-wave list (aspira-wavelist.js), 4x a second: rebuilding its
   // HTML every frame was a visible share of a late-game frame (2026-10-05)
   if (!(performance.now() < waveListAt)) { waveListAt = performance.now() + 250; updateWaveList(); }
-  // THE SOURCE (owner, 2026-10-09: "rename game to the source"; was the spire) becomes ASCENDANT once the game has been
-  // beaten (owner), and stays so - and while a BOSS or its fleet is out the title IS the boss's name (owner, 2026-10-09:
-  // "move boss name to where game title is ... make it switch back when boss is over"; it was drawn on the board)
+  // THE TITLE IS THE BOSS'S NAME (owner, 2026-10-23: "Game should start by saying The Star / Get rid of \"The Source\""; it was THE SOURCE,
+  // ASCENDANT once beaten, a boss's name only while it was out): the next boss's (bossShownN, aspira-bosses.js), pink while it is out
   const boss = G.enemies.find(e => (e.arcana || e.bossKin) && !e.dead);
-  setText(document.querySelector(".asp-title"), boss ? arcanaOf(boss.n).name.toLowerCase() : best.ascended ? "ascendant" : "the source");
+  setText(document.querySelector(".asp-title"), arcanaOf(bossShownN()).name.toLowerCase());
   document.querySelector(".asp-title").classList.toggle("asp-title-boss", !!boss);
   if (!ui.paused) ui.pauseBtn = false;
   $("asp-sp-pause").classList.toggle("on", ui.paused); $("asp-sp-pause").classList.toggle("asp-held", ui.paused && !!ui.pauseBtn); // paused by the button: it flashes (owner, 2026-10-14) - a card's pause does not

@@ -150,7 +150,7 @@
 .asp-bottom {
   position: absolute;
   left: var(--space-6);
-  right: var(--space-6); /* the Exec bubble never moves anything (owner): it may overlap */
+  right: env(safe-area-inset-right, 0px); /* STUCK TO THE RIGHT WALL (owner, 2026-10-23: "All things on bottom right should be right aligned stuck to right wall"; was space-6) - the Exec bubble never moves anything (owner): it may overlap */
   bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px) + var(--foot-h, 0px) + var(--space-3)); /* above the bottom speed bar (and a phone's home bar) */
   z-index: var(--z-raised);
   display: flex;
@@ -162,8 +162,8 @@
 .asp-bottom > * { pointer-events: auto; }
 .asp-build { display: flex; gap: var(--space-2); }
 
-/* the title sits CENTRED under the build buttons (owner; was under the wave list) */
-.asp-buildcol { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+/* every row RIGHT-ALIGNED under the build buttons (owner, 2026-10-23; the title sat centred) */
+.asp-buildcol { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); text-align: right; }
 
 /* only its BUTTONS catch a touch (owner, 2026-10-14: "boss text and powers stop me from dragging my towers"): the boss text,
    the title and the gaps round the power buttons let a drag through to the board */
@@ -315,9 +315,8 @@
 /* the boss's haiku, above the title (owner; was on the board under the core) */
 .asp-bosshint { text-align: right; font-size: var(--fs-2xs); line-height: var(--lh-snug); color: hsl(var(--pink-hsl)); white-space: pre; } /* exactly its 3 lines, never wrapped (owner) */
 
-/* ...and it never moves the power buttons (owner, 2026-10-08): no width of its own - the column
-   (centred on its widest child) ignores it, and the text hangs LEFT from the column's right edge */
-.asp-buildcol .asp-bosshint:not(:empty) { align-self: flex-end; width: 0; display: flex; justify-content: flex-end; }
+/* (it had no width of its own 2026-10-08..23 so the centred column never moved; the column is right-aligned now) */
+.asp-buildcol .asp-bosshint:not(:empty) { align-self: flex-end; } /* right-aligned like the rest (2026-10-23; it hung from a zero width so the column stayed centred) */
 
 .asp-bosshint:empty { display: none; } /* "cancel" and "close" the same width: the button never shifts */
 
@@ -696,7 +695,7 @@
 
   .asp-title { font-size: var(--fs-xl); letter-spacing: var(--tracking-wide); } /* bigger (owner; was sm) */
 
-  .asp-bottom { right: var(--space-3); }
+  .asp-bottom { right: env(safe-area-inset-right, 0px); }
 
   #asp .asp-build { gap: var(--space-1); }
 
@@ -757,7 +756,7 @@
 /* auto-wait, auto-speed and quality: their own line in the header, under the stats (owner, 2026-10-10); it flips with the
    header under a boss's sky */
 .asp-autowait { pointer-events: auto; align-self: stretch; flex-wrap: nowrap; gap: var(--space-4); } /* the header's box lets taps through, this does not */
-.asp-autowait.asp-ascboxes { flex-wrap: wrap; row-gap: var(--space-1); } /* the hax boxes STACK when the line has no room for both (owner, 2026-10-23: "Stack hax vertically if not wnough space") */
+.asp-autowait.asp-ascboxes { flex-wrap: wrap; row-gap: var(--space-1); justify-content: flex-end; } /* the hax boxes STACK when the line has no room for both (owner, 2026-10-23: "Stack hax vertically if not wnough space") */
 
 /* a plain checkbox + label, no button box (owner: "not on a card"), lit text while it holds the game slow */
 #asp .asp-autowait button { flex: 0 0 auto; white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-1); padding: 0; border: none; background: none; font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); }
@@ -903,7 +902,7 @@
 
 /* the CORE POWERS' BUTTONS under the title (owner, 2026-10-11; above it since 2026-10-08; aspira-powers.js): name, seconds left, and a
    bar along the bottom that fills as the power recharges; flashing when ready, lit while it runs or is armed */
-.asp-powers { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); } /* stacked, TEMPORAL DRIVE over ORBITAL RELAY (owner, 2026-10-08) */
+.asp-powers { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); } /* stacked, TEMPORAL DRIVE over ORBITAL RELAY (owner, 2026-10-08) */
 #asp .asp-powers .asp-power { align-self: stretch; } /* one width: the wider label sets both */
 .asp-powers[hidden] { display: none; }
 #asp .asp-power { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: var(--space-0-5); min-width: calc(var(--space-10) * 3); padding: var(--space-1-5) var(--space-3); font-size: var(--fs-xs); line-height: var(--lh-none); text-transform: uppercase; }

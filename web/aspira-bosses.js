@@ -342,8 +342,15 @@ function starRed() {
 // and shrinks back as it collapses. The boss's NAME sits just above it, where
 // the interest line is otherwise. Drawn before the inversion, so cyan reads red.
 const BOSS_BAR_R = 400, BOSS_BAR_W = 21, BOSS_BAR_TRACK = 0.3; // 3x thicker (owner); the track = full HP, translucent
-// the live boss's haiku for the HTML above the title (updateHud), or ""
-const bossHint = () => { const b = G.enemies.find(e => e.arcana && !e.dead); return b ? arcanaOf(b.n).hint.join("\n") : ""; };
+// THE BOSS SHOWN under the powers (owner, 2026-10-23: "Game should start by saying The Star / Get rid of \"The Source\" / Then just have the
+// boss name and poem on the right"): the live boss (or its fleet), else the one on its way this wave, else the NEXT boss
+const bossShownN = () => {
+  const b = G.enemies.find(e => (e.arcana || e.bossKin) && !e.dead); if (b) return b.n;
+  if (G.wave > 0 && G.wave % STAR_EVERY === 0 && bossUp()) return G.wave;
+  return Math.min(WIN_WAVE, (Math.floor(G.wave / STAR_EVERY) + 1) * STAR_EVERY);
+};
+// the shown boss's haiku for the HTML above the title (updateHud)
+const bossHint = () => arcanaOf(bossShownN()).hint.join("\n");
 // (the boss's NAME is the page title while it is out now - updateHud, aspira-ui.js; drawBossTitle drew it on the board)
 // the bar ENDS INSIDE the phone's screen, BOSS_BAR_EDGE clear of its sides (owner, 2026-10-18: "boss hp bar should end before the mobile
 // edges"): BOSS_BAR_R at most, else the widest half that still lies on the screen (phoneInside: 2D box or 3D view), by halving
