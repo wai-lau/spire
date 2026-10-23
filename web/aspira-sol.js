@@ -6,6 +6,8 @@
 // THE REWORK (owner, 2026-10-22: "always goes through at 100% after enemy in a straight line" / "whole screen, make beams thin"): every hit
 // carries on at st.pierce (1) x st.pass of the full hit to the screen's edge (SOL_PIERCE_LEN, SOL_PIERCE_HOPS a perf cap) on a THIN line (was 24 wide, 420 on, 12)
 const SOL_PIERCE_W = 6, SOL_PIERCE_LEN = 3000, SOL_PIERCE_HOPS = 64, SOL_BEAM_THIN = 1.5;
+// every SOL beam's width x SOL_THIN (owner, 2026-10-23: "Make beams way thinner each"); its opacity x share^2 (f.share, rayHit)
+const SOL_THIN = 0.4;
 // ALWAYS (owner, 2026-10-19: "make beams always pass through the max amount for breach level" - no kill needed): every hit sends the
 // beam on with SOL_PIERCE[breach] of the FULL hit, the same at every hop, up to SOL_PIERCE_HOPS enemies along its line
 // AS A REFLECTION (owner, 2026-10-22: "make the piercing beam the same visual intensity and damage as the reflected beam"): the beam
@@ -22,11 +24,11 @@ function solPierce(t, st, from, e, full, share = 1) {
       best = along; o = x;
     }
     if (!o) break;
-    beam(e, o, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, seen, true); fx[fx.length - 1].alpha = al; // one beam's damage, at its share's opacity
+    beam(e, o, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, seen, true); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); // one beam's damage, at its share's opacity
     fromHit(e, () => damage(o, carry, t, false, false, st)); onHit(o, t, st, carry); bleed(o, st, t);
     from = e; e = o;
   }
-  if (e !== from) { solOutOfSight(t, st, from, e); fx[fx.length - 1].alpha = al; } // on to the screen's edge past the last one (thin, its share's opacity)
+  if (e !== from) { solOutOfSight(t, st, from, e); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); } // on to the screen's edge past the last one (thin, its share's opacity)
 }
 // TARGETING BY THE LINE (owner, 2026-10-23: "for SOL targetting, account for passthrough enemies to select first targets"): of the
 // SOL_LINE_TOP first by the tower's mode, the one whose beam - tower through it, on to SOL_PIERCE_LEN - hits the most enemies (the

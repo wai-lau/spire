@@ -196,7 +196,7 @@ raises the hit a little (`SOL_REFRACTION_DMG` 1 .. 1.5). Every hit SCORCHES: a s
 `SOL_SCORCH_T` 0.4 s in `SOL_SCORCH_TICKS` ticks, each popping `SOL_DOT_ST.shieldPop` shields (onHit's `st.dot`; the strongest holds,
 a new hit restarts it). The breach SHRAPNEL is gone. TARGETING (`solLineSort`): of the first `SOL_LINE_TOP` by mode, the one whose
 line crosses the most enemies. DRAWN: the beams start in the tower and converge on the first enemy; every
-section's OPACITY is the share of the first beam's damage it carries (a reflection its `SOL_HOP`^k, the pass-through x `st.pass`).
+section's OPACITY is the SQUARE of the share of the first beam's damage it carries, applied past `BEAM_BRIGHT`'s cap (`f.share`), every beam `SOL_THIN` (0.4) wide x its damage width (a reflection its `SOL_HOP`^k, the pass-through x `st.pass`).
 
 | axis | buys |
 |---|---|

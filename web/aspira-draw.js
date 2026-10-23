@@ -297,7 +297,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
     ctx.globalAlpha = Math.min(1, k * 2);
     const one = () => {
     if (f.k === "beam") {
-      ctx.globalAlpha = Math.min(1, ctx.globalAlpha * (f.alpha ?? 1) * BEAM_BRIGHT); // ARC: an arc as opaque as its damage share; x BEAM_BRIGHT (owner)
+      ctx.globalAlpha = Math.min(1, ctx.globalAlpha * (f.alpha ?? 1) * BEAM_BRIGHT) * (f.share ?? 1) ** 2; // share: a SOL beam's part of the first beam's hit, squared past the cap (aspira-towers.js rayHit) // ARC: an arc as opaque as its damage share; x BEAM_BRIGHT (owner)
       // glow underlay + core, both widening with the damage behind the shot
       ctx.strokeStyle = COL[f.color]; ctx.lineCap = "round";
       // a following beam reads its endpoints live from the tower/enemy it joins

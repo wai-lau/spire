@@ -279,8 +279,9 @@ function rayHit(t, st, e, base, from) {
   beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, (m > 1 ? 5 : 3) * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d, true); // a chart SOL's beams THIN (owner, 2026-10-22)
   if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
   // OPACITY = THE SHARE (owner, 2026-10-23: "the section of beam should reflect the % of damage it carries compared to the initial beam" /
-  // "Opacity"): a SOL reflection's beam at base / st.dmg (its st.hop^k), the pass-through on from it x st.pass (solPierce)
-  const share = st.pierce ? base / (st.dmg || 1) : 1; if (share < 1) fx[fx.length - 1].alpha = share;
+  // "Opacity"): a SOL reflection's beam at base / st.dmg (its st.hop^k), the pass-through on from it x st.pass (solPierce) - drawn at
+  // share^2, past BEAM_BRIGHT's cap (owner: "These 3 lines basically look the same / Exaggerate diff / Make beams way thinner each")
+  const share = st.pierce ? base / (st.dmg || 1) : 1; if (st.pierce) Object.assign(fx[fx.length - 1], { share, thin: SOL_THIN });
   dmgBatch(() => { for (let i = 0; i < n && !e.dead; i++) { fromHit(from, () => damage(e, part, t, false, crit, st)); onHit(e, t, st, part); bleed(e, st, t); } }); // ONE number for the volley (dmgBatch, aspira-floats.js); a crit PINK (owner); st: its shieldPop
   if (st.pierce) solPierce(t, st, from, e, n * part, share); // (always - kill or not)
   if (e.dead && st.smash && !e.smashed) {

@@ -161,7 +161,7 @@ function fxGlFx(f, k, a) {
   if (f.k === "spark") { fxGlDisc(f.x, f.y, 1.5, 0, COL[f.color], a, 0, true); return true; }
   if (f.k === "flash") { fxGlDisc(f.x, f.y, f.r * (1.3 - 0.3 * k), 0, COL.white, k, 0); return true; }
   if (f.k === "ring" && !f.grad && f.outline !== false) { fxGlDisc(f.x, f.y, f.r * (1 - k * 0.5), f.w || 2, COL[f.color], 0, Math.min(1, a * (f.a || 1))); return true; }
-  if (f.k === "beam") { fxGlBeam(f, Math.min(1, a * (f.alpha ?? 1) * BEAM_BRIGHT)); return true; }
+  if (f.k === "beam") { fxGlBeam(f, Math.min(1, a * (f.alpha ?? 1) * BEAM_BRIGHT) * (f.share ?? 1) ** 2); return true; }
   return false;
 }
 // a BEAM: each stroke of drawFx's, widest glow first, as round-ended segments (one per beam of a multi-beam shot)
