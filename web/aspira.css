@@ -150,7 +150,7 @@
 .asp-bottom {
   position: absolute;
   left: var(--space-6);
-  right: env(safe-area-inset-right, 0px); /* STUCK TO THE RIGHT WALL (owner, 2026-10-23: "All things on bottom right should be right aligned stuck to right wall"; was space-6) - the Exec bubble never moves anything (owner): it may overlap */
+  right: calc(env(safe-area-inset-right, 0px) + var(--space-3)); /* a little padding (owner, 2026-10-23: "add a lil padding for bottom right stuff") - STUCK TO THE RIGHT WALL (owner, 2026-10-23: "All things on bottom right should be right aligned stuck to right wall"; was space-6) - the Exec bubble never moves anything (owner): it may overlap */
   bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px) + var(--foot-h, 0px) + var(--space-3)); /* above the bottom speed bar (and a phone's home bar) */
   z-index: var(--z-raised);
   display: flex;
@@ -695,7 +695,7 @@
 
   .asp-title { font-size: var(--fs-xl); letter-spacing: var(--tracking-wide); } /* bigger (owner; was sm) */
 
-  .asp-bottom { right: env(safe-area-inset-right, 0px); }
+  .asp-bottom { right: calc(env(safe-area-inset-right, 0px) + var(--space-2)); }
 
   #asp .asp-build { gap: var(--space-1); }
 
