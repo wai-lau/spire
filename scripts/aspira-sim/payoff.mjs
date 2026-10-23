@@ -1,5 +1,5 @@
 // UPGRADE PAYOFFS (owner, 2026-10-15: "merge upgrades 2-3 and 4-5 in one for each axis ... test what the payoffs look
-// like"): every axis bought ALONE up its STOPS (I, III, V, VI - aspira-capstone.js SKILL_STOPS), as in isolation.mjs -
+// like"): every axis bought ALONE up its TIERS (I, II, III, IV - aspira-capstone.js TIER_STEPS), as in isolation.mjs -
 // the test tower at cell 0, one L1 helper of each other kind, lives refilled, waves FROM..TO. Per buy: the team's damage
 // vs the stop before it, the leaks, and the buy's price (that axis alone, from level 1), so gain per credit reads off.
 // POWER (owner, 2026-10-15: "each upgrade should feel like a 50-70% increase in power"): the test tower's power is the team's
@@ -12,9 +12,9 @@ import { runPool } from "./pool.mjs";
 
 const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), ALL = ["arc", "frz", "sol", "acd"];
 const WINDOWS = (process.env.WINDOWS || "25-45,60-85").split(",").map(w => w.split("-").map(Number));
-const HPX = Number(process.env.HPX || 10), STOPS = [0, 1, 3, 5, 6], ROMAN = ["0", "I", "II", "III", "IV", "V", "VI"];
-// the levels a tower with one axis at tier k has bought (the capstone is two)
-const lvlAt = k => 1 + k + (k >= 6 ? 1 : 0);
+const HPX = Number(process.env.HPX || 10), STOPS = [0, 1, 2, 3, 4], ROMAN = ["0", "I", "II", "III", "IV"];
+// the ladder level (t.lvl) of a tower with one axis at tier k: the steps its tiers took (aspira-capstone.js TIER_STEPS: 1 2 2 2)
+const lvlAt = k => 1 + [0, 1, 3, 5, 7][k];
 
 export default async function task({ kind, axis, k, seed, from, to }) {
   const g = makeGame(seed, HPX !== 1 ? `for (const k in ENEMIES) ENEMIES[k].hp *= ${HPX};` : ""); g.reset();
@@ -37,7 +37,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("payoff.mjs")) {
   const SEEDS = Number(process.argv[2] || 2), OUT = process.argv[3] || null;
   const g0 = makeGame(1);
   const axesOf = kind => g0.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`);
-  // the price of the buy that takes the axis from stop a to stop b, from level lvlAt(a)
+  // the price of the buy that takes the axis from tier a to tier b, from level lvlAt(a)
   const price = (kind, a, b) => g0.run(`skillPointsCost({ kind: ${JSON.stringify(kind)}, lvl: ${lvlAt(a)} }, ${lvlAt(b) - lvlAt(a)})`);
   const jobs = [];
   for (const [from, to] of WINDOWS) for (const kind of KINDS) {

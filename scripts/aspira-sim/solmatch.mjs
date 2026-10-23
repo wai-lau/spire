@@ -54,7 +54,7 @@ if (isMainThread && process.argv[1].endsWith("solmatch.mjs")) {
       if (r > 0) { if (mean(got) < mean(old)) lo = m; else hi = m; }
       console.error(`base round ${r}: x${(2 ** m).toFixed(3)} mean margin ${mean(got).toFixed(1)} (old ${mean(old).toFixed(1)})`);
     }
-    // 2. each axis's lever table x 2^m (stops I..VI), on the fitted base, the three in step
+    // 2. each axis's lever table x 2^m (tiers I..IV), on the fitted base, the three in step
     const ax = Object.fromEntries(AXES.map(a => [a, { lo: -3, hi: 3, best: null }]));
     for (let r = 0; r <= ROUNDS; r++) {
       const patches = {};

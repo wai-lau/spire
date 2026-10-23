@@ -842,7 +842,7 @@
 .asp-tower .asp-prio { margin-bottom: 0; font-size: calc(var(--fs-2xs) * 0.8); }
 .asp-tower .asp-prio b { font-weight: var(--fw-normal); }
 
-/* the upgrade button is ONE line (owner): "Arc IV", and while axes are pulled "Arc VI (-440c)";
+/* the upgrade button is ONE line (owner): "Arc IV", and while axes are pulled "Arc IV (-440c)";
    a basket the bank cannot cover: the cost red, the border red, no tap - but readable (owner) */
 .asp-up-big .asp-spend-cost { font-weight: var(--fw-normal); color: hsl(var(--asp-bad-hsl)); } /* the card's red, so it shows on the pink SOL card too */
 .asp-up-big .asp-spend-cost.asp-cost-ok { font-weight: var(--fw-bold); color: inherit; } /* affordable: just bold, the button's own colour (owner, 2026-10-09) */
@@ -877,11 +877,11 @@
 .asp-pips i.lock { background: hsl(var(--green-hsl)); border-color: hsl(var(--green-hsl)); } /* locked in */
 .asp-pips i.pull { background: hsl(var(--green-hsl) / 0.45); border-color: hsl(var(--green-hsl)); } /* pulled, not yet bought */
 
-/* the capstone tier VI (aspira-capstone.js): its pip and the chart's outer ring in orange - one axis a tower */
+/* the capstone tier IV (aspira-capstone.js): its pip and the chart's outer ring in orange - one axis a tower */
 .asp-pips i.capstone { border-color: hsl(var(--orange-hsl)); }
 .asp-pips i.capstone.lock { background: hsl(var(--orange-hsl)); }
 .asp-pips i.capstone.pull { background: hsl(var(--orange-hsl) / 0.45); }
-.asp-pips i.capstone.gone { border-color: hsl(var(--asp-bad-hsl)); background: hsl(var(--asp-bad-hsl) / 0.45); } /* another axis bought the VI: this one is gone (owner, 2026-10-12) */
+.asp-pips i.capstone.gone { border-color: hsl(var(--asp-bad-hsl)); background: hsl(var(--asp-bad-hsl) / 0.45); } /* another axis bought the capstone: this one is gone (owner, 2026-10-12) */
 .asp-chart .grid.capstone { stroke: hsl(var(--orange-hsl) / 0.45); }
 .asp-axis-name { display: flex; justify-content: space-between; font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); }
 .asp-axis-tier { font-weight: var(--fw-bold); color: hsl(var(--green-hsl)); }

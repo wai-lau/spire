@@ -34,7 +34,7 @@ const LEVERS = {
   contagion: { kind: "acd", get: k => `ACD_PUDDLE_HEAT[${k}]`, set: (k, v) => `ACD_PUDDLE_HEAT[${k}] = ${v};`, min: 0.01 },
 };
 const AXES = process.env.AXES ? process.env.AXES.split(",") : Object.keys(LEVERS).filter(a => !LEVERS[a].axis); // (alternate levers only when named)
-const TARGET = (process.env.TARGET || "1.6,2.56,2.56,3").split(",").map(Number), STOPS = [1, 3, 5, 6], ROMAN = ["I", "II", "III", "IV"];
+const TARGET = (process.env.TARGET || "1.6,2.56,2.56,3").split(",").map(Number), STOPS = [1, 2, 3, 4], ROMAN = ["I", "II", "III", "IV"];
 const CUM = TARGET.map((_, i) => TARGET.slice(0, i + 1).reduce((a, b) => a * b, 1));
 const LEAK = Number(process.env.LEAK || 0.05);
 const clampV = (axis, v) => Math.min(LEVERS[axis].max ?? Infinity, Math.max(LEVERS[axis].min ?? 0, v));

@@ -1,29 +1,29 @@
 // TOWER DAMAGE FIT (2026-10-22, the SOL rework / ACD changes - owner: "keep same strength", "every other non repeating pair of towers"):
-// a CELL is the tower bare, or one axis alone at a stop (I, III, V, VI); its TEAM the tower + every pair of two different other kinds
-// (15), each pair tower with as many chart points spread (stops.mjs); it plays the waves its stop is bought for (WIN) for a FIXED time
+// a CELL is the tower bare, or one axis alone at a tier (I, II, III, IV); its TEAM the tower + every pair of two different other kinds
+// (15), each pair tower with as many chart points spread (stops.mjs); it plays the waves its tier is bought for (WIN) for a FIXED time
 // (the waves come on their timer), every enemy's HP x HPX so nothing dies, lives refilled. The measure: the tower's own CREDITED damage
 // (damageCredit: what its debuffs - Breach, Corrosion - add to the others' hits counts as its). Monotone in its damage, no player
 // choices (the closest-approach and lives measures were swamped by the smart saver's spending - solmatch.mjs).
 //   node solfit.mjs measure old.json        (ASPIRA_WEB=<the reference web>)
-//   node solfit.mjs fit old.json [rounds=7]  (the live web): base damage on the BARE cell, then each (axis, stop) lever to its old dealt
+//   node solfit.mjs fit old.json [rounds=7]  (the live web): base damage on the BARE cell, then each (axis, tier) lever to its old dealt
 // env KIND (sol), SEEDS (1), HPX (1000)
 import fs from "node:fs";
 import { isMainThread } from "node:worker_threads";
 import { makeGame } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-import { spreadStops } from "./stops.mjs";
+import { spreadStops, POINTS_AT } from "./stops.mjs";
 
 const KIND = process.env.KIND || "sol", HPX = Number(process.env.HPX || 1000), SEEDS = Number(process.env.SEEDS || 1), SHARE = process.env.SHARE === "1";
 const LEVERS = { sol: { focus: "SOL_PASS", refraction: "SOL_REFRACTION_DMG", breach: "SOL_SCORCH" }, acd: { spray: "ACD_SPRAY_MUL", corrosion: "ACD_CORROSION_DMG", contagion: "ACD_PUDDLE_HEAT" } };
 const OTHERS = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"].filter(k => k !== KIND), PAIRS = OTHERS.flatMap((a, i) => OTHERS.slice(i + 1).map(b => [a, b]));
-const WIN = { 0: [10, 30], 1: [20, 40], 3: [40, 60], 5: [60, 80], 6: [80, 100] }, STOPS = [1, 3, 5, 6], LEVER = LEVERS[KIND], AXES = Object.keys(LEVER);
+const WIN = { 0: [10, 30], 1: [20, 40], 2: [40, 60], 3: [60, 80], 4: [80, 100] }, STOPS = [1, 2, 3, 4], LEVER = LEVERS[KIND], AXES = Object.keys(LEVER);
 
 export default async function task({ axis, k, pair, seed, patch = "" }) {
   const [from, to] = WIN[k];
   const g = makeGame(seed, `for (const q in ENEMIES) ENEMIES[q].hp *= ${HPX};\n${patch}`); g.reset();
   g.run(`G.money = 1e12; G.started = true; G.wave = ${from - 1}; G.lives = 1e6;`);
-  const me = g.place(KIND, 0); if (axis && k) { me.skills = { [axis]: k }; me.lvl = 1 + k; }
-  pair.forEach((kind, i) => { const t = g.place(kind, [2, 4][i]); if (k) { t.skills = spreadStops(g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`), k); t.lvl = 1 + k; } });
+  const me = g.place(KIND, 0); if (axis && k) { me.skills = { [axis]: k }; me.lvl = 1 + POINTS_AT[k]; }
+  pair.forEach((kind, i) => { const t = g.place(kind, [2, 4][i]); if (k) { t.skills = spreadStops(g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`), POINTS_AT[k]); t.lvl = 1 + POINTS_AT[k]; } });
   g.run(`let prev = "swarm"; for (let n = 1; n < ${from}; n++) { const w = wavePlan(n, prev); if (w.type !== "bonus") prev = w.type; } G.lastType = prev; G.nextIn = 0;`);
   let guard = 0;
   while (g.G.wave <= to && guard++ < 400000) { g.step(0.05); g.clearFx(); g.run("G.lives = 1e6; G.over = false;"); }
@@ -42,10 +42,10 @@ if (isMainThread && process.argv[1].endsWith("solfit.mjs")) {
   const [mode, file] = process.argv.slice(2);
   if (mode === "measure") {
     const d = await dealt(CELLS);
-    fs.writeFileSync(file, JSON.stringify(CELLS.map((c, i) => ({ ...c, dealt: d[i] }))));
+    fs.writeFileSync(file, JSON.stringify(CELLS.map((c, i) => ({ ...c, dealt: d[i], v: 2 }))));
     CELLS.forEach((c, i) => console.log(`${(c.axis || "bare").padEnd(11)} ${c.k}: ${Math.round(d[i])}`));
   } else if (mode === "fit") {
-    const old = JSON.parse(fs.readFileSync(file, "utf8")), ROUNDS = Number(process.argv[4] || 7), g0 = makeGame(1);
+    const old = JSON.parse(fs.readFileSync(file, "utf8")).map(c => (c.v === 2 ? c : { ...c, k: [0, 1, 1, 2, 2, 3, 4][c.k] })), ROUNDS /* (a file measured before 2026-10-23 holds the old levels 0 1 3 5 6) */ = Number(process.argv[4] || 7), g0 = makeGame(1);
     const at = (axis, k) => old.find(c => c.axis === axis && c.k === k).dealt;
     let lo = -4, hi = 4, bestB = null;
     for (let r = 0; r <= ROUNDS; r++) {

@@ -7,7 +7,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-import { spreadStops, focusStops, snapStop, STOPS } from "./stops.mjs"; // tiers by STOP only (0 1 3 5 6)
+import { spreadStops, focusStops, snapStop, STOPS, POINTS_AT } from "./stops.mjs"; // tiers bought whole (0 I II III IV)
 
 const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), PATCH = process.env.BV_PATCH || "", WAVES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 const POINTS = (process.env.POINTS || "4,8").split(",").map(Number);
@@ -19,7 +19,7 @@ export default async function task({ kind, wave, points, seed, patch = "" }) {
   const axes = g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`);
   for (const ci of open) {
     const t = g.place(kind, ci); if (!t) continue;
-    const sk = spreadStops(axes, points); // by STOP (stops.mjs)
+    const sk = spreadStops(axes, points); // by TIER (stops.mjs)
     t.skills = sk; t.lvl = 1 + points;
   }
   g.run("G.nextIn = 0;");

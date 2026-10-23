@@ -137,7 +137,7 @@ check("boss sky keeps tower colours: ranges drawn under it", () => {
   return seen.drawTowerRange ? "" : "no range drawn on the boss sky";
 });
 
-check("capstone: one axis to VI, a second refused; every tier table covers VI", () => {
+check("capstone: one axis to IV, a second refused; every tier table covers IV", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "arc";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -146,15 +146,31 @@ check("capstone: one axis to VI, a second refused; every tier table covers VI", 
     for (let k = 0; k < 6; k++) upgradeTower(t, ids[1], true);
     const out = { a: skillOf(t, ids[0]), b: skillOf(t, ids[1]), opts: skillOptions(t).map(o => o.choice) };
     for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) {
-      const s = towerStats({ id: 99, kind, x: CX, y: CY, lvl: 7, skills: { [ax.id]: 6 } });
-      if (!ax.tiers[5] || Object.values(s).some(v => v === undefined || (typeof v === "number" && isNaN(v)))) out.bad = kind + " " + ax.id;
-      if (/undefined/.test(describeTower(kind, { [ax.id]: 6 }))) out.bad = kind + " " + ax.id + " desc";
+      const s = towerStats({ id: 99, kind, x: CX, y: CY, lvl: 7, skills: { [ax.id]: 4 } });
+      if (!ax.tiers[3] || Object.values(s).some(v => v === undefined || (typeof v === "number" && isNaN(v)))) out.bad = kind + " " + ax.id;
+      if (/undefined/.test(describeTower(kind, { [ax.id]: 4 }))) out.bad = kind + " " + ax.id + " desc";
     }
     return out;
   })()`);
-  if (r.a !== 6) return "first axis reached " + r.a + ", not VI";
-  if (r.b !== 5) return "second axis reached " + r.b + " (one capstone a tower)";
-  if (r.bad) return "tier VI incomplete: " + r.bad;
+  if (r.a !== 4) return "first axis reached " + r.a + ", not IV";
+  if (r.b !== 3) return "second axis reached " + r.b + " (one capstone a tower)";
+  if (r.bad) return "tier IV incomplete: " + r.bad;
+  return "";
+});
+check("tiers are purchases (owner, 2026-10-23): five slots in every per-tier table, TIER_STEPS ladder steps a buy, an old save read once", () => {
+  const r = run(`(() => {
+    const out = { len: [], price: [] };
+    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) out.len.push(ax.tiers.length, SKILL_MOVE[kind][ax.id].length);
+    for (const T of [ARC_CONDUCTIVITY, ARC_VOLTAGE_DMG, ARC_CAPACITANCE, SOL_BEAMS, SOL_REFRACTION, ACD_LINES, ACD_CONTAGION, FRZ_MOON_COUNT, GRV_AURA_R, CRR_HANGAR, IFR_FAN, IFR_BEAM_L, IFR_BEAM_W, ARC_SIDE_DMG, VOLT_CARRY_N, CAP_BURST_K]) out.len.push(T.length);
+    G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0]; G.money = 1e9;
+    for (let k = 0; k < 4; k++) { const lvl = t.lvl, m = G.money; upgradeTower(t, "focus", true); out.price.push([skillOf(t, "focus"), t.lvl - lvl, Math.round(m - G.money) === skillPointsCost({ ...t, lvl }, t.lvl - lvl)]); }
+    const g = { towers: [{ skills: { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6 } }] }; skillScaleFix(g); out.once = JSON.stringify(g.towers[0].skills); skillScaleFix(g); out.twice = JSON.stringify(g.towers[0].skills);
+    return out;
+  })()`);
+  if (r.len.some(n => n !== 5 && n !== 4)) return "a per-tier table is not 5 slots (tier names 4, the capstone's name the fifth): " + r.len;
+  if (JSON.stringify(r.price) !== JSON.stringify([[1, 1, true], [2, 2, true], [3, 2, true], [4, 2, true]])) return "a buy's tier / ladder steps / price: " + JSON.stringify(r.price) + " (expected tiers 1 2 3 4 taking 1 2 2 2 steps)";
+  if (r.once !== '{"a":0,"b":1,"c":1,"d":2,"e":2,"f":3,"g":4}') return "an old save's levels read " + r.once + " (expected 0 1 1 2 2 3 4)";
+  if (r.twice !== r.once) return "a save is read twice: " + r.twice;
   return "";
 });
 // an enemy held still on lane 0 at about `dist` u from tower t (its lane point nearest that distance); shield / hp settable after
@@ -225,7 +241,7 @@ check("FRZ moons: at most 3 moons, at most 3 moonlets each, at every stop; the t
   const r = run(`(() => { const out = []; for (const k of [0, 1, 3, 6]) { G = newGame(); G.money = 1e9; ui.build = "frz"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
     for (let i = 0; i < k; i++) upgradeTower(t, "moons", true); const st = towerStats(t); out.push({ n: st.moonN, sub: st.subN, hit: st.moonHit, srcs: frzSources(t, st).length }); } return out; })()`);
   for (const q of r) if (q.n > 3 || q.sub > 3) return "FRZ moons: " + q.n + " moons, " + q.sub + " moonlets each (max 3 and 3)";
-  const top = r[r.length - 1]; if (!(top.hit > 2)) return "FRZ moons VI hit x" + top.hit + " (expected the top stops to hit harder)";
+  const top = r[r.length - 1]; if (!(top.hit > 2)) return "FRZ moons IV hit x" + top.hit + " (expected the top stops to hit harder)";
   return "";
 });
 check("IFR: each axis scales only its own numbers", () => {
@@ -245,8 +261,8 @@ check("IFR: each axis scales only its own numbers", () => {
   const F = { meteor: ["chargeS", "ballV", "ballR", "routeK", "fireR"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple", "hfK"] };
   for (const ax of Object.keys(F)) { const stray = r.moved[ax].filter(k => !F[ax].includes(k)); if (stray.length) return ax + " moved another axis's numbers: " + stray; if (!r.moved[ax].length) return ax + " moved nothing"; }
   if (Math.abs(r.base.fireR - 16 * r.base.ballR) > 1e-9) return "Hellfire 0: the fire's max " + r.base.fireR + " is not 16x the meteor's size " + r.base.ballR + " (owner, 2026-10-20)";
-  if (Math.abs(r.vi.meteor.ballR - 5.4) > 1e-9) return "Meteor VI meteor radius " + r.vi.meteor.ballR + " (expected 5.4: 20% of 27, owner 2026-10-20)";
-  if (r.vi.hellfire.fireR !== 180) return "Hellfire VI fire radius " + r.vi.hellfire.fireR + " (expected 180)";
+  if (Math.abs(r.vi.meteor.ballR - 5.4) > 1e-9) return "Meteor IV meteor radius " + r.vi.meteor.ballR + " (expected 5.4: 20% of 27, owner 2026-10-20)";
+  if (r.vi.hellfire.fireR !== 180) return "Hellfire IV fire radius " + r.vi.hellfire.fireR + " (expected 180)";
   if (r.base.triple || !r.vi.firaga.triple) return "three flares a meteor is not the Flare capstone's alone";
   if (!r.live.length || r.kept.length) return "a save keeps IFR live keys: " + r.kept + " (live: " + r.live + ")";
   if (r.oldOk !== true) return "a cleaned IFR threw on resume: " + r.oldOk;
@@ -414,7 +430,7 @@ check("IFR: the fire (Hellfire, its circle drawn at 16%, then 8%, its glow twice
   if (r.r0 !== r.ballR || Math.abs(r.R0 - 16 * r.ballR) > 1e-9) return "Hellfire 0: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + ", then 16x it)";
   if (r.fireHits !== 1) return "the fire's ring hit an enemy " + r.fireHits + " times (expected once: owner, 2026-10-21, \"3x hellfire flare hit\")";
   if (!r.drawn) return "the fire's circle is not drawn at 16%, its glow x2 wide (drawIfrFires, IFR_FIRE_A / _W; owner 2026-10-21)";
-  if (r.R6 !== 180) return "Hellfire VI fire grows to " + r.R6 + " (expected 180)";
+  if (r.R6 !== 180) return "Hellfire IV fire grows to " + r.R6 + " (expected 180)";
   if (Math.abs(r.grow - r.growWant) > 1 / 30 + 1e-6) return "the fire took " + r.grow.toFixed(3) + " s to grow (expected " + r.growWant.toFixed(3) + ")";
   if (!(r.until >= 0) || Math.abs(r.goneAt - r.until) > 1 / 30 + 1e-6 || r.goneAfter < 0.1) return "the fire went at " + r.goneAt.toFixed(2) + " s, its last flare out at " + r.until + " (owner, 2026-10-21: it stays till its flares are out)";
   if (r.sold !== true) return "selling the tower with a live fire threw: " + r.sold;
@@ -473,7 +489,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f = t.ifrFires[0]; let tm = 0, bigAt = -1, lastSmall = 0;
       while (f.left > 0 && tm < 20) { const n0 = t.ifrFlares.length; stepIfrFires(t, st, 1 / 60); tm += 1 / 60; for (let q = n0; q < t.ifrFlares.length; q++) { if (t.ifrFlares[q].big) bigAt = tm; else lastSmall = tm; } }
       const bigs = t.ifrFlares.filter(q => q.big); out.bigN = bigs.length; out.bigAt = bigAt; out.lastSmall = lastSmall;
-      out.bigOff = bigs[0] ? Math.hypot(bigs[0].x - CX, bigs[0].y - CY) : NaN; out.bigL = bigs[0] ? bigs[0].L : NaN; out.bigWant = 1260; /* (0.5 x 12 x the old VI length 210) */ /* PINNED (owner, 2026-10-20): the size of a typical Flare-VI flare when IFR_FLARE_K was 12 - "do not change the flare sizes further without asking" */ out.normMax = IFR_FLARE_K * st.beamL; out.beamVI = [st.beamL, st.beamW]; out.beam0 = [IFR_BEAM_L[0], IFR_BEAM_W[0]]; out.mono = [IFR_BEAM_L, IFR_BEAM_W].every(T => T.every((v, i) => !i || v > T[i - 1])); out.bigHit = bigs[0] && bigs[0].hit; out.bigHitWant = st.dmg * st.flareK * IFR_BIG_K; }
+      out.bigOff = bigs[0] ? Math.hypot(bigs[0].x - CX, bigs[0].y - CY) : NaN; out.bigL = bigs[0] ? bigs[0].L : NaN; out.bigWant = 1260; /* (0.5 x 12 x the old capstone length 210) */ /* PINNED (owner, 2026-10-20): the size of a typical Flare-IV flare when IFR_FLARE_K was 12 - "do not change the flare sizes further without asking" */ out.normMax = IFR_FLARE_K * st.beamL; out.beamIV = [st.beamL, st.beamW]; out.beam0 = [IFR_BEAM_L[0], IFR_BEAM_W[0]]; out.mono = [IFR_BEAM_L, IFR_BEAM_W].every(T => T.every((v, i) => !i || v > T[i - 1])); out.bigHit = bigs[0] && bigs[0].hit; out.bigHitWant = st.dmg * st.flareK * IFR_BIG_K; }
     { const t = fresh("firaga", 0), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f = t.ifrFires[0]; let tm = 0; while (f.left > 0 && tm < 20) { stepIfrFires(t, st, 1 / 60); tm += 1 / 60; } out.bigN0 = t.ifrFlares.filter(q => q.big).length; } out.flareT = IFR_FIRE_FLARE_T; { const z = IFR_FIRE_FLARE_T / IFR_FIRE_FLARE_SD, pdf = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI); let cdf = 0; for (let x = -8; x < z; x += 0.001) cdf += Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI) * 0.001; out.flareMean = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * pdf / cdf; } /* the mean of the bell cut at 0 */
     return out;
   })()`);
@@ -481,19 +497,19 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (r.land0.fires !== 1) return "a fan meteor's landing made " + r.land0.fires + " fires (expected its own Hellfire - owner 2026-10-20: every meteor)";
   if (r.land0.n !== 1 || !(r.land0.jit < 30)) return "a fan meteor's landing lit " + r.land0.n + " flares, " + r.land0.jit + " u off (expected 1 there)";
   if (r.land6.n !== 3 || !(r.land6.jit <= r.jmax + 30)) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 3, within " + r.jmax + " u)";
-  for (const [k, f] of [["Hellfire 0", r.f0], ["Hellfire VI", r.f6]]) {
+  for (const [k, f] of [["Hellfire 0", r.f0], ["Hellfire IV", r.f6]]) {
     if (!(f.n >= 1)) return k + ": a grown fire lit " + f.n + " flares (1 at the least)";
     if (Math.abs(f.share - f.shareWant) > 1e-9) return k + ": a fire's share " + f.share + " (expected 1 / sqrt(1 + the fan) = " + f.shareWant.toFixed(3) + ": a Hellfire a meteor, the same burn a strike)";
     if (f.n >= 1 && f.lastT > f.window + 0.02) return k + ": its flares lit until " + f.lastT.toFixed(2) + " s (expected within its meteor's flare's life, " + f.window + " s - owner 2026-10-20)";
     if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD < 0.5 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", nearer the centre)";
     if (f.n >= 5 && f.sizes < 2) return k + ": its flares are all one size";
   }
-  if (Math.abs(r.beamVI[0] - 100) > 1e-6 || Math.abs(r.beamVI[1] - 16) > 1e-6 || Math.abs(r.beam0[0] - 2 * 50 * 100 / 210) > 1e-6 || Math.abs(r.beam0[1] - 2 * 10 * 16 / 24) > 1e-6 || !r.mono) return "Flare tables: VI " + r.beamVI + ", untaken " + r.beam0 + ", rising " + r.mono + " (expected VI 100 x 16, untaken doubled to 47.6 x 13.3, the rest between - owner 2026-10-20)";
+  if (Math.abs(r.beamIV[0] - 100) > 1e-6 || Math.abs(r.beamIV[1] - 16) > 1e-6 || Math.abs(r.beam0[0] - 2 * 50 * 100 / 210) > 1e-6 || Math.abs(r.beam0[1] - 2 * 10 * 16 / 24) > 1e-6 || !r.mono) return "Flare tables: IV " + r.beamIV + ", untaken " + r.beam0 + ", rising " + r.mono + " (expected IV 100 x 16, untaken doubled to 47.6 x 13.3, the rest between - owner 2026-10-20)";
   if (r.bigN !== 1 || r.bigN0 !== 0 || !(r.bigOff < 1e-6) || !(r.bigAt >= r.lastSmall) || Math.abs(r.bigL - r.bigWant) > 1e-6 || Math.abs(r.bigHit - r.bigHitWant) > 1e-6) return "the Flare capstone's big flare: " + r.bigN + " (untaken " + r.bigN0 + "), " + r.bigOff + " u off centre, lit at " + r.bigAt + " s after the last flare at " + r.lastSmall + ", L " + r.bigL + " (" + r.bigWant + "), hit " + r.bigHit + " (" + r.bigHitWant + ")";
-  if (!(r.hfN >= 1) || !(r.hfL <= r.hfLmax) || Math.abs(r.hfHit - r.hfHitWant) > 1e-6) return "at Flare VI the fire lit " + r.hfN + " flares up to " + r.hfL + " long, hitting " + r.hfHit + " (expected " + r.base + "+ untaken flares: at most " + r.hfLmax + ", hitting " + r.hfHitWant + ")";
+  if (!(r.hfN >= 1) || !(r.hfL <= r.hfLmax) || Math.abs(r.hfHit - r.hfHitWant) > 1e-6) return "at Flare IV the fire lit " + r.hfN + " flares up to " + r.hfL + " long, hitting " + r.hfHit + " (expected " + r.base + "+ untaken flares: at most " + r.hfLmax + ", hitting " + r.hfHitWant + ")";
   if (!r.hfShapes || !(r.hfKmin >= 0.2 - 1e-9 && r.hfKmin < 0.21 && r.hfKmax <= 0.35 + 1e-9 && r.hfKmax > 0.34) || !(r.hfLifeMin === 0.4 && r.hfLifeMax === 0.4) || r.base !== 0.6) return "the fire's flares: sizes " + r.hfKmin.toFixed(2) + ".." + r.hfKmax.toFixed(2) + " of the largest, burn " + r.hfLife + " s, tick " + r.hfTick + " (expected 20-35%, 0.4 game s - 0.5 real s at 1x - each (owner 2026-10-21), lasting 0.2-3 s - owner 2026-10-20)";
   if (Math.abs(r.hitOnce - r.hitWant) > 1 || r.hitAfter) return "a fire flare hit " + r.hitOnce + " on appearing (expected " + r.hitWant + ") and " + r.hitAfter + " after (expected none: it hits once, no burn - owner 2026-10-20)";
-  if (!(r.hfK > 1.3 && r.hfK < 2)) return "Flare VI raises the fire's flares x" + r.hfK + " (expected slightly - owner 2026-10-20)";
+  if (!(r.hfK > 1.3 && r.hfK < 2)) return "Flare IV raises the fire's flares x" + r.hfK + " (expected slightly - owner 2026-10-20)";
   if (!(r.iMain > r.iHf)) return "a meteor's flare (" + r.iMain + ") is not brighter than a fire's (" + r.iHf + ") at the same hit (owner, 2026-10-20: more opaque and intense)";
   const dens3 = r.f3.n / r.f3.R ** 2, dens6 = r.f6.n / r.f6.R ** 2;
   if (Math.abs(dens6 / dens3 / (r.f6.dens / r.f3.dens) - 1) > 0.15 || !(r.f6.dens > r.f3.dens)) return "flare density: " + r.f3.n + " in r" + r.f3.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected " + (r.f6.dens / r.f3.dens).toFixed(2) + "x denser - owner 2026-10-20: denser as Hellfire levels)";
@@ -580,7 +596,7 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
     t.ifrCharge = 0.5; const R = st.ballR * 0.65, c = rec(() => drawIfrTop(t));
     out.outer = Math.max(...c.A.map(q => q.r)); out.R = R;
     const inner = c.A.filter(q => q.r < R - 1e-6); out.innerMin = Math.min(...inner.map(q => q.r)) / R; out.innerA = Math.max(...inner.map(q => q.a)); out.innerN = inner.length;
-    out.hfBright = ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] * IFR_HF_FK[6] }) > ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] });
+    out.hfBright = ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] * IFR_HF_FK[4] }) > ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] });
     out.coreHf = ifrFlareCol("orange", { hf: true }) === COL.threat && ifrFlareCol("yellow", { hf: true }) === COL.orange; /* red to the core, the thinnest line orange (owner, 2026-10-21) */ out.coreMain = ifrFlareCol("yellow", {}) === COL.white && ifrFlareCol("orange", {}) === COL.yellow; out.haloHf = ifrFlareCol("glow", { hf: true }) === COL.threat; out.mainK = IFR_FLARE_MAIN_K;
     const ref = TOWERS.ifr.dmg * IFR_TICK_K[0]; out.i1 = ifrFlareI({ hit: ref, hf: true }); out.i2 = ifrFlareI({ hit: 2 * ref, hf: true }); out.i0 = ifrFlareI({ hit: ref / 10, hf: true });
     return out;
@@ -643,7 +659,7 @@ check("IFR: no cap on live flares (owner, 2026-10-20: \"actually no cap\"); a fr
   if (n !== 700) return "a tower kept " + n + " live flares of 700 lit (expected all: no cap)";
   return ms < 12 ? "" : "a frame of 200 fire flares over 200 enemies took " + ms.toFixed(1) + " ms";
 });
-check("IFR: 200 enemies and 40 Flare VI flares tick under 16 ms", () => {
+check("IFR: 200 enemies and 40 Flare IV flares tick under 16 ms", () => {
   run(`G = newGame(); G.money = 1e9; ui.build = "ifr";
     { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); }
     { const t = G.towers[0]; ifrInit(t); for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true);

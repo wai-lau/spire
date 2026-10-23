@@ -30,13 +30,13 @@ function boardChart(t, x, y, alpha, c0) {
   const pt = (i, k) => {
     // tier 0 sits at a small inner triangle, like the card's (8 of 46), so a
     // one-axis build is a thin triangle, never a bare line (owner)
-    const p = corner(i), f = TOWER_K * (BOARD_CHART_MIN + (1 - BOARD_CHART_MIN) * shownTier(k) / SHOWN_TIERS); // a ring a purchase (aspira-capstone.js)
+    const p = corner(i), f = TOWER_K * (BOARD_CHART_MIN + (1 - BOARD_CHART_MIN) * k / SKILL_TIERS); // a ring a purchase (aspira-capstone.js)
     return [x + (p.x - c0.x) * f, y + (p.y - c0.y) * f];
   };
   const path = ks => { ctx.beginPath(); ks.forEach((k, i) => { const [px, py] = pt(i, k); if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.closePath(); };
   ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineJoin = "round";
   ctx.globalAlpha = 0.25 * alpha; ctx.lineWidth = 1.5;
-  for (const k of SKILL_STOPS.slice(1)) { path(axes.map(() => k)); ctx.stroke(); }
+  for (let k = 1; k <= SKILL_TIERS; k++) { path(axes.map(() => k)); ctx.stroke(); }
   axes.forEach((_, i) => { const [px, py] = pt(i, SKILL_TIERS); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(px, py); ctx.stroke(); });
   path(axes.map(ax => skillOf(t, ax.id)));
   ctx.globalAlpha = 0.6 * alpha; ctx.fill();
