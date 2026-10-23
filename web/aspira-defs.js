@@ -177,8 +177,9 @@ const PATHS = [];
 // CORE TWIST (owner, 2026-10-22: "instead of auto wait, gradually increase the twist of the lane so that the enemies take the same
 // amount of time to reach the core without auto wait"; "more twist near center"): extra winding at rate (1 - r/TWIST_R)^TWIST_P / r,
 // so it starts from nothing at TWIST_R and is tightest at the core - each lane TWIST_S x its rider's speed longer: the time the
-// enemy wait added (its last 0.5 s walked at x0.125 = 4 s). Each pair's rider (TYPE_PAIR, aspira-waves.js; pair 5 spare as 3)
-const TWIST_R = 140, TWIST_P = 3, TWIST_S = 3.5, TWIST_SUB = 8, PAIR_RIDER = ["armor", "bonus", "swarm", "shield", "fast", "shield"];
+// enemy wait added (its last 0.5 s walked at x0.125 = 4 s). SMOOTHED (owner, 2026-10-23: "For lane twist, smooth out the change"): rate
+// (1 - r/TWIST_R)^TWIST_P / (r + TWIST_SOFT), from 320 out, linear, softened at the core (was 140, cubed, / r: straight, then a knot at the core). Each pair's rider (TYPE_PAIR, aspira-waves.js; pair 5 spare as 3)
+const TWIST_R = 320, TWIST_P = 1, TWIST_SOFT = 30, TWIST_S = 3.5, TWIST_SUB = 8, PAIR_RIDER = ["armor", "bonus", "swarm", "shield", "fast", "shield"];
 const PAIR_V = j => ENEMIES[PAIR_RIDER[j]].speed * ENEMY_SPEED;
 let ENEMY_SPEED = 1.125; // 2026-10-11: the short lanes (owner: "reduce speed also"; was 1.5, briefly 1.875) // let: the simulator sweeps it (the lanes keep 1.125's twist)
 
@@ -214,7 +215,7 @@ function buildSpiral(i) {
   for (let k = 1; k < T.length; k++) {
     const tm = (T[k - 1] + T[k]) / 2, rm = R0 - (R0 - rEnd) * tm, dt = (T[k] - T[k - 1]) * steps;
     F.push(F[k - 1] + dt * Math.pow(tm, TANGENT_Q) / (rm + LANE_SOFT_R));
-    G.push(G[k - 1] + dt * Math.pow(Math.max(0, 1 - rm / TWIST_R), TWIST_P) / rm); // the CORE TWIST's winding (below)
+    G.push(G[k - 1] + dt * Math.pow(Math.max(0, 1 - rm / TWIST_R), TWIST_P) / (rm + TWIST_SOFT)); // the CORE TWIST's winding (below)
   }
   const spiral = X => { // the spiral with X radians of core twist per unit of G: its points, its end s, the lead-in's s
     const out = []; let q = prev, s = acc, ld = 0;
