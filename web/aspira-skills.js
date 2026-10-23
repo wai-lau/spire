@@ -343,17 +343,24 @@ function solSkillStats(t, s, b) {
 // THE FORK (owner, 2026-10-23: "Maybe start it at 2" / "relection VI goes to 6" / "add more reflections to keep fire rate the same"):
 // the first enemy forks SOL_FAN[0] chains, Reflection VI SOL_FAN[1] (were 1, VI 3)
 const SOL_FAN = [2, 6];
-function solRefraction(t, st, e) {
-  // IN RANGE (owner, 2026-10-23: "All reflection targets need to be withing SOL rnage"): a fork or a bounce only to an enemy inside
-  // the tower's own range; none left there, the chain stops
-  const r2 = (st.range || 0) ** 2, out = x => hit.has(x) || (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > r2;
-  const hit = new Set([e]), heads = [];
-  fx.push({ k: "cone", x: t.x, y: t.y, a: Math.atan2(e.y - t.y, e.x - t.x), half: (st.cone || SOL_CONE) * Math.PI / 180, len: Math.hypot(e.x - t.x, e.y - t.y) + 30, color: TOWERS[t.kind].color, t: 0, life: SOL_CONE_LIFE }); // the shot's own cone flashes (back 2026-10-23)
+// IN RANGE (owner, 2026-10-23: "All reflection targets need to be withing SOL rnage"): a fork or a bounce only to an enemy inside
+// the tower's own range; none left there, the chain stops. solHeads: the first enemy's forks (also the charge cones' aim, drawAims)
+const solOut = (t, st, hit) => { const r2 = (st.range || 0) ** 2; return x => hit.has(x) || (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > r2; };
+function solHeads(t, st, e, hit = new Set([e])) {
+  const out = solOut(t, st, hit), heads = [];
   for (let c = 0; c < (st.fan || 1); c++) { const o = chainPick(t, e, Infinity, out); if (!o) break; hit.add(o); heads.push(o); }
+  return heads;
+}
+// a light CONE off a struck enemy, POINTED AT THE NEXT ONE (owner, 2026-10-23: "SOL reflection cone animations off of the hit of each
+// enemy hit should point to the next target"); the tower's own cone along the shot
+const solCone = (t, st, a, b) => fx.push({ k: "cone", x: a.x, y: a.y, a: Math.atan2(b.y - a.y, b.x - a.x), half: (st.cone || SOL_CONE) * Math.PI / 180, len: Math.hypot(b.x - a.x, b.y - a.y) + 30, color: TOWERS[t.kind].color, t: 0, life: SOL_CONE_LIFE });
+function solRefraction(t, st, e) {
+  const hit = new Set([e]), out = solOut(t, st, hit), heads = solHeads(t, st, e, hit);
+  solCone(t, st, t, e);
   for (const h of heads) {
     let prev = e, nxt = h, m = st.hop || 1;
     for (let k = 1; ; k++) {
-      rayHit(t, st, nxt, st.dmg * m, prev);
+      solCone(t, st, prev, nxt); rayHit(t, st, nxt, st.dmg * m, prev);
       if (k >= st.refraction) break;
       prev = nxt; nxt = chainPick(t, prev, Infinity, out);
       if (!nxt) break;
