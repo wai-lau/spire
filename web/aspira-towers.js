@@ -270,13 +270,13 @@ function bleed(e, st, t) {
   const per = st.bleedArmor;
   e.armor = (e.armor || 0) - per * k; stripBy(e, t, per * k); // permanent, and on past zero (owner); its share of the damage it adds is SOL's (damageCredit)
   e.bleedCrit = Math.min(BLEED_CRIT_CAP, (e.bleedCrit || 0) + st.bleedCrit * k); e.breachN = (e.breachN || 0) + k; // stacks, for the spokes
-  e.breached = (e.breached || 0) + per * k; e.breachBy = t; // its SHRAPNEL when it dies (breachShrapnel, aspira-skills.js)
+  e.breached = (e.breached || 0) + per * k; e.breachBy = t; // (it fed the breach SHRAPNEL until the SOL rework, 2026-10-22 - SCORCH now; game.js's typeof guard skips the gone breachShrapnel)
 }
 function rayHit(t, st, e, base, from) {
   const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1);
   const m = crit ? st.critMul : 1, d = shotDamage(t, st, e, base) * m;
   const n = st.beams || 1, part = d; // every beam is a FULL hit (owner, 2026-10-06; was a fitted share of the shot)
-  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, m > 1 ? 5 : 3, d, true);
+  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, (m > 1 ? 5 : 3) * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d, true); // a chart SOL's beams THIN (owner, 2026-10-22)
   if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
   dmgBatch(() => { for (let i = 0; i < n && !e.dead; i++) { fromHit(from, () => damage(e, part, t, false, crit, st)); onHit(e, t, st, part); bleed(e, st, t); } }); // ONE number for the volley (dmgBatch, aspira-floats.js); a crit PINK (owner); st: its shieldPop
   if (st.pierce) solPierce(t, st, from, e, n * part); // (always - kill or not)

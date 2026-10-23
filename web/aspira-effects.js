@@ -16,22 +16,7 @@ function drawAims() {
       const p = Math.min(1, Math.max(0, 1 - l.cd / t.period));
       // Refraction's light CONE builds while it CHARGES (owner, 2026-10-06), then
       // the shot's own cone flashes as before
-      if (st.refraction || st.refraction) {
-        const d = Math.hypot(l.e.x - t.x, l.e.y - t.y);
-        // ...SWEEPING IN as it charges (owner, 2026-10-21: "start it at at least 30deg, but it sweeps into the correct angle over the
-        // charge time"; it narrowed to a line from 2026-10-12): SOL_AIM_DEG at the charge's start, the real cone (st.cone) at the shot -
-        // and the FIRST REFRACTION cone sweeps in with it off the target, the way the shot will bend ("so it looks like the shots are
-        // getting lined up and fired": solConeDir, re-aimed SOL_AIM_EVERY s at most)
-        const real = (st.cone || SOL_CONE) * Math.PI / 180, half = Math.max(real, SOL_AIM_DEG * Math.PI / 180) * (1 - p) + real * p, al = Math.cbrt(p), col = TOWERS[t.kind].color;
-        drawCone({ x: t.x, y: t.y, a: Math.atan2(l.e.y - t.y, l.e.x - t.x), half, len: d * 1.6, color: col }, al); // to SOL_CONE_A at full charge
-        const now = performance.now();
-        if (!(l.aimAt > now - SOL_AIM_EVERY * 1000)) { l.aimAt = now; l.aimDir = solConeDir(t, st, l.e, real); }
-        // it SLIDES to a new aim, the short way round (owner, 2026-10-21: "when cone orientation updates, slide the cone, don't teleport")
-        const dt = Math.min(0.1, (now - (l.aimShownAt || now)) / 1000), off = Math.atan2(Math.sin(l.aimDir - (l.aimShown ?? l.aimDir)), Math.cos(l.aimDir - (l.aimShown ?? l.aimDir)));
-        l.aimShown = (l.aimShown ?? l.aimDir) + off * (1 - Math.exp(-dt / SOL_AIM_SLIDE)); l.aimShownAt = now;
-        drawCone({ x: l.e.x, y: l.e.y, a: l.aimShown, half, len: d, color: col }, al);
-        ctx.strokeStyle = COL[TOWERS[t.kind].color];
-      }
+      // (the Refraction aim CONES that swept in while charging went with the SOL rework, owner 2026-10-22 - no cone now)
       ctx.globalAlpha = 0.32 + 0.32 * p * p; // never below half its full strength (owner)
       const len = Math.hypot(l.e.x - t.x, l.e.y - t.y) || 1, px = -(l.e.y - t.y) / len, py = (l.e.x - t.x) / len;
       ctx.beginPath();

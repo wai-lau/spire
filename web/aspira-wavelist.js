@@ -80,10 +80,12 @@ function liveWaves() {
   return m;
 }
 
-// a HYBRID wave named with both its traits (owner, 2026-10-18: "for the waves that have multiple features, label them as such in the next
-// wave indicator"): from HYBRID_FROM swarms carry shields and fast carry armor (spawnEnemy's aug)
-const WAVE_AUG = { swarm: "shield", fast: "armor" };
-const waveName = (type, n) => (n >= HYBRID_FROM && WAVE_AUG[type] ? type + "+" + WAVE_AUG[type] : type);
+// a COMBO wave by its own name (owner, 2026-10-18: "for the waves that have multiple features, label them as such in the next wave
+// indicator"; 2026-10-22 the names: "Psi-swarm / Shell-fast / Hyper-armor / Hyper-shield") - once its after-60 lever is in play
+// (TYPE_TUNE, aspira-waves.js): a swarm with a share of shields, a fast with a share of armor, armor or shields at another speed
+const COMBO_NAME = { swarm: "psi-swarm", fast: "shell-fast", armor: "hyper-armor", shield: "hyper-shield" };
+const comboOn = (type, n) => { const l = TUNE_AFTER[type]; if (!l || tuneSection(n) < TUNE_LATE) return false; const v = tune(type, l, n); return TUNE_SHARE[type] ? v > 0 : v !== 1; };
+const waveName = (type, n) => (comboOn(type, n) ? COMBO_NAME[type] : type);
 const WAVE_PLANS = new Map(); // n -> its plan, as the list last drew it (a tap opens its card: aspira-wavecard.js)
 function updateWaveList() {
   // the waves still alive and the next ones, one per row (owner; waves are fixed, so they are

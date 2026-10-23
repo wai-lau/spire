@@ -130,7 +130,7 @@ function refreshUpgradePreview(t) {
 const STAT_SECTIONS = {
   arc: [["Arc", ["Damage", "Rate", "Range", "Shields", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
   frz: [["Freeze Aura", ["Aura slow", "Aura dmg", "Cold bite", "Brittle", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
-  sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Refraction", ["Refract"]], ["Breach", ["Breach", "Bleed", "Shrapnel"]]],
+  sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Reflection", ["Reflect"]], ["Breach", ["Breach", "Bleed", "Scorch"]]],
   car: [["Hangar", ["Interceptors", "Focus fire"]], ["Tether", ["Tether slow", "Tether pulse", "Chain"]], ["Armament", ["Damage", "Rate", "Ammo", "Autopilot", "Slow", "Shields"]]],
   grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Aura size", "Aura slow", "Armor strip"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]]],
   ifr: [["Meteor", ["Damage", "Meteors", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire flares"]], ["Flare", ["Flare", "Flare burn", "Flare capstone"]]],

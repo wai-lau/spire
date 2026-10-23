@@ -40,7 +40,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | Rule | Design |
 |---|---|
 | one pair a type | `TYPE_PAIR` / `PAIR_TURNS`: armor the most direct, swarm almost straight, fast a curve, shield and boss ellipses (`ELLIPSE` 0.7); the type fixes the path, every enemy walks it at one base speed. The chart's dotted 250 u ring is where the pairs' "time under fire" was measured when they were solved (`FIRE_R` in `aspira-defs.js`: declared, read by nothing, kept as the record) |
-| winding | pitch-driven (`TANGENT_Q`, `LANE_SOFT_R`): no hook off the lead-in, a gentle coil at the core; the drawn lane runs on under the core, the walked path ends at `CORE_R` |
+| winding | pitch-driven (`TANGENT_Q`, `LANE_SOFT_R`): no hook off the lead-in, a gentle coil at the core; plus the CORE TWIST (owner, 2026-10-22, in place of auto-wait): extra winding at rate `(1 - r/TWIST_R)^TWIST_P / r` inside `TWIST_R` 140, tightest at the core, each lane `TWIST_S` 3.5 s x its rider's speed longer (`PAIR_RIDER`, `PAIR_V`; solved by bisection), sampled `TWIST_SUB` x finer there; the per-section twist sets the difficulty curve (§5.6); the drawn lane runs on under the core, the walked path ends at `CORE_R` |
 | copies | a wave rides rotated copies of its lane: swarm 20/24, fast 3/5, shield 2/3, armor 2, boss 1 (Lovers 2 opposite, Devil 6), Judgement's escorts 12, **never exactly four** (`NO_LANES`); the set is turned by `laneBestTurn` (rule in §2.2: most even copies, then most total lane, then nearest the usual turn; turned 90 degrees in landscape) |
 | lit | a lane lights only with live enemies (`alive / sent`, `LANE_FADE_IN_MS`); a boss lane is wider, haloed, and waits for the sky (§5.5); Roman numerals on `LABEL_R` 430 never overlap (`placeLabels`); lit layers rebuild at most every `LIT_MIN_MS` |
 | footprint | a tower is a hex of `TOWER_K` cells, `towerGap()` from another, blocked by the core only where outlines touch (`coreKeep`); building on a lane is allowed (towers and enemies never collide); `CORNER_SLOTS` is empty (dormant, §4.8) |
@@ -90,9 +90,8 @@ lost core segment flashes the boss red.
 
 ![Wave gating](docs/arch/wave-gating.svg)
 
-**Auto-wait** (on by default; only ever slows): x0.125 of the chosen speed
-when a live enemy is 0.5 game s from the core (`AUTO_SLOW_S`; the threat ring keeps its 1 s line, `AUTO_WAIT3_S`) (ONE stage since 2026-10-19; the x0.5 at 4 s and x0.25 at 1.5 s are gone - the threat rings stay); a stage is left past 1.25x its line,
-and a slower speed holds 1.5 s real before speeding up.
+**No auto-wait** (owner, 2026-10-22): the checkbox and the game slowdown are gone, and the per-enemy wait that briefly replaced them
+too. The lanes' CORE TWIST (§2.1) gives the same time to the core instead. The threat ring keeps its 1 s line (`AUTO_WAIT3_S`).
 
 | Pauses (`towersFrozen` while paused and while the sky turns) | Pauses | On close |
 |---|---|---|
@@ -188,16 +187,18 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 
 **SOL** - locks a target (a lock holds out to `SOL_HOLD`), charges the whole reload, fires;
 a target dying mid-charge restarts the charge; a lost lock hands its charge only to a new
-target inside the Refraction cone. Armor cuts SOL like any other. **Weakness: swarms** (a narrow cone, `SOL_CONE_BY`).
-Every hit PASSES THROUGH, kill or not (`solPierce`, `web/aspira-sol.js`): the beam goes on along its line to the next enemies (`SOL_PIERCE_W` wide,
-`SOL_PIERCE_LEN` on, `SOL_PIERCE_HOPS` at most) with `SOL_PIERCE[breach]` of the full hit (35% untaken .. 125% capstone), each hit
-breaching in full; it is drawn at 50% + half the carry.
+target inside the lock cone (`SOL_CONE_BY`). Armor cuts SOL like any other. **Weakness: swarms** (a THIN beam: only what is on its line).
+THE REWORK (owner, 2026-10-22): every hit PASSES THROUGH at 100% (`solPierce`, `web/aspira-sol.js`) along its line to the screen's edge,
+on a thin line (`SOL_PIERCE_W` 6, `SOL_PIERCE_LEN` 3000, `SOL_PIERCE_HOPS` 64 a perf cap), each hit breaching and scorching in full;
+beams are drawn thin (`SOL_BEAM_THIN`). The first enemy REFLECTS the beam on in a chain (`solRefraction`, no cone), each reflection
+`SOL_HOP` x the last and passing through along its own line. Every hit SCORCHES: a short burn, `SOL_SCORCH[breach]` x the hit over
+`SOL_SCORCH_T` 1 s (onHit's `st.dot`; the strongest holds, a new hit restarts it). The breach SHRAPNEL is gone.
 
 | axis | buys |
 |---|---|
-| Focus | more beams a shot, each a full hit popping more shield charges; range |
-| Refraction | the shot bends FORWARD on to more enemies in a cone from the first struck, pointed where it holds the most (third buy: all ahead, then out of sight; capstone: two opposite cones), hops hitting harder; range |
-| Breach (SOL's own) | armor stripped **for good, below zero**; bigger crits; a breached death fires shrapnel that BREACHES the enemies near it (the armor it had lost, `SHRAP_BREACH` x) - no damage (owner, 2026-10-18); slide |
+| Focus | more beams on the one enemy, each a full hit popping a shield charge; range |
+| Reflection (id `refraction`) | more reflections in the chain (`SOL_REFRACTION` 1 2 3 4 5 6), each a bigger share (`SOL_HOP`, compounding); capstone: the first enemy reflects off THREE different enemies, each chain running on (`s.fan`), no further splitting; range |
+| Breach (SOL's own) | armor stripped **for good, below zero** (a flat number a hit, `SOL_BREACH_ARMOR`); bigger crits; a hotter scorch; slide |
 
 **ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; a jet
 resets when its enemy dies or leaves (no carry at the base), jets never share an enemy;
@@ -206,8 +207,8 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 | axis | buys |
 |---|---|
 | Corrosion | a tick strips a share of its damage from armor, **below zero without limit** (jets only); eaten armor drips as **goo** that homes on the next enemy, strips twice its value and burns |
-| Flow (id `spray`) | more jets; a jet keeps its ramp when its enemy dies **or escapes** (the fast answer) and slows what it burns; range |
-| Contagion | bigger, longer, hotter, more frequent pools; from the first buy an enemy killed in a pool leaves a pool; slide |
+| Flow (id `spray`) | more jets; a jet keeps its ramp when its enemy dies **or escapes** (the fast answer); its POOLS turn slimy and slow (`ACD_FLOW_SLOW`, on the pools since 2026-10-22, was on the jets); range |
+| Contagion | bigger, longer, hotter, more frequent pools; from the first buy ANYTHING ACD kills leaves a full pool (2026-10-22; without it, kills leave none - the jets' drips only); slide |
 
 ### 4.5 Rules every axis obeys
 
@@ -501,7 +502,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | 3 | bleed crit | wired (a non-SOL tower may crit a bleeding enemy for x `BLEED_CRIT_MUL`), but `SOL_BREACH_CRIT` is 0 at every tier, so nothing bleeds crit-ably and the step is inert |
 | 4 | marks | damage-taken x `shredMul` |
 | 5 | **Brittle** | x while slowed |
-| 6 | **armor** | minus `trunc(armor - frost)`, never below 10% of the hit; **negative armor adds**; EVERY hit, quiet ones too; a boss's armor floors at minus its wave's reference |
+| 6 | **armor** | minus `trunc(armor - frost)`, never below 10% of the hit; **negative armor adds**; EVERY hit, quiet ones too; EVERY enemy's armor floors at minus its wave's reference (`armorRefOf`; owner 2026-10-22, "boss armor floor to everything" - was bosses only) |
 | 7 | `bossHitCap` | Justice |
 | 8 | floor | a **whole number, at least 1 if it landed** |
 
@@ -731,8 +732,8 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 
 | Balance rule the owner set (keep when changing numbers) | Checked by |
 |---|---|
-| a lone L1 tower of any kind clears waves 1-11, losing at most 3 lives (owner, 2026-10-20; was 0) | `solo`; `WAVE_COUNT_MUL` |
-| the Star (wave 12) needs two towers or an upgrade (SOL and ACD may solo it) | `wave1`, `waverep` |
+| any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22; replaced "a lone L1 tower clears 1-11, losing at most 3", 2026-10-20) | `solo` (its duo table) |
+| an ordinary type's count and HP never drop from one of its waves to the next (owner, 2026-10-22: "types should never get weaker along any axis") | `planCount`, `enemyHp` (aspira-waves.js) |
 | every trio of kinds is winnable except the designed deaths (§4.6d) (no kind required) | `trios`, `tribal` |
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |
 | players held to `MAX_TOWERS` (`strategy.towerCap` lifts it for test teams) | the simulator |

@@ -69,7 +69,7 @@ function acdTick(t, st, l, every) {
   const burn = o => {
     const dd = shotDamage(t, st, o, d);
     damage(o, dd, t, false, false, st); onHit(o, t, st, dd); o.burnT = 0.4; // burning: no longer Fresh (st: its shieldPop)
-    if (st.burnSlow && !o.dead) applySlow(o, st.burnSlow, 0.5, t.id); // Residue: the burn slows
+    // (the jets' own slow moved to the POOLS - owner, 2026-10-22: "move slow from jets to pools"; stepPuddles)
     if (st.corrode && !o.dead) corrodeHit(o, dd * st.corrode, t); // Corrosion: st.corrode of the tick's damage, past zero on purpose; corrodeT: dotted ring
   };
   const R = st.plagueR ? plagueRadius(l, st) : 0, center = l.e;
@@ -104,8 +104,10 @@ function stepAcd(t, dt) {
 // dropped st.corrode, so the axis no longer touched armor. Each tick strips ACD_CORRODE of its damage, past zero -
 // negative armor is a flat bonus on every hit from every tower, bosses too. The weakest of 1x / 3x / 10x tried
 // (scripts/aspira-sim/trios.mjs): ARC+FRZ+ACD 90 -> won (Judgement, Death), ARC+SOL+ACD 96 -> won (Capacitance first)
-// NO FLOOR (owner, 2026-10-13: "just get rid of this floor"): Corrosion eats below zero without limit, from the jets only - not
-// the pools (owner, 2026-10-13). (A floor of 0.25-1.25x the wave's armor, x16 on bosses, held it 2026-10-12)
+// THE BOSS FLOOR FOR ALL (owner, 2026-10-22: "boss armor floor to everything", after "no floor" the same day): armor COUNTS no lower than
+// minus the wave's armor (armorRefOf) on any enemy - damage() and damageCredit. Corrosion eats from the jets only - not the pools (owner,
+// 2026-10-13). (No floor 2026-10-13 .. 22: "just get rid of this floor".) (A floor of 0.25-1.25x the
+// wave's armor, x16 on bosses, held it 2026-10-12)
 const acdArmorRef = new Map(), armorRefOf = n => acdArmorRef.get(n) ?? acdArmorRef.set(n, ENEMIES.armor.armor * ENEMY_HP_MUL * armorGrow(n)).get(n);
 // DAMAGE CREDIT (owner, 2026-10-12: "damage caused by debuff from another tower should attribute damage source to
 // the debuffing tower"): of a hit's tally (`got`), what BRITTLE added goes to the FRZ that made it brittle (e.brittleBy),
@@ -114,7 +116,7 @@ const acdArmorRef = new Map(), armorRefOf = n => acdArmorRef.get(n) ?? acdArmorR
 function stripBy(e, t, amt) { if (t && amt > 0) (e.strip ||= {})[t.id] = (e.strip[t.id] || 0) + amt; }
 function damageCredit(e, t, pre, amt, frost, got) {
   const A0 = e.armor0 || 0, hit = (a, A) => { A = Math.trunc(A); return A > 0 ? Math.max(a * 0.1, a - A) : A < 0 ? a - A : a; };
-  const base = hit(pre, A0), brit = Math.max(0, hit(amt, A0) - base), full = hit(amt, Math.max((e.armor || 0) - frost, e.arcana ? -armorRefOf(e.wave || 1) : -Infinity)), arm = Math.max(0, full - base - brit);
+  const base = hit(pre, A0), brit = Math.max(0, hit(amt, A0) - base), full = hit(amt, Math.max((e.armor || 0) - frost, -armorRefOf(e.wave || 1))), arm = Math.max(0, full - base - brit);
   const k = full > 0 ? got / full : 0, give = (id, v) => { const o = id != null && G.towers.find(x => x.id === id); if (o && v > 0) { o.dealt = (o.dealt || 0) + v; return v; } return 0; };
   let mine = got;
   if (brit) mine -= give(e.brittleBy, brit * k);
@@ -234,11 +236,12 @@ const ACD_CONTAGION = [{ every: 1.2, life: 5, r: 55 }, { every: 1.2, life: 5, r:
 const ACD_PUDDLE_CAP = 8; // (2026-10-08: x8, was x32 - a pool held the jet's whole ramp)
 let ACD_SHIELD_POP = 1; // 1 (owner, 2026-10-12: ACD pops 1x, pools too - shields are a bare ACD's weakness); // 2026-10-11 (was 1, as every hit; 2 left ACD 16-34% leaked on shield waves, 3 gives 6-23%): let: the simulator sweeps it
 const ACD_PUDDLE_HEAT = [0.1, 0.11, 0.12, 0.741, 3.039, 6.408]; /* V x9, VI x36 (steeper late tiers) */ // 2026-10-12: base pools burn low (they are free now) // 2026-10-11: x1.5 so ACD answers a swarm a little (owner: "FRZ ACD handle swarms a bit better") // 10% of the jet with the bigger, longer pools (owner, 2026-10-08; was 30%): isolation I..V 108 117 133 160 197%, the curve it had (108 123 128 146 197) // flat 30% of the jet (2026-10-08, Contagion under 200%; no tier lowers it) // restored (overnight 2026-10-08): the tier fit cut it to ~15%, and without ARC the pools are the only swarm answer - FRZ+SOL+ACD went 0/6 -> 4/6 with them back
-// (the pools' slow moved to Flow's jets, owner 2026-10-12: "these rays could slow instead of contagion")
+// (the pools' slow moved to Flow's jets, owner 2026-10-12: "these rays could slow instead of contagion" - and BACK to the pools, as
+// Flow's slimy pools, owner 2026-10-22: "move slow from jets to pools")
 // CONTAGION SPREADS (owner, 2026-10-13: "make acd contagion better vs swarms"): from Contagion I an enemy a POOL kills leaves
-// a pool of its own, ACD_SPREAD_R as wide and ACD_SPREAD_LIFE as long, as hot - a crowd dying in acid carries it down the lane.
+// a pool of its own, as hot - a crowd dying in acid carries it down the lane (a full pool since 2026-10-22; was 0.8x wide, half as long).
 // At most ACD_SPREAD_MAX pools a tower (the late-game lag)
-const ACD_SPREAD_R = 0.8, ACD_SPREAD_LIFE = 0.5, ACD_SPREAD_MAX = 240;
+const ACD_SPREAD_MAX = 240; // (ACD_SPREAD_R 0.8 / ACD_SPREAD_LIFE 0.5 - the smaller kill pools - went 2026-10-22: a full pool now)
 function acdSkillStats(t, s, b) {
   const c = skillOf(t, "corrosion");
   s.dmg = b.dmg * ACD_BASE_DMG_MUL * ACD_CORROSION_DMG[c]; s.range = b.range * RANGE_BONUS; s.double = ACD_DOUBLE[0]; s.cap = ACD_BASE_MAX; s.plagueR = 0;
@@ -255,8 +258,9 @@ function stepPuddles(t, st, dt) {
   const sp = st.contagion;
   const drop = l => (t.puddles ||= []).push({ x: l.e.x, y: l.e.y, r: sp.r, life: Math.min(POOL_MAX_S, sp.life), age: 0, tick: 0, dps: st.dmg * Math.min(ACD_PUDDLE_CAP, 2 ** (l.held / st.double)) * st.contagionHeat });
   for (const l of t.lines) {
-    // a KILL under a jet drops a pool where it fell (owner, 2026-10-12); an escape drops none
-    if (l.e.dead) { if (l.e.hp <= 0 && !l.dropped) { l.dropped = true; drop(l); } continue; }
+    // a KILL under a jet drops a pool where it fell (owner, 2026-10-12) - with Contagion only (owner, 2026-10-22: "at level 0 make kills
+    // not leave pools"); an escape drops none
+    if (l.e.dead) { if (l.e.hp <= 0 && !l.dropped && st.spread) { l.dropped = true; drop(l); } continue; }
     l.drip = (l.drip ?? sp.every) - dt;
     if (l.drip > 0) continue;
     l.drip += sp.every;
@@ -274,7 +278,8 @@ function stepPuddles(t, st, dt) {
         if (e.dead || (e.x - p.x) ** 2 + (e.y - p.y) ** 2 > p.r * p.r) continue;
         const hp0 = e.hp;
         fromHit(p, () => damage(e, p.dps * every, t, false, false, hit)); e.burnT = 0.4; // away from the pool's centre
-        if (st.spread && hp0 > 0 && e.hp <= 0 && t.puddles.length + born.length < ACD_SPREAD_MAX) born.push({ x: e.x, y: e.y, r: p.r * ACD_SPREAD_R, life: p.life * ACD_SPREAD_LIFE, age: 0, tick: 0, dps: p.dps, spread: true });
+        if (st.burnSlow && !e.dead) applySlow(e, st.burnSlow, 0.5, t.id); // Flow's SLIMY pools slow (owner, 2026-10-22: the jets' slow moved here)
+        if (st.spread && hp0 > 0 && e.hp <= 0 && t.puddles.length + born.length < ACD_SPREAD_MAX) born.push({ x: e.x, y: e.y, r: sp.r, life: Math.min(POOL_MAX_S, sp.life), age: 0, tick: 0, dps: p.dps, spread: true }); // ANYTHING ACD kills leaves a FULL pool with Contagion (owner, 2026-10-22: "anything killed by ACD leaves a pool (instead of requiring it to be in pool)" - a jet's kill: the drop above; was r x ACD_SPREAD_R, life x ACD_SPREAD_LIFE)
         if (hit && hp0 > e.hp) (t.poolAcc ||= new Map()).set(e, (t.poolAcc.get(e) || 0) + hp0 - e.hp); /* the WHOLE hit, overkill too (owner, 2026-10-17) */ // a real hit: it pops one shield charge
       }
     }

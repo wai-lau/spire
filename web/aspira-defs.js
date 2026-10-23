@@ -79,10 +79,7 @@ const ease01 = t => { const u = Math.min(1, Math.max(0, t)); return u * u * (3 -
 const speedGrow = n => 1 + SPEED_MID * ease01((n - SPEED_FROM) / (SPEED_TO - SPEED_FROM)) + SPEED_LATE * Math.max(0, n - SPEED_TO);
 const midHump = n => ease01((n - MID_HP_FROM + MID_HP_EASE) / MID_HP_EASE) * (1 - ease01((n - MID_HP_TO) / MID_HP_EASE));
 const plainHpGrow = n => Math.pow(speedGrow(n), -HP_TRADE) * (1 + MID_HP * midHump(n)) * Math.pow(HP_LATE_X, Math.max(0, n - HP_LATE_FROM));
-// LATE HYBRIDS (owner, 2026-10-13): after HYBRID_FROM swarms carry SWARM_SHIELD of a shield unit's charges, fast FAST_ARMOR of an
-// armor unit's armor ("maybe just 1/10 shields", "give fast armour") - first the other way round, but any armor on a swarm made ARC
-// (the swarm counter: many small hits) its worst tower, 10-18% leaked at even 3%. let: the sims sweep them
-let HYBRID_FROM = 97, SWARM_SHIELD = 0.1, FAST_ARMOR = 0.1; // countermx 2026-10-13: fast armor 0.25 made every build leak fast 20-36%; 0.1 keeps SOL and FRZ Rime the late fast answer (0-4%)
+// (LATE HYBRIDS - swarms with shield charges, fast with armor from wave 97 - are gone: TYPE_TUNE's after-60 levers, aspira-waves.js)
 const SIZE_LOG = 0.25; // an enemy's size x (1 + SIZE_LOG log10 of its HP over wave 1's) - spawnEnemy
 const WAVE_K = 10 / 12, eqWave = n => n * WAVE_K;
 const BUILD_R = RIM_R - 6;
@@ -172,13 +169,18 @@ const TANGENT_Q = 2;
 // uses 1 / (r + LANE_SOFT_R), so the same turns spread outward instead of
 // packing into the last few dozen units around the core
 const LANE_SOFT_R = 200;
-// pace 1 on every lane (owner, 2026-10-08: one speed for all; was (len / shortest)^0.6, a long lane ridden faster)
-const PACE_EXP = 0;
 // Straight radial lead-in from LEAD_R to R0 ahead of every spiral, so on a
 // wide screen a lane never visibly BEGINS in open space. The spiral leaves R0
 // pointing straight outward (angle ~ t^2.2), so the join has no kink.
 const LEAD_R = 2400;
 const PATHS = [];
+// CORE TWIST (owner, 2026-10-22: "instead of auto wait, gradually increase the twist of the lane so that the enemies take the same
+// amount of time to reach the core without auto wait"; "more twist near center"): extra winding at rate (1 - r/TWIST_R)^TWIST_P / r,
+// so it starts from nothing at TWIST_R and is tightest at the core - each lane TWIST_S x its rider's speed longer: the time the
+// enemy wait added (its last 0.5 s walked at x0.125 = 4 s). Each pair's rider (TYPE_PAIR, aspira-waves.js; pair 5 spare as 3)
+const TWIST_R = 140, TWIST_P = 3, TWIST_S = 3.5, TWIST_SUB = 8, PAIR_RIDER = ["armor", "bonus", "swarm", "shield", "fast", "shield"];
+const PAIR_V = j => ENEMIES[PAIR_RIDER[j]].speed * ENEMY_SPEED;
+let ENEMY_SPEED = 1.125; // 2026-10-11: the short lanes (owner: "reduce speed also"; was 1.5, briefly 1.875) // let: the simulator sweeps it (the lanes keep 1.125's twist)
 
 // Stretch a point along axis `ax` by a CONSTANT 1 + stretch, so an elliptical
 // lane keeps its shape all the way in (owner: it must not round off). To still
@@ -206,19 +208,32 @@ function buildSpiral(i) {
     if (prev) acc += Math.hypot(p.x - prev.x, p.y - prev.y);
     p.s = acc; pts.push(p); prev = p;
   }
-  let lead = 0;
-  const F = [0];
-  for (let k = 1; k <= steps; k++) {
-    const tm = (k - 0.5) / steps, rm = R0 - (R0 - rEnd) * tm;
-    F.push(F[k - 1] + Math.pow(tm, TANGENT_Q) / (rm + LANE_SOFT_R));
+  const T = [0]; // the samples in t: every lane's own, each split TWIST_SUB ways inside the core twist (its tight coils)
+  for (let k = 1; k <= steps; k++) { const sub = R0 - (R0 - rEnd) * k / steps < TWIST_R ? TWIST_SUB : 1; for (let j = 1; j <= sub; j++) T.push((k - 1 + j / sub) / steps); }
+  const F = [0], G = [0];
+  for (let k = 1; k < T.length; k++) {
+    const tm = (T[k - 1] + T[k]) / 2, rm = R0 - (R0 - rEnd) * tm, dt = (T[k] - T[k - 1]) * steps;
+    F.push(F[k - 1] + dt * Math.pow(tm, TANGENT_Q) / (rm + LANE_SOFT_R));
+    G.push(G[k - 1] + dt * Math.pow(Math.max(0, 1 - rm / TWIST_R), TWIST_P) / rm); // the CORE TWIST's winding (below)
   }
-  for (let k = 0; k <= steps; k++) {
-    const t = k / steps, r = R0 - (R0 - rEnd) * t, a = a0 + dir * turns * Math.PI * 2 * F[k] / F[steps];
-    const p = ellipse(r * Math.cos(a), r * Math.sin(a), ax, stretch);
-    if (prev) acc += Math.hypot(p.x - prev.x, p.y - prev.y);
-    if (k === 0) lead = acc;
-    p.s = acc; pts.push(p); prev = p;
-  }
+  const spiral = X => { // the spiral with X radians of core twist per unit of G: its points, its end s, the lead-in's s
+    const out = []; let q = prev, s = acc, ld = 0;
+    for (let k = 0; k < T.length; k++) {
+      const t = T[k], r = R0 - (R0 - rEnd) * t, a = a0 + dir * (turns * Math.PI * 2 * F[k] / F[T.length - 1] + X * G[k]);
+      const p = ellipse(r * Math.cos(a), r * Math.sin(a), ax, stretch);
+      if (q) s += Math.hypot(p.x - q.x, p.y - q.y);
+      if (k === 0) ld = s;
+      p.s = s; out.push(p); q = p;
+    }
+    return { out, s, ld };
+  };
+  // CORE TWIST: X solved (bisection) so the lane is TWIST_S x its rider's speed longer than without it
+  const want = spiral(0).s + TWIST_S * PAIR_V(i >> 1);
+  let lo = 0, hi = 1;
+  while (spiral(hi).s < want) hi *= 2;
+  for (let n = 0; n < 40; n++) { const m = (lo + hi) / 2; if (spiral(m).s < want) lo = m; else hi = m; }
+  const sp = spiral(hi), lead = sp.ld;
+  pts.push(...sp.out); acc = sp.s;
   const rim = pts.find(p => Math.hypot(p.x - CX, p.y - CY) <= RIM_R);
   // the lane never changes, so its stroke path is built once (drawLanes)
   const p2d = new Path2D();
@@ -242,12 +257,6 @@ function buildSpiral(i) {
   return { pts, len: acc, lead, turns, pace: 1, rim, ellip: stretch > 0, p2d, glow2d, lit2d };
 }
 
-for (let i = 0; i < N_PATHS; i++) PATHS.push(buildSpiral(i));
-{
-  // pace from the spiral alone: the lead-in is the same length for every lane
-  const spiralLen = p => p.len - p.lead, shortest = Math.min(...PATHS.map(spiralLen));
-  for (const p of PATHS) p.pace = Math.pow(spiralLen(p) / shortest, PACE_EXP);
-}
 
 // Background stars for the chart, symmetric like the lanes: one 60-degree
 // wedge between two mirror axes is seeded (identical every load), then
@@ -364,18 +373,11 @@ let RANGE_BONUS = 1.165; /* x0.75 (owner, 2026-10-12: "reduce all tower ranges b
 // (Tagged - taking extra damage right now - came and went on 2026-10-07, owner)
 const MODES = [["fresh", "Fresh"], ["biggest", "Biggest"], ["close", "Near"]];
 
-// Each special enemy had ONE counter tower: swarm -> CHN, fast -> SLW,
-// armor -> RPR; shield's counter was RPD, removed (owner: three towers only).
 // shield = hits absorbed (any size) before the
 // enemy takes damage; armor = flat damage removed from every hit (floor 10%).
 // Both scale with the wave number in spawnEnemy.
 // DICE (owner, 2026-10-09: "fast -> d4, swarm -> d6, armor -> d8, shield -> d10, boss -> d20"): each enemy is its die
 // seen from above - the outline here, the facet lines in dieFacets (aspira-enemies.js).
-// (was) SHAPE SHOWS SPEED (owner): triangle = fastest, more sides = slower, and the
-// hexagon is reserved for the towers (bosses were removed). Swarms read by size + count;
-// shield shows as concentric outlines, armor as a thick outline (drawEnemy).
-// speeds (owner, 2026-10-02): fast doubled to 270, then eased to 220; shield and armor halved to
-// 37.5 and 30
 // every type's speed (x ENEMY_SPEED 1.5 = 114 units/s): fast's lane at exactly 1.5 turns under fire for its 9.3 s
 const ENEMY_BASE_SPEED = 76;
 const ENEMIES = {
@@ -494,3 +496,4 @@ const DEFAULT_MODE = { arc: "close", frz: "close", sol: "close", acd: "close", g
 // each new tower costs 1.5x the last (owner, 2026-10-04; was 2x): 40, 60, 90, 135, 203, 304
 const towerCost = k => freeBuild() ? 0 : Math.round(TOWERS[k].cost * Math.pow(1.5, G.towers.length));
 const sellValue = t => Math.floor(t.spent * 0.95); // 95% back (owner, 2026-10-13; was 70%)
+for (let i = 0; i < N_PATHS; i++) PATHS.push(buildSpiral(i)); // (pace 1 on every lane: one speed for all, owner 2026-10-08; here, after ENEMIES: the core twist reads the riders' speeds)

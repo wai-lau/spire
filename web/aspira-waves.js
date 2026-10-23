@@ -86,8 +86,31 @@ let COUNT_SLOPE = 0.5, COUNT_CAP = Infinity; // a plain wave's base count: 10 + 
 const WAVE_COUNT_MUL = { [UNLOCK.indexOf("shield") + 1]: 0.5, 1: 0.75, 3: 0.67, 4: 0.75, 6: 0.67, 7: 0.75, 10: 0.5, 11: 0.5 }; /* waves 1-11 a lone L1 tower can clear (owner, 2026-10-12; scripts/aspira-sim/solo.mjs) */ /* the FIRST shield wave at half (owner, 2026-10-12) */ // (wave 1 was DOUBLED from 2026-10-09; dropped 2026-10-12 - owner: "make sure that the first swarm wave is weaker than the second")
 // FEWER LATE FAST (owner, 2026-10-11: "for waves that make lives go fix them"): fast cost 14 lives a wave past 80, every
 // other type under 2 - x FAST_LATE_MUL past FAST_LATE_FROM. waverep x3 with HP_END 1.06: 0.8 6.8 a wave, 0.65 2.6, 0.5 1.3
-const FAST_LATE_MUL = 0.65, FAST_LATE_FROM = 80;
+// (FAST_LATE_MUL - fast x0.65 the bodies past wave 80 - is GONE: owner, 2026-10-22, "types should never get weaker along any axis" / "remove count drop yes")
 // how many of `type` a plain wave n brings (before the split onto lane copies) - wavePlan, and a boss's fleet (aspira-bosses.js)
+// THE TYPE LEVERS (owner, 2026-10-22: "tune types using these levers ONLY"): each ordinary type is tuned per SECTION (ARCHITECTURE.md 5.6:
+// waves 1-24, 25-60, 61-96, 97-120) by its own levers alone, x the curves - swarm: count, speed, and from 61 shield (a share of a shield
+// unit's charges); fast: HP, speed, and from 61 armor (a share of an armor unit's armor); armor: armor, count, and from 61 speed; shield:
+// shield, count, and from 61 speed. The late hybrids (swarm + shield, fast + armor from 97) are replaced by the after-61 levers. A count
+// lever splits the wave's bounty over its bodies (the wave pays the same). let: the sims tune it. An after-60 lever is fixed before 61
+const TUNE_SECTIONS = [24, 60, 96], TUNE_LATE = 2; // the sections' last waves; TUNE_LATE: the first section with the after-60 levers
+// TUNED (autotune.mjs, 2026-10-22, the core twist, count first to x1.5): sections 1-2 (waves 1-60) matched to each one's hardest type by
+// break point - shield set section 1 (x5.81 speed), fast section 2 (x3.62); 3-4 hold section 2's values until the late-scale rebuild is
+// tuned (never weaker - the after-60 shares at 0 till then)
+let TYPE_TUNE = {
+  swarm: { count: [1.5, 1.5, 1.5, 1.5], speed: [1.509, 2.307, 2.307, 2.307], shield: [0, 0, 0, 0] },
+  fast: { hp: [1.27, 1.27, 1.27, 1.27], speed: [1.747, 1.747, 1.747, 1.747], armor: [0, 0, 0, 0] },
+  armor: { armor: [1, 4.321, 4.321, 4.321], count: [1.418, 1.5, 1.5, 1.5], speed: [1, 1, 1, 1] },
+  shield: { shield: [1, 1.377, 1.377, 1.377], count: [1, 1.5, 1.5, 1.5], speed: [1, 1, 1, 1] },
+};
+const TUNE_AFTER = { swarm: "shield", fast: "armor", armor: "speed", shield: "speed" }, TUNE_SHARE = { swarm: 1, fast: 1 }; // TUNE_SHARE: the after-60 lever is a share (0 = none), not a factor
+const tuneSection = n => { let i = 0; while (i < TUNE_SECTIONS.length && n > TUNE_SECTIONS[i]) i++; return i; };
+function tune(type, lever, n) { // the lever's value at wave n: a factor, or a share for swarm shield / fast armor; 1 (0 for a share) if the type has no such lever
+  const row = TYPE_TUNE[type] && TYPE_TUNE[type][lever], share = TUNE_AFTER[type] === lever && TUNE_SHARE[type];
+  if (!row) return 1;
+  const i = tuneSection(n);
+  return TUNE_AFTER[type] === lever && i < TUNE_LATE ? (share ? 0 : 1) : row[i];
+}
 function waveCount(type, n0, cut = true) { // cut false: without the early thinning (the lanes are chosen from that)
   const n = eqWave(n0); // (the 10-cycle equivalent - aspira-defs.js; WAVE_COUNT_MUL keys stay real waves)
   const base = Math.min(10 + Math.floor(n * COUNT_SLOPE), COUNT_CAP); // let: the simulator sweeps both (owner, 2026-10-11: "enemy counts increase as the game progresses")
@@ -95,10 +118,31 @@ function waveCount(type, n0, cut = true) { // cut false: without the early thinn
   // HALF the bodies at TWICE the health (owner, 2026-10-02)
   // x WAVE_COUNT_MUL[n]: waves 1-30 tuned so each comes about as close to the
   // core against one L1 tower of each kind (owner; scripts/aspira-sim/wavebal.mjs)
-  const c = (type === "swarm" ? base * 6 : base) / 2 / (cut ? earlyX(n0) : 1) * (WAVE_COUNT_MUL[n0] ?? 1) * (TYPE_COUNT_MUL[type] ?? 1) * (type === "swarm" ? swarmMul(n) * (n >= SWARM_X2_FROM ? 2 : 1) * lateK(n0, "swarm") : 1) * (type === "fast" && n > FAST_LATE_FROM ? FAST_LATE_MUL : 1); // swarms 6x (owner: doubled from 3x)
+  const c = (type === "swarm" ? base * 6 : base) / 2 / (cut ? earlyX(n0) : 1) * (WAVE_COUNT_MUL[n0] ?? 1) * (TYPE_COUNT_MUL[type] ?? 1) * (type === "swarm" ? swarmMul(n) * (n >= SWARM_X2_FROM ? 2 : 1) * lateK(n0, "swarm") : 1) * tune(type, "count", n0); // swarms 6x (owner: doubled from 3x) // tune: the count lever (TYPE_TUNE)
   // SYMMETRICAL FORMATIONS (owner, 2026-10-11: "2n+1 for fast, 3n for armor"): whole Vs and full lattice rows
   const unit = FORM_UNIT[type] || 1;
   return Math.max(unit, Math.round(c / unit) * unit);
+}
+// NO DROPS (owner, 2026-10-22: "types should never get weaker along any axis" / "yes remove all drops"): an ordinary type's COUNT and HP never
+// fall from one of its waves to the next - each is the most it has been up to that wave (boss waves skipped). The early thinning, the HP traded
+// for speed, the late swarm and fast cuts all used to dip them; a dip now holds the level before it. Memoised per game (the levers are set
+// before it starts; a swept HP is in the key)
+const monoMemo = new Map();
+function monoUp(key, n, f) { let a = monoMemo.get(key); if (!a) monoMemo.set(key, a = [0]); for (let m = a.length; m <= n; m++) a[m] = Math.max(a[m - 1], m % STAR_EVERY ? f(m) : 0); return a[n]; }
+const enemyHp = (type, n0) => (ENEMIES[type].star || !TYPE_TUNE[type] ? enemyHpRaw(type, n0) : monoUp("hp|" + type + "|" + ENEMIES[type].hp, n0, m => enemyHpRaw(type, m)));
+function planCountOwn(type, n) { // a wave's count as its own curves make it (before NO DROPS)
+  const split = formSplit(type, waveCount(type, n, false), n), count = laneCount(type, waveCount(type, n), split);
+  return type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : Math.max(split, count);
+}
+function planCount(type, n) { // ...and as sent: at least the count SENT the wave before (whole lane-fulls rounded up past it) - memoised a type
+  let a = monoMemo.get("c|" + type); if (!a) monoMemo.set("c|" + type, a = [0]);
+  for (let m = a.length; m <= n; m++) {
+    if (!(m % STAR_EVERY)) { a[m] = a[m - 1]; continue; }
+    const own = planCountOwn(type, m), least = a[m - 1], split = formSplit(type, waveCount(type, m, false), m);
+    let c = own; for (let i = 0; c < least && i < 256; i++) c = laneCount(type, least + i, split);
+    a[m] = Math.max(own, c);
+  }
+  return a[n];
 }
 function wavePlan(n, prev) {
   // every STAR_EVERY-th wave is the boss, ALONE (owner, 2026-10-02)
@@ -112,7 +156,7 @@ function wavePlan(n, prev) {
   const count = laneCount(type, raw, split);
   // a swarm wave is never under SWARM_WAVE_MIN bodies, AFTER the lane rounding (owner, 2026-10-14: "make sure swarm waves have at least 12 units");
   // and no lane copy of any OTHER type is empty (owner, 2026-10-15: "min 1 enemy per lane also ... except swarm")
-  return { type, count: type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : Math.max(split, count), split, star: n % STAR_EVERY === 0 };
+  return { type, count: Math.max(type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : Math.max(split, count), planCount(type, n)), split, star: n % STAR_EVERY === 0 }; // (planCount: NO DROPS)
 }
 function makeWave(n) {
   const { type, count } = wavePlan(n, G.lastType);

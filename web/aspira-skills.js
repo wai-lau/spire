@@ -95,7 +95,7 @@ SKILL_TREES.sol = [
     { name: "Lance" },
     { name: "Supernova" },
   ] },
-  { id: "refraction", name: "Refraction", tiers: [
+  { id: "refraction", name: "Reflection" /* (owner, 2026-10-22: "rename refraction to reflection"; the id stays - saves) */, tiers: [
     { name: "Lens" },
     { name: "Prism" },
     { name: "Spectrum" },
@@ -362,7 +362,7 @@ function skillHopTo(c, node, nxt, depth) {
 // Refraction from the start (owner, 2026-10-08): one hop in a 40-degree cone at tier 0; every tier one more hop than before
 // (were 0 / 2 / 5 / 9 / 12 / 15); V has NO limit - every enemy ahead in the cone, then on out of sight (solRefraction)
 const SOL_SHIELD_POP = [1, 1, 1, 1, 1, 1] /* one charge a beam, however deep the Focus (owner, 2026-10-16: "SOL should only pop based on the number of beams"); was 1 2 3 4 5 6, */ /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */, SOL_REFRACT_POP = [0, 0, 0, 0, 0, 0] /* a refracted ray pops nothing extra (owner, 2026-10-16); was 0 1 1 2 2 3 */ /* Refraction breaks shields too (owner, 2026-10-12) */; // 2026-10-11: a concentrated beam punches through more than one shield
-const SOL_BEAMS = [2, 3, 3, 10, 12, 17] /* BATTERY 6.7.0 (2026-10-20): untaken 2 rays (a lone L1 SOL lost a life to every wave-3 armor pair - 72 u apart since 6.5), Focus III 10 (SOL countered armor alone: shields 84% leaked -> 24%); were [1, 2, 3, 4, 5, 17] */ /* V 6 -> 8, VI 8 -> 12 (a beam is the one shield charge it pops now: SOL_SHIELD_POP) */, SOL_REFRACTION = [1, 3, 6, 10, 13, Infinity];
+const SOL_BEAMS = [2, 3, 3, 10, 12, 17] /* BATTERY 6.7.0 (2026-10-20): untaken 2 rays (a lone L1 SOL lost a life to every wave-3 armor pair - 72 u apart since 6.5), Focus III 10 (SOL countered armor alone: shields 84% leaked -> 24%); were [1, 2, 3, 4, 5, 17] */ /* V 6 -> 8, VI 8 -> 12 (a beam is the one shield charge it pops now: SOL_SHIELD_POP) */, SOL_REFRACTION = [1, 2, 3, 4, 5, 6] /* REFLECTIONS in the chain (SOL rework, 2026-10-22; were 1 3 6 10 13 and every enemy in the cone) */;
 // BREACH IS SOL'S OWN, from the start (owner, 2026-10-08): every hit strips SOL_BREACH_ARMOR armor for good
 // (below zero too: a flat bonus on every later hit from every tower); the Breach axis massively
 // increases the strip and adds crit chance for every tower, SOL_BREACH_CRIT a hit (none at base)
@@ -381,61 +381,42 @@ const SOL_CRITMUL = [3, 5, 6.5, 9, 14.6, 25]; /* x1.3 from I (2026-10-18: Breach
 // saturates): each Focus beam's share of the shot by tier, and each Refract
 // hop's damage by tier (a hop is far weaker than the first hit)
 // (owner 2026-10-06: every Focus beam is a FULL hit - 1 / 2 / 3 / 4 beams, no share - so no stat falls; SOL's base damage pays for it)
-const SOL_HOP = [1, 1, 1, 1, 1, 1]; // every refraction hop a full strike (overnight fit 2026-10-08: even 1.5x reached only 133% - Refraction needs a mechanic change, not numbers) // II / III raised 2026-10-07 (were 0.3 / 0.455) with the cone narrowed to 8 degrees: fewer hops land, so each counts more
+const SOL_HOP = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75]; // REFLECTION'S SHARE (SOL rework, owner 2026-10-22): each reflection hits at this x the last one's (compounding: p, p^2, p^3..), balanced overnight; was 1 a hop // every refraction hop a full strike (overnight fit 2026-10-08: even 1.5x reached only 133% - Refraction needs a mechanic change, not numbers) // II / III raised 2026-10-07 (were 0.3 / 0.455) with the cone narrowed to 8 degrees: fewer hops land, so each counts more
 // Refraction peaked at I (107%) and fell by III (93%): range alone spread its fire
 // thin, so II / III also hit harder (owner, 2026-10-07)
 // (LIGHT OUTRUNS THE FAST, Refraction x the fast, removed 2026-10-12 - owner: no extra damage by enemy type)
 const SOL_REFRACTION_DMG = [1, 1, 1.3, 4.6, 13.0987, 24.1275]; // III..V x1.15 / 1.35 / 1.5 with the 160-degree cone (owner, 2026-10-08: "even a 160 deg angle?" - the cone alone tops out at 156%)
 // each Focus tier's beam STRENGTH (2026-10-08, the tier fit's lever for Focus: more beams alone measured 168% at V)
-const SOL_PIERCE = [0.35, 0.6, 0.7, 0.8, 0.9, 1]; /* by Breach STOP: 0 35%, I 60%, II 80%, III 100%, IV (the capstone) 125% (owner, 2026-10-19: "100% carry earlier / capstone goes above 100%"; 2 and 4 are never bought) */ // the overkill a kill carries on (solPierce, aspira-towers.js) by Breach tier; VI 1 (capstone)
+// (SOL_PIERCE - the pass-through by Breach tier, 35% .. 125% - is GONE with the SOL rework: every beam passes through at 100%, aspira-sol.js)
+const SOL_PIERCE_OLD = [0.35, 0.6, 0.7, 0.8, 0.9, 1]; /* by Breach STOP: 0 35%, I 60%, II 80%, III 100%, IV (the capstone) 125% (owner, 2026-10-19: "100% carry earlier / capstone goes above 100%"; 2 and 4 are never bought) */ // the overkill a kill carries on (solPierce, aspira-towers.js) by Breach tier; VI 1 (capstone)
 const SOL_FOCUS_DMG = [1, 1, 1, 1, 4.556, 4.704]; // never below 1 (owner, 2026-10-08: no upgrade lowers a stat) - more beams carry I..III (114 / 133 / 152%)
 function solSkillStats(t, s, b) {
   s.dmg = b.dmg * SOL_REFRACTION_DMG[skillOf(t, "refraction")] * SOL_FOCUS_DMG[skillOf(t, "focus")]; s.range = b.range * RANGE_BONUS; s.crit = LVL_SOL_CRIT[0]; s.rate = b.rate;
   s.shieldPop = SOL_SHIELD_POP[skillOf(t, "focus")] + SOL_REFRACT_POP[skillOf(t, "refraction")]; // FOCUS pierces shields: each beam pops this many (SOL's shield help, counter matrix)
-  s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")]; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.twinCone = skillOf(t, "refraction") >= 6; // VI: two opposite cones (solRefraction)
+  s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.fan = skillOf(t, "refraction") >= 6 ? 3 : 1; // VI: three reflections off the first enemy (solRefraction)
   const bk = skillOf(t, "breach");
-  s.breach = 1; s.pierce = SOL_PIERCE[bk]; s.critMul = SOL_CRITMUL[bk]; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = SOL_BREACH_CRIT[bk]; s.skill = true;
+  s.breach = 1; s.pierce = 1; s.dot = { frac: SOL_SCORCH[bk], t: SOL_SCORCH_T }; s.critMul = SOL_CRITMUL[bk]; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = SOL_BREACH_CRIT[bk]; s.skill = true;
 }
-// from fireRay: bend on from the first enemy hit to st.refraction more, each the nearest not yet hit to the last one,
-// inside ONE light cone, SOL_CONE degrees either side - no reach limit between hops, nor the tower's range.
-// THE CONE STARTS AT THE FIRST ENEMY STRUCK (owner, 2026-10-12: "on first bounce of any refraction, pretend like the cone
-// originated from that enemy and direct that cone towards the optimal angle to hit the most"): it points where it holds
-// the most living enemies (up to the hops it has - solConeDir), and every hop runs FORWARD, further from that first enemy
-// than the last hit and along the cone (it was the TOWER's cone along the shot, which a lattice coming head-on mostly
-// left: 3-4 hops of 10-13, soldiag.mjs); SOL's targeting picks among what the cone holds (chainPick)
-const angOff = (a, b) => Math.abs(((a - b + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
-function solConeDir(t, st, e, half) {
-  const others = G.enemies.filter(o => !o.dead && o.seen && o !== e), ang = others.map(o => Math.atan2(o.y - e.y, o.x - e.x));
-  let dir = Math.atan2(e.y - t.y, e.x - t.x), best = 0; // nothing round it: on along the shot
-  for (const a of ang) { let n = 0; for (const b of ang) if (angOff(a, b) <= half) n++; n = Math.min(n, st.refraction); if (n > best) { best = n; dir = a; } }
-  return dir;
-}
+// THE SOL REWORK (owner, 2026-10-22: "SOL beam always goes through at 100% after enemy in a straight line, starts with one reflection as
+// usual. However, reflection deals less than 100% damage and also passes through" / "refraction -> increases passthrough% and additional
+// reflections (passthrough is multiplicative for each reflection)" / "reflection VI makes 3 reflections off the first enemy (must hit
+// different targets)", "they dont split"): from fireRay, the first enemy reflects the beam on to st.refraction more in a CHAIN (each the
+// next SOL's targeting picks off the last, no cone, no reach limit), the k-th at st.hop^k of the shot; every reflection passes through
+// along its own line like the main beam (rayHit -> solPierce). VI: st.fan (3) chains, each starting on a different enemy.
+// (Was: the reflections inside a light cone off the first enemy, VI two opposite cones - solConeDir; ARCHAEOLOGY.md)
 function solRefraction(t, st, e) {
-  const half = (st.cone || SOL_CONE) * Math.PI / 180, dir = solConeDir(t, st, e, half), hit = new Set([e]), ex = e.x, ey = e.y;
-  const fromE = o => Math.hypot(o.x - ex, o.y - ey);
-  // EVERYTHING inside the cone off the first enemy is fair game (owner, 2026-10-12: "everything needs to fit in the cone off the
-  // first enemy") - each hop only further OUT along it than the last, never a check on the hop's own heading
-  const forward = (from, o) => fromE(o) > (from === e ? 0 : fromE(from));
-  let far = Math.hypot(ex - t.x, ey - t.y);
-  // one CONE's chain, pointing `a` off the first enemy; returns how far out it reached
-  const chain = a => {
-    const inCone = o => angOff(Math.atan2(o.y - ey, o.x - ex), a) <= half;
-    let prev = e, from0 = t, farE = 0;
-    for (let k = 0; k < st.refraction; k++) {
-      const from = prev, nxt = chainPick(t, prev, Infinity, o => hit.has(o) || !inCone(o) || !forward(from, o)); // within the cone, forward, by SOL's targeting
-      if (!nxt) { if (prev !== e) solOutOfSight(t, st, from0, prev); break; } // no one left in the cone: on out of sight (owner, 2026-10-08)
-      from0 = prev;
-      rayHit(t, st, nxt, st.dmg * (st.hop || 1), prev); hit.add(nxt); prev = nxt;
-      far = Math.max(far, Math.hypot(nxt.x - t.x, nxt.y - t.y)); farE = Math.max(farE, fromE(nxt));
+  const hit = new Set([e]), heads = [];
+  for (let c = 0; c < (st.fan || 1); c++) { const o = chainPick(t, e, Infinity, x => hit.has(x)); if (!o) break; hit.add(o); heads.push(o); }
+  for (const h of heads) {
+    let prev = e, nxt = h, m = st.hop || 1;
+    for (let k = 1; ; k++) {
+      rayHit(t, st, nxt, st.dmg * m, prev);
+      if (k >= st.refraction) break;
+      prev = nxt; nxt = chainPick(t, prev, Infinity, x => hit.has(x));
+      if (!nxt) break;
+      hit.add(nxt); m *= st.hop || 1;
     }
-    // the cone AGAIN from the first enemy struck, the way the hops really bend (owner, 2026-10-12: "show the cone again")
-    if (farE > 0) fx.push({ k: "cone", x: ex, y: ey, a, half, len: farE + 30, color: TOWERS[t.kind].color, t: 0, life: SOL_CONE_LIFE });
-  };
-  chain(dir);
-  // REFRACTION VI fires TWO cones off the first enemy, the chosen way and straight OPPOSITE (owner, 2026-10-12)
-  if (st.twinCone) chain(dir + Math.PI);
-  // the cone DRAWN from the tower along the shot, as before (owner, 2026-10-12: "draw the cone from the tower still anyway")
-  fx.push({ k: "cone", x: t.x, y: t.y, a: Math.atan2(ey - t.y, ex - t.x), half, len: far + 30, color: TOWERS[t.kind].color, t: 0, life: SOL_CONE_LIFE });
+  }
 }
 // a shot that runs OUT OF TARGETS goes on from the last enemy struck, along its last leg, far past the screen's edge (owner, 2026-10-08)
 const SOL_OUT_LEN = 3000;
@@ -445,7 +426,7 @@ const SOL_OUT_LEN = 3000;
 function solOutOfSight(t, st, a, b) {
   const far = { get x() { const dx = b.x - a.x, dy = b.y - a.y; return b.x + dx / (Math.hypot(dx, dy) || 1) * SOL_OUT_LEN; },
     get y() { const dx = b.x - a.x, dy = b.y - a.y; return b.y + dy / (Math.hypot(dx, dy) || 1) * SOL_OUT_LEN; } };
-  beam(b, far, TOWERS[t.kind].color, RAY_BEAM_LIFE, 3, st.dmg, true);
+  beam(b, far, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, st.dmg, true);
 }
 const SOL_CONE_LIFE = 0.6; // game seconds (1x runs BASE_SPEED 0.8 game s a real s): long enough to see the cubic fade
 // UI (drawFx): the Refract light cone, a faint wedge that fades FAST (owner):
@@ -465,23 +446,7 @@ function drawCone(f0, k) {
   ctx.arc(f.x, f.y, f.len, f.a - f.half, f.a + f.half); ctx.closePath(); ctx.fill();
 }
 // ACD's chart numbers, stats and puddles live in aspira-acid.js
-// BREACH SHRAPNEL (owner, 2026-10-12: "when breached enemy dies, it should fire shrapnel around based on total armor breached"):
-// a breached enemy's death - by any tower - bursts into up to SHRAP_N pieces at enemies within SHRAP_R, EACH a hit of SHRAP_MUL x
-// the armor it had LOST (healthy armor0 minus its armor now - owner: "a multiple of the armour diff between healthy and current"),
-// so each pops a shield charge and armor blunts it as ever; credited to the SOL that breached it. Breach had stopped paying past
-// armor (its strip was overkill); this spends the overkill on whatever is near
-const SHRAP_MUL = 1, SHRAP_N = 8, SHRAP_R = 90, SHRAP_BREACH = 1;
-function breachShrapnel(e) {
-  const t = e.breachBy && G.towers.includes(e.breachBy) ? e.breachBy : null;
-  const near = G.enemies.filter(o => !o.dead && o.seen && o !== e && Math.hypot(o.x - e.x, o.y - e.y) <= SHRAP_R)
-    .sort((a, b) => Math.hypot(a.x - e.x, a.y - e.y) - Math.hypot(b.x - e.x, b.y - e.y)).slice(0, SHRAP_N);
-  const each = SHRAP_MUL * Math.max(0, (e.armor0 || 0) - (e.armor || 0));
-  if (!near.length || !each) return;
-  if (typeof burst === "function") burst(e.x, e.y, TOWERS.sol.color, 6 + near.length);
-  for (const o of near) {
-    beam(e, o, TOWERS.sol.color, RAY_BEAM_LIFE, 1, 0, true, false);
-    // BREACH, not damage (owner, 2026-10-18: "breach shrapnel should cause more breach to nearby units, not deal damage"): each piece
-    // strips SHRAP_BREACH x the armor the dead one had lost off its target, as a Breach hit does (spokes, shrapnel of its own)
-    const k = each * SHRAP_BREACH; o.armor = (o.armor || 0) - k; if (t) stripBy(o, t, k); o.breachN = (o.breachN || 0) + 1; o.breached = (o.breached || 0) + k; o.breachBy = t || o.breachBy;
-  }
-}
+// SCORCH (owner, 2026-10-22: "replace shrapnel with short, high damage DoT"; the BREACH SHRAPNEL a breached death burst into is gone -
+// ARCHAEOLOGY.md): every SOL hit - beam, pass-through, reflection - sets a burn of SOL_SCORCH[breach] x that hit over SOL_SCORCH_T s
+// (onHit's st.dot: the strongest burn holds, a new hit restarts the clock - Focus's beams do not stack it). Balanced overnight
+const SOL_SCORCH = [1, 1.1, 1.2, 1.3, 1.4, 1.5], SOL_SCORCH_T = 1;

@@ -107,50 +107,11 @@ KINDS.forEach((k, i) => {
   }, v === "pause" ? "asp-sp-pause" : speedId(v));
 });
 
-// AUTO-WAIT (owner): a checkbox under the pause button; while ticked, the game
-// drops to a share of the chosen speed (AUTO_WAIT_K) whenever an enemy is within AUTO_WAIT3_S game-seconds of
-// reaching the core at its current speed (owner: time, not distance), and goes
-// back to the chosen speed once none is. Remembered in localStorage.
-const AUTO_WAIT3_S = 1, AUTO_SLOW_S = 0.5; // AUTO_SLOW_S: the slow itself, closer still (owner, 2026-10-19: "make auto-wait slow happen when even closer only"; was AUTO_WAIT3_S, 1 s) - AUTO_WAIT3_S stays the threat ring's line (aspira-threat.js). ONE stage (owner, 2026-10-19: "remove the outer tier also, just keep the innermost tier of slow (keep all threat indicators)" - the x0.5 at 4 s and the x0.25 at 1.5 s are gone); 2026-10-18: "make the first and second tier of auto-wait happen later" (was 6 / 2); 2026-10-11: "start at 6s, 1/2 at 2s and 1/4 at 1s" (was 8 / 3)
-// each stage a SHARE of the chosen speed, not a fixed one (owner, 2026-10-12: "make auto-wait slowness be a percentage of the
-// chosen speed"): half of it from 6s out, a quarter from 2s, an eighth from 1s (was 1x / 1/2x / 1/4x, capped by the speed)
-const AUTO_WAIT_K = [0.5, 0.25, 0.125]; // (only [2] is used since 2026-10-19: the outer stages are gone)
+// AUTO-WAIT (owner, 2026-10-11..19: a checkbox; the GAME dropped to an eighth of its speed near the core) is GONE, and the per-enemy wait
+// that briefly replaced it too (owner, 2026-10-22): the lanes' CORE TWIST (aspira-defs.js) gives the same time. Here: the threat ring's line
+const AUTO_WAIT3_S = 1; // the threat ring's line (aspira-threat.js)
 const etaToCore = e => { const v = effSpeed(e); return v > 0 ? (PATHS[e.pi].len - e.s) / v : Infinity; };
-let autoWait = true;
-// ON by default (owner); only an explicit "0" (unticked before) turns it off
-try { autoWait = localStorage.getItem("spire.autowait") !== "0"; } catch (e) { autoWait = true; }
-// ONE stage (three 2026-10-11 .. 10-19): AUTO_WAIT_K[2] of the chosen speed within AUTO_WAIT3_S of the core. Returns the speed key, or 0 when not waiting.
-// NO JITTER (owner): the nearest ETA jumps as enemies are slowed, die or swap,
-// so a stage is entered at its line but only LEFT past AUTO_RELEASE x it (6s in,
-// 7.5s out; 2s in, 2.5s out; 1s in, 1.25s out), and a slower speed holds at least AUTO_HOLD_MS of
-// real time before it may speed up again. Slowing down is always immediate.
-// Worked out at most once a frame (it is asked several times).
-const AUTO_RELEASE = 1.25, AUTO_HOLD_MS = 1500;
-let awLevel = 0, awSince = 0, awAt = -1;
-const autoWaiting = () => {
-  if (!autoWait || ui.paused) { awLevel = 0; return 0; }
-  const now = performance.now();
-  if (now - awAt < 8) return awLevel;
-  awAt = now;
-  let eta = Infinity;
-  for (const e of G.enemies) if (!e.dead) eta = Math.min(eta, etaToCore(e));
-  const stages = [[AUTO_SLOW_S, AUTO_WAIT_K[2] * ui.speed]];
-  const hold = (lvl, line) => awLevel && awLevel <= lvl && eta <= line * AUTO_RELEASE; // already this slow or slower, still near
-  const hit = stages.find(([line, lvl]) => eta <= line || hold(lvl, line));
-  const want = hit ? hit[1] : 0;
-  const slower = want && (!awLevel || want < awLevel);
-  if (want !== awLevel && (slower || now - awSince >= AUTO_HOLD_MS)) { awLevel = want; awSince = now; }
-  return awLevel;
-};
-(function autoWaitBox() {
-  const row = document.createElement("div");
-  row.className = "asp-row asp-autowait";
-  document.querySelector(".asp-head").append(row); // at the TOP, under the stats (owner, 2026-10-10; was under the wave list, before that under the speed row)
-  const btn = button(row, "asp-check", "", () => {
-    autoWait = !autoWait;
-    try { localStorage.setItem("spire.autowait", autoWait ? "1" : "0"); } catch (e) { /* not remembered */ }
-  }, "asp-autowait");
-  btn.setAttribute("role", "checkbox");
+(function ascRow() {
   ascBoxes(); // auto-move + free builds, under the title (aspira-ascend.js)
   updateQuality(); /* the board's 3D layers show (aspira-quality.js) */
 })();
@@ -159,12 +120,9 @@ const autoWaiting = () => {
 const ICON_UNCHECKED = '<svg class="asp-box" viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="2"/></svg>';
 const ICON_CHECKED = '<svg class="asp-box" viewBox="0 0 20 20"><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M5.5 10.5l3 3 6-7"/></svg>';
 // (AUTO-SPEED - 3x far from every tower's reach, easing to the chosen speed - ran 2026-10-09..12; removed, owner: "remove auto-speed feature")
-// the speed the game runs at (x): the chosen one, held down by auto-wait
-const speedX = () => (timeStopped() ? 1 : Math.min(autoWaiting() || Infinity, ui.speed)); // the speed the game REALLY runs at: a Temporal Drive freeze plays at 1x (frame) - auto-move's glide read the setting and crawled at 1/10 (owner, 2026-10-14)
+// the speed the game runs at (x): the chosen one
+const speedX = () => (timeStopped() ? 1 : ui.speed); /* (auto-wait no longer slows the game: ENEMY WAIT slows the enemies, aspira-waves.js) */ // the speed the game REALLY runs at: a Temporal Drive freeze plays at 1x (frame) - auto-move's glide read the setting and crawled at 1/10 (owner, 2026-10-14)
 function updateAutoWait() {
-  const btn = $("asp-autowait"), html = (autoWait ? ICON_CHECKED : ICON_UNCHECKED) + "<span>auto-wait</span>"; // the box bigger than the words (owner)
-  if (btn.dataset.html !== html) { btn.dataset.html = html; btn.innerHTML = html; btn.setAttribute("aria-checked", String(autoWait)); }
-  btn.classList.toggle("on", autoWaiting()); // lit while it is holding the game at 1/2x
   ascCheck("asp-automove", autoMove, "move-hax", (G.autoMoveS || 0) > 0); // auto-move (owner, 2026-10-22: "Rename auto-move to move-hax")
   ascCheck("asp-freebuild", freeMode, "cred-hax", !!G.autoBuy || freeMode); // (DQ) while it is ON too (owner, 2026-10-22: "cred-hax needs to say (DQ) also when checked") // free towers/upgrades (owner, 2026-10-22: "Rename free towers checkbox to Hax", "Hax with lowercase h", then "hax to cred-hax")
 }

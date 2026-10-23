@@ -137,6 +137,12 @@ with a small `CRED` (white halo then plain outline).
 - **Time:** the sim ran at a hidden 3x at "1x" until it was rescaled so 1x is real time (every rate
   x3, every duration /3).
 
+**Auto-wait, gone (2026-10-22).** The checkbox slowed the whole GAME to x0.125 when an enemy was 0.5 s from the core. The owner made
+it always on but enemies-only ("instead of slowing down the game, slow down the enemies only", "only enemies within the auto-wait
+distance slow down"): ENEMY WAIT, per enemy, x0.125 inside 0.5 s at its own pace. The sims then found the game unloseable (138 of 140
+trio games won, no life lost through wave 96, the speed probe saturating at x4), and the owner replaced it with the lanes' CORE TWIST
+(the same 3.5 s, as path) - "gradually increase the twist of the lane so that the enemies take the same amount of time".
+
 ## 4. Towers history
 
 ### 4.1 The first towers and trees (10-01..05)
@@ -369,6 +375,15 @@ had crawled at a tenth (4.3.35, 4.3.37).
 Targeting: Hard / Fast / Close -> Fresh / Biggest / Near (10-03); "Tagged" came and went 10-07;
 defaults all-close -> by role. Sizes: towers 25% smaller (10-05/06) and bigger "to press" (10-11).
 
+**SOL rework (2026-10-22).** Was: the pass-through `SOL_PIERCE[breach]` 35% .. 125%, 420 u on, 12 enemies at most; refraction hops inside
+a light CONE off the first enemy (`solConeDir`, 3-12 degrees by tier), every enemy ahead in the cone at V, two opposite cones at VI; an
+aim cone that swept in while charging; a breached death's SHRAPNEL breaching the enemies near it. Now: 100% through to the screen's edge on a
+thin line, chained reflections at a compounding share, three chains at VI, a scorch on every hit. Also found: the description had said 1 2 4 8
+12 rays while it fired 2 3 10 17 25.
+**ACD (2026-10-22).** Flow's slow moved from the jets back to the pools (it had gone pools -> jets on 2026-10-12, "these rays could slow
+instead of contagion"); kills leave pools only with Contagion, and then every ACD kill leaves a FULL pool (a pool kill used to leave one
+0.8x wide and half as long, `ACD_SPREAD_R` / `ACD_SPREAD_LIFE`).
+
 ## 5. Enemies, waves and bosses history
 
 - **Shapes:** triangle fastest, more sides slower, hexagons reserved for towers (10-01); armor a heptagon,
@@ -424,6 +439,9 @@ negative-able (10-03); quiet hits skipped armor until 10-12 ("allow negative arm
 Damage numbers: every hit shows (10-06), culled by size at `DMG_MAX` 120, sized by the pre-armor hit, grey by
 the share armor took (10-09), flying away from the tower (`DMG_FLY` 30 -> 90). Credit for debuff-added damage goes
 to the debuffer (10-12). Crits were a CRIT label, then a pink number, then marigold (the `orange` token; current).
+
+**The armor floor (2026-10-22).** Bosses alone floored at minus their wave's armor (2026-10-13); the owner, seeing a Corrosion VI jet strip
+~53k armor a second, tried a floor for all, reverted it ("actually no floor"), then kept it ("boss armor floor to everything").
 
 ## 7. Interface history
 

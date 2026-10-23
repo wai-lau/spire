@@ -62,7 +62,7 @@ function shieldsOf(type, n) {
 // ...and EARLY ARMOR HARDER (owner, 2026-10-12: "armor feels too easy early"): x ARMOR_EARLY to wave 20, easing to x1 by 30
 const SHIELD_EARLY = 0.6, ARMOR_EARLY = 2 /* owner, 2026-10-12: "make early armor stronger" (was 1.6) */, early = (k, n) => k + (1 - k) * Math.min(1, Math.max(0, (n - 20) / 10));
 const SWARM_HP_X = 1.5; // a swarm wave's whole HP x1.5 (owner, 2026-10-12), spread by the jitter (spawnEnemy)
-const enemyHp = (type, n0, n = eqWave(n0)) => earlyHpX(type, n0) * (9 * hpPow(n) + n * 2) * ENEMIES[type].hp * 2 * (ENEMIES[type].star ? 1 : plainHpMul(n0) * plainHpGrow(n0) * plainEnd(n)) * shieldsOf(type, n0).hpMul * (type === "shield" ? early(SHIELD_EARLY, n) : type === "armor" ? early(ARMOR_EARLY, n) : type === "swarm" ? SWARM_HP_X : 1); // x2: half as many enemies (owner); 9 / 2 (2026-10-08: all HP halved, was 18 / 4)
+const enemyHpRaw = (type, n0, n = eqWave(n0)) => tune(type, "hp", n0) * earlyHpX(type, n0) * (9 * hpPow(n) + n * 2) * ENEMIES[type].hp * 2 * (ENEMIES[type].star ? 1 : plainHpMul(n0) * plainHpGrow(n0) * plainEnd(n)) * shieldsOf(type, n0).hpMul * (type === "shield" ? early(SHIELD_EARLY, n) : type === "armor" ? early(ARMOR_EARLY, n) : type === "swarm" ? SWARM_HP_X : 1); // x2: half as many enemies (owner); 9 / 2 (2026-10-08: all HP halved, was 18 / 4)
 function spawnEnemy(type, n, pi, ang = 0) {
   const d = ENEMIES[type], s0 = entryS(pi), p0 = pathAt(pi, s0, ang);
   // a SWARMER's HP - and its SIZE - jitter 30-300% of the average, which is SWARM_HP_X the wave's (owner, 2026-10-12: "increase
@@ -73,19 +73,19 @@ function spawnEnemy(type, n, pi, ang = 0) {
   // armor/shields, late waves were pure dps and ARC spam won. Armor grows with
   // the curve to ARMOR_EXP (0.4; was the square root), shields with its 0.4 power - normalised so
   // shields still start at exactly their base (8) on their first wave (3).
-  const late = n >= HYBRID_FROM, armorOf = t => Math.floor(ENEMIES[t].armor * ENEMY_HP_MUL * armorGrow(n)); // (armorGrow, HYBRID_FROM: aspira-defs.js) // x ENEMY_HP_MUL like the HP (2026-10-11: left out of the HP cut, armor ate 4.4x more of each hit)
-  const shield = type === "swarm" && late ? Math.round(SWARM_SHIELD * shieldsOf("shield", n).shield) : shieldsOf(type, n).shield; // fewer late shields, more HP (shieldsOf); late swarms carry a share of a shield unit's
-  const armor = d.armor ? armorOf(type) : type === "fast" && late ? Math.floor(FAST_ARMOR * armorOf("armor")) : 0; // late fast a share of an armor unit's
+  const armorOf = t => Math.floor(ENEMIES[t].armor * ENEMY_HP_MUL * armorGrow(n)); // (armorGrow: aspira-defs.js) // x ENEMY_HP_MUL like the HP (2026-10-11: left out of the HP cut, armor ate 4.4x more of each hit)
+  const shield = type === "swarm" ? Math.round(tune("swarm", "shield", n) * shieldsOf("shield", n).shield) : Math.round(shieldsOf(type, n).shield * tune(type, "shield", n)); // the shield levers (TYPE_TUNE, aspira-waves.js): a late swarm carries a share of a shield unit's charges
+  const armor = d.armor ? Math.floor(armorOf(type) * tune(type, "armor", n)) : type === "fast" ? Math.floor(tune("fast", "armor", n) * armorOf("armor")) : 0; // the armor levers: a late fast carries a share of an armor unit's armor
   G.enemies.push({
-    armor, armor0: armor, shield, shieldMax: shield, wave: n, aug: late && type === "swarm" ? "shield" : late && type === "fast" ? "armor" : null, /* aug: its late HYBRID trait - its outline wears that type's colour (owner, 2026-10-13) */ // armor0: as spawned (damageCredit) // the wave it CAME from (the end screen's leaks)
+    armor, armor0: armor, shield, shieldMax: shield, wave: n, aug: type === "swarm" && shield > 0 ? "shield" : type === "fast" && armor > 0 ? "armor" : null, /* aug: its late HYBRID trait - its outline wears that type's colour (owner, 2026-10-13) */ // armor0: as spawned (damageCredit) // the wave it CAME from (the end screen's leaks)
     // swarm members wander widely off the lane, each at its own speed (+-50%, its own roll - never tied to its size)
     // and its own wobble rate, so a clump churns as it moves
     jit: type === "swarm" ? 18 + Math.random() * 45 : 0, /* x1.5 wider (owner, 2026-10-12: "swarm units spread wider across lane"; was 12 + 30) */ ph: Math.random() * 6.283, // owner: tripled, halved twice, doubled 2026-10-08
-    spd: (type === "swarm" ? 0.5 + Math.random() /* +-50% (owner, 2026-10-14: "increase their speed jitter significantly, not correlated to size" - a swarm strings out instead of arriving as one clump; was 0.8 + 0.4) */ : type === "fast" ? lateK(n, "fast") * (n === 1 ? FIRST_FAST_SPD : 1) : 1) * speedRamp(n) * (ENEMIES[type].star ? 1 : speedGrow(n)), /* (aspira-defs.js) */ phr: 0.6 + Math.random(),
+    spd: (type === "swarm" ? 0.5 + Math.random() /* +-50% (owner, 2026-10-14: "increase their speed jitter significantly, not correlated to size" - a swarm strings out instead of arriving as one clump; was 0.8 + 0.4) */ : type === "fast" ? lateK(n, "fast") * (n === 1 ? FIRST_FAST_SPD : 1) : 1) * speedRamp(n) * (ENEMIES[type].star ? 1 : speedGrow(n) * tune(type, "speed", n)), /* (aspira-defs.js) */ phr: 0.6 + Math.random(),
     id: G.id++, type, n, hp, max: hp, pi, ang, s: s0, x: p0.x, y: p0.y, rot: Math.random() * 6,
     // fractional, so a cheap swarmer really pays its share (owner: halved
     // swarm bounty must hold; money is shown rounded down)
-    bounty: bountyBase(eqWave(n)) * d.bounty * (d.star ? 1 : earlyX(n)), // (aspira-waves.js) slowF: 0, slowT: 0, stunT: 0, markT: 0, markMul: 1,
+    bounty: bountyBase(eqWave(n)) * d.bounty * (d.star ? 1 : earlyX(n) / tune(type, "count", n)), /* the count lever splits the wave's pay */ // (aspira-waves.js) slowF: 0, slowT: 0, stunT: 0, markT: 0, markMul: 1,
   });
   G.enemies[G.enemies.length - 1].sizeMul = (1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earlyHpX(type, n) / (enemyHp(type, 1) / earlyHpX(type, 1)))) * (type === "swarm" ? jit : 1); if (type === "swarm") G.enemies[G.enemies.length - 1].drawJit = swarmDrawJit(jit); // GROWS WITH LOG HP (owner, 2026-10-13: "initial unit size should scale logarithmically with unit hp"): x1 on wave 1, about x2 by 119; a swarmer x its HP share too, 50-300% (owner, 2026-10-12)
   if (type === "bonus") bossSpawn(G.enemies[G.enemies.length - 1], n); // which boss (aspira-bosses.js)
@@ -95,7 +95,6 @@ function spawnEnemy(type, n, pi, ang = 0) {
 // Global enemy pace (owner: everything at half speed). Spawn gaps are divided
 // by it too, so enemies stay the same DISTANCE apart on the lane — that
 // spacing is a balance lever for chain reach.
-let ENEMY_SPEED = 1.125; // 2026-10-11: the short lanes (owner: "reduce speed also"; was 1.5, briefly 1.875) // let: the simulator sweeps it
 const OFF_SCREEN_SPEED = 3, effSpeed = e => ENEMIES[e.type].speed * ENEMY_SPEED * (e.spd || 1) * PATHS[e.pi].pace * (e.stunT > 0 ? 0 : 1 - (e.slowT > 0 ? e.slowF : 0));
 
 // FRESH (owner): an enemy carrying NO debuff - slowed, stunned, bleeding,
@@ -157,7 +156,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   // frost it holds - STACKING with Corrosion, below zero like it (owner, 2026-10-12: "let rime reduce armor"; Brittle did it
   // for an hour, "brittle should stack with corrosion (both should allow negative)")
   const frost = e.frostArmor ? frostShare(e) * e.frostArmor * armorRefOf(e.wave || 1) : 0;
-  const arm = Math.trunc(Math.max((e.armor || 0) - frost, e.arcana ? -armorRefOf(e.wave || 1) : -Infinity)); // whole armor, rounded toward zero (Breach/Corrosion strip it in fractions); a BOSS no lower than minus its wave's armor (owner, 2026-10-13)
+  const arm = Math.trunc(Math.max((e.armor || 0) - frost, -armorRefOf(e.wave || 1))); // whole armor, rounded toward zero (Breach/Corrosion strip it in fractions); EVERY enemy no lower than minus its wave's armor - the boss floor for all (owner, 2026-10-22: "boss armor floor to everything"; bosses only since 2026-10-13)
   if (arm > 0) // EVERY hit, quiet ones too - FRZ ticks, splash, damage over time, Nova (owner, 2026-10-12; quiet hits skipped armor until then)
     amt = Math.max(amt * 0.1, amt - arm);
   // NEGATIVE armor (ACD's Corrosion, owner) is a flat bonus on every hit - quiet ones too (owner, 2026-10-12: "allow

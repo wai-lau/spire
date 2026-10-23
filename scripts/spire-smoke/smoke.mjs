@@ -180,7 +180,7 @@ check("spacing (owner, 2026-10-20): armor units 2x (72), fast units three times,
   if (Math.abs(r.armorPitch - 72) > 1e-6 || Math.abs(r.armorRow - 72) > 1e-6) return "armor lattice " + r.armorPitch + " across, " + r.armorRow + " between rows (expected 72 both: back from 216, owner 2026-10-20 - its outer columns walked out of reach)";
   if (Math.abs(r.vLat - 24) > 1e-6 || Math.abs(r.vBack - 28) > 1e-6) return "a shield V steps " + r.vLat + " across, " + r.vBack + " back (expected 24, 28: a third, owner 2026-10-21)";
   if (Math.abs(r.fastSide - 78) > 1e-6 || Math.abs(r.fastBehind - 78) > 0.01) return "fast pairs " + r.fastSide + " across, " + r.fastBehind + " behind (expected 78 both, three times 26)";
-  if (Math.abs(r.firstSpd - 0.5) > 1e-9 || Math.abs(r.laterSpd - 1) > 1e-9) return "wave 1 fast at x" + r.firstSpd + ", wave 2 at x" + r.laterSpd + " (expected x0.5, x1: owner 2026-10-21 \"halve the speed of the first fast wave\")";
+  if (Math.abs(r.firstSpd / r.laterSpd - 0.5) > 1e-9) return "wave 1 fast at x" + r.firstSpd + ", wave 2 at x" + r.laterSpd + " (expected wave 1 HALF wave 2 - its speed lever, TYPE_TUNE, sets both: owner 2026-10-21 \"halve the speed of the first fast wave\")";
   if (r.shieldIdx !== 5 || Math.abs(r.shieldGap - 5 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected 5 x 0.4 = 2, half the old 4)";
   if (r.shieldQueued !== 4) return "a V of 5: " + r.shieldQueued + " wingmates wait off the board (expected 4 - only the leader spawns on it)";
   return "";
@@ -760,7 +760,7 @@ check("GRV: the aura slows smaller enemies more (owner, 2026-10-21)", () => {
 check("GRV: a hole every 3 shots, holding all three's mass (owner, 2026-10-21)", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "grv"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null; const t = G.towers[0], st = towerStats(t);
-    spawnEnemy("armor", 30, 0, 0); const e = G.enemies[0]; e.seen = true; e.hp = e.max = 1e12;
+    spawnEnemy("armor", 30, 0, 0); const e = G.enemies[0]; e.seen = true; e.hp = e.max = 1e12; e.armor = 0; // (no armor: the check is the mass summing - the tuned armor lever blunted the hits, 2026-10-22)
     for (let k = 0; k < 3; k++) novaAt(t, st, e);
     for (let i = 0; i < 60 && !t.spheres.every(sp => sp.auraSnd); i++) for (const sp of t.spheres) stepSphere(sp, t, st, 1 / 60); /* to the step the hole opens (it evaporates from then) */
     const live = t.spheres.filter(sp => !sp.merged && sp.mass > 0);

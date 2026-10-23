@@ -40,7 +40,7 @@ const SPEC = {
     ["Circle", st.plagueR ? Math.round(st.plagueR) + (st.bloom ? "→" + Math.round(st.plagueR * st.bloom) : "") : "—"],
     ["Armor", st.corrode ? "−" + Math.round(st.corrode * 100) + "% of dmg" : "—"] /* a tick strips ACD_CORRODE OF ITS DAMAGE; dmgUnits(0.1) read "−0" (2026-10-14) */, /* no "Shields −1 / hit" rows: one charge a hit is the default, unsaid (owner, 2026-10-20) */
     ["Goo", st.corrode ? "×" + Math.round(DRIP_TAKE * (1 + DRIP_TIER_K * skillOf(t, "corrosion")) * 10) / 10 + " eaten armor · pull " + ACD_DRIP_PULL[skillOf(t, "corrosion")] : "—"] /* dripDrop / stepDrips: strips and burns that much */,
-    ["Pool spread", st.spread ? "kill in pool → pool ×" + ACD_SPREAD_R + " size" : "—"],
+    ["Kill pools", st.spread ? "every ACD kill" : "—"] /* (owner, 2026-10-22: anything ACD kills leaves a full pool) */,
     // puddles one number a row (owner, 2026-10-07: "1 / 1.4s · 1.5s · r20" was unreadable), so each
     // reads now -> next on its own and its colour judges that one number
     // always the same rows ("—" with no puddles), so a pull from Contagion 0 lines up now -> next
@@ -60,10 +60,10 @@ const SPEC = {
     ["Armor strip", "−" + dmgUnits(st.dmg * GRV_AURA_K * GRV_STRIP * GRV_STRIP_OUT) + "/s edge · −" + dmgUnits(st.dmg * GRV_AURA_K * GRV_STRIP * GRV_STRIP_IN) + "/s centre"] /* more the closer: in the numbers, not the words (owner, 2026-10-16) */, ["Pellets", +st.pellets.toFixed(1) + "/s" + (st.hawking ? " · last burst" : "")],
     ["Pellet hit", dmgUnits(st.dmg * st.pelletK)], ["Black hole", "grows up to " + GRV_MASS_MAX + "× its size by hitting · lasts " + GRV_LIFE + "s if it hits nothing"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means") */]  /* (no "Shields -1 / hit" row: every hit pops one - owner, 2026-10-16: "isn't this just default behaviour? maybe no need to list") */,
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
-    ["Beams", st.beams || 1], ...(st.skill && st.shieldPop > 1 ? [["Shields", "−" + st.shieldPop + " / beam"]] : []) /* only when over the default 1 (owner, 2026-10-20) */ /* SOL_SHIELD_POP + SOL_REFRACT_POP */, ...(st.skill ? [["Refract", st.refraction ? (st.refraction === Infinity ? "all" : "+" + st.refraction) + " in a " + (st.cone || SOL_CONE) * 2 + "° cone" : "—"]] : []),
+    ["Beams", st.beams || 1], ...(st.skill && st.shieldPop > 1 ? [["Shields", "−" + st.shieldPop + " / beam"]] : []) /* only when over the default 1 (owner, 2026-10-20) */ /* SOL_SHIELD_POP + SOL_REFRACT_POP */, ...(st.skill ? [["Reflect", st.refraction ? (st.fan > 1 ? st.fan + " × " : "") + st.refraction + " at ×" + st.hop + " each" : "—"]] : []),
     // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)
     [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + dmgUnits(st.bleedArmor) + " armor" + (st.bleedCrit ? ", +" + Math.round(st.bleedCrit * 100) + "% crit" : "") + (st.breach > 1 ? " ×" + st.breach : "") + "/hit" : "—"],
-    ...(st.skill ? [["Shrapnel", SHRAP_N + " × armor lost · r" + SHRAP_R]] : []) /* breachShrapnel */, ["Form", rayForm(st)]],
+    ...(st.skill && st.dot ? [["Scorch", Math.round(st.dot.frac * 100) + "% of a hit over " + st.dot.t + "s"]] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]],
 };
 
 // One stat row: "now" alone at max level, "now -> next" when an upgrade
