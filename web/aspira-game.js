@@ -120,7 +120,7 @@ function pickTargets(t, st, count) {
   const key = MODE_KEY[t.mode];
   // ties go to whoever is furthest along the spiral
   c.sort((a, b) => key(a) - key(b) || b.e.s - a.e.s);
-  return c.slice(0, count).map(a => a.e);
+  return (st.pierce && typeof solLineSort === "function" ? solLineSort(t, c) : c).slice(0, count).map(a => a.e); // SOL: the line through the most (aspira-sol.js)
 }
 
 // quiet: no flash or number (poison ticks, splash), so they do not spam
@@ -394,7 +394,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       if (e.corrodeT > 0) e.corrodeT -= dt; // Corrosion ring
       if (e.burnT > 0) e.burnT -= dt; // under an ACD burn (Fresh targeting)
       if (e.marks) sumMarks(e, dt);
-      if (e.dotT > 0) { e.dotT -= dt; damage(e, e.dotDps * dt, e.dotSrc, true); if (e.dead) continue; }
+      if (e.dotT > 0) { const q = SOL_SCORCH_T / SOL_SCORCH_TICKS; e.dotAcc = (e.dotAcc || 0) + Math.min(dt, e.dotT); e.dotT -= dt; while (e.dotAcc >= q - 1e-9 && !e.dead) { e.dotAcc -= q; damage(e, e.dotDps * q, e.dotSrc, false, false, SOL_DOT_ST); } if (e.dotT <= 0) e.dotAcc = 0; if (e.dead) continue; } // SOL's scorch in few big ticks, popping shields (aspira-skills.js)
       { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; e.s += (m ? Math.min(effSpeed(e), effSpeed(m)) : effSpeed(e)) * ((e.seen && inReach(e, reach)) || (m && m.seen && inReach(m, reach)) ? 1 : OFF_SCREEN_SPEED) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") */
     }
     const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)

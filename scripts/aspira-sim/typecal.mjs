@@ -3,7 +3,7 @@
 // games (every wave one type, a boss wave an ordinary one of it; every trio, the smart saver) but read BAND BY BAND - per type and band
 // (the four sections: waves 1-24, 25-60, 61-96, 97-120): lives lost and rewinds (the smart saver rewinds a leaked wave and buys, so rewinds are the
 // difficulty its lives hide), over every trio = the average team. Lever: TYPE_HP="swarm:1.1,fast:0.9" multiplies ENEMIES[type].hp.
-// env KINDS, SEEDS (1,2), TYPES, TYPE_HP, PROBE_WAVES, REWIND, BANDS, ASPIRA_PATCH, ASPIRA_WEB; argv[2] = a resumable results file
+// env KINDS, WITH, SEEDS (1,2), TYPES, TYPE_HP, PROBE_WAVES, REWIND, BANDS, ASPIRA_PATCH, ASPIRA_WEB; argv[2] = a resumable results file
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
@@ -40,6 +40,7 @@ export default async function task({ trio, type, seed, typeHp, probeWaves, patch
 }
 if (isMainThread && process.argv[1].endsWith("typecal.mjs")) {
   const trios = []; for (let a = 0; a < ALL.length; a++) for (let b = a + 1; b < ALL.length; b++) for (let c = b + 1; c < ALL.length; c++) trios.push([ALL[a], ALL[b], ALL[c]]);
+  if (process.env.WITH) trios.splice(0, trios.length, ...trios.filter(t => t.includes(process.env.WITH))); // WITH=sol: only the trios holding that tower (a tower's own old-vs-new check)
   const typeHp = process.env.TYPE_HP || "";
   const jobs = []; for (const type of TYPES) for (const trio of trios) for (const seed of (process.env.SEEDS || "1,2").split(",").map(Number)) jobs.push({ trio, type, seed, typeHp });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true, out: process.argv[2] || null });

@@ -18,7 +18,7 @@ const LEVERS = {
   temp: { kind: "frz", get: k => `FRZ_TEMP_SLOW[${k}]`, set: (k, v) => `FRZ_TEMP_SLOW[${k}] = ${v};`, min: 0.05, max: 0.85 },
   rime: { kind: "frz", get: k => `FRZ_RIME[${k}]`, set: (k, v) => `FRZ_RIME[${k}] = ${v};`, min: 0.001, max: 0.6 },
   moons: { kind: "frz", get: k => `FRZ_MOON_BY[${k}]`, set: (k, v) => `FRZ_MOON_BY[${k}] = ${v};`, min: 0.05 },
-  focus: { kind: "sol", get: k => `SOL_FOCUS_DMG[${k}]`, set: (k, v) => `SOL_FOCUS_DMG[${k}] = ${v};`, min: 0.1 },
+  focus: { kind: "sol", get: k => `SOL_PASS[${k}]`, set: (k, v) => `SOL_PASS[${k}] = ${v};`, min: 0.1 },
   refraction: { kind: "sol", get: k => `SOL_REFRACTION_DMG[${k}]`, set: (k, v) => `SOL_REFRACTION_DMG[${k}] = ${v};`, min: 0.1 },
   breach: { kind: "sol", get: k => `SOL_BREACH_ARMOR[${k}]`, set: (k, v) => `SOL_BREACH_ARMOR[${k}] = ${v};`, min: 1 },
   corrosion: { kind: "acd", get: k => `ACD_CORROSION_DMG[${k}]`, set: (k, v) => `ACD_CORROSION_DMG[${k}] = ${v};`, min: 0.1 },

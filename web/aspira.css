@@ -653,7 +653,7 @@
 
 #asp .asp-build-cards button.asp-card { gap: var(--space-1); padding: var(--space-2-5) var(--space-3); line-height: var(--lh-tight); }
 
-.asp-build-cards .asp-hint { font-size: var(--fs-xs); line-height: var(--lh-tight); }
+.asp-build-cards .asp-hint { font-size: var(--fs-2xs); line-height: var(--lh-tight); white-space: nowrap; overflow: hidden; } /* ONE line, every card the same size (fitTaglines, aspira-chooser.js; owner, 2026-10-23) */
 
 
 #asp.asp-boss .asp-wavenote { filter: invert(1) drop-shadow(0 0 1px hsl(var(--bg-hsl))) drop-shadow(0 0 1px hsl(var(--bg-hsl))); }

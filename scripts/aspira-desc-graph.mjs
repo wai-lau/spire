@@ -26,7 +26,7 @@ const MECH = {
     moons: k => (V("FRZ_MOON_COUNT")[k] ? `${V("FRZ_MOON_COUNT")[k]} moon${V("FRZ_MOON_COUNT")[k] > 1 ? "s" : ""} at ${pct(V("FRZ_MOON_BY")[k])} of the tower${V("FRZ_SUBMOON_N")[k] ? `, each with ${V("FRZ_SUBMOON_N")[k]} small moon${V("FRZ_SUBMOON_N")[k] > 1 ? "s" : ""}` : ""}` : "no moons"),
   },
   sol: {
-    focus: k => `${V("SOL_BEAMS")[k]} beam${V("SOL_BEAMS")[k] > 1 ? "s" : ""} per shot, each a full hit x${V("SOL_FOCUS_DMG")[k]}, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
+    focus: k => `${V("SOL_BEAMS")[k]} beam${V("SOL_BEAMS")[k] > 1 ? "s" : ""} per shot, each a full hit, passing through at ${pct(V("SOL_PASS")[k])}, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
     refraction: k => `bends on to ${V("SOL_REFRACTION")[k] === Infinity ? "every enemy" : V("SOL_REFRACTION")[k] + " more"} within a ${V("SOL_CONE_BY")[k] * 2} deg cone${k >= 6 ? " (two, opposite)" : ""}, shot x${V("SOL_REFRACTION_DMG")[k]}, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
     breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good (a breached death throws shrapnel), crit x${V("SOL_CRITMUL")[k]}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
   },

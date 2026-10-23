@@ -19,7 +19,7 @@ TABLES = {
     "rime": ("web/aspira-skills.js", "FRZ_RIME", None),
     "temp": ("web/aspira-skills.js", "FRZ_TEMP_SLOW", None),
     "moons": ("web/aspira-skills.js", "FRZ_MOON_BY", None),
-    "focus": ("web/aspira-skills.js", "SOL_FOCUS_DMG", None),
+    "focus": ("web/aspira-skills.js", "SOL_PASS", None),
     "refraction": ("web/aspira-skills.js", "SOL_HOP", None),
     "breach": ("web/aspira-skills.js", "SOL_BREACH_ARMOR", None),
     "corrosion": ("web/aspira-acid.js", "ACD_CORROSION_DMG", None),

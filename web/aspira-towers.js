@@ -277,7 +277,7 @@ function rayHit(t, st, e, base, from) {
   const m = crit ? st.critMul : 1, d = shotDamage(t, st, e, base) * m;
   const n = st.beams || 1, part = d; // every beam is a FULL hit (owner, 2026-10-06; was a fitted share of the shot)
   beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, (m > 1 ? 5 : 3) * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d, true); // a chart SOL's beams THIN (owner, 2026-10-22)
-  if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
+  if (n > 1 && from === t) Object.assign(fx[fx.length - 1], { beams: n, spread: t.kind === "sol" }); // n converging beams from the tower (SOL: fanned out past SOL_FAN_FAR, beamLegs); a Refract hop past the first enemy is ONE thick beam (owner)
   dmgBatch(() => { for (let i = 0; i < n && !e.dead; i++) { fromHit(from, () => damage(e, part, t, false, crit, st)); onHit(e, t, st, part); bleed(e, st, t); } }); // ONE number for the volley (dmgBatch, aspira-floats.js); a crit PINK (owner); st: its shieldPop
   if (st.pierce) solPierce(t, st, from, e, n * part); // (always - kill or not)
   if (e.dead && st.smash && !e.smashed) {

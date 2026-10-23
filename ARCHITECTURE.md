@@ -188,11 +188,15 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 **SOL** - locks a target (a lock holds out to `SOL_HOLD`), charges the whole reload, fires;
 a target dying mid-charge restarts the charge; a lost lock hands its charge only to a new
 target inside the lock cone (`SOL_CONE_BY`). Armor cuts SOL like any other. **Weakness: swarms** (a THIN beam: only what is on its line).
-THE REWORK (owner, 2026-10-22): every hit PASSES THROUGH at 100% (`solPierce`, `web/aspira-sol.js`) along its line to the screen's edge,
+THE REWORK (owner, 2026-10-22/23): every hit PASSES THROUGH at `SOL_PASS[focus]` (0.5 .. 0.9, VI 1; Focus = beams + pass) (`solPierce`, `web/aspira-sol.js`) along its line to the screen's edge,
 on a thin line (`SOL_PIERCE_W` 6, `SOL_PIERCE_LEN` 3000, `SOL_PIERCE_HOPS` 64 a perf cap), each hit breaching and scorching in full;
 beams are drawn thin (`SOL_BEAM_THIN`). The first enemy REFLECTS the beam on in a chain (`solRefraction`, no cone), each reflection
-`SOL_HOP` x the last and passing through along its own line. Every hit SCORCHES: a short burn, `SOL_SCORCH[breach]` x the hit over
-`SOL_SCORCH_T` 1 s (onHit's `st.dot`; the strongest holds, a new hit restarts it). The breach SHRAPNEL is gone.
+`SOL_HOP` (0.5) x the last and passing through along its own line; the first enemy forks `st.fan` chains (2, VI 6), and Reflection
+raises the hit a little (`SOL_REFRACTION_DMG` 1 .. 1.5). Every hit SCORCHES: a short, big burn, `SOL_SCORCH[breach]` x the hit over
+`SOL_SCORCH_T` 0.4 s in `SOL_SCORCH_TICKS` ticks, each popping `SOL_DOT_ST.shieldPop` shields (onHit's `st.dot`; the strongest holds,
+a new hit restarts it). The breach SHRAPNEL is gone. TARGETING (`solLineSort`): of the first `SOL_LINE_TOP` by mode, the one whose
+line crosses the most enemies. DRAWN: past `SOL_FAN_FAR` (120u) a multi-beam shot fans out to a 60-degree arc 60u out, then converges
+(`beamLegs`, `web/aspira-draw.js`).
 
 | axis | buys |
 |---|---|

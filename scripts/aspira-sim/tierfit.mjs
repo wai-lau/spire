@@ -13,7 +13,7 @@ const LEVERS = {
   voltage: { kind: "arc", get: k => `ARC_VOLTAGE_DMG[${k}]`, set: (k, v) => `ARC_VOLTAGE_DMG[${k}] = ${v};`, min: 1, max: 8 },
   capacitance: { kind: "arc", get: k => `ARC_CAPACITANCE[${k}].frac`, set: (k, v) => `ARC_CAPACITANCE[${k}].frac = ${v};`, max: 1.5 },
   rime: { kind: "frz", get: k => `FRZ_RIME[${k}]`, set: (k, v) => `FRZ_RIME[${k}] = ${v};`, max: 0.25 },
-  focus: { kind: "sol", get: k => `SOL_FOCUS_DMG[${k}]`, set: (k, v) => `SOL_FOCUS_DMG[${k}] = ${v};`, min: 0.4, max: 2 },
+  focus: { kind: "sol", get: k => `SOL_PASS[${k}]`, set: (k, v) => `SOL_PASS[${k}] = ${v};`, min: 0.4, max: 2 },
   refraction: { kind: "sol", get: k => `SOL_HOP[${k}]`, set: (k, v) => `SOL_HOP[${k}] = ${v};`, max: 1.5 },
   breach: { kind: "sol", get: k => `SOL_BREACH_ARMOR[${k}]`, set: (k, v) => `SOL_BREACH_ARMOR[${k}] = ${v};`, max: 200 }, // the strip a hit
   temp: { kind: "frz", get: k => `FRZ_TEMP_SLOW[${k}]`, set: (k, v) => `FRZ_TEMP_SLOW[${k}] = ${v};`, min: 0.4, max: 0.85 }, // the aura's slow (never below the base)
