@@ -280,23 +280,6 @@ function gradDisc(x, y, r, col, a = 1) {
 }
 const DMG_HOLD = 0.1; // s a damage number stays whole before it shrinks + fades (owner: 0.5 was too long)
 const TWIN_GAP = 3.5; // Charge's parallel beams sit 2 x this apart
-// SOL'S FAN (owner, 2026-10-23: "when SOL targets something further than 120u away, the beams spread out to points on an arc 60u away and
-// then converge from there instead of starting within the tower"): a multi-beam shot's LEGS, [x0, y0, x1, y1] each - past SOL_FAN_FAR
-// (f.spread) tower -> a point on the SOL_FAN_R arc facing the enemy -> the enemy, the points spread evenly over SOL_FAN_SPAN centred
-// on the middle beam (owner: "The arc should span 60 deg, centered on the middle beam"); nearer, or any other tower, the parallel beams 2 x TWIN_GAP apart at the tower (aspira-fxgl.js draws the same legs)
-const SOL_FAN_FAR = 120, SOL_FAN_R = 60, SOL_FAN_SPAN = Math.PI / 3;
-function beamLegs(f, x1, y1, x2, y2) {
-  const n = f.beams || 1, len = Math.hypot(x2 - x1, y2 - y1) || 1, out = [];
-  if (n <= 1) return [[x1, y1, x2, y2]];
-  if (f.spread && len > SOL_FAN_FAR) {
-    const a0 = Math.atan2(y2 - y1, x2 - x1), step = SOL_FAN_SPAN / (n - 1);
-    for (let i = 0; i < n; i++) { const a = a0 + (i - (n - 1) / 2) * step, mx = x1 + Math.cos(a) * SOL_FAN_R, my = y1 + Math.sin(a) * SOL_FAN_R; out.push([x1, y1, mx, my], [mx, my, x2, y2]); }
-    return out;
-  }
-  const px = -(y2 - y1) / len, py = (x2 - x1) / len;
-  for (let i = 0; i < n; i++) { const o = (i - (n - 1) / 2) * 2 * TWIN_GAP; out.push([x1 + px * o, y1 + py * o, x2, y2]); }
-  return out;
-}
 // Two passes so towers sit on top of their own shots but under the numbers:
 // pass "shots" draws beams/rings/sparks, pass "text" draws floating numbers.
 // Passes: "dmg" = damage numbers (`under` text), drawn right over the
@@ -322,8 +305,15 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
       const pt = (x, y) => (map ? map(x, y) : { x, y, s: 1 }), B = pt(x2, y2), ws = map ? cam.k * (pt(x1, y1).s + B.s) / 2 : 1;
       if (map) ctx.setTransform(1, 0, 0, 1, 0, 0); // device px: the ends are already projected
       ctx.beginPath();
-      // Charge / Quad / Horizon: n beams CONVERGING on the enemy (owner) - parallel at the tower, or SOL's fan (beamLegs)
-      for (const [ax, ay, bx, by] of beamLegs(f, x1, y1, x2, y2)) { const A = pt(ax, ay), Z = pt(bx, by); ctx.moveTo(A.x, A.y); ctx.lineTo(Z.x, Z.y); }
+      if (f.beams > 1) {
+        // Charge / Quad / Horizon: n beams, 2 x TWIN_GAP apart at the tower,
+        // CONVERGING on the enemy (owner)
+        const len = Math.hypot(x2 - x1, y2 - y1) || 1, px = -(y2 - y1) / len, py = (x2 - x1) / len;
+        for (let i = 0; i < f.beams; i++) {
+          const o = (i - (f.beams - 1) / 2) * 2 * TWIN_GAP;
+          const A = pt(x1 + px * o, y1 + py * o); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y);
+        }
+      } else { const A = pt(x1, y1); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); }
       // the core's width is the DAMAGE of this hit (owner: every tower) - a
       // multi-beam shot's beams each carry the whole hit (rayHit)
       const core = (f.soft ? BEAM_MIN + ((f.bw ??= beamWidth(f.d || 0)) - BEAM_MIN) * ARC_W_CORR : (f.bw ??= beamWidth(f.d || 0))) * (f.thin || 1) * ws; // (soft: a chart ARC's, flatter with damage - aspira-skills.js; thin: its leaps)

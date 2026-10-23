@@ -166,8 +166,12 @@ function fxGlFx(f, k, a) {
 }
 // a BEAM: each stroke of drawFx's, widest glow first, as round-ended segments (one per beam of a multi-beam shot)
 function fxGlBeam(f, a) {
-  const x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2;
-  const cut = []; for (const g of beamLegs(f, x1, y1, x2, y2)) { const c = trimToTowers(g[0], g[1], g[2], g[3]); if (c) cut.push(c); } // (the legs, aspira-draw.js; nothing of them inside a tower)
+  const x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, segs = [];
+  if (f.beams > 1) {
+    const len = Math.hypot(x2 - x1, y2 - y1) || 1, px = -(y2 - y1) / len, py = (x2 - x1) / len;
+    for (let i = 0; i < f.beams; i++) { const o = (i - (f.beams - 1) / 2) * 2 * TWIN_GAP; segs.push([x1 + px * o, y1 + py * o]); }
+  } else segs.push([x1, y1]);
+  const cut = []; for (const sg of segs) { const c = trimToTowers(sg[0], sg[1], x2, y2); if (c) cut.push(c); } // (nothing of it inside a tower)
   const line = (w, css, al) => { for (let i = 0; i < cut.length; i++) { const c = cut[i]; fxGlPush(c[0], c[1], c[2], c[3], w / 2, 0, css, al, css, 0); } };
   const core = (f.soft ? BEAM_MIN + ((f.bw ??= beamWidth(f.d || 0)) - BEAM_MIN) * ARC_W_CORR : (f.bw ??= beamWidth(f.d || 0))) * (f.thin || 1), col = COL[f.color];
   if (f.m) {

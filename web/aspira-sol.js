@@ -10,8 +10,8 @@ const SOL_PIERCE_W = 6, SOL_PIERCE_LEN = 3000, SOL_PIERCE_HOPS = 64, SOL_BEAM_TH
 // beam on with SOL_PIERCE[breach] of the FULL hit, the same at every hop, up to SOL_PIERCE_HOPS enemies along its line
 // AS A REFLECTION (owner, 2026-10-22: "make the piercing beam the same visual intensity and damage as the reflected beam"): the beam
 // on carries st.pass (SOL_PASS by FOCUS tier since 2026-10-23; was st.hop) of the hit, drawn like a reflection's beam (one beam's damage, full alpha, thin)
-function solPierce(t, st, from, e, full) {
-  const carry = full * (st.pierce || 0) * (st.pass || 1), seen = carry / (st.beams || 1); if (carry <= 0) return;
+function solPierce(t, st, from, e, full, share = 1) {
+  const carry = full * (st.pierce || 0) * (st.pass || 1), seen = carry / (st.beams || 1), al = share * (st.pierce || 0) * (st.pass || 1); if (carry <= 0) return; // al: its opacity, the share of the first beam it carries (rayHit)
   for (let k = 0; k < SOL_PIERCE_HOPS; k++) {
     const dx = e.x - from.x, dy = e.y - from.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
     let o = null, best = SOL_PIERCE_LEN;
@@ -22,11 +22,11 @@ function solPierce(t, st, from, e, full) {
       best = along; o = x;
     }
     if (!o) break;
-    beam(e, o, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, seen, true); // looks like a reflection (rayHit draws one beam's damage)
+    beam(e, o, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, seen, true); fx[fx.length - 1].alpha = al; // one beam's damage, at its share's opacity
     fromHit(e, () => damage(o, carry, t, false, false, st)); onHit(o, t, st, carry); bleed(o, st, t);
     from = e; e = o;
   }
-  if (e !== from) solOutOfSight(t, st, from, e); // on to the screen's edge past the last one (thin)
+  if (e !== from) { solOutOfSight(t, st, from, e); fx[fx.length - 1].alpha = al; } // on to the screen's edge past the last one (thin, its share's opacity)
 }
 // TARGETING BY THE LINE (owner, 2026-10-23: "for SOL targetting, account for passthrough enemies to select first targets"): of the
 // SOL_LINE_TOP first by the tower's mode, the one whose beam - tower through it, on to SOL_PIERCE_LEN - hits the most enemies (the
