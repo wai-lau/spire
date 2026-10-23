@@ -193,7 +193,7 @@ THE REWORK (owner, 2026-10-22/23): every hit PASSES THROUGH at `SOL_PASS[focus]`
 on a thin line (`SOL_PIERCE_W` 6, `SOL_PIERCE_LEN` 3000, `SOL_PIERCE_HOPS` 64 a perf cap), each hit breaching and scorching in full;
 beams are drawn thin (`SOL_BEAM_THIN`). The first enemy REFLECTS the beam on in a chain (`solRefraction`, no cone), each reflection
 `SOL_HOP` (0.5) x the last and passing through along its own line; the first enemy forks `st.fan` chains (2, IV 6), and Reflection
-raises the hit a little (`SOL_REFRACTION_DMG` 1 .. 1.5). Every hit SCORCHES: a short, big burn, `SOL_SCORCH[breach]` x the hit over
+raises the hit a little (`SOL_REFRACTION_DMG` 1 .. 1.5); every fork and bounce only to an enemy inside the tower's range (the pass-through is not limited). Every hit SCORCHES: a short, big burn, `SOL_SCORCH[breach]` x the hit over
 `SOL_SCORCH_T` 0.4 s in `SOL_SCORCH_TICKS` ticks, each popping `SOL_DOT_ST.shieldPop` shields (onHit's `st.dot`; the strongest holds,
 a new hit restarts it). The breach SHRAPNEL is gone. TARGETING (`solLineSort`): of the first `SOL_LINE_TOP` by mode, the one whose
 line crosses the most enemies. DRAWN: the beams start in the tower and converge on the first enemy; every
