@@ -75,7 +75,7 @@ def test_sliders_preview_limits_and_lock_in(guest_page):
     up = page.locator("#asp-up")
     assert up.inner_text().strip() == "Arc"
 
-    # one stop out on the first axis: a point in the basket, priced, previewed
+    # one tier out on the first axis: a tier in the basket, priced, previewed
     _tap(page, 0, 1)
     assert _basket(page).get("conductivity") == 1
     assert "Arc I" in up.inner_text() and str(page.evaluate("skillPointsCost(G.towers[0], 1)")) in up.inner_text()
@@ -86,10 +86,10 @@ def test_sliders_preview_limits_and_lock_in(guest_page):
     # past the top: it stops at the top tier
     _tap(page, 0, 1, top + 2)
     assert _basket(page).get("conductivity") == top
-    # the shown tier is the PURCHASE count (I-IV, IV the capstone - aspira-capstone.js SHOWN_TIERS), the pull a stop at a time
-    assert page.locator(".asp-axis-tier").nth(0).inner_text() == "0→" + page.evaluate("roman(SHOWN_TIERS)")
-    _tap(page, 0, -1, 2)  # back down two stops: VI -> V -> III (shown II)
-    assert _basket(page).get("conductivity") == 3
+    # the tier is the PURCHASE count (I-IV, IV the capstone - aspira-capstone.js), the pull a tier at a time
+    assert page.locator(".asp-axis-tier").nth(0).inner_text() == "0→" + page.evaluate("roman(SKILL_TIERS)")
+    _tap(page, 0, -1, 2)  # back down two tiers: IV -> III -> II
+    assert _basket(page).get("conductivity") == 2
     assert "Arc II" in up.inner_text()
 
     # a poor bank: the pull still lands, the button goes red and takes no tap
@@ -103,12 +103,12 @@ def test_sliders_preview_limits_and_lock_in(guest_page):
     page.evaluate("G.money = 100000; refreshUpgradePreview(G.towers[0])")  # a bank that covers it: the button takes the tap
     assert not up.is_disabled()
 
-    # lock in: every pulled point bought in order, each at its own step
+    # lock in: every pulled tier bought in order, each at its own ladder steps
     page.evaluate("G.money = 100000")
     cost = page.evaluate("basketCost(G.towers[0])")
     up.click()
     t = page.evaluate("() => ({ lvl: G.towers[0].lvl, skills: G.towers[0].skills, money: G.money })")
-    assert t["skills"] == {"conductivity": 3} and t["lvl"] == 4
+    assert t["skills"] == {"conductivity": 2} and t["lvl"] == 4  # tier II: three ladder steps
     assert t["money"] == 100000 - cost
     assert _basket(page) == {}
     assert "II" in up.inner_text() and "(" not in up.inner_text()

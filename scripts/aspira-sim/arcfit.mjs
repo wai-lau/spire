@@ -5,12 +5,13 @@
 // ARC_CONDUCTIVITY[k].d and ARC_VOLTAGE_DMG[k].
 // usage: node arcfit.mjs [seeds=2]   env FROM=6 TO=20
 import { makeGame } from "./sim.mjs";
+import { POINTS_AT } from "./stops.mjs";
 const FROM = Number(process.env.FROM || 6), TO = Number(process.env.TO || 20), SEEDS = Number(process.argv[2] || 2);
 const GOAL = [1, 1.25, 1.5, 2];
 function run(sk, seed, cd, vd) {
   const g = makeGame(seed); g.reset(); g.run("G.money = 1e12; G.started = true; G.wave = " + (FROM - 1) + ";");
   g.run(`${JSON.stringify(cd)}.forEach((d, i) => { ARC_CONDUCTIVITY[i].d = d; }); ARC_VOLTAGE_DMG.splice(0, 4, ...${JSON.stringify(vd)});`);
-  const t = g.place("arc", 0); t.skills = sk; t.lvl = 1 + Object.values(sk).reduce((a, b) => a + b, 0);
+  const t = g.place("arc", 0); t.skills = sk; t.lvl = 1 + Object.values(sk).reduce((a, b) => a + POINTS_AT[b], 0);
   g.place("frz", 2); g.place("sol", 3); g.place("acd", 4);
   g.run(`let prev = "swarm"; for (let k = 1; k < ${FROM}; k++) { const w = wavePlan(k, prev); if (w.type !== "bonus") prev = w.type; } G.lastType = prev; G.nextIn = 0;`);
   let guard = 0;

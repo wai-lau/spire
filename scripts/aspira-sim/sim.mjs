@@ -109,13 +109,13 @@ export function makeGame(seed, patch = "") {
         // strategy) the lowest open axis, so builds spread evenly
         let id = null;
         if (need === "skill") {
-          const ids = SKILL_TREES[t.kind].map(a => a.id).filter(id => skillOf(t, id) < axisCap(t, id)); // (one capstone VI a tower)
+          const ids = SKILL_TREES[t.kind].map(a => a.id).filter(id => skillOf(t, id) < axisCap(t, id)); // (one capstone a tower)
           id = ids.includes(choice) ? choice : ids.sort((a, b) => skillOf(t, a) - skillOf(t, b))[0];
         }
-        // a CAPSTONE (tier VI) is two levels at two steps' price, as in upgradeTower (aspira-ui.js)
-        const steps = id ? stopLevels(t, id) : 1, c = steps > 1 ? skillPointsCost(t, steps) : upCost(t); // to the axis's next STOP (II-III, IV-V one buy)
+        // a buy is one TIER: tierSteps ladder steps (a CAPSTONE is two levels at two steps' price), as in upgradeTower (aspira-ui.js)
+        const steps = id ? tierSteps(t, id) : 1, c = steps > 1 ? skillPointsCost(t, steps) : upCost(t);
         if (G.money < c) return false;
-        if (id) t.skills = { ...t.skills, [id]: nextStop(skillOf(t, id)) };
+        if (id) t.skills = { ...t.skills, [id]: skillOf(t, id) + 1 };
         if (need === "path") t.path = choice;
         else if (need === "form") { t.form = choice; t.mode = UPGRADES[t.kind][t.path].finals[choice].mode || t.mode; }
         G.money -= c; t.spent += c; t.lvl += steps;

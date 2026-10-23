@@ -8,11 +8,11 @@
 // towerStats calls carSkillStats, the tower loop stepCar, drawScene drawCar.
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const CRR_HANGAR = [3, 5, 7, 11, 11, 13]; // interceptors: PRIMES by purchase (owner: "prime numbers starting at 5") - bare 5, then I 7 (stop 1), II 11 (3), III 13 (5), IV 17 (6)
+const CRR_HANGAR = [3, 5, 11, 13]; // interceptors: PRIMES by purchase (owner: "prime numbers starting at 5") - bare 5, then I 7 (stop 1), II 11 (3), III 13 (5), IV 17 (6)
 // each axis ITS OWN job (owner, 2026-10-15: "make sure each axis for each tower feels unique"): Hangar WIDTH (more interceptors),
 // Launch TEMPO (faster there and back, a shorter reload ) - (Warp, a teleport, was removed: owner, 2026-10-17), Armament DEPTH (a far harder hit, more of them)
 const CRR_SPEED_V = 2500 /* 1900 -> 2500 (owner, 2026-10-19: CRR toward fast; countermx 61-69 spread with the rest of 6.4: fast 34% -> 22% leaked) */ /* x1.3: keeps up with fast (owner, 2026-10-18: "more good vs fast and less good vs shield"; was 1470) */, CRR_RELOAD_S = 0.4; // an interceptor's speed and its reload at home - FIXED since Tether replaced Launch (owner, 2026-10-17)
-const CRR_AMMO = [6, 6, 6, 6, 6, 14] /* BATTERY 6.7.0 (2026-10-20): untaken 4 -> 6 - a lone L1 CRR lost 5-7 on the fast and shield waves */; /* doubled back (2026-10-19, CRR toward fast: more sorties keep up with a fast wave) */ /* HALVED again, each volley x2 (CRR_VOLLEY_K 4): the same damage in half the hits - half the shield pops (owner, 2026-10-18: CAR less good vs shield) */ /* halved, its bolts doubled into fewer, bigger VOLLEYS (CRR_VOLLEY_K, CRR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
+const CRR_AMMO = [6, 6, 6, 14] /* BATTERY 6.7.0 (2026-10-20): untaken 4 -> 6 - a lone L1 CRR lost 5-7 on the fast and shield waves */; /* doubled back (2026-10-19, CRR toward fast: more sorties keep up with a fast wave) */ /* HALVED again, each volley x2 (CRR_VOLLEY_K 4): the same damage in half the hits - half the shield pops (owner, 2026-10-18: CAR less good vs shield) */ /* halved, its bolts doubled into fewer, bigger VOLLEYS (CRR_VOLLEY_K, CRR_BOLTS) */ // Armament: volleys a sortie (owner, 2026-10-15: "reduce ammo"; was 12 .. 28)
 // ONE TARGET A VOLLEY (owner, 2026-10-16: "to make ATC worse vs swarms reduce ammo (number of volleys), increase bolts per volley to
 // match, then make it so that all bolts from a single volley need to target a single target, regardless of overkill, remaining bolts
 // just keep going for a little bit and may chance a hit on something else"; then "don't shoot unshot parts of a volley if the enemy dies" - the rest of
@@ -23,21 +23,21 @@ const CRR_VOLLEY_K = 4; /* 2 -> 4 with CRR_AMMO halved (2026-10-18) */
 // the shot's HIT is SPREAD across the axes like ARC's (owner, 2026-10-15: "spread out armament damage like arc"): Armament half of
 // it (log), Hangar and Launch a quarter each (CRR_SIDE_DMG). STEEPER than ARC's: on ARC's tables a mid build (III on every
 // axis) dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899 - ARC chains, and an interceptor spends ~40% flying and reloading
-const CRR_SHOT_MUL = [0.9, 2, 4.5, 7.5, 123.845, 301.58] /* BATTERY 6.7.0 (2026-10-20): untaken 0.6 -> 0.9 */; /* V x9, VI x36 (steeper late tiers) */ // Armament (VI 15)
-const CRR_SIDE_DMG = [1, 1.6, 2.4, 4.76, 11.8748, 25.214]; /* V x3, VI x6 (steeper late tiers) */ // Hangar's and Launch's share (VI 5.1)
-const CRR_RATE_MUL = [1, 1, 1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
+const CRR_SHOT_MUL = [0.9, 2, 7.5, 301.58] /* BATTERY 6.7.0 (2026-10-20): untaken 0.6 -> 0.9 */; /* V x9, VI x36 (steeper late tiers) */ // Armament (VI 15)
+const CRR_SIDE_DMG = [1, 1.6, 4.76, 25.214]; /* V x3, VI x6 (steeper late tiers) */ // Hangar's and Launch's share (VI 5.1)
+const CRR_RATE_MUL = [1, 1, 1, 1]; // (Armament's rate went into the hit: one lever an axis)
 // TETHER (owner, 2026-10-17: "replace Launch with Tether"): once an interceptor fires at an enemy a BEAM joins them while it keeps at it;
 // it SLOWS that enemy (the old Pin, which needs Tether now, and harder) and PULSES every CRR_TETHER_PULSE s for CRR_TETHER_K x the shot,
 // a real hit that pops a shield charge; both grow with the tier. Capstone (Chain): the beam runs on to the nearest other enemy within
 // the interceptor's circling range of its target, slowing and pulsing it too. Index 0 = untaken; capstone.js pushes VI
-const CRR_TETHER_SLOW = [0.35 /* every CRR tethers a little (owner, 2026-10-18: CRR better vs fast) */, 0.45, 0.5, 0.55, 0.6, 0.65], CRR_TETHER_K = [0, 2, 3, 36, 81, 210.6] /* V 6 -> 24 (x4), VI 10 -> 40: Tether as impactful as Launch was (countermx 61-69 launch V: 32/47/39/55 -> 12/12/7/0 % leaked swarm/fast/shield/armor; 2026-10-17) */, CRR_TETHER_PULSE = 0.5, CRR_TETHER_ST = { noFx: true };
+const CRR_TETHER_SLOW = [0.35 /* every CRR tethers a little (owner, 2026-10-18: CRR better vs fast) */, 0.45, 0.55, 0.65], CRR_TETHER_K = [0, 2, 36, 210.6] /* V 6 -> 24 (x4), VI 10 -> 40: Tether as impactful as Launch was (countermx 61-69 launch V: 32/47/39/55 -> 12/12/7/0 % leaked swarm/fast/shield/armor; 2026-10-17) */, CRR_TETHER_PULSE = 0.5, CRR_TETHER_ST = { noFx: true };
 const CRR_SLOW = 0.2, CRR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CRR_BOLT_PAIR = 2, CRR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 const CRR_BOLTS = Math.ceil(6 / CRR_BOLT_PAIR) * CRR_BOLT_PAIR; /* 10 -> 6, each x1.67 (owner, 2026-10-18: CRR less good vs shield - every bolt pops one) */ /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CRR_BOLTS of the hit
 const CRR_GAP = 0.15; /* 0.11 -> 0.15 with the reload x0.5 (owner, 2026-10-16: "reduce launch rate of interceptors, but reduce reload time to compensate"; countermx 61-69 spread 30/2/0/21 -> 25/0/0/15 - at 0.25 no reload made up for it: 70% of swarms leaked) */ /* x1/1.75 (owner, 2026-10-16: "interceptor spawn speed"; was 0.2) */ // s between launches (owner: "one by one")
 // Hangar's FOCUS FIRE (owner, 2026-10-15): every OTHER interceptor looping the same target adds this share to each shot on it -
 // width turns into depth when the wing outnumbers the targets (they spread first: carTarget prefers an unheld enemy)
-const CRR_FOCUS = [0, 0.15, 0.15, 0.3, 0.3, 0.45];
+const CRR_FOCUS = [0, 0.15, 0.3, 0.45];
 // (Launch's STRAFING PASS - a ram on arrival - was removed: owner, 2026-10-17, "I dont like the strafe idea")
 // THE FLIGHT (owner, 2026-10-16: "a much smoother almost elliptical path, with a circle going around the enemy (stay about 100u
 // away)"): a heading that turns at a capped rate, steered by a guidance field that spirals onto a CRR_ORBIT circle round the
@@ -54,15 +54,15 @@ const CRR_LEASH = 7.4; /* ~1180 at range 160 (as simmed 2026-10-16) */ /* the 96
 const CRR_BURST_N = 10, CRR_BURST_K = 1.5, CRR_PELLET_V = 340, CRR_PELLET_REACH = 90, CRR_PELLET_HIT = 3; // Autopilot's pellets
 
 SKILL_TREES.car = [
-  { id: "hangar", name: "Hangar", tiers: [{ name: "Bay" }, { name: "Deck" }, { name: "Hold" }, { name: "Wing" }, { name: "Fleet" }] },
-  { id: "launch" /* id kept (saves); shown as TETHER */, name: "Tether", tiers: [{ name: "Leash" }, { name: "Line" }, { name: "Rope" }, { name: "Cable" }, { name: "Tow" }] },
-  { id: "armament", name: "Armament", tiers: [{ name: "Pulse" }, { name: "Burst" }, { name: "Strafe" }, { name: "Barrage" }, { name: "Salvo" }] },
+  { id: "hangar", name: "Hangar", tiers: [{ name: "Bay" }, { name: "Hold" }, { name: "Fleet" }] },
+  { id: "launch" /* id kept (saves); shown as TETHER */, name: "Tether", tiers: [{ name: "Leash" }, { name: "Rope" }, { name: "Tow" }] },
+  { id: "armament", name: "Armament", tiers: [{ name: "Pulse" }, { name: "Strafe" }, { name: "Salvo" }] },
 ];
-SKILL_MOVE.car = { hangar: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]], launch: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]], armament: [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]] };
+SKILL_MOVE.car = { hangar: [[1, 1], [1, 1], [1, 1], [1, 1]], launch: [[1, 1], [1, 1], [1, 1], [1, 1]], armament: [[1, 1], [1, 1], [1, 1], [1, 1]] };
 
 // how much of the wing the Hangar can STORE in orbit, by tier (owner, 2026-10-16: "hanger tiers can store 25% 50% 75% 100% of interceptors
 // in orbit"); s.hold = that many interceptors (rounded up), 0 untaken
-const CRR_HOLD_FRAC = [0, 0.25, 0.5, 0.75, 1, 1, 1];
+const CRR_HOLD_FRAC = [0, 0.25, 0.75, 1, 1];
 const carHoldFrac = h => CRR_HOLD_FRAC[Math.min(h, CRR_HOLD_FRAC.length - 1)];
 const CRR_CHAIN_FROM = 1; // Tether runs on to one more enemy from III (owner, 2026-10-18; was the capstone's alone)
 function carSkillStats(t, s, b) {
@@ -114,7 +114,8 @@ function stepCar(t, dt) {
 }
 // a SALVO: interceptors sent at once, then CRR_GAP - one more per Hangar level (owner, 2026-10-17: "each level of hangar should increase the
 // number of interceptors deployed at once"), times the relay's RELAY_MUL
-const carSalvo = t => (1 + skillOf(t, "hangar")) * relayMul(t);
+const carSalvoN = h => 1 + TIER_LEVEL[h]; // interceptors launched at a time: one more than the Hangar's old ladder step (aspira-skills.js TIER_LEVEL)
+const carSalvo = t => carSalvoN(skillOf(t, "hangar")) * relayMul(t);
 function stepIcp(i, t, st, dt) {
   if (i.state === "home") {
     i.reload = Math.max(0, i.reload - dt);
@@ -368,7 +369,7 @@ function drawCar(darts) {
         }
       }
       ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
-      const z = CRR_DART_K0 + CRR_DART_GROW * skillOf(t, "armament");
+      const z = CRR_DART_K0 + CRR_DART_GROW * TIER_LEVEL[skillOf(t, "armament")];
       for (const i of t.icp) if (i.state !== "home" || i.hold) carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); // its own size: smaller ones hold closer
       continue;
     }

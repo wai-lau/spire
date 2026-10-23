@@ -2,9 +2,9 @@
 // tier ALONE, as in isolation.mjs (the test tower with one axis at tier k, one L1 helper of
 // each other kind, waves FROM..TO, lives refilled), and a bisection on ONE lever per axis -
 // the axis's own table entry at tier k - until the TEAM's damage vs the bare tower hits the
-// target curve TARGET (default 110 / 125 / 150 / 170 / 190% at I..V: the median of all 12 axes
-// on 2026-10-08 - a 125..300% curve needed absurd values for the weak axes). All the (axis, tier) bisections step together, a pool round each.
-// usage: node tierfit.mjs [seeds=3] [rounds=7]   env AXES=voltage,rime  TARGET=1.25,1.5,2,2.5,3  FROM=40 TO=70
+// target curve TARGET (default 110 / 150 / 190% at I..III - the old curve's 1st, 3rd and 5th of its five points: the median of all 12 axes
+// on 2026-10-08, a 125..300% curve needed absurd values for the weak axes; the capstone IV is a leap, not fitted). All the (axis, tier) bisections step together, a pool round each.
+// usage: node tierfit.mjs [seeds=3] [rounds=7]   env AXES=voltage,rime  TARGET=1.25,2,3  FROM=40 TO=70
 import { runPool } from "./pool.mjs";
 import { makeGame } from "./sim.mjs";
 
@@ -28,7 +28,7 @@ const LEVERS = {
 // a lever's sane range (a slow can't pass 85%, say); the bisection never proposes outside it
 const clampV = (axis, v) => Math.min(LEVERS[axis].max ?? Infinity, Math.max(LEVERS[axis].min ?? 0, v));
 const AXES = process.env.AXES ? process.env.AXES.split(",") : Object.keys(LEVERS).filter(a => !LEVERS[a].axis); // (alternate levers like tempreach only when named)
-const TARGET = (process.env.TARGET || "1.1,1.25,1.5,1.7,1.9").split(",").map(Number);
+const TARGET = (process.env.TARGET || "1.1,1.5,1.9").split(",").map(Number);
 const FROM = Number(process.env.FROM || 40), TO = Number(process.env.TO || 70);
 const SEEDS = Number(process.argv[2] || 3), ROUNDS = Number(process.argv[3] || 7);
 const task = new URL("./isolation.mjs", import.meta.url);
@@ -43,7 +43,7 @@ const base = {};
 }
 // each (axis, tier): the current value and a log2 bracket on the multiplier around it
 const cells = [];
-for (const axis of AXES) for (let k = 1; k <= 5; k++) { const cur = g0.run(LEVERS[axis].get(k)); cells.push({ axis, k, cur, lo: -3, hi: 3, best: null }); }
+for (const axis of AXES) for (let k = 1; k <= TARGET.length; k++) { const cur = g0.run(LEVERS[axis].get(k)); cells.push({ axis, k, cur, lo: -3, hi: 3, best: null }); }
 const axisOf = a => LEVERS[a].axis || a; // the chart axis a lever belongs to (tempreach -> temp)
 for (let round = 0; round <= ROUNDS; round++) {
   const jobs = [];

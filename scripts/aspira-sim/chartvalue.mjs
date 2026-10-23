@@ -10,7 +10,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makeGame } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-import { spreadStops, focusStops, snapStop, STOPS } from "./stops.mjs"; // tiers by STOP only (0 1 3 5 6)
+import { spreadStops, focusStops, snapStop, STOPS, POINTS_AT } from "./stops.mjs"; // tiers bought whole (0 I II III IV)
 
 const KINDS = ["arc", "frz", "sol", "acd"], RUN_KINDS = process.env.CV_KINDS ? process.env.CV_KINDS.split(",") : KINDS;
 const FROM = Number(process.env.FROM || 30), TO = Number(process.env.TO || 60);
@@ -21,7 +21,7 @@ export default async function task({ kind, dist, seed }) {
   const g = makeGame(seed); g.reset();
   g.run(`G.money = 1e12; G.started = true; G.wave = ${FROM - 1}; G.lives = 1e6;`);
   const axes = g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`);
-  const sk = {}; dist.forEach((n, i) => { if (snapStop(n)) sk[axes[i]] = snapStop(n); }); // by STOP (stops.mjs)
+  const sk = {}; dist.forEach((n, i) => { if (snapStop(n)) sk[axes[i]] = snapStop(n); }); // by TIER (stops.mjs)
   const t = g.place(kind, 0); t.skills = sk; t.lvl = 1 + dist.reduce((a, b) => a + b, 0);
   // TWO helpers (2026-10-12: the game holds three towers), the pair turning with the seed so every pairing gets its turn
   const others = KINDS.filter(k => k !== kind); others.splice(seed % 3, 1);

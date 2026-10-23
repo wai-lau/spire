@@ -6,7 +6,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-import { spreadStops, focusStops, snapStop, STOPS } from "./stops.mjs"; // tiers by STOP only (0 1 3 5 6)
+import { spreadStops, focusStops, snapStop, STOPS, POINTS_AT } from "./stops.mjs"; // tiers bought whole (0 I II III IV)
 
 const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), POINTS = Number(process.env.POINTS || 8), PATCH = process.env.BV_PATCH || "";
 const WINDOWS = (process.env.WINDOWS || "21-29,41-49,61-69,81-89").split(",").map(w => w.split("-").map(Number));
@@ -16,7 +16,7 @@ export default async function task({ kind, from, to, seed, patch = "" }) {
   g.run(`G.started = true; G.money = 1e12; G.lives = 1e6; let prev = "swarm"; for (let n = 1; n < ${from}; n++) { const w = wavePlan(n, prev); if (w.type !== "bonus") prev = w.type; } G.lastType = prev; G.wave = ${from - 1};`);
   const sc = cellScores(g, kind), open = g.run("CELLS.map((c, i) => i).filter(cellOpen)").sort((a, b) => sc[b] - sc[a]);
   const axes = g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`);
-  for (const ci of open) { const t = g.place(kind, ci); if (!t) continue; const sk = spreadStops(axes, POINTS); t.skills = sk; /* by STOP (stops.mjs) */ t.lvl = 1 + POINTS; }
+  for (const ci of open) { const t = g.place(kind, ci); if (!t) continue; const sk = spreadStops(axes, POINTS); t.skills = sk; /* by TIER (stops.mjs) */ t.lvl = 1 + POINTS; }
   g.run("G.nextIn = 0;");
   const leaks = {}; let guard = 0;
   while (g.G.wave <= to && guard++ < 400000) {

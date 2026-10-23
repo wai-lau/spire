@@ -1,6 +1,6 @@
 // /aspira - SKILL CHARTS (owner, 2026-10-05). A tower type with a chart (only
 // ARC so far) levels up to 1 + SKILL_POINTS; each upgrade raises ONE of its
-// three axes a tier (max SKILL_TIERS), like a JoJo Stand chart, and every tier
+// three axes a tier (max SKILL_TIERS, four), like a JoJo Stand chart, and every tier
 // is a named step. The other towers keep the path / form tree
 // (aspira-upgrades.js). Loaded after aspira-towers.js (the simulator too):
 // this file also holds ARC's skill-chart FIRING, kept out of towers.js (cap).
@@ -8,8 +8,14 @@
 // by DRAGGING the axes of the chart on the tower card (aspira-sliders.js), any
 // number at once; each still costs its own step of the ladder below
 // FIVE tiers an axis (owner, 2026-10-07: "add another 2 tiers to each upgrade"; was 3), fifteen points a tower
-// SIX with the capstone tier (owner, 2026-10-11; aspira-capstone.js): ONE axis a tower may take to VI, so sixteen points (5 + 5 + 6)
-const SKILL_POINTS = 16, SKILL_TIERS = 6;
+// SIX with the capstone tier (owner, 2026-10-11; aspira-capstone.js): ONE axis a tower may take to the capstone, so sixteen points (5 + 5 + 6)
+// FOUR TIERS (owner, 2026-10-23: "drop all the god damn levels between that can not be bought"): an axis level is a PURCHASE, 0 I II III IV
+// (SKILL_TIERS, IV the capstone), and every per-tier table below holds those five values (the capstone's pushed by aspira-capstone.js). The
+// price LADDER below (SKILL_POINTS, SKILL_STEP_COST) keeps its steps: a tier takes TIER_STEPS of them. NOTE: dated comments in this file
+// and its tower files speak the old seven-slot tables (0 1 2 3 4 5 6) - an old slot 3 is now tier II, 5 tier III, 6 tier IV
+const SKILL_POINTS = 16, SKILL_TIERS = 4;
+// the ladder step a tier stands on, on the old seven-slot scale: what a formula that grew LINEARLY with the level (DRIP_TIER_K, CRR_DART_GROW) keeps its numbers through
+const TIER_LEVEL = [0, 1, 3, 5, 6];
 // cost of each of the six small upgrades, x the build cost (about the old
 // three-step total, spread over six; balance later). DEARER (owner, 2026-10-06:
 // "make the levels more expensive and more powerful"): was 2 / 3.5 / 5.5 / 8 / 10.5 / 13,
@@ -28,27 +34,9 @@ const SKILL_TREES = {
   // raw power, damage and range; Static = an EXPLOSION on every hit that marks
   // what it catches. Base: one jump forking two ways, three enemies.
   arc: [
-    { id: "conductivity", name: "Conductivity", tiers: [
-      { name: "Transfer" },
-      { name: "Conduit" },
-      { name: "Superconductor" },
-      { name: "Lattice" },
-      { name: "Storm" },
-    ] },
-    { id: "voltage", name: "Voltage", tiers: [
-      { name: "Spark" },
-      { name: "Fry" },
-      { name: "Vaporize" },
-      { name: "Arc Flash" },
-      { name: "Plasma" },
-    ] },
-    { id: "capacitance", name: "Capacitance", tiers: [
-      { name: "Static" },
-      { name: "Charge" },
-      { name: "Overload" },
-      { name: "Discharge" },
-      { name: "Tempest" },
-    ] },
+    { id: "conductivity", name: "Conductivity", tiers: [{ name: "Transfer" }, { name: "Superconductor" }, { name: "Storm" }] },
+    { id: "voltage", name: "Voltage", tiers: [{ name: "Spark" }, { name: "Vaporize" }, { name: "Plasma" }] },
+    { id: "capacitance", name: "Capacitance", tiers: [{ name: "Static" }, { name: "Overload" }, { name: "Tempest" }] },
   ],
 };
 // FRZ (owner, 2026-10-05): an AURA - everything inside is slowed (and loses it
@@ -57,27 +45,9 @@ const SKILL_TREES = {
 // PERMANENT slow on all it passes; Moons = 1 / 2 / 3 orbiting copies of the
 // tower at half of everything.
 SKILL_TREES.frz = [
-  { id: "temp", name: "Sublimation" /* (owner, 2026-10-12; was Temp) */, tiers: [
-    { name: "Chill" },
-    { name: "Freeze" },
-    { name: "Absolute Zero" },
-    { name: "Permafrost" },
-    { name: "Heat Death" },
-  ] },
-  { id: "rime", name: "Permafrost" /* (owner, 2026-10-12; was Rime) */, tiers: [
-    { name: "Frost" },
-    { name: "Glacier" },
-    { name: "Cryosphere" },
-    { name: "Ice Sheet" },
-    { name: "Glaciation" },
-  ] },
-  { id: "moons", name: "Moons", tiers: [
-    { name: "Moon" },
-    { name: "Twin Moons" },
-    { name: "Desolation" },
-    { name: "Satellites" },
-    { name: "Eclipse" },
-  ] },
+  { id: "temp", name: "Sublimation" /* (owner, 2026-10-12; was Temp) */, tiers: [{ name: "Chill" }, { name: "Absolute Zero" }, { name: "Heat Death" }] },
+  { id: "rime", name: "Permafrost" /* (owner, 2026-10-12; was Rime) */, tiers: [{ name: "Frost" }, { name: "Cryosphere" }, { name: "Glaciation" }] },
+  { id: "moons", name: "Moons", tiers: [{ name: "Moon" }, { name: "Desolation" }, { name: "Eclipse" }] },
 ];
 // SOL (owner, 2026-10-05): Focus = more beams (the old Quad look: side by
 // side at the tower, CONVERGING on the target - not parallel, owner), each its
@@ -88,60 +58,24 @@ SKILL_TREES.frz = [
 // good). Focus x Pierce multiply:
 // 4 beams x 6 = 24 Breaches a volley on one target.
 SKILL_TREES.sol = [
-  { id: "focus", name: "Focus", tiers: [
-    { name: "Convergence" },
-    { name: "Crux" },
-    { name: "Disintegration" },
-    { name: "Lance" },
-    { name: "Supernova" },
-  ] },
-  { id: "refraction", name: "Reflection" /* (owner, 2026-10-22: "rename refraction to reflection"; the id stays - saves) */, tiers: [
-    { name: "Lens" },
-    { name: "Prism" },
-    { name: "Spectrum" },
-    { name: "Halo" },
-    { name: "Aurora" },
-  ] },
-  { id: "breach", name: "Breach", tiers: [
-    { name: "Pierce" },
-    { name: "Sear" },
-    { name: "Flare" },
-    { name: "Brand" },
-    { name: "Sunfire" },
-  ] },
+  { id: "focus", name: "Focus", tiers: [{ name: "Convergence" }, { name: "Disintegration" }, { name: "Supernova" }] },
+  { id: "refraction", name: "Reflection" /* (owner, 2026-10-22: "rename refraction to reflection"; the id stays - saves) */, tiers: [{ name: "Lens" }, { name: "Spectrum" }, { name: "Aurora" }] },
+  { id: "breach", name: "Breach", tiers: [{ name: "Pierce" }, { name: "Flare" }, { name: "Sunfire" }] },
 ];
 // ACD (owner, 2026-10-05): its lines DRIP burning PUDDLES onto the lane by
 // default, each burning at a share of its line's current heat. Catalyst = the
 // burn ramps faster (tier III: a line whose enemy dies hands half its ramp to
 // the next); Pour = 2 / 3 / 5 lines at once; Seep = more, longer, bigger puddles.
 SKILL_TREES.acd = [
-  { id: "corrosion", name: "Corrosion", tiers: [
-    { name: "Etch" },
-    { name: "Corrode" },
-    { name: "Dissolve" },
-    { name: "Erode" },
-    { name: "Annihilate" },
-  ] },
-  { id: "spray", name: "Flow", tiers: [
-    { name: "Mist" },
-    { name: "Downpour" },
-    { name: "Torrent" },
-    { name: "Deluge" },
-    { name: "Cascade" },
-  ] },
-  { id: "contagion", name: "Contagion", tiers: [
-    { name: "Blister" },
-    { name: "Plague" },
-    { name: "Pandemic" },
-    { name: "Epidemic" },
-    { name: "Blight" },
-  ] },
+  { id: "corrosion", name: "Corrosion", tiers: [{ name: "Etch" }, { name: "Dissolve" }, { name: "Annihilate" }] },
+  { id: "spray", name: "Flow", tiers: [{ name: "Mist" }, { name: "Torrent" }, { name: "Cascade" }] },
+  { id: "contagion", name: "Contagion", tiers: [{ name: "Blister" }, { name: "Pandemic" }, { name: "Blight" }] },
 ];
 const hasSkills = t => !!SKILL_TREES[t.kind];
 const maxLvl = t => (hasSkills(t) ? 2 + SKILL_POINTS : MAX_LVL); // (+1: the capstone is two levels - aspira-capstone.js)
 const skillOf = (t, id) => (t.skills && t.skills[id]) || 0;
 // the level the TOWER'S LOOK shows (its rings, max-level spokes): a chart
-// tower's 7 levels fold onto the 4 drawn ones
+// tower's ladder steps fold onto the 4 drawn ones
 const shownLvl = t => (!hasSkills(t) ? t.lvl : t.lvl >= maxLvl(t) ? MAX_LVL : 1 + Math.floor((t.lvl - 1) / 5)); // fifteen points, five a look
 
 // REACH BY TIER (owner, 2026-10-06: ranges and movement were HALVED, and "no upgrade
@@ -154,14 +88,14 @@ const shownLvl = t => (!hasSkills(t) ? t.lvl : t.lvl >= maxLvl(t) ? MAX_LVL : 1 
 //   SOL  (a long-range ANCHOR) Focus and Refraction = RANGE; Breach = SLIDE extent (owner)
 //   ACD  Spray = range (more lines need more targets in reach); Contagion = a roaming
 //        plague (the puddles follow the lane): slide
-const NO_MOVE = [[1, 1], [1, 1], [1, 1], [1, 1], [1, 1], [1, 1]];
+const NO_MOVE = [[1, 1], [1, 1], [1, 1], [1, 1]];
 const SKILL_MOVE = {
   // ARC's range tiers CUT (owner, 2026-10-11: "ranges way too high, late game players don't need to move towers"):
   // maxed it reached x4.3 - all of the plain lanes from a corner; now x1.25. SOL keeps its reach (owner, same day)
-  arc:    { conductivity: [[1, 1], [1.02, 1], [1.04, 1], [1.07, 1], [1.09, 1], [1.12, 1]], voltage: [[1, 1], [1.02, 1], [1.04, 1], [1.07, 1], [1.09, 1], [1.12, 1]], capacitance: [[1, 1], [1, 1.3], [1, 1.6], [1, 2], [1, 2.2], [1, 2.4]] },
-  frz: { temp: [[1, 1], [1.1, 1], [1.2, 1], [1.3, 1], [1.4, 1], [1.5, 1]] /* wider again (owner, 2026-10-11: FRZ's reach back now its leash is screen-capped; was 1.08 .. 1.2) */ /* a narrower aura per tier (owner, 2026-10-08; was 1.25 .. 2.2) */, rime: [[1, 1], [1, 4 / 3, 1], [1, 5 / 3, 1], [1, 2], [1, 2.2], [1, 2.4]], moons: NO_MOVE }, // Rime buys back FRZ's halved slide (owner)
-  sol: { focus: [[1, 1], [1.2, 1], [1.4, 1], [1.7, 1], [1.85, 1], [2, 1]], refraction: [[1, 1], [1.1, 1], [1.2, 1], [1.35, 1], [1.45, 1], [1.55, 1]], breach: [[1, 1], [1, 1.3], [1, 1.6], [1, 2], [1, 2.2], [1, 2.4]] },
-  acd:    { spray: [[1, 1], [1.02, 1], [1.04, 1], [1.06, 1], [1.12, 1], [1.3, 1]] /* V: RANGE instead of a hotter carry (owner, 2026-10-12; was 1.15) */ /* Spray's lever now that each jet stays a full strike (owner, 2026-10-08; was 1.2 .. 2.3) */, contagion: [[1, 1], [1, 1.15], [1, 1.3], [1, 1.5], [1, 1.65], [1, 1.8]], corrosion: NO_MOVE },
+  arc:    { conductivity: [[1, 1], [1.02, 1], [1.07, 1], [1.12, 1]], voltage: [[1, 1], [1.02, 1], [1.07, 1], [1.12, 1]], capacitance: [[1, 1], [1, 1.3], [1, 2], [1, 2.4]] },
+  frz: { temp: [[1, 1], [1.1, 1], [1.3, 1], [1.5, 1]] /* wider again (owner, 2026-10-11: FRZ's reach back now its leash is screen-capped; was 1.08 .. 1.2) */ /* a narrower aura per tier (owner, 2026-10-08; was 1.25 .. 2.2) */, rime: [[1, 1], [1, 4 / 3, 1], [1, 2], [1, 2.4]], moons: NO_MOVE }, // Rime buys back FRZ's halved slide (owner)
+  sol: { focus: [[1, 1], [1.2, 1], [1.7, 1], [2, 1]], refraction: [[1, 1], [1.1, 1], [1.35, 1], [1.55, 1]], breach: [[1, 1], [1, 1.3], [1, 2], [1, 2.4]] },
+  acd:    { spray: [[1, 1], [1.02, 1], [1.06, 1], [1.3, 1]] /* V: RANGE instead of a hotter carry (owner, 2026-10-12; was 1.15) */ /* Spray's lever now that each jet stays a full strike (owner, 2026-10-08; was 1.2 .. 2.3) */, contagion: [[1, 1], [1, 1.15], [1, 1.5], [1, 1.8]], corrosion: NO_MOVE },
 };
 function skillMove(t, s) {
   for (const [ax, tiers] of Object.entries(SKILL_MOVE[t.kind])) {
@@ -182,14 +116,14 @@ function skillMove(t, s) {
 // ARC's HIT, SPREAD over its three axes (owner, 2026-10-15: "spread the damage across the upgrades, but keep it mainly in
 // voltage" -> "spread out a bit more" - a build without Voltage hit for 24 whatever it bought): the old Voltage curve's log shared
 // 50% Voltage, 25% each Conductivity and Capacitance (ARC_SIDE_DMG); a full ARC (Voltage VI, the others V) x53.5, was x69.9 on Voltage alone
-const ARC_SIDE_DMG = [1, 1.38, 1.69, 1.99, 2.01, 2.04, 2.08]; // Conductivity's and Capacitance's share, by tier (its VI here)
-const ARC_VOLTAGE_DMG = [1, 1.91, 2.86, 26.595, 28.445, 39.385] /* was 1 3.64 8.16 15.55 26.14 40.76 (Voltage alone) */ /* x (1 + 0.1 tier) for the armor pierce it lost (owner, 2026-10-13: "arc voltage should just increase damage instead of pierce"; was 3.31 6.8 11.96 18.67 27.17) */ /* x (1 + 0.6 tier) (2026-10-11, roles: TEAM countermx 81-89 - Voltage leaks 4% of armor, Conductivity 10, Capacitance 12; was 2.068 3.093 4.272 5.492 6.793) */, ARC_VOLTAGE_FALL = [0.5, 0.65, 0.8, 1, 1.1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
+const ARC_SIDE_DMG = [1, 1.38, 1.99, 2.04, 2.08]; // Conductivity's and Capacitance's share, by tier (its VI here)
+const ARC_VOLTAGE_DMG = [1, 1.91, 26.595, 39.385] /* was 1 3.64 8.16 15.55 26.14 40.76 (Voltage alone) */ /* x (1 + 0.1 tier) for the armor pierce it lost (owner, 2026-10-13: "arc voltage should just increase damage instead of pierce"; was 3.31 6.8 11.96 18.67 27.17) */ /* x (1 + 0.6 tier) (2026-10-11, roles: TEAM countermx 81-89 - Voltage leaks 4% of armor, Conductivity 10, Capacitance 12; was 2.068 3.093 4.272 5.492 6.793) */, ARC_VOLTAGE_FALL = [0.5, 0.65, 1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
 // Conductivity's shape by tier (owner): strikes (separate first targets),
 // jumps, and forks per jump - 3, 7, 13, then two separate 13-hit attacks -
 // and r, how much further each JUMP reaches (owner; Voltage owns the tower's range)
 // d: a damage multiplier, FITTED so each tier deals +25% / +50% / +100% over
 // the base (owner), like Voltage's (scripts/aspira-sim: arcfit)
-let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 2, r: 1, d: 1, v: 0 }, { s: 1, j: 2, f: 2, r: 1.2, d: 1, v: 0 }, { s: 1, j: 2, f: 3, r: 1.4, d: 1, v: 0 }, { s: 3, j: 3, f: 3, r: 1.6, d: 1.5, v: 1 }, { s: 3, j: 3, f: 4, r: 1.8, d: 1.8, v: 2 }, { s: 4, j: 3, f: 4, r: 2.4, d: 2.4, v: 3 }] /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
+let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 2, r: 1, d: 1, v: 0 }, { s: 1, j: 2, f: 2, r: 1.2, d: 1, v: 0 }, { s: 3, j: 3, f: 3, r: 1.6, d: 1.5, v: 1 }, { s: 4, j: 3, f: 4, r: 2.4, d: 2.4, v: 3 }] /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
 // v: how many times a bolt may RETURN to an enemy it already struck (owner, 2026-10-08): from III a jump may hit any
 // enemy but the one it leaps from - III once more (2 hits an enemy), IV twice (3), V three times (4)
 // Capacitance by tier (owner, 2026-10-07): the charge, x the hit that left it, and
@@ -200,7 +134,7 @@ let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 2, r: 1, d: 1, v: 0 }, { s: 1, j: 2, f:
 // charges instead of arcing more ... hits add more and more charges as you level up"): an ARC hit leaves `n`
 // charges, each worth `frac` of the hit; the next hit from anything sets them ALL off, each a BURST of radius
 // ARC_BURST_R round the enemy hitting everything inside (each burst its own hit: armor bites each, each pops a shield)
-const ARC_CAPACITANCE = [null, { n: 1, frac: 0.14 }, { n: 2, frac: 0.14 }, { n: 4, frac: 0.875 }, { n: 6, frac: 0.875 }, { n: 5, frac: 0.745 }]; // frac 0.1 -> 0.14 (2026-10-12, chartvalue 30-60: tier III read 96% of the 2/2/2 team and 3/0/3 92% - now 99% / 98%) // a burst hits all round it, so each charge is small: isolation I..V 110 119 150 167 184% (with the slows below)
+const ARC_CAPACITANCE = [null, { n: 1, frac: 0.14 }, { n: 4, frac: 0.875 }, { n: 5, frac: 0.745 }]; // frac 0.1 -> 0.14 (2026-10-12, chartvalue 30-60: tier III read 96% of the 2/2/2 team and 3/0/3 92% - now 99% / 98%) // a burst hits all round it, so each charge is small: isolation I..V 110 119 150 167 184% (with the slows below)
 const ARC_BURST_R = 70, ARC_BURST_A = 0.45;
 // each jump hits ARC_FALL as hard and reaches ARC_SHRINK as far as the one before (owner)
 const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
@@ -208,7 +142,7 @@ const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
 // was 1.5 x the tower's range; the range was HALVED (owner, 2026-10-06: "not their
 // effects nor reach"), so the jump keeps its old absolute size: 1.5 x the old 156
 // range, and Voltage still lengthens it by the old x1.15 / 1.3 / 1.45
-const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.3, 1.45, 1.6, 1.75];
+const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // VOLTAGE PIERCES ARMOR (owner, 2026-10-11: "make upgrade choices matter" - Voltage was ARC's dead axis, worst on every
 // type): its arcs ignore this share of armor - Voltage is ARC's armor answer, Conductivity the shields, Capacitance the fast
 function arcSkillStats(t, s, b) {
@@ -220,14 +154,14 @@ function arcSkillStats(t, s, b) {
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
 function skillOptions(t) {
-  return SKILL_TREES[t.kind].filter(ax => skillOf(t, ax.id) < axisCap(t, ax.id)).map(ax => { // (one capstone VI a tower - aspira-capstone.js)
+  return SKILL_TREES[t.kind].filter(ax => skillOf(t, ax.id) < axisCap(t, ax.id)).map(ax => { // (one capstone a tower - aspira-capstone.js)
     const n = skillOf(t, ax.id), tier = ax.tiers[n];
-    return { choice: ax.id, name: ax.name + " " + roman(shownTier(nextStop(n))) + " · " + tier.name, desc: describeTower(t.kind, withSkill(t, ax.id)) };
+    return { choice: ax.id, name: ax.name + " " + roman(n + 1) + " · " + tier.name, desc: describeTower(t.kind, withSkill(t, ax.id)) };
   });
 }
 const withSkill = (t, id) => ({ ...t.skills, [id]: skillOf(t, id) + 1 });
-// the sliders' BASKET (aspira-sliders.js): the price of the tower's NEXT n points, each
-// at its own step of the ladder, and its chart with `add` (axis -> points) pulled on
+// the sliders' BASKET (aspira-sliders.js): the price of the tower's NEXT n ladder steps, each
+// at its own step of the ladder, and its chart with `add` (axis -> tiers) pulled on
 const skillPointsCost = (t, n) => { if (freeBuild()) return 0; let c = 0; for (let i = 0; i < n; i++) c += Math.round(TOWERS[t.kind].cost * SKILL_STEP_COST[t.lvl - 1 + i]); return c; };
 const withSkills = (t, add) => { const s = { ...t.skills }; for (const [id, n] of Object.entries(add)) if (n) s[id] = (s[id] || 0) + n; return s; };
 
@@ -251,7 +185,7 @@ function fireSkillChain(t, st, e, seen) {
   // strike point throws sparks
   const v = skillOf(t, "voltage");
   if (v) root.fx.pierce = true;
-  if (v >= SKILL_TIERS - 1) burst(e.x, e.y, "white", v > SKILL_TIERS - 1 ? 12 : 6); // V sparks, the capstone VI twice as many
+  if (v >= SKILL_TIERS - 1) burst(e.x, e.y, "white", v > SKILL_TIERS - 1 ? 12 : 6); // III sparks, the capstone IV twice as many
   const c = { t, st, col, skill: true, seen: seen || new Set(), hits: new Map() }; // shared by the attack's strikes
   c.seen.add(e.id); c.hits.set(e.id, 1);
   skillHit(c, e, d);
@@ -260,7 +194,7 @@ function fireSkillChain(t, st, e, seen) {
 // VOLTAGE CARRIES (owner, 2026-10-18: "a kill passes its leftover damage on to the nearest enemy"): a Voltage hit that kills arcs
 // what the kill did not need on to the nearest enemy within VOLT_CARRY_R x the jump reach, up to VOLT_CARRY_N hops by tier - its
 // single-target hit had nothing to spend on a swarm (countermx N=1: Voltage 71% leaked, Conductivity 35)
-const VOLT_CARRY_N = [0, 1, 2, 3, 4, 6, 8], VOLT_CARRY_R = 0.8;
+const VOLT_CARRY_N = [0, 1, 3, 6, 8], VOLT_CARRY_R = 0.8;
 function voltCarry(c, e, left) {
   const seen = new Set([e]);
   for (let k = 0; k < c.st.carry && left > 0; k++) {
@@ -285,7 +219,7 @@ function skillHit(c, e, d) {
 let staticQuiet = false;
 // Overload's leaps SLOW what they hit (owner, 2026-10-06, the no-FRZ niche search):
 // 30% for STAT_SLOW_T s - a late team without FRZ can answer the fast waves
-const ARC_STAT_SLOW = [0, 0.25, 0.3, 0.35, 0.4, 0.45] /* from tier I and deeper (2026-10-11, roles: Capacitance is ARC's FAST answer - leaks 0% of fast, Conductivity 4; was 0 0 0 .15 .17 .2) */, STAT_SLOW_T = 0.6; // from III (owner, 2026-10-08: kept at III, not moved to V)
+const ARC_STAT_SLOW = [0, 0.25, 0.35, 0.45] /* from tier I and deeper (2026-10-11, roles: Capacitance is ARC's FAST answer - leaks 0% of fast, Conductivity 4; was 0 0 0 .15 .17 .2) */, STAT_SLOW_T = 0.6; // from III (owner, 2026-10-08: kept at III, not moved to V)
 // a DISCHARGE: every charge the enemy holds BURSTS round it (ARC_CAPACITANCE; 2026-10-08, was a chain of
 // arcs - too much like Conductivity). Quiet: a burst neither charges nor sets off charges, so there is
 // no chain reaction (staticQuiet).
@@ -297,7 +231,7 @@ const ARC_A = 0.4, ARC_CORR = 0.5, ARC_W_CORR = 0.5, ARC_LEAP_A = 0.6 * ARC_A, A
 // CAPACITANCE CHAINS from tier CAP_CHAIN_FROM (owner, 2026-10-18: "a charged enemy that dies discharges into its neighbours" - it did,
 // but not when a discharge killed it: no chain reaction): a charged enemy a discharge kills joins capQueue and goes off after the
 // burst that killed it, once each (its charge is spent as it goes)
-const CAP_CHAIN_FROM = 1, capQueue = [], CAP_BURST_K = [1, 1.1, 1.2, 1.35, 1.5, 1.7, 2]; // CAP_BURST_K: the burst's reach by Capacitance tier
+const CAP_CHAIN_FROM = 1, capQueue = [], CAP_BURST_K = [1, 1.1, 1.35, 1.7, 2]; // CAP_BURST_K: the burst's reach by Capacitance tier
 function dischargeStatic(e) {
   const outer = !staticQuiet;
   dischargeOne(e);
@@ -361,41 +295,41 @@ function skillHopTo(c, node, nxt, depth) {
 // Breach stacks per hit (owner: "each beam permanently weakens the target's armor" - Breach is what strips it; the base SOL strips nothing)
 // Refraction from the start (owner, 2026-10-08): one hop in a 40-degree cone at tier 0; every tier one more hop than before
 // (were 0 / 2 / 5 / 9 / 12 / 15); V has NO limit - every enemy ahead in the cone, then on out of sight (solRefraction)
-const SOL_SHIELD_POP = [1, 1, 1, 1, 1, 1] /* one charge a beam, however deep the Focus (owner, 2026-10-16: "SOL should only pop based on the number of beams"); was 1 2 3 4 5 6, */ /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */, SOL_REFRACT_POP = [0, 0, 0, 0, 0, 0] /* (+3 for an hour, 2026-10-23 - scorch pops shields now instead) */ /* a refracted ray pops nothing extra (owner, 2026-10-16); was 0 1 1 2 2 3 */ /* Refraction breaks shields too (owner, 2026-10-12) */; // 2026-10-11: a concentrated beam punches through more than one shield
-const SOL_BEAMS = [2, 3, 3, 10, 12, 17] /* BATTERY 6.7.0 (2026-10-20): untaken 2 rays (a lone L1 SOL lost a life to every wave-3 armor pair - 72 u apart since 6.5), Focus III 10 (SOL countered armor alone: shields 84% leaked -> 24%); were [1, 2, 3, 4, 5, 17] */ /* V 6 -> 8, VI 8 -> 12 (a beam is the one shield charge it pops now: SOL_SHIELD_POP) */, SOL_REFRACTION = [1, 2, 3, 4, 5, 6] /* REFLECTIONS in the chain (SOL rework, 2026-10-22; were 1 3 6 10 13 and every enemy in the cone) */;
+const SOL_SHIELD_POP = [1, 1, 1, 1] /* one charge a beam, however deep the Focus (owner, 2026-10-16: "SOL should only pop based on the number of beams"); was 1 2 3 4 5 6, */ /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */, SOL_REFRACT_POP = [0, 0, 0, 0] /* (+3 for an hour, 2026-10-23 - scorch pops shields now instead) */ /* a refracted ray pops nothing extra (owner, 2026-10-16); was 0 1 1 2 2 3 */ /* Refraction breaks shields too (owner, 2026-10-12) */; // 2026-10-11: a concentrated beam punches through more than one shield
+const SOL_BEAMS = [2, 3, 10, 17] /* BATTERY 6.7.0 (2026-10-20): untaken 2 rays (a lone L1 SOL lost a life to every wave-3 armor pair - 72 u apart since 6.5), Focus III 10 (SOL countered armor alone: shields 84% leaked -> 24%); were [1, 2, 3, 4, 5, 17] */ /* V 6 -> 8, VI 8 -> 12 (a beam is the one shield charge it pops now: SOL_SHIELD_POP) */, SOL_REFRACTION = [1, 2, 4, 6] /* REFLECTIONS in the chain (SOL rework, 2026-10-22; were 1 3 6 10 13 and every enemy in the cone) */;
 // BREACH IS SOL'S OWN, from the start (owner, 2026-10-08): every hit strips SOL_BREACH_ARMOR armor for good
 // (below zero too: a flat bonus on every later hit from every tower); the Breach axis massively
 // increases the strip and adds crit chance for every tower, SOL_BREACH_CRIT a hit (none at base)
 // BREACH STRIPS A FLAT AMOUNT, big from the start (owner, 2026-10-12: "SOL with any upgrades should be good vs armor", then
 // "dont scale breach with enemy armor" - it was x the wave's armor for an hour): a bare SOL strips 80 a hit (was 3)
-const SOL_BREACH_ARMOR = [80, 200, 350, 550, 1219, 2359] /* bigger tiers (owner, 2026-10-12: "increase breach effect to make it better" - the Breach build: armor 61-69 16% -> 12%, 81-89 9% -> 5%); was 80 120 160 210 270 330, before that 3 24 72 150 261 300 */ /* x1.5 for the crit chance it no longer gives (owner, 2026-10-12: "remove extra crit chance, just reduce armor more") */ /* doubled back (2026-10-12, trio sim: ARC+FRZ+SOL, the trio without ACD, leaked 57% of armor at 81-89 - 45% with this) */ /* halved, rounded down (2026-10-08; was 2 16 49 101 174 200) */, SOL_BREACH_CRIT = [0, 0, 0, 0, 0, 0]; // NO crit chance any more (owner, 2026-10-12; was 0 .01 .02 .03 .04 .05)
+const SOL_BREACH_ARMOR = [80, 200, 550, 2359] /* bigger tiers (owner, 2026-10-12: "increase breach effect to make it better" - the Breach build: armor 61-69 16% -> 12%, 81-89 9% -> 5%); was 80 120 160 210 270 330, before that 3 24 72 150 261 300 */ /* x1.5 for the crit chance it no longer gives (owner, 2026-10-12: "remove extra crit chance, just reduce armor more") */ /* doubled back (2026-10-12, trio sim: ARC+FRZ+SOL, the trio without ACD, leaked 57% of armor at 81-89 - 45% with this) */ /* halved, rounded down (2026-10-08; was 2 16 49 101 174 200) */, SOL_BREACH_CRIT = [0, 0, 0, 0]; // NO crit chance any more (owner, 2026-10-12; was 0 .01 .02 .03 .04 .05)
 // a refraction lands within SOL_CONE degrees of the first shot's direction (at
 // any distance); one Breach = BREACH_ARMOR armor off and BREACH_CRIT crit
 // chance for every tower
 // the cone's half-angle by Refraction tier (owner, 2026-10-08: it WIDENS with the tier and starts wider, since every hop
 // must now travel forward - see solRefraction; was a flat 8, before that 25)
-const SOL_CONE_BY = [3, 6, 6, 8, 8, 9] /* NARROW (owner, 2026-10-19: "SOL should not be good vs swarm whatsoever" - the cone is the lever) */ /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit; the chart SOL uses SOL_BREACH_CRIT)
+const SOL_CONE_BY = [3, 6, 8, 9] /* NARROW (owner, 2026-10-19: "SOL should not be good vs swarm whatsoever" - the cone is the lever) */ /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit; the chart SOL uses SOL_BREACH_CRIT)
 // SOL's own lever (owner: more crit): Breach also raises the crit MULTIPLIER, x3 at base
-const SOL_CRITMUL = [3, 5, 6.5, 9, 14.6, 25]; /* x1.3 from I (2026-10-18: Breach's shrapnel no longer deals damage) */
+const SOL_CRITMUL = [3, 5, 9, 25]; /* x1.3 from I (2026-10-18: Breach's shrapnel no longer deals damage) */
 // FITTED 2026-10-06 to +25 / +50 / +100% (on an HP-scaled field, so nothing
 // saturates): each Focus beam's share of the shot by tier, and each Refract
 // hop's damage by tier (a hop is far weaker than the first hit)
 // (owner 2026-10-06: every Focus beam is a FULL hit - 1 / 2 / 3 / 4 beams, no share - so no stat falls; SOL's base damage pays for it)
-const SOL_HOP = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]; // REFLECTION'S SHARE, FIXED (owner, 2026-10-23: "reflection just increases the reflections"; was 0.5 .. 0.75, VI 0.8): each reflection hits at this x the last one's (compounding: p, p^2, p^3..); (SOL rework 2026-10-22) was 1 a hop // every refraction hop a full strike (overnight fit 2026-10-08: even 1.5x reached only 133% - Refraction needs a mechanic change, not numbers) // II / III raised 2026-10-07 (were 0.3 / 0.455) with the cone narrowed to 8 degrees: fewer hops land, so each counts more
+const SOL_HOP = [0.5, 0.5, 0.5, 0.5]; // REFLECTION'S SHARE, FIXED (owner, 2026-10-23: "reflection just increases the reflections"; was 0.5 .. 0.75, VI 0.8): each reflection hits at this x the last one's (compounding: p, p^2, p^3..); (SOL rework 2026-10-22) was 1 a hop // every refraction hop a full strike (overnight fit 2026-10-08: even 1.5x reached only 133% - Refraction needs a mechanic change, not numbers) // II / III raised 2026-10-07 (were 0.3 / 0.455) with the cone narrowed to 8 degrees: fewer hops land, so each counts more
 // Refraction peaked at I (107%) and fell by III (93%): range alone spread its fire
 // thin, so II / III also hit harder (owner, 2026-10-07)
 // (LIGHT OUTRUNS THE FAST, Refraction x the fast, removed 2026-10-12 - owner: no extra damage by enemy type)
-const SOL_REFRACTION_DMG = [1, 1.1, 1.2, 1.3, 1.4, 1.5] /* SLIGHT (owner, 2026-10-23: "reflection can increase damage slightly so that we dont have an absurd number of beams"; was 1 1 1.3 4.6 13.1 24.1, VI 32.2) */; // III..V x1.15 / 1.35 / 1.5 with the 160-degree cone (owner, 2026-10-08: "even a 160 deg angle?" - the cone alone tops out at 156%)
+const SOL_REFRACTION_DMG = [1, 1.1, 1.3, 1.5] /* SLIGHT (owner, 2026-10-23: "reflection can increase damage slightly so that we dont have an absurd number of beams"; was 1 1 1.3 4.6 13.1 24.1, VI 32.2) */; // III..V x1.15 / 1.35 / 1.5 with the 160-degree cone (owner, 2026-10-08: "even a 160 deg angle?" - the cone alone tops out at 156%)
 // each Focus tier's beam STRENGTH (2026-10-08, the tier fit's lever for Focus: more beams alone measured 168% at V)
 // (SOL_PIERCE - the pass-through by Breach tier, 35% .. 125% - is GONE with the SOL rework: every beam passes through at 100%, aspira-sol.js)
-const SOL_PIERCE_OLD = [0.35, 0.6, 0.7, 0.8, 0.9, 1]; /* by Breach STOP: 0 35%, I 60%, II 80%, III 100%, IV (the capstone) 125% (owner, 2026-10-19: "100% carry earlier / capstone goes above 100%"; 2 and 4 are never bought) */ // the overkill a kill carries on (solPierce, aspira-towers.js) by Breach tier; VI 1 (capstone)
+const SOL_PIERCE_OLD = [0.35, 0.6, 0.8, 1]; /* by Breach STOP: 0 35%, I 60%, II 80%, III 100%, IV (the capstone) 125% (owner, 2026-10-19: "100% carry earlier / capstone goes above 100%"; 2 and 4 are never bought) */ // the overkill a kill carries on (solPierce, aspira-towers.js) by Breach tier; VI 1 (capstone)
 // FOCUS = BEAMS + PASS-THROUGH (owner, 2026-10-23: "I want focus to improve the passthrough rate and beam count"): SOL_PASS of a hit carries on past
 // each enemy (solPierce); Focus no longer multiplies damage (SOL_FOCUS_DMG, was 1 1 1 1 4.556 4.704, VI 5.2 - gone)
-const SOL_PASS = [0.5, 0.55, 0.6, 0.7, 0.8, 0.9];
+const SOL_PASS = [0.5, 0.55, 0.7, 0.9];
 function solSkillStats(t, s, b) {
   s.dmg = b.dmg * SOL_REFRACTION_DMG[skillOf(t, "refraction")]; s.range = b.range * RANGE_BONUS; s.crit = LVL_SOL_CRIT[0]; s.rate = b.rate;
   s.shieldPop = SOL_SHIELD_POP[skillOf(t, "focus")] + SOL_REFRACT_POP[skillOf(t, "refraction")]; s.pass = SOL_PASS[skillOf(t, "focus")]; // FOCUS pierces shields: each beam pops this many (SOL's shield help, counter matrix)
-  s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.fan = SOL_FAN[skillOf(t, "refraction") >= 6 ? 1 : 0]; // the chains off the first enemy (solRefraction)
+  s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.fan = SOL_FAN[skillOf(t, "refraction") >= CAPSTONE_TIER ? 1 : 0]; // the chains off the first enemy (solRefraction)
   const bk = skillOf(t, "breach");
   s.breach = 1; s.pierce = 1; s.dot = { frac: SOL_SCORCH[bk], t: SOL_SCORCH_T }; s.critMul = SOL_CRITMUL[bk]; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = SOL_BREACH_CRIT[bk]; s.skill = true;
 }
@@ -457,4 +391,4 @@ function drawCone(f0, k) {
 // SHORT AND BIG, POPS SHIELDS (owner, 2026-10-23: "pops shield (dont all other dots pop shields?) make this short and big"): over
 // SOL_SCORCH_T s in SOL_SCORCH_TICKS whole ticks (few big ticks, so flat armor bites less; was every frame over 1s), each a loud-free hit
 // that pops a shield charge like IFR's burn and ACD's pools (SOL_DOT_ST; it bounced off shields unpopped until then)
-const SOL_SCORCH = [1, 1.1, 1.2, 1.3, 1.4, 1.5], SOL_SCORCH_T = 0.4, SOL_SCORCH_TICKS = 4, SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 5 }; // 5 a tick: three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5 (2026-10-23, the marks rule - a second check)
+const SOL_SCORCH = [1, 1.1, 1.3, 1.5], SOL_SCORCH_T = 0.4, SOL_SCORCH_TICKS = 4, SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 5 }; // 5 a tick: three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5 (2026-10-23, the marks rule - a second check)

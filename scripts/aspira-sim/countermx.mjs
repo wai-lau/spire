@@ -7,12 +7,12 @@
 // those spread - a support axis (FRZ Rime cracking shields) only shows in a team that can kill what it opens up.
 // usage: node countermx.mjs [seeds=2]   env N=3 POINTS=8 WINDOWS=41-49,61-69 KINDS=... BV_PATCH=<file> TEAM=1 SPREAD_ONLY=1 (spread builds only: marks.py's input)
 // a window may carry its OWN points (owner, 2026-10-12: test each boss band at the points a player has there): WINDOWS=1-9:2,11-19:4
-// - a focused build then takes the deepest STOP those points reach (stops.mjs: 0 1 3 5 6, never 2 or 4), capped at the capstone
+// - a focused build then takes the deepest TIER those points reach (stops.mjs: 0 I II III IV), capped at the capstone
 import fs from "node:fs";
 import { isMainThread } from "node:worker_threads";
 import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-import { spreadStops, focusStops, snapStop, STOPS } from "./stops.mjs"; // tiers by STOP only (0 1 3 5 6)
+import { spreadStops, focusStops, snapStop, STOPS, POINTS_AT } from "./stops.mjs"; // tiers bought whole (0 I II III IV)
 
 const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), TYPES = ["swarm", "fast", "shield", "armor"];
 const TEAM = process.env.TEAM === "1", N = TEAM ? 1 : Number(process.env.N || 3), POINTS = Number(process.env.POINTS || 8);
@@ -27,12 +27,12 @@ export default async function task({ kind, build, type, from, to, seed, points: 
   const sc = cellScores(g, kind), open = g.run("CELLS.map((c, i) => i).filter(cellOpen)").sort((a, b) => sc[b] - sc[a]);
   const axes = g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`);
   const sk = {};
-  Object.assign(sk, build === "spread" ? spreadStops(axes, POINTS) : focusStops(axes, build, POINTS)); // by STOP (stops.mjs; tiers was the old raw depth)
+  Object.assign(sk, build === "spread" ? spreadStops(axes, POINTS) : focusStops(axes, build, POINTS)); // by TIER (stops.mjs)
   let placed = 0;
   for (const ci of open) { if (placed >= N) break; const t = g.place(kind, ci); if (!t) continue; t.skills = { ...sk }; t.lvl = 1 + POINTS; placed++; }
   if (TEAM) for (const m of mates || ["arc", "frz", "sol", "acd"].filter(k => k !== kind)) {
     const ax = g.run(`SKILL_TREES[${JSON.stringify(m)}].map(a => a.id)`), ms = {};
-    for (let p = 0; p < POINTS; p++) ms[ax[p % 3]] = (ms[ax[p % 3]] || 0) + 1;
+    Object.assign(ms, spreadStops(ax, POINTS)); // by TIER (stops.mjs; the raw point-levels it was included the ones that cannot be bought)
     const msc = cellScores(g, m), free = g.run("CELLS.map((c, i) => i).filter(cellOpen)").filter(ci => !g.G.towers.some(t => t.cell === ci)).sort((a, b) => msc[b] - msc[a]);
     for (const ci of free) { const t = g.place(m, ci); if (t) { t.skills = { ...ms }; t.lvl = 1 + POINTS; break; } }
   }
@@ -59,7 +59,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("countermx.mjs")
   const jobs = [];
   for (const [from, to, points] of WINDOWS) for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) for (const type of TYPES) for (let seed = 1; seed <= SEEDS; seed++) for (const mates of TRIO ? TRIOS(kind) : [null]) jobs.push({ kind, build, type, from, to, seed, points, mates });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true });
-  console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at ${["-", "I", "II", "III", "IV", "V", "VI"][snapStop(Math.min(POINTS, STOPS[STOPS.length - 1]))]} + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds: % LEAKED`);
+  console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at ${["-", "I", "II", "III", "IV"][snapStop(Math.min(POINTS, POINTS_AT[POINTS_AT.length - 1]))]} + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds: % LEAKED`);
   for (const [from, to, points] of WINDOWS) {
     console.log(`\nwaves ${from}-${to} (${points} pts)`.padEnd(26) + TYPES.map(t => t.padStart(8)).join(""));
     for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) {

@@ -42,7 +42,7 @@ const SPEC = {
     ["Peak", "×" + st.cap + " (" + dmgW(st.dmg * st.cap) + "/s)"], ["Jets", st.allInRange ? "all in range" : st.targets],
     ["Circle", st.plagueR ? Math.round(st.plagueR) + (st.bloom ? "→" + Math.round(st.plagueR * st.bloom) : "") : "—"],
     ["Armor", st.corrode ? "−" + Math.round(st.corrode * 100) + "% of dmg" : "—"] /* a tick strips ACD_CORRODE OF ITS DAMAGE; dmgW(0.1) read "−0" (2026-10-14) */, /* no "Shields −1 / hit" rows: one charge a hit is the default, unsaid (owner, 2026-10-20) */
-    ["Goo", st.corrode ? "×" + Math.round(DRIP_TAKE * (1 + DRIP_TIER_K * skillOf(t, "corrosion")) * 10) / 10 + " eaten armor · pull " + ACD_DRIP_PULL[skillOf(t, "corrosion")] : "—"] /* dripDrop / stepDrips: strips and burns that much */,
+    ["Goo", st.corrode ? "×" + Math.round(DRIP_TAKE * (1 + DRIP_TIER_K * TIER_LEVEL[skillOf(t, "corrosion")]) * 10) / 10 + " eaten armor · pull " + ACD_DRIP_PULL[skillOf(t, "corrosion")] : "—"] /* dripDrop / stepDrips: strips and burns that much */,
     ["Kill pools", st.spread ? "every ACD kill" : "—"] /* (owner, 2026-10-22: anything ACD kills leaves a full pool) */,
     // puddles one number a row (owner, 2026-10-07: "1 / 1.4s · 1.5s · r20" was unreadable), so each
     // reads now -> next on its own and its colour judges that one number

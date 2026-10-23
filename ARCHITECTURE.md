@@ -118,22 +118,23 @@ Ids `arc frz sol acd grv car ifr` (`KINDS`; `car` is shown as CRR). The seven hu
 
 ### 4.2 The chart (pillar 4)
 
-Three axes a kind, each a ladder of **six table tiers** (`SKILL_TIERS`; the sixth the
-capstone) sold as **four purchases**:
+Three axes a kind, each a ladder of **four purchases** (`SKILL_TIERS`); an axis level IS the
+tier shown, and every per-tier table holds exactly those five values:
 
-| shown on card, board, title | 0 | I | II | III | IV = capstone |
+| shown on card, board, title = table index | 0 | I | II | III | IV = capstone (`CAPSTONE_TIER`) |
 |---|---|---|---|---|---|
-| table index (`SKILL_STOPS`) | 0 | 1 | 3 | 5 | 6 (`CAPSTONE_TIER`) |
-| levels and ladder steps a buy (`stopLevels`) | | 1 | 2 | 2 | 2 (`CAPSTONE_LEVELS`) |
+| ladder steps a buy takes (`TIER_STEPS`, `tierSteps`) | | 1 | 2 | 2 | 2 (`CAPSTONE_LEVELS`) |
 
-- Indices 2 and 4 are never rested on (an old save's 2 / 4 reads I / II); every per-tier
-  table keeps 0..6 and `aspira-capstone.js` appends index 6 to every one in one place
-  (`CAPSTONE_NUM`).
+- A tower's `lvl` is the price LADDER, not the tiers: a buy from tier k takes `TIER_STEPS[k]`
+  steps of `SKILL_STEP_COST`. Tables are written 0 I II III and `aspira-capstone.js` appends
+  the IV value to every one in one place (`CAPSTONE_NUM`).
+- An old save (levels 0..6, or a very old one's 2 / 4) is read once through `OLD_TIER`
+  (0 1 1 2 2 3 4; `skillScaleFix`); a save written now carries `skillScale` = `SKILL_SCALE`.
 - Price: `SKILL_STEP_COST` x the build price, one ladder step a level (17 steps; a full chart
   about 63,100c at the 40c build price: the steps were scaled x1.6 on 2026-10-15, ARCHAEOLOGY §4.4). The capstone costs "the same as increasing the level by 2".
 - **One capstone a tower** (`axisCap`, `capstoneHolder`; the card says "One capstone per
   tower · X IV holds it"). A tower's shown level is its purchases (`shownLevel`).
-- **The basket**: a tap pulls an axis to its next (or last) stop, the card previews the
+- **The basket**: a tap pulls an axis to its next (or last) tier, the card previews the
   result, one priced button locks it in. Below the locked tier is refused with a note; the
   bank never limits a pull (unaffordable = red cost, disabled button); a card closed
   unbought drops its pull.
@@ -188,10 +189,10 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 **SOL** - locks a target (a lock holds out to `SOL_HOLD`), charges the whole reload, fires;
 a target dying mid-charge restarts the charge; a lost lock hands its charge only to a new
 target inside the lock cone (`SOL_CONE_BY`). Armor cuts SOL like any other. **Weakness: swarms** (a THIN beam: only what is on its line).
-THE REWORK (owner, 2026-10-22/23): every hit PASSES THROUGH at `SOL_PASS[focus]` (0.5 .. 0.9, VI 1; Focus = beams + pass) (`solPierce`, `web/aspira-sol.js`) along its line to the screen's edge,
+THE REWORK (owner, 2026-10-22/23): every hit PASSES THROUGH at `SOL_PASS[focus]` (0.5 .. 0.9, IV 1; Focus = beams + pass) (`solPierce`, `web/aspira-sol.js`) along its line to the screen's edge,
 on a thin line (`SOL_PIERCE_W` 6, `SOL_PIERCE_LEN` 3000, `SOL_PIERCE_HOPS` 64 a perf cap), each hit breaching and scorching in full;
 beams are drawn thin (`SOL_BEAM_THIN`). The first enemy REFLECTS the beam on in a chain (`solRefraction`, no cone), each reflection
-`SOL_HOP` (0.5) x the last and passing through along its own line; the first enemy forks `st.fan` chains (2, VI 6), and Reflection
+`SOL_HOP` (0.5) x the last and passing through along its own line; the first enemy forks `st.fan` chains (2, IV 6), and Reflection
 raises the hit a little (`SOL_REFRACTION_DMG` 1 .. 1.5). Every hit SCORCHES: a short, big burn, `SOL_SCORCH[breach]` x the hit over
 `SOL_SCORCH_T` 0.4 s in `SOL_SCORCH_TICKS` ticks, each popping `SOL_DOT_ST.shieldPop` shields (onHit's `st.dot`; the strongest holds,
 a new hit restarts it). The breach SHRAPNEL is gone. TARGETING (`solLineSort`): of the first `SOL_LINE_TOP` by mode, the one whose
@@ -307,7 +308,7 @@ are in ARCHAEOLOGY §4.6c.
 | numbers | one damage number per `CRR_NUM_HITS` hits per interceptor, their sum (`carNum`) |
 | look | hairline trails (`carTrails`); darts sized by Armament; drawn in `skyKeep` so a boss sky does not invert them. No new 3D primitives: darts are filled triangles, firing lines and pellets single strokes (the board's path context takes no gradient stroke, §11) |
 
-| Axis | Buys | Capstone (VI) |
+| Axis | Buys | Capstone (IV) |
 |---|---|---|
 | Hangar | WIDTH: more interceptors, more of them stored in orbit; **focus fire** (each other interceptor looping the same target adds a share to every shot on it); a share of the hit | Full Wing |
 | Launch | TEMPO: interceptor speed, a shorter reload, the strafing pass (`CRR_RAM`), the carrier's leash; a share of the hit | **Warp**: they teleport onto the target's circle and home |
@@ -334,7 +335,7 @@ life and its own damage** - every hit is `TOWERS.ifr.dmg` x that axis's table, n
 | flare | a big + over a tiny x, a random size; every tick burns what touches a spoke (catching fire OFF, 2026-10-20: "don't require lit"); its glow brightens with its hit (`ifrFlareI`) - a meteor's twice as bright as the fire's (`IFR_FLARE_MAIN_K`) |
 | look | the meteor: a black disc, an inner glow from 30% at the outline to 0 at 30% of the radius in, the outline glow; in 3D the spokes are GPU glow lines (`fxGlGlowLine`); no gradients on the board context |
 
-| axis | buys | good against (owner) | capstone (VI) |
+| axis | buys | good against (owner) | capstone (IV) |
 |---|---|---|---|
 | Meteor | charge time, speed, meteor size, its hit (gently), the fan's count | all-rounder | Impact: each fan hit fissures into two |
 | Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across |
@@ -648,7 +649,7 @@ be in the game's way.
 | Store | Holds |
 |---|---|
 | localStorage | `aspira.best` `{score, wave, ascended}`, `spire.autowait` / `automove`, `aspira.mute` / `vol` |
-| IndexedDB (`aspira-autosave.js`) | the whole `G` as each wave starts, cleared when a game ends; on load **resume wave N** or **new game**, the card read from a small `meta` record so it comes up before a tower can be built (the run itself is read on resume) - the save is the board AT REST (`runClean`: towers back on their build slots, every transient state and the field dropped; the Challenge button up) (a resumed run may still sign TOP PLAYERS); **everything in `G` must be structured-cloneable** |
+| IndexedDB (`aspira-autosave.js`) | the whole `G` as each wave starts, cleared when a game ends; on load **resume wave N** or **new game**, the card read from a small `meta` record so it comes up before a tower can be built (the run itself is read on resume) - the save is the board AT REST, stamped `skillScale` (`runClean`: towers back on their build slots, every transient state and the field dropped; the Challenge button up) (a resumed run may still sign TOP PLAYERS); **everything in `G` must be structured-cloneable** |
 | server | nothing beyond §9.1-9.2; no accounts |
 
 ### 9.4 Version and changelog
@@ -673,7 +674,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 |---|---|
 | data and state | `defs` (geometry, tables, `towerStats`), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows) |
 | waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
-| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (CRR), `desc`, `capstone` (index 6 on every table), `chart`, `stats`, `sliders` (the card) |
+| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (CRR), `desc`, `capstone` (tier IV on every table), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
 | draw (3D) | `warp`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
@@ -749,7 +750,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | code | **no mid-line `//` comment** in the game JS or in a GLSL expression line; use `/* */` (it swallows the rest of the line; `lint-swallowed.py` flags it) |
 | code | one global scope, ESLint `no-undef` off: a dropped `const` throws at run time; verify placement in a browser or the smoke after touching `placeTower`. A new top-level name must not collide with another file's (GRV's projectile grid is `projGrid` / `enemiesNear` because `aspira-acid.js` owns `enemyGrid`) |
 | code | UI-only code that logic reaches needs a `typeof X === "function"` guard; a new logic script goes in `sim.mjs` `FILES`; a browser global needs a `dom.mjs` stub |
-| code | every per-tier table has exactly 6 entries before `aspira-capstone.js` loads; a new table or axis needs a `CAPSTONE_NUM` entry and a `CAPSTONE_TIERS` name |
+| code | every per-tier table has exactly 4 entries (0 I II III) before `aspira-capstone.js` loads, 5 after; a new table or axis needs a `CAPSTONE_NUM` entry and a `CAPSTONE_TIERS` name |
 | code | `fixedRand(wave, salt)`, never `Math.random`, for anything shaping a wave (a changed salt changes the sequence for everyone and every sim seed) |
 | code | whole numbers: HP, armor, hits floored, a landed hit >= 1, fractions banked; a spawned enemy never has 0 HP |
 | code | `G` stays structured-cloneable: no functions, DOM nodes or closures (autosave) |

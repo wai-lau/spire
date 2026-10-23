@@ -1,6 +1,6 @@
 // BUILD LOG (owner, 2026-10-14: "just get me the frz acd arc builds that succeed and at what times they buy which
 // upgrades"): one trio, full games to the win, the smart saver with both core powers - every way of choosing each
-// tower's CAPSTONE axis (that axis first, to VI, then the other two in chart order), plus all-spread. Per build:
+// tower's CAPSTONE axis (that axis first, to IV, then the other two in chart order), plus all-spread. Per build:
 // wins, lives, rewinds; then each winning build's purchases by wave (sim.mjs's purchase log, S.buys).
 // usage: node buildlog.mjs [seeds=2] [out.jsonl]   env TRIO=arc,frz,acd  ASPIRA_PATCH / ASPIRA_WEB as everywhere
 import { isMainThread } from "node:worker_threads";
@@ -21,7 +21,7 @@ export default async function task({ build, seed }) {
 }
 
 const label = b => TRIO.map(k => k.toUpperCase() + " " + (b[k] || "spread")).join(", ");
-const ROMAN = ["0", "I", "II", "III", "IV", "V", "VI"];
+const ROMAN = ["0", "I", "II", "III", "IV"];
 // one tower's purchases as "w3 build, w5 voltage I, ..." - consecutive buys in one wave folded
 function timeline(buys, k) {
   const mine = buys.filter(b => b.k === k), out = [];
@@ -36,7 +36,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("buildlog.mjs"))
   rec(0, {});
   const jobs = []; for (const build of builds) for (let seed = 1; seed <= SEEDS; seed++) jobs.push({ build, seed });
   const res = await runPool(new URL(import.meta.url), jobs, { out: OUT });
-  console.log(`${TRIO.join("+").toUpperCase()}: full games to ${WIN}, smart saver, both core powers, ${SEEDS} seeds; capstone axis first to VI, then the others\n`);
+  console.log(`${TRIO.join("+").toUpperCase()}: full games to ${WIN}, smart saver, both core powers, ${SEEDS} seeds; capstone axis first to IV, then the others\n`);
   const rows = builds.map(build => {
     const rs = jobs.map((j, i) => (j.build === build ? res[i] : null)).filter(Boolean);
     return { build, rs, won: rs.filter(r => r.won).length, lives: rs.reduce((a, r) => a + (r.won ? r.lives : 0), 0) / Math.max(1, rs.filter(r => r.won).length), rewinds: rs.reduce((a, r) => a + r.rewinds, 0) / rs.length };

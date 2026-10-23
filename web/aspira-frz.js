@@ -8,30 +8,30 @@
 // for the other towers; FRZ + L1 ARC + L1 SOL, waves 20-30) - the first
 // guesses were 2-4x too strong; range moves little so "colder" reads as colder
 // early-game balance 2026-10-06: +0.03 on every tier (FRZ stays a pure SUPPORT tower - owner)
-const FRZ_TEMP_SLOW = [0.45, 0.45, 0.45, 0.45, 0.45, 0.534] /* BATTERY 6.7.0 (2026-10-20): untaken 0.4 -> 0.45 (and I-V to match) */; /* V +0.094, VI +0.12 (steeper late tiers, tuned 2026-10-17) */ // a small ramp (overnight fit 2026-10-08: even a flat 0.4 overshot - Temp's reach is the next lever) // weakened (owner, 2026-10-08; isolation: Temp V 438% team, leaks 660 -> 56); was .43 .46 .5 .54 .58 // the aura's range is in SKILL_MOVE
+const FRZ_TEMP_SLOW = [0.45, 0.45, 0.45, 0.534] /* BATTERY 6.7.0 (2026-10-20): untaken 0.4 -> 0.45 (and I-V to match) */; /* V +0.094, VI +0.12 (steeper late tiers, tuned 2026-10-17) */ // a small ramp (overnight fit 2026-10-08: even a flat 0.4 overshot - Temp's reach is the next lever) // weakened (owner, 2026-10-08; isolation: Temp V 438% team, leaks 660 -> 56); was .43 .46 .5 .54 .58 // the aura's range is in SKILL_MOVE
 // Temp's TEAM hook (owner, 2026-10-07: FRZ's chart was flat, 97-103%): an enemy
 // its aura touches turns BRITTLE - while slowed it takes x FRZ_BRITTLE from every
 // tower (damage(), which already reads e.brittle; drawStatus shows the crack)
 // from tier I (owner, 2026-10-11: slows are SHAPED now - aspira-game.js slowShape - so FRZ's payoff moves from how
 // slow to what the slowed suffer; was 1 1 1 1.15 1.2 1.25, from III)
-const FRZ_BRITTLE = [1, 1.15, 1.3, 1.45, 2.624, 3.5623]; // x damage from every tower while slowed (an armor-taking Brittle was tried 2026-10-12 and reverted the same day - ARCHAEOLOGY.md); was 1.06 .. 1.3 - the no-ARC team 0/9 -> 5/9 with the ARC nerf and fast HP x0.75
+const FRZ_BRITTLE = [1, 1.15, 1.45, 3.5623]; // x damage from every tower while slowed (an armor-taking Brittle was tried 2026-10-12 and reverted the same day - ARCHAEOLOGY.md); was 1.06 .. 1.3 - the no-ARC team 0/9 -> 5/9 with the ARC nerf and fast HP x0.75
 // FROST TAKES ARMOR (owner, 2026-10-12: "let rime reduce armor"): an enemy at FULL frost has this x the wave's armor
 // reference off its armor (less frost, that share of it), past zero - damage(). Rime is FRZ's armor answer, Temp the
 // fast (slow + tick + brittle); a pulse no longer breaks shield charges (it did until 2026-10-12)
 /* RIME'S BITE (owner, 2026-10-18: Rime is the weakest FRZ axis): each ring that reaches an enemy hits it for this x a tick (quiet, armor still bites) */
-const FRZ_RIME_BITE = [0, 4, 6, 45, 70, 200];
-const FRZ_RIME_CRACK = [0, 0.25, 0.4, 0.715, 0.91, 1.105];
+const FRZ_RIME_BITE = [0, 4, 45, 200];
+const FRZ_RIME_CRACK = [0, 0.25, 0.715, 1.105];
 // Moons only add aura sources; their armor crack (FRZ_MOON_CRACK) and the hard-types-skip-brittle table (FRZ_HARD)
 // were removed with the effects (2026-10-12; ARCHAEOLOGY.md) - brittle applies to every slowed enemy.
 // a tick is QUIET (no flash, no crit) yet ARMOR takes its flat bite like any hit (owner, 2026-10-12: "frz ticks should not
 // ignore armor" - damage() now bites every hit); the empty opts the shield-pop call passes
 const FRZ_TICK_HIT = {};
-const FRZ_RIME = [0, 0.02, 0.035, 0.3, 0.425, 0.9]; // HALVED with the period (owner, 2026-10-14: "double pulse rate, half effect and opacity" - was .04 .07 .12 .17 .22; same frost a second, twice the rings); each pulse's permanent stacking slow (a shielded enemy takes none - applySlow refuses it; this was "the SHIELD answer" while pulses shattered shields, until 2026-10-12) (2026-10-11: a slow, tanky shield takes the most pulses; was 0 .024 .035 .054 .064 .068): Rime build leaks 13% of shields, Temp 24, Moons 23
+const FRZ_RIME = [0, 0.02, 0.3, 0.9]; // HALVED with the period (owner, 2026-10-14: "double pulse rate, half effect and opacity" - was .04 .07 .12 .17 .22; same frost a second, twice the rings); each pulse's permanent stacking slow (a shielded enemy takes none - applySlow refuses it; this was "the SHIELD answer" while pulses shattered shields, until 2026-10-12) (2026-10-11: a slow, tanky shield takes the most pulses; was 0 .024 .035 .054 .064 .068): Rime build leaks 13% of shields, Temp 24, Moons 23
 // FRZ's own levers (owner: no generic multipliers): Rime pulses MORE OFTEN each tier, the moons are STRONGER copies each tier
-const FRZ_RIME_PERIOD = [1, 1, 0.85, 0.385, 0.33, 0.275] /* halved (owner, 2026-10-14; was 2 2 1.7 1.4 1.2 1) */, FRZ_MOON_BY = [0.6, 0.85, 0.86, 1.5438, 1.5438, 1.5438]; /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
+const FRZ_RIME_PERIOD = [1, 1, 0.385, 0.275] /* halved (owner, 2026-10-14; was 2 2 1.7 1.4 1.2 1) */, FRZ_MOON_BY = [0.6, 0.85, 1.5438, 1.5438]; /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
 // TEMP CONDUCTS FASTER (owner, 2026-10-11: "make temp conduct faster"): each Temp tier shortens the aura's TICK (s) -
 // the same bite each tick, so more damage and more shield pops a second (capstone VI in aspira-capstone.js)
-const FRZ_TEMP_TICK = [0.35, 0.34, 0.33, 0.32, 0.2188, 0.0976] /* BATTERY 6.7.0 (2026-10-20): untaken 0.5 -> 0.35 and I-III to match - a lone L1 FRZ lost 3-10 on waves 1-11 after the 6.5 spacing (armor 2x, fast 3x) */; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
+const FRZ_TEMP_TICK = [0.35, 0.34, 0.32, 0.0976] /* BATTERY 6.7.0 (2026-10-20): untaken 0.5 -> 0.35 and I-III to match - a lone L1 FRZ lost 3-10 on waves 1-11 after the 6.5 spacing (armor 2x, fast 3x) */; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
 const FRZ_TICK = 0.5, FRZ_RIME_GROW = 2.4; // a Rime ring takes FRZ_RIME_GROW game s to reach the edge (owner: much slower; was 0.6)
 const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit of slow (owner: thicker the colder) // an aura slow outlasts one step only: it is gone the moment the enemy leaves
 function frzSkillStats(t, s, b) {
@@ -45,7 +45,7 @@ function frzSkillStats(t, s, b) {
 // CAPPED (owner, 2026-10-20: "max 3 sattelites per moon, max 3 moons, find another way to scale it"): at most 3 moons, 3 moonlets each; the top
 // stops scale by FRZ_MOON_HIT instead - the moons' and moonlets' DAMAGE (not their reach or slow), making up the sources they lost
 // (V: 24 -> 9, VI: 35 -> 12, weighted by their aura scale: x2.4, x2.75). Were [0, 1, 2, 3, 3, 4] VI 5 and [0, 0, 0, 0, 1, 5] VI 6
-const FRZ_MOON_COUNT = [0, 1, 2, 3, 3, 3], FRZ_SUBMOON_N = [0, 0, 0, 0, 1, 2], FRZ_MOON_HIT = [1, 1, 1, 1, 1.5, 2.4];
+const FRZ_MOON_COUNT = [0, 1, 3, 3], FRZ_SUBMOON_N = [0, 0, 0, 2], FRZ_MOON_HIT = [1, 1, 1, 2.4];
 // a small moon circles its moon at r, the other way round and faster, an aura at k x its moon's
 const FRZ_SUBMOON = { r: 84, k: 0.6, spin: 2 }; // r tripled (owner, 2026-10-08; was 28) // k 0.2: V at 195% (0.1 -> 194, 0.3 -> 203, 0.5 -> 216; five moons alone sit near 190)
 // the aura's sources: the tower, then each moon at FRZ_MOON_SCALE of everything, then their small moons

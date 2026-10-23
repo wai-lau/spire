@@ -132,7 +132,7 @@ function hopTo(c, node, nxt, depth) {
 const MOON_SPIN = 2 / 3, MOON_ORBIT = 126; // rad/s (owner: 4 -> 2 -> 2/3); orbit radius tripled (owner, 2026-10-05; was 80, then 42)
 // a chart FRZ's moons orbit CLOSER, and closer with every Moons tier (owner,
 // 2026-10-06: after the range halving 126 put them far outside the aura)
-const MOON_ORBIT_BY_N = [MOON_ORBIT, 140, 140, 140, 140, 140]; // TWICE as far (owner, 2026-10-08: "twice as far as they are now"; was 70 at every tier, before that 70 58 46 46 46)
+const MOON_ORBIT_BY_N = [MOON_ORBIT, 140, 140, 140]; // TWICE as far (owner, 2026-10-08: "twice as far as they are now"; was 70 at every tier, before that 70 58 46 46 46)
 // a chart FRZ's moons fly ELLIPTICAL orbits (owner, 2026-10-08): Keplerian, the tower at a focus, the
 // orbit's size its old radius, eccentricity MOON_ECC - the near end (periapsis) toward the core, so a moon
 // swings far out over the lanes (210) and back in close (70), fastest near the tower; the moons are evenly

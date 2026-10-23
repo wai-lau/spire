@@ -1,5 +1,5 @@
 // UPGRADE ISOLATION (owner, 2026-10-07 balancing runs): every axis tier ALONE. For each
-// kind, the test tower at cell 0 with ONE axis at tier k (k = 0..5, the others at 0)
+// kind, the test tower at cell 0 with ONE axis at tier k (k = 0..4, I..IV, the others at 0)
 // and one L1 helper of each other kind, lives refilled so every wave plays out, over
 // two windows (WINDOWS: early 10-30, late 40-70). Metric: the TEAM's damage (so FRZ's
 // slow and SOL's breach count through the others' hits), the tower's own damage, and
@@ -9,7 +9,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makeGame } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-import { spreadStops, focusStops, snapStop, STOPS } from "./stops.mjs"; // tiers by STOP only (0 1 3 5 6)
+import { spreadStops, focusStops, snapStop, STOPS, POINTS_AT } from "./stops.mjs"; // tiers bought whole (0 I II III IV)
 
 const KINDS = ["arc", "frz", "sol", "acd"];
 const WINDOWS = (process.env.WINDOWS || "10-30,40-70").split(",").map(w => w.split("-").map(Number));
@@ -18,7 +18,7 @@ export default async function task({ kind, axis, k, seed, from, to, patch = "" }
   const g = makeGame(seed, patch); g.reset();
   g.run(`G.money = 1e12; G.started = true; G.wave = ${from - 1}; G.lives = 1e6;`);
   const t = g.place(kind, 0);
-  if (axis && k) { t.skills = { [axis]: k }; t.lvl = 1 + k; }
+  if (axis && k) { t.skills = { [axis]: k }; t.lvl = 1 + POINTS_AT[k]; }
   KINDS.filter(x => x !== kind).forEach((x, i) => g.place(x, [2, 3, 4][i]));
   g.run(`let prev = "swarm"; for (let n = 1; n < ${from}; n++) { const w = wavePlan(n, prev); if (w.type !== "bonus") prev = w.type; } G.lastType = prev; G.nextIn = 0;`);
   let guard = 0, lost = 0, breaches = 0;
@@ -50,10 +50,10 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("isolation.mjs")
       const base = pick(j => j.kind === kind && !j.axis && j.from === from), bt = mean(base, r => r.team), bo = mean(base, r => r.own);
       console.log(`${kind.toUpperCase()}  bare: team ${Math.round(bt)} own ${Math.round(bo)} leaks ${mean(base, r => r.lost).toFixed(0)} breaches ${mean(base, r => r.breaches).toFixed(1)}`);
       for (const axis of axesOf(kind)) {
-        const cells = [1, 2, 3, 4, 5].map(k => { const rs = pick(j => j.kind === kind && j.axis === axis && j.k === k && j.from === from); return `${["I", "II", "III", "IV", "V"][k - 1]} ${(100 * mean(rs, r => r.team) / bt).toFixed(0)}% / ${(100 * mean(rs, r => r.own) / bo).toFixed(0)}% / ${mean(rs, r => r.lost).toFixed(0)} / ${mean(rs, r => r.breaches).toFixed(1)}`; });
+        const cells = [1, 2, 3, 4].map(k => { const rs = pick(j => j.kind === kind && j.axis === axis && j.k === k && j.from === from); return `${["I", "II", "III", "IV"][k - 1]} ${(100 * mean(rs, r => r.team) / bt).toFixed(0)}% / ${(100 * mean(rs, r => r.own) / bo).toFixed(0)}% / ${mean(rs, r => r.lost).toFixed(0)} / ${mean(rs, r => r.breaches).toFixed(1)}`; });
         console.log(`   ${axis.padEnd(13)} ${cells.join("   ")}`);
       }
     }
   }
-  console.log(`\ntier prices if bought first: I ${price(1)}c, II ${price(2)}c, III ${price(3)}c (later points cost more: a full chart is ${price(15)}c)`);
+  console.log(`\ntier prices if bought first: I ${price(1)}c, II ${price(3)}c, III ${price(5)}c, IV ${price(7)}c (later points cost more: a full chart is ${price(15)}c)`);
 }

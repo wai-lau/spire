@@ -41,7 +41,7 @@ function runClean(g) {
   Object.assign(g, { enemies: [], spawns: [], fleetQ: [], chains: [], drips: [] });
   return g;
 }
-const runSave = () => { if (G.started && !G.over) runDo("readwrite", s => { const at = Date.now(); s.put({ wave: G.wave, lives: G.lives, at }, RUN_META); return s.put({ G: runClean(structuredClone(G)), wave: G.wave, lives: G.lives, at }, RUN_KEY); }); };
+const runSave = () => { if (G.started && !G.over) runDo("readwrite", s => { const at = Date.now(); s.put({ wave: G.wave, lives: G.lives, at }, RUN_META); return s.put({ G: Object.assign(runClean(structuredClone(G)), { skillScale: SKILL_SCALE }), wave: G.wave, lives: G.lives, at }, RUN_KEY); }); }; // (stamped: its axis levels are the tiers - skillScaleFix, aspira-capstone.js)
 const runClear = () => runDo("readwrite", s => { s.delete(RUN_META); return s.delete(RUN_KEY); });
 // a CHECKPOINT AT EVERY BOSS, on a CLEAR board (owner, 2026-10-16: "save to last wave not mid wave", "actually, save every boss"):
 // once a boss wave is beaten and nothing is left on the field or still to spawn (waveClear, aspira-waves.js), that state is
@@ -70,7 +70,7 @@ function runOffer(saved) {
 }
 function runResume(saved) {
   try {
-    G = runClean(saved.G); runSavedAt = G.wave; autoMove = !!G.autoMove; freeMode = !!G.freeMode; // (auto-move is the game's own; runClean also drops leashHint - a page-clock stamp that kept the movement rings on for hours, owner 2026-10-16)
+    G = runClean(skillScaleFix(saved.G)); runSavedAt = G.wave; autoMove = !!G.autoMove; freeMode = !!G.freeMode; // (auto-move is the game's own; runClean also drops leashHint - a page-clock stamp that kept the movement rings on for hours, owner 2026-10-16)
     fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null;
     if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 });
     refreshPanels();

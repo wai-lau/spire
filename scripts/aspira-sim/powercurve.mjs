@@ -40,7 +40,7 @@ function buy(g, b, credits) {
       const T = `G.towers.find(x => x.id === ${t.id})`;
       const ax = AX[t.kind].filter(id => id !== b.skip[t.kind]).find(id => g.run(`skillOf(${T}, "${id}") < axisCap(${T}, "${id}")`));
       if (!ax) continue;
-      const c = g.run(`(() => { const t = ${T}, n = stopLevels(t, "${ax}"); return n > 1 ? skillPointsCost(t, n) : upCost(t); })()`);
+      const c = g.run(`(() => { const t = ${T}, n = tierSteps(t, "${ax}"); return n > 1 ? skillPointsCost(t, n) : upCost(t); })()`);
       if (!best || c < best.c) best = { t, ax, c };
     }
     if (!best || best.c > g.G.money) return;

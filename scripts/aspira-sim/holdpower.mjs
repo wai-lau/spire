@@ -1,7 +1,7 @@
 // HOLD POWER (owner, 2026-10-15: "x1.6 in terms of simulated power level of the tower, not x1.6 in terms of damage"): a
 // tower's POWER LEVEL is how tough the enemies it can hold are - the enemy HP multiplier at which the test tower (with one L1
 // helper of each other kind, as payoff.mjs) lets through at most LEAK of what spawns over waves FROM..TO (no boss wave).
-// Found by bisection on log2(HP x), per bare tower and per purchase (I..IV = internal stops 1 3 5 6) of each axis alone;
+// Found by bisection on log2(HP x), per bare tower and per purchase (I..IV = tiers 1 2 3 4) of each axis alone;
 // each purchase reads as x the power before it. COVERAGE is not toughness: a lane no tower reaches leaks whatever the
 // HP, so each setup's FLOOR (its leak share at HP x FLOOR_HPX, near zero) is measured first and the bar is FLOOR + LEAK.
 // usage: node holdpower.mjs [seeds=2] [rounds=7] [out.jsonl]   env FROM=61 TO=71 LEAK=0.05 KINDS=arc,frz  ASPIRA_PATCH / ASPIRA_WEB
@@ -12,7 +12,7 @@ import { runPool } from "./pool.mjs";
 const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), ALL = ["arc", "frz", "sol", "acd"];
 const FROM = Number(process.env.FROM || 61), TO = Number(process.env.TO || 71), LEAK = Number(process.env.LEAK || 0.05);
 export const FLOOR_HPX = 0.001;
-const STOPS = [1, 3, 5, 6], lvlAt = k => 1 + k + (k >= 6 ? 1 : 0);
+const STOPS = [1, 2, 3, 4], lvlAt = k => 1 + [0, 1, 3, 5, 7][k]; // (the ladder level of tier k: aspira-capstone.js TIER_STEPS 1 2 2 2)
 
 export default async function task({ kind, axis, k, seed, hpx, patch = "" }) {
   const g = makeGame(seed, `for (const id in ENEMIES) ENEMIES[id].hp *= ${hpx};\n` + patch); g.reset(); // patch: a stat under fit (holdfit.mjs)

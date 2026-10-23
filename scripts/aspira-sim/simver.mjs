@@ -19,9 +19,9 @@ function hashOf() {
 export const SIM_VERSION = hashOf();
 export const simBanner = () => `sim version ${SIM_VERSION} (web ${process.env.ASPIRA_WEB ? path.basename(SIM_WEB) : "repo"}${process.env.ASPIRA_PATCH || process.env.BV_PATCH ? ", PATCHED" : ""})`;
 
-// HALF-PATCHED TIER TABLES (2026-10-12: a test raised SOL_BREACH_ARMOR's tiers I-V and missed the capstone VI the "breach" build
+// HALF-PATCHED TIER TABLES (2026-10-12: a test raised SOL_BREACH_ARMOR's tiers 0-III and missed the capstone IV the "breach" build
 // actually runs - the result looked identical): every ALL-CAPS array the patch names is compared before and after it; one
-// that changed below its last index but not AT it (capstone tables are 7 long - aspira-capstone.js) is reported, loudly, once
+// that changed below its last index but not AT it (capstone tables are 5 long - aspira-capstone.js) is reported, loudly, once
 const warned = new Set();
 export function patchProbe(run, patch) {
   const names = [...new Set((patch.match(/\b[A-Z][A-Z0-9_]{2,}\b/g) || []))];
@@ -33,7 +33,7 @@ export function patchProbe(run, patch) {
       if (!before[n] || !after[n] || warned.has(n)) continue;
       const a = JSON.parse(before[n]), b = JSON.parse(after[n]), last = a.length - 1;
       const low = a.slice(0, last).some((v, i) => JSON.stringify(v) !== JSON.stringify(b[i])), top = JSON.stringify(a[last]) !== JSON.stringify(b[last]);
-      if (low && !top && a.length >= 7) { warned.add(n); console.error(`!! patch changed ${n} below its last tier but NOT index ${last} (the capstone VI) - a maxed axis still reads ${JSON.stringify(a[last])}`); }
+      if (low && !top && a.length >= 5) { warned.add(n); console.error(`!! patch changed ${n} below its last tier but NOT index ${last} (the capstone IV) - a maxed axis still reads ${JSON.stringify(a[last])}`); }
     }
   };
 }

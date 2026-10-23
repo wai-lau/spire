@@ -28,7 +28,7 @@ const DESCRIBE = {
     const tp = sk.temp || 0, rm = sk.rime || 0, mo = sk.moons || 0, pct = x => Math.round(x * 100) + "%", mn = FRZ_MOON_COUNT[mo], sub = FRZ_SUBMOON_N[mo];
     return "Emits an aura that slows enemies by " + pct(FRZ_TEMP_SLOW[tp]) + " and hurts more the slower they are." +
       (FRZ_BRITTLE[tp] > 1 ? " Enemies in the aura take " + pct(FRZ_BRITTLE[tp] - 1) + " more damage." : "") +
-      (rm ? " " + (rm >= 6 ? "Rapid pulses" : "Pulses") + " of frost permanently slow by " + pct(FRZ_RIME[rm]) + " and break up to " + dmgUnits(FRZ_RIME_CRACK[rm] * armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + " armor on every hit." : "") +
+      (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost permanently slow by " + pct(FRZ_RIME[rm]) + " and break up to " + dmgUnits(FRZ_RIME_CRACK[rm] * armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + " armor on every hit." : "") +
       (mn ? " " + (mn > 1 ? cap(NUM_WORD[mn]) + " moons copy" : "A moon copies") + " the aura" + (sub ? ", each with " + NUM_WORD[sub] + " satellite" + (sub > 1 ? "s" : "") : "") + "." : "");
   },
   // SOL (owner, 2026-10-22, the rework): the beams on one enemy (SOL_BEAMS), the pass-through (SOL_PASS, by Focus), the reflections (SOL_REFRACTION in a
@@ -36,7 +36,7 @@ const DESCRIBE = {
   sol(sk) {
     const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, n = SOL_BEAMS[f], k = SOL_REFRACTION[r], p = Math.round(SOL_HOP[r] * 100), TIMES = ["", "once", "twice"];
     return "Focuses " + n + " piercing beam" + (n > 1 ? "s" : "") + " onto an enemy, passing through at " + Math.round(SOL_PASS[f] * 100) + "%. " + /* Focus: beams + pass-through (owner, 2026-10-23) */
-      "Reflects " + (TIMES[k] || k + " times") + " for " + (100 - p) + "% less damage" + (k > 1 ? " every reflection" : "") + "." + (r >= 6 ? " First reflection splits six ways." : " First reflection splits two ways.") /* (owner: st.fan, two chains, VI six) */ + " Beams break " + dmgUnits(SOL_BREACH_ARMOR[b] * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor and scorch for " + Math.round(SOL_SCORCH[b] * 100) + "% over " + SOL_SCORCH_T + "s."; // (owner: "Break X armor and scorch" / "and scorch for ...")
+      "Reflects " + (TIMES[k] || k + " times") + " for " + (100 - p) + "% less damage" + (k > 1 ? " every reflection" : "") + "." + (r >= CAPSTONE_TIER ? " First reflection splits six ways." : " First reflection splits two ways.") /* (owner: st.fan, two chains, VI six) */ + " Beams break " + dmgUnits(SOL_BREACH_ARMOR[b] * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor and scorch for " + Math.round(SOL_SCORCH[b] * 100) + "% over " + SOL_SCORCH_T + "s."; // (owner: "Break X armor and scorch" / "and scorch for ...")
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY) and its slow - on the POOLS now (ACD_FLOW_SLOW),
@@ -51,24 +51,24 @@ const DESCRIBE = {
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
   car(sk) {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
-    return "Launches " + CRR_HANGAR[h] + " interceptors " + (h ? (h + 1) + " at a time" : "one by one") + (h ? ", storing " + Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]) + " of them circling it while there is nothing to hit" /* the COUNT, not a % (owner, 2026-10-16) */ : "") + ". Each flies to an enemy, fires " + /* FOCUS FIRE named (owner, 2026-10-18: "that wingmate thing should be added to description") */
-      CRR_AMMO[a] + " volleys" + (CRR_FOCUS[h] ? " (each shot +" + Math.round(CRR_FOCUS[h] * 100) + "% for every other interceptor on the same enemy)" : "") + (l ? ", tethered to its target by a beam that slows it and pulses damage" + (l >= 6 ? ", running on to one more enemy nearby" : "") : "") + ", then " + (a >= 6 ? "bursts into pellets, rebuilt at home." : "flies home to reload.");
+    return "Launches " + CRR_HANGAR[h] + " interceptors " + (h ? carSalvoN(h) + " at a time" : "one by one") + (h ? ", storing " + Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]) + " of them circling it while there is nothing to hit" /* the COUNT, not a % (owner, 2026-10-16) */ : "") + ". Each flies to an enemy, fires " + /* FOCUS FIRE named (owner, 2026-10-18: "that wingmate thing should be added to description") */
+      CRR_AMMO[a] + " volleys" + (CRR_FOCUS[h] ? " (each shot +" + Math.round(CRR_FOCUS[h] * 100) + "% for every other interceptor on the same enemy)" : "") + (l ? ", tethered to its target by a beam that slows it and pulses damage" + (l >= CAPSTONE_TIER ? ", running on to one more enemy nearby" : "") : "") + ", then " + (a >= CAPSTONE_TIER ? "bursts into pellets, rebuilt at home." : "flies home to reload.");
   },
   // GRV (owner, 2026-10-15): Supernova a wider nova (Hypernova tears armor away); Void a harder slow (Event Horizon all but
   // stops it); Radiation more pellets (Hawking: a last burst)
   grv(sk) {
     const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0;
-    return (n >= 6 ? "Three hypernovas that tear armor away, each where it catches the most, leave" : "Three novas, each where it catches the most, leave") + " a black hole" + (n >= 6 ? " twice as big as usual" : "") + ", its aura as big as the nova's hit. The aura " +
-      (v >= 6 ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; its black centre burns whatever it touches, and the hole grows with the nova's hit and that burn. Nearby holes pull together and merge. It radiates " +
-      (r >= 6 ? "pellets and bursts as it fades." : "pellets.");
+    return (n >= CAPSTONE_TIER ? "Three hypernovas that tear armor away, each where it catches the most, leave" : "Three novas, each where it catches the most, leave") + " a black hole" + (n >= CAPSTONE_TIER ? " twice as big as usual" : "") + ", its aura as big as the nova's hit. The aura " +
+      (v >= CAPSTONE_TIER ? "holds what a fully grown core catches almost still and strips armor" : "slows and strips armor") + "; its black centre burns whatever it touches, and the hole grows with the nova's hit and that burn. Nearby holes pull together and merge. It radiates " +
+      (r >= CAPSTONE_TIER ? "pellets and bursts as it fades." : "pellets.");
   },
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
   // towers across); Flare the flares - bigger, hotter, longer (its capstone: three a landing)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
-    return "Charges at its centre and launches a meteor that hunts down an enemy. Where it strikes a flare burns, a fire " + (h ? "spreads" + (h >= 6 ? " six towers wide" : "") : "flickers") +
-      ", lighting many small flares as it grows, and " + IFR_FAN[m] + " meteors burst out all round, each hunting any enemy that comes near" + (m >= 6 ? " and splitting in two on a hit" : "") +
-      "; where each lands a flare burns" + (f >= 6 ? " - three of them." : ".");
+    return "Charges at its centre and launches a meteor that hunts down an enemy. Where it strikes a flare burns, a fire " + (h ? "spreads" + (h >= CAPSTONE_TIER ? " six towers wide" : "") : "flickers") +
+      ", lighting many small flares as it grows, and " + IFR_FAN[m] + " meteors burst out all round, each hunting any enemy that comes near" + (m >= CAPSTONE_TIER ? " and splitting in two on a hit" : "") +
+      "; where each lands a flare burns" + (f >= CAPSTONE_TIER ? " - three of them." : ".");
   },
 
 

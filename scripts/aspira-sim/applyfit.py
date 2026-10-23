@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write a tierfit.mjs result (FIT_JSON) into the game's tables (owner, 2026-10-08 overnight loop).
 
-Each axis's fitted tier values replace tiers I..V of its own lever table. Only tiers whose fit landed
+Each axis's fitted tier values replace tiers I..III of its own lever table (the source holds 0 I II III; the capstone IV is pushed by aspira-capstone.js). Only tiers whose fit landed
 closer to target than the current value move. A tier is NOT forced above the one before it: a tier may
 add more, weaker items (jets, beams, moons) and the fit's targets already rise.
 usage: python3 applyfit.py fit.json [--skip breach,...]
@@ -64,7 +64,7 @@ def main():
             new = "[" + ", ".join([items[0]] + [str(round(v, 3)) for v in vals]) + "]"
         else:
             objs = re.findall(r"\{[^}]*\}|null", lit)
-            assert len(objs) == 6, (name, len(objs))
+            assert len(objs) == 4, (name, len(objs))
             out = [objs[0]] + [re.sub(field + r":\s*[0-9.]+", f"{field}: {round(v, 3)}", o) for o, v in zip(objs[1:], vals)]
             new = "[" + ", ".join(out) + "]"
         if new != lit:

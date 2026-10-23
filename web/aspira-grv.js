@@ -7,14 +7,14 @@
 // simulator too); towerStats calls grvSkillStats, the tower loop stepGrv, fire() novaAt, drawScene drawGrv.
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const GRV_AURA_R = [45, 80, 110, 161.2, 176.8, 247]; /* x1.25 with the faster evaporation (owner, 2026-10-16: "raise bh fire rate and bh size to compensate"; was 68 .. 122) */ // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
-const GRV_STRIP_MUL = [1, 1, 1, 3, 18.79, 34.59]; /* Void: the aura's armor strip, x by tier (late tiers steepened, 2026-10-16) */
-const GRV_RATE_MUL = [1, 1, 1, 1, 2, 5.58]; /* Supernova: the nova's fire rate, x by tier */
-const GRV_SLOW = [0.04, 0.1, 0.18, 0.294, 0.336, 0.539]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
-const GRV_NOVA_R = [71, 85, 99, 112, 126, 185]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
-const GRV_NOVA_MUL = [0.8, 1.2, 1.5, 1.4, 2, 6]; /* 2026-10-18: cut with THREE novas a fire (was 0.8 2 3.2 4 27.42 67.13, VI 167.8 -> 36) - Supernova was the only axis that mattered */ /* V x9, VI x36 (steeper late tiers) */ /* x2 (owner, 2026-10-16: "double the nova damage"; was [1, 1.3, 1.6, 2, 2.4, 2.8]) */ // Supernova: the nova's hit, x the tower's damage
-const GRV_PELLETS = [3, 3.9, 4.8, 5.7, 6.6, 7.5]; /* HALF the pellets at TWICE the hit (owner, 2026-10-17: "halve bh pellet count but double damage"; was 6 .. 15) */ // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
-const GRV_PELLET_K = [0.2, 0.4, 0.8, 0.96, 7.972, 47.94]; /* V, VI x2 (2026-10-18; VI 118 -> 236) */ /* x2 with the halved count (owner, 2026-10-17) */ /* V x9, VI x36 (steeper late tiers) */ // Radiation: a pellet's hit, x the tower's damage
+const GRV_AURA_R = [45, 80, 161.2, 247]; /* x1.25 with the faster evaporation (owner, 2026-10-16: "raise bh fire rate and bh size to compensate"; was 68 .. 122) */ // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
+const GRV_STRIP_MUL = [1, 1, 3, 34.59]; /* Void: the aura's armor strip, x by tier (late tiers steepened, 2026-10-16) */
+const GRV_RATE_MUL = [1, 1, 1, 5.58]; /* Supernova: the nova's fire rate, x by tier */
+const GRV_SLOW = [0.04, 0.1, 0.294, 0.539]; // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
+const GRV_NOVA_R = [71, 85, 112, 185]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
+const GRV_NOVA_MUL = [0.8, 1.2, 1.4, 6]; /* 2026-10-18: cut with THREE novas a fire (was 0.8 2 3.2 4 27.42 67.13, VI 167.8 -> 36) - Supernova was the only axis that mattered */ /* V x9, VI x36 (steeper late tiers) */ /* x2 (owner, 2026-10-16: "double the nova damage"; was [1, 1.3, 1.6, 2, 2.4, 2.8]) */ // Supernova: the nova's hit, x the tower's damage
+const GRV_PELLETS = [3, 3.9, 5.7, 7.5]; /* HALF the pellets at TWICE the hit (owner, 2026-10-17: "halve bh pellet count but double damage"; was 6 .. 15) */ // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
+const GRV_PELLET_K = [0.2, 0.4, 0.96, 47.94]; /* V, VI x2 (2026-10-18; VI 118 -> 236) */ /* x2 with the halved count (owner, 2026-10-17) */ /* V x9, VI x36 (steeper late tiers) */ // Radiation: a pellet's hit, x the tower's damage
 let GRV_AURA_K = 0.6; // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
 const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1) - x2 faster (owner, 2026-10-16: "some bh taking too long to evaporate if merged with too many / increase bh evaporation speed significantly"; was 5)
 // EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction
@@ -46,14 +46,14 @@ const grvNovaR = (sp, st) => st.novaR * (1 - Math.min(1, novaLocal(sp.age)[1] / 
 const GRV_PELLET_REACH = 1.4, GRV_PELLET_V = 320, GRV_PELLET_HIT = 3; // a pellet flies this x the aura's radius, at V a second; touches an enemy within its size + HIT
 const GRV_PEL_ST = { noNum: true }; // a pellet hit: its flash, but its number goes to grvFloat (into the hole)
 const GRV_AURA_ST = { noFx: true, noNum: true }; /* noNum: its number is grvFloat's alone (it showed twice once grvFloat became a plain dmgNumber) */
-const GRV_INNER_T = [3, 4.5, 6, 20, 80, 160]; /* IV-VI x4 .. x21 (2026-10-18, Void up to Supernova; VI 15.37 -> 320) */ /* the inner burn by Void tier: a lone untaken GRV was beating the wave-10 Star (owner, 2026-10-17: early strength trimmed to tiers 0-I) */ const GRV_INNER_K = 6 /* x2 (owner, 2026-10-16: "seems too small?"; was 3) */, GRV_INNER_SHOW = 1, GRV_INNER_ST = { noFx: true, noNum: true }; // SHOW: its burn's number once a second an enemy, the sum (the FRZ aura's treatment - owner: "so it doesn't emit as many numbers") // the INNER AURA's damage a second, x the tower's damage x mass (owner, 2026-10-16: "the inner aura should do damage and feed the bh"); a hit there shows its own number // a nova hit: no flash, no number (its numbers drift INWARD - grvFloat)
+const GRV_INNER_T = [3, 4.5, 20, 160]; /* IV-VI x4 .. x21 (2026-10-18, Void up to Supernova; VI 15.37 -> 320) */ /* the inner burn by Void tier: a lone untaken GRV was beating the wave-10 Star (owner, 2026-10-17: early strength trimmed to tiers 0-I) */ const GRV_INNER_K = 6 /* x2 (owner, 2026-10-16: "seems too small?"; was 3) */, GRV_INNER_SHOW = 1, GRV_INNER_ST = { noFx: true, noNum: true }; // SHOW: its burn's number once a second an enemy, the sum (the FRZ aura's treatment - owner: "so it doesn't emit as many numbers") // the INNER AURA's damage a second, x the tower's damage x mass (owner, 2026-10-16: "the inner aura should do damage and feed the bh"); a hit there shows its own number // a nova hit: no flash, no number (its numbers drift INWARD - grvFloat)
 
 SKILL_TREES.grv = [
-  { id: "void", name: "Void", tiers: [{ name: "Well" }, { name: "Sink" }, { name: "Abyss" }, { name: "Maw" }, { name: "Void" }] },
-  { id: "supernova", name: "Supernova", tiers: [{ name: "Flare" }, { name: "Burst" }, { name: "Nova" }, { name: "Blaze" }, { name: "Supernova" }] },
-  { id: "radiation", name: "Radiation", tiers: [{ name: "Glow" }, { name: "Ember" }, { name: "Spray" }, { name: "Storm" }, { name: "Radiance" }] },
+  { id: "void", name: "Void", tiers: [{ name: "Well" }, { name: "Abyss" }, { name: "Void" }] },
+  { id: "supernova", name: "Supernova", tiers: [{ name: "Flare" }, { name: "Nova" }, { name: "Supernova" }] },
+  { id: "radiation", name: "Radiation", tiers: [{ name: "Glow" }, { name: "Spray" }, { name: "Radiance" }] },
 ];
-SKILL_MOVE.grv = { void: [[1, 1], [1.02, 1], [1.04, 1], [1.06, 1], [1.08, 1], [1.1, 1]], supernova: [[1, 1], [1.04, 1], [1.08, 1], [1.12, 1], [1.16, 1], [1.2, 1]], radiation: [[1, 1], [1, 1.2], [1, 1.4], [1, 1.6], [1, 1.8], [1, 2]] };
+SKILL_MOVE.grv = { void: [[1, 1], [1.02, 1], [1.06, 1], [1.1, 1]], supernova: [[1, 1], [1.04, 1], [1.12, 1], [1.2, 1]], radiation: [[1, 1], [1, 1.2], [1, 1.6], [1, 2]] };
 
 function grvSkillStats(t, s, b) {
   const v = skillOf(t, "void"), n = skillOf(t, "supernova"), r = skillOf(t, "radiation");
