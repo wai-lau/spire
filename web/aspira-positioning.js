@@ -340,7 +340,9 @@ function phoneRect3d() { // 3D: the view's pixels (call under viewCam) - the SAM
 }
 // OFF-SCREEN = UNTOUCHABLE (owner, 2026-10-17: "untargetable and completely immune to effects or damage until they are within the screen
 // area"): e.seen latches on the phone's screen (phoneInside); every enemy loop, damage and applySlow test it
-const enemySeen = e => typeof phoneInside !== "function" || phoneInside(e.x, e.y);
+// BY ITS LANE, NOT ITS BODY (owner, 2026-10-23: "Off-screeness should be determined by lane offscreeness not unit"): the lane's point at
+// the unit's distance along it (pathAt) - a formation's sideways offset no longer brings a flank unit on screen early, or late
+const enemySeen = e => { if (typeof phoneInside !== "function") return true; const p = e.pi != null ? pathAt(e.pi, e.s, e.ang || 0) : e; return phoneInside(p.x, p.y); };
 // is (x, y) on the phone, `inset` world units clear of its edge?
 function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once by a caller testing many points (legalSpot - perf)
   if (!on3d) { const b = phoneBox(); return x >= b.x0 + inset && x <= b.x1 - inset && y >= b.y0 + inset && y <= b.y1 - inset; }
