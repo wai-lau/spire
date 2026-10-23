@@ -4,7 +4,7 @@
 // RPR's charge-up: a thin line to the target it is reloading for, fading in
 // as the reload fills (alpha ~ progress^2), so the shot is telegraphed.
 // It deals nothing; the damage comes with the bright flash on firing.
-const SOL_AIM_DEG = 30, SOL_AIM_EVERY = 0.2, SOL_AIM_SLIDE = 0.15; // SLIDE: s, the eased turn to a new aim
+const SOL_AIM_DEG = 30; // the charge cones' half angle at the charge's start
 function drawAims() {
   ctx.lineCap = "round"; ctx.lineWidth = 0.8;
   for (const t of G.towers) {
@@ -16,7 +16,14 @@ function drawAims() {
       const p = Math.min(1, Math.max(0, 1 - l.cd / t.period));
       // Refraction's light CONE builds while it CHARGES (owner, 2026-10-06), then
       // the shot's own cone flashes as before
-      // (the Refraction aim CONES that swept in while charging went with the SOL rework, owner 2026-10-22 - no cone now)
+      // THE CHARGE CONES, BACK (owner, 2026-10-23: "Visually bring back the SOL firing animation"; gone with the 6.12 rework): SOL_AIM_DEG
+      // at the charge's start sweeping in to the lock cone (st.cone) at the shot, from the tower and again off the target along the
+      // line the pass-through runs (the old second cone aimed where Refraction would bend - there is no cone to bend in now)
+      const real = (st.cone || SOL_CONE) * Math.PI / 180, half = Math.max(real, SOL_AIM_DEG * Math.PI / 180) * (1 - p) + real * p, al = Math.cbrt(p), col = TOWERS[t.kind].color;
+      const d = Math.hypot(l.e.x - t.x, l.e.y - t.y), aim = Math.atan2(l.e.y - t.y, l.e.x - t.x);
+      drawCone({ x: t.x, y: t.y, a: aim, half, len: d * 1.6, color: col }, al);
+      drawCone({ x: l.e.x, y: l.e.y, a: aim, half, len: d, color: col }, al);
+      ctx.strokeStyle = COL[col];
       ctx.globalAlpha = 0.32 + 0.32 * p * p; // never below half its full strength (owner)
       const len = Math.hypot(l.e.x - t.x, l.e.y - t.y) || 1, px = -(l.e.y - t.y) / len, py = (l.e.x - t.x) / len;
       ctx.beginPath();

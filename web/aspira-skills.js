@@ -348,6 +348,7 @@ function solRefraction(t, st, e) {
   // the tower's own range; none left there, the chain stops
   const r2 = (st.range || 0) ** 2, out = x => hit.has(x) || (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > r2;
   const hit = new Set([e]), heads = [];
+  fx.push({ k: "cone", x: t.x, y: t.y, a: Math.atan2(e.y - t.y, e.x - t.x), half: (st.cone || SOL_CONE) * Math.PI / 180, len: Math.hypot(e.x - t.x, e.y - t.y) + 30, color: TOWERS[t.kind].color, t: 0, life: SOL_CONE_LIFE }); // the shot's own cone flashes (back 2026-10-23)
   for (let c = 0; c < (st.fan || 1); c++) { const o = chainPick(t, e, Infinity, out); if (!o) break; hit.add(o); heads.push(o); }
   for (const h of heads) {
     let prev = e, nxt = h, m = st.hop || 1;
