@@ -61,13 +61,13 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("solo.mjs")) {
     const pre = rs.map(r => r.pre).join("/"), star = rs.map(r => (r.star === "beaten" ? "W" : r.star === "leaked" ? "l" + r.starLost : "X")).join(" "); // W no leak, l<n> n lost to it, X broke through
     return `${setup.toUpperCase().padEnd(18)} slot ${slot.padEnd(5)} lives lost w1-11 ${pre.padEnd(12)} star ${star}  ${process.env.SOLO_WAVES ? rs.map(r => r.byWave || "-").join(" / ") : rs.map(r => r.worst).filter(Boolean).join(" ")}`;
   };
-  console.log("\n== ALONE, L1 (target: at most 3 lost on 1-11 a seed, the Star breaks through - owner, 2026-10-20; was 0)");
+  console.log("\n== ALONE, L1 (no target since 2026-10-22 - the duo rule below; was at most 3 lost on 1-11, owner 2026-10-20)");
   for (const k of K) console.log(line(k));
   console.log("\n== ALONE + ONE UPGRADE (target: the Star beaten)");
   for (const k of K) for (const ax of axes[k]) console.log(line(`${k}+${ax}`));
   // EVERY placement, not just the best (owner, 2026-10-15: "ensure that any pair of two towers doesn't leak on waves 1-11 ...
   // honestly 1-12"): a player puts towers anywhere - how many slot pairs hold 1-12 with no life lost (all seeds), the worst loss
   const clean = setup => { const all = [...by.get(setup)], ok = all.filter(([, rs]) => rs.every(r => r && r.pre === 0 && r.star === "beaten")); const worst = all.map(([slot, rs]) => [slot, Math.max(...rs.map(r => (r ? r.pre + r.starLost + (r.star === "BREACH" ? 10 : 0) : 99)))]).sort((x, y) => y[1] - x[1])[0]; return `  every slot pair: ${ok.length}/${all.length} clean, worst ${worst[1]} lost (slots ${worst[0]})`; };
-  console.log("\n== TWO L1 TOWERS (target: the Star beaten - and EVERY slot pair clean on 1-12)");
+  console.log("\n== TWO L1 TOWERS (THE RULE, owner 2026-10-22: any duo of two different kinds clears 1-12, the Star too, no life lost)");
   for (let a = 0; a < K.length; a++) for (let b = a; b < K.length; b++) console.log(line(`${K[a]}+${K[b]}`) + clean(`${K[a]}+${K[b]}`));
 }
