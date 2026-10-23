@@ -129,7 +129,14 @@ function waveCount(type, n0, cut = true) { // cut false: without the early thinn
 // before it starts; a swept HP is in the key)
 const monoMemo = new Map();
 function monoUp(key, n, f) { let a = monoMemo.get(key); if (!a) monoMemo.set(key, a = [0]); for (let m = a.length; m <= n; m++) a[m] = Math.max(a[m - 1], m % STAR_EVERY ? f(m) : 0); return a[n]; }
-const enemyHp = (type, n0) => (ENEMIES[type].star || !TYPE_TUNE[type] ? enemyHpRaw(type, n0) : monoUp("hp|" + type + "|" + ENEMIES[type].hp, n0, m => enemyHpRaw(type, m)));
+// THE LATE SCALE (owner, 2026-10-22: "rebuild to new ceiling" - no hit past 9999; docs/superpowers/specs/2026-10-22-late-scale-rebuild-
+// design.md): past SCALE_FROM every enemy's HP and armor, and every hit and armor strip ON it, is x scaleOf(its wave) - so a hit and what it
+// hits shrink TOGETHER and the game plays the same; the armor enemy's HP grows as its raw HP ^ SCALE_A past wave 60 (3.4k there -> ~10k at
+// 120, was 400k). escale(e): an enemy's own. Tower numbers (st.dmg, tables) stay raw - the scale is applied where they meet an enemy
+const SCALE_FROM = 60, SCALE_A = 0.23, scaleMemo = new Map();
+const scaleOf = n => (n <= SCALE_FROM ? 1 : scaleMemo.get(n) ?? scaleMemo.set(n, Math.pow(enemyHpRaw("armor", n) / enemyHpRaw("armor", SCALE_FROM), SCALE_A - 1)).get(n));
+const escale = e => scaleOf(e.wave || 1);
+const enemyHp = (type, n0) => (ENEMIES[type].star || !TYPE_TUNE[type] ? enemyHpRaw(type, n0) : monoUp("hp|" + type + "|" + ENEMIES[type].hp, n0, m => enemyHpRaw(type, m))) * scaleOf(n0);
 function planCountOwn(type, n) { // a wave's count as its own curves make it (before NO DROPS)
   const split = formSplit(type, waveCount(type, n, false), n), count = laneCount(type, waveCount(type, n), split);
   return type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : Math.max(split, count);

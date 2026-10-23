@@ -113,7 +113,7 @@ let grvLastHit = 0;
 function grvHit(sp, t, st, e, amt, opt) {
   const hp0 = e.hp;
   damage(e, amt, t, false, false, opt);
-  const dealt = Math.max(0, hp0 - Math.max(0, e.hp)); grvLastHit = Math.max(0, hp0 - e.hp); // dealt: what fed the hole (to zero); grvLastHit: the WHOLE hit, overkill too - its NUMBER (owner, 2026-10-17: "On overkill, show damage that would have been dealt")
+  const dealt = Math.max(0, hp0 - Math.max(0, e.hp)) / escale(e); /* (back to RAW: it is weighed against st.dmg - the LATE SCALE) */ grvLastHit = Math.max(0, hp0 - e.hp); // dealt: what fed the hole (to zero); grvLastHit: the WHOLE hit, overkill too - its NUMBER (owner, 2026-10-17: "On overkill, show damage that would have been dealt")
   if (dealt > 0) sp.mass = Math.min(sp.cap || GRV_MASS_MAX, sp.mass + GRV_GAIN * dealt / Math.max(1e-6, opt === GRV_INNER_ST ? st.hdmg : st.dmg)); /* (the burn's feed by the HOLE's damage, the nova's by its own) */
   return dealt;
 }
@@ -223,7 +223,7 @@ function stepSphere(sp, t, st, dt) {
     for (const e of G.enemies) {
       const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
       if (e.dead || !e.seen || d2 > ar * ar) continue;
-      if (e.armor > 0) e.armor -= Math.min(e.armor, st.hdmg * GRV_AURA_K * (st.stripMul || 1) * k * GRV_TICK * GRV_STRIP * (GRV_STRIP_IN - (GRV_STRIP_IN - GRV_STRIP_OUT) * Math.sqrt(d2) / Math.max(1, ar))); // MORE the closer (owner, 2026-10-16: "The aura strip armor and slows more the closer they are"): x1.5 at the centre to x0.5 at the edge
+      if (e.armor > 0) e.armor -= Math.min(e.armor, escale(e) * st.hdmg * GRV_AURA_K * (st.stripMul || 1) * k * GRV_TICK * GRV_STRIP * (GRV_STRIP_IN - (GRV_STRIP_IN - GRV_STRIP_OUT) * Math.sqrt(d2) / Math.max(1, ar))); // MORE the closer (owner, 2026-10-16: "The aura strip armor and slows more the closer they are"): x1.5 at the centre to x0.5 at the edge
       const inIn = d2 <= inner * inner, slow = inIn ? core : outer;
       if (inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.hdmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy NOT doubled like other slows - GRV is weak to fast

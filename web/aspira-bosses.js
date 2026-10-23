@@ -91,7 +91,7 @@ function bossSpawn(e, n) {
   e.arcana = arcanaOf(n).id;
   e.spd = (e.spd || 1) * (BOSS_SPEED[e.arcana] || 1) * BOSS_PACE;
   const grow = hpPow(eqWave(n)) + eqWave(n) * 4 / 18; // the armored enemy's armor curve (spawnEnemy)
-  e.armor = e.armor0 = Math.floor((BOSS_ARMOR[e.arcana] || 0) * Math.pow(grow, ARMOR_EXP));
+  e.armor = e.armor0 = Math.floor((BOSS_ARMOR[e.arcana] || 0) * Math.pow(grow, ARMOR_EXP) * escale(e)); // (x the LATE SCALE)
   e.baseSpd = e.spd; e.broodAt = 0.8; e.sprintT = CHARIOT_EVERY;
   e.shield = e.shieldMax = (BOSS_SHIELD[e.arcana] || 0) + Math.round(BOSS_SHIELD_K * shieldsOf("shield", n).shield); e.shieldBuf = 0;
   // HP per boss: BOSS_HP (fitted, see there; the Devil's is each of six)

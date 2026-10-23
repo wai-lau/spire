@@ -184,7 +184,7 @@ function fireFrz(t, st) {
     if (st.siphon) e.siphon = Math.max(e.siphon || 1, st.siphon);
     // each pulse also nicks: st.dmg (+ Sap's % max HP); it is a real hit, so
     // it pops one shield charge per enemy touched (owner)
-    const nick = st.dmg + (st.sap ? e.max * st.sap : 0);
+    const nick = st.dmg + (st.sap ? e.max * st.sap / escale(e) : 0); // (e.max is scaled already - damage() scales it again)
     if (nick > 0) damage(e, nick, t);
   }
   return cands.length > 0;
@@ -268,7 +268,7 @@ function bleed(e, st, t) {
   if (!st.bleedArmor || e.dead) return;
   const k = st.breach || 1; // the chart SOL: Breach stacks per hit (aspira-skills.js)
   const per = st.bleedArmor;
-  e.armor = (e.armor || 0) - per * k; stripBy(e, t, per * k); // permanent, and on past zero (owner); its share of the damage it adds is SOL's (damageCredit)
+  e.armor = (e.armor || 0) - per * k * escale(e); stripBy(e, t, per * k * escale(e)); // permanent, and on past zero (owner); its share of the damage it adds is SOL's (damageCredit)
   e.bleedCrit = Math.min(BLEED_CRIT_CAP, (e.bleedCrit || 0) + st.bleedCrit * k); e.breachN = (e.breachN || 0) + k; // stacks, for the spokes
   e.breached = (e.breached || 0) + per * k; e.breachBy = t; // (it fed the breach SHRAPNEL until the SOL rework, 2026-10-22 - SCORCH now; game.js's typeof guard skips the gone breachShrapnel)
 }
@@ -334,7 +334,7 @@ function usePower(code) {
     for (const e of G.enemies) if (e.seen) e.stunT = Math.max(e.stunT, 4 / 3);
     banner("freeze");
   } else if (code === "BOM") {
-    for (const e of G.enemies) { burst(e.x, e.y, "orange", 6); damage(e, e.max * 0.45, null); }
+    for (const e of G.enemies) { burst(e.x, e.y, "orange", 6); damage(e, e.max * 0.45 / escale(e), null); }
     ring(CX, CY, 480, "orange", 0.6); banner("blast");
   } else {
     G.power[code] = POWER_TIME;

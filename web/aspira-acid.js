@@ -108,7 +108,7 @@ function stepAcd(t, dt) {
 // minus the wave's armor (armorRefOf) on any enemy - damage() and damageCredit. Corrosion eats from the jets only - not the pools (owner,
 // 2026-10-13). (No floor 2026-10-13 .. 22: "just get rid of this floor".) (A floor of 0.25-1.25x the
 // wave's armor, x16 on bosses, held it 2026-10-12)
-const acdArmorRef = new Map(), armorRefOf = n => acdArmorRef.get(n) ?? acdArmorRef.set(n, ENEMIES.armor.armor * ENEMY_HP_MUL * armorGrow(n)).get(n);
+const acdArmorRef = new Map(), armorRefOf = n => acdArmorRef.get(n) ?? acdArmorRef.set(n, ENEMIES.armor.armor * ENEMY_HP_MUL * armorGrow(n) * scaleOf(n)).get(n); // (x the LATE SCALE)
 // DAMAGE CREDIT (owner, 2026-10-12: "damage caused by debuff from another tower should attribute damage source to
 // the debuffing tower"): of a hit's tally (`got`), what BRITTLE added goes to the FRZ that made it brittle (e.brittleBy),
 // what LOWER ARMOR added (stripped by Breach / Corrosion - e.strip, by tower id - and frost, e.frostBy) to those towers
@@ -129,6 +129,7 @@ function damageCredit(e, t, pre, amt, frost, got) {
   t.dealt = (t.dealt || 0) + mine;
 }
 function corrodeHit(e, amt, t) {
+  amt *= escale(e); // the LATE SCALE: a raw strip (a share of the RAW tick), x the enemy's
   const a = e.armor || 0, pos = Math.max(0, Math.min(amt, a)); // the part eaten off REAL armor, above zero
   e.armor = a - amt; stripBy(e, t, amt);
   e.corrodeT = 0.4;

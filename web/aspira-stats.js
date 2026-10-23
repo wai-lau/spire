@@ -3,6 +3,9 @@
 // change painted red when it is for the worse. UI only; loaded before aspira-ui.js and
 // called at run time (aspira-sliders.js cardStats, aspira-chooser.js).
 
+// THE LATE SCALE (aspira-waves.js): every damage / HP / armor number on the card is shown x the CURRENT wave's scale - what it does to
+// the enemies on the board now (raw tower numbers ran to millions late; owner, 2026-10-22: "no number past 9999")
+const dmgW = v => dmgUnits(v * (typeof scaleOf === "function" && typeof G !== "undefined" && G ? scaleOf(Math.max(1, G.wave || 1)) : 1));
 // SOL's form, in one short line for the popup (the same row at every level, so
 // the next-level preview lines up)
 function rayForm(st) {
@@ -18,7 +21,7 @@ function rayForm(st) {
 const SPEC = {
   arc: st => {
     const tree = [1]; for (let l = 1; l <= st.layers; l++) tree.push(st.branch ** l);
-    return [["Hits", (st.targets > 1 ? st.targets + " × " : "") + tree.join("→")] /* × the STRIKES (Conductivity III+: "twin arcs") */, ["Arc dmg", dmgUnits(st.dmg * st.arcFall)],
+    return [["Hits", (st.targets > 1 ? st.targets + " × " : "") + tree.join("→")] /* × the STRIKES (Conductivity III+: "twin arcs") */, ["Arc dmg", dmgW(st.dmg * st.arcFall)],
       ["Charge", st.charge ? st.charge.n + " × " + Math.round(st.charge.frac * 100) + "% of hit · burst r" + ARC_BURST_R : "—"],
       ["Re-strikes", st.revisit ? "up to " + st.revisit + "× an enemy" : "—"],
       ["Burst slow", st.statSlow ? Math.round(st.statSlow * 100) + "% · " + STAT_SLOW_T + "s" : "—"], // the prose's "slowing all near" (ARC_STAT_SLOW)
@@ -27,18 +30,18 @@ const SPEC = {
         : [["Arc hop", Math.round(st.arcRange)], ["Reach", Math.round(chainReach(st))]]),
       ["Delay", hopDelay(st).toFixed(2) + "s"]];
   },
-  frz: st => st.skill ? [["Aura slow", Math.round(st.aura * 100) + "%"], ["Aura dmg", dmgUnits(st.dmg * st.rate) + "/s"], ["Brittle", st.brittle > 1 ? "+" + Math.round((st.brittle - 1) * 100) + "% taken" : "—"],
-    ["Permafrost", st.rime ? "every " + st.rimeEvery + "s, +" + Math.round(st.rime * 1000) / 10 + "% slow, stacking" /* names WHAT it adds (owner, 2026-10-14: "+22% ... but what +22%"); tenths, since halving made 3.5 and 8.5 */ : "—"], ["Frost armor", st.rimeCrack ? "−" + Math.round(st.rimeCrack * 100) + "% armor (−" + dmgUnits(st.rimeCrack * armorRefOf(G.wave || 1)) + " now)" : "—"] /* at FULL frost (less frost, that share): frostArmor x the wave's armor reference (an armored enemy's armor), and that in armor at THIS wave (damage()) */, ["Full frost", st.rime ? Math.round(FRZ_RIME_FULL * 100) + "% slow, then spreads" : "—"], ["Cold bite", "+" + FRZ_CHILL_K + "% dmg per 1% slow"] /* frzBite */ /* the prose's "seeps into their armor": frostArmor x an armored enemy's armor, by frost share (damage()) */, ["Moons", st.moonN ? st.moonN + " at " + Math.round(st.moonK * 100) + "%" + (st.subN ? " +" + st.subN + " small each" : "") : "—"]]
+  frz: st => st.skill ? [["Aura slow", Math.round(st.aura * 100) + "%"], ["Aura dmg", dmgW(st.dmg * st.rate) + "/s"], ["Brittle", st.brittle > 1 ? "+" + Math.round((st.brittle - 1) * 100) + "% taken" : "—"],
+    ["Permafrost", st.rime ? "every " + st.rimeEvery + "s, +" + Math.round(st.rime * 1000) / 10 + "% slow, stacking" /* names WHAT it adds (owner, 2026-10-14: "+22% ... but what +22%"); tenths, since halving made 3.5 and 8.5 */ : "—"], ["Frost armor", st.rimeCrack ? "−" + Math.round(st.rimeCrack * 100) + "% armor (−" + dmgW(st.rimeCrack * armorRefOf(G.wave || 1)) + " now)" : "—"] /* at FULL frost (less frost, that share): frostArmor x the wave's armor reference (an armored enemy's armor), and that in armor at THIS wave (damage()) */, ["Full frost", st.rime ? Math.round(FRZ_RIME_FULL * 100) + "% slow, then spreads" : "—"], ["Cold bite", "+" + FRZ_CHILL_K + "% dmg per 1% slow"] /* frzBite */ /* the prose's "seeps into their armor": frostArmor x an armored enemy's armor, by frost share (damage()) */, ["Moons", st.moonN ? st.moonN + " at " + Math.round(st.moonK * 100) + "%" + (st.subN ? " +" + st.subN + " small each" : "") : "—"]]
     : [["Slow", Math.round(st.slow * 100) + "%"], ["Lasts", st.permafrost ? "forever" : SLOW_TIME.toFixed(1) + "s"],
     ["Targets", st.all ? "all" : st.targets],
-    ["Shatter", st.shatter ? dmgUnits(st.dmg * st.shatter.mul) + " r" + st.shatter.r : "—"],
+    ["Shatter", st.shatter ? dmgW(st.dmg * st.shatter.mul) + " r" + st.shatter.r : "—"],
     ["Extra", st.frostbite ? "blast slows " + st.frostbite + "s" : st.brittle ? "+" + Math.round((st.brittle - 1) * 100) + "% taken"
       : st.chillStop ? "95% for " + st.chillStop + "s" : "—"]],
   // acidic terms, never heat (owner, 2026-10-07): the acid CORRODES, BUILDS on its target, PEAKS
-  acd: (st, t) => [["Corrode", dmgUnits(st.dmg) + "/s"], ["Builds", "×2 / " + st.double + "s"],
-    ["Peak", "×" + st.cap + " (" + dmgUnits(st.dmg * st.cap) + "/s)"], ["Jets", st.allInRange ? "all in range" : st.targets],
+  acd: (st, t) => [["Corrode", dmgW(st.dmg) + "/s"], ["Builds", "×2 / " + st.double + "s"],
+    ["Peak", "×" + st.cap + " (" + dmgW(st.dmg * st.cap) + "/s)"], ["Jets", st.allInRange ? "all in range" : st.targets],
     ["Circle", st.plagueR ? Math.round(st.plagueR) + (st.bloom ? "→" + Math.round(st.plagueR * st.bloom) : "") : "—"],
-    ["Armor", st.corrode ? "−" + Math.round(st.corrode * 100) + "% of dmg" : "—"] /* a tick strips ACD_CORRODE OF ITS DAMAGE; dmgUnits(0.1) read "−0" (2026-10-14) */, /* no "Shields −1 / hit" rows: one charge a hit is the default, unsaid (owner, 2026-10-20) */
+    ["Armor", st.corrode ? "−" + Math.round(st.corrode * 100) + "% of dmg" : "—"] /* a tick strips ACD_CORRODE OF ITS DAMAGE; dmgW(0.1) read "−0" (2026-10-14) */, /* no "Shields −1 / hit" rows: one charge a hit is the default, unsaid (owner, 2026-10-20) */
     ["Goo", st.corrode ? "×" + Math.round(DRIP_TAKE * (1 + DRIP_TIER_K * skillOf(t, "corrosion")) * 10) / 10 + " eaten armor · pull " + ACD_DRIP_PULL[skillOf(t, "corrosion")] : "—"] /* dripDrop / stepDrips: strips and burns that much */,
     ["Kill pools", st.spread ? "every ACD kill" : "—"] /* (owner, 2026-10-22: anything ACD kills leaves a full pool) */,
     // puddles one number a row (owner, 2026-10-07: "1 / 1.4s · 1.5s · r20" was unreadable), so each
@@ -47,22 +50,22 @@ const SPEC = {
     ["Pool burn", st.contagion ? Math.round(st.contagionHeat * 100) + "% of jet" : "—"], ["Drips every", st.contagion ? st.contagion.every + "s" : "—"],
     ["Pool size", st.contagion ? st.contagion.r : "—"], ["Pool lasts", st.contagion ? st.contagion.life + "s" : "—"], ["Carry", st.carry ? Math.round(st.carry * 100) + "%" : "—"], ["Jet slow", st.burnSlow ? Math.round(st.burnSlow * 100) + "%" : "—"]],
   // CRR (aspira-car.js): Damage + Rate are a SHOT's and an interceptor's
-  car: st => [["Interceptors", st.wing], ["Focus fire", st.focus ? "+" + Math.round(st.focus * 100) + "% / wingmate" : "—"], ["Ammo", st.ammo + " shots"], ["Tether slow", st.tSlow ? Math.round(st.tSlow * 100) + "%" : "—"], ["Tether pulse", st.tK ? dmgUnits(st.dmg * st.tK) + " / " + CRR_TETHER_PULSE + "s" : "—"], ["Chain", st.tChain ? "1 more" : "—"],
-    ["Autopilot", st.autopilot ? CRR_BURST_N + " pellets × " + dmgUnits(st.dmg * CRR_BURST_K) : "—"], ["Slow", Math.round(CRR_SLOW * 100) + "% · " + CRR_SLOW_S + "s"], ["Shields", "−" + CRR_BOLTS + " / shot"]],
+  car: st => [["Interceptors", st.wing], ["Focus fire", st.focus ? "+" + Math.round(st.focus * 100) + "% / wingmate" : "—"], ["Ammo", st.ammo + " shots"], ["Tether slow", st.tSlow ? Math.round(st.tSlow * 100) + "%" : "—"], ["Tether pulse", st.tK ? dmgW(st.dmg * st.tK) + " / " + CRR_TETHER_PULSE + "s" : "—"], ["Chain", st.tChain ? "1 more" : "—"],
+    ["Autopilot", st.autopilot ? CRR_BURST_N + " pellets × " + dmgW(st.dmg * CRR_BURST_K) : "—"], ["Slow", Math.round(CRR_SLOW * 100) + "% · " + CRR_SLOW_S + "s"], ["Shields", "−" + CRR_BOLTS + " / shot"]],
   // IFR (aspira-ifrit.js, axes redone 2026-10-20): Damage is the base every hit multiplies (each axis by its own K), Rate meteors a second
-  ifr: st => [["Meteors", "1 + a fan of " + st.fan + (st.fissure ? " · fissure" : "")], ["Hit", dmgUnits(st.dmg * st.routeK)], ["Charge", st.chargeS + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
+  ifr: st => [["Meteors", "1 + a fan of " + st.fan + (st.fissure ? " · fissure" : "")], ["Hit", dmgW(st.dmg * st.routeK)], ["Charge", st.chargeS + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
     ["Fire", "r" + Math.round(st.fireR) + " · " + st.fireV + "/s"], ["Fire flares", Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2) + " untaken flares"],
-    ["Flare", Math.round(st.beamL) + " long · " + Math.round(st.beamW) + " wide"], ["Flare burn", dmgUnits(st.dmg * st.flareK) + " / " + st.tickS + "s · " + st.burnS + "s"],
+    ["Flare", Math.round(st.beamL) + " long · " + Math.round(st.beamW) + " wide"], ["Flare burn", dmgW(st.dmg * st.flareK) + " / " + st.tickS + "s · " + st.burnS + "s"],
     ["Flare capstone", st.triple ? "3 flares a landing" : "—"]],
   // GRV (aspira-grv.js): at STARTING mass - a sphere grows up to x GRV_MASS_MAX with the damage it deals
-  grv: st => [["Nova hit", dmgUnits(st.dmg * st.novaMul)], ["Nova reach", st.novaR], ["Aura size", st.auraR + " × nova dmg (×" + GRV_GROW_MIN + "–" + GRV_GROW_MAX + ")"],
+  grv: st => [["Nova hit", dmgW(st.dmg * st.novaMul)], ["Nova reach", st.novaR], ["Aura size", st.auraR + " × nova dmg (×" + GRV_GROW_MIN + "–" + GRV_GROW_MAX + ")"],
     ["Aura slow", Math.round(Math.min(GRV_SLOW_MAX, st.slow) * 100) + "% · core " + (st.horizon ? "90% full" : Math.round(Math.min(GRV_CORE_MAX, Math.min(GRV_SLOW_MAX, st.slow) * GRV_CORE_MUL) * 100) + "%")],
-    ["Armor strip", "−" + dmgUnits(st.dmg * GRV_AURA_K * GRV_STRIP * GRV_STRIP_OUT) + "/s edge · −" + dmgUnits(st.dmg * GRV_AURA_K * GRV_STRIP * GRV_STRIP_IN) + "/s centre"] /* more the closer: in the numbers, not the words (owner, 2026-10-16) */, ["Pellets", +st.pellets.toFixed(1) + "/s" + (st.hawking ? " · last burst" : "")],
-    ["Pellet hit", dmgUnits(st.dmg * st.pelletK)], ["Black hole", "grows up to " + GRV_MASS_MAX + "× its size by hitting · lasts " + GRV_LIFE + "s if it hits nothing"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means") */]  /* (no "Shields -1 / hit" row: every hit pops one - owner, 2026-10-16: "isn't this just default behaviour? maybe no need to list") */,
+    ["Armor strip", "−" + dmgW(st.dmg * GRV_AURA_K * GRV_STRIP * GRV_STRIP_OUT) + "/s edge · −" + dmgW(st.dmg * GRV_AURA_K * GRV_STRIP * GRV_STRIP_IN) + "/s centre"] /* more the closer: in the numbers, not the words (owner, 2026-10-16) */, ["Pellets", +st.pellets.toFixed(1) + "/s" + (st.hawking ? " · last burst" : "")],
+    ["Pellet hit", dmgW(st.dmg * st.pelletK)], ["Black hole", "grows up to " + GRV_MASS_MAX + "× its size by hitting · lasts " + GRV_LIFE + "s if it hits nothing"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means") */]  /* (no "Shields -1 / hit" row: every hit pops one - owner, 2026-10-16: "isn't this just default behaviour? maybe no need to list") */,
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
     ["Beams", st.beams || 1], ...(st.skill && st.shieldPop > 1 ? [["Shields", "−" + st.shieldPop + " / beam"]] : []) /* only when over the default 1 (owner, 2026-10-20) */ /* SOL_SHIELD_POP + SOL_REFRACT_POP */, ...(st.skill ? [["Reflect", st.refraction ? (st.fan > 1 ? st.fan + " × " : "") + st.refraction + " at ×" + st.hop + " each" : "—"]] : []),
     // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)
-    [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + dmgUnits(st.bleedArmor) + " armor" + (st.bleedCrit ? ", +" + Math.round(st.bleedCrit * 100) + "% crit" : "") + (st.breach > 1 ? " ×" + st.breach : "") + "/hit" : "—"],
+    [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + dmgW(st.bleedArmor) + " armor" + (st.bleedCrit ? ", +" + Math.round(st.bleedCrit * 100) + "% crit" : "") + (st.breach > 1 ? " ×" + st.breach : "") + "/hit" : "—"],
     ...(st.skill && st.dot ? [["Scorch", Math.round(st.dot.frac * 100) + "% of a hit over " + st.dot.t + "s"]] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]],
 };
 

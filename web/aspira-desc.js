@@ -36,7 +36,7 @@ const DESCRIBE = {
   sol(sk) {
     const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, n = SOL_BEAMS[f], k = SOL_REFRACTION[r], p = Math.round(SOL_HOP[r] * 100), TIMES = ["", "once", "twice"];
     return "Focuses " + n + " piercing beam" + (n > 1 ? "s" : "") + " onto an enemy. " +
-      "Reflects " + (TIMES[k] || k + " times") + " for " + (100 - p) + "% less damage" + (k > 1 ? " every reflection" : "") + "." + (r >= 6 ? " First reflection is tripled." : "") /* (owner: VI's three chains) */ + " Beams break " + dmgUnits(SOL_BREACH_ARMOR[b]) + " armor and scorch for " + Math.round(SOL_SCORCH[b] * 100) + "% over " + SOL_SCORCH_T + "s."; // (owner: "Break X armor and scorch" / "and scorch for ...")
+      "Reflects " + (TIMES[k] || k + " times") + " for " + (100 - p) + "% less damage" + (k > 1 ? " every reflection" : "") + "." + (r >= 6 ? " First reflection is tripled." : "") /* (owner: VI's three chains) */ + " Beams break " + dmgUnits(SOL_BREACH_ARMOR[b] * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor and scorch for " + Math.round(SOL_SCORCH[b] * 100) + "% over " + SOL_SCORCH_T + "s."; // (owner: "Break X armor and scorch" / "and scorch for ...")
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY) and its slow - on the POOLS now (ACD_FLOW_SLOW),

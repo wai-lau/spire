@@ -73,7 +73,7 @@ function spawnEnemy(type, n, pi, ang = 0) {
   // armor/shields, late waves were pure dps and ARC spam won. Armor grows with
   // the curve to ARMOR_EXP (0.4; was the square root), shields with its 0.4 power - normalised so
   // shields still start at exactly their base (8) on their first wave (3).
-  const armorOf = t => Math.floor(ENEMIES[t].armor * ENEMY_HP_MUL * armorGrow(n)); // (armorGrow: aspira-defs.js) // x ENEMY_HP_MUL like the HP (2026-10-11: left out of the HP cut, armor ate 4.4x more of each hit)
+  const armorOf = t => Math.floor(ENEMIES[t].armor * ENEMY_HP_MUL * armorGrow(n) * scaleOf(n)); /* x the LATE SCALE (aspira-waves.js) */ // (armorGrow: aspira-defs.js) // x ENEMY_HP_MUL like the HP (2026-10-11: left out of the HP cut, armor ate 4.4x more of each hit)
   const shield = type === "swarm" ? Math.round(tune("swarm", "shield", n) * shieldsOf("shield", n).shield) : Math.round(shieldsOf(type, n).shield * tune(type, "shield", n)); // the shield levers (TYPE_TUNE, aspira-waves.js): a late swarm carries a share of a shield unit's charges
   const armor = d.armor ? Math.floor(armorOf(type) * tune(type, "armor", n)) : type === "fast" ? Math.floor(tune("fast", "armor", n) * armorOf("armor")) : 0; // the armor levers: a late fast carries a share of an armor unit's armor
   G.enemies.push({
@@ -129,6 +129,7 @@ function pickTargets(t, st, count) {
 const BLEED_CRIT_MUL = 2;
 function damage(e, amt, t, quiet = false, crit = false, st = null) {
   if (e.dead || !e.seen) return; // OFF-SCREEN: untouchable (enemySeen)
+  amt *= escale(e); // the LATE SCALE: a raw tower hit, x its target's wave scale (aspira-waves.js)
   if (e.charge && !staticQuiet && t) dischargeStatic(e); // ARC Static: ANY tower's hit sets the charges off, the charging ARC's too (aspira-skills.js)
   // a shield eats one whole HIT, whatever its size (poison/splash just bounce) -
   // SOL's included (owner: stripping shields is ACD's job, its ticks pop them)
@@ -166,7 +167,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   // per-tower tally: damage counts only up to the HP the enemy had left
   if (t) damageCredit(e, t, pre, amt, frost, Math.min(amt, Math.max(0, e.hp))); // the debuffers' shares to THEM (aspira-acid.js)
   amt = bossHitCap(e, amt); // Justice / Death cap a single hit (aspira-bosses.js)
-  amt = Math.max(1, Math.floor(amt)); // a hit is a WHOLE number, rounded down - but one that lands always takes 1 (owner, 2026-10-08)
+  { const c = escale(e); if (c < 1) { const v = Math.max(1, Math.floor(amt / c)) * c + (e.bank || 0); amt = Math.max(1, Math.floor(v)); e.bank = v - amt; } else amt = Math.max(1, Math.floor(amt)); } // a hit is a WHOLE number, rounded down - but one that lands always takes 1 (owner, 2026-10-08); under the LATE SCALE the rounding is the RAW hit's, its fraction (a debt too) banked on the enemy, so it plays as before (2026-10-22)
   e.hp -= amt;
   if (!quiet && !(st && st.noFx) && !(typeof farFx === "function" && farFx(e))) { // noFx: unseen (crowded pools - aspira-acid.js); farFx: 3D's far ring (aspira-quality.js)
     // impact flash sized and lit by the damage; big hits also throw sparks
@@ -190,7 +191,7 @@ function onHit(e, t, st, amt) {
   if (st.hitSlow) applySlow(e, st.hitSlow.f, st.hitSlow.t, t ? t.id : "x");
   // Melt (ARC): every hit strips armor for good, past zero (owner: every armor
   // reduction is permanent and may go negative), so later hits land harder
-  if (st.armorShred) e.armor = (e.armor || 0) - st.armorShred;
+  if (st.armorShred) e.armor = (e.armor || 0) - st.armorShred * escale(e);
   if (st.splash) {
     // a FILLED blast that lingers 0.3s, so the splash actually reads (owner)
     fx.push({ k: "blast", x: e.x, y: e.y, r: st.splash.r, color: TOWERS[t.kind].color, t: 0, life: 0.3 });
