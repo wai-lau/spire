@@ -15,8 +15,13 @@ import { patchProbe } from "./simver.mjs";
 const WEB = (process.env.ASPIRA_WEB || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "web")) + "/";
 const FILES = ["aspira-defs.js", "aspira-drawsize.js", "aspira-upgrades.js", "aspira-game.js", "aspira-formations.js", "aspira-floats.js", "aspira-waves.js", "aspira-bosses.js", "aspira-towers.js", "aspira-sol.js", "aspira-acid.js", "aspira-skills.js", "aspira-frz.js", "aspira-grv.js", "aspira-car.js", "aspira-ifrit.js", "aspira-desc.js", "aspira-capstone.js","aspira-positioning.js", "aspira-core.js"];
 
+// LOAD ONCE A PROCESS (2026-10-24: a new game cost ~2 s, mostly the lanes' spiral solve and recompiling 20 files): each file is
+// compiled once (vm.Script), each lane built once (SIM_LANES, aspira-defs.js) and handed to every game as its own copy
+const SCRIPTS = new Map(), LANES = [], DT_K = Number(process.env.DT_K) || 1;
+const scriptOf = f => { let s = SCRIPTS.get(f); if (!s) SCRIPTS.set(f, s = new vm.Script(fs.readFileSync(WEB + f, "utf8"), { filename: f })); return s; };
+const simLanes = (i, build) => structuredClone(LANES[i] ??= build(i));
 export function makeGame(seed, patch = "") {
-  patch = [process.env.ASPIRA_PATCH, patch].filter(Boolean).join("\n"); // ASPIRA_PATCH: a balance experiment for every game of a run
+  patch = [...new Set([process.env.ASPIRA_PATCH, patch].filter(Boolean))].join("\n"); // ASPIRA_PATCH: a balance experiment for every game of a run (deduped: tribal / duo / axis / trioplan pass it in as `patch` too, and a `*=` patch ran TWICE - 2026-10-24)
   let a = seed >>> 0 || 1;
   const rand = () => { a = (a + 0x6D2B79F5) >>> 0; let t = Math.imul(a ^ (a >>> 15), a | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const M = Object.create(Math); M.random = rand;
@@ -30,7 +35,8 @@ export function makeGame(seed, patch = "") {
     sfx: () => null, sfxFor: () => null, sfxSeq: () => null, bossVoice: () => "", shakeScreen: () => {}, showOverlay: () => {}, cam: { k: 1, ox: 0, oy: 0 }, cv: { width: 1000, height: 1000 },
   };
   vm.createContext(ctx);
-  for (const f of FILES) vm.runInContext(fs.readFileSync(WEB + f, "utf8"), ctx, { filename: f });
+  ctx.SIM_LANES = simLanes;
+  for (const f of FILES) scriptOf(f).runInContext(ctx);
   if (patch) { const check = patchProbe(src => vm.runInContext(src, ctx), patch); vm.runInContext(patch, ctx, { filename: "patch" }); check(); } // balance experiments (a half-patched tier table is reported - simver.mjs)
   // tower stats depend only on kind / level / path / form (no aura mods remain),
   // so cache them - towerStats runs for every tower on every step
@@ -124,6 +130,7 @@ export function makeGame(seed, patch = "") {
     };`, ctx);
   // the seeded RNG's state, so a snapshot can be resumed exactly
   ctx.api.rng = { get: () => a, set: v => { a = v; } };
+  if (DT_K !== 1) { const st = ctx.api.step; ctx.api.step = dt => st(dt * DT_K); } // DT_K: a COARSE PROBE - every step x DT_K (2026-10-24, owner: "use the bigger time step run as a probe"; dtprobe.sh measures how far it drifts)
   return ctx.api;
 }
 
