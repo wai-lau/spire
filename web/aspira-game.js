@@ -223,7 +223,7 @@ const SLOW_TIME = 125 / 48; // ~2.6 real seconds (owner: 10x the old ~4.2s, then
 // (1.5x speed) moves no slower than any other fully slowed one: 1.5 x (1 - 0.8) = 1 - 0.7
 // (2026-10-11: at SLOW_CAP the no-ARC trio FRZ+SOL+ACD lost every game to Fast leaks).
 const FAST_SLOW_MUL = 2;
-let SLOW_KNEE = 0.4, SLOW_CAP = 0.7; // let: the simulator sweeps them
+let SLOW_KNEE = 0.4, SLOW_CAP = 0.8; /* 0.7 -> 0.8 (owner, 2026-10-24): an enemy keeps 20% of its speed */ // let: the simulator sweeps them
 const TOWER_SLOW_MAX = 0.95; // one tower slow's ceiling before shaping (applySlow)
 // DERIVED from fast's speed (owner, 2026-10-12: "fast enemies look like they get frozen in place by frz" - a fixed 0.88 was
 // set for 1.5x speed; at 1.91x a fully slowed fast enemy crawled at 0.23 of base, below everyone's 0.3): a fully slowed

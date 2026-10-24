@@ -95,7 +95,7 @@ function stepChains(dt) {
 // leash) that is NOT AN ANCESTOR of this node (owner: every ARC hop, not just
 // back to its own parent) - an arc never runs back up its own branch
 function nextHop(c, node) {
-  const from = node.e, leash = chainReach(c.st) ** 2, anc = new Set();
+  const from = node.e, leash = c.st.range ** 2, anc = new Set(); // inside ARC's own range (owner, 2026-10-24: "Confine all targets to within arc range"; was chainReach)
   for (let n = node; n; n = n.up) anc.add(n.e.id);
   let nxt = null, nd = c.st.arcRange * c.st.arcRange;
   for (const o of G.enemies) {

@@ -222,9 +222,9 @@ const ACD_CORRODE = [0, 0.1, 0.3, 0.6]; // x2 (2026-10-12: Corrosion is the stri
 const ACD_FLOW_CARRY = [0, 0.3, 0.7, 0.9] /* V and VI no hotter (owner, 2026-10-12: "flow V should not flow faster" - range instead, SKILL_MOVE; was 1.1, VI 1.5) */, ACD_FLOW_SLOW = [0, 0.05, 0.11, 0.17];
 // CORROSION'S DAMAGE MOVED TO THE BASE (owner, 2026-10-12): a bare ACD burns ACD_BASE_DMG_MUL harder; Corrosion is
 // now the armor STRIP alone - into negative armor, a flat bonus on every tower's hits, so it pays on the unarmored too
-let ACD_BASE_DMG_MUL = 2; // let: the simulator sweeps it
+let ACD_BASE_DMG_MUL = 1.2; /* x0.6 (2026-10-24 marks target; was 2) */ // let: the simulator sweeps it
 const ACD_CORROSION_DMG = [1, 1, 1, 6.744]; /* V x9, VI x36 (steeper late tiers, 2026-10-16/17) */ // was 1 1.4 2.1 3.1 4.2 4.9 (kept as a table: the capstone tier and fits index it) // x1.15 I..V (owner, 2026-10-11: ACD's strength back through Corrosion; was 1.213 1.823 2.674 3.631 4.253)
-const ACD_DOUBLE = [0.5, 0.39, 0.12, 0.12], ACD_LINES = [2, 3, 6, 8], /* early-game balance 2026-10-06: two lines from the start (was 1/2/3/5); Spray to be re-fitted */ ACD_SPRAY_MUL = [1, 1, 1, 6.744]; /* V x9, VI x36 (steeper late tiers) */  // every jet a full strike (owner, 2026-10-08: never below 1) - Spray's reach (SKILL_MOVE) is the lever
+const ACD_DOUBLE = [0.25, 0.195, 0.06, 0.06] /* x0.5 with ACD_BASE_DMG_MUL x0.6: a steeper ramp - better vs armor, worse vs swarm (2026-10-24 marks target) */, ACD_LINES = [2, 3, 6, 8], /* early-game balance 2026-10-06: two lines from the start (was 1/2/3/5); Spray to be re-fitted */ ACD_SPRAY_MUL = [1, 1, 1, 6.744]; /* V x9, VI x36 (steeper late tiers) */  // every jet a full strike (owner, 2026-10-08: never below 1) - Spray's reach (SKILL_MOVE) is the lever
 // puddles by Seep tier (index 0 = the DEFAULT drip, owner): one every `every`
 // s per line, lasting `life` s, radius r; each burns at ACD_PUDDLE_HEAT of its
 // line's heat when it fell, by Seep tier

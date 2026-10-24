@@ -199,7 +199,7 @@ function voltCarry(c, e, left) {
   const seen = new Set([e]);
   for (let k = 0; k < c.st.carry && left > 0; k++) {
     let o = null, bd = (c.st.arcRange * VOLT_CARRY_R) ** 2;
-    for (const x of G.enemies) { if (x.dead || !x.seen || seen.has(x)) continue; const dd = (x.x - e.x) ** 2 + (x.y - e.y) ** 2; if (dd < bd) { bd = dd; o = x; } }
+    for (const x of G.enemies) { if (x.dead || !x.seen || seen.has(x) || !arcInRange(c, x)) continue; const dd = (x.x - e.x) ** 2 + (x.y - e.y) ** 2; if (dd < bd) { bd = dd; o = x; } }
     if (!o) return;
     beam(e, o, TOWERS.arc.color, CHAIN_BEAM_LIFE, 1, left);
     const h = o.hp; fromHit(e, () => damage(o, left, c.t, false, false, c.st)); seen.add(o);
@@ -271,11 +271,12 @@ function chainPick(t, from, r2, skip) {
   }
   return best;
 }
+const arcInRange = (c, o) => (o.x - c.t.x) ** 2 + (o.y - c.t.y) ** 2 <= c.st.range * c.st.range;
 function skillHop(c, node, depth) {
   const r = c.st.arcRange * c.st.arcShrink ** (depth - 1);
   // never the enemy it leaps from; an enemy already struck only while its hits are under 1 + st.revisit (Conductivity III+)
   const max = 1 + (c.st.revisit || 0);
-  return chainPick(c.t, node.e, r * r, o => o.id === node.e.id || (c.hits.get(o.id) || 0) >= max);
+  return chainPick(c.t, node.e, r * r, o => o.id === node.e.id || (c.hits.get(o.id) || 0) >= max || !arcInRange(c, o)); // EVERY target inside ARC's range (owner, 2026-10-24: "Confine all targets to within arc range")
 }
 function skillHopTo(c, node, nxt, depth) {
   const raw = c.st.dmg * c.st.arcFall ** depth, d = shotDamage(c.t, c.st, nxt, raw);
