@@ -176,7 +176,8 @@ function fxGlBeam(f, a) {
   const core = (f.soft ? BEAM_MIN + ((f.bw ??= beamWidth(f.d || 0)) - BEAM_MIN) * ARC_W_CORR : (f.bw ??= beamWidth(f.d || 0))) * (f.thin || 1), col = COL[f.color];
   if (f.m) {
     if (f.slim) for (let i = 4; i >= 1; i--) line(core * SOL_BEAM_W * (1 + i * 0.25), col, Math.min(1, a * SOL_GLOW_A * BEAM_BRIGHT));
-    else line(core * (f.soft ? ARC_GLOW_W : 3), col, Math.min(1, a * (f.soft ? ARC_GLOW_A : 0.22) * BEAM_BRIGHT));
+    else if (f.soft) for (const c of cut) fxGlGlowLine(c[0], c[1], c[2], c[3], core * ARC_GLOW_R, col, Math.min(1, a * ARC_GLOW_C * BEAM_BRIGHT), 0, 0); // ARC: a real GLOW, brightest on the line, clear ARC_GLOW_R x its width off it (owner, 2026-10-23: "Beams should have glow, not semiopaque second layer")
+    else line(core * 3, col, Math.min(1, a * 0.22 * BEAM_BRIGHT));
   }
   const ca = f.slim ? Math.min(1, a * 1.5) : a, cw = f.slim ? core * SOL_BEAM_W : core;
   line(cw, f.slim ? COL.white : col, ca);

@@ -327,7 +327,8 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
             ctx.globalAlpha = Math.min(1, a * SOL_GLOW_A * BEAM_BRIGHT); ctx.lineWidth = core * SOL_BEAM_W * (1 + i * 0.25); ctx.stroke(); // SOL: thicker, more opaque (owner, 2026-10-06; was 0.5 wide, 0.3)
           }
         } else {
-          ctx.globalAlpha = Math.min(1, a * (f.soft ? ARC_GLOW_A : 0.22) * BEAM_BRIGHT); ctx.lineWidth = core * (f.soft ? ARC_GLOW_W : 3); ctx.stroke(); // soft: a chart ARC's (aspira-skills.js)
+          if (f.soft) for (let i = 4; i >= 1; i--) { ctx.globalAlpha = Math.min(1, a * ARC_GLOW_C * BEAM_BRIGHT / 3); ctx.lineWidth = 2 * core * ARC_GLOW_R * i / 4; ctx.stroke(); } // ARC: a GLOW, nested strokes stacking to a falloff (owner, 2026-10-23; was one semi-opaque layer) - the GPU's glow line in 3D
+          else { ctx.globalAlpha = Math.min(1, a * 0.22 * BEAM_BRIGHT); ctx.lineWidth = core * 3; ctx.stroke(); }
         }
         ctx.globalAlpha = a;
       }
