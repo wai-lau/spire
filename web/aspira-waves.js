@@ -101,7 +101,7 @@ let TYPE_TUNE = {
   swarm: { count: [1.5, 1.5, 1.5, 1.5], speed: [1.509, 2.307, 2.307, 2.307], shield: [0, 0, 0, 0] },
   fast: { hp: [1.27, 1.27, 1.27, 1.27], speed: [1.747, 1.747, 1.747, 1.747], armor: [0, 0, 0, 0] },
   armor: { armor: [1, 4.321, 4.321, 4.321], count: [1.418, 1.5, 1.5, 1.5], speed: [1, 1, 1, 1] },
-  shield: { shield: [1, 1.377, 1.377, 1.377], count: [1, 1.5, 1.5, 1.5], speed: [1, 1, 1, 1] },
+  shield: { shield: [1, 1.377, 0.6, 0.4], count: [1, 1.5, 0.75, 0.75], speed: [1, 1, 1, 1] }, // 61+ eased (owner, 2026-10-23: "reduce the shield counts later on"): counts floor at 12 (NO DROPS), charges x0.6 / x0.4 held till the curve passes - REWIND=0 typecal 13 -> 55/70 won (swarm 48, armor 53, fast 58)
 };
 const TUNE_AFTER = { swarm: "shield", fast: "armor", armor: "speed", shield: "speed" }, TUNE_SHARE = { swarm: 1, fast: 1 }; // TUNE_SHARE: the after-60 lever is a share (0 = none), not a factor
 const tuneSection = n => { let i = 0; while (i < TUNE_SECTIONS.length && n > TUNE_SECTIONS[i]) i++; return i; };

@@ -870,3 +870,22 @@ Audio: 24 voices; shots 0.6, bosses / upgrades / builds 2, kills 0.4; volume 0-2
 ### 12.13 Meta
 
 TOP PLAYERS: `ASC_MAX` 6 posts an IP an hour, `SHOW_MAX` 500, a win `1 <= lives <= 100000`, wave 11..1000, a team of 1-5 kinds, `OWNER_SHOWN_FROM` 2026-10-14 00:00 ET. Slow logs every 180 s, 30 posts an IP an hour, 16 KB, 400 files kept. Smoke: 22 checks.
+
+### 12.x The marks target (owner, 2026-10-23)
+
+The build cards' marks balance is aiming for (swarm, fast, shield, armor; every row and column sums to 0, no two towers alike).
+Measured marks (`marks.py`) are moved toward it by balance only, never by editing `VS_MARKS`.
+
+| tower | swarm | fast | shield | armor |
+|---|---|---|---|---|
+| ARC | +1 | +1 | +1 | -3 |
+| FRZ | +2 | +1 | -2 | -1 |
+| SOL | -1 | -2 | +1 | +2 |
+| ACD | -2 | -2 | +1 | +3 |
+| GRV | +1 | -1 | -2 | +2 |
+| CAR | -2 | +2 | +1 | -1 |
+| IFR | +1 | +1 | 0 | -2 |
+
+The sim's smart saver (REWIND on) reads an easier wave as harder (2026-10-23): it spends only on a leak, so a mid-game with fewer leaks
+reaches wave 97 underbuilt - late shield counts x1.0 / x0.75 fell 31 -> 27 -> 22/70 with it, rose 13 -> 17 -> 28/70 with REWIND=0.
+Size type levers with REWIND=0.
