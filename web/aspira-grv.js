@@ -379,7 +379,7 @@ const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // ones are laid on a scratch layer at A / CAP each and that layer on the board at CAP - one alone is A, stacked they near CAP, never past it
 // ...and an aura's own opacity grows with its SIZE (owner, 2026-10-22: "correlate opacity with size, so that opacity stays the same after merge"):
 // k base auras' area (radius^2 / area a mass, never under 1) shows as k of them stacked would - CAP (1 - (1 - A / CAP)^k): a merge keeps the look
-const GRV_AURA_A = 0.3, GRV_AURA_CAP = 0.5;
+const GRV_AURA_A = 0.03, GRV_AURA_CAP = 0.05; // x0.1 both, the overlap curve unchanged (owner, 2026-10-24: "GRV aura opacity make it 10% of what it is right now"; were 0.3 / 0.5)
 const grvAuraAlpha = (sp, ar) => GRV_AURA_CAP * (1 - Math.pow(1 - GRV_AURA_A / GRV_AURA_CAP, Math.max(1, ar * ar / Math.max(1e-6, sp.apm || ar * ar))));
 let grvAuraCv = null;
 function grvAura(x, sp, ar, a) { // one aura's gradient disc on context x at alpha a

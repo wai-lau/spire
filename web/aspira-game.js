@@ -463,13 +463,13 @@ function step(dt) {
     if (t.kind === "frz" && hasSkills(t)) { frzStep(t, dt); continue; } // the chart FRZ: an aura, every step (aspira-skills.js)
     if (t.kind === "sol") { stepSol(t, dt); continue; }
     if (t.kind === "acd") { stepAcd(t, dt); continue; } if (t.kind === "car") { stepCar(t, dt); continue; } if (t.kind === "ifr") { stepIfr(t, dt); continue; } if (t.kind === "grv") stepGrv(t, dt); // GRV: its spheres every step, its novas on the cooldown below (aspira-grv.js)
-    t.cd -= dt;
+    t.cd -= dt; if (t.echo > 0 && (t.echo -= dt) <= 0) { const st = towerStats(t); for (let i = 0, n = relayMul(t); i < n; i++) fire(t, st); } // ARC's second strike (ARC_ECHO_S, aspira-skills.js)
     if (t.cd > 0) continue;
     const st = towerStats(t);
     let fired = false;
     for (let i = 0, n = t.kind === "arc" ? relayMul(t) : 1; i < n; i++) fired = fire(t, st) || fired; // the Orbital Relay: an ARC attacks three times (aspira-core.js)
     if (fired) sfx(t.kind);
-    t.cd = fired ? 1 / st.rate : 0.05;
+    t.cd = fired ? 1 / st.rate : 0.05; if (fired && t.kind === "arc") t.echo = ARC_ECHO_S;
   }
   G.enemies = G.enemies.filter(e => !e.gone);
 }

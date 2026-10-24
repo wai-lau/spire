@@ -327,15 +327,15 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
             ctx.globalAlpha = Math.min(1, a * SOL_GLOW_A * BEAM_BRIGHT); ctx.lineWidth = core * SOL_BEAM_W * (1 + i * 0.25); ctx.stroke(); // SOL: thicker, more opaque (owner, 2026-10-06; was 0.5 wide, 0.3)
           }
         } else {
-          if (f.soft) for (let i = 4; i >= 1; i--) { ctx.globalAlpha = Math.min(1, a * ARC_GLOW_C * BEAM_BRIGHT / 3); ctx.lineWidth = 2 * core * ARC_GLOW_R * i / 4; ctx.stroke(); } // ARC: a GLOW, nested strokes stacking to a falloff (owner, 2026-10-23; was one semi-opaque layer) - the GPU's glow line in 3D
+          if (f.soft) { for (let i = 6; i >= 1; i--) { ctx.globalAlpha = Math.min(1, a * (1 + ARC_GLOW_C * BEAM_BRIGHT) / 6); ctx.lineWidth = 2 * core * ARC_GLOW_R * i / 6; ctx.stroke(); } } // ARC: ONLY a GLOW, nested strokes stacking to a falloff, no hard core on top (owner, 2026-10-24: "all arc beams should use the glow instead of the hard edge"; 2026-10-23: was one semi-opaque layer) - the GPU's glow line in 3D
           else { ctx.globalAlpha = Math.min(1, a * 0.22 * BEAM_BRIGHT); ctx.lineWidth = core * 3; ctx.stroke(); }
         }
         ctx.globalAlpha = a;
       }
       if (f.slim) { ctx.strokeStyle = COL.white; ctx.globalAlpha = Math.min(1, ctx.globalAlpha * 1.5); }
-      ctx.lineWidth = f.slim ? core * SOL_BEAM_W : core; ctx.stroke();
+      if (!f.soft) { ctx.lineWidth = f.slim ? core * SOL_BEAM_W : core; ctx.stroke(); } // (ARC: the glow alone)
       // Ion: a thin WHITE core down the middle of the arc - it pierces (owner)
-      if (f.pierce) { ctx.strokeStyle = COL.white; ctx.lineWidth = Math.max(1, ctx.lineWidth * 0.35); ctx.stroke(); }
+      if (f.pierce && !f.soft) { ctx.strokeStyle = COL.white; ctx.lineWidth = Math.max(1, ctx.lineWidth * 0.35); ctx.stroke(); }
     } else if (f.k === "hit") {
       const a = ctx.globalAlpha, rr = f.r * (0.5 + 0.5 * (1 - k));
       ctx.fillStyle = COL[f.color]; ctx.globalAlpha = a * 0.3;

@@ -58,7 +58,7 @@ function skillScaleFix(g) {
 const CAPSTONE_NUM = [
   // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit; Capacitance eight charges
   [ARC_VOLTAGE_DMG, 51.6 /* the spread hit (aspira-skills.js ARC_SIDE_DMG; was 69.9) */], [ARC_VOLTAGE_FALL, 1.6], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
-  [ARC_CONDUCTIVITY, { s: 6 /* was 6 - the ARC nerf, 2026-10-11; trimmed and restored with the axis balance, 2026-10-18 */, j: 4, f: 4, r: 3, d: 3.5, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 1.0625 /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
+  [ARC_CONDUCTIVITY, { s: 4 /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, d: 2.36 /* was 3.5, then 4.72 - the shield popper (aspira-skills.js) */, q: 1.225, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 1.0625 /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
   // FRZ: Temp a far deeper chill; Rime the fastest, deepest rings; Moons three moons with three moonlets each, burning far harder (capped 2026-10-20)
   [FRZ_TEMP_SLOW, 0.67], [FRZ_TEMP_TICK, 0.0495], [FRZ_BRITTLE, 9.0185], [FRZ_RIME, 0.9], [FRZ_RIME_BITE, 300], [FRZ_RIME_PERIOD, 0.1925] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 1.2],
   [FRZ_MOON_COUNT, 3], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 3], [FRZ_MOON_HIT, 2.75] /* (owner, 2026-10-20: max 3 and 3; were 5 and 6) */,
@@ -74,7 +74,7 @@ const CAPSTONE_NUM = [
   [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_TETHER_K, 351], [CRR_AMMO, 16], [CRR_SHOT_MUL, 1446.7], [CRR_SIDE_DMG, 55.944], [CRR_RATE_MUL, 1],
   [GRV_AURA_R, 279.5], [GRV_STRIP_MUL, 138.3], [GRV_RATE_MUL, 8.525], [GRV_INNER_T, 320], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_NOVA_MUL, 36], [GRV_PELLETS, 9], [GRV_PELLET_K, 236],
   // IFR (axes redone 2026-10-20): Meteor a fan of 12 that fissures (Impact); Hellfire a fire six towers across; Flare the biggest, hottest, longest flares, three a landing
-  [IFR_CHARGE_S, 0.6], [IFR_BALL_V, 540], [IFR_ROUTE_K, 800], [IFR_FAN, 9], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 180], [IFR_FIRE_V, 660], [IFR_FIRE_DENS, 7.9], [IFR_FIRE_HK, 10], [IFR_HF_FK, 1.6], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 10], [IFR_TICK_S, 0.2], [IFR_TICK_K, 2.5],
+  [IFR_CHARGE_S, 0.6], [IFR_BALL_V, 540], [IFR_ROUTE_K, 800], [IFR_FAN, 9], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 180], [IFR_FIRE_V, 660], [IFR_FIRE_DENS, 7.9], [IFR_FIRE_HK, 10], [IFR_HF_FK, 1.6], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 10], [IFR_TICK_S, 0.4 /* x2 (2026-10-24; was 0.2) */], [IFR_TICK_K, 2.5],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)

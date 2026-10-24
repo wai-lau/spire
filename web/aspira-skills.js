@@ -123,7 +123,7 @@ const ARC_VOLTAGE_DMG = [1, 1.91, 26.595, 39.385] /* was 1 3.64 8.16 15.55 26.14
 // and r, how much further each JUMP reaches (owner; Voltage owns the tower's range)
 // d: a damage multiplier, FITTED so each tier deals +25% / +50% / +100% over
 // the base (owner), like Voltage's (scripts/aspira-sim: arcfit)
-let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 2, r: 1, d: 1, v: 0 }, { s: 1, j: 2, f: 2, r: 1.2, d: 1, v: 0 }, { s: 3, j: 3, f: 3, r: 1.6, d: 1.5, v: 1 }, { s: 4, j: 3, f: 4, r: 2.4, d: 2.4, v: 3 }] /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
+let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 1, r: 0.7, d: 0.5, v: 0 }, { s: 1, j: 2, f: 1, r: 0.84, d: 0.5, v: 0 }, { s: 2, j: 3, f: 1, r: 1.12, d: 1.01, q: 1.225, v: 1 }, { s: 3, j: 3, f: 2, r: 1.68, d: 1.525, q: 1.155, v: 3 }] /* the SHIELD POPPER (owner, 2026-10-24, marks target C: "A4 ... seem OK"): reach x0.7, two forks fewer (at least 1), d x0.5 - it no longer clears every crowd; were f 2 2 3 4, r 1 1.2 1.6 2.4, d 1 1 2.02 3.05 */ /* strikes 3 / 4 -> 2 / 3, the lost share split root-wise into q (fire rate) and d, d x1.1 (owner, 2026-10-24: "conductivity hit counts should not go up so fast" / "maybe conductivity increases damage and fire rate"; d was 1.5 / 2.4) */ /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
 // v: how many times a bolt may RETURN to an enemy it already struck (owner, 2026-10-08): from III a jump may hit any
 // enemy but the one it leaps from - III once more (2 hits an enemy), IV twice (3), V three times (4)
 // Capacitance by tier (owner, 2026-10-07): the charge, x the hit that left it, and
@@ -142,14 +142,17 @@ const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
 // was 1.5 x the tower's range; the range was HALVED (owner, 2026-10-06: "not their
 // effects nor reach"), so the jump keeps its old absolute size: 1.5 x the old 156
 // range, and Voltage still lengthens it by the old x1.15 / 1.3 / 1.45
+// TWO STRIKES (owner, 2026-10-24: "fire 2 strikes in quick succession from the get go at 1/2 damage"): every ARC attack goes off twice,
+// ARC_ECHO_S apart, each at ARC_ECHO_K of the hit (t.echo, the tower step in aspira-game.js) - twice the hits pop twice the shields
+const ARC_ECHO_K = 0.5, ARC_ECHO_S = 0.12;
 const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // VOLTAGE PIERCES ARMOR (owner, 2026-10-11: "make upgrade choices matter" - Voltage was ARC's dead axis, worst on every
 // type): its arcs ignore this share of armor - Voltage is ARC's armor answer, Conductivity the shields, Capacitance the fast
 function arcSkillStats(t, s, b) {
   const c = skillOf(t, "conductivity"), v = skillOf(t, "voltage"), z = skillOf(t, "capacitance");
-  s.dmg = b.dmg * ARC_VOLTAGE_DMG[v] * ARC_SIDE_DMG[c] * ARC_SIDE_DMG[z] * ARC_CONDUCTIVITY[c].d; s.range = b.range * RANGE_BONUS;
+  s.dmg = b.dmg * ARC_VOLTAGE_DMG[v] * ARC_SIDE_DMG[c] * ARC_SIDE_DMG[z] * ARC_CONDUCTIVITY[c].d * ARC_ECHO_K; s.range = b.range * RANGE_BONUS;
   const sh = ARC_CONDUCTIVITY[c]; // Conductivity: strikes, jumps AND forks
-  s.arcRange = ARC_JUMP_BASE * ARC_VOLTAGE_JUMP[v] * sh.r; s.targets = sh.s; s.layers = sh.j; s.branch = sh.f; s.revisit = sh.v || 0;
+  s.arcRange = ARC_JUMP_BASE * ARC_VOLTAGE_JUMP[v] * sh.r; s.rate = b.rate * (sh.q || 1); s.targets = sh.s; s.layers = sh.j; s.branch = sh.f; s.revisit = sh.v || 0;
   s.carry = VOLT_CARRY_N[v]; s.arcFall = ARC_VOLTAGE_FALL[v]; s.arcShrink = ARC_SHRINK; s.charge = ARC_CAPACITANCE[z]; s.statSlow = ARC_STAT_SLOW[z]; s.skill = true;
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
@@ -201,7 +204,7 @@ function voltCarry(c, e, left) {
     let o = null, bd = (c.st.arcRange * VOLT_CARRY_R) ** 2;
     for (const x of G.enemies) { if (x.dead || !x.seen || seen.has(x) || !arcInRange(c, x)) continue; const dd = (x.x - e.x) ** 2 + (x.y - e.y) ** 2; if (dd < bd) { bd = dd; o = x; } }
     if (!o) return;
-    beam(e, o, TOWERS.arc.color, CHAIN_BEAM_LIFE, 1, left);
+    beam(e, o, TOWERS.arc.color, CHAIN_BEAM_LIFE, 1, left); Object.assign(fx[fx.length - 1], { soft: true, alpha: ARC_A }); // a glow like every ARC beam (owner, 2026-10-24)
     const h = o.hp; fromHit(e, () => damage(o, left, c.t, false, false, c.st)); seen.add(o);
     if (!o.dead) return; left -= Math.max(0, h); e = o;
   }

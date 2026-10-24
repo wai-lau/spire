@@ -18,7 +18,7 @@ const DESCRIBE = {
     // strike the same place more than once. Hits leave six charges that slow and deal damage when popped." - every number read live
     const c = sk.conductivity || 0, v = sk.voltage || 0, z = sk.capacitance || 0, sh = ARC_CONDUCTIVITY[c], n = z ? ARC_CAPACITANCE[z].n : 0;
     return (sh.s > 1 ? cap(NUM_WORD[sh.s]) + " bolts of lightning, each forking " : "A bolt of lightning, forking ") + sh.f + " ways" + ARC_LAYERS[sh.j] + ", dealing " +
-      Math.round(ARC_VOLTAGE_FALL[v] * 100) + "% damage each fork." + (sh.v ? " Lightning can strike the same place more than once." : "") +
+      Math.round(ARC_VOLTAGE_FALL[v] * 100) + "% damage each fork, struck twice in a row." + (sh.v ? " Lightning can strike the same place more than once." : "") +
       (n ? " Hits leave " + (n > 1 ? NUM_WORD[n] + " charges that slow and deal" : "a charge that slows and deals") + " damage when popped." : "");
   },
   // FRZ (owner, 2026-10-22, shorter): "Emits an aura that slows enemies by 67% and hurts more the slower they are. Enemies in the aura take

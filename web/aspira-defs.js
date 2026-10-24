@@ -497,4 +497,4 @@ const DEFAULT_MODE = { arc: "close", frz: "close", sol: "close", acd: "close", g
 // each new tower costs 1.5x the last (owner, 2026-10-04; was 2x): 40, 60, 90, 135, 203, 304
 const towerCost = k => freeBuild() ? 0 : Math.round(TOWERS[k].cost * Math.pow(1.5, G.towers.length));
 const sellValue = t => Math.floor(t.spent * 0.95); // 95% back (owner, 2026-10-13; was 70%)
-for (let i = 0; i < N_PATHS; i++) PATHS.push(buildSpiral(i)); // (pace 1 on every lane: one speed for all, owner 2026-10-08; here, after ENEMIES: the core twist reads the riders' speeds)
+for (let i = 0; i < N_PATHS; i++) PATHS.push(typeof SIM_LANES === "function" ? SIM_LANES(i, buildSpiral) : buildSpiral(i)); // (SIM_LANES: the simulator builds each lane once a process - scripts/aspira-sim/sim.mjs) // (pace 1 on every lane: one speed for all, owner 2026-10-08; here, after ENEMIES: the core twist reads the riders' speeds)
