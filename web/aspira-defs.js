@@ -480,7 +480,7 @@ function towerStats(t, noAura = false) {
   }
   if (typeof relayMul === "function") { const m = relayMul(t); if (m > 1) relayStats(s, t.kind, m); } // the core's Orbital Relay: the tower as three (aspira-core.js)
   if (G.power.RNG > 0) s.range *= 1.3;
-  if (G.power.DAM > 0) s.dmg *= 1.6;
+  if (G.power.DAM > 0) { s.dmg *= 1.6; if (s.biteDmg) s.biteDmg *= 1.6; } // (biteDmg: FRZ Rime's, aspira-frz.js)
   return s;
 }
 // FREE BUILDS (owner, 2026-10-20: "auto-move should make upgrades and towers free"; "if any purchase is made during auto-move,

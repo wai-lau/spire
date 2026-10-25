@@ -50,11 +50,11 @@ const SPEC = {
     ["Pool size", st.contagion ? st.contagion.r : "—"], ["Pool lasts", st.contagion ? st.contagion.life + "s" : "—"], ["Carry", st.carry ? Math.round(st.carry * 100) + "%" : "—"], ["Pool slow", st.burnSlow ? Math.round(st.burnSlow * 100) + "%" : "—"]],
   // CRR (aspira-car.js): Damage + Rate are a SHOT's and an interceptor's
   car: st => [["Interceptors", st.wing], ["Focus fire", st.focus ? "+" + Math.round(st.focus * 100) + "% / wingmate" : "—"], ["Ammo", st.ammo + " shots"], ["Tether slow", st.tSlow ? Math.round(st.tSlow * 100) + "%" : "—"], ["Tether pulse", st.tK ? dmgW(st.dmg * st.tK) + " / " + CRR_TETHER_PULSE + "s" : "—"], ["Chain", st.tChain ? "1 more" : "—"],
-    ["Autopilot", st.autopilot ? CRR_BURST_N + " pellets × " + dmgW(st.dmg * CRR_BURST_K) : "—"], ["Slow", Math.round(CRR_SLOW * 100) + "% · " + CRR_SLOW_S + "s"], ["Shields", "−" + CRR_BOLTS + " / shot"]],
+    ["Autopilot", st.autopilot ? CRR_BURST_N + " pellets × " + dmgW(st.dmg * CRR_BURST_K) : "—"], ["Slow", Math.round(CRR_SLOW * 100) + "% · " + CRR_SLOW_S + "s"], ["Shields", "−" + st.bolts + " / shot"] /* a bolt a charge: Armament's count (tier redesign 2026-10-24) */],
   // IFR (aspira-ifrit.js, axes redone 2026-10-20): Damage is the base every hit multiplies (each axis by its own K), Rate meteors a second
-  ifr: st => [["Meteors", "1 + a fan of " + st.fan + (st.fissure ? " · fissure" : "")], ["Hit", dmgW(st.dmg * st.routeK)], ["Charge", +st.chargeS.toFixed(2) + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
-    ["Fire", "r" + Math.round(st.fireR) + " · " + st.fireV + "/s"], ["Fire flares", Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2) + " untaken flares"],
-    ["Flare", Math.round(st.beamL) + " long · " + Math.round(st.beamW) + " wide"], ["Flare burn", dmgW(st.dmg * st.flareK) + " / " + st.tickS + "s · " + st.burnS + "s"],
+  ifr: st => [["Meteors", st.fan ? "1 + a fan of " + st.fan + (st.fissure ? " · fissure" : "") : "1"] /* (fire, flares, fan "—" until bought - tier redesign 2026-10-24) */, ["Hit", dmgW(st.dmg * st.routeK)], ["Charge", +st.chargeS.toFixed(2) + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
+    ["Fire", st.fire ? "r" + Math.round(st.fireR) + " · " + st.fireV + "/s" : "—"], ["Fire flares", st.fire ? Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2) + " untaken flares" : "—"],
+    ["Flare", st.flares ? Math.round(st.beamL) + " long · " + Math.round(st.beamW) + " wide" : "—"], ["Flare burn", st.flares ? dmgW(st.dmg * st.flareK) + " / " + st.tickS + "s · " + st.burnS + "s" : "—"],
     ["Flare capstone", st.triple ? "3 flares a landing" : "—"]],
   // GRV (aspira-grv.js): at STARTING mass - a sphere grows up to x GRV_MASS_MAX with the damage it deals
   grv: st => [["Nova hit", dmgW(st.dmg * GRV_NOVA_K)], ["Nova reach", st.novaR], ["Aura size", st.auraOn ? st.auraR + " × nova dmg (×" + GRV_GROW_MIN + "–" + GRV_GROW_MAX + ")" : "—"] /* (each part "—" until its axis buys it - tier redesign 2026-10-24) */,

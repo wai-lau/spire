@@ -361,6 +361,7 @@ const SOL_FAN_BY = [0, 1, SOL_FAN[0], SOL_FAN[0], SOL_FAN[0], SOL_FAN[1]]; // by
 // the tower's own range; none left there, the chain stops. solHeads: the first enemy's forks (also the charge cones' aim, drawAims)
 const solOut = (t, st, hit) => { const r2 = (st.range || 0) ** 2; return x => hit.has(x) || (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > r2; };
 function solHeads(t, st, e, hit = new Set([e])) {
+  if (!st.refraction) return []; // no Reflection, no bounce to aim at (tier redesign 2026-10-24)
   const out = solOut(t, st, hit), heads = [];
   for (let c = 0; c < (st.fan || 1); c++) { const o = chainPick(t, e, Infinity, out); if (!o) break; hit.add(o); heads.push(o); }
   return heads;

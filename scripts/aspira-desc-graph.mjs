@@ -17,7 +17,7 @@ const x = v => Math.round(v * 100) / 100; // x1.3333333 -> x1.33
 const MECH = {
   arc: {
     conductivity: k => { const c = V("ARC_CONDUCTIVITY")[k], r = V("SKILL_MOVE").arc.conductivity[k][0]; return `${c.s} strike${c.s > 1 ? "s" : ""}, ${c.j} jump${c.j > 1 ? "s" : ""}, forking ${c.f} ways${c.v ? `, re-strikes ${c.v}x` : ""}, jumps reach x${x(c.r)}, range x${x(r)}`; },
-    voltage: k => `hit x${V("ARC_VOLTAGE_DMG")[k]}, each jump keeps ${pct(V("ARC_VOLTAGE_FALL")[k])} of the hit before it, range x${x(V("SKILL_MOVE").arc.voltage[k][0])}`,
+    voltage: k => `forks ${V("VOLT_FORK")[k]} ways, each jump keeps ${pct(V("ARC_VOLTAGE_FALL")[k])} of the hit before it, range x${x(V("SKILL_MOVE").arc.voltage[k][0])}`,
     capacitance: k => { const b = V("ARC_CAPACITANCE")[k]; return b ? `${b.n} charge${b.n > 1 ? "s" : ""} a hit, each ${pct(b.frac)} of it; the next hit bursts them all, r${V("ARC_BURST_R")}, slowing ${pct(V("ARC_STAT_SLOW")[k])} for ${V("STAT_SLOW_T")}s, slide x${x(V("SKILL_MOVE").arc.capacitance[k][1])}` : "no charge"; },
   },
   frz: {
@@ -26,14 +26,14 @@ const MECH = {
     moons: k => (V("FRZ_MOON_COUNT")[k] ? `${V("FRZ_MOON_COUNT")[k]} moon${V("FRZ_MOON_COUNT")[k] > 1 ? "s" : ""} at ${pct(V("FRZ_MOON_BY")[k])} of the tower${V("FRZ_SUBMOON_N")[k] ? `, each with ${V("FRZ_SUBMOON_N")[k]} small moon${V("FRZ_SUBMOON_N")[k] > 1 ? "s" : ""}` : ""}` : "no moons"),
   },
   sol: {
-    focus: k => `${V("SOL_BEAMS")[k]} beam${V("SOL_BEAMS")[k] > 1 ? "s" : ""} per shot, each a full hit, passing through at ${pct(V("SOL_PASS")[k])}, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
-    refraction: k => `bends on to ${V("SOL_REFRACTION")[k] === Infinity ? "every enemy" : V("SOL_REFRACTION")[k] + " more"} within a ${V("SOL_CONE_BY")[k] * 2} deg cone${k >= 4 ? " (two, opposite)" : ""}, shot x${V("SOL_REFRACTION_DMG")[k]}, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
+    focus: k => `${V("SOL_BEAMS")[k]} beam${V("SOL_BEAMS")[k] > 1 ? "s" : ""} per shot, each a full hit, passing through ${V("SOL_PASS_N")[k] === Infinity ? "every enemy" : V("SOL_PASS_N")[k] + " more"} at ${pct(V("SOL_PASS")[k])}, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
+    refraction: k => `${V("SOL_REFRACTION")[k]} reflection${V("SOL_REFRACTION")[k] === 1 ? "" : "s"} in a chain, ${V("SOL_FAN_BY")[k]} chain${V("SOL_FAN_BY")[k] === 1 ? "" : "s"} off the first enemy, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
     breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good (a breached death throws shrapnel), crit x${V("SOL_CRITMUL")[k]}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
   },
   acd: {
     corrosion: k => (V("ACD_CORRODE")[k] ? `a tick strips ${pct(V("ACD_CORRODE")[k])} of its damage from armor, below zero; eaten armor drops goo (pull ${V("ACD_DRIP_PULL")[k]})` : "no armor strip"),
-    spray: k => `${V("ACD_LINES")[k]} jets${V("ACD_FLOW_SLOW")[k] ? `, slowing ${pct(V("ACD_FLOW_SLOW")[k])}` : ""}, a jet carries ${pct(V("ACD_FLOW_CARRY")[k])} of its ramp to the next enemy, range x${x(V("SKILL_MOVE").acd.spray[k][0])}`,
-    contagion: k => { const c = V("ACD_CONTAGION")[k]; return `a pool every ${c.every}s per jet + one per kill, lasting ${c.life}s, radius ${c.r}, at ${pct(V("ACD_PUDDLE_HEAT")[k])} of the jet${k ? ", a pool kill leaves its own pool" : ""}, slide x${x(V("SKILL_MOVE").acd.contagion[k][1])}`; },
+    spray: k => `${V("ACD_LINES")[k]} jet${V("ACD_LINES")[k] > 1 ? "s" : ""}, a jet carries ${pct(V("ACD_FLOW_CARRY")[k])} of its ramp to the next enemy, range x${x(V("SKILL_MOVE").acd.spray[k][0])}`,
+    contagion: k => { const c = V("ACD_CONTAGION")[k]; return c ? `a pool every ${c.every}s per jet, lasting ${c.life}s, radius ${c.r}, at ${pct(V("ACD_POOL_HEAT"))} of the jet, slowing ${pct(V("ACD_POOL_SLOW")[k])}, slide x${x(V("SKILL_MOVE").acd.contagion[k][1])}` : "no pools"; },
   },
 };
 // the words that change from a to b, b's changed words marked *so* (the card's wordDiff, in text)

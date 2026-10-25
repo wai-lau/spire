@@ -105,7 +105,7 @@ function grvNovaSpot(t, st) {
 function novaAt(t, st, e) {
   const p0 = pathAt(e.pi, e.s, e.ang || 0), p1 = pathAt(e.pi, e.s + effSpeed(e) * GRV_LEAD_S, e.ang || 0);
   const bh = (t.grvShots = (t.grvShots || 0) + 1) % GRV_BH_EVERY === 0; // (grvBank: only every GRV_BH_EVERY-th shot leaves a hole)
-  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0, bh });
+  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.hyper ? GRV_HYPER_MASS : 1, hit: new Set(), tick: 0, pel: 0, bh, hole: !!st.hole }); // hole: its tower's Void, stamped at birth (grvPull)
   return true;
 }
 // one hit from a sphere: the damage it really dealt feeds its mass
@@ -155,7 +155,8 @@ function grvPull(t, st, dt) {
       /* ... and now only when their CENTRES meet (owner, 2026-10-16: "dont instamerge when they touch, only when their centers are aligned"): under GRV_MERGE_D u, or the step carries them past each other (the closest approach of this step's relative motion), so a pair cannot overshoot and orbit; touching cores just keep pulling, damped near the end so they settle */
       const rvx = (b.vx || 0) - (a.vx || 0), rvy = (b.vy || 0) - (a.vy || 0), rv2 = rvx * rvx + rvy * rvy;
       const tc = rv2 > 1e-9 ? Math.min(dt, Math.max(0, -(dx * rvx + dy * rvy) / rv2)) : 0, cd = Math.hypot(dx + rvx * tc, dy + rvy * tc);
-      if (d <= GRV_MERGE_D || cd <= GRV_MERGE_D) { grvMerge(a.ar >= b.ar ? a : b, a.ar >= b.ar ? b : a); if (a.merged) break; continue; }
+      const aBig = !!a.hole !== !!b.hole ? !!a.hole : a.ar >= b.ar; // a HOLE always takes a hole-less sphere in, whatever their sizes (tier redesign 2026-10-24: a Radiation- or Nova-only GRV's sphere ate a neighbour's Void hole)
+      if (d <= GRV_MERGE_D || cd <= GRV_MERGE_D) { grvMerge(aBig ? a : b, aBig ? b : a); if (a.merged) break; continue; }
       if (d <= grvCoreR(a.ar) + grvCoreR(b.ar)) { a.vx = (a.vx || 0) * (1 - 3 * dt); a.vy = (a.vy || 0) * (1 - 3 * dt); } /* cores touching: settle */
       const f = GRV_PULL_A * dt * Math.max(0, b.mass) * (GRV_PULL_D / Math.max(d, GRV_PULL_D)) ** 2; // a's pull toward b: b's MASS over the distance squared (owner, 2026-10-16: "bh acceleration should be dependent on mass"; was a fixed 45 shared by mass)
       a.vx = (a.vx || 0) + dx / d * f; a.vy = (a.vy || 0) + dy / d * f;

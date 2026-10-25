@@ -178,3 +178,36 @@ check("tier I names: every axis's first hint is named (no placeholder), GRV's se
   for (const [id, ns] of Object.entries(r.names)) if (ns.length !== 5) return id + " has " + ns.length + " tier names";
   if (r.nova !== "Nova") return "GRV axis 2 is " + r.nova;
 });
+
+// ---------- final review fixes (plan 2, 2026-10-24) ----------
+const rows = (kind, sk) => run(`(() => { const sk = ${JSON.stringify(sk)}, t = { id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ skills: sk }), skills: sk }, st = towerStats(t, true);
+  return { st: { bolts: st.bolts }, rows: Object.fromEntries(SPEC.${kind}(st, t)) }; })()`);
+check("review: the card's rows show no mechanic the tower lacks - CRR shields by its bolts, IFR's fire / flares / fan only once bought", () => {
+  const c0 = rows("car", {}), c1 = rows("car", { armament: 1 });
+  if (c0.rows.Shields !== "−1 / shot" || c1.rows.Shields !== "−2 / shot") return "CRR Shields rows " + c0.rows.Shields + " / " + c1.rows.Shields + " (expected −1, −2)";
+  const i0 = rows("ifr", {}).rows, ih = rows("ifr", { hellfire: 1 }).rows, ifl = rows("ifr", { firaga: 1 }).rows;
+  for (const k of ["Fire", "Fire flares", "Flare", "Flare burn"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
+  if (i0.Meteors !== "1") return "IFR tier 0 Meteors reads " + i0.Meteors;
+  if (ih.Fire === "—" || ifl.Flare === "—") return "IFR Hellfire I / Flare I rows blank";
+});
+check("review: a SOL without Reflection aims no reflection cone (solHeads)", () => {
+  const n = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[40, 0], [70, 20]]); return solHeads(t, st, es[0]).length; })()`);
+  if (n !== 0) return "tier 0 SOL aims " + n + " reflection heads";
+});
+check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
+  const r = run(`(() => { const t = { id: 99, kind: "frz", x: CX, y: CY, lvl: 2, skills: { rime: 1 } }; G = newGame(); const a = towerStats(t, true).biteDmg; G.power.DAM = 1; const b = towerStats(t, true).biteDmg; G.power.DAM = 0;
+    const s = { dmg: 1, biteDmg: 1, targets: 1 }; relayStats(s, "frz", 3); return [b / a, s.biteDmg]; })()`);
+  if (Math.abs(r[0] - 1.6) > 1e-9 || r[1] !== 3) return "bite x" + r[0] + " under DAM, x" + r[1] + " under the Relay (expected 1.6, 3)";
+});
+check("review: the card-text graph generator runs (docs/spire-descriptions.md is rebuilt from it)", () => {
+  const r = spawnSync(process.execPath, [path.join(ROOT, "scripts/aspira-desc-graph.mjs")], { encoding: "utf8", timeout: 120000 });
+  if (r.status !== 0) return "aspira-desc-graph.mjs exited " + r.status + ": " + (r.stderr || "").split("\n").filter(Boolean).slice(0, 2).join(" | ");
+});
+check("review: a hole-less GRV sphere never swallows another GRV's Void hole", () => {
+  const r = run(`(() => { G = newGame(); G.towers.push({ id: 901, kind: "grv", x: CX - 50, y: CY }, { id: 902, kind: "grv", x: CX + 50, y: CY });
+    const [a, b] = G.towers; a.skills = { radiation: 1 }; a.lvl = 2; b.skills = { void: 1 }; b.lvl = 2;
+    const mk = (t, ar) => { const sp = { id: G.id++, x: CX, y: CY, vx: 0, vy: 0, ar, age: 1, mass: 1, apm: ar * ar, hit: new Set(), tick: 0, pel: 0, bh: true, open: true, auraSnd: true, hole: !!towerStats(t, true).hole }; (t.spheres ||= []).push(sp); return sp; };
+    const big = mk(a, 90), hole = mk(b, 40); grvPull(a, towerStats(a, true), 1 / 60); grvPull(b, towerStats(b, true), 1 / 60);
+    return { holeMerged: !!hole.merged, bigMerged: !!big.merged }; })()`);
+  if (r.holeMerged || !r.bigMerged) return "merge: " + JSON.stringify(r) + " (expected the hole to take the hole-less sphere in)";
+});
