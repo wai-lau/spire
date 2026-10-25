@@ -254,5 +254,5 @@ check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightnin
   if (r[1] !== "Two bolts of lightning that fork for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
   if (!/that chain once for \d+% less damage every chain\.$/.test(r[3])) return "Conductivity I: " + r[3];
   if (!/that chain once and fork for \d+% less damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
-  if (!r[5].includes("slows enemies by") || !r[5].endsWith(" and deals " + r[6] + "% damage.")) return "FRZ tier 0: " + r[5];
+  if (!r[5].includes("slows enemies by") || !r[5].includes(" and deals " + r[6] + "% damage over ")) return "FRZ tier 0: " + r[5];
 });
