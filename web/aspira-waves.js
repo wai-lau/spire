@@ -254,7 +254,7 @@ const laneKey = (pi, ang) => pi + ":" + ang.toFixed(3);
 const LANE_LEAD = 3;
 function laneSoon() {
   const n = G.wave + 1;
-  if (!G.started || G.over || !(G.nextIn > 0 && G.nextIn <= LANE_LEAD) || n % STAR_EVERY === 0 || (typeof bossUp === "function" && bossUp())) return [];
+  if (!G.started || G.over || !(G.nextIn > 0 && G.nextIn <= LANE_LEAD) || n % STAR_EVERY === 0 || G.wave % STAR_EVERY === 0 /* the wave after a boss: no early lanes (owner, 2026-10-24: "after boss wave, no need to show lanes early") */ || (typeof bossUp === "function" && bossUp())) return [];
   const p = wavePlan(n, G.lastType), pi = laneMap(n)[p.type], k = firstOne(n) ? 1 : Math.min(p.count, formSplit(p.type, p.count, n)), a = 1 - G.nextIn / LANE_LEAD;
   return Array.from({ length: k }, (_, j) => ({ pi, ang: (laneBestTurn(pi, k, n, p.type) + (j / k) * Math.PI * 2) % (Math.PI * 2), color: ENEMIES[p.type].color, n, star: false, swarm: p.type === "swarm", alive: 0, a }));
 }
