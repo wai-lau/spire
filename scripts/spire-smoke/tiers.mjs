@@ -248,11 +248,11 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
     t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
   if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });
-check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightning.\" / Conductivity \"chains\" / Voltage \"forks for X% damage every chain\"; FRZ tier 0 \"slows and deals X% damage\"", () => {
+check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightning.\" / Conductivity \"chains\" / Voltage \"forks for X% less damage every chain\"; FRZ tier 0 \"slows and deals X% damage\"", () => {
   const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 1 }), Math.round(ARC_VOLTAGE_FALL[1] * 100), describeTower("arc", { conductivity: 1 }), describeTower("arc", { conductivity: 1, voltage: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP * 100)]`);
   if (r[0] !== "Two bolts of lightning.") return "tier 0: " + r[0];
-  if (r[1] !== "Two bolts of lightning that fork for " + r[2] + "% damage every chain.") return "Voltage I: " + r[1];
-  if (!/that chain once for \d+% damage after striking\.$/.test(r[3])) return "Conductivity I: " + r[3];
-  if (!/that chain once and fork for \d+% damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
+  if (r[1] !== "Two bolts of lightning that fork for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
+  if (!/that chain once for \d+% less damage every chain\.$/.test(r[3])) return "Conductivity I: " + r[3];
+  if (!/that chain once and fork for \d+% less damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
   if (!r[5].includes("slows enemies by") || !r[5].endsWith(" and deals " + r[6] + "% damage.")) return "FRZ tier 0: " + r[5];
 });

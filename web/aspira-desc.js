@@ -20,10 +20,11 @@ const DESCRIBE = {
     // (owner, 2026-10-25): "Two bolts of lightning." / "Two bolts of lightning that fork for X% damage after striking." - the double strike
     // is TWO bolts, so every strike counts twice; a fork wider than two names its ways, more than one layer its times
     // (owner, 2026-10-25): Conductivity "chains" (was "jump on"); Voltage "forks for X% damage every chain"
-    const pc = Math.round(ARC_VOLTAGE_FALL[v] * 100) + "% damage", times = TIMES[sh.j] || " " + NUM_WORD[sh.j] + " times";
-    const fork = " fork" + (f > 2 ? " " + NUM_WORD[f] + " ways" : "") + " for " + pc + " every chain";
-    const tree = !layers ? "" : f > 1 ? (sh.j ? " that chain" + times + " and" + fork : " that" + fork)
-      : " that chain" + times + " for " + pc + " after striking";
+    // ...then (owner, 2026-10-25): "35% less damage every chain" - the fall as a change, like SOL's reflections; full / more past 100%
+    const fl = ARC_VOLTAGE_FALL[v], d = Math.round(Math.abs(fl - 1) * 100), times = TIMES[sh.j] || " " + NUM_WORD[sh.j] + " times";
+    const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
+    const fork = " fork" + (f > 2 ? " " + NUM_WORD[f] + " ways" : "") + " for " + pc;
+    const tree = !layers ? "" : f > 1 ? (sh.j ? " that chain" + times + " and" + fork : " that" + fork) : " that chain" + times + " for " + pc;
     return cap(NUM_WORD[2 * sh.s]) + " bolts of lightning" + tree + "." + (sh.v ? " Lightning can strike the same place more than once." : "") +
       (n ? " Hits leave " + (n > 1 ? NUM_WORD[n] + " charges that slow and deal" : "a charge that slows and deals") + " damage when popped." : "");
   },
