@@ -72,11 +72,11 @@
 
 **Files:** Create `scripts/aspira-sim/marktarget.py`; modify `web/aspira-chooser.js` (`VS_MARKS`, via `marks.py --write`) and tower mechanic levers.
 
-- [ ] **Step 1:** Pick POINTS = a perfect player's buys per tower at waves 61-69 from Task 3's trioplan (rounded).
-- [ ] **Step 2:** `SPREAD_ONLY=1 POINTS=<p> WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out; python3 scripts/aspira-sim/marks.py cmx.out` - the measured marks and their raw double-centred scores.
-- [ ] **Step 3:** `marktarget.py cmx.out`: every integer table (-3..3) with each row and each column summing to 0, no two rows alike, every tower above 0 on two or more types; ranked by distance to the measured raw scores (in marks, summed |target - raw / PER_MARK|), fewest cells changed first. Print the nearest and its ties; it replaces target C as the benchmark (memory `marks-target`).
-- [ ] **Step 4:** Balance each tower whose measured row misses its target row, with that tower's own mechanic levers (never marks edits, one pop per tick, no SOL rate, IFR flares locked); re-run countermx after each round until every row matches.
-- [ ] **Step 5:** `marks.py --write`, commit `Spire tiers: marks - ...`. Expected: measured marks equal the target table; no RULE FAIL. Re-run `tribal.mjs` + `axis.mjs` if levers moved power (Task 4 bounds).
+- [ ] **Step 1:** One window a CHAPTER (owner, 2026-10-25: "make countermx consistent at the 4 different game chapters"; ARCHITECTURE.md 5.6): 13-19 (early, past the tier 0 ease), 41-49 (mid), 71-79 (late), 101-109 (end), each at the points a perfect player holds per tower there - Task 3's trioplan buy logs, the mean over every trio, rounded.
+- [ ] **Step 2:** `SPREAD_ONLY=1 WINDOWS=13-19:<p1>,41-49:<p2>,71-79:<p3>,101-109:<p4> KINDS=arc,frz,sol,acd,grv,car,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out; python3 scripts/aspira-sim/marks.py cmx.out` - each chapter's marks, whether they agree, and the pooled marks.
+- [ ] **Step 3:** `marktarget.py cmx.out`: ONE table for the whole game, its distance summed over the four chapters - every integer table (-3..3) with each row and each column summing to 0, no two rows alike, every tower above 0 on two or more types; ranked by distance to the measured raw scores (in marks, summed |target - raw / PER_MARK|), fewest cells changed first. Print the nearest and its ties; it replaces target C as the benchmark (memory `marks-target`).
+- [ ] **Step 4:** Balance each tower whose measured row misses its target row, with that tower's own mechanic levers (never marks edits, one pop per tick, no SOL rate, IFR flares locked); re-run countermx after each round until every row matches IN EVERY CHAPTER (marks.py prints CHAPTERS AGREE). A tower's per-tier tables shape when its strengths show, so a chapter that drifts is moved by the tiers a player holds in it.
+- [ ] **Step 5:** `marks.py --write`, commit `Spire tiers: marks - ...`. Expected: every chapter's measured marks equal the target table; no RULE FAIL. The standing marks command (CLAUDE.md, ARCHITECTURE.md 7.2) becomes the four-chapter one in Task 6. Re-run `tribal.mjs` + `axis.mjs` if levers moved power (Task 4 bounds).
 
 ### Task 6: Ship prep (7.0.0)
 

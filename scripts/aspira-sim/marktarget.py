@@ -18,21 +18,35 @@ import sys
 TYPES = ["swarm", "fast", "shield", "armor"]
 PER_MARK = 20  # as marks.py
 MIN_CHECKED = 2
-leak = {}
+# one window a CHAPTER (owner, 2026-10-25: "make countermx consistent at the 4 different game chapters", ARCHITECTURE.md 5.6): the
+# target is ONE table for the whole game, so its distance is summed over every window the run holds
+by_win, win = {}, None
 for line in open(sys.argv[1]):
+    h = re.match(r"\s*waves (\d+)-(\d+)", line)
+    if h:
+        win = f"{h.group(1)}-{h.group(2)}"
     m = re.match(r"\s+([A-Z]+) spread\s+(\d+)%\s+(\d+)%\s+(\d+)%\s+(\d+)%", line)
     if m:
-        leak[m.group(1).lower()] = dict(zip(TYPES, map(int, m.groups()[1:])))
-KINDS = list(leak)
-col = {t: sum(L[t] for L in leak.values()) / len(leak) for t in TYPES}
-raw = {}
-for k, L in leak.items():
-    D = {t: L[t] - col[t] for t in TYPES}
-    mean = sum(D.values()) / 4
-    raw[k] = [(mean - D[t]) / PER_MARK for t in TYPES]
+        by_win.setdefault(win, {})[m.group(1).lower()] = dict(zip(TYPES, map(int, m.groups()[1:])))
+WINS = list(by_win)
+KINDS = list(by_win[WINS[-1]])
+
+
+def raws_of(leak):
+    col = {t: sum(L[t] for L in leak.values()) / len(leak) for t in TYPES}
+    out = {}
+    for k, L in leak.items():
+        D = {t: L[t] - col[t] for t in TYPES}
+        mean = sum(D.values()) / 4
+        out[k] = [(mean - D[t]) / PER_MARK for t in TYPES]
+    return out
+
+
+RAW = {w: raws_of(by_win[w]) for w in WINS}
+raw = {k: [sum(RAW[w][k][i] for w in WINS) / len(WINS) for i in range(4)] for k in KINDS}  # the chapters' mean, for the print
 ROWS = [r for r in itertools.product(range(-3, 4), repeat=4) if sum(r) == 0 and sum(1 for x in r if x > 0) >= MIN_CHECKED]
 def dist(k, r):
-    return sum(abs(a - b) for a, b in zip(r, raw[k]))
+    return sum(abs(a - b) for w in WINS for a, b in zip(r, RAW[w][k]))
 
 
 
@@ -81,7 +95,7 @@ def fmt(r):
     return " ".join(f"{x:+d}" if x else " 0" for x in r)
 
 
-print("raw marks (measured, unrounded):", " ".join(TYPES), "  | measured marks")
+print(f"chapters {', '.join(WINS)}; raw marks (measured, unrounded, the chapters' mean):", " ".join(TYPES), "  | measured marks")
 for k in KINDS:
     print(f"  {k.upper()}  " + " ".join(f"{x:+.1f}" for x in raw[k]) + "  | " + fmt([meas[k][t] for t in TYPES]))
 for n, (neg, rows) in enumerate(sorted(top, key=lambda x: (round(-x[0], 6), moved(x[1])))):

@@ -9,11 +9,17 @@ import re
 import sys
 
 TYPES = ["swarm", "fast", "shield", "armor"]
-leak = {}
+# THE FOUR CHAPTERS (owner, 2026-10-25: "make countermx consistent at the 4 different game chapters" - ARCHITECTURE.md 5.6's
+# sections): a countermx run may hold one window a chapter (WINDOWS=13-19:p,41-49:p,71-79:p,101-109:p). Each window's marks print
+# on their own, then whether every chapter agrees; the build card's marks (--write) come from the leaks POOLED over the windows
+by_win, win = {}, None
 for line in open(sys.argv[1]):
+    h = re.match(r"\s*waves (\d+)-(\d+)", line)
+    if h:
+        win = f"{h.group(1)}-{h.group(2)}"
     m = re.match(r"\s+([A-Z]+) spread\s+(\d+)%\s+(\d+)%\s+(\d+)%\s+(\d+)%", line)
     if m:
-        leak[m.group(1).lower()] = dict(zip(TYPES, map(int, m.groups()[1:])))
+        by_win.setdefault(win, {})[m.group(1).lower()] = dict(zip(TYPES, map(int, m.groups()[1:])))
 
 
 def split(n, w):
@@ -34,31 +40,46 @@ def split(n, w):
 # dashes is fine) - and rounded so each row still sums to 0 (largest remainder). The old fixed 3 checks / 3 x's and the STOPS check
 # are gone: both broke the sums.
 PER_MARK = 20
-col = {t: sum(L[t] for L in leak.values()) / len(leak) for t in TYPES}
-marks, raws = {}, {}
-for k, L in leak.items():
-    D = {t: L[t] - col[t] for t in TYPES}
-    mean = sum(D.values()) / 4
-    raw = {t: (mean - D[t]) / PER_MARK for t in TYPES}
-    m = {t: int(raw[t] // 1) for t in TYPES}
-    for t in sorted(TYPES, key=lambda t: m[t] - raw[t])[:-sum(m.values())]:
-        m[t] += 1
-    marks[k], raws[k] = m, raw
-# the columns too: while a type's column is off 0, move one mark between it and a type off the other way, in the row where that
-# costs least (the cells nearest their next rounding) - a row keeps its 0
-while True:
-    cs = {t: sum(m[t] for m in marks.values()) for t in TYPES}
-    hi, lo = max(TYPES, key=cs.get), min(TYPES, key=cs.get)
-    if cs[hi] <= 0:
-        break
-    def cost(k):
-        m, r = marks[k], raws[k]
-        return abs(m[hi] - 1 - r[hi]) - abs(m[hi] - r[hi]) + abs(m[lo] + 1 - r[lo]) - abs(m[lo] - r[lo])
-    k = min(marks, key=cost)
-    marks[k][hi] -= 1
-    marks[k][lo] += 1
+
+
+def marks_of(leak):
+    col = {t: sum(L[t] for L in leak.values()) / len(leak) for t in TYPES}
+    marks, raws = {}, {}
+    for k, L in leak.items():
+        D = {t: L[t] - col[t] for t in TYPES}
+        mean = sum(D.values()) / 4
+        raw = {t: (mean - D[t]) / PER_MARK for t in TYPES}
+        m = {t: int(raw[t] // 1) for t in TYPES}
+        for t in sorted(TYPES, key=lambda t: m[t] - raw[t])[:-sum(m.values())]:
+            m[t] += 1
+        marks[k], raws[k] = m, raw
+    # the columns too: while a type's column is off 0, move one mark between it and a type off the other way, in the row where that
+    # costs least (the cells nearest their next rounding) - a row keeps its 0
+    while True:
+        cs = {t: sum(m[t] for m in marks.values()) for t in TYPES}
+        hi, lo = max(TYPES, key=cs.get), min(TYPES, key=cs.get)
+        if cs[hi] <= 0:
+            break
+        def cost(k):
+            m, r = marks[k], raws[k]
+            return abs(m[hi] - 1 - r[hi]) - abs(m[hi] - r[hi]) + abs(m[lo] + 1 - r[lo]) - abs(m[lo] - r[lo])
+        k = min(marks, key=cost)
+        marks[k][hi] -= 1
+        marks[k][lo] += 1
+    return marks, raws
+
+
+windows = list(by_win)
+leak = {k: {t: sum(by_win[w][k][t] for w in windows) / len(windows) for t in TYPES} for k in by_win[windows[-1]]}  # pooled
+per_win = {w: marks_of(by_win[w])[0] for w in windows}
+if len(windows) > 1:
+    for w in windows:
+        print(f"waves {w}:", " | ".join(f"{k.upper()} " + " ".join(f"{m[t]:+d}" for t in TYPES) for k, m in per_win[w].items()))
+    bad = [k for k in leak if len({tuple(per_win[w][k][t] for t in TYPES) for w in windows}) > 1]
+    print("CHAPTERS AGREE" if not bad else "CHAPTERS DIFFER: " + ", ".join(k.upper() for k in bad))
+marks, raws = marks_of(leak)
 for k, m in marks.items():
-    print(k.upper(), leak[k], "->", " ".join(f"{t}:{'+' if c > 0 else ''}{c}" for t, c in m.items() if c))
+    print(k.upper(), {t: round(v) for t, v in leak[k].items()}, "->", " ".join(f"{t}:{'+' if c > 0 else ''}{c}" for t, c in m.items() if c))
 dup = [k for k in marks if [marks[j] for j in marks].count(marks[k]) > 1]
 if dup:
     print("DUPLICATE marks:", ", ".join(k.upper() for k in dup))
@@ -75,7 +96,7 @@ if "--write" in sys.argv[2:]:
     chooser, ver = web / "aspira-chooser.js", (web / "aspira-version.txt").read_text().strip()
     order = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]
     body = ", ".join(f"{k}: {{ " + ", ".join(f"{t}: {marks[k][t]}" for t in TYPES if marks[k][t]) + " }" for k in order if k in marks)
-    line = f"const VS_MARKS = {{ {body} }}; /* regenerated {datetime.date.today()} v{ver} (marks.py --write, countermx 61-69 @6pts) */"
+    line = f"const VS_MARKS = {{ {body} }}; /* regenerated {datetime.date.today()} v{ver} (marks.py --write, countermx " + ",".join(windows) + ", pooled) */"
     src = chooser.read_text()
     new, n = re.subn(r"^const VS_MARKS = .*$", lambda _: line, src, count=1, flags=re.M)
     assert n == 1, "VS_MARKS line not found"
