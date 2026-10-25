@@ -15,7 +15,7 @@ export const FLOOR_HPX = 0.001;
 const STOPS = [1, 2, 3, 4], lvlAt = k => 1 + [0, 1, 3, 5, 7][k]; // (the ladder level of tier k: aspira-capstone.js TIER_STEPS 1 2 2 2)
 
 export default async function task({ kind, axis, k, seed, hpx, patch = "" }) {
-  const g = makeGame(seed, `for (const id in ENEMIES) ENEMIES[id].hp *= ${hpx};\n` + patch); g.reset(); // patch: a stat under fit (holdfit.mjs)
+  const g = makeGame(seed, `for (const id in ENEMIES) ENEMIES[id].hp *= ${hpx};\n` + patch); g.reset(); // patch: a stat under fit (was holdfit.mjs, archived 2026-10-25)
   g.run(`G.money = 1e12; G.started = true; G.wave = ${FROM - 1}; G.lives = 1e6;`);
   const t = g.place(kind, 0);
   if (axis && k) { t.skills = { [axis]: k }; t.lvl = lvlAt(k); }

@@ -40,9 +40,10 @@ are this repo's gitignored `data/aspira-sfx/`.
   `python3 scripts/aspira-sim/marks.py cmx.out --write`, and ship the new marks with the patch. ARCHITECTURE.md §7.2.
 - **Every tower beats or at least helps against two or more enemy types** (owner, 2026-10-19; a check of any size counts): `marks.py` prints `RULE FAIL` for a tower with checks on one
   type alone - fix it with balance, never by editing the marks.
-- **Tiers are purchases** (owner, 2026-10-19: "only 4 tiers now, tier 4 is the capstone / don't sim the intermediate tiers"; 2026-10-23: "drop all the
-  god damn levels between that can not be bought"): an axis is 0, I, II, III or IV (`SKILL_TIERS`) and every per-tier table has those five values;
-  a script that sets skills by hand spends points through `scripts/aspira-sim/stops.mjs`.
+- **Tiers are purchases** (owner, 2026-10-23: "drop all the god damn levels between that can not be bought"; tier redesign 2026-10-24): an axis
+  is 0, I, II, III, IV or V (`SKILL_TIERS`; V the capstone, one a tower; 13 purchases a tower) and every per-tier table has those six values;
+  damage, rate and range come from the tower's total level on one stat curve (`aspira-curve.js`). A script that sets skills by hand spends
+  points through `scripts/aspira-sim/stops.mjs`. ARCHITECTURE.md §4.2, §4.2b.
 - **Tests:** from exec-fn, `.venv/bin/pytest apps/spire/tests` (the shared
   fixtures live in exec-fn's root `conftest.py`).
 - **Diagrams:** mermaid source in `docs/arch/*.mmd`; staging one makes exec-fn's

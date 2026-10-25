@@ -25,7 +25,7 @@ caps it) and the single-threaded ones can run side by side.
 | `chartvalue.mjs [seeds] [out.jsonl]` | each kind's 10 ways to spend its 6 chart points vs 2/2/2 (team damage + leaks over waves FROM..TO) and the value of every axis tier |
 | `corevalue.mjs [seeds] [out.jsonl]` | each core power (and all three) vs none, picked at the boss picks and used in a real game |
 | `late.mjs [evals] [seeds] [out.jsonl]` | late game from wave START, every open slot maxed, every core power: ten parallel hill-climbs; the mono starts show where each kind walls |
-| `wavebal.mjs` / `typebal.mjs` / `bossbal.mjs` / `arcfit.mjs` | the fits (wave counts, type counts, boss HP, ARC tiers) - headers say how |
+| `wavebal.mjs` / `typebal.mjs` / `bossbal.mjs` | the fits (wave counts, type counts, boss HP) - headers say how. The per-axis damage fits (`arcfit`, `holdfit`, `solfit`, `solmatch`, `tierfit`, `applyfit.py`) went to the local `.archaeology/` with the tier redesign (2026-10-25): damage is the stat curve's |
 | `buildsearch.mjs` | hill-climb the build plan that banks the most by wave 30 |
 | `stuck.mjs [toWave=60]` | STUCK TOWERS (2026-10-13, part of the battery): each trio to wave 60 with the gliding player - stalled glide steps, give-ups in a row, illegal spots and their longest run; prints STUCK and exits 1 when a tower stalls, gives up twice running or overlaps past 0.5 s |
 | `tribal.mjs [out.jsonl]` | EVERY TRIO of the six kinds (all 20), PERFECT play (the smart saver, both powers) to wave 120, over `SEEDS` (default 1,2): wins, wave reached, lives left, rewinds. The input of the trio-scale method (ARCHITECTURE.md 4.6d); env `KINDS`, `SEEDS`, `ASPIRA_PATCH`, `ASPIRA_WEB`. (`trios.mjs` above walks only the first four kinds.) |

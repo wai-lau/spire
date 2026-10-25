@@ -147,14 +147,16 @@ battery. The axes add MECHANICS; one may nudge a stat up, never down, at most `N
 all (`nudge`; the axes' range factors in `skillMove`, ARC Conductivity's rate). SOL's curve rate
 is flat (its rate never rises). Per-axis raw damage tables are gone; a sub-attack's factor is
 one constant (`CRR_TETHER_K0`, `FRZ_RIME_BITE0`, `ACD_POOL_HEAT`, `GRV_PELLET_K0`,
-`GRV_INNER_K0`, `IFR_ROUTE_K0`, `IFR_TICK_K0`). Each stats function sets `dmgCurve` /
+`GRV_INNER_K0`, `IFR_ROUTE_K0`, `IFR_TICK_K0`), and so is any factor on the tower's own damage, on from its first tier
+(`SOL_CRIT_K`, `SOL_SCORCH_K`, `IFR_FIRE_HK`, `IFR_HF_FK`). Per-tier tables that stay hold counts, shapes, reaches and
+debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the tower's own axes only. Each stats function sets `dmgCurve` /
 `rateCurve` (the curve plus nudges) before a mechanic splits the hit.
 
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
 |---|---|---|---|---|
 | ARC | one beam, no chain | Conductivity: one jump | Voltage: one fork (`VOLT_FORK`) | Capacitance: one charge |
 | SOL | one beam, stops at its enemy (`SOL_PASS_N`) | Focus: passes one more | Reflection: one bounce (`SOL_FAN_BY`) | Breach: a scorch only (strip from II) |
-| CRR | one interceptor, one bolt a volley | Hangar: two, one held | Tether: one tethered drone (`CRR_TETHER_N`) | Armament: two bolts (`CRR_BOLTS_BY`) |
+| CRR | one interceptor, one bolt a volley | Hangar: two, one held | Tether: one tethered drone (`CRR_TETHER_N`; the first interceptor out, `carTethered`) | Armament: two bolts (`CRR_BOLTS_BY`) |
 | FRZ | a slowing circle, no tick | Sublimation: the tick, more the slower | Permafrost: a cracking pulse | Moons: one moon |
 | ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Contagion: ray pools that slow (`ACD_POOL_SLOW`); kill pools gone |
 | GRV | a nova alone (no sphere after it) | Void: the hole + armor strip | Nova (id `supernova`): the slowing aura | Radiation: pellets, brighter |
@@ -751,7 +753,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | the trio scale (§4.6d): all 20 trios of the six kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
 | the economy check behind the step price (§4.2) and the build card marks (§7.2) | `eco`, `marks.py` (from a `countermx` run) |
 | the counter matrix | `countermx` |
-| an axis tier's value; a buy's payoff | `isolation`, `tierfit`, `chartvalue`, `payoff` (each buy alone: gain, price, gain a credit), `buildlog` (purchases by wave) |
+| an axis tier's value; a buy's payoff | `isolation`, `chartvalue`, `payoff` (each buy alone: gain, price, gain a credit), `buildlog` (purchases by wave) |
 | bosses and fleets | `bossbal`, `bossfleet`, `bossvs` |
 | type and wave counts | `typebal`, `wavebal` |
 | the core | `corevalue`, `corepower` |
@@ -773,7 +775,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | code | **no mid-line `//` comment** in the game JS or in a GLSL expression line; use `/* */` (it swallows the rest of the line; `lint-swallowed.py` flags it) |
 | code | one global scope, ESLint `no-undef` off: a dropped `const` throws at run time; verify placement in a browser or the smoke after touching `placeTower`. A new top-level name must not collide with another file's (GRV's projectile grid is `projGrid` / `enemiesNear` because `aspira-acid.js` owns `enemyGrid`) |
 | code | UI-only code that logic reaches needs a `typeof X === "function"` guard; a new logic script goes in `sim.mjs` `FILES`; a browser global needs a `dom.mjs` stub |
-| code | every per-tier table has exactly 4 entries (0 I II III) before `aspira-capstone.js` loads, 5 after; a new table or axis needs a `CAPSTONE_NUM` entry and a `CAPSTONE_TIERS` name |
+| code | every per-tier table has exactly 4 entries (written as the old 0 I II III) before `aspira-capstone.js` loads, 6 after (the capstone V pushed, tier I inserted by `tierMid`); tier 0 and tier I are then set by hand in `aspira-tier01.js`. A new table or axis needs a `CAPSTONE_NUM` entry and a `CAPSTONE_TIERS` name; a table whose every tier holds one value is a constant, not a table |
 | code | `fixedRand(wave, salt)`, never `Math.random`, for anything shaping a wave (a changed salt changes the sequence for everyone and every sim seed) |
 | code | whole numbers: HP, armor, hits floored, a landed hit >= 1, fractions banked; a spawned enemy never has 0 HP |
 | code | `G` stays structured-cloneable: no functions, DOM nodes or closures (autosave) |
