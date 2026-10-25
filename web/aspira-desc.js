@@ -17,8 +17,10 @@ const DESCRIBE = {
     // (owner, 2026-10-22, shorter): "Six bolts of lightning, each forking 4 ways four times, dealing 160% damage each fork. Lightning can
     // strike the same place more than once. Hits leave six charges that slow and deal damage when popped." - every number read live
     const c = sk.conductivity || 0, v = sk.voltage || 0, z = sk.capacitance || 0, sh = ARC_CONDUCTIVITY[c], n = z ? ARC_CAPACITANCE[z].n : 0;
-    return (sh.s > 1 ? cap(NUM_WORD[sh.s]) + " bolts of lightning, each forking " : "A bolt of lightning, forking ") + sh.f + " ways" + ARC_LAYERS[sh.j] + ", dealing " +
-      Math.round(ARC_VOLTAGE_FALL[v] * 100) + "% damage each fork, struck twice in a row." + (sh.v ? " Lightning can strike the same place more than once." : "") +
+    const f = VOLT_FORK[v], layers = Math.max(sh.j, f > 1 ? 1 : 0), TIMES = ["", " once", " twice"]; // tier 0: one beam, no chain (tier redesign 2026-10-24)
+    const tree = !layers ? "" : f > 1 ? ", forking " + f + " ways" + ARC_LAYERS[layers] + ", dealing " + Math.round(ARC_VOLTAGE_FALL[v] * 100) + "% damage each fork"
+      : ", jumping on" + (TIMES[layers] || " " + NUM_WORD[layers] + " times") + ", dealing " + Math.round(ARC_VOLTAGE_FALL[v] * 100) + "% damage each jump";
+    return (sh.s > 1 ? cap(NUM_WORD[sh.s]) + " bolts of lightning" : "A bolt of lightning") + tree + ", struck twice in a row." + (sh.v ? " Lightning can strike the same place more than once." : "") +
       (n ? " Hits leave " + (n > 1 ? NUM_WORD[n] + " charges that slow and deal" : "a charge that slows and deals") + " damage when popped." : "");
   },
   // FRZ (owner, 2026-10-22, shorter): "Emits an aura that slows enemies by 67% and hurts more the slower they are. Enemies in the aura take

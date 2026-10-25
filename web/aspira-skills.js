@@ -117,15 +117,14 @@ function skillMove(t, s) {
 // the white core drawn in its arcs (aspira-draw.js), never a rule
 // ARC's HIT, SPREAD over its three axes (owner, 2026-10-15: "spread the damage across the upgrades, but keep it mainly in
 // voltage" -> "spread out a bit more" - a build without Voltage hit for 24 whatever it bought): the old Voltage curve's log shared
-// 50% Voltage, 25% each Conductivity and Capacitance (ARC_SIDE_DMG); a full ARC (Voltage VI, the others V) x53.5, was x69.9 on Voltage alone
-const ARC_SIDE_DMG = [1, 1.38, 1.99, 2.04, 2.08]; // Conductivity's and Capacitance's share, by tier (its VI here)
-const ARC_VOLTAGE_DMG = [1, 1.91, 26.595, 39.385] /* was 1 3.64 8.16 15.55 26.14 40.76 (Voltage alone) */ /* x (1 + 0.1 tier) for the armor pierce it lost (owner, 2026-10-13: "arc voltage should just increase damage instead of pierce"; was 3.31 6.8 11.96 18.67 27.17) */ /* x (1 + 0.6 tier) (2026-10-11, roles: TEAM countermx 81-89 - Voltage leaks 4% of armor, Conductivity 10, Capacitance 12; was 2.068 3.093 4.272 5.492 6.793) */, ARC_VOLTAGE_FALL = [0.5, 0.65, 1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
+// 50% Voltage, 25% each Conductivity and Capacitance (ARC_SIDE_DMG); a full ARC (Voltage VI, the others V) x53.5, was x69.9 on Voltage alone - ARC_SIDE_DMG and ARC_VOLTAGE_DMG GONE (tier redesign 2026-10-24): the hit is the stat curve's (aspira-curve.js)
+const ARC_VOLTAGE_FALL = [0.5, 0.65, 1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
 // Conductivity's shape by tier (owner): strikes (separate first targets),
 // jumps, and forks per jump - 3, 7, 13, then two separate 13-hit attacks -
 // and r, how much further each JUMP reaches (owner; Voltage owns the tower's range)
 // d: a damage multiplier, FITTED so each tier deals +25% / +50% / +100% over
 // the base (owner), like Voltage's (scripts/aspira-sim: arcfit)
-let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 1, r: 0.7, d: 0.5, v: 0 }, { s: 1, j: 2, f: 1, r: 0.84, d: 0.5, v: 0 }, { s: 2, j: 3, f: 1, r: 1.12, d: 1.01, q: 1.225, v: 1 }, { s: 3, j: 3, f: 2, r: 1.68, d: 1.525, q: 1.155, v: 3 }] /* the SHIELD POPPER (owner, 2026-10-24, marks target C: "A4 ... seem OK"): reach x0.7, two forks fewer (at least 1), d x0.5 - it no longer clears every crowd; were f 2 2 3 4, r 1 1.2 1.6 2.4, d 1 1 2.02 3.05 */ /* strikes 3 / 4 -> 2 / 3, the lost share split root-wise into q (fire rate) and d, d x1.1 (owner, 2026-10-24: "conductivity hit counts should not go up so fast" / "maybe conductivity increases damage and fire rate"; d was 1.5 / 2.4) */ /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
+let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 1, r: 0.7, v: 0 }, { s: 1, j: 2, f: 1, r: 0.84, v: 0 }, { s: 2, j: 3, f: 1, r: 1.12, q: 1.225, v: 1 }, { s: 3, j: 3, f: 2, r: 1.68, q: 1.155, v: 3 }] /* the SHIELD POPPER (owner, 2026-10-24, marks target C: "A4 ... seem OK"): reach x0.7, two forks fewer (at least 1), d x0.5 - it no longer clears every crowd; were f 2 2 3 4, r 1 1.2 1.6 2.4, d 1 1 2.02 3.05 */ /* strikes 3 / 4 -> 2 / 3, the lost share split root-wise into q (fire rate) and d, d x1.1 (owner, 2026-10-24: "conductivity hit counts should not go up so fast" / "maybe conductivity increases damage and fire rate"; d was 1.5 / 2.4) */ /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
 // v: how many times a bolt may RETURN to an enemy it already struck (owner, 2026-10-08): from III a jump may hit any
 // enemy but the one it leaps from - III once more (2 hits an enemy), IV twice (3), V three times (4)
 // Capacitance by tier (owner, 2026-10-07): the charge, x the hit that left it, and
@@ -152,9 +151,10 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // type): its arcs ignore this share of armor - Voltage is ARC's armor answer, Conductivity the shields, Capacitance the fast
 function arcSkillStats(t, s, b) {
   const c = skillOf(t, "conductivity"), v = skillOf(t, "voltage"), z = skillOf(t, "capacitance");
-  s.dmg = b.dmg * ARC_VOLTAGE_DMG[v] * ARC_SIDE_DMG[c] * ARC_SIDE_DMG[z] * ARC_CONDUCTIVITY[c].d * ARC_ECHO_K; s.range = b.range * RANGE_BONUS;
-  const sh = ARC_CONDUCTIVITY[c]; // Conductivity: strikes, jumps AND forks
-  s.arcRange = ARC_JUMP_BASE * ARC_VOLTAGE_JUMP[v] * sh.r; s.rate = b.rate * (sh.q || 1); s.targets = sh.s; s.layers = sh.j; s.branch = sh.f; s.revisit = sh.v || 0;
+  curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24; was ARC_VOLTAGE_DMG x ARC_SIDE_DMG x2 x Conductivity's d)
+  const sh = ARC_CONDUCTIVITY[c]; // Conductivity: strikes and jumps; Voltage the forks (VOLT_FORK)
+  s.rate *= nudge(sh.q || 1); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.dmg *= ARC_ECHO_K; // (dmgCurve / rateCurve: the curve plus nudges, before a mechanic splits it)
+  s.arcRange = ARC_JUMP_BASE * ARC_VOLTAGE_JUMP[v] * sh.r; s.targets = sh.s; s.branch = VOLT_FORK[v]; s.layers = Math.max(sh.j, s.branch > 1 ? 1 : 0); s.revisit = sh.v || 0; // a fork with no chain splits the strike once
   s.carry = VOLT_CARRY_N[v]; s.arcFall = ARC_VOLTAGE_FALL[v]; s.arcShrink = ARC_SHRINK; s.charge = ARC_CAPACITANCE[z]; s.statSlow = ARC_STAT_SLOW[z]; s.skill = true;
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
@@ -200,6 +200,9 @@ function fireSkillChain(t, st, e, seen) {
 // what the kill did not need on to the nearest enemy within VOLT_CARRY_R x the jump reach, up to VOLT_CARRY_N hops by tier - its
 // single-target hit had nothing to spend on a swarm (countermx N=1: Voltage 71% leaked, Conductivity 35)
 const VOLT_CARRY_N = [0, 1, 3, 6, 8], VOLT_CARRY_R = 0.8;
+// VOLTAGE FORKS (tier redesign, owner 2026-10-24: "Voltage determines forking, Conductivity determines chaining"): ways each jump
+// splits, by Voltage tier 0..V - tier I one fork (two ways); the forks Conductivity held (f 1 1 1 2, V 2) moved here
+const VOLT_FORK = [1, 2, 2, 2, 3, 3];
 function voltCarry(c, e, left) {
   const seen = new Set([e]);
   for (let k = 0; k < c.st.carry && left > 0; k++) {

@@ -62,8 +62,8 @@ function skillScaleFix(g) {
 // (Armament 38). SOL Breach (81) and ARC's single-target axes stay behind: count-limited, a mechanic question, not a number
 const CAPSTONE_NUM = [
   // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit; Capacitance eight charges
-  [ARC_VOLTAGE_DMG, 51.6 /* the spread hit (aspira-skills.js ARC_SIDE_DMG; was 69.9) */], [ARC_VOLTAGE_FALL, 1.6], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
-  [ARC_CONDUCTIVITY, { s: 4 /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, d: 2.36 /* was 3.5, then 4.72 - the shield popper (aspira-skills.js) */, q: 1.225, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 1.0625 /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
+  [ARC_VOLTAGE_FALL, 1.6], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
+  [ARC_CONDUCTIVITY, { s: 4 /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, q: 1.225, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 1.0625 /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
   // FRZ: Temp a far deeper chill; Rime the fastest, deepest rings; Moons three moons with three moonlets each, burning far harder (capped 2026-10-20)
   [FRZ_TEMP_SLOW, 0.67], [FRZ_TEMP_TICK, 0.0495], [FRZ_BRITTLE, 9.0185], [FRZ_RIME, 0.9], [FRZ_RIME_BITE, 300], [FRZ_RIME_PERIOD, 0.1925] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 1.2],
   [FRZ_MOON_COUNT, 3], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 3], [FRZ_MOON_HIT, 2.75] /* (owner, 2026-10-20: max 3 and 3; were 5 and 6) */,
@@ -142,7 +142,7 @@ function tierMid(a, b) {
 const withTierI = T => [T[0], tierMid(T[0], T[1]), ...T.slice(1)]; // (a new array: a table may be shared)
 for (const entry of CAPSTONE_NUM) if (Array.isArray(entry[0]) && entry[0].length === CAPSTONE_TIER) entry[0].splice(0, entry[0].length, ...withTierI(entry[0]));
 // ...and the tables WRITTEN with their capstone in (not in CAPSTONE_NUM): the same tier I
-const FULL_TIER_TABLES = [ARC_SIDE_DMG, VOLT_CARRY_N, CAP_BURST_K, CRR_HOLD_FRAC];
+const FULL_TIER_TABLES = [VOLT_CARRY_N, CAP_BURST_K, CRR_HOLD_FRAC];
 for (const T of FULL_TIER_TABLES) if (T.length === CAPSTONE_TIER) T.splice(0, T.length, ...withTierI(T));
 for (const kind of Object.keys(SKILL_MOVE)) for (const id of Object.keys(SKILL_MOVE[kind])) if (SKILL_MOVE[kind][id].length === CAPSTONE_TIER) SKILL_MOVE[kind][id] = withTierI(SKILL_MOVE[kind][id]);
 for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1) ax.tiers.unshift({ name: "Spark" }); // (placeholder names)
