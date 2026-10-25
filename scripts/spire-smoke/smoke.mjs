@@ -191,6 +191,20 @@ check("tier I sits between tier 0 and tier II in every table (tier redesign 2026
   })()`);
   return r.length ? "tier I out of place: " + r.slice(0, 6).join(", ") : "";
 });
+check("the build card reads tiers I..V (tier redesign 2026-10-24)", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0];
+    for (let k = 0; k < 5; k++) upgradeTower(t, "focus", true);
+    const out = { focus: skillOf(t, "focus"), offered: skillOptions(t).map(o => o.choice), txt: tierTxt(5), bad: [] };
+    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) for (let k = 0; k <= 5; k++) {
+      const d = describeTower(kind, { [ax.id]: k }); if (/undefined|NaN/.test(d)) out.bad.push(kind + " " + ax.id + " " + k);
+    }
+    return out;
+  })()`);
+  if (r.focus !== 5 || r.offered.includes("focus")) return "focus at " + r.focus + ", still offered: " + r.offered;
+  if (r.txt !== "V") return "tier 5 reads " + r.txt + " on the sliders";
+  return r.bad.length ? "a sentence reads undefined / NaN: " + r.bad.slice(0, 5).join(", ") : "";
+});
 // an enemy held still on lane 0 at about `dist` u from tower t (its lane point nearest that distance); shield / hp settable after
 run(`function ifrNear(type, t, dist) {
   spawnEnemy(type, 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
