@@ -43,13 +43,13 @@ const DESCRIBE = {
       (br ? " Beams break " + dmgUnits(br * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor" + (sc ? " and " + scorch : "") + "." : sc ? " Beams " + scorch + "." : ""); // (owner: "Break X armor and scorch" / "and scorch for ...")
   },
 
-  // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY) and its slow - on the POOLS now (ACD_FLOW_SLOW),
+  // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY), the pools' slow (ACD_POOL_SLOW, Contagion's since the tier redesign),
   // the pools (Contagion: kills leave them too), Corrosion: the armor FLOOR it eats down to (minus the wave's armor, damage() in aspira-game.js) - read live
   acd(sk) {
-    const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0, n = ACD_LINES[f];
-    return "Sprays " + n + " jets of acid that burn hotter the longer they hold an enemy." + (f ? " Jets retain " + Math.round(ACD_FLOW_CARRY[f] * 100) + "% flow between enemies." : "") +
+    const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0, n = ACD_LINES[f]; // tier 0: one ray, no pools (tier redesign 2026-10-24)
+    return "Sprays " + (n > 1 ? n + " jets" : "a jet") + " of acid that burn" + (n > 1 ? "" : "s") + " hotter the longer " + (n > 1 ? "they hold" : "it holds") + " an enemy." + (f ? " Jets retain " + Math.round(ACD_FLOW_CARRY[f] * 100) + "% flow between enemies." : "") +
       (k ? " Jets eat armor down to " + dmgUnits(-armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + ", dropping goo that strips nearby enemies." : "") /* the FLOOR every enemy's armor stops at, the current wave's (owner, 2026-10-22: "boss armor floor to everything" / "the armor value should say the floor") */ +
-      " " + (c ? "Jets and kills" : "Jets") + " leave " + (f ? "slimy acidic pools that slow by " + Math.round(ACD_FLOW_SLOW[f] * 100) + "%" : "acidic pools behind") + " for " + Math.min(POOL_MAX_S, ACD_CONTAGION[c].life) + "s.";
+      (c ? " Jets leave slimy acidic pools that slow by " + Math.round(ACD_POOL_SLOW[c] * 100) + "% for " + Math.min(POOL_MAX_S, ACD_CONTAGION[c].life) + "s." : "");
   },
   // CRR (owner, 2026-10-15): Hangar more interceptors (primes); Tether a slowing, pulsing beam to what it fires at (Chain: on to one more enemy); Armament harder, faster,
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)

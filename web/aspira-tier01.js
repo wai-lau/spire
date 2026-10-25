@@ -15,3 +15,6 @@ SOL_BEAMS[0] = 1; SOL_BEAMS[1] = 1; SOL_REFRACTION[0] = 0; SOL_REFRACTION[1] = 1
 // CRR: one interceptor, no tether, one bolt a volley (CRR_BOLTS_BY); Hangar I two interceptors, one held circling (CRR_HOLD_FRAC's tier I);
 // Tether I one tethered drone (CRR_TETHER_N) at today's base slow, its pulse from II
 CRR_HANGAR[0] = 1; CRR_HANGAR[1] = 2; CRR_TETHER_SLOW[0] = 0; CRR_TETHER_SLOW[1] = 0.35;
+
+// ACD: one acid ray, no pools (ACD_CONTAGION null); Flow I two rays and the carry; Contagion I the ray drips a slowing pool (ACD_POOL_SLOW)
+ACD_LINES[0] = 1; ACD_LINES[1] = 2; ACD_CONTAGION[0] = null;

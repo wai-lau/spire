@@ -71,8 +71,8 @@ const CAPSTONE_NUM = [
   [SOL_BEAMS, 25], [SOL_PASS, 1], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, 6] /* IV: six chains of six (SOL rework, s.fan; three until 2026-10-23) */,
   [SOL_CONE_BY, 12], [SOL_HOP, 0.5], [SOL_CRITMUL, 33], [SOL_BREACH_ARMOR, 3216], [SOL_SCORCH, 1.7], [SOL_REFRACT_POP, 0], [SOL_BREACH_CRIT, 0],
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
-  [ACD_CORROSION_DMG, 26.98], [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9], [ACD_FLOW_SLOW, 0.2], [ACD_SPRAY_MUL, 26.98],
-  [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }], [ACD_PUDDLE_HEAT, 34.17],
+  [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9],
+  [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }],
   // GRV: Void the widest, coldest aura (Event Horizon: a full sphere nearly stops what it holds); Supernova the biggest nova
   // (Hypernova: it tears half the armor away, spheres start heavy); Radiation the most pellets (Hawking: a last burst)
   // CRR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)

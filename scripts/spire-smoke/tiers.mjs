@@ -5,7 +5,7 @@ import path from "node:path";
 import { ROOT, boot, check } from "./harness.mjs";
 
 const { run } = boot();
-const CURVE_DONE = ["arc", "sol", "car", "frz"]; // the kinds whose stats run on the curve (each tower task adds its own)
+const CURVE_DONE = ["arc", "sol", "car", "frz", "acd"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
 check("curve: by total level alone, rising, slightly steepening, tier 0 below today's bare tower (tier redesign 2026-10-24)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
@@ -122,4 +122,20 @@ check("FRZ: tier 0 only slows; Sublimation I hurts, more the slower; Permafrost 
   if (z.frost > 0) return "tier 0 frosted " + z.frost;
   if (!(p.frost > 0 && p.crack > 0)) return "Permafrost I: frost " + p.frost + ", crack " + p.crack + " (expected a pulse's frost that cracks armor - damage() reads it)";
   if (m.moons !== 1) return "Moons I: " + m.moons + " moons";
+});
+
+// ---------- ACD ----------
+towerTierChecks("acd", ["pool", "puddle", "slow", "spread"]);
+check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry; Contagion I a ray-dripped slowing pool, no kill pools; Corrosion I eats armor (tier redesign 2026-10-24)", () => {
+  const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "acd", x: CX, y: CY, lvl: 1 + towerLevel({ skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { lines: s.targets, carry: s.carry, pools: !!s.contagion, slow: s.burnSlow || 0, corrode: s.corrode || 0 }; })()`);
+  const pools = (sk, kill) => run(`(() => { const { t, es } = tierLane("acd", ${JSON.stringify(sk)}, [30, 45]); G.started = true; ${kill ? "es[0].hp = es[0].max = 5;" : ""}
+    let slowed = false; for (let k = 0; k < 240; k++) { step(1 / 60); if (es[1].slowT > 0) slowed = true; } return { n: (t.puddles || []).length, spread: (t.puddles || []).filter(p => p.spread).length, slowed }; })()`);
+  const z = st({}), f = st({ spray: 1 }), c = st({ contagion: 1 }), k = st({ corrosion: 1 });
+  if (z.lines !== 1 || z.pools || z.carry || z.slow) return "tier 0 " + JSON.stringify(z);
+  if (f.lines !== 2 || !(f.carry > 0)) return "Flow I " + JSON.stringify(f);
+  if (!c.pools || !(c.slow > 0)) return "Contagion I " + JSON.stringify(c);
+  if (!(k.corrode > 0)) return "Corrosion I " + JSON.stringify(k);
+  const z0 = pools({}, true), c1 = pools({ contagion: 1 }, true);
+  if (z0.n) return "tier 0 left " + z0.n + " pools";
+  if (!c1.n || c1.spread || !c1.slowed) return "Contagion I pools " + JSON.stringify(c1) + " (expected ray pools that slow, none from kills)";
 });
