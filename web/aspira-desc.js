@@ -5,7 +5,6 @@
 // aspira-skills.js (the simulator too, for scripts/aspira-desc-graph.mjs).
 const cap = s => s[0].toUpperCase() + s.slice(1);
 const NUM_WORD = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
-const ARC_LAYERS = ["", "", " twice", " three times", " four times", " five times"]; // fork layers (ARC_CONDUCTIVITY[c].j); one layer says nothing
 // thematic words where they fit (owner): chill, rime, brittle, moons; rays, refract, pierce; jets, etch.
 // ONLY BEHAVIOUR is told here (owner, 2026-10-07): a tier that just moves a number - harder
 // hits, a colder or wider aura, faster pulses, a stronger acid, more or bigger puddles -
@@ -20,9 +19,11 @@ const DESCRIBE = {
     const f = VOLT_FORK[v], layers = Math.max(sh.j, f > 1 ? 1 : 0), TIMES = ["", " once", " twice"]; // tier 0: one beam, no chain (tier redesign 2026-10-24)
     // (owner, 2026-10-25): "Two bolts of lightning." / "Two bolts of lightning that fork for X% damage after striking." - the double strike
     // is TWO bolts, so every strike counts twice; a fork wider than two names its ways, more than one layer its times
-    const pc = Math.round(ARC_VOLTAGE_FALL[v] * 100) + "% damage after striking";
-    const tree = !layers ? "" : f > 1 ? " that fork" + (f > 2 ? " " + NUM_WORD[f] + " ways" : "") + ARC_LAYERS[layers] + " for " + pc
-      : " that jump on" + (TIMES[layers] || " " + NUM_WORD[layers] + " times") + " for " + pc;
+    // (owner, 2026-10-25): Conductivity "chains" (was "jump on"); Voltage "forks for X% damage every chain"
+    const pc = Math.round(ARC_VOLTAGE_FALL[v] * 100) + "% damage", times = TIMES[sh.j] || " " + NUM_WORD[sh.j] + " times";
+    const fork = " fork" + (f > 2 ? " " + NUM_WORD[f] + " ways" : "") + " for " + pc + " every chain";
+    const tree = !layers ? "" : f > 1 ? (sh.j ? " that chain" + times + " and" + fork : " that" + fork)
+      : " that chain" + times + " for " + pc + " after striking";
     return cap(NUM_WORD[2 * sh.s]) + " bolts of lightning" + tree + "." + (sh.v ? " Lightning can strike the same place more than once." : "") +
       (n ? " Hits leave " + (n > 1 ? NUM_WORD[n] + " charges that slow and deal" : "a charge that slows and deals") + " damage when popped." : "");
   },
@@ -31,7 +32,7 @@ const DESCRIBE = {
   // current wave - owner: "just put the actual current armor number" - FRZ_RIME_CRACK x armorRefOf, as fully frosted) / Moons: the moons and their satellites (owner: "satellites instead of moonlets") - every number read live
   frz(sk) {
     const tp = sk.temp || 0, rm = sk.rime || 0, mo = sk.moons || 0, pct = x => Math.round(x * 100) + "%", mn = FRZ_MOON_COUNT[mo], sub = FRZ_SUBMOON_N[mo];
-    return "Emits an aura that slows enemies by " + pct(FRZ_TEMP_SLOW[tp]) + (tp ? " and hurts more the slower they are." : " and nips them.") + /* tier 0 slows and nips (owner, 2026-10-25: FRZ_NIP) */
+    return "Emits an aura that slows enemies by " + pct(FRZ_TEMP_SLOW[tp]) + (tp ? " and hurts more the slower they are." : " and deals " + pct(FRZ_NIP) + " damage.") + /* tier 0 slows and nips (owner, 2026-10-25: "slows and deals X% damage" - FRZ_NIP, a share of the full chill) */
       (FRZ_BRITTLE[tp] > 1 ? " Enemies in the aura take " + pct(FRZ_BRITTLE[tp] - 1) + " more damage." : "") +
       (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost permanently slow by " + pct(FRZ_RIME[rm]) + " and break up to " + dmgUnits(FRZ_RIME_CRACK[rm] * armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + " armor on every hit." : "") +
       (mn ? " " + (mn > 1 ? cap(NUM_WORD[mn]) + " moons copy" : "A moon copies") + " the aura" + (sub ? ", each with " + NUM_WORD[sub] + " satellite" + (sub > 1 ? "s" : "") : "") + "." : "");
