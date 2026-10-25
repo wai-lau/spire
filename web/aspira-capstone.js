@@ -43,10 +43,13 @@ function nextBuy(t) {
 const levelsFor = (t, add) => SKILL_TREES[t.kind].reduce((a, ax) => a + stepsFor(skillOf(t, ax.id), skillOf(t, ax.id) + (add[ax.id] || 0)), 0);
 // OLD SAVES (owner, 2026-10-23): a run saved before the tiers became purchases holds axis levels 0..6 (old 2 / 4 read I / II); one saved now
 // is stamped g.skillScale = SKILL_SCALE (aspira-autosave.js), so a save is never read twice. g.towers[].skills is all there is to fix
-const SKILL_SCALE = 2, OLD_TIER = [0, 1, 1, 2, 2, 3, 4];
+// ...and a 6.15 save (skillScale 2, tiers 0..IV) reads every bought tier ONE UP, tier I taken on its way (tier redesign 2026-10-24); an
+// older one goes through OLD_TIER first
+const SKILL_SCALE = 3, OLD_TIER = [0, 1, 1, 2, 2, 3, 4], tierUp = k => (k ? k + 1 : 0);
 function skillScaleFix(g) {
   if (g.skillScale === SKILL_SCALE) return g;
-  for (const t of g.towers || []) if (t.skills) for (const id of Object.keys(t.skills)) t.skills[id] = OLD_TIER[t.skills[id]] ?? 0;
+  const fix = g.skillScale === 2 ? tierUp : k => tierUp(OLD_TIER[k] ?? 0);
+  for (const t of g.towers || []) if (t.skills) { for (const id of Object.keys(t.skills)) t.skills[id] = fix(t.skills[id]); if (t.lvl != null) t.lvl = 1 + Object.values(t.skills).reduce((a, b) => a + b, 0); } // t.lvl: the new ladder's step, a purchase each
   g.skillScale = SKILL_SCALE;
   return g;
 }

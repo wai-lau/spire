@@ -165,13 +165,16 @@ check("tiers are purchases (owner, 2026-10-23): five slots in every per-tier tab
     G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0]; G.money = 1e9;
     for (let k = 0; k < 5; k++) { const lvl = t.lvl, m = G.money; upgradeTower(t, "focus", true); out.price.push([skillOf(t, "focus"), t.lvl - lvl, Math.round(m - G.money) === skillPointsCost({ ...t, lvl }, t.lvl - lvl)]); }
     for (let k = 0; k < 4; k++) { upgradeTower(t, "refraction", true); upgradeTower(t, "breach", true); } out.full = [t.lvl, nextBuy(t)];
-    const g = { towers: [{ skills: { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6 } }] }; skillScaleFix(g); out.once = JSON.stringify(g.towers[0].skills); skillScaleFix(g); out.twice = JSON.stringify(g.towers[0].skills);
+    const g = { towers: [{ skills: { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6 } }] }; skillScaleFix(g); out.once = JSON.stringify(g.towers[0].skills); skillScaleFix(g); out.twice = JSON.stringify(g.towers[0].skills); const g2 = { skillScale: 2, towers: [{ skills: { a: 0, b: 1, c: 2, d: 3, e: 4 } }] }; skillScaleFix(g2); out.s2 = JSON.stringify(g2.towers[0].skills); skillScaleFix(g2); out.s2twice = JSON.stringify(g2.towers[0].skills); const g3 = { skillScale: 2, towers: [{ kind: "arc", lvl: 18, skills: { conductivity: 4, voltage: 3, capacitance: 3 } }] }; skillScaleFix(g3); out.s3 = [g3.towers[0].lvl, nextBuy(g3.towers[0])];
     return out;
   })()`);
   if (r.len.some(n => n < 4 || n > 6)) return "a per-tier table or name list out of range: " + r.len; // (exact lengths: "tier I sits between ...")
   if (JSON.stringify(r.price) !== JSON.stringify([[1, 1, true], [2, 1, true], [3, 1, true], [4, 1, true], [5, 1, true]])) return "a buy's tier / ladder steps / price: " + JSON.stringify(r.price) + " (expected tiers 1..5, one step each)";
   if (JSON.stringify(r.full) !== "[14,null]") return "a full tower (5 + 4 + 4 buys) reads lvl / next buy " + JSON.stringify(r.full) + " (expected 14, none)";
-  if (r.once !== '{"a":0,"b":1,"c":1,"d":2,"e":2,"f":3,"g":4}') return "an old save's levels read " + r.once + " (expected 0 1 1 2 2 3 4)";
+  if (r.once !== '{"a":0,"b":2,"c":2,"d":3,"e":3,"f":4,"g":5}') return "a pre-2026-10-23 save's levels read " + r.once + " (expected 0 2 2 3 3 4 5: old slots to tiers, then one up - tier redesign 2026-10-24)";
+  if (r.s2 !== '{"a":0,"b":2,"c":3,"d":4,"e":5}') return "a 6.15 save (tiers 0..IV) reads " + r.s2 + " (expected 0 2 3 4 5: every bought tier one up)";
+  if (r.s2twice !== r.s2) return "a 6.15 save is read twice: " + r.s2twice;
+  if (JSON.stringify(r.s3) !== "[14,null]") return "a 6.15 full ARC (IV / III / III, lvl 18) resumes at lvl / next buy " + JSON.stringify(r.s3) + " (expected 14, none: lvl = 1 + purchases on the new ladder)";
   if (r.twice !== r.once) return "a save is read twice: " + r.twice;
   return "";
 });
