@@ -245,3 +245,8 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
     t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
   if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });
+check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightning.\" / \"... that fork for X% damage after striking.\"", () => {
+  const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 1 }), Math.round(ARC_VOLTAGE_FALL[1] * 100)]`);
+  if (r[0] !== "Two bolts of lightning.") return "tier 0: " + r[0];
+  if (r[1] !== "Two bolts of lightning that fork for " + r[2] + "% damage after striking.") return "Voltage I: " + r[1];
+});
