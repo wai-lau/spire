@@ -7,14 +7,17 @@
 // hi: MEASURED on the old tables (the mean of the three V/IV/IV builds, 2026-10-24), floored at x2 where the old damage sat in
 // per-hit K tables (FRZ, SOL, GRV) and x20 for IFR (its meteor's x53 at the top) - PLACEHOLDERS, the balance battery fits them
 const STAT_CURVE = {
-  arc: { dmg: [0.8, 163], rate: [1, 1.18], range: [1, 1.28] },
+  arc: { dmg: [0.95, 163], rate: [1, 1.18], range: [1, 1.28] },
   frz: { dmg: [0.8, 2], rate: [1, 1], range: [1, 1.5] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
-  sol: { dmg: [0.8, 2], rate: [1, 1], range: [1, 1.5] }, // never raise SOL's fire rate (owner, 2026-10-23)
+  sol: { dmg: [0.95, 2], rate: [1, 1], range: [1, 1.5] }, // never raise SOL's fire rate (owner, 2026-10-23)
   acd: { dmg: [0.8, 16.2], rate: [1, 1], range: [1, 1.37] },
   grv: { dmg: [0.8, 2], rate: [1, 4.76], range: [1, 1.36] },
-  car: { dmg: [0.8, 20300], rate: [1, 1], range: [1, 1] },
-  ifr: { dmg: [0.8, 20], rate: [1, 2.22], range: [1, 1.27] },
+  car: { dmg: [0.8, 20300], rate: [2, 2], range: [1, 1] },
+  ifr: { dmg: [0.8, 20], rate: [2.5, 2.5], range: [1, 1.27] },
 };
+// lo: the DUO RULE's (plan 3, 2026-10-25 - scripts/aspira-sim/duo0.mjs): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
+// and CRR's tier 0 RATE x2.5 / x2 (one meteor, one interceptor: a third and two thirds of the old bare tower's hits) - each still below
+// the old bare tower in all, with the waves 1-12 ease (aspira-waves.js) and FRZ's nip (aspira-frz.js)
 const CURVE_P = 1; // the steepening: the level's share is (L / SKILL_POINTS) ** CURVE_P before the geometric step (1 = evenly geometric)
 const NUDGE_MAX = 1.2; // an axis's stat nudge, all of a tower's together: x1 .. x1.2 (spec, Calls for the build)
 const nudge = x => Math.min(NUDGE_MAX, Math.max(1, x));

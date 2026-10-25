@@ -111,12 +111,15 @@ check("CRR: tier 0 one interceptor, no tether, one bolt a volley; Hangar I two, 
 
 // ---------- FRZ ----------
 towerTierChecks("frz", ["hurts", "pulse", "moon", "more damage"]);
-check("FRZ: tier 0 only slows; Sublimation I hurts, more the slower; Permafrost I pulses crack armor; Moons I one moon (tier redesign 2026-10-24)", () => {
+check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Sublimation I hurts, more the slower; Permafrost I pulses crack armor; Moons I one moon (tier redesign 2026-10-24)", () => {
   const go = (sk, extra = "") => run(`(() => { const { t, es } = tierLane("frz", ${JSON.stringify(sk)}, [30]); const e = es[0]; e.armor = e.armor0 = 40; G.started = true;
     let slowed = false; for (let k = 0; k < 180; k++) { ${extra} step(1 / 60); if (e.slowT > 0 && e.slowF > 0) slowed = true; }
     return { dealt: e.max - e.hp, slowed, frost: frostShare(e), crack: towerStats(t).rimeCrack || 0, moons: towerStats(t).moonN || 0 }; })()`);
   const z = go({}), s = go({ temp: 1 }), sx = go({ temp: 1 }, `applySlow(e, 0.5, 0.2, "test");`), p = go({ rime: 1 }), m = go({ moons: 1 });
-  if (!z.slowed || z.dealt > 0) return "tier 0: " + JSON.stringify(z) + " (expected a slow, no damage)";
+  if (!z.slowed || !(z.dealt > 0)) return "tier 0: " + JSON.stringify(z) + " (expected a slow and a nip)";
+  const zx = go({}, `applySlow(e, 0.5, 0.2, "test");`);
+  if (zx.dealt > z.dealt * 1.01) return "tier 0 nip: " + zx.dealt + " slowed vs " + z.dealt + " (expected flat - more the slower is Sublimation's)";
+  if (!(s.dealt > z.dealt * 2)) return "Sublimation I: " + s.dealt + " vs the tier 0 nip " + z.dealt + " (expected the full hurt, well past a nip)";
   if (!(s.dealt > 0)) return "Sublimation I dealt nothing";
   if (!(sx.dealt > s.dealt)) return "Sublimation I: " + sx.dealt + " slowed vs " + s.dealt + " (expected more on the slower)";
   if (z.frost > 0) return "tier 0 frosted " + z.frost;
@@ -158,7 +161,7 @@ check("GRV: tier 0 a nova alone; Void I a hole that strips armor, no slow; Nova 
 towerTierChecks("ifr", ["fan", "fire", "flare", "hellfire"]);
 check("IFR: tier 0 a meteor that just hits; Meteor I a fan of two; Hellfire I one fire riding its enemy; Flare I one flare at the impact (tier redesign 2026-10-24)", () => {
   const go = sk => run(`(() => { const { t, es } = tierLane("ifr", ${JSON.stringify(sk)}, [70]); const e = es[0]; G.started = true;
-    let spawned = 0, fires = 0, flares = 0, rides = null; for (let k = 0; k < 45; k++) { step(1 / 60);
+    let spawned = 0, fires = 0, flares = 0, rides = null; const K = Math.min(45, Math.floor(towerStats(t).chargeS * 60)); for (let k = 0; k < K; k++) { step(1 / 60); // one volley (a faster curve rate would launch the next inside 45 frames)
       spawned = Math.max(spawned, (t.ifrBalls || []).filter(b => b.gen).length); fires = Math.max(fires, (t.ifrFires || []).length); flares = Math.max(flares, (t.ifrFlares || []).filter(f => !f.hf).length);
       if (rides == null && (t.ifrFires || []).length) rides = t.ifrFires[0].eid === e.id; if (e.max > e.hp && (t.ifrBalls || []).length === 0 && k > 30) break; }
     return { dealt: e.max - e.hp, spawned, fires, flares, rides }; })()`);
@@ -224,7 +227,7 @@ check("later: a factor on the tower's OWN damage is one constant, on from its fi
   const same = (kind, ax, key, from) => { const v = [1, 2, 3, 4, 5].map(n => statsOf(kind, { [ax]: n })[key]); return v.every(x => x === v[0]) && statsOf(kind, {})[key] === from ? "" : kind + " " + ax + " " + key + " " + JSON.stringify(v) + " (tier 0 " + statsOf(kind, {})[key] + ")"; };
   return same("sol", "breach", "critMul", 3) || same("sol", "breach", "scorch", 0) || same("ifr", "hellfire", "fireHK", statsOf("ifr", { hellfire: 1 }).fireHK) || same("ifr", "firaga", "hfK", 1);
 });
-check("later: the card rows read no zero mechanic - ARC Jumps at tier 0, FRZ Cold bite with no tick", () => {
+check("later: the card rows read no zero mechanic - ARC Jumps at tier 0, FRZ Cold bite before Sublimation (the nip is flat)", () => {
   const a0 = rows("arc", {}).rows, a1 = rows("arc", { conductivity: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;
   if (a0.Jumps !== "—") return "ARC tier 0 Jumps reads " + a0.Jumps;
   if (!/^1 jump/.test(a1.Jumps)) return "ARC Conductivity I Jumps reads " + a1.Jumps;

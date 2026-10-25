@@ -32,13 +32,17 @@ const FRZ_RIME_PERIOD = [1, 1, 0.385, 0.275] /* halved (owner, 2026-10-14; was 2
 // TEMP CONDUCTS FASTER (owner, 2026-10-11: "make temp conduct faster"): each Temp tier shortens the aura's TICK (s) -
 // the same bite each tick, so more damage and more shield pops a second (capstone VI in aspira-capstone.js)
 const FRZ_TEMP_TICK = [0.21, 0.204, 0.192, 0.0586] /* x0.6 with FRZ_TICK x0.6: more ticks, same damage - better vs shield (2026-10-24 marks target) */ /* BATTERY 6.7.0 (2026-10-20): untaken 0.5 -> 0.35 and I-III to match - a lone L1 FRZ lost 3-10 on waves 1-11 after the 6.5 spacing (armor 2x, fast 3x) */; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
+// THE NIP (owner, 2026-10-25, the tier redesign's duo rule: "FRZ chill nips"): tier 0's chill hurts a little - FRZ_NIP x a tier 0 tick,
+// enough to finish a 1-HP swarmer and pop an eased early shield; Sublimation I still makes it hurt in full (FRZ+SOL and FRZ+CRR lost
+// 5-8 / 2-4 lives on waves 1-12 with a chill that only slowed - scripts/aspira-sim/duo0.mjs). let: the battery's sims set it
+let FRZ_NIP = 0.1;
 const FRZ_TICK = 0.3 /* x0.6 with FRZ_TEMP_TICK x0.6 (2026-10-24 marks target; was 0.5) - the bare L1 FRZ (b.dmg, b.rate) untouched */, FRZ_RIME_GROW = 2.4; // a Rime ring takes FRZ_RIME_GROW game s to reach the edge (owner: much slower; was 0.6)
 const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit of slow (owner: thicker the colder) // an aura slow outlasts one step only: it is gone the moment the enemy leaves
 function frzSkillStats(t, s, b) {
   const f = skillOf(t, "temp"), c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; // the STAT CURVE (tier redesign 2026-10-24)
-  // the aura's damage a SECOND is the curve's; Sublimation splits it over more ticks (more shield pops, not more damage); tier 0 only slows
+  // the aura's damage a SECOND is the curve's; Sublimation splits it over more ticks (more shield pops, not more damage); tier 0 slows and nips (FRZ_NIP)
   const tick0 = b.dmg * c.dmg * b.rate * FRZ_TICK; s.biteDmg = tick0; // a tier 0 tick's worth: what the Rime ring's bite multiplies
-  s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = f ? tick0 * FRZ_TEMP_TICK[f] / FRZ_TEMP_TICK[0] : 0; s.rate = 1 / FRZ_TEMP_TICK[f]; // dmg / rate: a TICK
+  s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = tick0 * (f ? FRZ_TEMP_TICK[f] / FRZ_TEMP_TICK[0] : FRZ_NIP); s.chill = f > 0; s.rate = 1 / FRZ_TEMP_TICK[f]; // dmg / rate: a TICK
   s.rime = FRZ_RIME[skillOf(t, "rime")]; s.rimeCrack = FRZ_RIME_CRACK[skillOf(t, "rime")]; s.rimeBite = skillOf(t, "rime") ? FRZ_RIME_BITE0 : 0; s.rimeEvery = FRZ_RIME_PERIOD[skillOf(t, "rime")]; s.moonN = FRZ_MOON_COUNT[skillOf(t, "moons")]; s.moonK = FRZ_MOON_BY[skillOf(t, "moons")]; s.subN = FRZ_SUBMOON_N[skillOf(t, "moons")]; s.skill = true;
 }
 // moons and SMALL MOONS by tier (owner, 2026-10-08): 1 / 2 / 3 moons at I-III, then still THREE at IV and V,
@@ -108,7 +112,7 @@ function frzStep(t, dt) {
       // otherwise it is quiet (no flash) but shows its NUMBER, sized by what it took
       if (e.shield > 0) { damage(e, st.dmg * s.k * (s.hit || 1), t, false, false, FRZ_TICK_HIT); continue; } // a tick POPS a shield (owner, 2026-10-12: "shields should not absorb ticks")
       const hp = e.hp;
-      damage(e, st.dmg * s.k * (s.hit || 1) * frzBite(e), t, true); // quiet, but armor still bites it (damage())
+      damage(e, st.dmg * s.k * (s.hit || 1) * (st.chill ? frzBite(e) : 1), t, true); // (the nip: flat - "more the slower" is Sublimation's) // quiet, but armor still bites it (damage())
       if (hp - e.hp > 0) dmgTick(e, hp - e.hp, hp - e.hp, dmgInk("frz"), t, 0, st.rate); // (slow motion splits it - aspira-floats.js)
     }
   }

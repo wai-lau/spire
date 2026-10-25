@@ -51,11 +51,11 @@ const hpPow = n => Math.pow(HP_GROWTH, Math.min(n, HP_KNEE) - 1) * Math.pow(HP_L
 // start at exactly their base on their first wave (3).
 const sCurve = n => Math.pow(1.15, n - 1) + n * 4 / 18;
 function shieldsOf(type, n) {
-  const b = ENEMIES[type].shield; n = eqWave(n); // (the 10-cycle equivalent - aspira-defs.js)
+  const b = ENEMIES[type].shield, ez = n <= EASE_TO ? EASE_SH : 1; n = eqWave(n); // (the 10-cycle equivalent - aspira-defs.js) // ez: the tier 0 ease (aspira-waves.js)
   if (!b) return { shield: 0, hpMul: 1 };
   const r = sCurve(n) / sCurve(3), old = Math.max(b, b * Math.pow(r, 0.4)), shield = Math.max(b, Math.round(b * Math.pow(r, SHIELD_EXP)));
   // HP made up for the charges as they were at 0.335, not for the ones taken away now: the nerf is a real nerf (2026-10-12)
-  return { shield, hpMul: old / Math.max(b, Math.round(b * Math.pow(r, 0.335))) };
+  return { shield: Math.round(shield * ez), hpMul: old / Math.max(b, Math.round(b * Math.pow(r, 0.335))) };
 }
 // EARLY SHIELDS SOFTER (owner, 2026-10-12: "early game shield too hard" - rounded up to fill 3- and 5-Vs, wave 2 brings 9
 // not 5): x SHIELD_EARLY HP to wave 20, easing to full by wave 30
@@ -85,7 +85,7 @@ function spawnEnemy(type, n, pi, ang = 0) {
     id: G.id++, type, n, hp, max: hp, pi, ang, s: s0, x: p0.x, y: p0.y, rot: Math.random() * 6,
     // fractional, so a cheap swarmer really pays its share (owner: halved
     // swarm bounty must hold; money is shown rounded down)
-    bounty: bountyBase(eqWave(n)) * d.bounty * (d.star ? 1 : earlyX(n) / tune(type, "count", n)), /* the count lever splits the wave's pay */ // (aspira-waves.js) slowF: 0, slowT: 0, stunT: 0, markT: 0, markMul: 1,
+    bounty: bountyBase(eqWave(n)) * d.bounty * (d.star ? 1 : earlyN(n) / tune(type, "count", n)), /* the count lever splits the wave's pay */ // (aspira-waves.js) slowF: 0, slowT: 0, stunT: 0, markT: 0, markMul: 1,
   });
   G.enemies[G.enemies.length - 1].sizeMul = (1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earlyHpX(type, n) / (enemyHp(type, 1) / earlyHpX(type, 1)))) * (type === "swarm" ? jit : 1); if (type === "swarm") G.enemies[G.enemies.length - 1].drawJit = swarmDrawJit(jit); // GROWS WITH LOG HP (owner, 2026-10-13: "initial unit size should scale logarithmically with unit hp"): x1 on wave 1, about x2 by 119; a swarmer x its HP share too, 50-300% (owner, 2026-10-12)
   if (type === "bonus") bossSpawn(G.enemies[G.enemies.length - 1], n); // which boss (aspira-bosses.js)

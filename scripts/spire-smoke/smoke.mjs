@@ -401,7 +401,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = ifrAll(G.towers[0]); ifrInit(t); const st = towerStats(t), s0 = towerStats({ ...t, skills: {}, lvl: 1 }, true), out = { chargeS: s0.chargeS, dmg: s0.dmg, dmgWant: TOWERS.ifr.dmg * curveAt("ifr", 0).dmg };
+    const t = ifrAll(G.towers[0]); ifrInit(t); const st = towerStats(t), s0 = towerStats({ ...t, skills: {}, lvl: 1 }, true), out = { chargeS: s0.chargeS, dmg: s0.dmg, dmgWant: TOWERS.ifr.dmg * curveAt("ifr", 0).dmg, chargeWant: 1.4 / curveAt("ifr", 0).rate };
     spawnEnemy("fast", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
     for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - 0.9 * st.range); if (d < bd) { bd = d; bs = s; } }
     e.s = bs; const p0 = pathAt(0, bs, 0); e.x = p0.x; e.y = p0.y; e.seen = true; e.hp = e.max = 1e9; e.armor = 0; e.shield = 0; e.jit = 0; e.spd = 1;
@@ -418,7 +418,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   if (!r.hit) return "a led meteor missed its target: landed " + r.miss.toFixed(1) + " u from it (its radius " + r.r + ")";
   if (r.glow2d > 1 || r.glowGl > 0.5) return "the flare glow is wider than its hit band: 2D " + r.glow2d + " x W, GL half-width " + r.glowGl + " x W";
   if (r.whites) return "IFR still draws white: " + r.whites + " glow layers (owner, 2026-10-20: \"no white\")";
-  if (r.chargeS !== 1.4 || Math.abs(r.dmg - r.dmgWant) > 1e-9) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.4 - 2026-10-21 - and the curve's level 0, " + r.dmgWant + " - tier redesign 2026-10-24)";
+  if (Math.abs(r.chargeS - r.chargeWant) > 1e-9 || Math.abs(r.dmg - r.dmgWant) > 1e-9) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.4 s - 2026-10-21 - over the curve's level 0 rate, " + r.chargeWant + ", and its dmg, " + r.dmgWant + " - tier redesign 2026-10-24)";
   return "";
 });
 check("IFR: the fire (Hellfire, its circle drawn at 16%, then 8%, its glow twice as wide) opens at the meteor's size, its ring hits each enemy once, grows to its max, lights its flares and goes when they are out", () => {

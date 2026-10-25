@@ -72,10 +72,18 @@ function earlyHpX(type, n0) { // enemyHp (aspira-game.js)
   if (type === "swarm" && n0 <= EARLY_SWARM_TO) return EARLY_SWARM_HP * earlyHpXBase(type, n0);
   return earlyHpXBase(type, n0);
 }
+// TIER 0 EASE (tier redesign, spec "Calls for the build": "the duo rule wins a conflict: waves 1 to 12 ease (every type alike,
+// so types stay equally hard) until any two tier 0 towers clear them"): waves 1..EASE_TO bring /EASE_N the bodies at the SAME HP
+// each, and each pays x EASE_N (the wave pays the same). A COUNT cut, not HP: a tier-0 beam one-shots an early body, so its
+// limit is bodies a second (scripts/aspira-sim/duo0.mjs: half the HP moved SOL+IFR from 56 lives lost to 51)
+// SHIELDS too, and first: a shield takes one charge a hit (one pop per tick), so a tier-0 single beam's limit on a shield wave is hits a
+// second, whatever its damage - x EASE_SH the charges (shieldsOf, aspira-game.js; duo0.mjs: every losing tier-0 duo lost on shield waves)
+let EASE_N = 4, EASE_SH = 0.1, EASE_TO = 12; // let: the battery's sims set them. x0.1: one charge, at most (duo0.mjs, 2026-10-25: every duo clean, 2 seeds x every slot pair)
+const earlyN = n => earlyX(n) * (n <= EASE_TO ? EASE_N : 1); // the count divisor (waveCount) and the pay multiplier (spawnEnemy)
 function earlyHpXBase(type, n0) {
   if (earlyX(n0) === 1 || ENEMIES[type].star) return 1;
   const key = type + n0;
-  if (!earlyHpMemo.has(key)) { const raw = waveCount(type, n0), k = formSplit(type, waveCount(type, n0, false), n0), cnt = Math.max(type === "swarm" ? Math.round(SWARM_WAVE_MIN / earlyX(n0)) : k, laneCount(type, raw, k)); earlyHpMemo.set(key, earlyX(n0) * Math.min(1, raw / cnt)); } // (as wavePlan counts it: one a lane at least)
+  if (!earlyHpMemo.has(key)) { const raw = waveCount(type, n0), k = formSplit(type, waveCount(type, n0, false), n0), cnt = Math.max(type === "swarm" ? Math.round(SWARM_WAVE_MIN / earlyN(n0)) : k, laneCount(type, raw, k)); earlyHpMemo.set(key, earlyX(n0) * Math.min(1, raw / cnt)); } // (as wavePlan counts it: one a lane at least)
   return earlyHpMemo.get(key);
 }
 // swarms are DOUBLED on waves 11-60 and x1.5 after (owner, 2026-10-06): a
@@ -118,7 +126,7 @@ function waveCount(type, n0, cut = true) { // cut false: without the early thinn
   // HALF the bodies at TWICE the health (owner, 2026-10-02)
   // x WAVE_COUNT_MUL[n]: waves 1-30 tuned so each comes about as close to the
   // core against one L1 tower of each kind (owner; scripts/aspira-sim/wavebal.mjs)
-  const c = (type === "swarm" ? base * 6 : base) / 2 / (cut ? earlyX(n0) : 1) * (WAVE_COUNT_MUL[n0] ?? 1) * (TYPE_COUNT_MUL[type] ?? 1) * (type === "swarm" ? swarmMul(n) * (n >= SWARM_X2_FROM ? 2 : 1) * lateK(n0, "swarm") : 1) * tune(type, "count", n0); // swarms 6x (owner: doubled from 3x) // tune: the count lever (TYPE_TUNE)
+  const c = (type === "swarm" ? base * 6 : base) / 2 / (cut ? earlyN(n0) : 1) * (WAVE_COUNT_MUL[n0] ?? 1) * (TYPE_COUNT_MUL[type] ?? 1) * (type === "swarm" ? swarmMul(n) * (n >= SWARM_X2_FROM ? 2 : 1) * lateK(n0, "swarm") : 1) * tune(type, "count", n0); // swarms 6x (owner: doubled from 3x) // tune: the count lever (TYPE_TUNE)
   // SYMMETRICAL FORMATIONS (owner, 2026-10-11: "2n+1 for fast, 3n for armor"): whole Vs and full lattice rows
   const unit = FORM_UNIT[type] || 1;
   return Math.max(unit, Math.round(c / unit) * unit);
@@ -139,7 +147,7 @@ const escale = e => scaleOf(e.wave || 1);
 const enemyHp = (type, n0) => (ENEMIES[type].star || !TYPE_TUNE[type] ? enemyHpRaw(type, n0) : monoUp("hp|" + type + "|" + ENEMIES[type].hp, n0, m => enemyHpRaw(type, m))) * scaleOf(n0);
 function planCountOwn(type, n) { // a wave's count as its own curves make it (before NO DROPS)
   const split = formSplit(type, waveCount(type, n, false), n), count = laneCount(type, waveCount(type, n), split);
-  return type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : Math.max(split, count);
+  return type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyN(n)), count) : Math.max(split, count);
 }
 function planCount(type, n) { // ...and as sent: at least the count SENT the wave before (whole lane-fulls rounded up past it) - memoised a type
   let a = monoMemo.get("c|" + type); if (!a) monoMemo.set("c|" + type, a = [0]);
@@ -163,7 +171,7 @@ function wavePlan(n, prev) {
   const count = laneCount(type, raw, split);
   // a swarm wave is never under SWARM_WAVE_MIN bodies, AFTER the lane rounding (owner, 2026-10-14: "make sure swarm waves have at least 12 units");
   // and no lane copy of any OTHER type is empty (owner, 2026-10-15: "min 1 enemy per lane also ... except swarm")
-  return { type, count: Math.max(type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyX(n)), count) : Math.max(split, count), planCount(type, n)), split, star: n % STAR_EVERY === 0 }; // (planCount: NO DROPS)
+  return { type, count: Math.max(type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyN(n)), count) : Math.max(split, count), planCount(type, n)), split, star: n % STAR_EVERY === 0 }; // (planCount: NO DROPS)
 }
 function makeWave(n) {
   const { type, count } = wavePlan(n, G.lastType);

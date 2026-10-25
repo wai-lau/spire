@@ -31,7 +31,7 @@ const DESCRIBE = {
   // current wave - owner: "just put the actual current armor number" - FRZ_RIME_CRACK x armorRefOf, as fully frosted) / Moons: the moons and their satellites (owner: "satellites instead of moonlets") - every number read live
   frz(sk) {
     const tp = sk.temp || 0, rm = sk.rime || 0, mo = sk.moons || 0, pct = x => Math.round(x * 100) + "%", mn = FRZ_MOON_COUNT[mo], sub = FRZ_SUBMOON_N[mo];
-    return "Emits an aura that slows enemies by " + pct(FRZ_TEMP_SLOW[tp]) + (tp ? " and hurts more the slower they are." : ".") + /* tier 0 only slows (tier redesign 2026-10-24) */
+    return "Emits an aura that slows enemies by " + pct(FRZ_TEMP_SLOW[tp]) + (tp ? " and hurts more the slower they are." : " and nips them.") + /* tier 0 slows and nips (owner, 2026-10-25: FRZ_NIP) */
       (FRZ_BRITTLE[tp] > 1 ? " Enemies in the aura take " + pct(FRZ_BRITTLE[tp] - 1) + " more damage." : "") +
       (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost permanently slow by " + pct(FRZ_RIME[rm]) + " and break up to " + dmgUnits(FRZ_RIME_CRACK[rm] * armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + " armor on every hit." : "") +
       (mn ? " " + (mn > 1 ? cap(NUM_WORD[mn]) + " moons copy" : "A moon copies") + " the aura" + (sub ? ", each with " + NUM_WORD[sub] + " satellite" + (sub > 1 ? "s" : "") : "") + "." : "");
