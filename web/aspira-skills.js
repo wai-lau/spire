@@ -98,10 +98,12 @@ const SKILL_MOVE = {
   acd:    { spray: [[1, 1], [1.02, 1], [1.06, 1], [1.3, 1]] /* V: RANGE instead of a hotter carry (owner, 2026-10-12; was 1.15) */ /* Spray's lever now that each jet stays a full strike (owner, 2026-10-08; was 1.2 .. 2.3) */, contagion: [[1, 1], [1, 1.15], [1, 1.5], [1, 1.8]], corrosion: NO_MOVE },
 };
 function skillMove(t, s) {
+  let r = 1;
   for (const [ax, tiers] of Object.entries(SKILL_MOVE[t.kind])) {
     const m = tiers[skillOf(t, ax)];
-    s.range *= m[0]; s.slide *= m[1];
+    r *= m[0]; s.slide *= m[1];
   }
+  s.range *= nudge(r); // range is the CURVE's now: the axes' range factors together a nudge, x1.2 at most (tier redesign 2026-10-24, aspira-curve.js)
 }
 
 // ARC's numbers by tier (index 0 = untaken). Balance later (owner: ideas first).
