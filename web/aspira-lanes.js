@@ -117,8 +117,8 @@ function laneHold(live) {
 // an ordinary lit lane, MUCH more apparent (owner, 2026-10-12: "make the non boss lanes much more apparent"; was
 // line 0.3 x1.4, haze 0.03, glow 0.22) - a boss lane keeps the old numbers, scaled by BOSS_LANE_K / BOSS_LANE_W
 const SWARM_LANE_A = 0.25; // (halved again - owner, 2026-10-12; was 0.5) a swarm's lanes at half strength: it rides 10-12 of them (aspira-formations.js)
-const LIT_LINE_A = 0.75, LIT_LINE_W = 2.4, LIT_HAZE_A = 0.07, LIT_GLOW_A = 0.34;
-const BOSS_LANE_W = 3.5, BOSS_LANE_HALO_W = 22, BOSS_LANE_HALO_A = 0.06, BOSS_LANE_K = 1.5; // a boss lane: x widths, its glow (world px), x brightness (owner, 2026-10-09: "make boss lanes half as intense"; was 3)
+const LIT_GLOW_A = 0.34; // (the line's numbers are LIT_LINE_SOFT, below)
+const BOSS_LANE_W = 3.5, BOSS_LANE_K = 1.5; // a boss lane: x its glow's widths, x brightness (its line: BOSS_LINE_SOFT) (owner, 2026-10-09: "make boss lanes half as intense"; was 3)
 function drawLaneStrokes(all) {
   const S = laneSet(), { laneCv, lctx, glowCv, gctx, baseCv, bctx } = S, live = laneSplit(all).board; // (a lane still fading in is the fade layer's - laneFadeLayer)
   const holds = set => { if (typeof warp !== "undefined") warp.statLanes = set; }; // the lanes this board holds (on the GPU once it is sent up: warp.boardLanes)
@@ -154,26 +154,39 @@ function drawLaneStrokes(all) {
   S.litKey = sig; S.litCam = camSig; S.litAt = now; S.litLanes = new Set(live.map(laneKeyOf)); holds(S.litLanes);
   S.comboKey = ""; blitLanes(S);
 }
-function strokeLit(lctx, gctx, list) { // each lane IN USE lit in its rider's colour, at u.a, onto the line and glow layers (unmasked)
-  for (const u of list) {
-    lctx.save(); gctx.save();
-    for (const x of [lctx, gctx]) { x.translate(CX, CY); x.rotate(u.ang); x.translate(-CX, -CY); }
-    // the bonus STAR's lane burns three times as bright as the rest (owner),
-    // and a BOSS lane is much THICKER with much more GLOW (owner): w scales
-    // every width, and its line carries a wide shadow-blur halo
-    const k = u.star ? BOSS_LANE_K : 1, w = u.star ? BOSS_LANE_W : 1;
-    lctx.strokeStyle = gctx.strokeStyle = COL[u.color];
-    // a wide GLOW that grows in intensity toward the core (owner), on its own
-    // layer with a much steeper fade outward (owner: "stronger gradient")
-    { gctx.globalAlpha = Math.min(1, (u.star ? 0.22 * k : LIT_GLOW_A) * u.a); gctx.lineWidth = 32 * w; gctx.lineCap = "butt"; gctx.stroke(PATHS[u.pi].glow2d); gctx.lineCap = "round"; } // butt: a round end was a disc by the core // thicker at the core (owner; was 0.18, 20)
-    gctx.restore();
-    lctx.globalAlpha = (u.star ? 0.03 * k : LIT_HAZE_A) * u.a; lctx.lineWidth = 6 * w; lctx.stroke(PATHS[u.pi].lit2d);
-    // a boss lane's halo: one wide faint stroke, not a shadowBlur along the whole (doubled) lane - with the Devil's six
-    // lanes the blur was ~60% of an 82 ms layer rebuild (perf, 2026-10-11)
-    if (u.star) { lctx.globalAlpha = BOSS_LANE_HALO_A * k * u.a; lctx.lineWidth = BOSS_LANE_HALO_W; lctx.stroke(PATHS[u.pi].lit2d); }
-    lctx.globalAlpha = (u.star ? 0.3 * k : LIT_LINE_A) * u.a; lctx.lineWidth = u.star ? 1.4 * w : LIT_LINE_W; lctx.stroke(PATHS[u.pi].lit2d);
-    lctx.restore();
+// A LIT LANE IS A GLOW, NOT A BAND (owner, 2026-10-25: "Circles on the path / Path should be glow not hard edge"): each layer is a
+// PROFILE of strokes, widest + faintest first, and each level is stroked OPAQUE onto a scratch layer for every lane of one colour and
+// brightness, then laid on at its alpha (each a flush of the scratch: five levels a lane colour, perf) - so where lanes (or a lane and itself) cross, the levels UNION instead of adding: no darker
+// lens at a crossing, and the edge fades out level by level. [width (world px, x w on a boss lane), alpha (x the layer's)] each
+const LIT_LINE_SOFT = [[12, 0.08], [5, 0.22], [2.2, 0.55]]; // (was a 6-wide haze at 0.07 under a 2.4 line at 0.75)
+const BOSS_LINE_SOFT = [[22, 0.07], [9, 0.15], [3, 0.3]]; // x BOSS_LANE_K (was a 22 halo at 0.06, a 21 haze at 0.045, a 4.9 line at 0.45)
+const LIT_GLOW_SOFT = [[32, 0.4], [14, 0.6]]; // x LIT_GLOW_A, widths x w (was ONE 32-wide stroke)
+let laneScratch = null;
+const LANE_SOFT_DS = 2; // the levels are drawn at 1/2 resolution and scaled up: a glow needs no more, and a rebuild costs about what it did (perf)
+function strokeSoft(dst, list, key, prof, alphaOf, wk, cap) {
+  const groups = new Map();
+  for (const u of list) { const g = u.color + ":" + (u.star ? 1 : 0) + ":" + u.a.toFixed(3); groups.set(g, [...(groups.get(g) || []), u]); }
+  laneScratch ||= (() => { const c = document.createElement("canvas"), x = c.getContext("2d"); if (!x) throw new Error("lane scratch: no 2d context"); return { c, x }; })();
+  const { c, x } = laneScratch, W = Math.ceil(cv.width / LANE_SOFT_DS), H = Math.ceil(cv.height / LANE_SOFT_DS);
+  if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
+  for (const us of groups.values()) for (const [lw, la] of prof) {
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, W, H);
+    x.setTransform(cam.k / LANE_SOFT_DS, 0, 0, cam.k / LANE_SOFT_DS, cam.ox / LANE_SOFT_DS, cam.oy / LANE_SOFT_DS); x.lineJoin = "round";
+    x.strokeStyle = COL[us[0].color]; x.lineWidth = lw * wk(us[0]); x.lineCap = cap;
+    for (const u of us) { x.save(); x.translate(CX, CY); x.rotate(u.ang); x.translate(-CX, -CY); x.stroke(PATHS[u.pi][key]); x.restore(); }
+    dst.save(); dst.setTransform(1, 0, 0, 1, 0, 0); dst.globalAlpha = Math.min(1, alphaOf(us[0]) * la); dst.drawImage(c, 0, 0, W * LANE_SOFT_DS, H * LANE_SOFT_DS); dst.restore();
   }
+}
+function strokeLit(lctx, gctx, list) { // each lane IN USE lit in its rider's colour, at u.a, onto the line and glow layers (unmasked)
+  // a wide GLOW that grows in intensity toward the core (owner), on its own layer with a much steeper fade outward (owner: "stronger
+  // gradient"); butt ends - a round end was a disc by the core. A BOSS lane is much THICKER (w) with much more GLOW (owner)
+  const w = u => (u.star ? BOSS_LANE_W : 1);
+  strokeSoft(gctx, list, "glow2d", LIT_GLOW_SOFT, u => Math.min(1, (u.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * u.a), w, "butt");
+  // the line: the bonus STAR's lane burns brighter than the rest (owner); its halo is the profile's wide faint levels - one stroke
+  // each, never a shadowBlur along the whole (doubled) lane (with the Devil's six lanes the blur was ~60% of an 82 ms rebuild, 2026-10-11)
+  const plain = list.filter(u => !u.star), boss = list.filter(u => u.star);
+  if (plain.length) strokeSoft(lctx, plain, "lit2d", LIT_LINE_SOFT, u => u.a, () => 1, "round");
+  if (boss.length) strokeSoft(lctx, boss, "lit2d", BOSS_LINE_SOFT, u => BOSS_LANE_K * u.a, () => 1, "round");
 }
 // the faint base, the glow and the lit lines laid onto ONE cached layer whenever any of them changes, and that blitted:
 // one full-canvas draw a frame instead of three (perf, 2026-10-09; source-over is associative, so the same picture)
