@@ -13,9 +13,9 @@
 // (SKILL_TIERS, IV the capstone), and every per-tier table below holds those five values (the capstone's pushed by aspira-capstone.js). The
 // price LADDER below (SKILL_POINTS, SKILL_STEP_COST) keeps its steps: a tier takes TIER_STEPS of them. NOTE: dated comments in this file
 // and its tower files speak the old seven-slot tables (0 1 2 3 4 5 6) - an old slot 3 is now tier II, 5 tier III, 6 tier IV
-const SKILL_POINTS = 16, SKILL_TIERS = 4;
+const SKILL_POINTS = 13, SKILL_TIERS = 5; // tiers 0..V, V the capstone, 13 purchases a tower (5 + 4 + 4) (tier redesign, owner 2026-10-24; was 16 points / tiers 0..IV)
 // the ladder step a tier stands on, on the old seven-slot scale: what a formula that grew LINEARLY with the level (DRIP_TIER_K, CRR_DART_GROW) keeps its numbers through
-const TIER_LEVEL = [0, 1, 3, 5, 6];
+const TIER_LEVEL = [0, 0.5, 1, 3, 5, 6]; // tier I halfway to today's I (tier redesign 2026-10-24; was 0 1 3 5 6)
 // cost of each of the six small upgrades, x the build cost (about the old
 // three-step total, spread over six; balance later). DEARER (owner, 2026-10-06:
 // "make the levels more expensive and more powerful"): was 2 / 3.5 / 5.5 / 8 / 10.5 / 13,
@@ -23,7 +23,7 @@ const TIER_LEVEL = [0, 1, 3, 5, 6];
 // ...and on, for the three points past the sixth (owner, 2026-10-07: "keep increasing
 // the prices"): the step grows by one more each time, a full chart 174.5 builds (6,980c)
 // (the six points past the ninth, 2026-10-07: each step grows by one more again - a full chart 695.5 builds, 27,820c)
-const SKILL_STEP_COST = [4, 6.4, 11.2, 17.6, 25.6, 35.2, 46.4, 59.2, 73.6, 89.6, 107.2, 126.4, 147.2, 169.6, 193.6, 219.2, 246.4] /* x1.6 (owner, 2026-10-15: "the worst [no-weakness trio] is able to afford 100% upgrades with perfect play and interest" - eco.mjs: ARC+FRZ+ACD owned 109-287% of a max build at x1.5, 86-93% at x1.75; was 2.5 4 7 11 16 22 29 37 46 56 67 79 92 106 121 137 154) */; // the 17th: a capstone takes TWO levels (aspira-capstone.js) // the 16th: the capstone point (2026-10-11)
+const SKILL_STEP_COST = [5.2, 10.4, 20, 33.2, 50.5, 71.2, 95.4, 123.7, 155.5, 190.8, 230.2, 273, 319.3] /* 13 steps, one a purchase (tier redesign 2026-10-24: tiers 0..V, 13 purchases): the 17-step curve resampled, the full tower's total kept - a PLACEHOLDER, the redesign's balance battery sets the economy; was 4 6.4 11.2 17.6 25.6 35.2 46.4 59.2 73.6 89.6 107.2 126.4 147.2 169.6 193.6 219.2 246.4 */ /* x1.6 (owner, 2026-10-15: "the worst [no-weakness trio] is able to afford 100% upgrades with perfect play and interest" - eco.mjs: ARC+FRZ+ACD owned 109-287% of a max build at x1.5, 86-93% at x1.75; was 2.5 4 7 11 16 22 29 37 46 56 67 79 92 106 121 137 154) */; // the 17th: a capstone takes TWO levels (aspira-capstone.js) // the 16th: the capstone point (2026-10-11)
 // Each axis: its `id`, its `name` (the slider) and its tiers' `name`s (the end screen). WHAT A TOWER DOES is
 // one composed sentence for the whole chart, aspira-desc.js, each tier changing as few words as carry the
 // gain (owner, 2026-10-07) - the card shows the change in track changes (aspira-sliders.js); the reach each
@@ -72,11 +72,11 @@ SKILL_TREES.acd = [
   { id: "contagion", name: "Contagion", tiers: [{ name: "Blister" }, { name: "Pandemic" }, { name: "Blight" }] },
 ];
 const hasSkills = t => !!SKILL_TREES[t.kind];
-const maxLvl = t => (hasSkills(t) ? 2 + SKILL_POINTS : MAX_LVL); // (+1: the capstone is two levels - aspira-capstone.js)
+const maxLvl = t => (hasSkills(t) ? 1 + SKILL_POINTS : MAX_LVL); // a ladder step a purchase, the capstone too (tier redesign 2026-10-24; was 2 + 16, the capstone two levels)
 const skillOf = (t, id) => (t.skills && t.skills[id]) || 0;
 // the level the TOWER'S LOOK shows (its rings, max-level spokes): a chart
 // tower's ladder steps fold onto the 4 drawn ones
-const shownLvl = t => (!hasSkills(t) ? t.lvl : t.lvl >= maxLvl(t) ? MAX_LVL : 1 + Math.floor((t.lvl - 1) / 5)); // fifteen points, five a look
+const shownLvl = t => (!hasSkills(t) ? t.lvl : t.lvl >= maxLvl(t) ? MAX_LVL : Math.min(MAX_LVL, 1 + Math.floor((t.lvl - 1) / 4))); // thirteen purchases, four a look (2026-10-24; was five)
 
 // REACH BY TIER (owner, 2026-10-06: ranges and movement were HALVED, and "no upgrade
 // causes any stat to go down - balance by playing around with ranges and movement

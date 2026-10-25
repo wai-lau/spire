@@ -137,24 +137,24 @@ check("boss sky keeps tower colours: ranges drawn under it", () => {
   return seen.drawTowerRange ? "" : "no range drawn on the boss sky";
 });
 
-check("capstone: one axis to IV, a second refused; every tier table covers IV", () => {
+check("capstone: one axis to V, a second stops at IV; every tier table covers V (tier redesign 2026-10-24)", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "arc";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
     const t = G.towers[0], ids = SKILL_TREES.arc.map(a => a.id);
-    for (let k = 0; k < 6; k++) upgradeTower(t, ids[0], true);
-    for (let k = 0; k < 6; k++) upgradeTower(t, ids[1], true);
+    for (let k = 0; k < 7; k++) upgradeTower(t, ids[0], true);
+    for (let k = 0; k < 7; k++) upgradeTower(t, ids[1], true);
     const out = { a: skillOf(t, ids[0]), b: skillOf(t, ids[1]), opts: skillOptions(t).map(o => o.choice) };
     for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) {
-      const s = towerStats({ id: 99, kind, x: CX, y: CY, lvl: 7, skills: { [ax.id]: 4 } });
-      if (!ax.tiers[3] || Object.values(s).some(v => v === undefined || (typeof v === "number" && isNaN(v)))) out.bad = kind + " " + ax.id;
-      if (/undefined/.test(describeTower(kind, { [ax.id]: 4 }))) out.bad = kind + " " + ax.id + " desc";
+      const s = towerStats({ id: 99, kind, x: CX, y: CY, lvl: 6, skills: { [ax.id]: 5 } });
+      if (!ax.tiers[4] || Object.values(s).some(v => v === undefined || (typeof v === "number" && isNaN(v)))) out.bad = kind + " " + ax.id;
+      if (/undefined/.test(describeTower(kind, { [ax.id]: 5 }))) out.bad = kind + " " + ax.id + " desc";
     }
     return out;
   })()`);
-  if (r.a !== 4) return "first axis reached " + r.a + ", not IV";
-  if (r.b !== 3) return "second axis reached " + r.b + " (one capstone a tower)";
-  if (r.bad) return "tier IV incomplete: " + r.bad;
+  if (r.a !== 5) return "first axis reached " + r.a + ", not V";
+  if (r.b !== 4) return "second axis reached " + r.b + ", not IV (one capstone a tower)";
+  if (r.bad) return "tier V incomplete: " + r.bad;
   return "";
 });
 check("tiers are purchases (owner, 2026-10-23): five slots in every per-tier table, TIER_STEPS ladder steps a buy, an old save read once", () => {
@@ -163,15 +163,30 @@ check("tiers are purchases (owner, 2026-10-23): five slots in every per-tier tab
     for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) out.len.push(ax.tiers.length, SKILL_MOVE[kind][ax.id].length);
     for (const T of [ARC_CONDUCTIVITY, ARC_VOLTAGE_DMG, ARC_CAPACITANCE, SOL_BEAMS, SOL_REFRACTION, ACD_LINES, ACD_CONTAGION, FRZ_MOON_COUNT, GRV_AURA_R, CRR_HANGAR, IFR_FAN, IFR_BEAM_L, IFR_BEAM_W, ARC_SIDE_DMG, VOLT_CARRY_N, CAP_BURST_K]) out.len.push(T.length);
     G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0]; G.money = 1e9;
-    for (let k = 0; k < 4; k++) { const lvl = t.lvl, m = G.money; upgradeTower(t, "focus", true); out.price.push([skillOf(t, "focus"), t.lvl - lvl, Math.round(m - G.money) === skillPointsCost({ ...t, lvl }, t.lvl - lvl)]); }
+    for (let k = 0; k < 5; k++) { const lvl = t.lvl, m = G.money; upgradeTower(t, "focus", true); out.price.push([skillOf(t, "focus"), t.lvl - lvl, Math.round(m - G.money) === skillPointsCost({ ...t, lvl }, t.lvl - lvl)]); }
+    for (let k = 0; k < 4; k++) { upgradeTower(t, "refraction", true); upgradeTower(t, "breach", true); } out.full = [t.lvl, nextBuy(t)];
     const g = { towers: [{ skills: { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6 } }] }; skillScaleFix(g); out.once = JSON.stringify(g.towers[0].skills); skillScaleFix(g); out.twice = JSON.stringify(g.towers[0].skills);
     return out;
   })()`);
-  if (r.len.some(n => n !== 5 && n !== 4)) return "a per-tier table is not 5 slots (tier names 4, the capstone's name the fifth): " + r.len;
-  if (JSON.stringify(r.price) !== JSON.stringify([[1, 1, true], [2, 2, true], [3, 2, true], [4, 2, true]])) return "a buy's tier / ladder steps / price: " + JSON.stringify(r.price) + " (expected tiers 1 2 3 4 taking 1 2 2 2 steps)";
+  if (r.len.some(n => n < 4 || n > 6)) return "a per-tier table or name list out of range: " + r.len; // (exact lengths: "tier I sits between ...")
+  if (JSON.stringify(r.price) !== JSON.stringify([[1, 1, true], [2, 1, true], [3, 1, true], [4, 1, true], [5, 1, true]])) return "a buy's tier / ladder steps / price: " + JSON.stringify(r.price) + " (expected tiers 1..5, one step each)";
+  if (JSON.stringify(r.full) !== "[14,null]") return "a full tower (5 + 4 + 4 buys) reads lvl / next buy " + JSON.stringify(r.full) + " (expected 14, none)";
   if (r.once !== '{"a":0,"b":1,"c":1,"d":2,"e":2,"f":3,"g":4}') return "an old save's levels read " + r.once + " (expected 0 1 1 2 2 3 4)";
   if (r.twice !== r.once) return "a save is read twice: " + r.twice;
   return "";
+});
+check("tier I sits between tier 0 and tier II in every table (tier redesign 2026-10-24)", () => {
+  const r = run(`(() => {
+    const bad = [];
+    const num = (v0, v1, v2, at) => { if (typeof v1 !== "number" || isNaN(v1) || v1 < Math.min(v0, v2) - 1e-9 || v1 > Math.max(v0, v2) + 1e-9) bad.push(at); };
+    const walk = (a, b, c, at) => typeof a === "number" ? num(a, b, c, at) : a && typeof a === "object" ? Object.keys(a).forEach(k => walk(a[k], b && b[k], c && c[k], at + "." + k)) : 0;
+    CAPSTONE_NUM.forEach(([T], i) => { if (!Array.isArray(T)) return; if (T.length !== 6) bad.push("len " + i); else walk(T[0], T[1], T[2], "table " + i); });
+    FULL_TIER_TABLES.forEach((T, i) => { if (T.length !== 6) bad.push("full len " + i); else walk(T[0], T[1], T[2], "full table " + i); }); // (tables written with their capstone in)
+    for (const kind in SKILL_MOVE) for (const id in SKILL_MOVE[kind]) { const T = SKILL_MOVE[kind][id]; if (T.length !== 6) bad.push(kind + "." + id + " move"); }
+    for (const kind in SKILL_TREES) for (const ax of SKILL_TREES[kind]) if (ax.tiers.length !== 5) bad.push(kind + "." + ax.id + " names");
+    return bad;
+  })()`);
+  return r.length ? "tier I out of place: " + r.slice(0, 6).join(", ") : "";
 });
 // an enemy held still on lane 0 at about `dist` u from tower t (its lane point nearest that distance); shield / hp settable after
 run(`function ifrNear(type, t, dist) {
@@ -477,7 +492,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
       try { while ((f.left > 0) && tm < 60) { stepIfrFires(t, st, 1 / 60); tm += 1 / 60; } } finally { ifrFlare = of; }
       const d = lit.map(q => Math.hypot(q.x - CX, q.y - CY)), ts = lit.map(q => q.t).sort((a, b) => a - b);
       return { n: lit.length, R: f.R, window: st.burnS, share: f.hk, shareWant: 1 / Math.sqrt(1 + st.fan), lastT: ts[ts.length - 1] || 0, meanT: ts.reduce((a, b) => a + b, 0) / ts.length, minGap: Math.min(...ts.slice(1).map((v, i) => v - ts[i])), maxD: Math.max(...d), meanD: d.reduce((x, y) => x + y, 0) / d.length, sizes: new Set(t.ifrFlares.filter(q => q.hf).map(q => q.L.toFixed(2))).size, dens: st.fireDens }; };
-    out.f0 = fire(0); out.f3 = fire(3); out.f6 = fire(6); out.base = IFR_FIRE_FLARES; out.timeK = IFR_FIRE_TIME_K;
+    out.f0 = fire(0); out.f3 = fire(4); /* today\'s III, tier IV since the tier redesign (2026-10-24) */ out.f6 = fire(6); out.base = IFR_FIRE_FLARES; out.timeK = IFR_FIRE_TIME_K;
     /* the fire's flares are the UNTAKEN Flare's, whatever Flare's level (owner, 2026-10-20), and not the meteors' brighter kind */
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
       for (let i = 0; i < 600 && t.ifrFires.length; i++) stepIfrFires(t, st, 1 / 60); const hf = t.ifrFlares.filter(q => q.hf);

@@ -9,7 +9,9 @@
 // five values. A buy is one tier; t.lvl stays the LADDER of price steps (SKILL_STEP_COST), so a buy from tier k takes TIER_STEPS[k]
 // of them and costs exactly the steps it spans. (Before 2026-10-23 a table had seven slots, 0 1 2 3 4 5 6, and only 0 1 3 5 6 were ever
 // bought: an old table's slot 3 is now tier II, 5 tier III, 6 tier IV; a save of that time is read through OLD_TIER, skillScaleFix.)
-const CAPSTONE_TIER = SKILL_TIERS; // 4
+const CAPSTONE_TIER = SKILL_TIERS; // 5 (V; was IV until the tier redesign, 2026-10-24)
+// every per-tier table is WRITTEN 0..III (today's tiers, 4 slots; tier names I..III): the capstone is pushed here and tier I inserted below
+const WRITTEN_TIERS = 4;
 // the most axis `id` of tower t may reach, with `add` (axis -> tiers) pulled on: one short of the capstone while another axis holds it
 function capstoneHolder(t, id, add = {}) {
   return SKILL_TREES[t.kind].find(ax => ax.id !== id && skillOf(t, ax.id) + (add[ax.id] || 0) >= CAPSTONE_TIER) || null;
@@ -17,9 +19,9 @@ function capstoneHolder(t, id, add = {}) {
 const axisCap = (t, id, add = {}) => (capstoneHolder(t, id, add) ? CAPSTONE_TIER - 1 : CAPSTONE_TIER);
 // a CAPSTONE is TWO ladder steps (owner, 2026-10-12: "buying a capstone should cost the same as increasing the level by 2 (and also
 // increase tower level by 2)"): it pays the next two ladder steps and raises t.lvl by 2 (upgradeTower, aspira-ui.js)
-const CAPSTONE_LEVELS = 2;
+const CAPSTONE_LEVELS = 1; // ONE step, like every tier (tier redesign 2026-10-24: one purchase = one tier, the capstone included; was 2)
 // the ladder steps tier k -> k+1 takes: I one, II and III two each (the two merged tiers), the capstone CAPSTONE_LEVELS
-const TIER_STEPS = [1, 2, 2, CAPSTONE_LEVELS];
+const TIER_STEPS = [1, 1, 1, 1, CAPSTONE_LEVELS]; // every tier one step (2026-10-24; was 1 2 2 2)
 const stepsFor = (from, to) => TIER_STEPS.slice(from, to).reduce((a, b) => a + b, 0);
 const tierSteps = (t, id) => TIER_STEPS[skillOf(t, id)]; // the steps one buy on axis `id` of t takes
 // the purchases a tower has made (its card title's level): the sum over its axes, with `add` pulled on
@@ -76,7 +78,7 @@ const CAPSTONE_NUM = [
   // IFR (axes redone 2026-10-20): Meteor a fan of 12 that fissures (Impact); Hellfire a fire six towers across; Flare the biggest, hottest, longest flares, three a landing
   [IFR_CHARGE_S, 0.6], [IFR_BALL_V, 540], [IFR_ROUTE_K, 800], [IFR_FAN, 9], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 180], [IFR_FIRE_V, 660], [IFR_FIRE_DENS, 7.9], [IFR_FIRE_HK, 10], [IFR_HF_FK, 1.6], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 10], [IFR_TICK_S, 0.4 /* x2 (2026-10-24; was 0.2) */], [IFR_TICK_K, 2.5],
 ];
-for (const [table, v] of CAPSTONE_NUM) if (table.length === CAPSTONE_TIER) table.push(v);
+for (const [table, v] of CAPSTONE_NUM) if (table.length === WRITTEN_TIERS) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)
 const CAPSTONE_MOVE = {
   arc: { conductivity: [1.15, 1], voltage: [1.15, 1], capacitance: [1, 3] },
@@ -90,7 +92,7 @@ const CAPSTONE_MOVE = {
 for (const [kind, axes] of Object.entries(CAPSTONE_MOVE)) {
   for (const [id, m] of Object.entries(axes)) {
     const tiers = SKILL_MOVE[kind][id];
-    SKILL_MOVE[kind][id] = tiers.length === CAPSTONE_TIER ? [...tiers, m] : tiers; // a copy: NO_MOVE is shared between axes
+    SKILL_MOVE[kind][id] = tiers.length === WRITTEN_TIERS ? [...tiers, m] : tiers; // a copy: NO_MOVE is shared between axes
   }
 }
 
@@ -118,4 +120,26 @@ const CAPSTONE_TIERS = {
   hellfire: { name: "Hellfire" },
   firaga: { name: "Mega Firaga" } /* (owner, 2026-10-20; was Backdraft) */,
 };
-for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1 && CAPSTONE_TIERS[ax.id]) ax.tiers.push(CAPSTONE_TIERS[ax.id]);
+for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === WRITTEN_TIERS - 1 && CAPSTONE_TIERS[ax.id]) ax.tiers.push(CAPSTONE_TIERS[ax.id]);
+// TIER I (tier redesign, owner 2026-10-24: "a new level 0 and a new level 1 (bumping everything else up)"): every per-tier table gets a
+// tier I between tier 0 and today's tier I (now II) - a PLACEHOLDER the redesign's tower work replaces with each axis's first hint.
+// tierMid: whole counts stay whole, multipliers grow evenly (the root of their product), objects field by field; never past either side
+const zeroLike = v => typeof v === "number" ? 0 : Array.isArray(v) ? v.map(zeroLike) : v && typeof v === "object" ? Object.fromEntries(Object.keys(v).map(k => [k, zeroLike(v[k])])) : v;
+function tierMid(a, b) {
+  if (a == null && b != null) return tierMid(zeroLike(b), b); // (an untaken tier written null: half of tier II's)
+  if (typeof a === "number" && typeof b === "number") {
+    if (Number.isInteger(a) && Number.isInteger(b)) return Math.round((a + b) / 2);
+    const m = Number((a > 0 && b > 0 ? Math.sqrt(a * b) : (a + b) / 2).toPrecision(3)); // (3 figures: the card shows some of these)
+    return Math.min(Math.max(a, b), Math.max(Math.min(a, b), m));
+  }
+  if (Array.isArray(a) && Array.isArray(b)) return a.map((v, i) => tierMid(v, b[i]));
+  if (a && b && typeof a === "object" && typeof b === "object") return Object.fromEntries(Object.keys(a).map(k => [k, k in b ? tierMid(a[k], b[k]) : a[k]]));
+  return a;
+}
+const withTierI = T => [T[0], tierMid(T[0], T[1]), ...T.slice(1)]; // (a new array: a table may be shared)
+for (const entry of CAPSTONE_NUM) if (Array.isArray(entry[0]) && entry[0].length === CAPSTONE_TIER) entry[0].splice(0, entry[0].length, ...withTierI(entry[0]));
+// ...and the tables WRITTEN with their capstone in (not in CAPSTONE_NUM): the same tier I
+const FULL_TIER_TABLES = [ARC_SIDE_DMG, VOLT_CARRY_N, CAP_BURST_K, CRR_HOLD_FRAC];
+for (const T of FULL_TIER_TABLES) if (T.length === CAPSTONE_TIER) T.splice(0, T.length, ...withTierI(T));
+for (const kind of Object.keys(SKILL_MOVE)) for (const id of Object.keys(SKILL_MOVE[kind])) if (SKILL_MOVE[kind][id].length === CAPSTONE_TIER) SKILL_MOVE[kind][id] = withTierI(SKILL_MOVE[kind][id]);
+for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1) ax.tiers.unshift({ name: "Spark" }); // (placeholder names)
