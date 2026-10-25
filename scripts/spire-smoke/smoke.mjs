@@ -102,6 +102,11 @@ check("boss sky keeps tower colours: ranges drawn under it", () => {
   return seen.drawTowerRange ? "" : "no range drawn on the boss sky";
 });
 
+check("capstone: a capstone value never runs against its table (no tier lowers a stat - GRV_SLOW and CRR_AMMO V fell below IV when their tables were scaled, 2026-10-24)", () => {
+  const bad = run(`CAPSTONE_NUM.filter(([t]) => Array.isArray(t) && typeof t[5] === "number").map(([t], i) => ({ i, t: t.slice() }))
+    .filter(({ t }) => { const d1 = Math.sign(t[4] - t[3]), d2 = Math.sign(t[5] - t[4]); return d1 && d2 && d1 !== d2; }).map(({ i, t }) => i + ": " + t.join(" "))`);
+  if (bad.length) return "CAPSTONE_NUM rows whose V turns back: " + bad.join(" | ");
+});
 check("capstone: one axis to V, a second stops at IV; every tier table covers V (tier redesign 2026-10-24)", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "arc";
