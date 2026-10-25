@@ -129,17 +129,17 @@ function refreshUpgradePreview(t) {
 // (statRow paints a change for the worse red); rows the tower has not got yet ("—") are left out, and so is a section left empty
 const STAT_SECTIONS = {
   arc: [["Arc", ["Damage", "Rate", "Range", "Shields", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
-  frz: [["Freeze Aura", ["Aura slow", "Aura dmg", "Cold bite", "Brittle", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
-  sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Reflection", ["Reflect"]], ["Breach", ["Breach", "Bleed", "Scorch"]]],
-  car: [["Hangar", ["Interceptors", "Focus fire"]], ["Tether", ["Tether slow", "Tether pulse", "Chain"]], ["Armament", ["Damage", "Rate", "Ammo", "Autopilot", "Slow", "Shields"]]],
-  grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Aura size", "Aura slow", "Armor strip"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]]],
-  ifr: [["Meteor", ["Damage", "Meteors", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire flares"]], ["Flare", ["Flare", "Flare burn", "Flare capstone"]]],
-  acd: [["Jets", ["Corrode", "Builds", "Peak", "Jets", "Carry", "Jet slow", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
+  frz: [["Freeze Aura", ["Aura slow", "Aura tick", "Ticks", "Cold bite", "Brittle", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
+  sol: [["Beam", ["Damage", "Rate", "Range", "Beams", "Crit", "Crit ×", "Locks", "Shields"]], ["Reflection", ["Reflect"]], ["Breach", ["Breach", "Bleed", "Scorch tick", "Scorch ticks"]]],
+  car: [["Hangar", ["Interceptors", "Focus fire"]], ["Tether", ["Tether slow", "Tether pulse", "Pulses", "Chain"]], ["Armament", ["Damage", "Rate", "Ammo", "Autopilot", "Slow", "Shields"]]],
+  grv: [["Nova", ["Nova hit", "Nova reach", "Rate", "Range"]], ["Void", ["Void", "Armor strip", "Crush tick", "Crush ticks"]], ["Aura", ["Aura size", "Aura slow"]], ["Radiation", ["Pellets", "Pellet hit"]], ["Sphere", ["Mass", "Shields"]] /* void and aura by name (owner, 2026-10-25: "always call it a void, and an aura") */],
+  ifr: [["Meteor", ["Damage", "Meteors", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire flares"]], ["Flare", ["Flare", "Flare tick", "Flare ticks", "Flare lasts", "Flare capstone"]]],
+  acd: [["Jets", ["Jet tick", "Ticks", "Builds", "Peak tick", "Jets", "Carry", "Jet slow", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
 function cardStats(t, pv) {
   const b = TOWERS[t.kind], st = towerStats(t), nx = pv ? towerStats(pv) : null, spN = nx ? SPEC[t.kind](nx, pv) : null;
   const rows = [];
-  if (b.dmg && t.kind !== "acd" && t.kind !== "grv") rows.push(["Damage", dmgUnits(st.dmg), nx && dmgUnits(nx.dmg)]); // (ACD's Corrode row is its damage)
+  if (b.dmg && t.kind !== "acd" && t.kind !== "grv") rows.push(["Damage", dmgUnits(st.dmg), nx && dmgUnits(nx.dmg)]); // (ACD's Jet tick row is its damage)
   rows.push(["Range", Math.round(st.range), nx && Math.round(nx.range)], ["Rate", st.rate.toFixed(2) + "/s", nx && nx.rate.toFixed(2) + "/s"],
     ["Leash", slideSpan(t), nx && slideSpan(pv)]);
   SPEC[t.kind](st, t).forEach((r, k) => rows.push([r[0], r[1], spN ? spN[k][1] : null]));

@@ -189,7 +189,7 @@ check("review: the card's rows show no mechanic the tower lacks - CRR shields by
   const c0 = rows("car", {}), c1 = rows("car", { armament: 1 });
   if (c0.rows.Shields !== "−1 / shot" || c1.rows.Shields !== "−2 / shot") return "CRR Shields rows " + c0.rows.Shields + " / " + c1.rows.Shields + " (expected −1, −2)";
   const i0 = rows("ifr", {}).rows, ih = rows("ifr", { hellfire: 1 }).rows, ifl = rows("ifr", { firaga: 1 }).rows;
-  for (const k of ["Fire", "Fire flares", "Flare", "Flare burn"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
+  for (const k of ["Fire", "Fire flares", "Flare", "Flare tick", "Flare ticks", "Flare lasts"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
   if (i0.Meteors !== "1") return "IFR tier 0 Meteors reads " + i0.Meteors;
   if (ih.Fire === "—" || ifl.Flare === "—") return "IFR Hellfire I / Flare I rows blank";
 });
