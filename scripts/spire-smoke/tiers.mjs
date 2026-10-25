@@ -5,7 +5,7 @@ import path from "node:path";
 import { ROOT, boot, check } from "./harness.mjs";
 
 const { run } = boot();
-const CURVE_DONE = ["arc", "sol"]; // the kinds whose stats run on the curve (each tower task adds its own)
+const CURVE_DONE = ["arc", "sol", "car"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
 check("curve: by total level alone, rising, slightly steepening, tier 0 below today's bare tower (tier redesign 2026-10-24)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
@@ -85,4 +85,18 @@ check("SOL: tier 0 stops at its first enemy, no burn, no strip; Focus I passes o
   if (!f.line[0] || f.line[1]) return "Focus I line hits " + f.line + " (expected the second, not the third)";
   if (r.side + (r.line[0] ? 1 : 0) !== 1) return "Reflection I hit " + JSON.stringify(r) + " (expected one bounce)";
   if (!b.burn || b.armor !== 50) return "Breach I: " + JSON.stringify(b) + " (expected a burn, armor kept)";
+});
+
+// ---------- CRR ----------
+towerTierChecks("car", ["tether", "circling", "wingmate"]);
+check("CRR: tier 0 one interceptor, no tether, one bolt a volley; Hangar I two, one held; Tether I one tether at most; Armament I two bolts, same volley (tier redesign 2026-10-24)", () => {
+  const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "car", x: CX, y: CY, lvl: 1 + towerLevel({ skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts }; })()`);
+  const z = st({}), h = st({ hangar: 1 }), a = st({ armament: 1 });
+  if (z.wing !== 1 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== 0) return "tier 0 " + JSON.stringify(z);
+  if (h.wing !== 2 || h.hold !== 1) return "Hangar I " + JSON.stringify(h);
+  if (a.bolts !== 2) return "Armament I " + JSON.stringify(a);
+  const n = run(`(() => { const { t } = tierRig("car", { hangar: 3, launch: 1 }, [[200, 0], [-200, 40], [0, 220], [150, 150]]);
+    G.started = true; const seen = new Set(), orig = carTether; carTether = (i, ...r) => { seen.add(i); return orig(i, ...r); };
+    try { for (let k = 0; k < 600; k++) step(1 / 60); } finally { carTether = orig; } return [seen.size, t.icp.filter(i => i.state === "out").length]; })()`);
+  if (n[0] !== 1) return "Tether I: " + n[0] + " interceptors tethered (expected 1; " + n[1] + " out)";
 });
