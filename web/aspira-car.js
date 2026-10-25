@@ -64,7 +64,7 @@ SKILL_MOVE.car = { hangar: [[1, 1], [1, 1], [1, 1], [1, 1]], launch: [[1, 1], [1
 // in orbit"); s.hold = that many interceptors (rounded up), 0 untaken
 const CRR_HOLD_FRAC = [0, 0.25, 0.75, 1, 1];
 const carHoldFrac = h => CRR_HOLD_FRAC[Math.min(h, CRR_HOLD_FRAC.length - 1)];
-const CRR_CHAIN_FROM = 1; // Tether runs on to one more enemy from III (owner, 2026-10-18; was the capstone's alone)
+const CRR_CHAIN_FROM = 2; /* today's I, tier II since the tier redesign (2026-10-24) */ // Tether runs on to one more enemy from III (owner, 2026-10-18; was the capstone's alone)
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   s.range = b.range * RANGE_BONUS; s.rate = b.rate * CRR_RATE_MUL[a]; s.dmg = b.dmg * CRR_SHOT_MUL[a] * CRR_SIDE_DMG[h]; s.targets = 1;
@@ -114,7 +114,7 @@ function stepCar(t, dt) {
 }
 // a SALVO: interceptors sent at once, then CRR_GAP - one more per Hangar level (owner, 2026-10-17: "each level of hangar should increase the
 // number of interceptors deployed at once"), times the relay's RELAY_MUL
-const carSalvoN = h => 1 + TIER_LEVEL[h]; // interceptors launched at a time: one more than the Hangar's old ladder step (aspira-skills.js TIER_LEVEL)
+const carSalvoN = h => 1 + Math.floor(TIER_LEVEL[h]); /* whole interceptors: tier I's half step launches one (tier redesign 2026-10-24) */ // interceptors launched at a time: one more than the Hangar's old ladder step (aspira-skills.js TIER_LEVEL)
 const carSalvo = t => carSalvoN(skillOf(t, "hangar")) * relayMul(t);
 function stepIcp(i, t, st, dt) {
   if (i.state === "home") {

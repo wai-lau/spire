@@ -234,7 +234,7 @@ const ARC_A = 0.4, ARC_CORR = 0.5, ARC_W_CORR = 0.5, ARC_LEAP_A = 0.6 * ARC_A, A
 // CAPACITANCE CHAINS from tier CAP_CHAIN_FROM (owner, 2026-10-18: "a charged enemy that dies discharges into its neighbours" - it did,
 // but not when a discharge killed it: no chain reaction): a charged enemy a discharge kills joins capQueue and goes off after the
 // burst that killed it, once each (its charge is spent as it goes)
-const CAP_CHAIN_FROM = 1, capQueue = [], CAP_BURST_K = [1, 1.1, 1.35, 1.7, 2]; // CAP_BURST_K: the burst's reach by Capacitance tier
+const CAP_CHAIN_FROM = 2 /* today's I, tier II since the tier redesign (2026-10-24) */, capQueue = [], CAP_BURST_K = [1, 1.1, 1.35, 1.7, 2]; // CAP_BURST_K: the burst's reach by Capacitance tier
 function dischargeStatic(e) {
   const outer = !staticQuiet;
   dischargeOne(e);

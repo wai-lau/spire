@@ -205,6 +205,17 @@ check("the build card reads tiers I..V (tier redesign 2026-10-24)", () => {
   if (r.txt !== "V") return "tier 5 reads " + r.txt + " on the sliders";
   return r.bad.length ? "a sentence reads undefined / NaN: " + r.bad.slice(0, 5).join(", ") : "";
 });
+check("tier I is no more than today's I: whole counts on the card, from-tier switches at II (tier redesign 2026-10-24, review)", () => {
+  const r = run(`(() => {
+    const frac = []; for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) { const d = describeTower(kind, { [ax.id]: 1 }); if (/\\d\\.5 at a time/.test(d)) frac.push(kind + " " + ax.id); }
+    const tch = k => towerStats({ id: 99, kind: "car", x: CX, y: CY, lvl: 1 + k, skills: { launch: k } }).tChain;
+    return { frac, cap: CAP_CHAIN_FROM, chain: [tch(1), tch(2)] };
+  })()`);
+  if (r.frac.length) return "a half count on the card at tier I: " + r.frac.join(", ");
+  if (r.cap !== 2) return "Capacitance chains from tier " + r.cap + " (expected II: today's I moved up)";
+  if (JSON.stringify(r.chain) !== "[false,true]") return "Tether chains at tiers I / II: " + r.chain + " (expected false, true)";
+  return "";
+});
 // an enemy held still on lane 0 at about `dist` u from tower t (its lane point nearest that distance); shield / hp settable after
 run(`function ifrNear(type, t, dist) {
   spawnEnemy(type, 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
