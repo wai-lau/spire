@@ -66,7 +66,7 @@ const DESCRIBE = {
     return (n >= CAPSTONE_TIER ? "A hypernova that tears armor away" : "A nova") + " lands where it catches the most, imploding." +
       (v ? " It leaves a black hole" + (n >= CAPSTONE_TIER ? " twice as big as usual" : "") + " that strips armor; its black centre burns whatever it touches, and the hole grows with the nova's hit and that burn." +
         (v >= CAPSTONE_TIER ? " A fully grown core holds what it catches almost still." : "") : "") +
-      (n ? (v ? " Its aura" : " It leaves an aura") + ", as big as the nova's hit, slows what it holds." : "") + (v || n || r ? " Nearby ones pull together and merge." : "") +
+      (n ? (v ? " Its aura, as big as the nova's hit, slows" : " It leaves an aura, as big as the nova's hit, that slows") + " what it holds." : "") + (v || n ? " Nearby ones pull together and merge." : "") +
       (r ? " It radiates " + (r >= CAPSTONE_TIER ? "pellets and bursts as it fades." : "pellets.") : "");
   },
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
