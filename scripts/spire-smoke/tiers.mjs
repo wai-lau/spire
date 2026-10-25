@@ -5,7 +5,7 @@ import path from "node:path";
 import { ROOT, boot, check } from "./harness.mjs";
 
 const { run } = boot();
-const CURVE_DONE = ["arc"]; // the kinds whose stats run on the curve (each tower task adds its own)
+const CURVE_DONE = ["arc", "sol"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
 check("curve: by total level alone, rising, slightly steepening, tier 0 below today's bare tower (tier redesign 2026-10-24)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
@@ -71,4 +71,18 @@ check("ARC: tier 0 strikes one enemy; Conductivity I chains once; Voltage I fork
     fireSkillChain(t, st, es[0]); for (let i = 0; i < 30; i++) stepChains(0.05); return ${hitCount("es")}; })()`);
   const r = [n({}), n({ conductivity: 1 }), n({ voltage: 1 }), n({ capacitance: 1 })];
   if (JSON.stringify(r) !== "[1,2,3,1]") return "enemies hit (tier 0, Cond I, Volt I, Cap I): " + r + " (expected 1, 2, 3, 1)";
+});
+
+// ---------- SOL ----------
+towerTierChecks("sol", ["reflect", "pass", "scorch", "break"]);
+check("SOL: tier 0 stops at its first enemy, no burn, no strip; Focus I passes one more; Reflection I bounces once; Breach I burns and pops (tier redesign 2026-10-24)", () => {
+  const shot = sk => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [40, 60], [40, -60]]);
+    es[0].armor = es[0].armor0 = 50; es[0].shield = es[0].shieldMax = 3; const sh0 = es[0].shield;
+    fireRay(t, st, es[0]); const pops = sh0 - es[0].shield; const h0 = es[0].hp; for (let i = 0; i < 30; i++) step(1 / 60);
+    return { line: [es[1].hp < es[1].max, es[2].hp < es[2].max], side: es.slice(3).filter(e => e.hp < e.max).length, burn: !!(es[0].dotT > 0 || es[0].hp < h0), armor: es[0].armor, pops }; })()`);
+  const z = shot({}), f = shot({ focus: 1 }), r = shot({ refraction: 1 }), b = shot({ breach: 1 });
+  if (z.line[0] || z.side || z.burn || z.armor !== 50) return "tier 0: " + JSON.stringify(z);
+  if (!f.line[0] || f.line[1]) return "Focus I line hits " + f.line + " (expected the second, not the third)";
+  if (r.side + (r.line[0] ? 1 : 0) !== 1) return "Reflection I hit " + JSON.stringify(r) + " (expected one bounce)";
+  if (!b.burn || b.armor !== 50) return "Breach I: " + JSON.stringify(b) + " (expected a burn, armor kept)";
 });

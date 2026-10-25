@@ -328,19 +328,22 @@ const SOL_HOP = [0.5, 0.5, 0.5, 0.5]; // REFLECTION'S SHARE, FIXED (owner, 2026-
 // Refraction peaked at I (107%) and fell by III (93%): range alone spread its fire
 // thin, so II / III also hit harder (owner, 2026-10-07)
 // (LIGHT OUTRUNS THE FAST, Refraction x the fast, removed 2026-10-12 - owner: no extra damage by enemy type)
-const SOL_REFRACTION_DMG = [1, 1.1, 1.3, 1.5] /* SLIGHT (owner, 2026-10-23: "reflection can increase damage slightly so that we dont have an absurd number of beams"; was 1 1 1.3 4.6 13.1 24.1, VI 32.2) */; // III..V x1.15 / 1.35 / 1.5 with the 160-degree cone (owner, 2026-10-08: "even a 160 deg angle?" - the cone alone tops out at 156%)
+// (SOL_REFRACTION_DMG - Reflection's slight damage gain - GONE with the tier redesign, 2026-10-24: the hit is the stat curve's)
 // each Focus tier's beam STRENGTH (2026-10-08, the tier fit's lever for Focus: more beams alone measured 168% at V)
 // (SOL_PIERCE - the pass-through by Breach tier, 35% .. 125% - is GONE with the SOL rework: every beam passes through at 100%, aspira-sol.js)
 const SOL_PIERCE_OLD = [0.35, 0.6, 0.8, 1]; /* by Breach STOP: 0 35%, I 60%, II 80%, III 100%, IV (the capstone) 125% (owner, 2026-10-19: "100% carry earlier / capstone goes above 100%"; 2 and 4 are never bought) */ // the overkill a kill carries on (solPierce, aspira-towers.js) by Breach tier; VI 1 (capstone)
 // FOCUS = BEAMS + PASS-THROUGH (owner, 2026-10-23: "I want focus to improve the passthrough rate and beam count"): SOL_PASS of a hit carries on past
 // each enemy (solPierce); Focus no longer multiplies damage (SOL_FOCUS_DMG, was 1 1 1 1 4.556 4.704, VI 5.2 - gone)
 const SOL_PASS = [0.5, 0.55, 0.7, 0.9];
+// HOW MANY it passes through, by Focus tier 0..V (tier redesign, owner 2026-10-24: tier 0 "one beam that stops at its first enemy", Focus I
+// "the beam passes through one more enemy"); from II, today's I, every enemy on its line as before (SOL_PIERCE_HOPS caps it)
+const SOL_PASS_N = [0, 1, Infinity, Infinity, Infinity, Infinity];
 function solSkillStats(t, s, b) {
-  s.dmg = b.dmg * SOL_REFRACTION_DMG[skillOf(t, "refraction")]; s.range = b.range * RANGE_BONUS; s.crit = LVL_SOL_CRIT[0]; s.rate = b.rate;
-  s.shieldPop = SOL_SHIELD_POP[skillOf(t, "focus")] + SOL_REFRACT_POP[skillOf(t, "refraction")]; s.pass = SOL_PASS[skillOf(t, "focus")]; // FOCUS pierces shields: each beam pops this many (SOL's shield help, counter matrix)
-  s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.fan = SOL_FAN[skillOf(t, "refraction") >= CAPSTONE_TIER ? 1 : 0]; // the chains off the first enemy (solRefraction)
+  curveBase(t, s, b); s.rate = b.rate; s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.crit = LVL_SOL_CRIT[0]; // the STAT CURVE (tier redesign 2026-10-24); SOL's rate never rises (owner, 2026-10-23)
+  s.shieldPop = SOL_SHIELD_POP[skillOf(t, "focus")] + SOL_REFRACT_POP[skillOf(t, "refraction")]; s.pass = SOL_PASS[skillOf(t, "focus")]; s.passN = SOL_PASS_N[skillOf(t, "focus")]; // FOCUS pierces shields: each beam pops this many (SOL's shield help, counter matrix)
+  s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.fan = SOL_FAN_BY[skillOf(t, "refraction")]; // the chains off the first enemy (solRefraction)
   const bk = skillOf(t, "breach");
-  s.breach = 1; s.pierce = 1; s.dot = { frac: SOL_SCORCH[bk], t: SOL_SCORCH_T }; s.critMul = SOL_CRITMUL[bk]; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = SOL_BREACH_CRIT[bk]; s.skill = true;
+  s.breach = 1; s.pierce = 1; s.dot = SOL_SCORCH[bk] ? { frac: SOL_SCORCH[bk], t: SOL_SCORCH_T } : null; /* no burn at Breach 0 (tier redesign) */ s.critMul = SOL_CRITMUL[bk]; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = SOL_BREACH_CRIT[bk]; s.skill = true;
 }
 // THE SOL REWORK (owner, 2026-10-22: "SOL beam always goes through at 100% after enemy in a straight line, starts with one reflection as
 // usual. However, reflection deals less than 100% damage and also passes through" / "refraction -> increases passthrough% and additional
@@ -352,6 +355,7 @@ function solSkillStats(t, s, b) {
 // THE FORK (owner, 2026-10-23: "Maybe start it at 2" / "relection VI goes to 6" / "add more reflections to keep fire rate the same"):
 // the first enemy forks SOL_FAN[0] chains, Reflection VI SOL_FAN[1] (were 1, VI 3)
 const SOL_FAN = [2, 6];
+const SOL_FAN_BY = [0, 1, SOL_FAN[0], SOL_FAN[0], SOL_FAN[0], SOL_FAN[1]]; // by Reflection tier 0..V: tier I one bounce, one chain (tier redesign 2026-10-24)
 // IN RANGE (owner, 2026-10-23: "All reflection targets need to be withing SOL rnage"): a fork or a bounce only to an enemy inside
 // the tower's own range; none left there, the chain stops. solHeads: the first enemy's forks (also the charge cones' aim, drawAims)
 const solOut = (t, st, hit) => { const r2 = (st.range || 0) ** 2; return x => hit.has(x) || (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > r2; };

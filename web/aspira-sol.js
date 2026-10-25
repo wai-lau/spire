@@ -14,7 +14,8 @@ const SOL_THIN = 0.4;
 // on carries st.pass (SOL_PASS by FOCUS tier since 2026-10-23; was st.hop) of the hit, drawn like a reflection's beam (one beam's damage, full alpha, thin)
 function solPierce(t, st, from, e, full, share = 1) {
   const carry = full * (st.pierce || 0) * (st.pass || 1), seen = carry / (st.beams || 1), al = share * (st.pierce || 0) * (st.pass || 1); if (carry <= 0) return; // al: its opacity, the share of the first beam it carries (rayHit)
-  for (let k = 0; k < SOL_PIERCE_HOPS; k++) {
+  const hops = Math.min(SOL_PIERCE_HOPS, st.passN ?? SOL_PIERCE_HOPS); if (!hops) return; // Focus's count (SOL_PASS_N): tier 0 stops at its first enemy (tier redesign 2026-10-24)
+  for (let k = 0; k < hops; k++) {
     const dx = e.x - from.x, dy = e.y - from.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
     let o = null, best = SOL_PIERCE_LEN;
     for (const x of G.enemies) {

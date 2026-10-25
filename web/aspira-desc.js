@@ -37,8 +37,10 @@ const DESCRIBE = {
   // chain, each SOL_HOP x the last; VI three chains) and the armor every hit strips (SOL_BREACH_ARMOR) - every number read live
   sol(sk) {
     const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, n = SOL_BEAMS[f], k = SOL_REFRACTION[r], p = Math.round(SOL_HOP[r] * 100), TIMES = ["", "once", "twice"];
-    return "Focuses " + n + " piercing beam" + (n > 1 ? "s" : "") + " onto an enemy, passing through at " + Math.round(SOL_PASS[f] * 100) + "%. " + /* Focus: beams + pass-through (owner, 2026-10-23) */
-      "Reflects " + (TIMES[k] || k + " times") + " for " + (100 - p) + "% less damage" + (k > 1 ? " every reflection" : "") + "." + (r >= CAPSTONE_TIER ? " First reflection splits six ways." : " First reflection splits two ways.") /* (owner: st.fan, two chains, VI six) */ + " Beams break " + dmgUnits(SOL_BREACH_ARMOR[b] * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor and scorch for " + Math.round(SOL_SCORCH[b] * 100) + "% over " + SOL_SCORCH_T + "s."; // (owner: "Break X armor and scorch" / "and scorch for ...")
+    const pn = SOL_PASS_N[f], fan = SOL_FAN_BY[r], br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH[b], scorch = "scorch for " + Math.round(sc * 100) + "% over " + SOL_SCORCH_T + "s"; // tier 0: one beam, stopping at its enemy (tier redesign 2026-10-24)
+    return "Focuses " + (n > 1 ? n + " beams" : "a beam") + " onto an enemy" + (pn === 1 ? ", passing through to one more at " + Math.round(SOL_PASS[f] * 100) + "%" : pn ? ", passing through at " + Math.round(SOL_PASS[f] * 100) + "%" : "") + "." + /* Focus: beams + pass-through (owner, 2026-10-23) */
+      (k ? " Reflects " + (TIMES[k] || k + " times") + " for " + (100 - p) + "% less damage" + (k > 1 ? " every reflection" : "") + "." + (fan > 1 ? " First reflection splits " + NUM_WORD[fan] + " ways." : "") : "") /* (owner: st.fan, two chains, VI six) */ +
+      (br ? " Beams break " + dmgUnits(br * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor" + (sc ? " and " + scorch : "") + "." : sc ? " Beams " + scorch + "." : ""); // (owner: "Break X armor and scorch" / "and scorch for ...")
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY) and its slow - on the POOLS now (ACD_FLOW_SLOW),
