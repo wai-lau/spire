@@ -3,8 +3,8 @@
 // 120 waves. Per phase: margin = mean of each wave's closest approach (u from the core, capped 400) - 10 u per life lost; and the wins.
 // env KINDS, SEEDS, ASPIRA_WEB, ASPIRA_PATCH; usage: node axis.mjs out.jsonl
 import { isMainThread } from "node:worker_threads";
-import { makePlayer } from "/home/wai/src/exec-fn/apps/spire/scripts/aspira-sim/sim.mjs";
-import { runPool } from "/home/wai/src/exec-fn/apps/spire/scripts/aspira-sim/pool.mjs";
+import { makePlayer } from "./sim.mjs";
+import { runPool } from "./pool.mjs";
 const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], car: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
 const ALL = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"];
 // FREE trios (not guaranteed winnable): the PAIRS of mains their towers cover miss an enemy type - the owner's square, IFR swarm+shield

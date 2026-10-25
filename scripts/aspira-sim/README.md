@@ -35,6 +35,7 @@ caps it) and the single-threaded ones can run side by side.
 | `triodiag.mjs` | why a trio loses: its games to 120 with per-wave records over waves 60+, lives lost and closest approach per enemy type, and the killing wave's types. env `TRIOS` (`a.b.c,...`), `SEEDS`, `ASPIRA_WEB` |
 | `eco.mjs` | the no-weakness trios at wave 120: credits owned (spent + banked) against what maxing every tower costs; env `K` scales `SKILL_STEP_COST` (the x1.6 price came from it) |
 | `marks.py countermx.out` | turns a `countermx` run (spread build, waves 61-69) into the build card's check / x marks (`VS_MARKS`, aspira-chooser.js) |
+| `marktarget.py countermx.out [options=5]` | THE NEAREST ZERO-SUM MARKS TABLE (v7, owner 2026-10-25): every -3..3 table with rows and columns summing to 0, no two towers alike, every tower above 0 on two types or more, ranked by distance to the measured raw marks - the benchmark the towers are balanced to; each row shows the cells to move off the measured marks |
 
 `ASPIRA_WEB=<dir>` pins a run to a snapshot of the game files (`cp web/aspira-*.js`
 somewhere first): every game re-reads them, so a balance commit landing mid-run

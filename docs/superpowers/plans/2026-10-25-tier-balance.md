@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (native, chosen by Wai). Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fit the tier redesign's numbers so the spec's checks pass: the duo rule at tier 0, equal trios, the economy target (all 39 points by Death, under 10% of a tower's price left), marks target C with every tower on two or more types; ship-ready as the next minor (7.0.0 is NOT it: minor = 6.16.0).
+**Goal:** Fit the tier redesign's numbers so the spec's checks pass: the duo rule at tier 0, equal trios, the economy target (all 39 points by Death, under 10% of a tower's price left), marks target C with every tower on two or more types; ship-ready as **7.0.0** (owner, 2026-10-25: "All things after tower L0 rework should be considered v7").
 
 **Architecture:** No new mechanics. Every change is a number in `web/aspira-curve.js` (`STAT_CURVE` lo/hi per kind), `web/aspira-defs.js` (early-wave ease, `BOUNTY_MUL`), `web/aspira-skills.js` (`SKILL_STEP_COST`) or a tower's mechanic lever, tried first through `ASPIRA_PATCH` in the sims and committed once a sim passes. Every sim runs pinned to a snapshot (`ASPIRA_WEB`), one at a time.
 
@@ -48,6 +48,14 @@
 - [ ] **Step 2:** Scale each kind's `dmg[1]` by its factor; repeat until every factor is within 0.9..1.1.
 - [ ] **Step 3:** Commit `Spire tiers: curve fit - ...`. Expected: factors within ±10%; smoke passes.
 
+### Task 2b: Axis balance (owner, 2026-10-25: "make sure that axis balancing is run as well")
+
+**Files:** Modify `scripts/aspira-sim/axis.mjs` (relative imports - it ran master's sim), each tower's per-axis mechanic levers (counts, shapes, its one own-damage constant) in `web/aspira-*.js`.
+
+- [ ] **Step 1:** `node scripts/aspira-sim/axis.mjs <out.jsonl>` (each axis pushed first inside the real trios holding the tower, perfect play to 120) → `python3 scripts/aspira-sim/axisrep.py <out.jsonl>`.
+- [ ] **Step 2:** Per tower, bring each axis's early / mid / late margin within ±10% of the tower's mean, and wins within one game, with that axis's own mechanic levers - never a raw damage table (the curve owns damage), never a stat nudge past `NUDGE_MAX`.
+- [ ] **Step 3:** Commit `Spire tiers: axis balance - ...`. Expected: axisrep within ±10% per phase; smoke passes. Re-run Task 2's tribal if any lever moved a kind's power.
+
 ### Task 3: Economy target
 
 **Files:** Modify `web/aspira-skills.js` (`SKILL_STEP_COST`), `web/aspira-defs.js` (`BOUNTY_MUL`).
@@ -58,20 +66,22 @@
 
 ### Task 4: Re-check
 
-- [ ] **Step 1:** `solo.mjs 2` and `tribal.mjs` again on the final numbers. Expected: duo table clean, factors within ±15%. Fix and loop back to the failing task if not.
+- [ ] **Step 1:** `duo0.mjs 3`, `tribal.mjs` and `axis.mjs` again on the final numbers. Expected: duo clean, factors within ±15%, axes within ±15%. Fix and loop back to the failing task if not.
 
-### Task 5: Marks
+### Task 5: Marks - the nearest zero-sum target, then balance to it (owner, 2026-10-25: "this needs to include getting the nearest new zero sum table / Then balancing so each tower hits those benchmarks")
 
-**Files:** Modify `web/aspira-chooser.js` (`VS_MARKS`, via `marks.py --write`), tower mechanic levers if needed.
+**Files:** Create `scripts/aspira-sim/marktarget.py`; modify `web/aspira-chooser.js` (`VS_MARKS`, via `marks.py --write`) and tower mechanic levers.
 
 - [ ] **Step 1:** Pick POINTS = a perfect player's buys per tower at waves 61-69 from Task 3's trioplan (rounded).
-- [ ] **Step 2:** `SPREAD_ONLY=1 POINTS=<p> WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out; python3 scripts/aspira-sim/marks.py cmx.out` - compare to target C; fix RULE FAILs with balance.
-- [ ] **Step 3:** `marks.py --write`, commit `Spire tiers: marks - ...`. Expected: no RULE FAIL.
+- [ ] **Step 2:** `SPREAD_ONLY=1 POINTS=<p> WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out; python3 scripts/aspira-sim/marks.py cmx.out` - the measured marks and their raw double-centred scores.
+- [ ] **Step 3:** `marktarget.py cmx.out`: every integer table (-3..3) with each row and each column summing to 0, no two rows alike, every tower above 0 on two or more types; ranked by distance to the measured raw scores (in marks, summed |target - raw / PER_MARK|), fewest cells changed first. Print the nearest and its ties; it replaces target C as the benchmark (memory `marks-target`).
+- [ ] **Step 4:** Balance each tower whose measured row misses its target row, with that tower's own mechanic levers (never marks edits, one pop per tick, no SOL rate, IFR flares locked); re-run countermx after each round until every row matches.
+- [ ] **Step 5:** `marks.py --write`, commit `Spire tiers: marks - ...`. Expected: measured marks equal the target table; no RULE FAIL. Re-run `tribal.mjs` + `axis.mjs` if levers moved power (Task 4 bounds).
 
-### Task 6: Ship prep (6.16.0)
+### Task 6: Ship prep (7.0.0)
 
 **Files:** `web/aspira-version.txt`, `web/aspira-changelog.js` (in place), `ARCHITECTURE.md` §9.4/§4.2, `ARCHAEOLOGY.md` §12 snapshot, `CLAUDE.md` index lines if needed.
 
-- [ ] **Step 1:** Version 6.16.0, a changelog entry naming the tier ladder, the curve, the new mechanics and the economy.
+- [ ] **Step 1:** Version 7.0.0 (the tier redesign is the major; later battery runs are 7.x minors), a changelog entry naming the tier ladder, the curve, the new mechanics and the economy.
 - [ ] **Step 2:** Docs: the fitted numbers into ARCHAEOLOGY §12, principles only in ARCHITECTURE.
 - [ ] **Step 3:** Smoke + `.venv/bin/pytest apps/spire/tests` from exec-fn; commit. Then STOP: ask Wai before push/merge/deploy.
