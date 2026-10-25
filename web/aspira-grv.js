@@ -8,13 +8,11 @@
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const GRV_AURA_R = [45, 80, 161.2, 247]; /* x1.25 with the faster evaporation (owner, 2026-10-16: "raise bh fire rate and bh size to compensate"; was 68 .. 122) */ // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
-const GRV_STRIP_MUL = [1, 1, 3, 34.59]; /* Void: the aura's armor strip, x by tier (late tiers steepened, 2026-10-16) */
-const GRV_RATE_MUL = [1, 1, 1, 5.58]; /* Supernova: the nova's fire rate, x by tier */
+// (GRV_RATE_MUL, GRV_NOVA_MUL, GRV_STRIP_MUL - the raw rate, nova hit and strip by tier - GONE with the tier redesign, 2026-10-24: the stat curve's)
 const GRV_SLOW = [0.078, 0.195, 0.5733, 1.0517]; /* x1.3 (2026-10-24, GRV to fast -1) */ /* x1.5 (2026-10-24 marks target: better vs fast) */ // Void: the aura's slow at starting mass (x mass, to GRV_SLOW_MAX)
 const GRV_NOVA_R = [71, 85, 112, 185]; // Supernova: the nova's reach (x1.7 with the aura; was 42 .. 82)
-const GRV_NOVA_MUL = [0.8, 1.2, 1.4, 6]; /* 2026-10-18: cut with THREE novas a fire (was 0.8 2 3.2 4 27.42 67.13, VI 167.8 -> 36) - Supernova was the only axis that mattered */ /* V x9, VI x36 (steeper late tiers) */ /* x2 (owner, 2026-10-16: "double the nova damage"; was [1, 1.3, 1.6, 2, 2.4, 2.8]) */ // Supernova: the nova's hit, x the tower's damage
 const GRV_PELLETS = [2.1, 2.73, 3.99, 5.25]; /* x0.7 at x1/0.7 the hit (2026-10-24: fewer pops, same damage - GRV to shield -2) */ /* HALF the pellets at TWICE the hit (owner, 2026-10-17: "halve bh pellet count but double damage"; was 6 .. 15) */ // Radiation: pellets a second at starting mass (x mass) - x3 (owner, 2026-10-15: "3x as many pellets to start"; they can miss now; was 2 .. 5)
-const GRV_PELLET_K = [0.2857, 0.5714, 1.3714, 68.486]; /* x1/0.7 with GRV_PELLETS x0.7 (2026-10-24) */ /* V, VI x2 (2026-10-18; VI 118 -> 236) */ /* x2 with the halved count (owner, 2026-10-17) */ /* V x9, VI x36 (steeper late tiers) */ // Radiation: a pellet's hit, x the tower's damage
+const GRV_PELLET_K0 = 0.808; // a pellet's hit, x the tower's damage - ONE number since the tier redesign (2026-10-24: its tier I value 0.404, x2 - owner: Radiation's pellets "more useful"; was 0.2857 0.5714 1.3714 68.486, V 236)
 let GRV_AURA_K = 0.48; /* x0.8 (2026-10-24 marks target: less vs armor) */ // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
 const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1) - x2 faster (owner, 2026-10-16: "some bh taking too long to evaporate if merged with too many / increase bh evaporation speed significantly"; was 5)
 // EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction
@@ -46,11 +44,11 @@ const grvNovaR = (sp, st) => st.novaR * (1 - Math.min(1, novaLocal(sp.age)[1] / 
 const GRV_PELLET_REACH = 1.4, GRV_PELLET_V = 320, GRV_PELLET_HIT = 3; // a pellet flies this x the aura's radius, at V a second; touches an enemy within its size + HIT
 const GRV_PEL_ST = { noNum: true }; // a pellet hit: its flash, but its number goes to grvFloat (into the hole)
 const GRV_AURA_ST = { noFx: true, noNum: true }; /* noNum: its number is grvFloat's alone (it showed twice once grvFloat became a plain dmgNumber) */
-const GRV_INNER_T = [3, 4.5, 20, 160]; /* IV-VI x4 .. x21 (2026-10-18, Void up to Supernova; VI 15.37 -> 320) */ /* the inner burn by Void tier: a lone untaken GRV was beating the wave-10 Star (owner, 2026-10-17: early strength trimmed to tiers 0-I) */ const GRV_INNER_K = 6 /* x2 (owner, 2026-10-16: "seems too small?"; was 3) */, GRV_INNER_SHOW = 1, GRV_INNER_ST = { noFx: true, noNum: true }; // SHOW: its burn's number once a second an enemy, the sum (the FRZ aura's treatment - owner: "so it doesn't emit as many numbers") // the INNER AURA's damage a second, x the tower's damage x mass (owner, 2026-10-16: "the inner aura should do damage and feed the bh"); a hit there shows its own number // a nova hit: no flash, no number (its numbers drift INWARD - grvFloat)
+const GRV_INNER_K0 = 3.67; /* the inner burn, x the tower's damage x mass - ONE number since the tier redesign (2026-10-24: its tier I value; was 3 4.5 20 160, V 320) */ /* IV-VI x4 .. x21 (2026-10-18, Void up to Supernova; VI 15.37 -> 320) */ /* the inner burn by Void tier: a lone untaken GRV was beating the wave-10 Star (owner, 2026-10-17: early strength trimmed to tiers 0-I) */ const GRV_INNER_K = 6 /* x2 (owner, 2026-10-16: "seems too small?"; was 3) */, GRV_INNER_SHOW = 1, GRV_INNER_ST = { noFx: true, noNum: true }; // SHOW: its burn's number once a second an enemy, the sum (the FRZ aura's treatment - owner: "so it doesn't emit as many numbers") // the INNER AURA's damage a second, x the tower's damage x mass (owner, 2026-10-16: "the inner aura should do damage and feed the bh"); a hit there shows its own number // a nova hit: no flash, no number (its numbers drift INWARD - grvFloat)
 
 SKILL_TREES.grv = [
   { id: "void", name: "Void", tiers: [{ name: "Well" }, { name: "Abyss" }, { name: "Void" }] },
-  { id: "supernova", name: "Supernova", tiers: [{ name: "Flare" }, { name: "Nova" }, { name: "Supernova" }] },
+  { id: "supernova" /* id kept (saves); shown as NOVA - tier redesign, owner 2026-10-24: "Nova: adds slowing aura" (was Supernova) */, name: "Nova", tiers: [{ name: "Flare" }, { name: "Nova" }, { name: "Supernova" }] },
   { id: "radiation", name: "Radiation", tiers: [{ name: "Glow" }, { name: "Spray" }, { name: "Radiance" }] },
 ];
 SKILL_MOVE.grv = { void: [[1, 1], [1.02, 1], [1.06, 1], [1.1, 1]], supernova: [[1, 1], [1.04, 1], [1.12, 1], [1.2, 1]], radiation: [[1, 1], [1, 1.2], [1, 1.6], [1, 2]] };
@@ -65,11 +63,13 @@ function grvSkillStats(t, s, b) {
   // the late FIRE RATE comes from the DEEPEST axis and the nova's REACH from Void or Supernova (owner, 2026-10-18: "make sure each axis is
   // still equally powerful, move things between axes if necessary" - countermx N=1 had Supernova 0-17% leaked, Void 79-97%; Supernova alone
   // held the rate and the reach. A rate moved to Void instead cost every SOL/ACD/CRR + GRV trio its late game)
-  const rm = GRV_RATE_MUL[Math.max(v, n, r)], rh = 1 + (rm - 1) / 2;
-  s.dmg = b.dmg * rm / rh; s.hdmg = b.dmg; s.evapK = rh / rm; s.range = b.range * RANGE_BONUS; s.rate = b.rate * rh; s.targets = 1;
-  s.auraR = GRV_AURA_R[v]; s.slow = GRV_SLOW[v]; s.stripMul = GRV_STRIP_MUL[v]; s.innerK = GRV_INNER_T[v]; s.horizon = v >= CAPSTONE_TIER;
-  s.novaR = GRV_NOVA_R[Math.max(n, v)]; s.novaMul = GRV_NOVA_MUL[n]; s.hyper = n >= CAPSTONE_TIER;
-  s.pellets = GRV_PELLETS[r]; s.pelletK = GRV_PELLET_K[r]; s.hawking = r >= CAPSTONE_TIER; s.skill = true;
+  // THE TIER REDESIGN (owner, 2026-10-24): tier 0 a nova that pulls inward, nothing after; Void I adds the black hole and its armor strip,
+  // Nova I the slowing aura, Radiation I the pellets - each axis its own part of the sphere (hole / auraOn / pellets). The rate and the
+  // hits are the STAT CURVE's (was GRV_RATE_MUL by the deepest axis, half to the rate - rm / rh - and GRV_NOVA_MUL)
+  curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.hdmg = s.dmg; s.evapK = 1; s.targets = 1;
+  s.hole = v > 0; s.auraOn = n > 0; s.auraR = GRV_AURA_R[Math.max(n, v)]; s.slow = GRV_SLOW[n]; s.innerK = GRV_INNER_K0; s.horizon = v >= CAPSTONE_TIER;
+  s.novaR = GRV_NOVA_R[Math.max(n, v)]; s.hyper = n >= CAPSTONE_TIER;
+  s.pellets = GRV_PELLETS[r]; s.pelletK = GRV_PELLET_K0; s.hawking = r >= CAPSTONE_TIER; s.skill = true;
 }
 
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
@@ -193,6 +193,7 @@ function grvMerge(big, small) {
 function stepSphere(sp, t, st, dt) {
   if (sp.merged) return; // taken in by a bigger one (grvPull): no Hawking burst, nothing
   sp.age += dt;
+  if (sp.age >= GRV_NOVA_END && !st.hole && !st.auraOn && !st.pellets) { sp.mass = 0; return; } // TIER 0: the nova alone, no sphere after it (tier redesign 2026-10-24)
   if (!sp.auraSnd && sp.age >= GRV_NOVA_END) { sp.auraSnd = true; sp.apm = grvAuraBase(sp, st) ** 2 / Math.max(1e-6, sp.mass); if (grvBank(sp, t)) return; sfx("grvaura"); } // its AREA per mass, fixed as it opens // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
   // the NOVA: the yellow front sweeps out; each enemy it reaches takes the hit once
   const [nk, na] = novaLocal(sp.age);
@@ -205,7 +206,7 @@ function stepSphere(sp, t, st, dt) {
       if (e.dead || !e.seen || sp.hit.has(e.id) || d2 > st.novaR * st.novaR || d2 < r * r) continue;
       sp.hit.add(e.id);
       if (st.hyper && e.armor > 0) e.armor -= e.armor * GRV_HYPER_STRIP; // Hypernova: half the real armor, at once
-      const amt = st.dmg * st.novaMul * GRV_NOVA_K, dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
+      const amt = st.dmg * GRV_NOVA_K, dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
       sp.novaDealt = (sp.novaDealt || 0) + (e.dead ? amt : dealt); // (sets the aura's size: a KILL counts the whole hit - overkill on a
       // weak enemy is not a weak nova; a hit a shield swallowed counts nothing)
       if (dealt > 0) grvFloat(sp, e, grvLastHit); // the nova's number: the WHOLE hit, overkill too (grvLastHit)
@@ -223,10 +224,11 @@ function stepSphere(sp, t, st, dt) {
     for (const e of G.enemies) {
       const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
       if (e.dead || !e.seen || d2 > ar * ar) continue;
-      if (e.armor > 0) e.armor -= Math.min(e.armor, escale(e) * st.hdmg * GRV_AURA_K * (st.stripMul || 1) * k * GRV_TICK * GRV_STRIP * (GRV_STRIP_IN - (GRV_STRIP_IN - GRV_STRIP_OUT) * Math.sqrt(d2) / Math.max(1, ar))); // MORE the closer (owner, 2026-10-16: "The aura strip armor and slows more the closer they are"): x1.5 at the centre to x0.5 at the edge
+      if (st.hole && e.armor > 0) e.armor -= Math.min(e.armor, escale(e) * st.hdmg * GRV_AURA_K * k * GRV_TICK * GRV_STRIP * (GRV_STRIP_IN - (GRV_STRIP_IN - GRV_STRIP_OUT) * Math.sqrt(d2) / Math.max(1, ar))); // MORE the closer (owner, 2026-10-16: "The aura strip armor and slows more the closer they are"): x1.5 at the centre to x0.5 at the edge
       const inIn = d2 <= inner * inner, slow = inIn ? core : outer;
-      if (inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.hdmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
+      if (st.hole && inIn && sp.age >= GRV_NOVA_END) { const d = grvHit(sp, t, st, e, st.hdmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy doubled like every other slow (owner, 2026-10-24 marks target: "Increase slow to make good vs fast")
+      if (!st.auraOn) continue; // the slow and the pull are Nova's aura (tier redesign 2026-10-24)
       const lane = grvLane(e, sp), sk = lane.ahead ? GRV_AHEAD_K : 1;
       applySlow(e, slow * sk * grvSizeK(e), GRV_TICK * 1.5, "grv:" + t.id);
       grvPullTo(e, lane);
@@ -283,7 +285,7 @@ const GRV_PEL_SOFT = 80; // w = (in flight / this) squared past it: ~200 a tower
 // EACH PELLET ITS OWN SIZE (owner, 2026-10-21: "for the GRV pellets, jitter the length, opacity, and damage (correlated) between 25% and
 // 400% (same dps)"): one roll j = 0.25 + 3.75 u^4 (u uniform) - 25% .. 400%, its MEAN exactly 1, so the damage a second holds - sets its
 // hit (x j), its streak (x j) and its opacity (GRV_PEL_A x j, to 1)
-const GRV_PEL_J = () => 0.25 + 3.75 * Math.random() ** 4, GRV_PEL_A = 0.5;
+const GRV_PEL_J = () => 0.25 + 3.75 * Math.random() ** 4, GRV_PEL_A = 0.5 * 1.5; // x1.5 brighter (tier redesign, owner 2026-10-24)
 function grvPellet(sp, t, st, reach, w = 1) {
   const a = Math.random() * 6.283, j = GRV_PEL_J();
   (t.pellets ||= []).push({ sp, x: sp.x, y: sp.y, vx: Math.cos(a) * GRV_PELLET_V, vy: Math.sin(a) * GRV_PELLET_V, left: reach / GRV_PELLET_V, dmg: st.hdmg * st.pelletK * w * j, j });
@@ -344,7 +346,7 @@ function stepPellets(t, st, dt) {
 }
 
 // ---------- the PELLETS, drawn: a short coral streak along each one's flight ----------
-const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 2.2, GRV_PEL_BANDS = 4; // s of flight the streak spans; its width
+const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 2.2 * 1.6 /* x1.6 (tier redesign, owner 2026-10-24: Radiation's pellets "need to be visually more intense") */, GRV_PEL_BANDS = 4; // s of flight the streak spans; its width
 function drawGrvPellets() {
   ctx.strokeStyle = COL.violet; ctx.lineCap = "round"; ctx.lineWidth = GRV_PELLET_PX; /* GRV purple (owner, 2026-10-15) */ ctx.globalAlpha = 1;
   // ONE path a band of opacity (perf: a stroke each was most of drawGrv's 4 ms a frame at wave 89): GRV_PEL_BANDS steps of GRV_PEL_A x j
@@ -410,7 +412,7 @@ function drawGrv() {
     const st = towerStats(t, true);
     for (const sp of t.spheres) all.push([sp, st, grvAuraNow(sp, st)]);
   }
-  const over = all.filter(([sp, , ar]) => ar > 1 && all.some(([q, , qr]) => q !== sp && qr > 1 && Math.hypot(q.x - sp.x, q.y - sp.y) < ar + qr));
+  const over = all.filter(([sp, st, ar]) => ar > 1 && st.auraOn && all.some(([q, qs, qr]) => q !== sp && qr > 1 && qs.auraOn && Math.hypot(q.x - sp.x, q.y - sp.y) < ar + qr));
   const capped = over.length > 1 && grvAurasCapped(over.map(([sp, , ar]) => [sp, ar])); // (the lone ones are drawn by drawSphere, at A)
   for (const [sp, st] of all) drawSphere(sp, st, !(capped && over.some(o => o[0] === sp)));
   drawGrvPellets();
@@ -418,7 +420,7 @@ function drawGrv() {
 }
 function drawSphere(sp, st, auraOwn = true) {
   const k = grvMassK(sp), ar = grvAuraNow(sp, st);
-  if (ar > 1) { // the aura: clear at the sphere, its alpha (grvAuraAlpha) at mid-radius, clear at the edge (auraOwn false: drawn capped with its overlaps - drawGrv)
+  if (ar > 1 && st.auraOn) { // the aura: clear at the sphere, its alpha (grvAuraAlpha) at mid-radius, clear at the edge (auraOwn false: drawn capped with its overlaps - drawGrv)
     if (auraOwn) grvAura(ctx, sp, ar, grvAuraAlpha(sp, ar));
     // its REACH, shown like Permafrost's rings (owner, 2026-10-16: "for bh aura, show range of aura using a range indicator similar to
     // permafrost"): a thin glowing ring out from the centre to the edge every GRV_RING_S, fading as it goes
@@ -450,7 +452,7 @@ const grvCoreR = ar => GRV_CORE_PX * Math.log(1 + ar / GRV_CORE_A); // the black
 // overlap join into one, the dark of each over all the rings (owner, 2026-10-16: "accretion disks should connect, not be drawn over
 // another black hole", "the dark part needs to be drawn over all accretion disk layers")
 function drawGrvCore(sp, st, pass) {
-  if (sp.age < GRV_NOVA_END) return; // (the nova first - the centre appears once it is gone)
+  if (sp.age < GRV_NOVA_END || !st.hole) return; // (the nova first - the centre appears once it is gone; no centre without Void - tier redesign)
   const r = grvCoreR(grvAuraNow(sp, st)); // LOGARITHMIC in its aura (owner, 2026-10-16: "make the center sphere of a bh increase logarithmically visually instead of linearly"; was 0.16 x the aura + 2 root mass); shrinks with its mass, to nothing
   if (r < 0.3) return;
   ctx.globalAlpha = 1; ctx.beginPath();

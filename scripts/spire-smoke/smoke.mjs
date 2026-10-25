@@ -780,9 +780,9 @@ check("GRV: the aura slows smaller enemies more (owner, 2026-10-21)", () => {
   if (!(r.swarm === 2 && r.fast === 1 && r.armor < 1 && r.boss === 0.5)) return "size factors " + JSON.stringify(r) + " (expected swarm 2, fast 1, armor < 1, boss 0.5)";
   return "";
 });
-check("GRV: a hole every 3 shots, holding all three's mass (owner, 2026-10-21)", () => {
+check("GRV: a hole every 3 shots, holding all three's mass (owner, 2026-10-21; Void I bought - a tier 0 GRV leaves no hole since the tier redesign, 2026-10-24)", () => {
   const r = run(`(() => {
-    G = newGame(); G.money = 1e9; ui.build = "grv"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null; const t = G.towers[0], st = towerStats(t);
+    G = newGame(); G.money = 1e9; ui.build = "grv"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null; const t = G.towers[0]; t.skills = { void: 1 }; t.lvl = 2; const st = towerStats(t);
     spawnEnemy("armor", 30, 0, 0); const e = G.enemies[0]; e.seen = true; e.hp = e.max = 1e12; e.armor = 0; // (no armor: the check is the mass summing - the tuned armor lever blunted the hits, 2026-10-22)
     for (let k = 0; k < 3; k++) novaAt(t, st, e);
     for (let i = 0; i < 60 && !t.spheres.every(sp => sp.auraSnd); i++) for (const sp of t.spheres) stepSphere(sp, t, st, 1 / 60); /* to the step the hole opens (it evaporates from then) */

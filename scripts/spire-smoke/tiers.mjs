@@ -5,7 +5,7 @@ import path from "node:path";
 import { ROOT, boot, check } from "./harness.mjs";
 
 const { run } = boot();
-const CURVE_DONE = ["arc", "sol", "car", "frz", "acd"]; // the kinds whose stats run on the curve (each tower task adds its own)
+const CURVE_DONE = ["arc", "sol", "car", "frz", "acd", "grv"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
 check("curve: by total level alone, rising, slightly steepening, tier 0 below today's bare tower (tier redesign 2026-10-24)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
@@ -138,4 +138,18 @@ check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry;
   const z0 = pools({}, true), c1 = pools({ contagion: 1 }, true);
   if (z0.n) return "tier 0 left " + z0.n + " pools";
   if (!c1.n || c1.spread || !c1.slowed) return "Contagion I pools " + JSON.stringify(c1) + " (expected ray pools that slow, none from kills)";
+});
+
+// ---------- GRV ----------
+towerTierChecks("grv", ["black hole", "aura", "pellet", "strip"]);
+check("GRV: tier 0 a nova alone; Void I a hole that strips armor, no slow; Nova I a slowing aura, no hole; Radiation I pellets, no hole (tier redesign 2026-10-24)", () => {
+  const go = sk => run(`(() => { const { t, es, st } = tierLane("grv", ${JSON.stringify(sk)}, [40, 60]); const e = es[0]; e.armor = e.armor0 = 500; G.started = true;
+    t.grvShots = GRV_BH_EVERY - 1; novaAt(t, st, e); let slowed = false, pel = 0, sph = 0; /* the hole-leaving shot (GRV_BH_EVERY) */ for (let k = 0; k < 90; k++) { step(1 / 60); t.cd = 1e9; if (e.slowT > 0) slowed = true; pel = Math.max(pel, (t.pellets || []).length); if (k === 40) sph = (t.spheres || []).length; }
+    const s = towerStats(t); return { dealt: e.max - e.hp, sph, slowed, armor: e.armor, pel, hole: !!s.hole, aura: !!s.auraOn, name: SKILL_TREES.grv[1].name }; })()`);
+  const z = go({}), v = go({ void: 1 }), n = go({ supernova: 1 }), r = go({ radiation: 1 });
+  if (!(z.dealt > 0) || z.sph || z.slowed || z.pel || z.armor !== 500) return "tier 0: " + JSON.stringify(z) + " (expected the nova's hit, nothing after)";
+  if (!v.hole || !(v.armor < 500) || v.slowed) return "Void I: " + JSON.stringify(v);
+  if (n.hole || !n.slowed || n.armor !== 500) return "Nova I: " + JSON.stringify(n);
+  if (r.hole || !r.pel) return "Radiation I: " + JSON.stringify(r);
+  if (z.name !== "Nova") return "GRV's second axis reads " + z.name + " (expected Nova)";
 });
