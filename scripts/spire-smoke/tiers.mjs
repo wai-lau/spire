@@ -5,7 +5,7 @@ import path from "node:path";
 import { ROOT, boot, check } from "./harness.mjs";
 
 const { run } = boot();
-const CURVE_DONE = ["arc", "sol", "car"]; // the kinds whose stats run on the curve (each tower task adds its own)
+const CURVE_DONE = ["arc", "sol", "car", "frz"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
 check("curve: by total level alone, rising, slightly steepening, tier 0 below today's bare tower (tier redesign 2026-10-24)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
@@ -41,6 +41,14 @@ run(`function tierRig(kind, skills, spots = []) {
   const es = spots.map(([dx, dy]) => { spawnEnemy("armor", 30, 0, 0); const e = G.enemies[G.enemies.length - 1];
     e.x = t.x + dx; e.y = t.y + dy; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e9; e.armor = e.armor0 = 0; e.shield = e.shieldMax = 0; return e; });
   return { t, es, st: towerStats(t) };
+}`);
+// ...and held ON LANE 0 at about each distance from the tower (a stepped game re-reads an enemy's spot from its lane), like smoke's ifrNear
+run(`function tierLane(kind, skills, dists) {
+  const r = tierRig(kind, skills), t = r.t;
+  r.es = dists.map(dist => { spawnEnemy("armor", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
+    for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
+    const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e9; e.armor = e.armor0 = 0; e.shield = e.shieldMax = 0; return e; });
+  return r;
 }`);
 const hitCount = es => `${es}.filter(e => e.hp < e.max).length`;
 // the three checks every tower task shares (plan 2, "Tower tasks: shared shape")
@@ -99,4 +107,19 @@ check("CRR: tier 0 one interceptor, no tether, one bolt a volley; Hangar I two, 
     G.started = true; const seen = new Set(), orig = carTether; carTether = (i, ...r) => { seen.add(i); return orig(i, ...r); };
     try { for (let k = 0; k < 600; k++) step(1 / 60); } finally { carTether = orig; } return [seen.size, t.icp.filter(i => i.state === "out").length]; })()`);
   if (n[0] !== 1) return "Tether I: " + n[0] + " interceptors tethered (expected 1; " + n[1] + " out)";
+});
+
+// ---------- FRZ ----------
+towerTierChecks("frz", ["hurts", "pulse", "moon", "more damage"]);
+check("FRZ: tier 0 only slows; Sublimation I hurts, more the slower; Permafrost I pulses crack armor; Moons I one moon (tier redesign 2026-10-24)", () => {
+  const go = (sk, extra = "") => run(`(() => { const { t, es } = tierLane("frz", ${JSON.stringify(sk)}, [30]); const e = es[0]; e.armor = e.armor0 = 40; G.started = true;
+    let slowed = false; for (let k = 0; k < 180; k++) { ${extra} step(1 / 60); if (e.slowT > 0 && e.slowF > 0) slowed = true; }
+    return { dealt: e.max - e.hp, slowed, frost: frostShare(e), crack: towerStats(t).rimeCrack || 0, moons: towerStats(t).moonN || 0 }; })()`);
+  const z = go({}), s = go({ temp: 1 }), sx = go({ temp: 1 }, `applySlow(e, 0.5, 0.2, "test");`), p = go({ rime: 1 }), m = go({ moons: 1 });
+  if (!z.slowed || z.dealt > 0) return "tier 0: " + JSON.stringify(z) + " (expected a slow, no damage)";
+  if (!(s.dealt > 0)) return "Sublimation I dealt nothing";
+  if (!(sx.dealt > s.dealt)) return "Sublimation I: " + sx.dealt + " slowed vs " + s.dealt + " (expected more on the slower)";
+  if (z.frost > 0) return "tier 0 frosted " + z.frost;
+  if (!(p.frost > 0 && p.crack > 0)) return "Permafrost I: frost " + p.frost + ", crack " + p.crack + " (expected a pulse's frost that cracks armor - damage() reads it)";
+  if (m.moons !== 1) return "Moons I: " + m.moons + " moons";
 });

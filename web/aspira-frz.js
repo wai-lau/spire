@@ -19,7 +19,7 @@ const FRZ_BRITTLE = [1, 1.15, 1.45, 3.5623]; // x damage from every tower while 
 // reference off its armor (less frost, that share of it), past zero - damage(). Rime is FRZ's armor answer, Temp the
 // fast (slow + tick + brittle); a pulse no longer breaks shield charges (it did until 2026-10-12)
 /* RIME'S BITE (owner, 2026-10-18: Rime is the weakest FRZ axis): each ring that reaches an enemy hits it for this x a tick (quiet, armor still bites) */
-const FRZ_RIME_BITE = [0, 4, 45, 200];
+const FRZ_RIME_BITE0 = 2; // a ring's bite, x a tier 0 tick - ONE number since the tier redesign (2026-10-24; was 0 4 45 200, V 300 - its tier I value)
 const FRZ_RIME_CRACK = [0, 0.25, 0.715, 1.105];
 // Moons only add aura sources; their armor crack (FRZ_MOON_CRACK) and the hard-types-skip-brittle table (FRZ_HARD)
 // were removed with the effects (2026-10-12; ARCHAEOLOGY.md) - brittle applies to every slowed enemy.
@@ -35,17 +35,18 @@ const FRZ_TEMP_TICK = [0.21, 0.204, 0.192, 0.0586] /* x0.6 with FRZ_TICK x0.6: m
 const FRZ_TICK = 0.3 /* x0.6 with FRZ_TEMP_TICK x0.6 (2026-10-24 marks target; was 0.5) - the bare L1 FRZ (b.dmg, b.rate) untouched */, FRZ_RIME_GROW = 2.4; // a Rime ring takes FRZ_RIME_GROW game s to reach the edge (owner: much slower; was 0.6)
 const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit of slow (owner: thicker the colder) // an aura slow outlasts one step only: it is gone the moment the enemy leaves
 function frzSkillStats(t, s, b) {
-  const f = skillOf(t, "temp");
-  s.range = b.range * RANGE_BONUS;
-  s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = b.dmg * b.rate * FRZ_TICK; s.rate = 1 / FRZ_TEMP_TICK[f]; // dmg / rate: a TICK - the same bite, more often up Temp
-  s.rime = FRZ_RIME[skillOf(t, "rime")]; s.rimeCrack = FRZ_RIME_CRACK[skillOf(t, "rime")]; s.rimeBite = FRZ_RIME_BITE[skillOf(t, "rime")]; s.rimeEvery = FRZ_RIME_PERIOD[skillOf(t, "rime")]; s.moonN = FRZ_MOON_COUNT[skillOf(t, "moons")]; s.moonK = FRZ_MOON_BY[skillOf(t, "moons")]; s.subN = FRZ_SUBMOON_N[skillOf(t, "moons")]; s.moonHit = FRZ_MOON_HIT[skillOf(t, "moons")]; s.skill = true;
+  const f = skillOf(t, "temp"), c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; // the STAT CURVE (tier redesign 2026-10-24)
+  // the aura's damage a SECOND is the curve's; Sublimation splits it over more ticks (more shield pops, not more damage); tier 0 only slows
+  const tick0 = b.dmg * c.dmg * b.rate * FRZ_TICK; s.biteDmg = tick0; // a tier 0 tick's worth: what the Rime ring's bite multiplies
+  s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = f ? tick0 * FRZ_TEMP_TICK[f] / FRZ_TEMP_TICK[0] : 0; s.rate = 1 / FRZ_TEMP_TICK[f]; // dmg / rate: a TICK
+  s.rime = FRZ_RIME[skillOf(t, "rime")]; s.rimeCrack = FRZ_RIME_CRACK[skillOf(t, "rime")]; s.rimeBite = skillOf(t, "rime") ? FRZ_RIME_BITE0 : 0; s.rimeEvery = FRZ_RIME_PERIOD[skillOf(t, "rime")]; s.moonN = FRZ_MOON_COUNT[skillOf(t, "moons")]; s.moonK = FRZ_MOON_BY[skillOf(t, "moons")]; s.subN = FRZ_SUBMOON_N[skillOf(t, "moons")]; s.skill = true;
 }
 // moons and SMALL MOONS by tier (owner, 2026-10-08): 1 / 2 / 3 moons at I-III, then still THREE at IV and V,
 // each with 1 (IV) or 3 (V) small moons of its own (was 4 and 5 moons, V's with 2 small moons each)
 // CAPPED (owner, 2026-10-20: "max 3 sattelites per moon, max 3 moons, find another way to scale it"): at most 3 moons, 3 moonlets each; the top
 // stops scale by FRZ_MOON_HIT instead - the moons' and moonlets' DAMAGE (not their reach or slow), making up the sources they lost
 // (V: 24 -> 9, VI: 35 -> 12, weighted by their aura scale: x2.4, x2.75). Were [0, 1, 2, 3, 3, 4] VI 5 and [0, 0, 0, 0, 1, 5] VI 6
-const FRZ_MOON_COUNT = [0, 1, 3, 3], FRZ_SUBMOON_N = [0, 0, 0, 2], FRZ_MOON_HIT = [1, 1, 1, 2.4];
+const FRZ_MOON_COUNT = [0, 1, 3, 3], FRZ_SUBMOON_N = [0, 0, 0, 2];
 // a small moon circles its moon at r, the other way round and faster, an aura at k x its moon's
 const FRZ_SUBMOON = { r: 84, k: 0.6, spin: 2 }; // r tripled (owner, 2026-10-08; was 28) // k 0.2: V at 195% (0.1 -> 194, 0.3 -> 203, 0.5 -> 216; five moons alone sit near 190)
 // the aura's sources: the tower, then each moon at FRZ_MOON_SCALE of everything, then their small moons
@@ -53,11 +54,11 @@ function frzSources(t, st) {
   const out = [{ x: t.x, y: t.y, k: 1, id: t.id }];
   if (!st.moonN) return out;
   const moons = moonSpots(t, { moons: st.moonN });
-  moons.forEach((m, i) => out.push({ x: m.x, y: m.y, k: st.moonK, hit: st.moonHit || 1, id: t.id + ":moon" + i }));
+  moons.forEach((m, i) => out.push({ x: m.x, y: m.y, k: st.moonK, id: t.id + ":moon" + i }));
   if (st.subN) {
     const a0 = -(t.spin || 0) * MOON_SPIN * FRZ_SUBMOON.spin, S = FRZ_SUBMOON, n = st.subN;
     moons.forEach((m, i) => { for (let j = 0; j < n; j++) { const a = a0 + j * 2 * Math.PI / n;
-      out.push({ x: m.x + Math.cos(a) * S.r, y: m.y + Math.sin(a) * S.r, k: st.moonK * S.k, hit: st.moonHit || 1, id: t.id + ":moon" + i + ":" + j, small: true }); } });
+      out.push({ x: m.x + Math.cos(a) * S.r, y: m.y + Math.sin(a) * S.r, k: st.moonK * S.k, id: t.id + ":moon" + i + ":" + j, small: true }); } });
   }
   return out;
 }
@@ -100,7 +101,7 @@ function frzStep(t, dt) {
       // BRITTLE: x this from EVERY tower while slowed (damage()) - back to that (owner, 2026-10-12: "brittle should increase damage
       // like before, not reduce armor"; it took armor for an hour). A shield takes no slow, so it holds Brittle off
       if (st.brittle > 1 && st.brittle >= (e.brittle || 1)) { e.brittle = st.brittle; e.brittleBy = t.id; } // brittleBy: its added damage is this FRZ's (damageCredit)
-      if (!tick) continue;
+      if (!tick || !(st.dmg > 0)) continue; // (Sublimation 0: a plain slowing circle, no tick - tier redesign 2026-10-24)
       ticked = true;
       // (Moons cracked armor for good here until 2026-10-12 - owner: "moons should not affect armor"; Rime's frost is the armor answer)
       // a tick POPS a shield (owner, 2026-10-06) and is never blunted by armor;
@@ -131,7 +132,7 @@ function frzStep(t, dt) {
         if (!to) continue;
         if (to !== e) beam(e, to, TOWERS.frz.color, FRZ_SPREAD_FX, 1.5, 0, true);
         if (applySlow(to, p.v, Infinity, p.id, "stack")) { to.rimeKeep = (to.rimeKeep ?? 1) * (1 - p.v); to.frostArmor = Math.max(to.frostArmor || 0, st.rimeCrack); to.frostBy = t.id; }
-        if (st.rimeBite > 0) damage(to, st.dmg * st.rimeBite, t, true); /* the ring's own bite */ // (a shield takes no slow, so no frost)
+        if (st.rimeBite > 0) damage(to, st.biteDmg * st.rimeBite, t, true); /* the ring's own bite */ // (a shield takes no slow, so no frost)
       }
     }
     t.pulses = t.pulses.filter(p => p.age < FRZ_RIME_GROW);
