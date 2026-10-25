@@ -72,10 +72,10 @@ const DESCRIBE = {
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
   // towers across); Flare the flares - bigger, hotter, longer (its capstone: three a landing)
   ifr(sk) {
-    const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0;
-    return "Charges at its centre and launches a meteor that hunts down an enemy. Where it strikes a flare burns, a fire " + (h ? "spreads" + (h >= CAPSTONE_TIER ? " six towers wide" : "") : "flickers") +
-      ", lighting many small flares as it grows, and " + IFR_FAN[m] + " meteors burst out all round, each hunting any enemy that comes near" + (m >= CAPSTONE_TIER ? " and splitting in two on a hit" : "") +
-      "; where each lands a flare burns" + (f >= CAPSTONE_TIER ? " - three of them." : ".");
+    const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0, n = IFR_FAN[m]; // tier 0: a meteor that just hits (tier redesign 2026-10-24)
+    const parts = [f ? "a flare burns" : "", h ? "a fire " + (h > 1 ? "spreads" + (h >= CAPSTONE_TIER ? " six towers wide" : "") : "rides its enemy") + ", lighting many small flares as it grows" : "",
+      n ? NUM_WORD[n] + " meteors burst out all round, each hunting any enemy that comes near" + (m >= CAPSTONE_TIER ? " and splitting in two on a hit" : "") + (f ? "; where each lands a flare burns" + (f >= CAPSTONE_TIER ? " - three of them" : "") : "") : ""].filter(Boolean);
+    return "Charges at its centre and launches a meteor that hunts down an enemy." + (parts.length ? " Where it strikes " + parts.join(", and ") + "." : "");
   },
 
 

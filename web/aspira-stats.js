@@ -52,7 +52,7 @@ const SPEC = {
   car: st => [["Interceptors", st.wing], ["Focus fire", st.focus ? "+" + Math.round(st.focus * 100) + "% / wingmate" : "—"], ["Ammo", st.ammo + " shots"], ["Tether slow", st.tSlow ? Math.round(st.tSlow * 100) + "%" : "—"], ["Tether pulse", st.tK ? dmgW(st.dmg * st.tK) + " / " + CRR_TETHER_PULSE + "s" : "—"], ["Chain", st.tChain ? "1 more" : "—"],
     ["Autopilot", st.autopilot ? CRR_BURST_N + " pellets × " + dmgW(st.dmg * CRR_BURST_K) : "—"], ["Slow", Math.round(CRR_SLOW * 100) + "% · " + CRR_SLOW_S + "s"], ["Shields", "−" + CRR_BOLTS + " / shot"]],
   // IFR (aspira-ifrit.js, axes redone 2026-10-20): Damage is the base every hit multiplies (each axis by its own K), Rate meteors a second
-  ifr: st => [["Meteors", "1 + a fan of " + st.fan + (st.fissure ? " · fissure" : "")], ["Hit", dmgW(st.dmg * st.routeK)], ["Charge", st.chargeS + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
+  ifr: st => [["Meteors", "1 + a fan of " + st.fan + (st.fissure ? " · fissure" : "")], ["Hit", dmgW(st.dmg * st.routeK)], ["Charge", +st.chargeS.toFixed(2) + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
     ["Fire", "r" + Math.round(st.fireR) + " · " + st.fireV + "/s"], ["Fire flares", Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2) + " untaken flares"],
     ["Flare", Math.round(st.beamL) + " long · " + Math.round(st.beamW) + " wide"], ["Flare burn", dmgW(st.dmg * st.flareK) + " / " + st.tickS + "s · " + st.burnS + "s"],
     ["Flare capstone", st.triple ? "3 flares a landing" : "—"]],

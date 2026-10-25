@@ -21,3 +21,6 @@ ACD_LINES[0] = 1; ACD_LINES[1] = 2; ACD_CONTAGION[0] = null;
 
 // GRV: a nova alone (no sphere after it - stepSphere); Radiation's pellets from tier I only
 GRV_PELLETS[0] = 0;
+
+// IFR: a meteor that just hits (no fan; the fire and the flares off - ifrSkillStats); Meteor I a fan of two
+IFR_FAN[0] = 0; IFR_FAN[1] = 2;

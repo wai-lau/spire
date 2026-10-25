@@ -8,9 +8,9 @@
 // Spec: docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md (much changed since by the owner's notes, 2026-10-20 - the code is the truth)
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const IFR_CHARGE_S = [1.4 /* 1.45 -> 1.4 (2026-10-21: six fire flares a fire, the hit split, left one solo seed at 4 lives) */ /* 1.55 -> 1.45 (battery 6.8.0, 2026-10-21: the solo rule, 4 lives on 1 seed of 16) */ /* 1.7 -> 1.55 (owner, 2026-10-20: "a fire rate boost instead, as little as possible" - 1.6 left one solo seed at 4 lives) */, 1.4, 1.4, 1.2] /* I-III with it: the table stays monotone */ /* BATTERY 6.6.0 (2026-10-20): untaken 2.0 -> 1.7 (owner: "a little of" a faster charge for the solo rule) */ /* x2 (owner, 2026-10-20: "fire rate is too high, halve it, double damage" - TOWERS.ifr.dmg 60 -> 120); was [1.0 .. 0.6] VI 0.3 */ /* AXES REDONE (owner, 2026-10-20: "greatly lower initial meteor fire rate and increase damage"; one charge, no slots); was [0.5, 0.5, 0.5, 0.45, 0.4, 0.35] VI 0.1 */; // Meteor: s to fill THE charge (VI capstone.js)
+const IFR_CHARGE_S0 = 1.4; // s to fill THE charge at tier 0 - the STAT CURVE's rate shortens it (tier redesign 2026-10-24; was Meteor's table 1.4 1.4 1.4 1.2, V 0.6)
 const IFR_BALL_V = [360, 390, 450, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
-const IFR_ROUTE_K = [1.5, 2, 3, 80] /* III 6 -> 3 (battery 6.8.0, owner 2026-10-21 "A": IFR beat the mean on every type - one check; armor its weakness now) */ /* BATTERY 6.6.0 (2026-10-20): Meteor hits hard at its top (armor, fast); VI 800 */ /* FLATTER (owner, 2026-10-20: "meteor should increase damage less" - with the fork and one burst a meteor); was [1.5, 2, 4, 10, 60, 400] VI 8000 */ /* AXES REDONE (2026-10-20): x TOWERS.ifr.dmg, Meteor's own - was x the Blk Magic blast hit, [0.25, 0.5, 1, 4, 10, 60] VI 150 */; // Meteor: the en-route hit, its ONLY damage
+const IFR_ROUTE_K0 = 1.5; // the meteor's hit, x the tower's damage - ONE number since the tier redesign (2026-10-24; was Meteor's 1.5 2 3 80, V 800 - the curve's now)
 const IFR_FAN = [6, 7, 7, 8] /* BATTERY 6.6.0 (2026-10-20): fewer at the top (each fan hit pops a shield - Meteor was the shield answer); VI 9 */; // Meteor: the meteors the first impact fans out round 360 degrees (owner, 2026-10-20: "initial fan counts should be something like 0:5 1:7 2:9 3:12"; VI 12, its fissure the capstone)
 const IFR_FAN_T = 0.4, IFR_FAN_SD = 0.3, IFR_FAN_MAX_S = 1; // the fan's release times: a bell round FAN_T s, sd FAN_SD, kept in [0, FAN_MAX_S] ("increase timing jitter to 0.3s around 0.4s")
 let IFR_HOME_R = 400; // BATTERY 6.6.0: 50 -> 400 (owner's lever: homing distance). (let: the sims sweep it) // HOMING (owner, 2026-10-20: "start homing in on target at 50u"): an enemy whose body comes within this of a meteor is locked and the meteor steers straight at it
@@ -28,11 +28,13 @@ const IFR_BEAM_L = ifrSqueeze([50, 65, 100, 140], 210, 100, 2 * 50 * 100 / 210);
 const IFR_BEAM_W = ifrSqueeze([10, 12, 16, 20], 24, 16, 2 * 10 * 16 / 24); // Flare: its width, u (13.3 .. 15.2, VI 16)
 const IFR_BURN_S = [1.2, 1.4, 2, 6] /* BATTERY 6.6.0 (2026-10-20): Flare burns long at the top (more ticks, more shields popped); VI 10 */ /* HALVED, the ticks x2 (owner, 2026-10-19: "reduce duration of spokes and increase damage" - the same burn a flare in half the time); was [2.4 .. 6.4], VI 10 */ /* x2, longer flares (owner, 2026-10-19: "make the flares last longer"), with CATCHING FIRE and faster, harder ticks (countermx 61-69 spread @6pts 4 seeds: 9/69/8/37 swarm/fast/shield/armor); was [1.2, 1.4, 1.6, 2, 2.6, 3.2] - was [1.5, 2, 2.5, 3, 4, 5] (countermx 61-69 spread @6pts, 2026-10-19, pellets in random directions: swarm/fast/shield/armor 8/35/9/56 -> 13/77/23/58 - a short burn: fast is clear of the flares round its old spot before the next tick, a slow body still burns; with the radius, the ball speed or the tick period fast stayed 33-47) */; // Blk Magic: a flare burns this long (VI 10 = EFFECT_MAX_S)
 const IFR_TICK_S = [0.5, 0.5, 0.48, 0.44] /* x2, the hit unchanged (owner, 2026-10-24, marks target C: "!4 seem OK" - half the shield pops; was 0.25 0.25 0.24 0.22) */ /* untaken 0.54 -> 0.25 (solo.mjs 2026-10-20, after the halved meteor and charge: a lone L1 leaked the wave-4 swarm, 6 lives, whatever the damage - a flare needs two ticks to burn) */ /* stop I faster (axis balance 2026-10-19: the 6-point spread build sits on Hellfire I - shields 35% -> 16% leaked); was [0.54, 0.48, 0.43, 0.36, 0.3, 0.27] - x0.6 with the longer flares (2026-10-19); was [0.9, 0.8, 0.72, 0.6, 0.5, 0.45] - was [0.3 .. 0.15] VI 0.12, with TICK_K (countermx 61-69 spread @6pts, 2026-10-19: few big ticks - a slow body on a beam takes several, a fast one walks off between two, and a big tick gets through armor; 18/75/23/90 -> 20/69/39/51 at TICK_K x5, the shield fixed by the pellets) */; // Blk Magic: s between burn ticks
+const IFR_TICK_K0 = 0.784; // a Flare tick, x the tower's damage - ONE number since the tier redesign (2026-10-24: its tier I value); IFR_TICK_K[0] below stays the FIRE flares' base
 const IFR_TICK_K = [0.41, 1.5, 1.6, 1.6] /* BATTERY 6.6.0 (2026-10-20): Flare: VI 2.5 */ /* x0.5 with the flares x3 (sweep 2026-10-19: more ticks to pop shields, less each - armor shrugs them off) */ /* x2 with the flares halved (2026-10-19); was [0.41, 0.6, 0.91, 1.36, 1.52, 2.27], VI 3.78 */ /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
 const IFR_BIG_S = 2.8 /* 1260 / (IFR_FLARE_K 4.5 x the VI length 100): the big flare kept at its pinned 1260 u when the flares shrank (2026-10-20; was 4/3 x 210) */, IFR_BIG_K = 4, IFR_BIG_X = 1 / 9; // the Flare capstone's BIG flare, dead centre of a fire once all its flares are lit (owner, 2026-10-20): size x BIG_S the largest flare, hit x BIG_K, its x BIG_X as long (the old giant flare's)
 const IFR_ARM_U = 50, IFR_ARM_HIT_U = 100; // a SPAWNED meteor (fan, fissure) flies straight for its first ARM_U, then homes, and hits nothing until it has flown ARM_HIT_U (owner, 2026-10-20: "no homing for first 50", "100u instead of 50u for the non-hit")
 const IFR_FUSE_U = 200, IFR_FUSE_SD = 50, IFR_FUSE_LO = 150, IFR_FUSE_HI = 300; // owner, 2026-10-20: "meteors should explode around 200u, spread between 150u and 300u instead" (was round 400, sd 300); sd 50 my call // a SPAWNED meteor's FUSE: unspent, it bursts (a flare) once it has flown a distance drawn from a bell round FUSE_U, sd FUSE_SD, kept in [FUSE_LO, FUSE_HI] (owner, 2026-10-20: "a chance of exploding as it travels, time bell curve explosions around 400u away")
 const ifrFuse = () => { let d; do d = IFR_FUSE_U + IFR_FUSE_SD * ifrNormal(); while (d < IFR_FUSE_LO || d > IFR_FUSE_HI); return d; }; // (a draw outside [LO, HI] drawn again)
+const IFR_FAN_REF = 6; // the fan size the release bell is set for (ifrFanDelay; was IFR_FAN[0], 0 since the tier redesign)
 const IFR_FAN_V = 0.25, IFR_FAN_R = 0.25; // FAN_R: a spawned meteor's size (and reach) x the launched one's (owner, 2026-10-20: "1/2 the size", then "change the core to yellow and make it smaller again" - a quarter, a yellow core) // a fan meteor (and a fissure's) flies at this x the launch speed (owner, 2026-10-20: "quarter the speed of the fissured meteors")
 const IFR_TRIPLE_JIT = 10; // the Flare capstone: a landing fan meteor lights THREE flares, each up to this far off its spot (owner, 2026-10-20)
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
@@ -67,16 +69,18 @@ SKILL_MOVE.ifr = { meteor: [[1, 1], [1.05, 1], [1.15, 1], [1.25, 1]], hellfire: 
 
 function ifrSkillStats(t, s, b) {
   const m = skillOf(t, "meteor"), h = skillOf(t, "hellfire"), f = skillOf(t, "firaga");
-  s.range = b.range * RANGE_BONUS; s.targets = 1;
+  s.targets = 1;
   // EACH AXIS ITS OWN PART, ITS OWN DAMAGE (owner, 2026-10-20: "axes don't feel unique nor impactful"), every hit x TOWERS.ifr.dmg:
   // Meteor the meteors, Hellfire the fire the first one leaves, Flare (id firaga) the flares
   s.fan = IFR_FAN[m]; s.fissure = m >= CAPSTONE_TIER;
-  s.chargeS = IFR_CHARGE_S[m]; s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K[m];
+  s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K0;
+  s.fire = h > 0; s.flares = f > 0; // tier 0: a meteor that just hits - the fire is Hellfire's, the flares Flare's (tier redesign 2026-10-24)
   s.fireR = Math.max(s.ballR * IFR_FIRE_FLOOR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireDens = IFR_FIRE_DENS[h]; s.fireHK = IFR_FIRE_HK[h]; 
   s.triple = f >= CAPSTONE_TIER; s.hfK = IFR_HF_FK[f];
-  s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareK = IFR_TICK_K[f];
+  s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareK = IFR_TICK_K0;
   // every hit is st.dmg x its axis's K AT THE HIT, so what towerStats does to dmg after this (the DAM core power, an aura) reaches all of them
-  s.dmg = b.dmg; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
+  const c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.range = b.range * RANGE_BONUS * c.range; // the STAT CURVE (tier redesign 2026-10-24)
+  s.chargeS = IFR_CHARGE_S0 / c.rate; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
   s.skill = true;
 }
 // ---------- the charge ----------
@@ -166,7 +170,7 @@ function ifrFan(born, st, x, y, skip) {
   for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, ifrFanDelay(n)]);
 }
 // a fan meteor's release: the bell, its mean, sd and cap all x the root of the fan's size over the untaken one's (owner, 2026-10-20: "spread them out more in time, the more of them there are")
-const ifrFanDelay = n => { const k = Math.sqrt(n / IFR_FAN[0]); return Math.min(IFR_FAN_MAX_S * k, Math.max(0, k * (IFR_FAN_T + IFR_FAN_SD * ifrNormal()))); };
+const ifrFanDelay = n => { const k = Math.sqrt(n / IFR_FAN_REF); return Math.min(IFR_FAN_MAX_S * k, Math.max(0, k * (IFR_FAN_T + IFR_FAN_SD * ifrNormal()))); };
 // a FAN meteor lands (a hit, or its dead target's spot): a flare there - THREE within IFR_TRIPLE_JIT at the Flare capstone
 function ifrLandFlares(t, st, x, y) {
   if (!st.triple) { ifrFlare(t, st, x, y); return; }
@@ -211,8 +215,8 @@ function stepIfrBalls(t, st, dt) {
 // the Flare capstone's big centre flare)
 function ifrImpact(t, st, b, main = true) {
   const hk = 1 / Math.sqrt(1 + st.fan);
-  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens * hk, hk, win: st.burnS, big: main && st.triple, left: 1, eid: b.hitId ?? null });
-  ifrLandFlares(t, st, b.ax, b.ay); /* every meteor lights a flare where it strikes, the first too (owner, 2026-10-20) */
+  if (st.fire) (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens * hk, hk, win: st.burnS, big: main && st.triple, left: 1, eid: b.hitId ?? null });
+  if (st.flares) ifrLandFlares(t, st, b.ax, b.ay); /* every meteor lights a flare where it strikes, the first too (owner, 2026-10-20) */
   if (main) sfx("ifrblast");
 }
 // CATCHING FIRE (the flares' rule, the fire's too): an enemy burns only at a tick it was ALSO in the fire at the tick before - what stands

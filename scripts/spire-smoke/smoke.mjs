@@ -182,6 +182,9 @@ check("tier I is no more than today's I: whole counts on the card, from-tier swi
   return "";
 });
 // an enemy held still on lane 0 at about `dist` u from tower t (its lane point nearest that distance); shield / hp settable after
+// the IFR checks below test the fire, the fan and the flares: since the tier redesign (2026-10-24) a tier 0 IFR has none of them, so
+// each buys tier I of every axis it left at 0 (ifrAll, after its own upgrades)
+run(`function ifrAll(t, axes = ["meteor", "hellfire", "firaga"]) { for (const ax of axes) if (!skillOf(t, ax)) upgradeTower(t, ax, true); return t; }`);
 run(`function ifrNear(type, t, dist) {
   spawnEnemy(type, 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
   for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
@@ -253,7 +256,7 @@ check("FRZ moons: at most 3 moons, at most 3 moonlets each, at every stop (owner
 });
 check("IFR: each axis scales only its own numbers", () => {
   const r = run(`(() => {
-    const F = { meteor: ["chargeS", "ballV", "ballR", "routeK"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple", "hfK"] };
+    const F = { meteor: ["ballV", "ballR", "fan"], hellfire: ["fireR", "fireV", "fireDens", "fire"], firaga: ["beamL", "beamW", "burnS", "tickS", "triple", "hfK", "flares"] }; /* (chargeS: the stat curve's since the tier redesign - every point moves it) */
     const all = [].concat(...Object.values(F));
     const fresh = ax => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; if (ax) for (let k = 0; k < 6; k++) upgradeTower(t, ax, true); return t; };
     const pick = st => Object.fromEntries(all.map(k => [k, st[k]]));
@@ -265,7 +268,7 @@ check("IFR: each axis scales only its own numbers", () => {
     try { for (let i = 0; i < 30; i++) step(1 / 30); out.oldOk = true; } catch (e) { out.oldOk = String(e); }
     return out;
   })()`);
-  const F = { meteor: ["chargeS", "ballV", "ballR", "routeK", "fireR"], hellfire: ["fireR", "fireV", "fireDens"], firaga: ["beamL", "beamW", "burnS", "tickS", "flareK", "triple", "hfK"] };
+  const F = { meteor: ["ballV", "ballR", "fan", "fireR"], hellfire: ["fireR", "fireV", "fireDens", "fire"], firaga: ["beamL", "beamW", "burnS", "tickS", "triple", "hfK", "flares"] };
   for (const ax of Object.keys(F)) { const stray = r.moved[ax].filter(k => !F[ax].includes(k)); if (stray.length) return ax + " moved another axis's numbers: " + stray; if (!r.moved[ax].length) return ax + " moved nothing"; }
   if (Math.abs(r.base.fireR - 16 * r.base.ballR) > 1e-9) return "Hellfire 0: the fire's max " + r.base.fireR + " is not 16x the meteor's size " + r.base.ballR + " (owner, 2026-10-20)";
   if (Math.abs(r.vi.meteor.ballR - 5.4) > 1e-9) return "Meteor IV meteor radius " + r.vi.meteor.ballR + " (expected 5.4: 20% of 27, owner 2026-10-20)";
@@ -298,7 +301,7 @@ check("IFR: one charge at its centre, launched the moment it is full and a targe
 });
 check("IFR meteors: ONE homes onto its target from any distance; its first hit makes the fire and a 360-degree fan (Meteor's count, bell-curve release round 0.4 s) whose meteors home within 50 u, hit only, fissure at the capstone", () => {
   const r = run(`(() => {
-    const fresh = m => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < m; k++) upgradeTower(t, "meteor", true); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
+    const fresh = m => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < m; k++) upgradeTower(t, "meteor", true); ifrAll(t); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
     const out = {};
     /* the launch: ONE meteor, homing onto its target however far off its first heading */
@@ -308,7 +311,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     out.fires1 = t.ifrFires.length; out.fireAt = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - tgt.x, t.ifrFires[0].y - tgt.y) : NaN;
     const fan = t.ifrBalls.filter(b => b.gen === 1); out.fan = fan.length; out.want = st.fan; out.fanR = fan.map(b => b.r / st.ballR); out.fanV = fan.map(b => Math.hypot(b.vx, b.vy) / st.ballV);
     const angs = fan.map(b => (Math.atan2(b.vy, b.vx) + 2 * Math.PI) % (2 * Math.PI)).sort((a, b) => a - b); out.maxGap = Math.max(...angs.map((a, i) => (i ? a - angs[i - 1] : a + 2 * Math.PI - angs[angs.length - 1]))) * 180 / Math.PI;
-    const w = Array.from({ length: 2000 }, () => ifrFanDelay(IFR_FAN[0])); const w4 = Array.from({ length: 2000 }, () => ifrFanDelay(4 * IFR_FAN[0])); out.wait4Mean = w4.reduce((a, b) => a + b, 0) / w4.length; out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= IFR_FAN_MAX_S * Math.sqrt(st.fan / IFR_FAN[0]) + 1e-9); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
+    const w = Array.from({ length: 2000 }, () => ifrFanDelay(IFR_FAN_REF)); const w4 = Array.from({ length: 2000 }, () => ifrFanDelay(4 * IFR_FAN_REF)); out.wait4Mean = w4.reduce((a, b) => a + b, 0) / w4.length; out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= IFR_FAN_MAX_S * Math.sqrt(st.fan / IFR_FAN[0]) + 1e-9); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
     tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; /* the fan hits nothing here: no new fire */
     /* the LAUNCHED meteor never goes silently (owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening"): locked, the
        view does not cull it (its seen target may sit where the camera does not reach), and out of time it bursts where it is */
@@ -360,7 +363,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (r.fires1 !== 1 || !(r.fireAt < 30)) return "the homing meteor: fires " + r.fires1 + ", " + r.fireAt + " u from its target (expected a hit on it, one fire)";
   if (r.fanR.some(k => Math.abs(k - 0.25) > 1e-9)) return "fan meteors are " + r.fanR[0] + " x the launched one's size (expected a quarter, owner 2026-10-20)";
   if (r.fanV.some(v => Math.abs(v - 0.25) > 1e-9)) return "fan meteors fly at " + r.fanV[0] + " x the launch speed (expected a quarter, owner 2026-10-20)";
-  if (r.fan !== r.want || r.want !== 7) return "the impact fan at Meteor I: " + r.fan + " meteors (its st.fan " + r.want + ", expected 7)";
+  if (r.fan !== r.want || r.want !== 2) return "the impact fan at Meteor I: " + r.fan + " meteors (its st.fan " + r.want + ", expected 2 - \"a fan of two meteors\", tier redesign 2026-10-24)";
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
   if (Math.abs(r.wait4Mean / r.waitMean - 2) > 0.15) return "a fan 4x as big releases over " + (r.wait4Mean / r.waitMean).toFixed(2) + "x the time (expected 2: the root of the count)";
   if (!r.fanWaits || Math.abs(r.waitMean - 0.4) > 0.05 || r.waitMin < 0 || r.waitMax > 1 || r.waitMax - r.waitMin < 0.3) return "fan release times: mean " + r.waitMean.toFixed(2) + " in [" + r.waitMin.toFixed(2) + ", " + r.waitMax.toFixed(2) + "] (expected a bell round 0.4 s, sd 0.3)";
@@ -398,7 +401,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = G.towers[0]; ifrInit(t); const st = towerStats(t), out = { chargeS: st.chargeS, dmg: st.dmg };
+    const t = ifrAll(G.towers[0]); ifrInit(t); const st = towerStats(t), s0 = towerStats({ ...t, skills: {}, lvl: 1 }, true), out = { chargeS: s0.chargeS, dmg: s0.dmg, dmgWant: TOWERS.ifr.dmg * curveAt("ifr", 0).dmg };
     spawnEnemy("fast", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
     for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - 0.9 * st.range); if (d < bd) { bd = d; bs = s; } }
     e.s = bs; const p0 = pathAt(0, bs, 0); e.x = p0.x; e.y = p0.y; e.seen = true; e.hp = e.max = 1e9; e.armor = 0; e.shield = 0; e.jit = 0; e.spd = 1;
@@ -415,12 +418,12 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   if (!r.hit) return "a led meteor missed its target: landed " + r.miss.toFixed(1) + " u from it (its radius " + r.r + ")";
   if (r.glow2d > 1 || r.glowGl > 0.5) return "the flare glow is wider than its hit band: 2D " + r.glow2d + " x W, GL half-width " + r.glowGl + " x W";
   if (r.whites) return "IFR still draws white: " + r.whites + " glow layers (owner, 2026-10-20: \"no white\")";
-  if (r.chargeS !== 1.4 || r.dmg !== 120) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.4 - 2026-10-21 - and 120)";
+  if (r.chargeS !== 1.4 || Math.abs(r.dmg - r.dmgWant) > 1e-9) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.4 - 2026-10-21 - and the curve's level 0, " + r.dmgWant + " - tier redesign 2026-10-24)";
   return "";
 });
 check("IFR: the fire (Hellfire, its circle drawn at 16%, then 8%, its glow twice as wide) opens at the meteor's size, its ring hits each enemy once, grows to its max, lights its flares and goes when they are out", () => {
   const r = run(`(() => {
-    const fresh = h => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < h; k++) upgradeTower(t, "hellfire", true); ifrInit(t); return t; };
+    const fresh = h => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < h; k++) upgradeTower(t, "hellfire", true); ifrAll(t); ifrInit(t); return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; return e; };
     let t = fresh(0), st = towerStats(t), out = {};
     const q = held(t, CX + 2, CY); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f0 = t.ifrFires[0]; out.r0 = f0.r; out.R0 = f0.R; out.ballR = st.ballR;
@@ -464,7 +467,7 @@ check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () 
 });
 check("IFR flares: one where each meteor lands, the first too (three within 10 u at the Flare capstone); a fire lights its flares on a bell round its first second, inside it, near the centre more often, more of them in a wider fire", () => {
   const r = run(`(() => {
-    const fresh = (ax, k) => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let i = 0; i < k; i++) upgradeTower(t, ax, true); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
+    const fresh = (ax, k, need) => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let i = 0; i < k; i++) upgradeTower(t, ax, true); ifrAll(t, need); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
     const out = {};
     /* the first hit: a fire, no flare */
@@ -479,7 +482,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
       const lf = t.ifrFlares.filter(f => !f.hf); return { n: lf.length, fires: t.ifrFires.length, jit: Math.max(...lf.map(f => Math.hypot(f.x - v.x, f.y - v.y))) }; };
     out.land0 = land(t, st); t = fresh("firaga", 6); st = towerStats(t); out.land6 = land(t, st); out.jmax = IFR_TRIPLE_JIT;
     /* the fire's flares, at Hellfire 0 and 6 */
-    const fire = h => { const t = fresh("hellfire", h), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
+    const fire = h => { const t = fresh("hellfire", h, ["hellfire"]), st = towerStats(t); st.fan = IFR_FAN_REF; /* the fire alone, at the fan share this check was written for (the old untaken fan of 6: tier 0 has none since the tier redesign) */ ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
       const lit = [], of = ifrFlare; let tm = 0; ifrFlare = function (t2, st2, x, y, sz, big, hf) { if (hf) lit.push({ x, y, t: tm }); return of.apply(this, arguments); };
       try { while ((f.left > 0) && tm < 60) { stepIfrFires(t, st, 1 / 60); tm += 1 / 60; } } finally { ifrFlare = of; }
       const d = lit.map(q => Math.hypot(q.x - CX, q.y - CY)), ts = lit.map(q => q.t).sort((a, b) => a - b);
@@ -619,7 +622,7 @@ check("IFR: draws its charge, meteors, fires and flares; G clones; selling mid-f
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = G.towers[0]; for (let i = 0; i < 90; i++) step(1 / 30);
+    const t = ifrAll(G.towers[0]); for (let i = 0; i < 90; i++) step(1 / 30);
     ifrNear("swarm", t, 90);
     for (let i = 0; i < 30; i++) step(1 / 30); /* 1 s: the meteor has landed, its fire and fan live */
     const out = { live: t.ifrBalls.length + t.ifrFires.length + t.ifrFlares.length };

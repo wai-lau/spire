@@ -5,7 +5,7 @@ import path from "node:path";
 import { ROOT, boot, check } from "./harness.mjs";
 
 const { run } = boot();
-const CURVE_DONE = ["arc", "sol", "car", "frz", "acd", "grv"]; // the kinds whose stats run on the curve (each tower task adds its own)
+const CURVE_DONE = ["arc", "sol", "car", "frz", "acd", "grv", "ifr"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
 check("curve: by total level alone, rising, slightly steepening, tier 0 below today's bare tower (tier redesign 2026-10-24)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
@@ -152,4 +152,19 @@ check("GRV: tier 0 a nova alone; Void I a hole that strips armor, no slow; Nova 
   if (n.hole || !n.slowed || n.armor !== 500) return "Nova I: " + JSON.stringify(n);
   if (r.hole || !r.pel) return "Radiation I: " + JSON.stringify(r);
   if (z.name !== "Nova") return "GRV's second axis reads " + z.name + " (expected Nova)";
+});
+
+// ---------- IFR ----------
+towerTierChecks("ifr", ["fan", "fire", "flare", "hellfire"]);
+check("IFR: tier 0 a meteor that just hits; Meteor I a fan of two; Hellfire I one fire riding its enemy; Flare I one flare at the impact (tier redesign 2026-10-24)", () => {
+  const go = sk => run(`(() => { const { t, es } = tierLane("ifr", ${JSON.stringify(sk)}, [70]); const e = es[0]; G.started = true;
+    let spawned = 0, fires = 0, flares = 0, rides = null; for (let k = 0; k < 45; k++) { step(1 / 60);
+      spawned = Math.max(spawned, (t.ifrBalls || []).filter(b => b.gen).length); fires = Math.max(fires, (t.ifrFires || []).length); flares = Math.max(flares, (t.ifrFlares || []).filter(f => !f.hf).length);
+      if (rides == null && (t.ifrFires || []).length) rides = t.ifrFires[0].eid === e.id; if (e.max > e.hp && (t.ifrBalls || []).length === 0 && k > 30) break; }
+    return { dealt: e.max - e.hp, spawned, fires, flares, rides }; })()`);
+  const z = go({}), m = go({ meteor: 1 }), h = go({ hellfire: 1 }), f = go({ firaga: 1 });
+  if (!(z.dealt > 0) || z.spawned || z.fires || z.flares) return "tier 0: " + JSON.stringify(z) + " (expected a hit and nothing else)";
+  if (m.spawned !== 2) return "Meteor I fanned " + m.spawned + " (expected 2)";
+  if (h.fires !== 1 || !h.rides) return "Hellfire I: " + JSON.stringify(h) + " (expected one fire riding the struck enemy)";
+  if (f.flares !== 1 || f.fires) return "Flare I: " + JSON.stringify(f) + " (expected one flare, no fire)";
 });
