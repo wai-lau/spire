@@ -151,7 +151,7 @@ function stepIcp(i, t, st, dt) {
       for (let k = 0; k < pair && i.bk < st.bolts; k++, i.bk++) carBolt(i, i.ve, t, st, (k - (pair - 1) / 2) * CRR_BOLT_SIDE);
       if (i.bk >= st.bolts) { i.bk = 0; i.ammo--; }
     }
-    if (st.tSlow > 0 && i.ve && !i.ve.dead && t.icp.indexOf(i) < st.tetherN) carTether(i, t, st, dt); else i.tc = null; // the TETHER, once it has fired at its target
+    if (st.tSlow > 0 && carTethered(t, i, st)) carTether(i, t, st, dt); else i.tc = null; // the TETHER, once it has fired at its target
     if (i.ammo <= 0) {
       if (st.autopilot) { carBurst(i, t, st); i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; } // rebuilt at home
       carHome(i, t, st);
@@ -164,6 +164,9 @@ function stepIcp(i, t, st, dt) {
   carSteer(i, t.x - i.x, t.y - i.y, st.speed, dt, Math.max(0, Math.min(1, (d - 39) / 78))); /* (78: the old SLOT_R - the last approach home, not the slots' distance) */ // the avoidance lets go on the last approach home
 }
 // the TETHER's work a frame (see CRR_TETHER_SLOW): slow its target (and the capstone's chained one), pulse both every CRR_TETHER_PULSE s
+// TETHERED: the first st.tetherN interceptors OUT on a live target, in wing order - not interceptor 0 alone, which reloading
+// left Tether I with nothing tethered (tier redesign 2026-10-25). Only those draw a beam (drawCar)
+const carTethered = (t, i, st) => i.state === "out" && !!i.ve && !i.ve.dead && t.icp.filter(j => j.state === "out" && j.ve && !j.ve.dead).indexOf(i) < st.tetherN;
 function carTether(i, t, st, dt) {
   const e = i.ve, r2 = (CRR_ORBIT * 1.2) ** 2;
   if (st.tChain && (!i.tc || i.tc.dead || i.tc === e || carDist2(i.tc, e) > r2)) { i.tc = null; let bd = r2; for (const o of G.enemies) { if (o.dead || !o.seen || o === e) continue; const d = carDist2(o, e); if (d < bd) { bd = d; i.tc = o; } } }
@@ -366,8 +369,9 @@ function drawCar(darts) {
       carTrails(t);
       if (skillOf(t, "launch") > 0) { // the TETHER beams: interceptor -> target (-> the chained one), brighter on a pulse
         ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round";
+        const st = towerStats(t);
         for (const i of t.icp) {
-          if (i.state !== "out" || !i.ve || i.ve.dead) continue;
+          if (!carTethered(t, i, st)) continue;
           i.tf = Math.max(0, (i.tf || 0) - 0.08); ctx.globalAlpha = 0.45 + 0.55 * i.tf; ctx.lineWidth = 1.2 + 1.8 * i.tf;
           ctx.beginPath(); ctx.moveTo(i.x, i.y); ctx.lineTo(i.ve.x, i.ve.y); if (i.tc && !i.tc.dead) ctx.lineTo(i.tc.x, i.tc.y); ctx.stroke();
         }

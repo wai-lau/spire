@@ -62,7 +62,7 @@ function towerTierChecks(kind, tier0Words) {
   });
   check(kind.toUpperCase() + ": the card's stat rows read no NaN / undefined at tier 0 or any single-axis tier I", () => {
     const r = run(`(() => { const bad = []; for (const sk of [{}, ...SKILL_TREES.${kind}.map(ax => ({ [ax.id]: 1 }))]) {
-      const t = { id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ skills: sk }), skills: sk }, txt = JSON.stringify(SPEC.${kind}(towerStats(t, true), t));
+      const t = { id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, txt = JSON.stringify(SPEC.${kind}(towerStats(t, true), t));
       if (/NaN|undefined|null/.test(txt)) bad.push(JSON.stringify(sk) + " " + txt.slice(0, 160)); } return bad; })()`);
     if (r.length) return r.join(" || ");
   });
@@ -98,15 +98,15 @@ check("SOL: tier 0 stops at its first enemy, no burn, no strip; Focus I passes o
 // ---------- CRR ----------
 towerTierChecks("car", ["tether", "circling", "wingmate"]);
 check("CRR: tier 0 one interceptor, no tether, one bolt a volley; Hangar I two, one held; Tether I one tether at most; Armament I two bolts, same volley (tier redesign 2026-10-24)", () => {
-  const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "car", x: CX, y: CY, lvl: 1 + towerLevel({ skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts }; })()`);
+  const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "car", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "car", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts }; })()`);
   const z = st({}), h = st({ hangar: 1 }), a = st({ armament: 1 });
   if (z.wing !== 1 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== 0) return "tier 0 " + JSON.stringify(z);
   if (h.wing !== 2 || h.hold !== 1) return "Hangar I " + JSON.stringify(h);
   if (a.bolts !== 2) return "Armament I " + JSON.stringify(a);
   const n = run(`(() => { const { t } = tierRig("car", { hangar: 3, launch: 1 }, [[200, 0], [-200, 40], [0, 220], [150, 150]]);
-    G.started = true; const seen = new Set(), orig = carTether; carTether = (i, ...r) => { seen.add(i); return orig(i, ...r); };
-    try { for (let k = 0; k < 600; k++) step(1 / 60); } finally { carTether = orig; } return [seen.size, t.icp.filter(i => i.state === "out").length]; })()`);
-  if (n[0] !== 1) return "Tether I: " + n[0] + " interceptors tethered (expected 1; " + n[1] + " out)";
+    G.started = true; let most = 0, ever = 0, seen = new Set(); const orig = carTether; carTether = (i, ...r) => { seen.add(i); return orig(i, ...r); };
+    try { for (let k = 0; k < 600; k++) { seen = new Set(); step(1 / 60); most = Math.max(most, seen.size); ever += seen.size; } } finally { carTether = orig; } return [most, ever]; })()`);
+  if (n[0] !== 1) return "Tether I: " + n[0] + " interceptors tethered at once (expected 1 - " + n[1] + " tether steps in all)"; // at most ONE at a time; which one rides it moves (carTethered, 2026-10-25)
 });
 
 // ---------- FRZ ----------
@@ -127,7 +127,7 @@ check("FRZ: tier 0 only slows; Sublimation I hurts, more the slower; Permafrost 
 // ---------- ACD ----------
 towerTierChecks("acd", ["pool", "puddle", "slow", "spread"]);
 check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry; Contagion I a ray-dripped slowing pool, no kill pools; Corrosion I eats armor (tier redesign 2026-10-24)", () => {
-  const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "acd", x: CX, y: CY, lvl: 1 + towerLevel({ skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { lines: s.targets, carry: s.carry, pools: !!s.contagion, slow: s.burnSlow || 0, corrode: s.corrode || 0 }; })()`);
+  const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "acd", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "acd", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { lines: s.targets, carry: s.carry, pools: !!s.contagion, slow: s.burnSlow || 0, corrode: s.corrode || 0 }; })()`);
   const pools = (sk, kill) => run(`(() => { const { t, es } = tierLane("acd", ${JSON.stringify(sk)}, [30, 45]); G.started = true; ${kill ? "es[0].hp = es[0].max = 5;" : ""}
     let slowed = false; for (let k = 0; k < 240; k++) { step(1 / 60); if (es[1].slowT > 0) slowed = true; } return { n: (t.puddles || []).length, spread: (t.puddles || []).filter(p => p.spread).length, slowed }; })()`);
   const z = st({}), f = st({ spray: 1 }), c = st({ contagion: 1 }), k = st({ corrosion: 1 });
@@ -180,7 +180,7 @@ check("tier I names: every axis's first hint is named (no placeholder), GRV's se
 });
 
 // ---------- final review fixes (plan 2, 2026-10-24) ----------
-const rows = (kind, sk) => run(`(() => { const sk = ${JSON.stringify(sk)}, t = { id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ skills: sk }), skills: sk }, st = towerStats(t, true);
+const rows = (kind, sk) => run(`(() => { const sk = ${JSON.stringify(sk)}, t = { id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, st = towerStats(t, true);
   return { st: { bolts: st.bolts }, rows: Object.fromEntries(SPEC.${kind}(st, t)) }; })()`);
 check("review: the card's rows show no mechanic the tower lacks - CRR shields by its bolts, IFR's fire / flares / fan only once bought", () => {
   const c0 = rows("car", {}), c1 = rows("car", { armament: 1 });
@@ -210,4 +210,38 @@ check("review: a hole-less GRV sphere never swallows another GRV's Void hole", (
     const big = mk(a, 90), hole = mk(b, 40); grvPull(a, towerStats(a, true), 1 / 60); grvPull(b, towerStats(b, true), 1 / 60);
     return { holeMerged: !!hole.merged, bigMerged: !!big.merged }; })()`);
   if (r.holeMerged || !r.bigMerged) return "merge: " + JSON.stringify(r) + " (expected the hole to take the hole-less sphere in)";
+});
+
+// ---------- the left-for-later list (owner, 2026-10-25: "zero" / "fix all the left for later things") ----------
+const statsOf = (kind, sk) => run(`(() => { G = newGame(); const sk = ${JSON.stringify(sk)}; const st = towerStats({ id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, true);
+  return { critMul: st.critMul, scorch: st.dot ? st.dot.frac : 0, brittle: st.brittle, fireHK: st.fireHK, hfK: st.hfK }; })()`);
+check("later: tier I adds no extra numbers the spec does not name - SOL Breach I crit as tier 0, FRZ Sublimation I no Brittle", () => {
+  const s0 = statsOf("sol", {}), s1 = statsOf("sol", { breach: 1 }), f1 = statsOf("frz", { temp: 1 });
+  if (s1.critMul !== s0.critMul) return "SOL Breach I crit x" + s1.critMul + " (tier 0 x" + s0.critMul + ")";
+  if (f1.brittle !== 1) return "FRZ Sublimation I Brittle x" + f1.brittle + " (expected 1)";
+});
+check("later: a factor on the tower's OWN damage is one constant, on from its first tier (SOL crit + scorch, IFR fire hit + Flare's fire boost)", () => {
+  const same = (kind, ax, key, from) => { const v = [1, 2, 3, 4, 5].map(n => statsOf(kind, { [ax]: n })[key]); return v.every(x => x === v[0]) && statsOf(kind, {})[key] === from ? "" : kind + " " + ax + " " + key + " " + JSON.stringify(v) + " (tier 0 " + statsOf(kind, {})[key] + ")"; };
+  return same("sol", "breach", "critMul", 3) || same("sol", "breach", "scorch", 0) || same("ifr", "hellfire", "fireHK", statsOf("ifr", { hellfire: 1 }).fireHK) || same("ifr", "firaga", "hfK", 1);
+});
+check("later: the card rows read no zero mechanic - ARC Jumps at tier 0, FRZ Cold bite with no tick", () => {
+  const a0 = rows("arc", {}).rows, a1 = rows("arc", { conductivity: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;
+  if (a0.Jumps !== "—") return "ARC tier 0 Jumps reads " + a0.Jumps;
+  if (!/^1 jump/.test(a1.Jumps)) return "ARC Conductivity I Jumps reads " + a1.Jumps;
+  if (f0["Cold bite"] !== "—") return "FRZ tier 0 Cold bite reads " + f0["Cold bite"];
+  if (f1["Cold bite"] === "—") return "FRZ Sublimation I Cold bite blank";
+});
+check("later: ACD's sentence says the jet, not Jets, when it sprays one", () => {
+  const d = run(`describeTower("acd", { corrosion: 1, contagion: 1, flow: 0 })`);
+  if (/Jets/.test(d)) return d;
+  if (!/The jet eats armor/.test(d) || !/The jet leaves/.test(d)) return "no singular jet: " + d;
+});
+check("later: towerLevel counts only the tower's own axes (a stray key in a save adds nothing)", () => {
+  const n = run(`towerLevel({ kind: "arc", skills: { conductivity: 2, void: 3, junk: 9 } })`);
+  if (n !== 2) return "towerLevel " + n + " (expected 2)";
+});
+check("later: CRR's tether rides the first interceptor OUT on a target, not interceptor 0, and only it draws a beam", () => {
+  const r = run(`(() => { G = newGame(); const t = { id: 99, kind: "car", x: CX, y: CY, lvl: 3, skills: { hangar: 1, launch: 1 } }, st = towerStats(t, true), e = { x: CX + 30, y: CY, hp: 1e9, dead: false };
+    t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
+  if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });

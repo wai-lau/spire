@@ -37,19 +37,19 @@ const DESCRIBE = {
   // chain, each SOL_HOP x the last; VI three chains) and the armor every hit strips (SOL_BREACH_ARMOR) - every number read live
   sol(sk) {
     const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, n = SOL_BEAMS[f], k = SOL_REFRACTION[r], p = Math.round(SOL_HOP[r] * 100), TIMES = ["", "once", "twice"];
-    const pn = SOL_PASS_N[f], fan = SOL_FAN_BY[r], br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH[b], scorch = "scorch for " + Math.round(sc * 100) + "% over " + SOL_SCORCH_T + "s"; // tier 0: one beam, stopping at its enemy (tier redesign 2026-10-24)
+    const pn = SOL_PASS_N[f], fan = SOL_FAN_BY[r], br = SOL_BREACH_ARMOR[b], sc = b ? SOL_SCORCH_K : 0, scorch = "scorch for " + Math.round(sc * 100) + "% over " + SOL_SCORCH_T + "s"; // tier 0: one beam, stopping at its enemy (tier redesign 2026-10-24)
     return "Focuses " + (n > 1 ? n + " beams" : "a beam") + " onto an enemy" + (pn === 1 ? ", passing through to one more at " + Math.round(SOL_PASS[f] * 100) + "%" : pn ? ", passing through at " + Math.round(SOL_PASS[f] * 100) + "%" : "") + "." + /* Focus: beams + pass-through (owner, 2026-10-23) */
       (k ? " Reflects " + (TIMES[k] || k + " times") + " for " + (100 - p) + "% less damage" + (k > 1 ? " every reflection" : "") + "." + (fan > 1 ? " First reflection splits " + NUM_WORD[fan] + " ways." : "") : "") /* (owner: st.fan, two chains, VI six) */ +
       (br ? " Beams break " + dmgUnits(br * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor" + (sc ? " and " + scorch : "") + "." : sc ? " Beams " + scorch + "." : ""); // (owner: "Break X armor and scorch" / "and scorch for ...")
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY), the pools' slow (ACD_POOL_SLOW, Contagion's since the tier redesign),
-  // the pools (Contagion: kills leave them too), Corrosion: the armor FLOOR it eats down to (minus the wave's armor, damage() in aspira-game.js) - read live
+  // the pools (Contagion: the ray drips them; no kill pools since the tier redesign), Corrosion: the armor FLOOR it eats down to (minus the wave's armor, damage() in aspira-game.js) - read live
   acd(sk) {
-    const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0, n = ACD_LINES[f]; // tier 0: one ray, no pools (tier redesign 2026-10-24)
+    const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0, n = ACD_LINES[f], J = n > 1 ? "Jets" : "The jet", s = n > 1 ? "" : "s"; // tier 0: one ray, no pools (tier redesign 2026-10-24)
     return "Sprays " + (n > 1 ? n + " jets" : "a jet") + " of acid that burn" + (n > 1 ? "" : "s") + " hotter the longer " + (n > 1 ? "they hold" : "it holds") + " an enemy." + (f ? " Jets retain " + Math.round(ACD_FLOW_CARRY[f] * 100) + "% flow between enemies." : "") +
-      (k ? " Jets eat armor down to " + dmgUnits(-armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + ", dropping goo that strips nearby enemies." : "") /* the FLOOR every enemy's armor stops at, the current wave's (owner, 2026-10-22: "boss armor floor to everything" / "the armor value should say the floor") */ +
-      (c ? " Jets leave slimy acidic pools that slow by " + Math.round(ACD_POOL_SLOW[c] * 100) + "% for " + Math.min(POOL_MAX_S, ACD_CONTAGION[c].life) + "s." : "");
+      (k ? " " + J + " eat" + s + " armor down to " + dmgUnits(-armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + ", dropping goo that strips nearby enemies." : "") /* the FLOOR every enemy's armor stops at, the current wave's (owner, 2026-10-22: "boss armor floor to everything" / "the armor value should say the floor") */ +
+      (c ? " " + J + " leave" + s + " slimy acidic pools that slow by " + Math.round(ACD_POOL_SLOW[c] * 100) + "% for " + Math.min(POOL_MAX_S, ACD_CONTAGION[c].life) + "s." : "");
   },
   // CRR (owner, 2026-10-15): Hangar more interceptors (primes); Tether a slowing, pulsing beam to what it fires at (Chain: on to one more enemy); Armament harder, faster,
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)

@@ -28,7 +28,7 @@ const MECH = {
   sol: {
     focus: k => `${V("SOL_BEAMS")[k]} beam${V("SOL_BEAMS")[k] > 1 ? "s" : ""} per shot, each a full hit, passing through ${V("SOL_PASS_N")[k] === Infinity ? "every enemy" : V("SOL_PASS_N")[k] + " more"} at ${pct(V("SOL_PASS")[k])}, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
     refraction: k => `${V("SOL_REFRACTION")[k]} reflection${V("SOL_REFRACTION")[k] === 1 ? "" : "s"} in a chain, ${V("SOL_FAN_BY")[k]} chain${V("SOL_FAN_BY")[k] === 1 ? "" : "s"} off the first enemy, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
-    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good (a breached death throws shrapnel), crit x${V("SOL_CRITMUL")[k]}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
+    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good${k ? `, scorch ${V("SOL_SCORCH_K")} of the hit` : ""}, crit x${V("SOL_CRIT_K")}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
   },
   acd: {
     corrosion: k => (V("ACD_CORRODE")[k] ? `a tick strips ${pct(V("ACD_CORRODE")[k])} of its damage from armor, below zero; eaten armor drops goo (pull ${V("ACD_DRIP_PULL")[k]})` : "no armor strip"),

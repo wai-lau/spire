@@ -69,7 +69,7 @@ const CAPSTONE_NUM = [
   [FRZ_MOON_COUNT, 3], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 3] /* (owner, 2026-10-20: max 3 and 3; were 5 and 6) */,
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
   [SOL_BEAMS, 25], [SOL_PASS, 1], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, 6] /* IV: six chains of six (SOL rework, s.fan; three until 2026-10-23) */,
-  [SOL_CONE_BY, 12], [SOL_HOP, 0.5], [SOL_CRITMUL, 33], [SOL_BREACH_ARMOR, 3216], [SOL_SCORCH, 1.7], [SOL_REFRACT_POP, 0], [SOL_BREACH_CRIT, 0],
+  [SOL_CONE_BY, 12], [SOL_HOP, 0.5], [SOL_BREACH_ARMOR, 3216],
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
   [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9],
   [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }],
@@ -79,7 +79,7 @@ const CAPSTONE_NUM = [
   [CRR_HANGAR, 17], [CRR_FOCUS, 0.7], [CRR_TETHER_SLOW, 0.75], [CRR_AMMO, 16],
   [GRV_AURA_R, 279.5], [GRV_SLOW, 0.616], [GRV_NOVA_R, 230], [GRV_PELLETS, 9],
   // IFR (axes redone 2026-10-20): Meteor a fan of 12 that fissures (Impact); Hellfire a fire six towers across; Flare the biggest, hottest, longest flares, three a landing
-  [IFR_BALL_V, 540], [IFR_FAN, 9], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 180], [IFR_FIRE_V, 660], [IFR_FIRE_DENS, 7.9], [IFR_FIRE_HK, 10], [IFR_HF_FK, 1.6], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 10], [IFR_TICK_S, 0.4 /* x2 (2026-10-24; was 0.2) */],
+  [IFR_BALL_V, 540], [IFR_FAN, 9], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 180], [IFR_FIRE_V, 660], [IFR_FIRE_DENS, 7.9], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 10], [IFR_TICK_S, 0.4 /* x2 (2026-10-24; was 0.2) */],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === WRITTEN_TIERS) table.push(v);
 // the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)

@@ -519,7 +519,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (!(r.hfN >= 1) || !(r.hfL <= r.hfLmax) || Math.abs(r.hfHit - r.hfHitWant) > 1e-6) return "at Flare IV the fire lit " + r.hfN + " flares up to " + r.hfL + " long, hitting " + r.hfHit + " (expected " + r.base + "+ untaken flares: at most " + r.hfLmax + ", hitting " + r.hfHitWant + ")";
   if (!r.hfShapes || !(r.hfKmin >= 0.2 - 1e-9 && r.hfKmin < 0.21 && r.hfKmax <= 0.35 + 1e-9 && r.hfKmax > 0.34) || !(r.hfLifeMin === 0.4 && r.hfLifeMax === 0.4) || r.base !== 0.6) return "the fire's flares: sizes " + r.hfKmin.toFixed(2) + ".." + r.hfKmax.toFixed(2) + " of the largest, burn " + r.hfLife + " s, tick " + r.hfTick + " (expected 20-35%, 0.4 game s - 0.5 real s at 1x - each (owner 2026-10-21), lasting 0.2-3 s - owner 2026-10-20)";
   if (Math.abs(r.hitOnce - r.hitWant) > 1 || r.hitAfter) return "a fire flare hit " + r.hitOnce + " on appearing (expected " + r.hitWant + ") and " + r.hitAfter + " after (expected none: it hits once, no burn - owner 2026-10-20)";
-  if (!(r.hfK > 1.3 && r.hfK < 2)) return "Flare IV raises the fire's flares x" + r.hfK + " (expected slightly - owner 2026-10-20)";
+  if (!(r.hfK > 1 && r.hfK < 1.3)) return "Flare IV raises the fire's flares x" + r.hfK + " (expected slightly - owner 2026-10-20)";
   if (!(r.iMain > r.iHf)) return "a meteor's flare (" + r.iMain + ") is not brighter than a fire's (" + r.iHf + ") at the same hit (owner, 2026-10-20: more opaque and intense)";
   const dens3 = r.f3.n / r.f3.R ** 2, dens6 = r.f6.n / r.f6.R ** 2;
   if (Math.abs(dens6 / dens3 / (r.f6.dens / r.f3.dens) - 1) > 0.15 || !(r.f6.dens > r.f3.dens)) return "flare density: " + r.f3.n + " in r" + r.f3.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected " + (r.f6.dens / r.f3.dens).toFixed(2) + "x denser - owner 2026-10-20: denser as Hellfire levels)";
@@ -606,7 +606,7 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
     t.ifrCharge = 0.5; const R = st.ballR * 0.65, c = rec(() => drawIfrTop(t));
     out.outer = Math.max(...c.A.map(q => q.r)); out.R = R;
     const inner = c.A.filter(q => q.r < R - 1e-6); out.innerMin = Math.min(...inner.map(q => q.r)) / R; out.innerA = Math.max(...inner.map(q => q.a)); out.innerN = inner.length;
-    out.hfBright = ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] * IFR_HF_FK[4] }) > ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] });
+    out.hfBright = ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] * IFR_HF_FK }) > ifrFlareI({ hf: true, hit: TOWERS.ifr.dmg * IFR_TICK_K[0] });
     out.coreHf = ifrFlareCol("orange", { hf: true }) === COL.threat && ifrFlareCol("yellow", { hf: true }) === COL.orange; /* red to the core, the thinnest line orange (owner, 2026-10-21) */ out.coreMain = ifrFlareCol("yellow", {}) === COL.white && ifrFlareCol("orange", {}) === COL.yellow; out.haloHf = ifrFlareCol("glow", { hf: true }) === COL.threat; out.mainK = IFR_FLARE_MAIN_K;
     const ref = TOWERS.ifr.dmg * IFR_TICK_K[0]; out.i1 = ifrFlareI({ hit: ref, hf: true }); out.i2 = ifrFlareI({ hit: 2 * ref, hf: true }); out.i0 = ifrFlareI({ hit: ref / 10, hf: true });
     return out;

@@ -305,22 +305,22 @@ function skillHopTo(c, node, nxt, depth) {
 // Breach stacks per hit (owner: "each beam permanently weakens the target's armor" - Breach is what strips it; the base SOL strips nothing)
 // Refraction from the start (owner, 2026-10-08): one hop in a 40-degree cone at tier 0; every tier one more hop than before
 // (were 0 / 2 / 5 / 9 / 12 / 15); V has NO limit - every enemy ahead in the cone, then on out of sight (solRefraction)
-const SOL_SHIELD_POP = [1, 1, 1, 1] /* one charge a beam, however deep the Focus (owner, 2026-10-16: "SOL should only pop based on the number of beams"); was 1 2 3 4 5 6, */ /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */, SOL_REFRACT_POP = [0, 0, 0, 0] /* (+3 for an hour, 2026-10-23 - scorch pops shields now instead) */ /* a refracted ray pops nothing extra (owner, 2026-10-16); was 0 1 1 2 2 3 */ /* Refraction breaks shields too (owner, 2026-10-12) */; // 2026-10-11: a concentrated beam punches through more than one shield
+const SOL_SHIELD_POP = 1 /* ONE NUMBER (tier redesign 2026-10-25: it was 1 at every tier) */ /* one charge a beam, however deep the Focus (owner, 2026-10-16: "SOL should only pop based on the number of beams"); was 1 2 3 4 5 6, */ /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */; /* (SOL_REFRACT_POP, a refracted ray's extra pops, was 0 at every tier since 2026-10-23 - gone with the tier redesign) */ // 2026-10-11: a concentrated beam punches through more than one shield
 const SOL_BEAMS = [2, 3, 10, 17] /* BATTERY 6.7.0 (2026-10-20): untaken 2 rays (a lone L1 SOL lost a life to every wave-3 armor pair - 72 u apart since 6.5), Focus III 10 (SOL countered armor alone: shields 84% leaked -> 24%); were [1, 2, 3, 4, 5, 17] */ /* V 6 -> 8, VI 8 -> 12 (a beam is the one shield charge it pops now: SOL_SHIELD_POP) */, SOL_REFRACTION = [1, 2, 4, 6] /* REFLECTIONS in the chain (SOL rework, 2026-10-22; were 1 3 6 10 13 and every enemy in the cone) */;
 // BREACH IS SOL'S OWN, from the start (owner, 2026-10-08): every hit strips SOL_BREACH_ARMOR armor for good
 // (below zero too: a flat bonus on every later hit from every tower); the Breach axis massively
-// increases the strip and adds crit chance for every tower, SOL_BREACH_CRIT a hit (none at base)
+// increases the strip
 // BREACH STRIPS A FLAT AMOUNT, big from the start (owner, 2026-10-12: "SOL with any upgrades should be good vs armor", then
 // "dont scale breach with enemy armor" - it was x the wave's armor for an hour): a bare SOL strips 80 a hit (was 3)
-const SOL_BREACH_ARMOR = [80, 200, 550, 2359] /* bigger tiers (owner, 2026-10-12: "increase breach effect to make it better" - the Breach build: armor 61-69 16% -> 12%, 81-89 9% -> 5%); was 80 120 160 210 270 330, before that 3 24 72 150 261 300 */ /* x1.5 for the crit chance it no longer gives (owner, 2026-10-12: "remove extra crit chance, just reduce armor more") */ /* doubled back (2026-10-12, trio sim: ARC+FRZ+SOL, the trio without ACD, leaked 57% of armor at 81-89 - 45% with this) */ /* halved, rounded down (2026-10-08; was 2 16 49 101 174 200) */, SOL_BREACH_CRIT = [0, 0, 0, 0]; // NO crit chance any more (owner, 2026-10-12; was 0 .01 .02 .03 .04 .05)
+const SOL_BREACH_ARMOR = [80, 200, 550, 2359] /* bigger tiers (owner, 2026-10-12: "increase breach effect to make it better" - the Breach build: armor 61-69 16% -> 12%, 81-89 9% -> 5%); was 80 120 160 210 270 330, before that 3 24 72 150 261 300 */ /* x1.5 for the crit chance it no longer gives (owner, 2026-10-12: "remove extra crit chance, just reduce armor more") */ /* doubled back (2026-10-12, trio sim: ARC+FRZ+SOL, the trio without ACD, leaked 57% of armor at 81-89 - 45% with this) */ /* halved, rounded down (2026-10-08; was 2 16 49 101 174 200) */; // (SOL_BREACH_CRIT, crit chance a hit, was 0 at every tier since 2026-10-12 - gone with the tier redesign)
 // a refraction lands within SOL_CONE degrees of the first shot's direction (at
-// any distance); one Breach = BREACH_ARMOR armor off and BREACH_CRIT crit
-// chance for every tower
+// any distance); one Breach = BREACH_ARMOR armor off
 // the cone's half-angle by Refraction tier (owner, 2026-10-08: it WIDENS with the tier and starts wider, since every hop
 // must now travel forward - see solRefraction; was a flat 8, before that 25)
-const SOL_CONE_BY = [3, 6, 8, 9] /* NARROW (owner, 2026-10-19: "SOL should not be good vs swarm whatsoever" - the cone is the lever) */ /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit; the chart SOL uses SOL_BREACH_CRIT)
-// SOL's own lever (owner: more crit): Breach also raises the crit MULTIPLIER, x3 at base
-const SOL_CRITMUL = [3, 5, 9, 25]; /* x1.3 from I (2026-10-18: Breach's shrapnel no longer deals damage) */
+const SOL_CONE_BY = [3, 6, 8, 9] /* NARROW (owner, 2026-10-19: "SOL should not be good vs swarm whatsoever" - the cone is the lever) */ /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit)
+// SOL's crit hits x SOL_CRIT_K - ONE number since the tier redesign (owner, 2026-10-25: "fix all the left for later things": a factor on the
+// tower's own damage is one constant, the curve carries the rest; was 3 5 9 25, V 33 by Breach tier)
+const SOL_CRIT_K = 3;
 // FITTED 2026-10-06 to +25 / +50 / +100% (on an HP-scaled field, so nothing
 // saturates): each Focus beam's share of the shot by tier, and each Refract
 // hop's damage by tier (a hop is far weaker than the first hit)
@@ -341,10 +341,10 @@ const SOL_PASS = [0.5, 0.55, 0.7, 0.9];
 const SOL_PASS_N = [0, 1, Infinity, Infinity, Infinity, Infinity];
 function solSkillStats(t, s, b) {
   curveBase(t, s, b); s.rate = b.rate; s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.crit = LVL_SOL_CRIT[0]; // the STAT CURVE (tier redesign 2026-10-24); SOL's rate never rises (owner, 2026-10-23)
-  s.shieldPop = SOL_SHIELD_POP[skillOf(t, "focus")] + SOL_REFRACT_POP[skillOf(t, "refraction")]; s.pass = SOL_PASS[skillOf(t, "focus")]; s.passN = SOL_PASS_N[skillOf(t, "focus")]; // FOCUS pierces shields: each beam pops this many (SOL's shield help, counter matrix)
+  s.shieldPop = SOL_SHIELD_POP; s.pass = SOL_PASS[skillOf(t, "focus")]; s.passN = SOL_PASS_N[skillOf(t, "focus")]; // FOCUS pierces shields: each beam pops this many (SOL's shield help, counter matrix)
   s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.fan = SOL_FAN_BY[skillOf(t, "refraction")]; // the chains off the first enemy (solRefraction)
   const bk = skillOf(t, "breach");
-  s.breach = 1; s.pierce = 1; s.dot = SOL_SCORCH[bk] ? { frac: SOL_SCORCH[bk], t: SOL_SCORCH_T } : null; /* no burn at Breach 0 (tier redesign) */ s.critMul = SOL_CRITMUL[bk]; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = SOL_BREACH_CRIT[bk]; s.skill = true;
+  s.breach = 1; s.pierce = 1; s.dot = bk ? { frac: SOL_SCORCH_K, t: SOL_SCORCH_T } : null; /* no burn at Breach 0 (tier redesign) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
 }
 // THE SOL REWORK (owner, 2026-10-22: "SOL beam always goes through at 100% after enemy in a straight line, starts with one reflection as
 // usual. However, reflection deals less than 100% damage and also passes through" / "refraction -> increases passthrough% and additional
@@ -412,9 +412,9 @@ function drawCone(f0, k) {
 }
 // ACD's chart numbers, stats and puddles live in aspira-acid.js
 // SCORCH (owner, 2026-10-22: "replace shrapnel with short, high damage DoT"; the BREACH SHRAPNEL a breached death burst into is gone -
-// ARCHAEOLOGY.md): every SOL hit - beam, pass-through, reflection - sets a burn of SOL_SCORCH[breach] x that hit over SOL_SCORCH_T s
+// ARCHAEOLOGY.md): every SOL hit - beam, pass-through, reflection - sets a burn of SOL_SCORCH_K x that hit (from Breach I; ONE number since the tier redesign, 2026-10-25 - was 1 1.1 1.3 1.5, V 1.7 by Breach tier) over SOL_SCORCH_T s
 // (onHit's st.dot: the strongest burn holds, a new hit restarts the clock - Focus's beams do not stack it). Balanced overnight
 // SHORT AND BIG, POPS SHIELDS (owner, 2026-10-23: "pops shield (dont all other dots pop shields?) make this short and big"): over
 // SOL_SCORCH_T s in SOL_SCORCH_TICKS whole ticks (few big ticks, so flat armor bites less; was every frame over 1s), each a loud-free hit
 // that pops a shield charge like IFR's burn and ACD's pools (SOL_DOT_ST; it bounced off shields unpopped until then)
-const SOL_SCORCH = [1, 1.1, 1.3, 1.5], SOL_SCORCH_T = 0.4, SOL_SCORCH_TICKS = 4, SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 1 }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)
+const SOL_SCORCH_K = 1.05 /* its tier I value */, SOL_SCORCH_T = 0.4, SOL_SCORCH_TICKS = 4, SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 1 }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)

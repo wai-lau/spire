@@ -18,7 +18,8 @@ const STAT_CURVE = {
 const CURVE_P = 1; // the steepening: the level's share is (L / SKILL_POINTS) ** CURVE_P before the geometric step (1 = evenly geometric)
 const NUDGE_MAX = 1.2; // an axis's stat nudge, all of a tower's together: x1 .. x1.2 (spec, Calls for the build)
 const nudge = x => Math.min(NUDGE_MAX, Math.max(1, x));
-const towerLevel = t => Object.values(t.skills || {}).reduce((a, n) => a + (n || 0), 0);
+// the tower's OWN axes only: a stray key an old save carries (another kind's axis, a renamed id) buys no level
+const towerLevel = t => (SKILL_TREES[t.kind] || []).reduce((a, ax) => a + (((t.skills || {})[ax.id]) || 0), 0);
 const curveStat = ([lo, hi], L) => lo * (hi / lo) ** ((Math.max(0, Math.min(SKILL_POINTS, L)) / SKILL_POINTS) ** CURVE_P);
 function curveAt(kind, L) {
   const c = STAT_CURVE[kind];
