@@ -12,7 +12,7 @@ import fs from "node:fs";
 import { isMainThread } from "node:worker_threads";
 import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-import { spreadStops, focusStops, snapStop, STOPS, POINTS_AT } from "./stops.mjs"; // tiers bought whole (0 I II III IV)
+import { spreadStops, focusStops, snapStop, STOPS, POINTS_AT } from "./stops.mjs"; // tiers bought whole (0 I II III IV V, a point a purchase since 2026-10-24; POINTS=6 kept until the balance battery re-picks it)
 
 const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), TYPES = ["swarm", "fast", "shield", "armor"];
 const TEAM = process.env.TEAM === "1", N = TEAM ? 1 : Number(process.env.N || 3), POINTS = Number(process.env.POINTS || 8);
@@ -59,7 +59,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("countermx.mjs")
   const jobs = [];
   for (const [from, to, points] of WINDOWS) for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) for (const type of TYPES) for (let seed = 1; seed <= SEEDS; seed++) for (const mates of TRIO ? TRIOS(kind) : [null]) jobs.push({ kind, build, type, from, to, seed, points, mates });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true });
-  console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at ${["-", "I", "II", "III", "IV"][snapStop(Math.min(POINTS, POINTS_AT[POINTS_AT.length - 1]))]} + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds: % LEAKED`);
+  console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at ${["-", "I", "II", "III", "IV", "V"][snapStop(Math.min(POINTS, POINTS_AT[POINTS_AT.length - 1]))]} + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds: % LEAKED`);
   for (const [from, to, points] of WINDOWS) {
     console.log(`\nwaves ${from}-${to} (${points} pts)`.padEnd(26) + TYPES.map(t => t.padStart(8)).join(""));
     for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) {
