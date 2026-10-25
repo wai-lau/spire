@@ -57,10 +57,10 @@ const SPEC = {
     ["Flare", st.flares ? Math.round(st.beamL) + " long · " + Math.round(st.beamW) + " wide" : "—"], ["Flare tick", st.flares ? dmgW(st.dmg * st.flareK) : "—"], ["Flare ticks", st.flares ? +(1 / st.tickS).toFixed(1) + "/s" : "—"], ["Flare lasts", st.flares ? +st.burnS.toFixed(1) + "s" : "—"],
     ["Flare capstone", st.triple ? "3 flares a landing" : "—"]],
   // GRV (aspira-grv.js; rework 2026-10-25): at STARTING mass - a void grows up to x GRV_MASS_MAX with the damage it deals
-  grv: st => [["Nova hit", dmgW(st.dmg * GRV_NOVA_K)], ["Nova reach", st.novaR], ["Armor strip", st.strip ? "−" + dmgW(st.dmg * GRV_NOVA_K * st.strip) + " / nova" : "—"],
-    ["Void", st.auraR + " × nova dmg + strip (×" + GRV_GROW_MIN + "–" + GRV_GROW_MAX + ") · grows up to " + GRV_MASS_MAX + "× by hitting · lasts " + GRV_LIFE + "s if it hits nothing"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means") */,
+  grv: st => [["Nova hit", st.novaN ? st.novaN + " × " + dmgW(st.dmg * GRV_NOVA_K) : "—"], ["Nova reach", st.novaN ? st.novaR : "—"], ["Armor strip", st.strip ? "−" + dmgW(st.dmg * GRV_NOVA_K * st.strip) + " / nova" : "—"],
+    ["Void", "r" + Math.round(st.auraR * Math.sqrt(st.startM)) + " · grows up to " + GRV_MASS_MAX + "× by hitting · lasts " + GRV_LIFE + "s if it hits nothing"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means") */,
     ["Crush tick", dmgW(st.dmg * st.innerK * GRV_TICK)], ["Crush ticks", +(1 / GRV_TICK).toFixed(1) + "/s"] /* the void's crush, at starting mass (owner, 2026-10-25) */,
-    ["Pellets", st.pellets + " / mass lost" + (st.big ? " · starts ×" + GRV_BIG_MASS + ", cap ×" + GRV_BIG_CAP * GRV_BIG_MASS : "")], ["Pellet hit", dmgW(st.dmg * st.pelletK)], ["Pellet reach", "×" + st.pelReach + " void"],
+    ["Pellets", st.pellets ? st.pellets + " / mass lost" : "—"], ["Pellet hit", st.pellets ? dmgW(st.dmg * st.pelletK) : "—"], ["Pellet reach", st.pellets ? "×" + st.pelReach + " void" : "—"],
     ["Aura size", st.auraOn ? "×" + st.accR + " void" : "—"] /* (the aura "—" until Acceleration buys it) */,
     ["Aura slow", st.auraOn ? Math.round(Math.min(GRV_SLOW_MAX, st.slow) * 100) + "% · inner " + Math.round(Math.min(GRV_CORE_MAX, Math.min(GRV_SLOW_MAX, st.slow) * GRV_CORE_MUL) * 100) + "%" + (st.horizon ? " · all inner" : "") : "—"]]  /* (no "Shields -1 / hit" row: every hit pops one - owner, 2026-10-16: "isn't this just default behaviour? maybe no need to list") */,
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
