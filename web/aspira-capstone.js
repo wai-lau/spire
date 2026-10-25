@@ -1,12 +1,12 @@
 // /spire - the CAPSTONES (once "giga capstones"; renamed 2026-10-14) (owner, 2026-10-11: "add a 6th level to each of the axes for each tower that is a giga
 // version of the capstone", "you can only get 1/3 of the capstones"): every axis gains a capstone tier, a big leap
-// over the tier before it, and a tower may take ONE axis to it - the other two stop a tier short (axisCap). Sixteen points
-// (5 + 5 + 6, SKILL_POINTS; the ladder steps t.lvl counts). Every per-tier table is extended here, in one place, so no
+// over the tier before it, and a tower may take ONE axis to it - the other two stop a tier short (axisCap). Thirteen purchases
+// (5 + 4 + 4, SKILL_POINTS, tier redesign 2026-10-24; was sixteen points). Every per-tier table is extended here, in one place, so no
 // capstone lookup is ever undefined. Loaded after aspira-skills.js, aspira-acid.js, aspira-frz.js and aspira-desc.js (the simulator too).
 // TIERS ARE PURCHASES (owner, 2026-10-23: "drop all the god damn levels between that can not be bought, stop listing them everywhere";
 // 2026-10-19: "there are only 4 tiers now, tier 4 is the capstone"; 2026-10-15: "merge upgrades 2-3 and 4-5 in one for each axis ...
-// merge the prices too"): an axis level IS the tier shown, 0 I II III IV (IV the capstone), every per-tier table holds exactly those
-// five values. A buy is one tier; t.lvl stays the LADDER of price steps (SKILL_STEP_COST), so a buy from tier k takes TIER_STEPS[k]
+// merge the prices too"): an axis level IS the tier shown, 0 I II III IV V (V the capstone since the tier redesign, 2026-10-24), every
+// per-tier table holds exactly those six values. A buy is one tier; t.lvl stays the LADDER of price steps (SKILL_STEP_COST), so a buy from tier k takes TIER_STEPS[k]
 // of them and costs exactly the steps it spans. (Before 2026-10-23 a table had seven slots, 0 1 2 3 4 5 6, and only 0 1 3 5 6 were ever
 // bought: an old table's slot 3 is now tier II, 5 tier III, 6 tier IV; a save of that time is read through OLD_TIER, skillScaleFix.)
 const CAPSTONE_TIER = SKILL_TIERS; // 5 (V; was IV until the tier redesign, 2026-10-24)
@@ -145,4 +145,9 @@ for (const entry of CAPSTONE_NUM) if (Array.isArray(entry[0]) && entry[0].length
 const FULL_TIER_TABLES = [VOLT_CARRY_N, CAP_BURST_K, CRR_HOLD_FRAC];
 for (const T of FULL_TIER_TABLES) if (T.length === CAPSTONE_TIER) T.splice(0, T.length, ...withTierI(T));
 for (const kind of Object.keys(SKILL_MOVE)) for (const id of Object.keys(SKILL_MOVE[kind])) if (SKILL_MOVE[kind][id].length === CAPSTONE_TIER) SKILL_MOVE[kind][id] = withTierI(SKILL_MOVE[kind][id]);
-for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1) ax.tiers.unshift({ name: "Spark" }); // (placeholder names)
+// TIER I NAMES (tier redesign 2026-10-24; Claude's calls, the design doc lists them for the owner): each axis's first hint, put in front of
+// its written tiers here, after the capstone's name is pushed (that push keys on the written count, so the trees cannot hold them)
+const TIER_I_NAMES = { conductivity: "Lead", voltage: "Fork", capacitance: "Charge", focus: "Lance", refraction: "Glint", breach: "Singe",
+  hangar: "Escort", launch: "Line", armament: "Twin", temp: "Nip", rime: "Rime", moons: "Crescent", corrosion: "Pit", spray: "Drip", contagion: "Seep",
+  void: "Sink", supernova: "Halo", radiation: "Ember", meteor: "Split", hellfire: "Cinder", firaga: "Flicker" };
+for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1) ax.tiers.unshift({ name: TIER_I_NAMES[ax.id] || "?" });

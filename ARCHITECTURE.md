@@ -118,26 +118,49 @@ Ids `arc frz sol acd grv car ifr` (`KINDS`; `car` is shown as CRR). The seven hu
 
 ### 4.2 The chart (pillar 4)
 
-Three axes a kind, each a ladder of **four purchases** (`SKILL_TIERS`); an axis level IS the
-tier shown, and every per-tier table holds exactly those five values:
+Three axes a kind, each a ladder of **five purchases** (`SKILL_TIERS`, tier redesign 2026-10-24,
+spec `docs/superpowers/specs/2026-10-24-tier-redesign-design.md`); an axis level IS the tier
+shown, and every per-tier table holds exactly those six values:
 
-| shown on card, board, title = table index | 0 | I | II | III | IV = capstone (`CAPSTONE_TIER`) |
-|---|---|---|---|---|---|
-| ladder steps a buy takes (`TIER_STEPS`, `tierSteps`) | | 1 | 2 | 2 | 2 (`CAPSTONE_LEVELS`) |
+| shown on card, board, title = table index | 0 | I | II | III | IV | V = capstone (`CAPSTONE_TIER`) |
+|---|---|---|---|---|---|---|
+| what it is | the plain tower | the axis's first hint | the old I | the old II | the old III | the old IV |
 
-- A tower's `lvl` is the price LADDER, not the tiers: a buy from tier k takes `TIER_STEPS[k]`
-  steps of `SKILL_STEP_COST`. Tables are written 0 I II III and `aspira-capstone.js` appends
-  the IV value to every one in one place (`CAPSTONE_NUM`).
-- An old save (levels 0..6, or a very old one's 2 / 4) is read once through `OLD_TIER`
-  (0 1 1 2 2 3 4; `skillScaleFix`); a save written now carries `skillScale` = `SKILL_SCALE`.
-- Price: `SKILL_STEP_COST` x the build price, one ladder step a level (17 steps; a full chart
-  about 63,100c at the 40c build price: the steps were scaled x1.6 on 2026-10-15, ARCHAEOLOGY §4.4). The capstone costs "the same as increasing the level by 2".
+- A tower's `lvl` is 1 + its purchases: **13 a tower** (`SKILL_POINTS`: one axis to V, two to
+  IV), one step of `SKILL_STEP_COST` each (13 steps, a placeholder until the balance battery).
+- Tables are written 0 + the old I..III; `aspira-capstone.js` appends V (`CAPSTONE_NUM`) and
+  inserts tier I (`tierMid`); `aspira-tier01.js` then writes each tower's real tier 0 and tier I.
+- An old save is read once one tier up (`SKILL_SCALE` 3; `skillScaleFix`, `OLD_TIER` for older).
 - **One capstone a tower** (`axisCap`, `capstoneHolder`; the card says "One capstone per
   tower · X IV holds it"). A tower's shown level is its purchases (`shownLevel`).
 - **The basket**: a tap pulls an axis to its next (or last) tier, the card previews the
   result, one priced button locks it in. Below the locked tier is refused with a note; the
   bank never limits a pull (unaffordable = red cost, disabled button); a card closed
   unbought drops its pull.
+
+### 4.2b The stat curve, tier 0 and tier I (`web/aspira-curve.js`, `web/aspira-tier01.js`)
+
+A tower's damage, rate and range come from its **total level** (every purchase, any axis) on
+one geometric curve per kind (`STAT_CURVE`, `curveAt`, `curveBase`): `lo` at 0 (below the old
+bare tower), `hi` at 13 - placeholders measured on the old tables, fitted by the balance
+battery. The axes add MECHANICS; one may nudge a stat up, never down, at most `NUDGE_MAX` 1.2 in
+all (`nudge`; the axes' range factors in `skillMove`, ARC Conductivity's rate). SOL's curve rate
+is flat (its rate never rises). Per-axis raw damage tables are gone; a sub-attack's factor is
+one constant (`CRR_TETHER_K0`, `FRZ_RIME_BITE0`, `ACD_POOL_HEAT`, `GRV_PELLET_K0`,
+`GRV_INNER_K0`, `IFR_ROUTE_K0`, `IFR_TICK_K0`). Each stats function sets `dmgCurve` /
+`rateCurve` (the curve plus nudges) before a mechanic splits the hit.
+
+| tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
+|---|---|---|---|---|
+| ARC | one beam, no chain | Conductivity: one jump | Voltage: one fork (`VOLT_FORK`) | Capacitance: one charge |
+| SOL | one beam, stops at its enemy (`SOL_PASS_N`) | Focus: passes one more | Reflection: one bounce (`SOL_FAN_BY`) | Breach: a scorch only (strip from II) |
+| CRR | one interceptor, one bolt a volley | Hangar: two, one held | Tether: one tethered drone (`CRR_TETHER_N`) | Armament: two bolts (`CRR_BOLTS_BY`) |
+| FRZ | a slowing circle, no tick | Sublimation: the tick, more the slower | Permafrost: a cracking pulse | Moons: one moon |
+| ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Contagion: ray pools that slow (`ACD_POOL_SLOW`); kill pools gone |
+| GRV | a nova alone (no sphere after it) | Void: the hole + armor strip | Nova (id `supernova`): the slowing aura | Radiation: pellets, brighter |
+| IFR | a meteor that just hits | Meteor: a fan of two | Hellfire: a fire riding its enemy | Flare: one flare at the impact |
+
+Tier I names: `TIER_I_NAMES` (`aspira-capstone.js`). Checks: `scripts/spire-smoke/tiers.mjs`.
 
 ### 4.3 Moving (pillar 3)
 
@@ -674,7 +697,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 |---|---|
 | data and state | `defs` (geometry, tables, `towerStats`), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows) |
 | waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
-| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (CRR), `desc`, `capstone` (tier IV on every table), `chart`, `stats`, `sliders` (the card) |
+| towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (CRR), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
 | draw (3D) | `warp`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
