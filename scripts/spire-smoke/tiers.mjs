@@ -144,17 +144,17 @@ check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry;
 });
 
 // ---------- GRV ----------
-towerTierChecks("grv", ["black hole", "aura", "pellet", "strip"]);
-check("GRV: tier 0 a nova alone; Void I a hole that strips armor, no slow; Nova I a slowing aura, no hole; Radiation I pellets, no hole (tier redesign 2026-10-24)", () => {
+towerTierChecks("grv", ["aura", "strip"]); // (its tiny void and the pellets it sheds ARE tier 0 - GRV rework 2026-10-25)
+check("GRV rework (owner, 2026-10-25): tier 0 a nova + a tiny void, no aura, no strip; Nova I strips armor; Void I a bigger void; Acceleration I an aura that slows", () => {
   const go = sk => run(`(() => { const { t, es, st } = tierLane("grv", ${JSON.stringify(sk)}, [40, 60]); const e = es[0]; e.armor = e.armor0 = 500; G.started = true;
     t.grvShots = GRV_BH_EVERY - 1; novaAt(t, st, e); let slowed = false, pel = 0, sph = 0; /* the hole-leaving shot (GRV_BH_EVERY) */ for (let k = 0; k < 90; k++) { step(1 / 60); t.cd = 1e9; if (e.slowT > 0) slowed = true; pel = Math.max(pel, (t.pellets || []).length); if (k === 40) sph = (t.spheres || []).length; }
-    const s = towerStats(t); return { dealt: e.max - e.hp, sph, slowed, armor: e.armor, pel, hole: !!s.hole, aura: !!s.auraOn, name: SKILL_TREES.grv[1].name }; })()`);
+    const s = towerStats(t); return { dealt: e.max - e.hp, sph, slowed, armor: e.armor, pel, hole: !!s.hole, aura: !!s.auraOn, voidR: s.auraR, name: SKILL_TREES.grv[1].name, acc: SKILL_TREES.grv[2].name }; })()`);
   const z = go({}), v = go({ void: 1 }), n = go({ supernova: 1 }), r = go({ radiation: 1 });
-  if (!(z.dealt > 0) || z.sph || z.slowed || z.pel || z.armor !== 500) return "tier 0: " + JSON.stringify(z) + " (expected the nova's hit, nothing after)";
-  if (!v.hole || !(v.armor < 500) || v.slowed) return "Void I: " + JSON.stringify(v);
-  if (n.hole || !n.slowed || n.armor !== 500) return "Nova I: " + JSON.stringify(n);
-  if (r.hole || !r.pel) return "Radiation I: " + JSON.stringify(r);
-  if (z.name !== "Nova") return "GRV's second axis reads " + z.name + " (expected Nova)";
+  if (!(z.dealt > 0) || !z.sph || z.slowed || z.armor !== 500) return "tier 0: " + JSON.stringify(z) + " (expected the nova's hit and a void, no slow, no strip)";
+  if (!(v.voidR > z.voidR) || v.slowed || v.armor !== 500) return "Void I: " + JSON.stringify(v);
+  if (!(n.armor < 500) || n.slowed) return "Nova I: " + JSON.stringify(n);
+  if (!r.slowed || !r.aura) return "Acceleration I: " + JSON.stringify(r);
+  if (z.name !== "Nova" || z.acc !== "Acceleration") return "GRV's axes read " + z.name + " / " + z.acc;
 });
 
 // ---------- IFR ----------
@@ -206,13 +206,10 @@ check("review: the card-text graph generator runs (docs/spire-descriptions.md is
   const r = spawnSync(process.execPath, [path.join(ROOT, "scripts/aspira-desc-graph.mjs")], { encoding: "utf8", timeout: 120000 });
   if (r.status !== 0) return "aspira-desc-graph.mjs exited " + r.status + ": " + (r.stderr || "").split("\n").filter(Boolean).slice(0, 2).join(" | ");
 });
-check("review: a hole-less GRV sphere never swallows another GRV's Void hole", () => {
-  const r = run(`(() => { G = newGame(); G.towers.push({ id: 901, kind: "grv", x: CX - 50, y: CY }, { id: 902, kind: "grv", x: CX + 50, y: CY });
-    const [a, b] = G.towers; a.skills = { radiation: 1 }; a.lvl = 2; b.skills = { void: 1 }; b.lvl = 2;
-    const mk = (t, ar) => { const sp = { id: G.id++, x: CX, y: CY, vx: 0, vy: 0, ar, age: 1, mass: 1, apm: ar * ar, hit: new Set(), tick: 0, pel: 0, bh: true, open: true, auraSnd: true, hole: !!towerStats(t, true).hole }; (t.spheres ||= []).push(sp); return sp; };
-    const big = mk(a, 90), hole = mk(b, 40); grvPull(a, towerStats(a, true), 1 / 60); grvPull(b, towerStats(b, true), 1 / 60);
-    return { holeMerged: !!hole.merged, bigMerged: !!big.merged }; })()`);
-  if (r.holeMerged || !r.bigMerged) return "merge: " + JSON.stringify(r) + " (expected the hole to take the hole-less sphere in)";
+check("GRV merge (owner, 2026-10-25): two voids' caps do not add - the mass past the bigger cap is lost and shed as pellets", () => {
+  const r = run(`(() => { G = newGame(); const mk = (m) => ({ id: G.id++, x: CX, y: CY, vx: 0, vy: 0, ar: 40, age: 1, mass: m, cap: 3, apm: 1600, hit: new Set(), tick: 0, pel: 0, bh: true, open: true, auraSnd: true });
+    const a = mk(2.5), b = mk(2); grvMerge(a, b); return { mass: a.mass, cap: a.cap, pel: a.pel, per: GRV_PEL_PER_MASS }; })()`);
+  if (r.cap !== 3 || Math.abs(r.mass - 3) > 1e-9 || Math.abs(r.pel - r.per * 1.5) > 1e-6) return "merge: " + JSON.stringify(r) + " (expected cap 3, mass 3, 1.5 mass of pellets)";
 });
 
 // ---------- the left-for-later list (owner, 2026-10-25: "zero" / "fix all the left for later things") ----------

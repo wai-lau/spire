@@ -72,16 +72,17 @@ const DESCRIBE = {
     return "Launches " + (CRR_HANGAR[h] > 1 ? CRR_HANGAR[h] + " interceptors " + (h ? carSalvoN(h) + " at a time" : "one by one") : "an interceptor") + (h ? ", storing " + Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]) + " of them circling it while there is nothing to hit" /* the COUNT, not a % (owner, 2026-10-16) */ : "") + ". Each flies to an enemy, fires " + /* FOCUS FIRE named (owner, 2026-10-18: "that wingmate thing should be added to description") */
       CRR_AMMO[a] + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts at " + pc(1 / nb) + " each" : "") /* 100% = a volley (CRR_VOLLEY_K x st.dmg), its bolts share it */ + (CRR_FOCUS[h] ? " (each shot +" + Math.round(CRR_FOCUS[h] * 100) + "% for every other interceptor on the same enemy)" : "") + (l ? (tn === 1 ? ", the first one tethered" : ", tethered") + " to its target by a beam that slows it" + (l >= 2 ? " and pulses " + ticking(CRR_TETHER_K0 / CRR_VOLLEY_K / CRR_TETHER_PULSE, 1 / CRR_TETHER_PULSE, 1) : "") + (l >= CAPSTONE_TIER ? ", running on to one more enemy nearby" : "") : "") + ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K / CRR_VOLLEY_K) + " damage, rebuilt at home." : "flies home to reload.");
   },
-  // GRV (owner, 2026-10-15; tier redesign 2026-10-24): Nova the slowing aura (Hypernova tears armor away); Void the hole and its strip (Event
-  // Horizon all but stops it); Radiation the pellets (Hawking: a last burst)
+  // GRV (rework, owner 2026-10-25): tier 0 the nova and a tiny void every third nova; Nova the rate and the strip (Hypernova: the most);
+  // Void the void's size and crush, pellets shed as it decays (Singularity: heavier, bigger); Acceleration the aura - pull, slow - and the pellets'
+  // damage and range (Event Horizon: the whole aura slows as hard as its inside)
   grv(sk) {
-    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0; // tier 0: the nova alone; Void the void, Nova the aura, Radiation the pellets (tier redesign 2026-10-24)
-    // (owner, 2026-10-25): "the void crushes" / "always call it a void, and an aura"; 100% = the nova's hit (GRV_NOVA_K x st.dmg)
-    return (n >= CAPSTONE_TIER ? "A hypernova that tears armor away" : "A nova") + " lands where it catches the most, imploding." +
-      (v ? " It leaves a void" + (n >= CAPSTONE_TIER ? " twice as big as usual" : "") + " that strips armor and crushes for " + ticking(GRV_INNER_K0 / GRV_NOVA_K, 1 / GRV_TICK, 1) + ", growing with the nova's hit and its crush." +
-        (v >= CAPSTONE_TIER ? " A fully grown void holds what it catches almost still." : "") : "") +
-      (n ? (v ? " Its aura, as big as the nova's hit, slows" : " It leaves an aura, as big as the nova's hit, that slows") + " what it holds." : "") + (v || n ? " Nearby ones pull together and merge." : "") +
-      (r ? " It radiates pellets of " + pc(GRV_PELLET_K0 / GRV_NOVA_K) + " damage" + (r >= CAPSTONE_TIER ? " and bursts into " + NUM_WORD[GRV_HAWKING_N] + " as it fades." : ".") : "");
+    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0, lo = GRV_INNER_K[v] / GRV_NOVA_K; // 100% = the nova's hit (GRV_NOVA_K x st.dmg)
+    // (owner, 2026-10-25): "GRV 0: implosion crushes" / "the void crushes" / "always call it a void, and an aura" / "122% to X% depending on the size"
+    return "A nova implodes, crushing what it catches." + (n ? " Each implosion strips armor worth " + pc(GRV_NOVA_STRIP[n]) + " of its hit." : "") +
+      " Every third nova leaves a" + (v ? "" : " tiny") + " void, sized by the novas' damage" + (n ? " and strip" : "") + ", that crushes for " + pc(lo) + " to " + ticking(lo * GRV_MASS_MAX, 1 / GRV_TICK, 1) + " by its size." +
+      (v >= CAPSTONE_TIER ? " It starts twice as heavy and grows far bigger." : "") + " As it decays it sheds pellets of " + pc(GRV_PELLET_K[r] / GRV_NOVA_K) + " damage." +
+      (r ? " An aura around it pulls enemies together and slows them, twice as hard inside the void" + (r >= CAPSTONE_TIER ? " - and as hard all the way out" : "") + ", and flings its pellets farther." : "") +
+      " Nearby voids pull together and merge, shedding what they cannot hold as pellets.";
   },
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
   // towers across); Flare the flares - bigger, hotter, longer (its capstone: three a landing)

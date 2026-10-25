@@ -22,8 +22,8 @@ FRZ_BRITTLE[1] = 1;
 // ACD: one acid ray, no pools (ACD_CONTAGION null); Flow I two rays and the carry; Contagion I the ray drips a slowing pool (ACD_POOL_SLOW)
 ACD_LINES[0] = 1; ACD_LINES[1] = 2; ACD_CONTAGION[0] = null;
 
-// GRV: a nova alone (no sphere after it - stepSphere); Radiation's pellets from tier I only
-GRV_PELLETS[0] = 0;
+// GRV: the nova and a TINY void every third nova, no aura (owner, 2026-10-25: "add void at 0 (every 3 novas) / But, tiny, no aura")
+GRV_AURA_R[0] = 30;
 
 // IFR: a meteor that just hits (no fan; the fire and the flares off - ifrSkillStats); Meteor I a fan of two
 IFR_FAN[0] = 0; IFR_FAN[1] = 2;

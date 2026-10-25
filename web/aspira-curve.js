@@ -1,29 +1,33 @@
 // /spire - THE STAT CURVE (tier redesign, owner 2026-10-24: "base tower stats are tied to total level / and the axes just add
 // mechanics based on those stats", "slightly steepening"; spec docs/superpowers/specs/2026-10-24-tier-redesign-design.md). A tower's
 // damage, fire rate and range come from its TOTAL LEVEL alone - every point it bought, whichever axis - on one curve per tower:
-// lo at level 0 (a bare tower, below the old bare one), hi at SKILL_POINTS, GEOMETRIC between (each point the same x, so the late
+// lo at level 0 (a bare tower, below the old bare one), hi at SKILL_POINTS, a POWER CURVE between (CURVE_P below; it was geometric - the late
 // points add the most). The axes add MECHANICS; one may NUDGE a stat up, never down, at most NUDGE_MAX over the curve in all.
 // Loaded after aspira-capstone.js (the simulator too, scripts/aspira-sim/sim.mjs FILES); the stats functions call curveBase.
 // hi: MEASURED on the old tables (the mean of the three V/IV/IV builds, 2026-10-24), floored at x2 where the old damage sat in
 // per-hit K tables (FRZ, SOL, GRV) and x20 for IFR (its meteor's x53 at the top) - PLACEHOLDERS, the balance battery fits them
+// NO RATE ON THE CURVE (owner, 2026-10-25: "as a general rule, rate does not grow with just tiers, only tower range, tower mvmt and damage"):
+// every rate row is flat (lo = hi); a rate gain lives in an axis (GRV's Nova) - ARC's old x1.18 folded into its damage
 const STAT_CURVE = {
-  arc: { dmg: [0.95, 163], rate: [1, 1.18], range: [1, 1.28] },
+  arc: { dmg: [0.95, 192.3 /* x1.18, its old rate gain (2026-10-25) */], rate: [1, 1], range: [1, 1.28] },
   frz: { dmg: [0.8, 2], rate: [1, 1], range: [1, 1.5] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
   sol: { dmg: [0.95, 2], rate: [1, 1], range: [1, 1.5] }, // never raise SOL's fire rate (owner, 2026-10-23)
   acd: { dmg: [0.8, 16.2], rate: [1, 1], range: [1, 1.37] },
-  grv: { dmg: [0.8, 2], rate: [1, 4.76], range: [1, 1.36] },
+  grv: { dmg: [0.8, 5 /* axsweep 2026-10-25 (3.6 placed first);  the old x4.76 rate gain split: x1.8 here, Nova's GRV_NOVA_RATE the rest (2026-10-25) */], rate: [1, 1], range: [1, 1.36] },
   car: { dmg: [0.8, 20300], rate: [2, 2], range: [1, 1] },
   ifr: { dmg: [0.8, 20], rate: [2.5, 2.5], range: [1, 1.27] },
 };
 // lo: the DUO RULE's (plan 3, 2026-10-25 - scripts/aspira-sim/duo0.mjs): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
 // and CRR's tier 0 RATE x2.5 / x2 (one meteor, one interceptor: a third and two thirds of the old bare tower's hits) - each still below
 // the old bare tower in all, with the waves 1-12 ease (aspira-waves.js) and FRZ's nip (aspira-frz.js)
-const CURVE_P = 1; // the steepening: the level's share is (L / SKILL_POINTS) ** CURVE_P before the geometric step (1 = evenly geometric)
+let CURVE_P = 2.5; // the steepening: lo + (hi - lo) x (L / SKILL_POINTS) ** CURVE_P. Was GEOMETRIC (lo x (hi/lo) ** share, plan 2): with ARC's x171 and CRR's x25000 spans
+// that held the mid game near lo - ARC hit 82 at five points (master's Voltage IV 310), and the axes that only SHAPE damage (Voltage, Conductivity,
+// Armament, Tether, Permafrost) lost 4 of 16 pushed first (axis.mjs, plan 3 Task 2b, 2026-10-25). A power curve rises at every point for every kind
 const NUDGE_MAX = 1.2; // an axis's stat nudge, all of a tower's together: x1 .. x1.2 (spec, Calls for the build)
 const nudge = x => Math.min(NUDGE_MAX, Math.max(1, x));
 // the tower's OWN axes only: a stray key an old save carries (another kind's axis, a renamed id) buys no level
 const towerLevel = t => (SKILL_TREES[t.kind] || []).reduce((a, ax) => a + (((t.skills || {})[ax.id]) || 0), 0);
-const curveStat = ([lo, hi], L) => lo * (hi / lo) ** ((Math.max(0, Math.min(SKILL_POINTS, L)) / SKILL_POINTS) ** CURVE_P);
+const curveStat = ([lo, hi], L) => lo + (hi - lo) * (Math.max(0, Math.min(SKILL_POINTS, L)) / SKILL_POINTS) ** CURVE_P;
 function curveAt(kind, L) {
   const c = STAT_CURVE[kind];
   return { dmg: curveStat(c.dmg, L), rate: curveStat(c.rate, L), range: curveStat(c.range, L) };
