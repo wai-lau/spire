@@ -234,9 +234,8 @@ check("tier I names: every axis's first hint is named (no placeholder), GRV's se
 // ---------- final review fixes (plan 2, 2026-10-24) ----------
 const rows = (kind, sk) => run(`(() => { const sk = ${JSON.stringify(sk)}, t = { id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, st = towerStats(t, true);
   return { st: { bolts: st.bolts }, rows: Object.fromEntries(SPEC.${kind}(st, t)) }; })()`);
-check("review: the card's rows show no mechanic the tower lacks - CRR shields by its bolts, IFR's fire / flares / fan only once bought", () => {
-  const c0 = rows("car", {}), c1 = rows("car", { armament: 1 });
-  if (c0.rows.Shields !== "−1 / shot" || c1.rows.Shields !== "−2 / shot") return "CRR Shields rows " + c0.rows.Shields + " / " + c1.rows.Shields + " (expected −1, −2)";
+check("review: the card's rows show no mechanic the tower lacks - no Shields row (any damage pops one charge, unsaid: owner 2026-10-26), IFR's fire / flares / fan only once bought", () => {
+  for (const k of ["car", "sol"]) if ("Shields" in rows(k, {}).rows) return k + " still shows a Shields row";
   const i0 = rows("ifr", {}).rows, ih = rows("ifr", { hellfire: 1 }).rows, ifl = rows("ifr", { firaga: 1 }).rows;
   for (const k of ["Fire", "Fire flares", "Flare", "Flare tick", "Flare ticks", "Flare lasts"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
   if (i0.Meteors !== "1") return "IFR tier 0 Meteors reads " + i0.Meteors;
@@ -296,5 +295,5 @@ check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightnin
   if (r[1] !== "Three bolts of lightning that fork three ways for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
   if (!/that chain once for \d+% less damage every chain\.$/.test(r[3])) return "Conductivity I: " + r[3];
   if (!/that chain once and fork three ways for \d+% less damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
-  if (!r[5].includes("slows enemies by") || !r[5].includes(" and deals " + r[6] + "% tower damage over ")) return "FRZ tier 0: " + r[5];
+  if (!r[5].includes("slows enemies by") || !r[5].includes(" and deals " + r[6] + "%td over ")) return "FRZ tier 0: " + r[5];
 });

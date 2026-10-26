@@ -6,10 +6,10 @@
 const cap = s => s[0].toUpperCase() + s.slice(1);
 // DAMAGE AS A SHARE OF THE TOWER'S (owner, 2026-10-25: "for all damage things we should show it as a percentage of the tower damage"):
 // 100% = the tower's MAIN hit - an ARC bolt, a second of FRZ's full aura, a SOL beam, a second of an ACD jet, a second of a tier 0 GRV void's crush, a CRR volley, an
-// IFR meteor; and what TICKS reads "X% damage over Y hits in Z seconds" (owner), a steady burn over 1s
+// IFR meteor; and what TICKS reads "X%td over Z s" (owner, 2026-10-26: "no need to write the number of hits, just have them in the stat block"), a steady burn over 1s
 const pc = x => Math.round(x * 100) + "%";
 const secs = x => +x.toFixed(2) + "s";
-const ticking = (x, hits, z) => pc(x) + " damage over " + Math.max(1, Math.round(hits)) + (Math.round(hits) === 1 ? " hit" : " hits") + " in " + secs(z);
+const ticking = (x, hits, z) => pc(x) + " damage over " + secs(z); // (hits: the stat block's, never the sentence's)
 const NUM_WORD = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
 // thematic words where they fit (owner): chill, rime, brittle, moons; rays, refract, pierce; jets, etch.
 // ONLY BEHAVIOUR is told here (owner, 2026-10-07): a tier that just moves a number - harder
@@ -40,9 +40,9 @@ const DESCRIBE = {
   frz(sk) {
     const tp = sk.temp || 0, rm = sk.rime || 0, mo = sk.moons || 0, pct = x => Math.round(x * 100) + "%", mn = FRZ_MOON_COUNT[mo], sub = FRZ_SUBMOON_N[mo];
     const hits = 1 / FRZ_TEMP_TICK[tp]; // ticks a second; 100% = a second of the full aura (Sublimation's - tier 0 nips FRZ_NIP of it)
-    return "Emits an aura that slows enemies by " + pct(FRZ_TEMP_SLOW[tp]) + " and deals " + (tp ? ticking(1, hits, 1) + ", up to " + pc(1 + FRZ_CHILL_K * SLOW_CAP) + " the slower they are." : ticking(FRZ_NIP, hits, 1) + ".") + /* tier 0 slows and nips (owner, 2026-10-25) */
+    return "Emits aura that slows enemies by " /* owner's words, 2026-10-26 */ + pct(FRZ_TEMP_SLOW[tp]) + " and deals " + (tp ? ticking(1, hits, 1) + ", up to " + pc(1 + FRZ_CHILL_K * SLOW_CAP) + " the slower they are." : ticking(FRZ_NIP, hits, 1) + ".") + /* tier 0 slows and nips (owner, 2026-10-25) */
       (FRZ_BRITTLE[tp] > 1 ? " Enemies in the aura take " + pct(FRZ_BRITTLE[tp] - 1) + " more damage." : "") +
-      (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost bite for " + pc(FRZ_RIME_BITE0 * FRZ_TEMP_TICK[0]) /* a bite: FRZ_RIME_BITE0 full ticks */ + ", pop a shield charge, permanently slow by " + pct(FRZ_RIME[rm]) + " and break up to " + dmgUnits(FRZ_RIME_CRACK[rm] * armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + " armor on every hit." : "") +
+      (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost bite for " + pc(FRZ_RIME_BITE0 * FRZ_TEMP_TICK[0]) + " damage" /* a bite: FRZ_RIME_BITE0 full ticks */ + ", permanently slow by " + pct(FRZ_RIME[rm]) + ((ac => String(ac) !== "0" ? " and break up to " + ac + " armor" : "")(dmgUnits(FRZ_RIME_CRACK[rm] * armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))))) /* nothing it does not do yet (owner, 2026-10-26) */ + " every hit." : "") +
       (mn ? " " + (mn > 1 ? cap(NUM_WORD[mn]) + " moons copy" : "A moon copies") + " the aura at " + pc(FRZ_MOON_BY[mo]) + (sub ? ", each with " + NUM_WORD[sub] + " satellite" + (sub > 1 ? "s" : "") + " at " + pc(FRZ_MOON_BY[mo] * FRZ_SUBMOON.k) : "") + "." : "");
   },
   // SOL (owner, 2026-10-26): one beam, straight through every hit and splitting at each to SOL_SPLIT more (Diffraction), each hit SOL_HOP
@@ -50,9 +50,9 @@ const DESCRIBE = {
   sol(sk) {
     const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, k = SOL_SPLIT[r], p = Math.round(SOL_HOP[r] * 100), TIMES = ["", "once", "twice"];
     const br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_N[f];
-    return "A solar ray that refracts " + (k > 1 ? (TIMES[k] || NUM_WORD[k] + " times") + " " : "") + "within a cone, losing " + (100 - p) + "% intensity every hit." + /* (owner, 2026-10-26: "0: A solar ray that refracts within a cone, losing Y% intensity every hit." / "diffraction 2 should say, refracts twice") */
+    return "A solar ray that refracts " + (k > 1 ? (TIMES[k] || NUM_WORD[k] + " times") + " " : "") + "within a cone" + (p >= 100 ? " without losing intensity." : ", losing " + (100 - p) + "% intensity every hit.") + /* (owner, 2026-10-26: V "refracts four times within a cone without losing intensity") */ /* (owner, 2026-10-26: "0: A solar ray that refracts within a cone, losing Y% intensity every hit." / "diffraction 2 should say, refracts twice") */
       (br ? " Every hit breaks " + dmgUnits(br * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor." : "") +
-      (sc ? " Every hit scorches for " + ticking(SOL_SCORCH_TOTAL, sc, sc * SOL_SCORCH_Q) + ", and every shot scorches " + (SOL_CONE_STACKS[f] > 1 ? NUM_WORD[SOL_CONE_STACKS[f]] + " times" : "once") + " every enemy in its cone; burns stack without limit." : "");
+      (sc ? " The light cone and hits scorch the enemy for " + ticking(SOL_SCORCH_TOTAL, sc, sc * SOL_SCORCH_Q) + "." : ""); /* owner's words, 2026-10-26: effects stack without limit unless said; the cone's stacks are the stat block's */
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY), the pools' slow (ACD_POOL_SLOW, Contagion's since the tier redesign),
@@ -60,7 +60,7 @@ const DESCRIBE = {
   acd(sk) {
     const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0, n = ACD_LINES[f], J = n > 1 ? "Jets" : "The jet", s = n > 1 ? "" : "s"; // tier 0: one ray, no pools (tier redesign 2026-10-24)
     const hits = TOWERS.acd.rate * curveAt("acd", 0).rate, pool = ACD_PUDDLE_CAP * ACD_POOL_HEAT, life = Math.min(POOL_MAX_S, (ACD_CONTAGION[c] || {}).life || 0); // 100% = a second of a jet, before its ramp
-    return "Sprays " + (n > 1 ? n + " jets" : "a jet") + " of acid that " + (n > 1 ? "each deal " : "deals ") + ticking(1, hits, 1) + ", doubling every " + secs(ACD_DOUBLE[0]) + " " + (n > 1 ? "they hold" : "it holds") + " an enemy, up to " + pc(ACD_BASE_MAX) + "." + (f ? " Jets retain " + Math.round(ACD_FLOW_CARRY[f] * 100) + "% flow between enemies." : "") +
+    return (n > 1 ? cap(NUM_WORD[n]) + " jets of acid each deal " : "A jet of acid deals ") + ticking(1, hits, 1) + ", doubling every " + secs(ACD_DOUBLE[0]) + " " + (n > 1 ? "they stay" : "it stays") + " on target, up to " + pc(ACD_BASE_MAX) + "." /* owner's words, 2026-10-26 */ + (f ? " Jets retain " + Math.round(ACD_FLOW_CARRY[f] * 100) + "% flow between enemies." : "") +
       (k ? " " + J + " eat" + s + " armor down to " + dmgUnits(-armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + ", dropping goo that strips nearby enemies." : "") /* the FLOOR every enemy's armor stops at, the current wave's (owner, 2026-10-22: "boss armor floor to everything" / "the armor value should say the floor") */ +
       (c ? " " + J + " leave" + s + " slimy acidic pools that slow by " + Math.round(ACD_POOL_SLOW[c] * 100) + "% and burn for up to " + ticking(pool * life, hits * life, life) + "." : ""); // (a pool burns at its tower's tick, x the jet's heat when it dropped - up to ACD_PUDDLE_CAP)
   },
@@ -70,7 +70,7 @@ const DESCRIBE = {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
     const nb = CRR_BOLTS_BY[a], tn = CRR_TETHER_N[l]; // tier 0: one interceptor, one bolt a volley, no tether (tier redesign 2026-10-24)
     return "Launches " + (CRR_HANGAR[h] > 1 ? CRR_HANGAR[h] + " interceptors " + (h ? carSalvoN(h) + " at a time" : "one by one") : "an interceptor") + (h ? ", storing " + Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]) + " of them circling it while there is nothing to hit" /* the COUNT, not a % (owner, 2026-10-16) */ : "") + ". Each flies to an enemy, fires " + /* FOCUS FIRE named (owner, 2026-10-18: "that wingmate thing should be added to description") */
-      CRR_AMMO[a] + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts at " + pc(1 / nb) + " each" : "") /* 100% = a volley (CRR_VOLLEY_K x st.dmg), its bolts share it */ + (CRR_FOCUS[h] ? " (each shot +" + Math.round(CRR_FOCUS[h] * 100) + "% for every other interceptor on the same enemy)" : "") + (l ? (tn === 1 ? ", the first one tethered" : ", tethered") + " to its target by a beam that slows it" + (l >= 2 ? " and pulses " + ticking(CRR_TETHER_K0 / CRR_VOLLEY_K / CRR_TETHER_PULSE, 1 / CRR_TETHER_PULSE, 1) : "") + (l >= CAPSTONE_TIER ? ", running on to one more enemy nearby" : "") : "") + ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K / CRR_VOLLEY_K) + " damage, rebuilt at home." : "flies home to reload.");
+      CRR_AMMO[a] + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts at " + pc(1 / nb) + " damage each" : "") /* 100% = a volley (CRR_VOLLEY_K x st.dmg), its bolts share it */ + (CRR_FOCUS[h] ? " (each shot +" + Math.round(CRR_FOCUS[h] * 100) + "% for every other interceptor on the same enemy)" : "") + (l ? (tn === 1 ? ", the first one tethered" : ", tethered") + " to its target by a beam that slows it" + (l >= 2 ? " and pulses " + ticking(CRR_TETHER_K0 / CRR_VOLLEY_K / CRR_TETHER_PULSE, 1 / CRR_TETHER_PULSE, 1) : "") + (l >= CAPSTONE_TIER ? ", running on to one more enemy nearby" : "") : "") + ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K / CRR_VOLLEY_K) + " damage, rebuilt at home." : "flies home to reload.");
   },
   // GRV (rework, owner 2026-10-25): tier 0 a tiny void a shot; Nova three novas before it, faster, stripping armor (Hypernova: the most);
   // Void a bigger void, pellets shed as it decays (Singularity: heavier); Acceleration the aura - pull, slow - and the pellets' damage and
@@ -91,13 +91,13 @@ const DESCRIBE = {
     // 100% = a meteor's hit (IFR_ROUTE_K0 x st.dmg); a fire flare's hit shrinks as Meteor fans out (hk), the fire's ring is IFR_RING_HIT_K of it
     const hf = IFR_TICK_K[0] * (f ? IFR_HF_FK : 1) * IFR_FIRE_HK * IFR_HF_HIT_K / Math.sqrt(1 + n) / IFR_ROUTE_K0;
     const burn = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]), fl = Math.floor(burn / IFR_TICK_S[f] + 1e-9);
-    const parts = [f ? "a flare burns for " + ticking(IFR_TICK_K0 / IFR_ROUTE_K0 * fl, fl, burn) : "", h ? "a fire " + (h > 1 ? "spreads" + (h >= CAPSTONE_TIER ? " six towers wide" : "") : "rides its enemy") + ", hitting for " + pc(hf * IFR_RING_HIT_K) + " as it grows and lighting many small flares of " + pc(hf) : "",
+    const parts = [f ? "a flare burns for " + ticking(IFR_TICK_K0 / IFR_ROUTE_K0 * fl, fl, burn) : "", h ? "a fire " + (h > 1 ? "spreads" + (h >= CAPSTONE_TIER ? " six towers wide" : "") : "rides its enemy") + ", hitting for " + pc(hf * IFR_RING_HIT_K) + " damage as it grows and lighting many small flares of " + pc(hf) + " damage" : "",
       n ? NUM_WORD[n] + " meteors burst out all round, each hunting any enemy that comes near" + (m >= CAPSTONE_TIER ? " and splitting in two on a hit" : "") + (f ? "; where each lands a flare burns" + (f >= CAPSTONE_TIER ? " - three of them" : "") : "") : ""].filter(Boolean);
     return "Charges at its centre and launches a meteor that hunts down an enemy." + (parts.length ? " Where it strikes " + parts.join(", and ") + "." : "");
   },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
 // (the per-tier `desc` / `base` sentences in SKILL_TREES were never shown once these existed, and had drifted; removed 2026-10-14)
-// A SHARE OF THE TOWER'S HIT READS "X% tower damage" (owner, 2026-10-26: "call it tower damage / so, 100% tower damage, 110% tower damage";
-// an hour before: drop the 100%) - a change ("50% less damage") is not a share and keeps its words
-const describeTower = (kind, skills) => DESCRIBE[kind](skills || {}).replace(/(\d%) damage/g, "$1 tower damage");
+// A SHARE OF THE TOWER'S HIT READS "X%td" - tower damage, the card's "Tower Damage (td)" row (owner, 2026-10-26: "use X%td as shorthand for
+// tower damage") - a change ("50% less damage") is not a share and keeps its words
+const describeTower = (kind, skills) => DESCRIBE[kind](skills || {}).replace(/(\d%) damage/g, "$1td");

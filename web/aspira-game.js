@@ -125,17 +125,16 @@ function pickTargets(t, st, count) {
 
 // quiet: no flash or number (poison ticks, splash), so they do not spam
 // crit: draw this hit's number PINK instead of a separate CRIT label (owner)
-// st (optional): the hitting tower's stats - st.ignoreShield, st.shieldPop
+// st (optional): the hitting tower's stats - st.noFx, st.from
 const BLEED_CRIT_MUL = 2;
 function damage(e, amt, t, quiet = false, crit = false, st = null) {
   if (e.dead || !e.seen) return; // OFF-SCREEN: untouchable (enemySeen)
   amt *= escale(e); // the LATE SCALE: a raw tower hit, x its target's wave scale (aspira-waves.js)
   if (e.charge && !staticQuiet && t) dischargeStatic(e); // ARC Static: ANY tower's hit sets the charges off, the charging ARC's too (aspira-skills.js)
-  // a shield eats one whole HIT, whatever its size (poison/splash just bounce) -
-  // SOL's included (owner: stripping shields is ACD's job, its ticks pop them)
-  if (e.shield > 0 && !(st && st.ignoreShield)) {
-    if (quiet) return;
-    e.shield = Math.max(0, e.shield - ((st && st.shieldPop) || 1)); // most hits pop one; ACD's acid and SOL's beams pop more (shieldPop)
+  // a shield eats one whole HIT, whatever its size - ANY damage pops ONE charge, quiet hits too, never more
+  // (owner, 2026-10-26: "anything that deals damage should pop a shield charge"; splash/poison once bounced, Ion pierced, shieldPop took more)
+  if (e.shield > 0) {
+    e.shield -= 1;
     if (e.shield < SHIELD_BREAK_N && (!(st && st.noFx) || e.shield <= 0)) shieldBreak(e); // its last charges BREAK, loudly (aspira-floats.js) - a crowd of pools (noFx) only the LAST one (owner, 2026-10-14: ACD too much late)
     if (!(st && st.noFx)) hitFlash(e, 18, 1, "cyan", 0.07);
     // all of it soaked: a "0" in SHIELD blue, as BIG as the hit it swallowed (owner)
@@ -311,12 +310,12 @@ function kill(e, t) {
 
 // LIVES come in multiples of LIFE_STEP 6 - a ring's first side count (owner, 2026-10-04)
 const LIFE_STEP = 6;
-// a boss drops +6 LIVES or +1% INTEREST, fixed per boss wave; ONCE a boss wave (2026-10-15: two-lane bosses paid twice)
+// a boss drops +6 LIVES or +0.5% INTEREST, fixed per boss wave; ONCE a boss wave (2026-10-15: two-lane bosses paid twice)
 function bonusDrop(e) {
   if ((G.bossPaid ||= {})[e.n]) return;
   G.bossPaid[e.n] = true;
   if (fixedRand(e.n, 4) < 0.5) { G.lives += LIFE_STEP; float(e.x, e.y - 18, "+" + LIFE_STEP + " lives", "cyan"); } // +6 (owner, 2026-10-11: "reduce life rewards to 6"; was +12)
-  else { G.interest += 0.01; float(e.x, e.y - 18, "+1% interest", "cyan"); } // owner: was +5%, too much compounding
+  else { G.interest += 0.005; float(e.x, e.y - 18, "+0.5% interest", "cyan"); } // owner, 2026-10-26: "Reduce interest / To 0.5% drops" (players banked 2-4M by Death); was +1%, +5% before that
 }
 
 function addScore(n) {

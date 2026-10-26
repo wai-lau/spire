@@ -68,7 +68,6 @@ const CAPSTONE_NUM = [
   /* (FRZ_TEMP_SLOW, _TICK, BRITTLE, RIME, RIME_PERIOD: written 0..V in aspira-frz.js since 2026-10-26) */ [FRZ_RIME_CRACK, 2.4 /* x2 with its table (2026-10-25) */],
 
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
-  [SOL_SHIELD_POP, 1],
   
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
   [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9],

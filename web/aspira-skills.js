@@ -286,7 +286,6 @@ function skillHopTo(c, node, nxt, depth) {
 
 // ---------- SOL's chart: Focus beams, Refract cone, Pierce Breaches ----------
 // Breach stacks per hit (owner: "each beam permanently weakens the target's armor" - Breach is what strips it; the base SOL strips nothing)
-const SOL_SHIELD_POP = 1 /* ONE NUMBER (tier redesign 2026-10-25: it was 1 at every tier) */ /* one charge a beam, however deep the Focus (owner, 2026-10-16: "SOL should only pop based on the number of beams"); was 1 2 3 4 5 6, */ /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */; /* (SOL_REFRACT_POP, a refracted ray's extra pops, was 0 at every tier since 2026-10-23 - gone with the tier redesign) */ // 2026-10-11: a concentrated beam punches through more than one shield
 // (SOL_BEAMS - Focus's beam count, 2 3 10 17, capstone 25 - GONE: SOL is ALWAYS ONE BEAM, owner 2026-10-25)
 const SOL_SPLIT = [1, 1, 2, 3, 3, 4]; /* II refracts TWICE (owner, 2026-10-26: "SOL diffraction 2 should say, refracts twice"; was 1 2 2 3 3 4) */ /* SPLITS A HIT by Diffraction tier 0..V (owner, 2026-10-26: "SOL should start with bouncing ... bounces have no limit" - solSpread, aspira-sol.js; Claude's numbers. Was SOL_REFRACTION, a chain's length 0 2 3 6 9 9) */
 // BREACH IS SOL'S OWN, from the start (owner, 2026-10-08): every hit strips SOL_BREACH_ARMOR armor for good
@@ -316,7 +315,7 @@ const SOL_PIERCE_OLD = [0.35, 0.6, 0.8, 1]; /* by Breach STOP: 0 35%, I 60%, II 
 // (owner: "All beams always breach"), each enemy at SOL_HOP x the one before)
 function solSkillStats(t, s, b) {
   curveBase(t, s, b); s.rate = b.rate; s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.crit = LVL_SOL_CRIT[0]; // the STAT CURVE (tier redesign 2026-10-24); SOL's rate never rises (owner, 2026-10-23)
-  s.shieldPop = SOL_SHIELD_POP; s.beams = 1; // ONE BEAM, always (owner, 2026-10-25)
+  s.beams = 1; // ONE BEAM, always (owner, 2026-10-25)
   s.split = SOL_SPLIT[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; /* the carry is DIFFRACTION's (owner, 2026-10-26: "move the carry increase from breach to diffraction") */
   const bk = skillOf(t, "breach");
   s.breach = 1; s.pierce = 1; const sc = skillOf(t, "focus"); s.dot = sc ? { k: SOL_SCORCH_TOTAL / SOL_SCORCH_N[sc], n: SOL_SCORCH_N[sc], t: SOL_SCORCH_N[sc] * SOL_SCORCH_Q, cone: SOL_CONE_STACKS[sc] } : null; /* SCORCH (owner, 2026-10-25): a burn of frac x the hit that landed - reflections and pass-throughs burn at their own falloff - stacking without cap (solScorch) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
@@ -353,4 +352,4 @@ const SOL_SCORCH_TOTAL = 1, SOL_SCORCH_Q = 0.1, SOL_SCORCH_N = [0, 60, 78, 96, 1
 // THE CONE SCORCHES (owner, 2026-10-26: "make the cone apply 1 stack of scorch to all enemies within it (can increase with levels)"):
 // each shot puts SOL_CONE_STACKS[Scorch] burns of the shot's hit on every enemy in its cone (solConeScorch, aspira-sol.js); Claude's ladder
 const SOL_CONE_STACKS = [0, 1, 1, 2, 2, 3];
-const SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 1 }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)
+const SOL_DOT_ST = { noFx: true, noNum: true }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)

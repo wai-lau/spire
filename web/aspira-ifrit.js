@@ -58,7 +58,7 @@ let IFR_FIRE_FLARES = 12 / 20 /* /20 (owner, 2026-10-20, with the flares x20 lon
 let IFR_FLARE_K = 4.5 /* x0.375 (owner, 2026-10-20: "capstone big flare should be the size of the current 4th upgrade normal flare / reduce 4upgrade normal flare size and all other flares accordingly" - the big flare (IFR_BIG_S x this) = a typical VI flare at 12; then "do not change the flare sizes further without asking"); was 12, 6, 3 */, IFR_LAND_POW = 1.5, IFR_FLARE_WS = 1; /* swept 2026-10-19 (countermx 61-69 spread @6pts, swarm/fast/shield/armor % leaked): K 1 POW 2: 17/74/64/49 - small flares popped no shields; K 3 POW 1.5 + ticks x0.5: 11/63/18/51 (the old six-beam IFR: 11/69/14/56) */ // IFR_FLARE_WS: the width's share of the jitter (W x s^WS; 0 = a full-width spoke at any length)
 const IFR_FLARE_MEAN = 0.5, IFR_FLARE_SD = 0.45 /* x3 (owner, 2026-10-20: "triple flare size jitter"; was 0.15) - more of them hit the [MIN, 1] clamp */, IFR_FLARE_MIN = 0.15;
 const ifrNormal = () => Math.sqrt(-2 * Math.log(1 - Math.random())) * Math.cos(2 * Math.PI * Math.random()); // (Box-Muller; Math.random is the sim's seeded one)
-const IFR_ROUTE_ST = { shieldPop: 1 }, IFR_BURN_ST = { noFx: true, noNum: true, shieldPop: 1 }; // (damage: st.shieldPop; the burn is quiet)
+const IFR_ROUTE_ST = {}, IFR_BURN_ST = { noFx: true, noNum: true }; // (the burn is quiet; any hit pops one shield charge - damage())
 
 SKILL_TREES.ifr = [
   { id: "meteor", name: "Meteor", tiers: [{ name: "Pebble" }, { name: "Rock" }, { name: "Meteor" }] },
