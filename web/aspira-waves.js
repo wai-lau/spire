@@ -438,6 +438,12 @@ function laneBestTurn(pi, k, n, type) {
   const wide = typeof BOX_WIDE !== "undefined" && BOX_WIDE ? Math.PI / 2 : 0, base = laneTurn(n); // landscape = the portrait pick turned the box's quarter turn (rotAbout sense)
   if (!realLanes() || !PATHS[pi]) return base + wide;
   if (n === 1 && k === 1) { const f = firstTurn(pi); if (f !== null) return f; } // (the screen's own turn: not turned with the board)
+  // THE SAME LANES AGAIN while they are still lit (owner, 2026-10-26: "lane previews disappear before lane appears, should just use those
+  // as the lanes instead of spawning a second set"): two waves of one type in a row took turns 150 degrees apart, so the next wave's k
+  // copies previewed BETWEEN the last wave's k still-lit ones - the same colour, alternating bright and faint round the board. If this
+  // lane's k lit copies are up (the last wave's, k-fold), the next wave rides them
+  { const lit = Object.keys(G.laneTotals || {}).filter(key => key.startsWith(pi + ":")).map(key => +key.split(":")[1]), per = Math.PI * 2 / k;
+    if (lit.length === k && lit.every(a => Math.abs((((a - lit[0]) % per) + per) % per) < 1e-3 || Math.abs((((a - lit[0]) % per) + per) % per - per) < 1e-3)) return lit[0]; } // (the angle holds the box's quarter turn already)
   const all = laneTurnScores(pi, k), step = Math.PI * 2 / LANE_TURNS;
   const sc = type === "armor" && all.some(s => s.axis === "v") ? all.map(s => (s.axis === "v" ? s : { spread: Infinity, total: 0 })) : all; // (index = turn: the others kept as never-picks)
   const flat = Math.min(...sc.map(s => s.spread)) + LANE_EVEN_SLACK * Math.max(...sc.map(s => s.total)), even = sc.filter(s => s.spread <= flat);
