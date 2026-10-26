@@ -162,6 +162,9 @@ function ifrHome(b, all, dt) {
       const d = Math.hypot(x.x - b.x, x.y - b.y) - ENEMIES[x.type].size * (x.sizeMul || 1);
       if (d <= IFR_HOME_R && d < best) { best = d; e = x; }
     }
+    // NO ONE ELSE IN REACH: a burst meteor may home BACK onto the enemy its meteor struck - a lone boss catches the burst (owner,
+    // 2026-10-26: "Shards may re-hit"; FRZ+IFR let the Star through with 41% HP, one hit and six misses). In a crowd it still spreads
+    if (!e && b.skip != null) { const x = all.find(x => x.id === b.skip && !x.dead && x.seen); if (x && Math.hypot(x.x - b.x, x.y - b.y) - ENEMIES[x.type].size * (x.sizeMul || 1) <= IFR_HOME_R) { e = x; b.skip = null; } }
     if (e) b.lock = e.id;
   }
   if (!e) return false;
