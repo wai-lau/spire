@@ -356,7 +356,7 @@ function ring(x, y, r, color, life = 0.12, grad = false, outline = true) { fx.pu
 // ---------- update ----------
 function stepSpawns(dt) {
   for (const w of G.spawns) {
-    w.timer -= dt;
+    w.timer -= dt * waveClock(w.n); // a wave not yet reached runs OFF_SCREEN_SPEED x - its releases too, so its gaps in distance hold (waveClock, aspira-formations.js)
     while (w.timer <= 0 && w.idx < w.list.length) {
       const type = w.list[w.idx++];
       // FORMATIONS (aspira-formations.js): fast Vs and armor's lattice spawn as a group; the rest one by one
@@ -394,7 +394,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       if (e.burnT > 0) e.burnT -= dt; // under an ACD burn (Fresh targeting)
       if (e.marks) sumMarks(e, dt);
       if (e.dotT > 0) { solScorchTick(e, dt); if (e.dead) continue; } // SOL's scorch stacks, popping shields (aspira-sol.js)
-      { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; e.s += (m ? Math.min(effSpeed(e), effSpeed(m)) : effSpeed(e)) * ((e.seen && inReach(e, reach)) || (m && m.seen && inReach(m, reach)) ? 1 : OFF_SCREEN_SPEED) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") */
+      { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; if ((e.seen && inReach(e, reach)) || (m && m.seen && inReach(m, reach))) (G.waveIn ||= {})[e.n] = 1; e.s += (m ? Math.min(effSpeed(e), effSpeed(m)) : effSpeed(e)) * waveClock(e.n) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") - a WAVE loses it TOGETHER, the moment its first unit reaches a tower's range (owner, 2026-10-26) */
     }
     const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)
     if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js) - which sets p whole, so no pathAt first (perf)

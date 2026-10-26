@@ -296,7 +296,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
     const kind = f.k !== "text" ? (f.k === "beam" && up ? "beams" : "shots") : f.under ? "dmg" : "text";
     if (kind !== pass || f.t >= f.life) continue; // a retired damage number (dmgNumber) is not drawn
     // full strength for the first half of the effect's life, then fade out
-    const k = 1 - f.t / f.life;
+    const k = 1 - f.t / f.life; f.fadeA = Math.min(1, k * 2); // (fadeA: the GPU's ARC core, full but for the fade - fxGlBeam)
     if (glFx && fxGlFx(f, k, Math.min(1, k * 2))) continue; // (before the canvas's alpha is touched: thousands a frame)
     ctx.globalAlpha = Math.min(1, k * 2);
     const one = () => {
@@ -331,7 +331,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
             ctx.globalAlpha = Math.min(1, a * SOL_GLOW_A * BEAM_BRIGHT); ctx.lineWidth = core * SOL_BEAM_W * (1 + i * 0.25); ctx.stroke(); // SOL: thicker, more opaque (owner, 2026-10-06; was 0.5 wide, 0.3)
           }
         } else {
-          if (f.soft) { for (let i = 6; i >= 1; i--) { ctx.globalAlpha = Math.min(1, a * (1 + ARC_GLOW_C * BEAM_BRIGHT) / 6); ctx.lineWidth = 2 * core * ARC_GLOW_R * i / 6; ctx.stroke(); } } // ARC: ONLY a GLOW, nested strokes stacking to a falloff, no hard core on top (owner, 2026-10-24: "all arc beams should use the glow instead of the hard edge"; 2026-10-23: was one semi-opaque layer) - the GPU's glow line in 3D
+          if (f.soft) { for (let i = 6; i >= 1; i--) { ctx.globalAlpha = Math.min(1, a * (1 + ARC_GLOW_C * BEAM_BRIGHT) / 6); ctx.lineWidth = 2 * core * ARC_GLOW_R * ARC_BEAM_W * i / 6; ctx.stroke(); } ctx.globalAlpha = Math.min(1, k * 2); ctx.lineWidth = Math.max(0.8 * ws, core * ARC_BEAM_W); ctx.stroke(); } /* + a THIN, FULLY OPAQUE core, the glow x ARC_BEAM_W (owner, 2026-10-26: "condense arc beams visually, make them 0.2x current widths" / "I want fully opaque thin core back") */ // ARC: ONLY a GLOW, nested strokes stacking to a falloff, no hard core on top (owner, 2026-10-24: "all arc beams should use the glow instead of the hard edge"; 2026-10-23: was one semi-opaque layer) - the GPU's glow line in 3D
           else { ctx.globalAlpha = Math.min(1, a * 0.22 * BEAM_BRIGHT); ctx.lineWidth = core * 3; ctx.stroke(); }
         }
         ctx.globalAlpha = a;

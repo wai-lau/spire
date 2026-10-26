@@ -152,9 +152,9 @@ check("CRR: tier 0 one interceptor, no tether, one bolt a volley; Hangar I two, 
   if (z.wing !== 1 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== 0) return "tier 0 " + JSON.stringify(z);
   if (h.wing !== 2 || h.hold !== 1) return "Hangar I " + JSON.stringify(h);
   if (a.bolts !== 2) return "Armament I " + JSON.stringify(a);
-  const n = run(`(() => { const { t } = tierRig("car", { hangar: 3, launch: 1 }, [[200, 0], [-200, 40], [0, 220], [150, 150]]);
-    G.started = true; let most = 0, ever = 0, seen = new Set(); const orig = carTether; carTether = (i, ...r) => { seen.add(i); return orig(i, ...r); };
-    try { for (let k = 0; k < 600; k++) { seen = new Set(); step(1 / 60); most = Math.max(most, seen.size); ever += seen.size; } } finally { carTether = orig; } return [most, ever]; })()`);
+  const n = run(`(() => { const { t } = tierLane("car", { hangar: 3, launch: 1 }, [90, 120, 150, 170]); /* held ON the lane (a stepped game re-reads a spot from it) */
+    G.started = true; G.nextIn = 1e9; G.spawns = []; /* the rig's enemies alone - no real wave */ let most = 0, ever = 0;
+    for (let k = 0; k < 600; k++) { step(1 / 60); const st = towerStats(t), c = t.icp.filter(i => carTethered(t, i, st)).length; most = Math.max(most, c); ever += c; } /* AT ONCE: tethered at a frame's end (a frame runs several steps, and which one rides it moves - 2026-10-26) */ return [most, ever]; })()`);
   if (n[0] !== 1) return "Tether I: " + n[0] + " interceptors tethered at once (expected 1 - " + n[1] + " tether steps in all)"; // at most ONE at a time; which one rides it moves (carTethered, 2026-10-25)
 });
 

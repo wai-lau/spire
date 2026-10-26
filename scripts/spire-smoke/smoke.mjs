@@ -774,7 +774,7 @@ check("no unit pops in: every enemy of every wave type and every boss fleet firs
       if (type === "boss") { G.wave = n - 1; sendWave(); } else G.spawns = [{ n, list: Array(12).fill(type), lanes: { [type]: 0 }, ang: 0, idx: 0, timer: 0 }];
       for (let i = 0; i < 4000 && (G.spawns.length || G.fleetQ.length); i++) {
         stepSpawns(1 / 60); stepFleetQ(1 / 60);
-        for (const e of G.enemies) { if (known.has(e.id)) continue; known.add(e.id); const over = e.s - entryS(e.pi); if (over > 5) bad.push(e.type + "@w" + n + " +" + Math.round(over)); }
+        for (const e of G.enemies) { if (known.has(e.id)) continue; known.add(e.id); const over = e.s - entryS(e.pi); if (over > 5 * OFF_SCREEN_SPEED /* a step at the wave's clock (2026-10-26) */) bad.push(e.type + "@w" + n + " +" + Math.round(over)); }
       }
     }
     return bad.slice(0, 6);

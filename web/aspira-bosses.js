@@ -212,7 +212,7 @@ function queueFleet(e) {
 function stepFleetQ(dt) {
   if (!G.fleetQ.length) return;
   G.fleetQ = G.fleetQ.filter(m => {
-    m.s += effSpeed(m) * dt;
+    m.s += effSpeed(m) * waveClock(m.n) * dt; // (at its wave's clock: a queued unit keeps its slot, owner 2026-10-26)
     if (m.s < entryS(m.pi)) return true;
     const p = pathAt(m.pi, m.s, m.ang || 0); m.x = p.x; m.y = p.y; G.enemies.push(m);
     return false;

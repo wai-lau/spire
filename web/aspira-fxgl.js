@@ -179,7 +179,7 @@ function fxGlBeam(f, a) {
   const core = (f.soft ? BEAM_MIN + ((f.bw ??= beamWidth(f.d || 0)) - BEAM_MIN) * ARC_W_CORR : (f.bw ??= beamWidth(f.d || 0))) * (f.thin || 1), col = COL[f.color];
   if (f.m) {
     if (f.slim) for (let i = 4; i >= 1; i--) line(core * SOL_BEAM_W * (1 + i * 0.25), col, Math.min(1, a * SOL_GLOW_A * BEAM_BRIGHT));
-    else if (f.soft) { for (const c of cut) fxGlGlowLine(c[0], c[1], c[2], c[3], core * ARC_GLOW_R, col, Math.min(1, a * (1 + ARC_GLOW_C * BEAM_BRIGHT)), 0, 0); return; } // ARC: ONLY a GLOW, brightest on the line (the old core's alpha + the glow's), clear ARC_GLOW_R x its width off it - no hard core on top (owner, 2026-10-24: "all arc beams should use the glow instead of the hard edge"; 2026-10-23: "Beams should have glow, not semiopaque second layer")
+    else if (f.soft) { for (const c of cut) fxGlGlowLine(c[0], c[1], c[2], c[3], core * ARC_GLOW_R * ARC_BEAM_W, col, Math.min(1, a * (1 + ARC_GLOW_C * BEAM_BRIGHT)), 0, 0); line(Math.max(0.8, core * ARC_BEAM_W), col, Math.min(1, f.fadeA ?? 1)); return; } /* glow x ARC_BEAM_W + a thin opaque core (owner, 2026-10-26) */ // ARC: ONLY a GLOW, brightest on the line (the old core's alpha + the glow's), clear ARC_GLOW_R x its width off it - no hard core on top (owner, 2026-10-24: "all arc beams should use the glow instead of the hard edge"; 2026-10-23: "Beams should have glow, not semiopaque second layer")
     else line(core * 3, col, Math.min(1, a * 0.22 * BEAM_BRIGHT));
   }
   const ca = f.slim ? Math.min(1, a * 1.5) : a, cw = f.slim ? core * SOL_BEAM_W : core;

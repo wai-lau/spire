@@ -86,6 +86,11 @@ function bellGaps(m, gap) { // m bodies' waits AFTER each (the last 0): an even 
 // HALF SPEED (owner, 2026-10-26: "cut speed of all non-boss/boss-fleet enemies in half"): every plain enemy spawns at PLAIN_SPEED_K
 // (spawnEnemy's spd; a boss's fleet rides at the boss's own pace - bossFleet); a stream's gaps stretch to match (stepSpawns)
 const PLAIN_SPEED_K = 0.5;
+// A WAVE LOSES ITS OFF-SCREEN SPEED TOGETHER (owner, 2026-10-26: "enemies from a wave should lose auto-fast together, as soon as first
+// unit of that wave reaches the range of a tower"): G.waveIn[n] is set by the first unit of wave n inside a tower's reach (stepEnemies);
+// till then the whole wave - its units on the board, those queued behind the mouth (stepFleetQ) and its releases (stepSpawns) - runs
+// OFF_SCREEN_SPEED x, so its spacing in distance is the designed one throughout
+const waveClock = n => (G.waveIn && G.waveIn[n] ? 1 : OFF_SCREEN_SPEED);
 function formSplit(type, count, n) {
   if (type === "armor") return ARMOR_ONE_BLOCK ? 1 : ARMOR_LANES; // always (laneCount rounds up)
   if (type === "swarm") return SWARM_LANES[Math.floor(fixedRand(n, 3) * SWARM_LANES.length)];

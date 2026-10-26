@@ -223,6 +223,7 @@ const ARC_STAT_SLOW = [0, 0.25, 0.35, 0.45] /* from tier I and deeper (2026-10-1
 // so under Voltage IV-V, where a jump carries MORE than the strike, the far jumps outshine the shot; widths follow the
 // damage at ARC_W_CORR of the usual slope; Capacitance's leaps thin and faint; the glow narrower and dimmer (drawFx, f.soft)
 const ARC_A = 0.4, ARC_CORR = 0.5, ARC_W_CORR = 0.5, ARC_LEAP_A = 0.6 * ARC_A, ARC_LEAP_W = 0.6, ARC_GLOW_R = 3, ARC_GLOW_C = 0.35; /* the GLOW: its reach (x the core width, each side) and centre alpha - a falloff, not a layer (owner, 2026-10-23: "Beams should have glow, not semiopaque second layer"; was a 2x-wide layer at 0.16) */ // A and GLOW_A x1.33 (owner, 2026-10-19: "make arc visual effect slightly more intense"; were 0.3 / 0.12)
+const ARC_BEAM_W = 0.2; // an ARC beam's glow x this, and its thin opaque core (owner, 2026-10-26: "condense arc beams visually, make them 0.2x current widths" / "I want fully opaque thin core back")
 // CAPACITANCE CHAINS from tier CAP_CHAIN_FROM (owner, 2026-10-18: "a charged enemy that dies discharges into its neighbours" - it did,
 // but not when a discharge killed it: no chain reaction): a charged enemy a discharge kills joins capQueue and goes off after the
 // burst that killed it, once each (its charge is spent as it goes)
