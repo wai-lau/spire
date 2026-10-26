@@ -160,9 +160,9 @@ function drawLaneStrokes(all) {
 // lens at a crossing, and the edge fades out level by level. [width (world px, x w on a boss lane), alpha (x the layer's)] each
 const LIT_LINE_SOFT = [[12, 0.08], [5, 0.22], [2.2, 0.55]]; // (was a 6-wide haze at 0.07 under a 2.4 line at 0.75)
 const BOSS_LINE_SOFT = [[22, 0.07], [9, 0.15], [3, 0.3]]; // x BOSS_LANE_K (was a 22 halo at 0.06, a 21 haze at 0.045, a 4.9 line at 0.45)
-const LIT_GLOW_SOFT = [[32, 0.4], [14, 0.6]]; // x LIT_GLOW_A, widths x w (was ONE 32-wide stroke)
+const LIT_GLOW_SOFT = [[36, 0.2], [30, 0.2], [24, 0.2], [18, 0.2], [12, 0.2], [7, 0.2]]; // x LIT_GLOW_A, widths x w - six even steps so the glow fades to nothing at its sides (owner, 2026-10-26: "glow should fade to 0% opacity at the sides"; was 32 at 0.4 + 14 at 0.6, before that ONE 32-wide stroke)
 let laneScratch = null;
-const LANE_SOFT_DS = 2; // the levels are drawn at 1/2 resolution and scaled up: a glow needs no more, and a rebuild costs about what it did (perf)
+const LANE_SOFT_DS = 1; // FULL resolution (owner, 2026-10-26: "can we render lanes at higher res?"; was 2, half and scaled up) - a rebuild only when the lit lanes change
 function strokeSoft(dst, list, key, prof, alphaOf, wk, cap) {
   const groups = new Map();
   for (const u of list) { const g = u.color + ":" + (u.star ? 1 : 0) + ":" + u.a.toFixed(3); groups.set(g, [...(groups.get(g) || []), u]); }
