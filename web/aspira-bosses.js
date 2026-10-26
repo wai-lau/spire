@@ -382,10 +382,22 @@ function drawBossMarks() {
       const s = P.len - (P.len - s0) * f /* f of the lane out from the core, where the bar's mouth end sits at f HP */, col = hp >= f ? "threat" : "grid", a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
       const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / L, ny = (b.x - a.x) / L;
       ctx.strokeStyle = COL[col]; ctx.beginPath(); ctx.moveTo(q.x - nx * BOSS_MARK_U / 2, q.y - ny * BOSS_MARK_U / 2); ctx.lineTo(q.x + nx * BOSS_MARK_U / 2, q.y + ny * BOSS_MARK_U / 2); ctx.stroke();
-      text(Math.round(f * 100) + "%", q.x + nx * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF), q.y + ny * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF), BOSS_LABEL_PX, col, true);
     }
   }
   ctx.globalAlpha = 1;
+}
+// ...their LABELS on the top layer, flat at each mark's spot like a damage number (owner, 2026-10-26: "boss labels are unreadable? wrong
+// layer?" - on the floor 3D warped them); at: 3D's placer (warpEntities' popRun), 2D draws in place
+function drawBossLabels(at = (x, y, fn) => fn()) {
+  for (const e of G.enemies) {
+    if (!e.arcana || e.dead) continue;
+    const P = PATHS[e.pi], s0 = entryS(e.pi), hp = Math.max(0, e.hp) / e.max;
+    for (const f of BOSS_BAR_MARKS) {
+      const s = P.len - (P.len - s0) * f, a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
+      const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, x = q.x - (b.y - a.y) / L * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF), y = q.y + (b.x - a.x) / L * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF);
+      at(x, y, () => { ctx.globalAlpha = 1; text(Math.round(f * 100) + "%", x, y, BOSS_LABEL_PX, hp >= f ? "threat" : "grid", true); });
+    }
+  }
 }
 
 // THE SKY'S FLIP (owner, 2026-10-09: "make inversion animation way less laggy, need like 10x improvement"): the frame is

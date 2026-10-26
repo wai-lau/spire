@@ -360,7 +360,7 @@ function warpEntities() {
     /* the numbers (hundreds a frame) go through popRun: no save / restore each (the whole pass has one) and no point object each - every text sets its own font, fill and alpha (perf) */
     const popRun = (x, y, fn, far) => { const P = warpProjectScratch(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); fn(); };
     const pass = f => { ctx.save(); try { f(popRun); } finally { ctx.restore(); } };
-    pass(pp => drawGrvCores((x, y, fn) => pp(x, y, fn, true))); pass(pp => ownColours(() => drawFx("dmg", (x, y, fn) => pp(x, y, fn, true)))); /* (never inverted by a boss sky - owner, 2026-10-17) */ pass(pp => drawFx("text", pp)); // the damage numbers OVER GRV's centres (owner, 2026-10-16: "damage numbers should render above aura and bh core"; the aura is in the fx layer, under all of this)
+    pass(pp => drawGrvCores((x, y, fn) => pp(x, y, fn, true))); pass(pp => ownColours(() => drawFx("dmg", (x, y, fn) => pp(x, y, fn, true)))); /* (never inverted by a boss sky - owner, 2026-10-17) */ pass(pp => drawFx("text", pp)); pass(pp => ownColours(() => drawBossLabels(pp))); /* the boss lane's %HP labels, flat (owner, 2026-10-26) */ // the damage numbers OVER GRV's centres (owner, 2026-10-16: "damage numbers should render above aura and bh core"; the aura is in the fx layer, under all of this)
     if (bannerT > 0) pop(CX, 70, () => { ctx.globalAlpha = Math.min(1, bannerT); text(bannerText, CX, 70, 30, bannerCol, true); ctx.globalAlpha = 1; });
     pop(CX, CY, () => drawCredits("pop")); // (the interest pop-up too)
     };
