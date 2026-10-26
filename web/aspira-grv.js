@@ -61,7 +61,6 @@ SKILL_TREES.grv = [
   { id: "supernova" /* id kept (saves); shown as NOVA - tier redesign, owner 2026-10-24: "Nova: adds slowing aura" (was Supernova) */, name: "Nova", tiers: [{ name: "Flare" }, { name: "Nova" }, { name: "Supernova" }] },
   { id: "radiation" /* id kept (saves); shown as ACCELERATION - owner 2026-10-25 */, name: "Acceleration", tiers: [{ name: "Glow" }, { name: "Spray" }, { name: "Radiance" }] },
 ];
-SKILL_MOVE.grv = { void: [[1, 1], [1.02, 1], [1.06, 1], [1.1, 1]], supernova: [[1, 1], [1.04, 1], [1.12, 1], [1.2, 1]], radiation: [[1, 1], [1, 1.2], [1, 1.6], [1, 2]] };
 
 function grvSkillStats(t, s, b) {
   const v = skillOf(t, "void"), n = skillOf(t, "supernova"), r = skillOf(t, "radiation");

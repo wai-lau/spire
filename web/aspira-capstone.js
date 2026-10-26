@@ -82,22 +82,6 @@ const CAPSTONE_NUM = [
   [IFR_BALL_V, 540], [IFR_FAN, 9], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 180], [IFR_FIRE_V, 660], [IFR_FIRE_DENS, 7.9], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 10], [IFR_TICK_S, 0.4 /* x2 (2026-10-24; was 0.2) */],
 ];
 for (const [table, v] of CAPSTONE_NUM) if (table.length === WRITTEN_TIERS) table.push(v);
-// the reach a capstone tier buys ([range, slide], SKILL_MOVE): ARC stays near today's cut (owner, 2026-10-11)
-const CAPSTONE_MOVE = {
-  arc: { conductivity: [1.15, 1], voltage: [1.15, 1], capacitance: [1, 3] },
-  frz: { temp: [1.7, 1], rime: [1, 3], moons: [1, 1] },
-  sol: { focus: [2.3, 1], refraction: [1.7, 1], breach: [1, 3] },
-  acd: { corrosion: [1, 1], spray: [1.5, 1] /* IV: range, not a hotter carry (owner, 2026-10-12; was 1.25) */, contagion: [1, 2.1] },
-  car: { hangar: [1, 1], launch: [1, 1], armament: [1, 1] },
-  grv: { void: [1.15, 1], supernova: [1.25, 1], radiation: [1, 2.2] },
-  ifr: { meteor: [1.3, 1], hellfire: [1, 1], firaga: [1, 1.8] }, /* (owner, 2026-10-20: smaller; were 1.6 / 1.4 / 3) */
-};
-for (const [kind, axes] of Object.entries(CAPSTONE_MOVE)) {
-  for (const [id, m] of Object.entries(axes)) {
-    const tiers = SKILL_MOVE[kind][id];
-    SKILL_MOVE[kind][id] = tiers.length === WRITTEN_TIERS ? [...tiers, m] : tiers; // a copy: NO_MOVE is shared between axes
-  }
-}
 
 // ---------- the words: each axis's capstone tier, and the composers' (aspira-desc.js) ----------
 const CAPSTONE_TIERS = {
@@ -144,7 +128,6 @@ for (const entry of CAPSTONE_NUM) if (Array.isArray(entry[0]) && entry[0].length
 // ...and the tables WRITTEN with their capstone in (not in CAPSTONE_NUM): the same tier I
 const FULL_TIER_TABLES = [VOLT_CARRY_N, CAP_BURST_K, CRR_HOLD_FRAC];
 for (const T of FULL_TIER_TABLES) if (T.length === CAPSTONE_TIER) T.splice(0, T.length, ...withTierI(T));
-for (const kind of Object.keys(SKILL_MOVE)) for (const id of Object.keys(SKILL_MOVE[kind])) if (SKILL_MOVE[kind][id].length === CAPSTONE_TIER) SKILL_MOVE[kind][id] = withTierI(SKILL_MOVE[kind][id]);
 // TIER I NAMES (tier redesign 2026-10-24; Claude's calls, the design doc lists them for the owner): each axis's first hint, put in front of
 // its written tiers here, after the capstone's name is pushed (that push keys on the written count, so the trees cannot hold them)
 const TIER_I_NAMES = { conductivity: "Lead", voltage: "Fork", capacitance: "Charge", focus: "Singe", refraction: "Glint", breach: "Crack",

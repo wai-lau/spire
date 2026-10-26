@@ -351,11 +351,11 @@ function usePower(code) {
 // stand-in player does: autoPosition, aspira-positioning.js). It stays inside its LEASH,
 // a circle round its own slot (its SPAWN), radius leashR - the slide travel it had on its
 // spoke (2026-10-03 .. 2026-10-09; slideLimits below), so it reaches as far out as it did.
-// Slide tiers grow it (SKILL_MOVE `slide`, aspira-skills.js); a tower is where the finger is.
+// The curve's slide grows it with the tower's total level (aspira-curve.js, owner 2026-10-26); a tower is where the finger is.
 // THE LEASH BY KIND (owner, 2026-10-13: "do an audit of the tower movements now that the cap makes more sense" - "ok fix"): the
 // phone's screen caps where a tower may stand (phoneInside, aspira-positioning.js), so each leash is its own length, sized so
 // its slide tiers have room - about a third of the phone at base, all of it by tier V (and further at the capstone, VI). MOVE_BASE x the tier's slide
-// (SKILL_MOVE), up to SLIDE_MAX. (Was the old spoke's travel x MOVE_SPAN 3.375: ARC 434, FRZ 519, ACD 869 - most of the
+// (the curve's slide, once SKILL_MOVE by axis), up to SLIDE_MAX. (Was the old spoke's travel x MOVE_SPAN 3.375: ARC 434, FRZ 519, ACD 869 - most of the
 // phone before a tier, so the slide tiers bought nothing - and SLIDE_MAX 2 voided every tier past x2; SOL halved to 74 that day)
 const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 222 /* x3 (owner, 2026-10-26: "keep SOL range, and only 3x SOL mvmt range instead of 5x"; was 74) */, grv: 200, car: 240 /* swapped with its range (owner, 2026-10-16: "Swap carrier mvmt range and range") */ /* 130: between SOL and ARC (owner, 2026-10-16: "give carrier some movement range actually, less than ARC, more than SOL, update range to match"); was 0 */, ifr: 120 /* 200 -> 120 (owner, 2026-10-20: "unnecessarily large") */ /* medium, like ARC and GRV (owner's design, 2026-10-19) */ }, SLIDE_MAX = 3;
 const MOVE_EDGE = 12; // world units kept clear of the screen's edge

@@ -65,7 +65,6 @@ SKILL_TREES.ifr = [
   { id: "hellfire", name: "Hellfire", tiers: [{ name: "Kindle" }, { name: "Blaze" }, { name: "Conflagration" }] },
   { id: "firaga", name: "Flare", tiers: [{ name: "Fire" }, { name: "Fira" }, { name: "Firaga" }] }, /* Blk Magic: Fire, Fira, Firaga, Mega Firaga (owner, 2026-10-20; was the Firaga axis - id kept for saves). Stops I III V VI: the 2 and 4 an old save may hold read as the stop below */
 ];
-SKILL_MOVE.ifr = { meteor: [[1, 1], [1.05, 1], [1.15, 1], [1.25, 1]], hellfire: [[1, 1], [1, 1], [1, 1], [1, 1]], firaga: [[1, 1], [1, 1.1], [1, 1.35], [1, 1.65]] }; // Meteor = range (gently), Flare = slide; Hellfire neither (owner, 2026-10-20: "IFR range and movement range are also unnecessarily large"; were up to x1.5 / x1.3 / x2.4)
 
 function ifrSkillStats(t, s, b) {
   const m = skillOf(t, "meteor"), h = skillOf(t, "hellfire"), f = skillOf(t, "firaga");

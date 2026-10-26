@@ -17,24 +17,24 @@ const x = v => Math.round(v * 100) / 100; // x1.3333333 -> x1.33
 const ST = (kind, ax, k) => V(`(() => { const sk = { ${ax}: ${k} }; return towerStats({ id: 99, kind: ${JSON.stringify(kind)}, x: CX, y: CY, lvl: 1 + towerLevel({ kind: ${JSON.stringify(kind)}, skills: sk }), skills: sk }, true); })()`);
 const MECH = {
   arc: {
-    conductivity: k => { const c = V("ARC_CONDUCTIVITY")[k], r = V("SKILL_MOVE").arc.conductivity[k][0]; return `${c.s} target${c.s > 1 ? "s" : ""} x a burst of ${V("ARC_BURST_N")} strikes ${V("ARC_ECHO_S")}s apart, ${c.j} jump${c.j > 1 ? "s" : ""}, forking ${c.f} ways${c.v ? `, re-strikes ${c.v}x` : ""}, jumps reach x${x(c.r)}, range x${x(r)}`; },
-    voltage: k => `forks ${V("VOLT_FORK")[k]} ways, each jump keeps ${pct(V("ARC_VOLTAGE_FALL")[k])} of the hit before it, range x${x(V("SKILL_MOVE").arc.voltage[k][0])}`,
-    capacitance: k => { const b = V("ARC_CAPACITANCE")[k]; return b ? `${b.n} charge${b.n > 1 ? "s" : ""} a hit, each ${pct(b.frac)} of it; the next hit bursts them all, r${V("ARC_BURST_R")}, slowing ${pct(V("ARC_STAT_SLOW")[k])} for ${V("STAT_SLOW_T")}s, slide x${x(V("SKILL_MOVE").arc.capacitance[k][1])}` : "no charge"; },
+    conductivity: k => { const c = V("ARC_CONDUCTIVITY")[k]; return `${c.s} target${c.s > 1 ? "s" : ""} x a burst of ${V("ARC_BURST_N")} strikes ${V("ARC_ECHO_S")}s apart, ${c.j} jump${c.j > 1 ? "s" : ""}, forking ${c.f} ways${c.v ? `, re-strikes ${c.v}x` : ""}, jumps reach x${x(c.r)}`; },
+    voltage: k => `forks ${V("VOLT_FORK")[k]} ways, each jump keeps ${pct(V("ARC_VOLTAGE_FALL")[k])} of the hit before it`,
+    capacitance: k => { const b = V("ARC_CAPACITANCE")[k]; return b ? `${b.n} charge${b.n > 1 ? "s" : ""} a hit, each ${pct(b.frac)} of it; the next hit bursts them all, r${V("ARC_BURST_R")}, slowing ${pct(V("ARC_STAT_SLOW")[k])} for ${V("STAT_SLOW_T")}s` : "no charge"; },
   },
   frz: {
-    temp: k => `aura slow ${pct(V("FRZ_TEMP_SLOW")[k])}, tick every ${V("FRZ_TEMP_TICK")[k]}s ${k ? `x(1 + ${V("FRZ_CHILL_K")} x slow)` : `a flat nip, x${V("FRZ_NIP")} a tick`}, aura width x${x(V("SKILL_MOVE").frz.temp[k][0])}${V("FRZ_BRITTLE")[k] > 1 ? `, brittle: takes x${V("FRZ_BRITTLE")[k]} from every tower` : ""}`,
-    rime: k => (V("FRZ_RIME")[k] ? `a pulse every ${V("FRZ_RIME_PERIOD")[k]}s leaves +${x(V("FRZ_RIME")[k] * 100)}% slow, permanent and stacking (full at ${pct(V("FRZ_RIME_FULL"))}, then spreads); full frost takes ${pct(V("FRZ_RIME_CRACK")[k])} of an armored enemy's armor; slide x${x(V("SKILL_MOVE").frz.rime[k][1])}` : "no pulses"),
+    temp: k => `aura slow ${pct(V("FRZ_TEMP_SLOW")[k])}, tick every ${V("FRZ_TEMP_TICK")[k]}s ${k ? `x(1 + ${V("FRZ_CHILL_K")} x slow)` : `a flat nip, x${V("FRZ_NIP")} a tick`}${V("FRZ_BRITTLE")[k] > 1 ? `, brittle: takes x${V("FRZ_BRITTLE")[k]} from every tower` : ""}`,
+    rime: k => (V("FRZ_RIME")[k] ? `a pulse every ${V("FRZ_RIME_PERIOD")[k]}s leaves +${x(V("FRZ_RIME")[k] * 100)}% slow, permanent and stacking (full at ${pct(V("FRZ_RIME_FULL"))}, then spreads); full frost takes ${pct(V("FRZ_RIME_CRACK")[k])} of an armored enemy's armor;` : "no pulses"),
     moons: k => (V("FRZ_MOON_COUNT")[k] ? `${V("FRZ_MOON_COUNT")[k]} moon${V("FRZ_MOON_COUNT")[k] > 1 ? "s" : ""} at ${pct(V("FRZ_MOON_BY")[k])} of the tower${V("FRZ_SUBMOON_N")[k] ? `, each with ${V("FRZ_SUBMOON_N")[k]} small moon${V("FRZ_SUBMOON_N")[k] > 1 ? "s" : ""}` : ""}` : "no moons"),
   },
   sol: {
-    focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${pct(V("SOL_SCORCH_TOTAL"))} of itself over ${V("SOL_SCORCH_N")[k]} ticks, the cone ${V("SOL_CONE_STACKS")[k]} burn(s) of the shot on every enemy in it, one every ${V("SOL_SCORCH_Q")}s, stacking without cap` : "no burn") + `, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
-    refraction: k => `every hit splits to the ${V("SOL_SPLIT")[k]} nearest enemies further down a +/-${V("SOL_CONE_BY")[k]} degree cone (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
-    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good, crit x${V("SOL_CRIT_K")}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
+    focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${pct(V("SOL_SCORCH_TOTAL"))} of itself over ${V("SOL_SCORCH_N")[k]} ticks, the cone ${V("SOL_CONE_STACKS")[k]} burn(s) of the shot on every enemy in it, one every ${V("SOL_SCORCH_Q")}s, stacking without cap` : "no burn") + ``,
+    refraction: k => `every hit splits to the ${V("SOL_SPLIT")[k]} nearest enemies further down a +/-${V("SOL_CONE_BY")[k]} degree cone (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`,
+    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good, crit x${V("SOL_CRIT_K")}`,
   },
   acd: {
     corrosion: k => (V("ACD_CORRODE")[k] ? `a tick strips ${pct(V("ACD_CORRODE")[k])} of its damage from armor, below zero; eaten armor drops goo (pull ${V("ACD_DRIP_PULL")[k]})` : "no armor strip"),
-    spray: k => `${V("ACD_LINES")[k]} jet${V("ACD_LINES")[k] > 1 ? "s" : ""}, a jet carries ${pct(V("ACD_FLOW_CARRY")[k])} of its ramp to the next enemy, range x${x(V("SKILL_MOVE").acd.spray[k][0])}`,
-    contagion: k => { const c = V("ACD_CONTAGION")[k]; return c ? `a pool every ${c.every}s per jet, lasting ${c.life}s, radius ${c.r}, at ${pct(V("ACD_POOL_HEAT"))} of the jet, slowing ${pct(V("ACD_POOL_SLOW")[k])}, slide x${x(V("SKILL_MOVE").acd.contagion[k][1])}` : "no pools"; },
+    spray: k => `${V("ACD_LINES")[k]} jet${V("ACD_LINES")[k] > 1 ? "s" : ""}, a jet carries ${pct(V("ACD_FLOW_CARRY")[k])} of its ramp to the next enemy`,
+    contagion: k => { const c = V("ACD_CONTAGION")[k]; return c ? `a pool every ${c.every}s per jet, lasting ${c.life}s, radius ${c.r}, at ${pct(V("ACD_POOL_HEAT"))} of the jet, slowing ${pct(V("ACD_POOL_SLOW")[k])}` : "no pools"; },
   },
   // (GRV, CRR, IFR: read off the tower's stats at that tier - towerStats, one axis raised)
   grv: {

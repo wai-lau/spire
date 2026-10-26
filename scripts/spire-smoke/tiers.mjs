@@ -22,10 +22,11 @@ check("curve: SOL's rate is flat (never raise SOL's fire rate)", () => {
   const r = run(`[curveAt("sol", 0).rate, curveAt("sol", SKILL_POINTS).rate]`);
   if (r[0] !== 1 || r[1] !== 1) return "SOL rate " + r;
 });
-check("curve: range nudges from the axes add at most 20%", () => {
-  const r = run(`(() => { let worst = 0; for (const kind in SKILL_MOVE) { const t = { id: 99, kind, x: CX, y: CY, lvl: 14, skills: {} };
-    SKILL_TREES[kind].forEach((ax, i) => t.skills[ax.id] = i ? 4 : 5); const s = { range: 1, slide: 1 }; skillMove(t, s); worst = Math.max(worst, s.range); } return worst; })()`);
-  if (r > 1.2 + 1e-9) return "a full tower's range nudge x" + r;
+check("curve: no axis moves range or movement (owner, 2026-10-26): every single-axis build at a level has the same range and slide - the curve's", () => {
+  const r = run(`(() => { const bad = []; for (const kind in SKILL_TREES) for (const L of [1, 3, 5]) { const seen = new Set();
+    for (const ax of SKILL_TREES[kind]) { const sk = { [ax.id]: L }; const s = towerStats({ id: 99, kind, x: CX, y: CY, lvl: 1 + L, skills: sk }, true); seen.add(s.range.toFixed(6) + "/" + s.slide.toFixed(6)); }
+    if (seen.size > 1) bad.push(kind + " L" + L + " " + [...seen].join(" | ")); } return bad; })()`);
+  if (r.length) return r.slice(0, 3).join(" || ");
 });
 check("curve: a sim game boots and plays two waves with every web file it needs (sim.mjs FILES)", () => {
   const r = spawnSync(process.execPath, [path.join(ROOT, "scripts/aspira-sim/sim.mjs"), '{"mix":{"arc":1,"car":1}}', "1", "2"], { encoding: "utf8", timeout: 120000 });
@@ -295,5 +296,5 @@ check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightnin
   if (r[1] !== "Three bolts of lightning that fork three ways for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
   if (!/that chain once for \d+% less damage every chain\.$/.test(r[3])) return "Conductivity I: " + r[3];
   if (!/that chain once and fork three ways for \d+% less damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
-  if (!r[5].includes("slows enemies by") || !r[5].includes(" and deals " + r[6] + "% damage over ")) return "FRZ tier 0: " + r[5];
+  if (!r[5].includes("slows enemies by") || !r[5].includes(" and deals " + r[6] + "% tower damage over ")) return "FRZ tier 0: " + r[5];
 });

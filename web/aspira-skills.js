@@ -27,8 +27,8 @@ const TIER_LEVEL = [0, 0.5, 1, 3, 5, 6]; // tier I halfway to today's I (tier re
 const SKILL_STEP_COST = [5.2, 10.4, 20, 33.2, 50.5, 71.2, 95.4, 123.7, 155.5, 190.8, 230.2, 273, 319.3] /* 13 steps, one a purchase (tier redesign 2026-10-24: tiers 0..V, 13 purchases): the 17-step curve resampled, the full tower's total kept - a PLACEHOLDER, the redesign's balance battery sets the economy; was 4 6.4 11.2 17.6 25.6 35.2 46.4 59.2 73.6 89.6 107.2 126.4 147.2 169.6 193.6 219.2 246.4 */ /* x1.6 (owner, 2026-10-15: "the worst [no-weakness trio] is able to afford 100% upgrades with perfect play and interest" - eco.mjs: ARC+FRZ+ACD owned 109-287% of a max build at x1.5, 86-93% at x1.75; was 2.5 4 7 11 16 22 29 37 46 56 67 79 92 106 121 137 154) */; // the 17th: a capstone takes TWO levels (aspira-capstone.js) // the 16th: the capstone point (2026-10-11)
 // Each axis: its `id`, its `name` (the slider) and its tiers' `name`s (the end screen). WHAT A TOWER DOES is
 // one composed sentence for the whole chart, aspira-desc.js, each tier changing as few words as carry the
-// gain (owner, 2026-10-07) - the card shows the change in track changes (aspira-sliders.js); the reach each
-// tier buys is in SKILL_MOVE below. (Per-tier `desc` / `base` sentences lived here until 2026-10-14.)
+// gain (owner, 2026-10-07) - the card shows the change in track changes (aspira-sliders.js); range and movement come
+// from the curve by total level (aspira-curve.js). (Per-tier `desc` / `base` sentences lived here until 2026-10-14.)
 const SKILL_TREES = {
   // ARC (owner): Conductivity = ALL the branching (owner, 2026-10-05) - how
   // many times the chain jumps AND how many ways each jump forks; Voltage =
@@ -89,23 +89,8 @@ const shownLvl = t => (!hasSkills(t) ? t.lvl : t.lvl >= maxLvl(t) ? MAX_LVL : Ma
 //   SOL  (a long-range ANCHOR) Focus and Refraction = RANGE; Breach = SLIDE extent (owner)
 //   ACD  Spray = range (more lines need more targets in reach); Contagion = a roaming
 //        plague (the puddles follow the lane): slide
-const NO_MOVE = [[1, 1], [1, 1], [1, 1], [1, 1]];
-const SKILL_MOVE = {
-  // ARC's range tiers CUT (owner, 2026-10-11: "ranges way too high, late game players don't need to move towers"):
-  // maxed it reached x4.3 - all of the plain lanes from a corner; now x1.25. SOL keeps its reach (owner, same day)
-  arc:    { conductivity: [[1, 1], [1.02, 1], [1.07, 1], [1.12, 1]], voltage: [[1, 1], [1.02, 1], [1.07, 1], [1.12, 1]], capacitance: [[1, 1], [1, 1.3], [1, 2], [1, 2.4]] },
-  frz: { temp: [[1, 1], [1.1, 1], [1.3, 1], [1.5, 1]] /* wider again (owner, 2026-10-11: FRZ's reach back now its leash is screen-capped; was 1.08 .. 1.2) */ /* a narrower aura per tier (owner, 2026-10-08; was 1.25 .. 2.2) */, rime: [[1, 1], [1, 4 / 3, 1], [1, 2], [1, 2.4]], moons: NO_MOVE }, // Rime buys back FRZ's halved slide (owner)
-  sol: { focus: [[1, 1], [1.2, 1], [1.7, 1], [2, 1]], refraction: [[1, 1], [1.1, 1], [1.35, 1], [1.55, 1]], breach: [[1, 1], [1, 1.3], [1, 2], [1, 2.4]] },
-  acd:    { spray: [[1, 1], [1.02, 1], [1.06, 1], [1.3, 1]] /* V: RANGE instead of a hotter carry (owner, 2026-10-12; was 1.15) */ /* Spray's lever now that each jet stays a full strike (owner, 2026-10-08; was 1.2 .. 2.3) */, contagion: [[1, 1], [1, 1.15], [1, 1.5], [1, 1.8]], corrosion: NO_MOVE },
-};
-function skillMove(t, s) {
-  let r = 1;
-  for (const [ax, tiers] of Object.entries(SKILL_MOVE[t.kind])) {
-    const m = tiers[skillOf(t, ax)];
-    r *= m[0]; s.slide *= m[1];
-  }
-  s.range *= nudge(r); // range is the CURVE's now: the axes' range factors together a nudge, x1.2 at most (tier redesign 2026-10-24, aspira-curve.js)
-}
+// (SKILL_MOVE / skillMove - each axis's range and slide factors - GONE: owner, 2026-10-26 "no axis should directly increase tower range,
+// tower movement, or tower damage"; both ride the curve by total level now, aspira-curve.js)
 
 // ARC's numbers by tier (index 0 = untaken; tiers 0..V since the tier redesign - aspira-capstone.js, aspira-tier01.js).
 // Voltage (REWORKED 2026-10-07, owner - raw damage on the strike was a dud axis; its fitted damage history: ARCHAEOLOGY.md)

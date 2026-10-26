@@ -61,7 +61,6 @@ SKILL_TREES.car = [
   { id: "launch" /* id kept (saves); shown as TETHER */, name: "Tether", tiers: [{ name: "Leash" }, { name: "Rope" }, { name: "Tow" }] },
   { id: "armament", name: "Armament", tiers: [{ name: "Pulse" }, { name: "Strafe" }, { name: "Salvo" }] },
 ];
-SKILL_MOVE.car = { hangar: [[1, 1], [1, 1], [1, 1], [1, 1]], launch: [[1, 1], [1, 1], [1, 1], [1, 1]], armament: [[1, 1], [1, 1], [1, 1], [1, 1]] };
 
 // how much of the wing the Hangar can STORE in orbit, by tier (owner, 2026-10-16: "hanger tiers can store 25% 50% 75% 100% of interceptors
 // in orbit"); s.hold = that many interceptors (rounded up), 0 untaken

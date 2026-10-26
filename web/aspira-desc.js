@@ -98,4 +98,6 @@ const DESCRIBE = {
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
 // (the per-tier `desc` / `base` sentences in SKILL_TREES were never shown once these existed, and had drifted; removed 2026-10-14)
-const describeTower = (kind, skills) => DESCRIBE[kind](skills || {});
+// A SHARE OF THE TOWER'S HIT READS "X% tower damage" (owner, 2026-10-26: "call it tower damage / so, 100% tower damage, 110% tower damage";
+// an hour before: drop the 100%) - a change ("50% less damage") is not a share and keeps its words
+const describeTower = (kind, skills) => DESCRIBE[kind](skills || {}).replace(/(\d%) damage/g, "$1 tower damage");

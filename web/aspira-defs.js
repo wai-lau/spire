@@ -468,7 +468,6 @@ function towerStats(t, noAura = false) {
   // every FRZ slow 20% weaker (owner, 2026-10-02) - base, Stasis, Permafrost,
   // Ice Age, Frostbite alike; Deep Freeze's 95% near-freeze is kept as is
   if (s.slow) s.slow = Math.min(0.85, s.slow * FRZ_SLOW_MUL);
-  if (hasSkills(t)) skillMove(t, s); // a chart tier's range / slide / speed (aspira-skills.js)
   if (!noAura) {
     for (const u of G.towers) {
       if (u === t) continue;

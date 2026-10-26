@@ -130,7 +130,7 @@ check("capstone: one axis to V, a second stops at IV; every tier table covers V 
 check("tiers are purchases (owner, 2026-10-23): five slots in every per-tier table, TIER_STEPS ladder steps a buy, an old save read once", () => {
   const r = run(`(() => {
     const out = { len: [], price: [] };
-    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) out.len.push(ax.tiers.length, SKILL_MOVE[kind][ax.id].length);
+    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) out.len.push(ax.tiers.length);
     for (const T of [ARC_CONDUCTIVITY, VOLT_FORK, ARC_CAPACITANCE, SOL_SPLIT, SOL_BREACH_ARMOR, SOL_SCORCH_N, ACD_LINES, ACD_CONTAGION, FRZ_MOON_COUNT, GRV_AURA_R, CRR_HANGAR, IFR_FAN, IFR_BEAM_L, IFR_BEAM_W, VOLT_CARRY_N, CAP_BURST_K]) out.len.push(T.length);
     G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0]; G.money = 1e9;
     for (let k = 0; k < 5; k++) { const lvl = t.lvl, m = G.money; upgradeTower(t, "focus", true); out.price.push([skillOf(t, "focus"), t.lvl - lvl, Math.round(m - G.money) === skillPointsCost({ ...t, lvl }, t.lvl - lvl)]); }
@@ -155,7 +155,6 @@ check("tier I sits between tier 0 and tier II in every table (tier redesign 2026
     const walk = (a, b, c, at) => typeof a === "number" ? num(a, b, c, at) : a && typeof a === "object" ? Object.keys(a).forEach(k => walk(a[k], b && b[k], c && c[k], at + "." + k)) : 0;
     CAPSTONE_NUM.forEach(([T], i) => { if (!Array.isArray(T)) return; if (T.length !== 6) bad.push("len " + i); else walk(T[0], T[1], T[2], "table " + i); });
     FULL_TIER_TABLES.forEach((T, i) => { if (T.length !== 6) bad.push("full len " + i); else walk(T[0], T[1], T[2], "full table " + i); }); // (tables written with their capstone in)
-    for (const kind in SKILL_MOVE) for (const id in SKILL_MOVE[kind]) { const T = SKILL_MOVE[kind][id]; if (T.length !== 6) bad.push(kind + "." + id + " move"); }
     for (const kind in SKILL_TREES) for (const ax of SKILL_TREES[kind]) if (ax.tiers.length !== 5) bad.push(kind + "." + ax.id + " names");
     return bad;
   })()`);
