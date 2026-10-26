@@ -380,4 +380,4 @@ const SOL_SCORCH_TOTAL = 1, SOL_SCORCH_Q = 0.1, SOL_SCORCH_N = [0, 60, 78, 96, 1
 // THE CONE SCORCHES (owner, 2026-10-26: "make the cone apply 1 stack of scorch to all enemies within it (can increase with levels)"):
 // each shot puts SOL_CONE_STACKS[Scorch] burns of the shot's hit on every enemy in its cone (solConeScorch, aspira-sol.js); Claude's ladder
 const SOL_CONE_STACKS = [0, 1, 1, 2, 2, 3];
-const SOL_DOT_ST = { noFx: true, noNum: true }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)
+const SOL_DOT_ST = { noFx: true }; /* its ticks SUM into a number every half second like any tick (dmgTick; noNum gone - owner, 2026-10-26: "SOL scorch damage not popping up, all ticks should show a cumulative damage every 0.5 seconds") */ // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)
