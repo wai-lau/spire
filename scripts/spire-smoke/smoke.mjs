@@ -41,6 +41,17 @@ check("armor comes on screen down the box's long axis: portrait top/bottom, land
   return "";
 });
 
+check("a lane stays FULL while its formations walk in - no dip at every group's spawn (owner, 2026-10-26: 'same wave's lanes brightness is like low high low high')", () => {
+  // no towers, so nothing dies: every lane of a fast (V) and an armor (lattice) wave must read a=1 from send till its last unit is on the board
+  const r = boot({}, { w: 390, h: 844 }).run(`(() => { const out = {}; for (const type of ["fast", "armor"]) { let n = 10; while (n < 80 && wavePlan(n, null).type !== type) n++;
+      G = newGame(); G.started = true; G.wave = n - 1; G.lastType = "swarm"; G.nextIn = 0; let lo = 1, at = -1, frames = 0;
+      for (let i = 0; i < 1800; i++) { step(1 / 60); if (G.wave !== n) continue; frames++; for (const u of activeLanes().values()) if (u.n === n && !u.star && u.a < lo) { lo = u.a; at = i; }
+        if (!G.spawns.length && !G.fleetQ.length && frames > 10) break; }
+      out[type] = { n, lo: +lo.toFixed(3), at, frames }; } return out; })()`);
+  for (const t of ["fast", "armor"]) if (r[t].lo < 0.999) return t + " wave " + r[t].n + ": a lane dipped to " + r[t].lo + " at frame " + r[t].at + " with nothing dead";
+  return "";
+});
+
 check("wave 1 rides ONE lane past the build hint's slot: onto the screen from the top in portrait, the left in landscape (owner, 2026-10-21/22)", () => {
   for (const [view, want] of [[{ w: 390, h: 844 }, "top"], [{ w: 1280, h: 800 }, "left"]]) {
     const r = boot({}, view).run(`(() => { G = newGame(); G.started = true; sendWave(); const s = G.spawns, pi = s[0].lanes[s[0].list[0]];

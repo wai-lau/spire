@@ -279,7 +279,9 @@ function laneSoon() {
 }
 function activeLanes() {
   const out = new Map(), totals = G.laneTotals || {};
-  for (const e of G.enemies) {
+  // G.fleetQ too: a formation's rear (and a boss's fleet) waits there to walk in - it is sent, so it is on its lane. Left out, every group's
+  // spawn dipped the lane to 1/m for the walk-in - a wave's lanes read bright/dim by which had a group entering (owner, 2026-10-26)
+  for (const list of [G.enemies, G.fleetQ]) for (const e of list) {
     if (e.dead) continue;
     const key = laneKey(e.pi, e.ang || 0), u = out.get(key);
     if (u) { u.alive++; if (ENEMIES[e.type].star && !u.star) Object.assign(u, { star: true, color: ENEMIES[e.type].color }); } // a boss lane whichever rider comes first
