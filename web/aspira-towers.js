@@ -18,7 +18,7 @@
 // the arc delay is a QUARTER of the tower's shot interval (owner), so it
 // follows fire-rate upgrades: 1.5 shots/s -> 0.17s per layer
 // beam lives (x BEAM_LIFE_MUL; look only - owner, 2026-10-08: SOL longer, ARC slightly shorter; were 0.2 / 0.083)
-const CHAIN_BEAM_LIFE = 0.15 /* ARC's beams last one burst gap, ARC_ECHO_S (owner, 2026-10-26: "I want the beam duration to reflect that"; was 0.16) */, RAY_BEAM_LIFE = 0.15 /* SOL's beams, x2 (owner, 2026-10-26: "Make the beams last 2x as long visually"; halved to 0.075 earlier that day) */, CHAIN_HOP_FRAC = 0.25;
+const CHAIN_BEAM_LIFE = 0.04 /* a FLICKER: each of the burst's strikes flashes, a clear gap before the next (ARC_ECHO_S 0.15) and between bursts (owner, 2026-10-26: "Lightning beams should visually be much shorter lived in order to show flickering, and distinct gaps between bursts"; was 0.15, one burst gap) */, RAY_BEAM_LIFE = 0.15 /* SOL's beams, x2 (owner, 2026-10-26: "Make the beams last 2x as long visually"; halved to 0.075 earlier that day) */, CHAIN_HOP_FRAC = 0.25;
 const hopDelay = st => CHAIN_HOP_FRAC / st.rate;
 // arcs only land on enemies within the REACH, measured from the TOWER (owner;
 // drawn as a dashed outer ring): CHAIN_LEASH x range for the base 1-layer

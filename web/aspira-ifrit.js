@@ -89,14 +89,16 @@ function ifrSkillStats(t, s, b) {
 // ONE CHARGE (owner, 2026-10-20: "always one charge ... charge is centered on the hexagon formed by intersection of tower and floor"):
 // it fills over chargeS at the tower's centre and waits there, full, until an enemy is in range
 const ifrCentre = t => { const c = CELLS[t.cell]; return { x: t.x ?? c.x, y: t.y ?? c.y }; };
-// THE CHARGE ORBITS (owner, 2026-10-26: "charged meteor orbits like Hangar"): round the tower at CRR's hold radius and speed; it launches from there
-const ifrChargeAt = (t, k = 0, n = 1) => { const c = ifrCentre(t), a = (t.ifrOrb || 0) + 2 * Math.PI * k / n; return { x: c.x + Math.cos(a) * CRR_HOLD_R, y: c.y + Math.sin(a) * CRR_HOLD_R }; }; // k of n evenly round
+// THE CHARGE ORBITS (owner, 2026-10-26: "charged meteor orbits like Hangar", then "much closer and faster"): IFR_ORB_R u out, IFR_ORB_W rad/s
+// (CRR's hold: 80 u, 1.4 rad/s); it launches from there
+const IFR_ORB_R = 36, IFR_ORB_W = 4.5;
+const ifrChargeAt = (t, k = 0, n = 1) => { const c = ifrCentre(t), a = (t.ifrOrb || 0) + 2 * Math.PI * k / n; return { x: c.x + Math.cos(a) * IFR_ORB_R, y: c.y + Math.sin(a) * IFR_ORB_R }; }; // k of n evenly round
 function ifrInit(t) {
   if (t.ifrInit0) return;
   for (const k of ["ifrSlot0", "ifrReady", "ifrLaunchCd", "ifrRings", "ifrFs"]) delete t[k]; /* a 6.4 tower's slots */
   t.ifrInit0 = true; t.ifrCharge = 1; /* built CHARGED - no wind-up before its first meteor (owner, 2026-10-20) */ t.ifrBalls = []; t.ifrFires = []; t.ifrFlares = [];
 }
-function ifrCharge(t, st, dt) { t.ifrCharge = Math.min(st.store || 1, t.ifrCharge + dt / Math.max(0.01, st.chargeS)); t.ifrGap = Math.max(0, (t.ifrGap || 0) - dt); t.ifrOrb = ((t.ifrOrb || 0) + CRR_HOLD_V / CRR_HOLD_R * dt) % (2 * Math.PI); }
+function ifrCharge(t, st, dt) { t.ifrCharge = Math.min(st.store || 1, t.ifrCharge + dt / Math.max(0.01, st.chargeS)); t.ifrGap = Math.max(0, (t.ifrGap || 0) - dt); t.ifrOrb = ((t.ifrOrb || 0) + IFR_ORB_W * dt) % (2 * Math.PI); }
 // "Always launch when meteor available" (owner): full + an enemy in range (the tower's targeting) = it flies, LED (owner, 2026-10-20:
 // "fire the meteor with lead"; never led before - it was the fast weakness): aimed where the enemy will be when it lands; its size is fixed at launch
 // where e will be when a meteor from c at speed v reaches it: its spot on its lane IFR_LEAD_N flight times on (its current offset from the lane kept)
@@ -113,7 +115,7 @@ function ifrLaunch(t, st) {
   const e = pickTargets(t, st, 1)[0];
   if (!e) return;
   const c = ifrChargeAt(t), a = ifrLead(c, e, st.ballV);
-  ifrMeteor(t, st, c.x, c.y, Math.atan2(a.y - c.y, a.x - c.x), 0, null); t.ifrBalls[t.ifrBalls.length - 1].lock = e.id; /* ONE meteor, homing onto e from any distance */
+  ifrMeteor(t, st, c.x, c.y, Math.atan2(a.y - c.y, a.x - c.x), 0, null); Object.assign(t.ifrBalls[t.ifrBalls.length - 1], { lock: e.id, ox: ifrCentre(t).x, oy: ifrCentre(t).y }); /* ONE meteor, homing onto e from any distance */
   t.ifrCharge -= 1; t.ifrGap = IFR_LAUNCH_GAP; t.ifrOrb = (t.ifrOrb || 0) + 2 * Math.PI / Math.max(1, st.store || 1); /* the next one steps into slot 0 */ t.shots = (t.shots || 0) + 1; sfx("ifr");
 }
 function stepIfr(t, dt) {
@@ -165,8 +167,20 @@ function ifrHome(b, all, dt) {
   if (!e) return false;
   b.lx = e.x; b.ly = e.y; /* where it was last seen alive */
   const v = Math.hypot(b.vx, b.vy), p = ifrLead(b, e, v), d = Math.hypot(p.x - b.x, p.y - b.y) || 1; /* at where it WILL be (the lead), not where it is */
-  b.vx = (p.x - b.x) / d * v; b.vy = (p.y - b.y) / d * v;
+  const [ux, uy] = ifrAvoid(b, (p.x - b.x) / d, (p.y - b.y) / d); b.vx = ux * v; b.vy = uy * v;
   return false;
+}
+// IT GOES ROUND ITS TOWER (owner, 2026-10-26: "meteors should avoid hitting the tower when launched like the interceptors"): the
+// launched meteor (b.ox, b.oy: its tower's centre) heading through the tower's hexagon (+ CRR_AVOID_PAD) slides along it instead
+function ifrAvoid(b, ux, uy) {
+  if (b.ox == null) return [ux, uy];
+  const ox = b.ox - b.x, oy = b.oy - b.y, d = Math.hypot(ox, oy) || 1, r = CELL_S * TOWER_K + CRR_AVOID_PAD;
+  if (d > r * 3) { b.ox = null; return [ux, uy]; } // well clear: never again
+  const along = (ux * ox + uy * oy) / d, lat = Math.abs(ux * oy - uy * ox);
+  if (along <= 0 || lat >= r) return [ux, uy]; // the tower is behind it, or it passes wide
+  let tx = ux - along * ox / d, ty = uy - along * oy / d; const tl = Math.hypot(tx, ty);
+  if (tl < 1e-3) { tx = oy / d; ty = -ox / d; } else { tx /= tl; ty /= tl; } // dead ahead: round it clockwise
+  return [tx, ty];
 }
 // THE FAN: st.fan meteors round 360 degrees from (x, y), evenly (a random start), each released after a bell-curve delay
 function ifrFan(born, st, x, y, skip) {
