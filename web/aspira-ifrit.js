@@ -167,14 +167,15 @@ function ifrHome(b, all, dt) {
   if (!e) return false;
   b.lx = e.x; b.ly = e.y; /* where it was last seen alive */
   const v = Math.hypot(b.vx, b.vy), p = ifrLead(b, e, v), d = Math.hypot(p.x - b.x, p.y - b.y) || 1; /* at where it WILL be (the lead), not where it is */
-  const [ux, uy] = ifrAvoid(b, (p.x - b.x) / d, (p.y - b.y) / d); b.vx = ux * v; b.vy = uy * v;
+  const [ux, uy] = ifrAvoid(b, (p.x - b.x) / d, (p.y - b.y) / d, p); b.vx = ux * v; b.vy = uy * v;
   return false;
 }
 // IT GOES ROUND ITS TOWER (owner, 2026-10-26: "meteors should avoid hitting the tower when launched like the interceptors"): the
 // launched meteor (b.ox, b.oy: its tower's centre) heading through the tower's hexagon (+ CRR_AVOID_PAD) slides along it instead
-function ifrAvoid(b, ux, uy) {
+function ifrAvoid(b, ux, uy, p) { // p: where it is headed - an enemy UNDER the tower is struck through it (owner, 2026-10-26: "if tower or core is on top of enemy, then meteor should not avoid")
   if (b.ox == null) return [ux, uy];
   const ox = b.ox - b.x, oy = b.oy - b.y, d = Math.hypot(ox, oy) || 1, r = CELL_S * TOWER_K + CRR_AVOID_PAD;
+  if (p && Math.hypot(p.x - b.ox, p.y - b.oy) < r) return [ux, uy];
   if (d > r * 3) { b.ox = null; return [ux, uy]; } // well clear: never again
   const along = (ux * ox + uy * oy) / d, lat = Math.abs(ux * oy - uy * ox);
   if (along <= 0 || lat >= r) return [ux, uy]; // the tower is behind it, or it passes wide

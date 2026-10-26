@@ -368,7 +368,8 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
     } else if (f.k === "cone") {
       drawCone(f, k); // (no SOL fx pushes a cone since 2026-10-26 - the charge cone is drawAims'; kept for an old fx in flight)
     } else if (f.k === "spark") {
-      ctx.fillStyle = COL[f.color]; ctx.fillRect(f.x - 1.5, f.y - 1.5, 3, 3);
+      if (f.streak) { ctx.strokeStyle = COL[f.color]; ctx.lineWidth = f.w || 1; ctx.beginPath(); ctx.moveTo(f.x - f.vx * 0.02, f.y - f.vy * 0.02); ctx.lineTo(f.x, f.y); ctx.stroke(); } /* (a thin ARC spark: a streak) */
+      else { const w = f.w || 3; ctx.fillStyle = COL[f.color]; ctx.fillRect(f.x - w / 2, f.y - w / 2, w, w); }
     } else if (f.k === "text") {
       // a DAMAGE number holds DMG_HOLD s, then shrinks and fades together, at
       // the same rate, to nothing at the end of its life (owner)

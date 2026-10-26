@@ -161,7 +161,7 @@ function fxGlRender(gl) {
 // order its 2D drawing (drawFx, aspira-draw.js) uses (a = the fade, globalAlpha at that point)
 function fxGlFx(f, k, a) {
   if (f.k === "hit") { fxGlDisc(f.x, f.y, f.r * (0.5 + 0.5 * (1 - k)), 1 + (f.m || 0) * 0.6, COL[f.color], a * 0.3, a); return true; }
-  if (f.k === "spark") { fxGlDisc(f.x, f.y, 1.5, 0, COL[f.color], a, 0, true); return true; }
+  if (f.k === "spark") { if (f.streak) fxGlPush(f.x - f.vx * 0.02, f.y - f.vy * 0.02, f.x, f.y, (f.w || 1) / 2, 0, COL[f.color], a, COL[f.color], 0); else fxGlDisc(f.x, f.y, (f.w || 3) / 2, 0, COL[f.color], a, 0, true); return true; } /* (HIT_SPARKS: ARC streaks, ACD's bigger) */
   if (f.k === "flash") { fxGlDisc(f.x, f.y, f.r * (1.3 - 0.3 * k), 0, COL.white, k, 0); return true; }
   if (f.k === "ring" && !f.grad && f.outline !== false) { fxGlDisc(f.x, f.y, f.r * (1 - k * 0.5), f.w || 2, COL[f.color], 0, Math.min(1, a * (f.a || 1))); return true; }
   if (f.k === "beam") { fxGlBeam(f, Math.min(1, a * (f.alpha ?? 1) * BEAM_BRIGHT) * (f.share ?? 1) ** 2); return true; }

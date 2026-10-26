@@ -171,8 +171,8 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   if (!quiet && !(st && st.noFx) && !(typeof farFx === "function" && farFx(e))) { // noFx: unseen (crowded pools - aspira-acid.js); farFx: 3D's far ring (aspira-quality.js)
     // impact flash sized and lit by the damage; big hits also throw sparks
     const m = dmgMag(amt), col = t ? TOWERS[t.kind].color : "orange";
-    hitFlash(e, 5 + 8 * m, m, col, 0.05 + 0.027 * m);
-    if (m > 1.2) burst(e.x, e.y, col, Math.round(m * 3));
+    const hs = t && HIT_SPARKS[t.kind]; if (hs) burst(e.x, e.y, col, Math.max(hs.min, Math.round(m * hs.per)), hs); else hitFlash(e, 5 + 8 * m, m, col, 0.05 + 0.027 * m); // ARC / ACD: no circle, their own sparks (HIT_SPARKS, aspira-floats.js)
+    if (!hs && m > 1.2) burst(e.x, e.y, col, Math.round(m * 3));
     // damage number, jittered so rapid hits don't stack
     // armor-blunted hits read GREYER the more armor took off them (owner, 2026-10-09: "greyness of damage popups should be
     // correlated to the percentage of damage mitigated by armor" - was all-or-nothing grey), white to the graticule's Silver

@@ -128,11 +128,14 @@ function shieldBreak(e) {
 // they were most of a 3D frame's board picture): at most SPARK_MAX alive, a burst past it throws only what is left
 const SPARK_MAX = 300;
 let sparkN = 0; // alive now (stepFx recounts)
-function burst(x, y, color, n) {
+// A HIT'S SPARKS BY TOWER (owner, 2026-10-26: "for ARC, on hit, no circle, but more thin sparks / for ACD, no circle on hit, slower and
+// thicker sparks"): per - sparks per unit of the hit's size (dmgMag), at least min; v x the speed; w the size; streak: a thin line along its flight
+const HIT_SPARKS = { arc: { per: 6, min: 3, v: 1, w: 1, streak: true }, acd: { per: 2, min: 1, v: 0.35, w: 5, life: 2 } };
+function burst(x, y, color, n, o = null) {
   n = Math.min(n, SPARK_MAX - sparkN); sparkN += Math.max(0, n);
   for (let i = 0; i < n; i++) {
-    const a = Math.random() * 6.283, v = 40 + Math.random() * 120;
-    fx.push({ k: "spark", x, y, vx: Math.cos(a) * v * 3, vy: Math.sin(a) * v * 3, color, t: 0, life: (0.4 + Math.random() * 0.3) / 3 });
+    const a = Math.random() * 6.283, v = (40 + Math.random() * 120) * (o ? o.v : 1);
+    fx.push({ k: "spark", x, y, vx: Math.cos(a) * v * 3, vy: Math.sin(a) * v * 3, color, t: 0, life: (0.4 + Math.random() * 0.3) / 3 * (o && o.life || 1), w: o ? o.w : 3, streak: !!(o && o.streak) });
   }
 }
 let bannerText = "", bannerT = 0, bannerCol = "orange";
