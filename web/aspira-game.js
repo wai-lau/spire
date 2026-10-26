@@ -168,7 +168,8 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   amt = bossHitCap(e, amt); // Justice / Death cap a single hit (aspira-bosses.js)
   { const c = escale(e); if (c < 1) { const v = Math.max(1, Math.floor(amt / c)) * c + (e.bank || 0); amt = Math.max(1, Math.floor(v)); e.bank = v - amt; } else amt = Math.max(1, Math.floor(amt)); } // a hit is a WHOLE number, rounded down - but one that lands always takes 1 (owner, 2026-10-08); under the LATE SCALE the rounding is the RAW hit's, its fraction (a debt too) banked on the enemy, so it plays as before (2026-10-22)
   e.hp -= amt;
-  if (!quiet && !(st && st.noFx) && !(typeof farFx === "function" && farFx(e))) { // noFx: unseen (crowded pools - aspira-acid.js); farFx: 3D's far ring (aspira-quality.js)
+  const showFx = !quiet && !(typeof farFx === "function" && farFx(e)); // farFx: 3D's far ring (aspira-quality.js); a noFx tick still gets its NUMBER below - only noNum hides it (owner, 2026-10-26: "scorch not showing damage numbers")
+  if (showFx && !(st && st.noFx)) { // noFx: unseen (crowded pools - aspira-acid.js); farFx: 3D's far ring (aspira-quality.js)
     // impact flash sized and lit by the damage; big hits also throw sparks
     const m = dmgMag(amt), col = t ? TOWERS[t.kind].color : "orange";
     const hs = t && HIT_SPARKS[t.kind]; if (hs) burst(e.x, e.y, col, Math.max(hs.min, Math.round(m * hs.per)), hs); else hitFlash(e, 5 + 8 * m, m, col, 0.05 + 0.027 * m); // ARC / ACD: no circle, their own sparks (HIT_SPARKS, aspira-floats.js)
@@ -177,8 +178,8 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
     // armor-blunted hits read GREYER the more armor took off them (owner, 2026-10-09: "greyness of damage popups should be
     // correlated to the percentage of damage mitigated by armor" - was all-or-nothing grey), white to the graticule's Silver
     // sized by the hit BEFORE armor (owner): a big hit blunted to little still reads big, in grey
-    if (!(st && st.noNum)) dmgTick(e, amt, raw, crit ? "white" : t ? dmgInk(t.kind) : "white" /* its TOWER'S colour, a crit white (owner, 2026-10-16: "color the damage numbers based on the tower that dealt it") */, (st && st.from) || hitFrom || t, crit || !blunted ? 0 : 1 - amt / raw, t && (t.kind === "acd" || t.kind === "frz") && st ? st.rate : 0); // (aspira-floats.js)
   }
+  if (showFx && !(st && st.noNum)) dmgTick(e, amt, raw, crit ? "white" : t ? dmgInk(t.kind) : "white" /* its TOWER'S colour, a crit white (owner, 2026-10-16: "color the damage numbers based on the tower that dealt it") */, (st && st.from) || hitFrom || t, crit || !blunted ? 0 : 1 - amt / raw, t && (t.kind === "acd" || t.kind === "frz") && st ? st.rate : 0); // (aspira-floats.js)
   if (e.hp <= 0) kill(e, t);
 }
 
