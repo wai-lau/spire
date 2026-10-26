@@ -337,7 +337,8 @@ function starRed() {
 
 // ---------- the boss's HP, on the board (UI only; aspira-draw.js calls it) ----------
 // a THICK line in the boss's colour (owner) - along its lane since 2026-10-26 (drawBossBar below). Drawn before the inversion, so cyan reads red.
-const BOSS_BAR_W = 21, BOSS_BAR_TRACK = 0.3; // 3x thicker (owner); the track = full HP, translucent
+const BOSS_BAR_W = 2.2, BOSS_BAR_TRACK = 0.3; // as thin as a lit lane's opaque core, LIT_LINE_SOFT's last (owner, 2026-10-26: "a lot thinner"; was 21); the track = full HP, translucent
+const BOSS_BAR_MARKS = [0.8, 0.6, 0.4, 0.2, 0.1, 0.05], BOSS_MARK_U = 14; // %HP ticks across the lane (owner, 2026-10-26: "add markers at 80 60 40 20 10 and 5% hp along the lane"), BOSS_MARK_U long
 // THE BOSS SHOWN under the powers (owner, 2026-10-23: "Game should start by saying The Star / Get rid of \"The Source\" / Then just have the
 // boss name and poem on the right"): the live boss (or its fleet), else the one on its way this wave, else the NEXT boss
 const bossShownN = () => {
@@ -355,6 +356,8 @@ const bossHint = () => arcanaOf(bossShownN()).hint.join("\n");
 // the boss has passed the bar's end it is the boss's own colour. One bar a boss (the Lovers two, the Devil six); on the board, so
 // 3D warps it onto the floor (it was a line along the horizon through the core, BOSS_BAR_R wide at full HP, 2026-10-09 .. 10-26)
 const BOSS_LANE_STEP = 10;
+// a tick across the lane at s: BOSS_MARK_U long, square to the lane there
+function bossMark(e, s) { const a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), L = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / L * BOSS_MARK_U / 2, ny = (b.x - a.x) / L * BOSS_MARK_U / 2, q = pathAt(e.pi, s, e.ang || 0); ctx.beginPath(); ctx.moveTo(q.x - nx, q.y - ny); ctx.lineTo(q.x + nx, q.y + ny); ctx.stroke(); }
 function drawBossBar() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
@@ -363,6 +366,7 @@ function drawBossBar() {
     ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round";
     ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = BOSS_BAR_TRACK; trace(s0, P.len); // the ORIGINAL HP as a translucent track (owner), the HP left solid over it
     ctx.strokeStyle = COL[passed ? ENEMIES.bonus.color : "threat"]; ctx.globalAlpha = 1; if (hpEnd > s0 + 1) trace(s0, hpEnd);
+    ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 0.8; ctx.lineWidth = BOSS_BAR_W; for (const f of BOSS_BAR_MARKS) bossMark(e, s0 + (P.len - s0) * f); // the %HP marks, still on the lane
   }
   ctx.globalAlpha = 1;
 }
