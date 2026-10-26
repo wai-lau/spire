@@ -420,7 +420,7 @@ function drawSceneBase() {
 }
 // everything that MOVES, over the board - in 3D its own layer, every frame
 function drawSceneTop() {
-  drawBossBar(); // a live boss's HP line along the horizon, UNDER the towers and their effects (owner)
+  drawBossBar(); skyKeep(drawBossMarks); // a live boss's HP along its lane, UNDER the towers and their effects (owner); its %HP marks keep their orange under the sky (owner, 2026-10-26)
   const sel = ui.sel && G.towers.find(t => t.id === ui.sel);
   const ranges = k => () => { for (const t of G.towers) if (t !== sel) drawTowerRange(t, !k, k); if (sel) drawTowerRange(sel, false, k); }; // (sky: every one at full strength - "range should be visible during boss waves") // tower colours survive the boss sky (2026-10-11) - but RANGES go white, unkept, so the inversion turns them BLACK (owner, 2026-10-12)
   if (skyOn()) ranges("white")(); else skyKeep(ranges());

@@ -356,8 +356,6 @@ const bossHint = () => arcanaOf(bossShownN()).hint.join("\n");
 // the boss has passed the bar's end it is the boss's own colour. One bar a boss (the Lovers two, the Devil six); on the board, so
 // 3D warps it onto the floor (it was a line along the horizon through the core, BOSS_BAR_R wide at full HP, 2026-10-09 .. 10-26)
 const BOSS_LANE_STEP = 10;
-// a tick across the lane at s: BOSS_MARK_U long, square to the lane there
-function bossMark(e, s) { const a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), L = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / L * BOSS_MARK_U / 2, ny = (b.x - a.x) / L * BOSS_MARK_U / 2, q = pathAt(e.pi, s, e.ang || 0); ctx.beginPath(); ctx.moveTo(q.x - nx, q.y - ny); ctx.lineTo(q.x + nx, q.y + ny); ctx.stroke(); }
 function drawBossBar() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
@@ -366,7 +364,25 @@ function drawBossBar() {
     ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round";
     ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = BOSS_BAR_TRACK; trace(s0, P.len); // the ORIGINAL HP as a translucent track (owner), the HP left solid over it
     ctx.strokeStyle = COL[passed ? ENEMIES.bonus.color : "threat"]; ctx.globalAlpha = 1; if (hpEnd > s0 + 1) trace(s0, hpEnd);
-    ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 0.8; ctx.lineWidth = BOSS_BAR_W; for (const f of BOSS_BAR_MARKS) bossMark(e, s0 + (P.len - s0) * f); // the %HP marks, still on the lane
+  }
+  ctx.globalAlpha = 1;
+}
+// THE %HP MARKS AND THEIR LABELS (owner, 2026-10-26: "label the boss lane hp markers, ensure that the inversion doesn't affect the orange
+// color / when the hp is below marker, make the label grey"): a tick across the lane and its "80%" beside it, orange (the threat colour)
+// while the boss's HP is still at or above that share, grey once under it; drawn through skyKeep (drawSceneTop) so the boss sky's
+// inversion leaves the orange alone
+const BOSS_LABEL_PX = 9, BOSS_LABEL_OFF = 13;
+function drawBossMarks() {
+  for (const e of G.enemies) {
+    if (!e.arcana || e.dead) continue;
+    const P = PATHS[e.pi], s0 = entryS(e.pi), hp = Math.max(0, e.hp) / e.max;
+    ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.globalAlpha = 0.9;
+    for (const f of BOSS_BAR_MARKS) {
+      const s = s0 + (P.len - s0) * f, col = hp >= f ? "threat" : "grid", a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
+      const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / L, ny = (b.x - a.x) / L;
+      ctx.strokeStyle = COL[col]; ctx.beginPath(); ctx.moveTo(q.x - nx * BOSS_MARK_U / 2, q.y - ny * BOSS_MARK_U / 2); ctx.lineTo(q.x + nx * BOSS_MARK_U / 2, q.y + ny * BOSS_MARK_U / 2); ctx.stroke();
+      text(Math.round(f * 100) + "%", q.x + nx * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF), q.y + ny * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF), BOSS_LABEL_PX, col, true);
+    }
   }
   ctx.globalAlpha = 1;
 }
