@@ -138,7 +138,7 @@ function chooseUpgrade(i) {
 // have the same number of checks and x's; an enemy type can have multiple; use sim stats"): from the counter matrix (countermx.mjs,
 // three towers of a kind, spread build, waves 61-69, % leaked; 5.1.23): 3 checks and 3 x's a tower, the checks to the types it lets
 // through less than its own average, split by how far under it, the x's likewise over (scripts/aspira-sim/marks.py)
-const VS_MARKS = { arc: { swarm: 1, fast: 1, shield: 1, armor: -3 }, frz: { swarm: 3, shield: -2, armor: -1 }, sol: { fast: -1, armor: 1 }, acd: { swarm: -2, fast: -1, shield: 1, armor: 2 }, grv: {  }, car: { swarm: -2, fast: 1, armor: 1 }, ifr: {  } }; /* regenerated 2026-10-25 v6.15.4 (marks.py --write, countermx 61-69, pooled) */
+const VS_MARKS = { arc: { swarm: 1, fast: 1, shield: 1, armor: -3 }, frz: { swarm: 2, fast: 1, shield: -2, armor: -1 }, sol: { fast: -1, armor: 1 }, acd: { swarm: -1, fast: -2, shield: 1, armor: 2 }, grv: {  }, car: { swarm: -2, fast: 1, armor: 1 }, ifr: {  } }; /* regenerated 2026-10-25 v6.15.4 (marks.py --write, countermx 61-69, pooled) */
 const VS_ORDER = ["swarm", "fast", "shield", "armor"];
 // THE GAPS (owner, 2026-10-19: "when building the third tower: for each tower card that has X where the two towers that you have do
 // not cover draw a red box around that"): with two towers built, the types neither has a check on; a card's x's on one are boxed red

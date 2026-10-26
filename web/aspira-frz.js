@@ -20,7 +20,7 @@ const FRZ_BRITTLE = [1, 1.15, 1.45, 3.5623]; // x damage from every tower while 
 // fast (slow + tick + brittle); a pulse no longer breaks shield charges (it did until 2026-10-12)
 /* RIME'S BITE (owner, 2026-10-18: Rime is the weakest FRZ axis): each ring that reaches an enemy hits it for this x a tick (quiet, armor still bites) */
 let FRZ_RIME_BITE0 = 2; // a ring's bite, x a tier 0 tick - ONE number since the tier redesign (2026-10-24; was 0 4 45 200, V 300 - its tier I value)
-const FRZ_RIME_CRACK = [0, 0.25, 0.715, 1.105];
+const FRZ_RIME_CRACK = [0, 0.5, 1.43, 2.21]; /* x2 (axis balance, owner 2026-10-25: Rime focus 45% leaked, Temp 9, Moons 6) */
 // Moons only add aura sources; their armor crack (FRZ_MOON_CRACK) and the hard-types-skip-brittle table (FRZ_HARD)
 // were removed with the effects (2026-10-12; ARCHAEOLOGY.md) - brittle applies to every slowed enemy.
 // a tick is QUIET (no flash, no crit) yet ARMOR takes its flat bite like any hit (owner, 2026-10-12: "frz ticks should not
@@ -28,7 +28,7 @@ const FRZ_RIME_CRACK = [0, 0.25, 0.715, 1.105];
 const FRZ_TICK_HIT = {};
 const FRZ_RIME = [0, 0.02, 0.3, 0.9]; // HALVED with the period (owner, 2026-10-14: "double pulse rate, half effect and opacity" - was .04 .07 .12 .17 .22; same frost a second, twice the rings); each pulse's permanent stacking slow (a shielded enemy takes none - applySlow refuses it; this was "the SHIELD answer" while pulses shattered shields, until 2026-10-12) (2026-10-11: a slow, tanky shield takes the most pulses; was 0 .024 .035 .054 .064 .068): Rime build leaks 13% of shields, Temp 24, Moons 23
 // FRZ's own levers (owner: no generic multipliers): Rime pulses MORE OFTEN each tier, the moons are STRONGER copies each tier
-const FRZ_RIME_PERIOD = [1, 1, 0.385, 0.275] /* halved (owner, 2026-10-14; was 2 2 1.7 1.4 1.2 1) */, FRZ_MOON_BY = [0.6, 0.85, 1.5438, 1.5438]; /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
+const FRZ_RIME_PERIOD = [0.667, 0.667, 0.257, 0.183] /* /1.5: x1.5 the rings, count first (axis balance 2026-10-25; was 1 1 0.385 0.275) */ /* halved (owner, 2026-10-14; was 2 2 1.7 1.4 1.2 1) */, FRZ_MOON_BY = [0.6, 0.85, 1.5438, 1.5438]; /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
 // TEMP CONDUCTS FASTER (owner, 2026-10-11: "make temp conduct faster"): each Temp tier shortens the aura's TICK (s) -
 // the same bite each tick, so more damage and more shield pops a second (capstone VI in aspira-capstone.js)
 const FRZ_TEMP_TICK = [0.21, 0.204, 0.192, 0.0586] /* x0.6 with FRZ_TICK x0.6: more ticks, same damage - better vs shield (2026-10-24 marks target) */ /* BATTERY 6.7.0 (2026-10-20): untaken 0.5 -> 0.35 and I-III to match - a lone L1 FRZ lost 3-10 on waves 1-11 after the 6.5 spacing (armor 2x, fast 3x) */; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
@@ -136,7 +136,7 @@ function frzStep(t, dt) {
         if (!to) continue;
         if (to !== e) beam(e, to, TOWERS.frz.color, FRZ_SPREAD_FX, 1.5, 0, true);
         if (applySlow(to, p.v, Infinity, p.id, "stack")) { to.rimeKeep = (to.rimeKeep ?? 1) * (1 - p.v); to.frostArmor = Math.max(to.frostArmor || 0, st.rimeCrack); to.frostBy = t.id; }
-        if (st.rimeBite > 0) damage(to, st.biteDmg * st.rimeBite, t, true); /* the ring's own bite */ // (a shield takes no slow, so no frost)
+        if (st.rimeBite > 0) damage(to, st.biteDmg * st.rimeBite, t, !(to.shield > 0)); /* the ring's own bite - quiet, but a shield loses ONE charge to it (owner, 2026-10-25: "Yes"; it bounced off until then) */ // (a shield takes no slow, so no frost)
       }
     }
     t.pulses = t.pulses.filter(p => p.age < FRZ_RIME_GROW);
