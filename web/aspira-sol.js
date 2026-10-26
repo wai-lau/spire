@@ -1,68 +1,92 @@
-// /spire - SOL's PASSTHROUGH (6.3.0, split out of aspira-towers.js at its 500-line cap): rayHit calls solPierce after every hit
-// SOL OVERKILL PIERCES (owner, 2026-10-18: "at level 0, for all sol beams, incl refractions, an overkilling shot keeps going forward,
-// carrying 20% of the remaining damage / upgrading breach upgrades this, up to 100% / this means applies full breach stacks,
-// regardless of amount of damage"): a kill sends the beam on along its line to the next enemy within SOL_PIERCE_W of it (up to
-// SOL_PIERCE_LEN on), with SOL_PIERCE[breach] of what the kill did not need; that hit breaches in full (bleed), and a kill goes on
-// THE REWORK (owner, 2026-10-22: "always goes through at 100% after enemy in a straight line" / "whole screen, make beams thin"): every hit
-// carries on at st.pierce (1) x st.pass of the full hit to the screen's edge (SOL_PIERCE_LEN, SOL_PIERCE_HOPS a perf cap) on a THIN line (was 24 wide, 420 on, 12)
-const SOL_PIERCE_W = 6, SOL_PIERCE_LEN = 3000, SOL_PIERCE_HOPS = 64, SOL_BEAM_THIN = 1.5;
+// /spire - SOL's SHOT (6.3.0, split out of aspira-towers.js at its 500-line cap): rayHit calls solSpread after the first hit
+// (THE PIERCE - a beam on through every enemy on its line, 2026-10-18 .. 2026-10-26 - is GONE: owner, 2026-10-26 "Get rid of piercing";
+// history ARCHAEOLOGY.md)
+const SOL_BEAM_THIN = 1.5;
 // every SOL beam's width x SOL_THIN (owner, 2026-10-23: "Make beams way thinner each"); its opacity x share^2 (f.share, rayHit)
 const SOL_THIN = 0.4;
-// ALWAYS (owner, 2026-10-19: "make beams always pass through the max amount for breach level" - no kill needed): every hit sends the
-// beam on with SOL_PIERCE[breach] of the FULL hit, the same at every hop, up to SOL_PIERCE_HOPS enemies along its line
-// AS A REFLECTION (owner, 2026-10-22: "make the piercing beam the same visual intensity and damage as the reflected beam"): the beam
-// on carries st.hop x the hit before (per enemy since 2026-10-25; SOL_PASS by Focus 2026-10-23..25), drawn like a reflection's beam (one beam's damage, full alpha, thin)
-// PER ENEMY (owner, 2026-10-25: "pierce carryover applies per enemy hit whether reflection or pierce"): each enemy on the line takes
-// st.hop x the one before it, compounding, every tier (the SOL_PASS share and SOL_PASS_N count are gone)
-function solPierce(t, st, from, e, full, share = 1) {
-  let carry = full * (st.pierce || 0), al = share * (st.pierce || 0); if (carry <= 0) return; // al: its opacity, the share of the first beam it carries (rayHit)
-  for (let k = 0; k < SOL_PIERCE_HOPS; k++) {
-    carry *= st.hop || 1; al *= st.hop || 1; const seen = carry;
-    const dx = e.x - from.x, dy = e.y - from.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-    let o = null, best = SOL_PIERCE_LEN;
-    for (const x of G.enemies) {
-      if (x.dead || !x.seen || x === e) continue;
-      const rx = x.x - e.x, ry = x.y - e.y, along = rx * ux + ry * uy;
-      if (along <= 0 || along >= best || Math.abs(rx * uy - ry * ux) > SOL_PIERCE_W + (ENEMIES[x.type].size || 0)) continue;
-      best = along; o = x;
-    }
-    if (!o) break;
-    beam(e, o, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, seen, true); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); // one beam's damage, at its share's opacity
-    fromHit(e, () => damage(o, carry, t, false, false, st)); onHit(o, t, st, carry); bleed(o, st, t);
-    from = e; e = o;
-  }
-  if (e !== from) { solOutOfSight(t, st, from, e); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); } // on to the screen's edge past the last one (thin, its share's opacity)
+// THE SHOT'S CONE (owner, 2026-10-26): every enemy a SOL shot hits after the first lies within st.cone degrees of the line tower -> first
+// enemy (solAim, set by fireRay), seen from the tower, out to the screen's edge - and farther from the tower than the enemy before it
+let solAim = null;
+function solInCone(t, st, x, a, at) {
+  const half = (st.cone || SOL_CONE) * Math.PI / 180, d = Math.abs(((Math.atan2(x.y - t.y, x.x - t.x) - a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
+  return d <= half && (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > (at.x - t.x) ** 2 + (at.y - t.y) ** 2;
 }
-// TARGETING BY THE LINE (owner, 2026-10-23: "for SOL targetting, account for passthrough enemies to select first targets"): of the
-// SOL_LINE_TOP first by the tower's mode, the one whose beam - tower through it, on to SOL_PIERCE_LEN - hits the most enemies (the
-// pass-through's reach, SOL_PIERCE_W wide), ties kept in the mode's order (stable sort); c is pickTargets' sorted candidates
-const SOL_LINE_TOP = 24;
-function solLineSort(t, c) {
-  const top = c.slice(0, SOL_LINE_TOP), n = new Map();
-  for (const a of top) {
-    const dx = a.e.x - t.x, dy = a.e.y - t.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-    let k = 1;
-    for (const x of G.enemies) {
-      if (x.dead || !x.seen || x === a.e) continue;
-      const rx = x.x - a.e.x, ry = x.y - a.e.y, along = rx * ux + ry * uy;
-      if (along > 0 && along < SOL_PIERCE_LEN && Math.abs(rx * uy - ry * ux) <= SOL_PIERCE_W + (ENEMIES[x.type].size || 0)) k++;
-    }
-    n.set(a, k);
+// where the line from -> e, carried on past e, leaves the shot's cone (its nearer wall), or null if it never does
+function solConeEdge(t, st, from, e) {
+  const L = Math.hypot(e.x - from.x, e.y - from.y) || 1, ux = (e.x - from.x) / L, uy = (e.y - from.y) / L, half = (st.cone || SOL_CONE) * Math.PI / 180;
+  let best = Infinity, wa = 0;
+  for (const sg of [1, -1]) {
+    const vx = Math.cos(solAim + sg * half), vy = Math.sin(solAim + sg * half), den = ux * vy - uy * vx; if (Math.abs(den) < 1e-9) continue;
+    const wx = t.x - e.x, wy = t.y - e.y, lam = (wx * vy - wy * vx) / den, mu = (wx * uy - wy * ux) / den;
+    if (lam > 1e-6 && mu > 0 && lam < best) { best = lam; wa = solAim + sg * half; }
   }
-  return top.sort((a, b) => n.get(b) - n.get(a)).concat(c.slice(SOL_LINE_TOP));
+  return best < Infinity ? { x: e.x + ux * best, y: e.y + uy * best, wa } : null; // wa: the wall's angle (a mirror off it - solSpread)
 }
+// THE SPREAD (owner, 2026-10-26: "SOL should start with bouncing ... bounces have no limit" / "only reason a beam stops at an enemy is if
+// there is less than 5% damage left" / "Get rid of piercing" / "Split, else fly on"): every hit SPLITS the beam to st.split more enemies
+// (Diffraction) inside the shot's cone and farther from SOL (solInCone), each at st.hop x the hit before; a hit with no one to split to
+// lets the beam FLY ON straight past it, striking no one on its line, to the cone's wall - a bounce (a carry step): it splits from the
+// wall, or with no one there MIRRORS off it (angle in = angle out) and flies on - or out of the cone's open end to the screen's edge.
+// An enemy is struck once a shot; a beam ends only under SOL_END_K of the shot; SOL_SHOT_CAP hits a shot guard the frame
+const SOL_SHOT_CAP = 512, SOL_WALLS = 16; // SOL_WALLS: mirrors off the cone's walls a line, at most (a wedge lets a line bounce only a few times)
+// A BEAM ENDS below SOL_END_K of the shot (owner, 2026-10-26: "when carryover damage goes below 5%, end the beam")
+const SOL_END_K = 0.05;
+// THE NEXT NEAREST TO SOL (owner, 2026-10-26: "for diffraction targets, always choose the next nearest target to SOL"): of the enemies a
+// split may take (skip: struck, outside the cone or no farther than the last), the one nearest the tower
+function solNext(t, skip) {
+  let best = null, bd = Infinity;
+  for (const o of G.enemies) {
+    if (o.dead || !o.seen || skip(o)) continue;
+    const d = (o.x - t.x) ** 2 + (o.y - t.y) ** 2; if (d < bd) { bd = d; best = o; }
+  }
+  return best;
+}
+function solSpread(t, st, from, e, full, share = 1) {
+  if (!(st.pierce > 0) || full <= 0) return;
+  const col = TOWERS[t.kind].color, hit = new Set([e]), L0 = Math.hypot(e.x - from.x, e.y - from.y) || 1;
+  const seg = (a, b, d, al) => { beam(a, b, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); };
+  const strike = (o, at, d) => { hit.add(o); fromHit(at, () => damage(o, d, t, false, false, st)); onHit(o, t, st, d); bleed(o, st, t); };
+  const out = last => x => hit.has(x) || (solAim != null && !solInCone(t, st, x, solAim, last)); // inside the shot's cone, farther from SOL
+  let n = 0;
+  const split = (b, at, carry, al) => { // st.split more off `at`, each farther than b.last: how many it found
+    let k = 0;
+    for (; k < (st.split || 0) && n < SOL_SHOT_CAP; k++) {
+      const w = solNext(t, out(b.last)); if (!w) break;
+      seg(at, w, carry, al); strike(w, at, carry); n++;
+      const L = Math.hypot(w.x - at.x, w.y - at.y) || 1; q.push({ p: { x: w.x, y: w.y }, ux: (w.x - at.x) / L, uy: (w.y - at.y) / L, last: w, carry, al });
+    }
+    return k;
+  };
+  const q = [{ p: { x: e.x, y: e.y }, ux: (e.x - from.x) / L0, uy: (e.y - from.y) / L0, last: e, carry: full, al: share }];
+  for (let qi = 0; qi < q.length; qi++) {
+    const b = q[qi], carry = b.carry * (st.hop || 1), al = b.al * (st.hop || 1);
+    if (carry < SOL_END_K * st.dmg) continue; // too faint: this beam ENDS here
+    if (!b.wall && split(b, b.p, carry, al)) continue; // a hit: it splits (a mirrored line struck no one: it only flies)
+    // FLY ON straight past it, through everyone, to the cone's wall
+    const via = solAim != null ? solConeEdge(t, st, { x: b.p.x - b.ux, y: b.p.y - b.uy }, b.p) : null;
+    if (!via) { seg(b.p, { x: b.p.x + b.ux * SOL_OUT_LEN, y: b.p.y + b.uy * SOL_OUT_LEN }, carry, al); continue; } // out the open end
+    // THE WALL IS A BOUNCE (owner, 2026-10-26: "count that as a bounce, except there's no pierce"): a carry step, then split from it - or
+    // with no one there A MIRROR ("just reflect off the cone (mirror angle across perpendicular line to cone edge)"), flying on from it
+    seg(b.p, via, carry, al); const c2 = carry * (st.hop || 1), a2 = al * (st.hop || 1);
+    if (c2 < SOL_END_K * st.dmg || split(b, via, c2, a2) || (b.walls || 0) >= SOL_WALLS) continue;
+    const vx = Math.cos(via.wa), vy = Math.sin(via.wa), d = b.ux * vx + b.uy * vy;
+    q.push({ p: { x: via.x, y: via.y }, ux: 2 * d * vx - b.ux, uy: 2 * d * vy - b.uy, last: b.last, carry: c2 / (st.hop || 1), al: a2 / (st.hop || 1), walls: (b.walls || 0) + 1, wall: true });
+  }
+}
+// (solLineSort - the first target by the most enemies on its line - GONE with the pierce, owner 2026-10-26: "Get rid of piercing")
 // SCORCH STACKS (owner, 2026-10-25: "Burn DoT, damage follows beam falloff, stacking no cap"): every hit adds its own burn, frac x the
-// hit that landed: st.dot.n ticks of st.dot.k x it (SOL_SCORCH_N, by Scorch tier); the stacks add up with no cap and tick together, ONE damage call a tick - one shield pop (one-pop rule)
+// hit that landed: st.dot.n ticks of st.dot.k x it (SOL_SCORCH_N, by Scorch tier); no cap on the stacks
+// EACH STACK ITS OWN BURN (owner, 2026-10-26: "when then scorch stacks, each stack should apply their burns independently"): a stack ticks
+// on its own clock from its hit, ONE damage call a tick - so each pops its own shield charge (was every stack summed into one tick)
 function solScorch(e, t, st, amt) {
-  (e.dots ||= []).push({ d: amt * st.dot.k, left: st.dot.n }); e.dotT = Math.max(e.dotT || 0, st.dot.t); e.dotSrc = t;
+  (e.dots ||= []).push({ d: amt * st.dot.k, left: st.dot.n, acc: 0, src: t }); e.dotT = Math.max(e.dotT || 0, st.dot.t);
 }
 function solScorchTick(e, dt) {
-  const q = SOL_SCORCH_Q; e.dotAcc = (e.dotAcc || 0) + Math.min(dt, e.dotT); e.dotT -= dt;
-  while (e.dotAcc >= q - 1e-9 && !e.dead && e.dots && e.dots.length) {
-    e.dotAcc -= q; let d = 0;
-    for (const s of e.dots) { d += s.d; s.left--; }
-    e.dots = e.dots.filter(s => s.left > 0);
-    if (d > 0) damage(e, d, e.dotSrc, false, false, SOL_DOT_ST);
+  const q = SOL_SCORCH_Q; e.dotT -= dt;
+  for (const s of e.dots || []) {
+    s.acc += dt;
+    while (s.acc >= q - 1e-9 && s.left > 0 && !e.dead) { s.acc -= q; s.left--; damage(e, s.d, s.src, false, false, SOL_DOT_ST); }
   }
-  if (e.dotT <= 0) { e.dotAcc = 0; e.dots = null; }
+  if (e.dots) e.dots = e.dots.filter(s => s.left > 0);
+  if (e.dotT <= 0 || !e.dots || !e.dots.length) { e.dotT = 0; e.dots = null; }
 }

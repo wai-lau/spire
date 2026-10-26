@@ -120,7 +120,7 @@ function pickTargets(t, st, count) {
   const key = MODE_KEY[t.mode];
   // ties go to whoever is furthest along the spiral
   c.sort((a, b) => key(a) - key(b) || b.e.s - a.e.s);
-  return (st.pierce && typeof solLineSort === "function" ? solLineSort(t, c) : c).slice(0, count).map(a => a.e); // SOL: the line through the most (aspira-sol.js)
+  return c.slice(0, count).map(a => a.e);
 }
 
 // quiet: no flash or number (poison ticks, splash), so they do not spam
@@ -402,8 +402,8 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
     const pl = e.pull ? grvPullStep(e, dt) : null; e.x = p.x + (pl ? pl[0] : 0); e.y = p.y + (pl ? pl[1] : 0); // + GRV's sideways pull (aspira-grv.js)
     // no free spin: one corner points along the lane, nose first
     if (FACING) {
-      const ahead = pathAtInto(e.pi, e.s + 3, e.ang, FORM_Q); // (scratch: formOffset is done with it)
-      if (ahead.x !== p.x || ahead.y !== p.y) e.rot = Math.atan2(ahead.y - p.y, ahead.x - p.x);
+      const ahead = e.form ? null : pathAtInto(e.pi, e.s + 3, e.ang, FORM_Q); // a formation unit: the lane's heading at its own spot (formOffset's e.faceA - it read the lane's centre ahead, sideways corners; owner, 2026-10-26)
+      if (e.form) e.rot = e.faceA; else if (ahead.x !== p.x || ahead.y !== p.y) e.rot = Math.atan2(ahead.y - p.y, ahead.x - p.x);
     }
     // wobble rate cut to 1/3 (owner) when the wander tripled, so it drifts, not buzzes
     if (e.jit) {
@@ -463,13 +463,13 @@ function step(dt) {
     if (t.kind === "frz" && hasSkills(t)) { frzStep(t, dt); continue; } // the chart FRZ: an aura, every step (aspira-skills.js)
     if (t.kind === "sol") { stepSol(t, dt); continue; }
     if (t.kind === "acd") { stepAcd(t, dt); continue; } if (t.kind === "car") { stepCar(t, dt); continue; } if (t.kind === "ifr") { stepIfr(t, dt); continue; } if (t.kind === "grv") stepGrv(t, dt); // GRV: its spheres every step, its novas on the cooldown below (aspira-grv.js)
-    t.cd -= dt; if (t.echo > 0 && (t.echo -= dt) <= 0) { const st = towerStats(t); for (let i = 0, n = relayMul(t); i < n; i++) fire(t, st); } // ARC's second strike (ARC_ECHO_S, aspira-skills.js)
+    t.cd -= dt; if (t.echo > 0 && (t.echo -= dt) <= 0) { const st = towerStats(t); for (let i = 0, n = relayMul(t); i < n; i++) fire(t, st); if (--t.burst > 0) t.echo += ARC_ECHO_S; } // ARC's burst (ARC_BURST_N, ARC_ECHO_S apart - aspira-skills.js)
     if (t.cd > 0) continue;
     const st = towerStats(t);
     let fired = false;
     for (let i = 0, n = t.kind === "arc" ? relayMul(t) : 1; i < n; i++) fired = fire(t, st) || fired; // the Orbital Relay: an ARC attacks three times (aspira-core.js)
     if (fired) sfx(t.kind);
-    t.cd = fired ? 1 / st.rate : 0.05; if (fired && t.kind === "arc") t.echo = ARC_ECHO_S;
+    t.cd = fired ? 1 / st.rate : 0.05; if (fired && t.kind === "arc") { t.echo = ARC_ECHO_S; t.burst = ARC_BURST_N - 1; }
   }
   G.enemies = G.enemies.filter(e => !e.gone);
 }

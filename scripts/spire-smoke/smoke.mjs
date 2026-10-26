@@ -131,7 +131,7 @@ check("tiers are purchases (owner, 2026-10-23): five slots in every per-tier tab
   const r = run(`(() => {
     const out = { len: [], price: [] };
     for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) out.len.push(ax.tiers.length, SKILL_MOVE[kind][ax.id].length);
-    for (const T of [ARC_CONDUCTIVITY, VOLT_FORK, ARC_CAPACITANCE, SOL_REFRACTION, SOL_BREACH_ARMOR, SOL_SCORCH_N, ACD_LINES, ACD_CONTAGION, FRZ_MOON_COUNT, GRV_AURA_R, CRR_HANGAR, IFR_FAN, IFR_BEAM_L, IFR_BEAM_W, VOLT_CARRY_N, CAP_BURST_K]) out.len.push(T.length);
+    for (const T of [ARC_CONDUCTIVITY, VOLT_FORK, ARC_CAPACITANCE, SOL_SPLIT, SOL_BREACH_ARMOR, SOL_SCORCH_N, ACD_LINES, ACD_CONTAGION, FRZ_MOON_COUNT, GRV_AURA_R, CRR_HANGAR, IFR_FAN, IFR_BEAM_L, IFR_BEAM_W, VOLT_CARRY_N, CAP_BURST_K]) out.len.push(T.length);
     G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0]; G.money = 1e9;
     for (let k = 0; k < 5; k++) { const lvl = t.lvl, m = G.money; upgradeTower(t, "focus", true); out.price.push([skillOf(t, "focus"), t.lvl - lvl, Math.round(m - G.money) === skillPointsCost({ ...t, lvl }, t.lvl - lvl)]); }
     for (let k = 0; k < 4; k++) { upgradeTower(t, "refraction", true); upgradeTower(t, "breach", true); } out.full = [t.lvl, nextBuy(t)];
@@ -732,6 +732,21 @@ check("Temporal Drive stops Strength dead; a tower's slow still takes 40% on her
   if (!(r.core >= 1 - 1e-9)) return "Temporal Drive slowed Strength to " + r.core + " (expected a full stop, 1)";
   if (!(r.tower < 0.5 * 0.4 + 1e-9)) return "a tower's 0.5 slow on Strength came to " + r.tower + " (expected at most 0.2)";
   return "";
+});
+check("a shield's corner points along the lane, in a formation too (owner, 2026-10-26: its heading read toward the lane's centre from an offset slot)", () => {
+  const r = run(`(() => {
+    G = newGame(); G.enemies = [];
+    const w = { n: 30, list: ["shield", "shield", "shield"], lanes: { shield: 0 }, ang: 0, idx: 1, timer: 0 }; G.fleetQ = []; formSpawn(w, "shield");
+    for (let i = 0; i < 180 && !G.enemies.some(e => e.form); i++) { stepFleetQ(1 / 60); stepEnemies(1 / 60); } for (let i = 0; i < 30; i++) { stepFleetQ(1 / 60); stepEnemies(1 / 60); }
+    let worst = 0, n = 0;
+    for (const e of G.enemies) { if (e.dead || !e.form) continue; // the lane at the unit's own spot: formOffset's along-lane place (its spin)
+      const spin = e.bossKin ? 0 : FORM_SPIN[e.type], c = e.s - (e.ahead || 0) + (e.aheadC || 0), phi = spin ? c / spin : 0, a0 = (e.ahead || 0) - (e.aheadC || 0), along = a0 * Math.cos(phi) - e.lat * Math.sin(phi);
+      const a = pathAt(e.pi, c + along, e.ang), b = pathAt(e.pi, c + along + 3, e.ang), h = Math.atan2(b.y - a.y, b.x - a.x);
+      worst = Math.max(worst, Math.abs(((e.rot - h + 3 * Math.PI) % (2 * Math.PI)) - Math.PI)); n++; }
+    return { n, worst };
+  })()`);
+  if (!r.n) return "no formation shields on the board";
+  if (r.worst > 0.05) return "a formation shield faces " + (r.worst * 180 / Math.PI).toFixed(1) + " degrees off its lane";
 });
 check("formations reach their spacing in the 1x zone (owner, 2026-10-21: \"they get compressed as they slow down\")", () => {
   const r = run(`(() => {

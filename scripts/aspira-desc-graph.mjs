@@ -1,5 +1,5 @@
 // The upgrade DESCRIPTION GRAPH (owner, 2026-10-07): for each tower, each axis
-// is a chain 0 -> I .. IV of the tower's ONE composed sentence (aspira-desc.js
+// is a chain 0 -> I .. V of the tower's ONE composed sentence (aspira-desc.js
 // describeTower) with only that axis raised; each edge is the few words that change, which is
 // exactly what the tower card shows in track changes (aspira-sliders.js
 // wordDiff). This prints the chains with the changed words marked *like this*
@@ -14,9 +14,10 @@ const V = expr => g.run(expr);
 const pct = x => Math.round(x * 100) + "%";
 // what each tier of each axis DOES, from the game's tables (index 0 = no point on the axis)
 const x = v => Math.round(v * 100) / 100; // x1.3333333 -> x1.33
+const ST = (kind, ax, k) => V(`(() => { const sk = { ${ax}: ${k} }; return towerStats({ id: 99, kind: ${JSON.stringify(kind)}, x: CX, y: CY, lvl: 1 + towerLevel({ kind: ${JSON.stringify(kind)}, skills: sk }), skills: sk }, true); })()`);
 const MECH = {
   arc: {
-    conductivity: k => { const c = V("ARC_CONDUCTIVITY")[k], r = V("SKILL_MOVE").arc.conductivity[k][0]; return `${c.s} strike${c.s > 1 ? "s" : ""}, ${c.j} jump${c.j > 1 ? "s" : ""}, forking ${c.f} ways${c.v ? `, re-strikes ${c.v}x` : ""}, jumps reach x${x(c.r)}, range x${x(r)}`; },
+    conductivity: k => { const c = V("ARC_CONDUCTIVITY")[k], r = V("SKILL_MOVE").arc.conductivity[k][0]; return `${c.s} target${c.s > 1 ? "s" : ""} x a burst of ${V("ARC_BURST_N")} strikes ${V("ARC_ECHO_S")}s apart, ${c.j} jump${c.j > 1 ? "s" : ""}, forking ${c.f} ways${c.v ? `, re-strikes ${c.v}x` : ""}, jumps reach x${x(c.r)}, range x${x(r)}`; },
     voltage: k => `forks ${V("VOLT_FORK")[k]} ways, each jump keeps ${pct(V("ARC_VOLTAGE_FALL")[k])} of the hit before it, range x${x(V("SKILL_MOVE").arc.voltage[k][0])}`,
     capacitance: k => { const b = V("ARC_CAPACITANCE")[k]; return b ? `${b.n} charge${b.n > 1 ? "s" : ""} a hit, each ${pct(b.frac)} of it; the next hit bursts them all, r${V("ARC_BURST_R")}, slowing ${pct(V("ARC_STAT_SLOW")[k])} for ${V("STAT_SLOW_T")}s, slide x${x(V("SKILL_MOVE").arc.capacitance[k][1])}` : "no charge"; },
   },
@@ -27,13 +28,29 @@ const MECH = {
   },
   sol: {
     focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${V("SOL_SCORCH_N")[k]} ticks of ${pct(V("SOL_SCORCH_TICK_K"))} of itself, one every ${V("SOL_SCORCH_Q")}s, stacking without cap` : "no burn") + `, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
-    refraction: k => `${V("SOL_REFRACTION")[k]} diffraction${V("SOL_REFRACTION")[k] === 1 ? "" : "s"} in a chain, ${V("SOL_FAN_BY")[k]} chain${V("SOL_FAN_BY")[k] === 1 ? "" : "s"} off the first enemy, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
-    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good, each enemy past the first (pass-through or diffraction) takes ${pct(V("SOL_HOP")[k])} of the one before, crit x${V("SOL_CRIT_K")}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
+    refraction: k => `every hit splits to the ${V("SOL_SPLIT")[k]} nearest enemies further down a +/-${V("SOL_CONE_BY")[k]} degree cone (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
+    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good, crit x${V("SOL_CRIT_K")}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
   },
   acd: {
     corrosion: k => (V("ACD_CORRODE")[k] ? `a tick strips ${pct(V("ACD_CORRODE")[k])} of its damage from armor, below zero; eaten armor drops goo (pull ${V("ACD_DRIP_PULL")[k]})` : "no armor strip"),
     spray: k => `${V("ACD_LINES")[k]} jet${V("ACD_LINES")[k] > 1 ? "s" : ""}, a jet carries ${pct(V("ACD_FLOW_CARRY")[k])} of its ramp to the next enemy, range x${x(V("SKILL_MOVE").acd.spray[k][0])}`,
     contagion: k => { const c = V("ACD_CONTAGION")[k]; return c ? `a pool every ${c.every}s per jet, lasting ${c.life}s, radius ${c.r}, at ${pct(V("ACD_POOL_HEAT"))} of the jet, slowing ${pct(V("ACD_POOL_SLOW")[k])}, slide x${x(V("SKILL_MOVE").acd.contagion[k][1])}` : "no pools"; },
+  },
+  // (GRV, CRR, IFR: read off the tower's stats at that tier - towerStats, one axis raised)
+  grv: {
+    void: k => { const s = ST("grv", "void", k); return `void starts at mass ${s.startM}, crush tick x${s.innerK} the hit${s.big ? ", heavier cap" : ""}`; },
+    supernova: k => { const s = ST("grv", "supernova", k); return s.novaN ? `${s.novaN} novas before each void, rate x${x(s.rate / ST("grv", "supernova", 0).rate)}, strip ${pct(s.strip)} of a nova's hit` : "no novas"; },
+    radiation: k => { const s = ST("grv", "radiation", k); return (s.auraOn ? `aura x${s.accR} the void's radius, slow ${pct(s.slow)} (x2 inside${s.horizon ? ", all of it" : ""}), ` : "no aura, ") + `pellets ${x(s.pelletK)}x the hit, reach x${s.pelReach}, ${x(s.pellets)} a mass lost`; },
+  },
+  car: {
+    hangar: k => { const s = ST("car", "hangar", k); return `${s.wing} interceptor${s.wing > 1 ? "s" : ""}, ${s.hold} held circling${s.focus ? `, focus fire +${pct(s.focus)} a wingmate` : ""}`; },
+    launch: k => { const s = ST("car", "launch", k); return s.tSlow ? `tether slow ${pct(s.tSlow)}${s.tK ? `, a pulse x${s.tK} the hit` : ""}${s.tChain ? ", chains to one more" : ""}` : "no tether"; },
+    armament: k => { const s = ST("car", "armament", k); return `${s.bolts} bolt${s.bolts > 1 ? "s" : ""} a volley, ${s.ammo} shots${s.autopilot ? ", autopilot" : ""}`; },
+  },
+  ifr: {
+    meteor: k => { const s = ST("ifr", "meteor", k); return s.fan ? `1 meteor + a fan of ${s.fan}${s.fissure ? ", fissure" : ""}` : "1 meteor"; },
+    hellfire: k => { const s = ST("ifr", "hellfire", k); return s.fire ? `a fire, radius ${x(s.fireR)}, growth ${x(s.fireV)}` : "no fire"; },
+    firaga: k => { const s = ST("ifr", "firaga", k); return s.flares ? `flares ${x(s.beamL)} long, ${x(s.beamW)} wide, burning ${x(s.burnS)}s at a tick every ${s.tickS}s${s.triple ? ", three at the impact" : ""}` : "no flares"; },
   },
 };
 // the words that change from a to b, b's changed words marked *so* (the card's wordDiff, in text)
@@ -52,7 +69,7 @@ function mark(a, b) {
   return out.join(" ");
 }
 const roman = ["0", "I", "II", "III", "IV", "V"];
-let md = "# The Spire - upgrade descriptions, as a graph\n\nGenerated by `scripts/aspira-desc-graph.mjs` from `web/aspira-desc.js` (the tower's composed sentence, one axis raised at a time) and the game's balance tables. Each axis is a chain 0 -> I .. IV (IV = the capstone, one axis a tower); a child's changed words are marked *like this* - exactly what the tower card shows in track changes when that tier is pulled from the one before it. The mechanic column is what the words must stay true to.\n";
+let md = "# The Spire - upgrade descriptions, as a graph\n\nGenerated by `scripts/aspira-desc-graph.mjs` from `web/aspira-desc.js` (the tower's composed sentence, one axis raised at a time) and the game's balance tables. Each axis is a chain 0 -> I .. V (V = the capstone, one axis a tower); a child's changed words are marked *like this* - exactly what the tower card shows in track changes when that tier is pulled from the one before it. The mechanic column is what the words must stay true to.\n";
 for (const kind of Object.keys(V("SKILL_TREES"))) {
   md += `\n## ${V(`TOWERS[${JSON.stringify(kind)}].name`)} (${kind.toUpperCase()})\n`;
   for (const ax of V(`SKILL_TREES[${JSON.stringify(kind)}]`)) {

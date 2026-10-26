@@ -362,7 +362,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
       ctx.strokeStyle = COL[f.color]; ctx.lineWidth = f.w || 2; if (f.a) ctx.globalAlpha *= f.a; // a: a fainter ring (Capacitance's burst)
       ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (1 - k * 0.5), 0, 6.283); ctx.stroke();
     } else if (f.k === "cone") {
-      drawCone(f, k); // SOL's Refract light cone (aspira-skills.js)
+      drawCone(f, k); // (no SOL fx pushes a cone since 2026-10-26 - the charge cone is drawAims'; kept for an old fx in flight)
     } else if (f.k === "spark") {
       ctx.fillStyle = COL[f.color]; ctx.fillRect(f.x - 1.5, f.y - 1.5, 3, 3);
     } else if (f.k === "text") {

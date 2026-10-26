@@ -18,7 +18,7 @@
 // the arc delay is a QUARTER of the tower's shot interval (owner), so it
 // follows fire-rate upgrades: 1.5 shots/s -> 0.17s per layer
 // beam lives (x BEAM_LIFE_MUL; look only - owner, 2026-10-08: SOL longer, ARC slightly shorter; were 0.2 / 0.083)
-const CHAIN_BEAM_LIFE = 0.16, RAY_BEAM_LIFE = 0.15, CHAIN_HOP_FRAC = 0.25;
+const CHAIN_BEAM_LIFE = 0.15 /* ARC's beams last one burst gap, ARC_ECHO_S (owner, 2026-10-26: "I want the beam duration to reflect that"; was 0.16) */, RAY_BEAM_LIFE = 0.075 /* SOL's beams, halved (owner, 2026-10-26: "maybe the beam lasts too long, halve the visual duration"; was 0.15) */, CHAIN_HOP_FRAC = 0.25;
 const hopDelay = st => CHAIN_HOP_FRAC / st.rate;
 // arcs only land on enemies within the REACH, measured from the TOWER (owner;
 // drawn as a dashed outer ring): CHAIN_LEASH x range for the base 1-layer
@@ -276,14 +276,14 @@ function rayHit(t, st, e, base, from) {
   const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1);
   const m = crit ? st.critMul : 1, d = shotDamage(t, st, e, base) * m;
   const n = st.beams || 1, part = d; // every beam is a FULL hit (owner, 2026-10-06; was a fitted share of the shot)
-  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, (m > 1 ? 5 : 3) * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d, true); // a chart SOL's beams THIN (owner, 2026-10-22)
+  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, (m > 1 ? 5 : 3) * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d, true, !st.pierce); // a SOL beam is FIXED where it struck, like its pass-through (owner, 2026-10-26: "neither visual should track the enemy") // a chart SOL's beams THIN (owner, 2026-10-22)
   if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
   // OPACITY = THE SHARE (owner, 2026-10-23: "the section of beam should reflect the % of damage it carries compared to the initial beam" /
-  // "Opacity"): a SOL reflection's beam at base / st.dmg (its st.hop^k), the pass-through on from it x st.hop an enemy (solPierce) - drawn at
+  // "Opacity"): a SOL reflection's beam at base / st.dmg (its st.hop^k), the pass-through on from it x st.hop an enemy (solSpread) - drawn at
   // share^2, past BEAM_BRIGHT's cap (owner: "These 3 lines basically look the same / Exaggerate diff / Make beams way thinner each")
   const share = st.pierce ? base / (st.dmg || 1) : 1; if (st.pierce) Object.assign(fx[fx.length - 1], { share, thin: SOL_THIN });
   dmgBatch(() => { for (let i = 0; i < n && !e.dead; i++) { fromHit(from, () => damage(e, part, t, false, crit, st)); onHit(e, t, st, part); bleed(e, st, t); } }); // ONE number for the volley (dmgBatch, aspira-floats.js); a crit PINK (owner); st: its shieldPop
-  if (st.pierce) solPierce(t, st, from, e, n * part, share); // (always - kill or not)
+  if (st.pierce) solSpread(t, st, from, e, base, share); // (always - kill or not) - the RAW hit x the carry, as a reflection carries it (owner, 2026-10-26: "both carry amounts based on carryover"; was the hit after armor and crit)
   if (e.dead && st.smash && !e.smashed) {
     // Nova / Supernova: the kill bursts (a filled blast that lingers, owner)
     e.smashed = true;
@@ -294,8 +294,7 @@ function rayHit(t, st, e, base, from) {
   }
 }
 function fireRay(t, st, e) {
-  rayHit(t, st, e, st.dmg, t);
-  if (st.refraction) { solRefraction(t, st, e); return; } // the chart SOL's Refract (aspira-skills.js)
+  solAim = st.pierce ? Math.atan2(e.y - t.y, e.x - t.x) : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's cone axis (aspira-sol.js)
   if (!st.ricochet) return;
   // Ricochet / Shredder: hop to the nearest enemy not yet hit, at full damage
   const hit = new Set([e]);
@@ -358,7 +357,7 @@ function usePower(code) {
 // its slide tiers have room - about a third of the phone at base, all of it by tier V (and further at the capstone, VI). MOVE_BASE x the tier's slide
 // (SKILL_MOVE), up to SLIDE_MAX. (Was the old spoke's travel x MOVE_SPAN 3.375: ARC 434, FRZ 519, ACD 869 - most of the
 // phone before a tier, so the slide tiers bought nothing - and SLIDE_MAX 2 voided every tier past x2; SOL halved to 74 that day)
-const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 74, grv: 200, car: 240 /* swapped with its range (owner, 2026-10-16: "Swap carrier mvmt range and range") */ /* 130: between SOL and ARC (owner, 2026-10-16: "give carrier some movement range actually, less than ARC, more than SOL, update range to match"); was 0 */, ifr: 120 /* 200 -> 120 (owner, 2026-10-20: "unnecessarily large") */ /* medium, like ARC and GRV (owner's design, 2026-10-19) */ }, SLIDE_MAX = 3;
+const MOVE_BASE = { arc: 200, frz: 240, acd: 280, sol: 222 /* x3 (owner, 2026-10-26: "keep SOL range, and only 3x SOL mvmt range instead of 5x"; was 74) */, grv: 200, car: 240 /* swapped with its range (owner, 2026-10-16: "Swap carrier mvmt range and range") */ /* 130: between SOL and ARC (owner, 2026-10-16: "give carrier some movement range actually, less than ARC, more than SOL, update range to match"); was 0 */, ifr: 120 /* 200 -> 120 (owner, 2026-10-20: "unnecessarily large") */ /* medium, like ARC and GRV (owner's design, 2026-10-19) */ }, SLIDE_MAX = 3;
 const MOVE_EDGE = 12; // world units kept clear of the screen's edge
 const leashR = t => MOVE_BASE[t.kind] * Math.min(towerStats(t, true).slide, SLIDE_MAX);
 const slideSpan = t => Math.round(leashR(t)); // the card's Leash row

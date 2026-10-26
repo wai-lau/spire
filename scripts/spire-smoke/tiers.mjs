@@ -83,17 +83,52 @@ check("ARC: tier 0 strikes one enemy; Conductivity I chains once; Voltage I fork
 
 // ---------- SOL ----------
 towerTierChecks("sol", ["diffract", "scorch", "break"]);
-check("SOL (owner, 2026-10-25): one beam through every enemy on its line, each at the carry x the one before; Scorch I burns and stacks; Diffraction I bounces once; Breach I strips armor, no burn", () => {
-  const shot = (sk, n = 1) => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [40, 60], [40, -60]]);
-    es[0].armor = es[0].armor0 = 50; for (const e of es) e.hp = e.max = 1e7; const h0 = es[0].hp;
+check("SOL (owner, 2026-10-26): tier 0 goes straight through its line AND splits at every hit within the cone; Scorch I burns and stacks; Diffraction I splits two ways; Breach I strips armor, no burn", () => {
+  const shot = (sk, n = 1) => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [230, 30], [40, 60]]);
+    es[0].armor = es[0].armor0 = 50; for (const e of es) e.hp = e.max = 1e7;
     for (let i = 0; i < ${n}; i++) fireRay(t, st, es[0]); const stacks = (es[0].dots || []).length; for (let i = 0; i < 30; i++) step(1 / 60);
-    return { lost: es.slice(1, 3).map(e => e.max - e.hp), side: es.slice(3).filter(e => e.hp < e.max).length, burn: stacks, armor: es[0].armor, hop: st.hop }; })()`);
+    return { hit: es.map(e => e.hp < e.max), burn: stacks, armor: es[0].armor, split: st.split }; })()`);
   const z = shot({}), f = shot({ focus: 1 }, 2), r = shot({ refraction: 1 }), b = shot({ breach: 1 });
-  if (!(z.lost[0] > 0 && z.lost[1] > 0 && z.lost[1] < z.lost[0])) return "tier 0 line " + JSON.stringify(z) + " (expected both hit, the second less)";
-  if (z.side || z.burn || z.armor !== 50) return "tier 0: " + JSON.stringify(z);
+  if (JSON.stringify(z.hit) !== "[true,true,true,true,false]") return "tier 0 hit " + JSON.stringify(z.hit) + " (expected the line, the one off it inside the cone, not the one at 56 degrees)";
+  if (z.burn || z.armor !== 50 || z.split !== 1) return "tier 0: " + JSON.stringify(z);
   if (f.burn < 2) return "Scorch I: " + JSON.stringify(f) + " (expected two stacking burns)";
-  if (r.side !== 1) return "Diffraction I hit " + JSON.stringify(r) + " (expected one bounce)";
+  if (r.split !== 2) return "Diffraction I splits " + r.split + " (expected 2)";
   if (b.burn || !(b.armor < 50)) return "Breach I: " + JSON.stringify(b) + " (expected armor stripped, no burn)";
+});
+
+check("SOL's shot cone (owner, 2026-10-26): after the first enemy every hit lies inside +/-15 degrees of tower -> first enemy, seen from the tower, each farther from SOL than the last", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[100, 0], [60, 8], [180, 60], [260, 20]]);
+    for (const e of es) e.hp = e.max = 1e7; fireRay(t, st, es[0]); return es.map(e => e.hp < e.max); })()`);
+  if (JSON.stringify(r) !== "[true,false,false,true]") return "hit " + JSON.stringify(r) + " (expected the first, not the nearer one in the cone, not the one outside it, the farther one inside)";
+});
+
+check("SOL's splits have no limit (owner, 2026-10-26: \"bounces have no limit\"): enemies zig-zagging off the line inside the cone, each farther, are ALL struck: each split takes the next nearest to SOL (2026-10-26)", () => {
+  const r = run(`(() => { const pts = [[50, 0]]; for (let k = 1; k < 10; k++) { const x = 50 + 40 * k; pts.push([x, (k % 2 ? 1 : -1) * 0.2 * x]); }
+    const { t, es, st } = tierRig("sol", {}, pts); for (const e of es) e.hp = e.max = 1e7; fireRay(t, st, es[0]); return es.filter(e => e.hp < e.max).length; })()`);
+  if (r !== 10) return r + " of 10 struck";
+});
+
+check("SOL has no pierce (owner, 2026-10-26: \"Get rid of piercing\" / \"Split, else fly on\"): with no one to split to the beam flies on straight past its enemy to the edge, striking no one on its line", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[60, 0], [140, 0]]); st.split = 0; for (const e of es) e.hp = e.max = 1e7; fx.length = 0; fireRay(t, st, es[0]);
+    const a0 = Math.atan2(es[0].y - t.y, es[0].x - t.x), segs = fx.filter(f => f.k === "beam" && f.share != null && f.share < 1);
+    return { second: es[1].hp < es[1].max, far: segs.some(f => Math.abs(Math.atan2(f.y2 - f.y1, f.x2 - f.x1) - a0) < 1e-6 && Math.hypot(f.x2 - f.x1, f.y2 - f.y1) > 1000) }; })()`);
+  if (r.second) return "the enemy on the line behind was struck (a pierce)";
+  if (!r.far) return "no straight line on to the edge";
+});
+
+check("SOL's mirror (owner, 2026-10-26: \"If there is no diffraction target, then just reflect off the cone\"): a line leaving the cone with no one to split to mirrors off the wall, angle in = angle out", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[100, 0], [140, 60]]); es[1].hp = es[1].max = 1e7; es[0].hp = es[0].max = 1e7; solAim = 0; fx.length = 0;
+    solSpread(t, st, { x: t.x + 100, y: t.y - 30 }, es[0], st.dmg); // a line in at an angle: on from es[0] it reaches the +15 wall; es[1] lies outside the cone, so no one to split to
+    const walls = fx.filter(f => f.k === "beam" && f.share != null).map(f => Math.atan2(f.y2 - f.y1, f.x2 - f.x1));
+    return { n: walls.length, angs: walls.map(a => +a.toFixed(4)) }; })()`);
+  const up = Math.atan2(30, 0); // (the way in, from (100,-30) to (100,0): straight down the screen, +90 degrees)
+  if (!r.angs.some(a => Math.abs(a - (2 * (15 * Math.PI / 180) - up)) < 1e-3)) return "no mirrored line off the +15 degree wall: " + JSON.stringify(r);
+});
+
+check("SOL's scorch stacks burn independently (owner, 2026-10-26): two stacks pop two shield charges in a tick's time, one each", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("sol", { focus: 1 }, [[60, 0]]); const e = es[0]; e.hp = e.max = 1e9; e.shield = e.shieldMax = 50;
+    solScorch(e, t, st, 100); solScorch(e, t, st, 100); const s0 = e.shield; solScorchTick(e, SOL_SCORCH_Q + 1e-6); return s0 - e.shield; })()`);
+  if (r !== 2) return r + " charges popped (expected 2: a stack, a pop)";
 });
 
 // ---------- CRR ----------
@@ -194,10 +229,6 @@ check("review: the card's rows show no mechanic the tower lacks - CRR shields by
   if (i0.Meteors !== "1") return "IFR tier 0 Meteors reads " + i0.Meteors;
   if (ih.Fire === "—" || ifl.Flare === "—") return "IFR Hellfire I / Flare I rows blank";
 });
-check("review: a SOL without Diffraction aims no diffraction cone (solHeads)", () => {
-  const n = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[40, 0], [70, 20]]); return solHeads(t, st, es[0]).length; })()`);
-  if (n !== 0) return "tier 0 SOL aims " + n + " reflection heads";
-});
 check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
   const r = run(`(() => { const t = { id: 99, kind: "frz", x: CX, y: CY, lvl: 2, skills: { rime: 1 } }; G = newGame(); const a = towerStats(t, true).biteDmg; G.power.DAM = 1; const b = towerStats(t, true).biteDmg; G.power.DAM = 0;
     const s = { dmg: 1, biteDmg: 1, targets: 1 }; relayStats(s, "frz", 3); return [b / a, s.biteDmg]; })()`);
@@ -248,8 +279,8 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
 });
 check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightning.\" / Conductivity \"chains\" / Voltage \"forks for X% less damage every chain\"; FRZ tier 0 \"slows and deals X% damage\"", () => {
   const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 1 }), Math.round(ARC_VOLTAGE_FALL[1] * 100), describeTower("arc", { conductivity: 1 }), describeTower("arc", { conductivity: 1, voltage: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP * 100)]`);
-  if (r[0] !== "Two bolts of lightning.") return "tier 0: " + r[0];
-  if (r[1] !== "Two bolts of lightning that fork three ways for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
+  if (r[0] !== "Three bolts of lightning.") return "tier 0: " + r[0];
+  if (r[1] !== "Three bolts of lightning that fork three ways for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
   if (!/that chain once for \d+% less damage every chain\.$/.test(r[3])) return "Conductivity I: " + r[3];
   if (!/that chain once and fork three ways for \d+% less damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
   if (!r[5].includes("slows enemies by") || !r[5].includes(" and deals " + r[6] + "% damage over ")) return "FRZ tier 0: " + r[5];

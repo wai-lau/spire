@@ -4,7 +4,6 @@
 // RPR's charge-up: a thin line to the target it is reloading for, fading in
 // as the reload fills (alpha ~ progress^2), so the shot is telegraphed.
 // It deals nothing; the damage comes with the bright flash on firing.
-const SOL_AIM_DEG = 30, SOL_AIM_EVERY = 0.2, SOL_AIM_SLIDE = 0.15; // the charge cones' half angle at the charge's start; s between re-aims; SLIDE: s, the eased turn
 function drawAims() {
   ctx.lineCap = "round"; ctx.lineWidth = 0.8;
   for (const t of G.towers) {
@@ -16,21 +15,10 @@ function drawAims() {
       const p = Math.min(1, Math.max(0, 1 - l.cd / t.period));
       // Refraction's light CONE builds while it CHARGES (owner, 2026-10-06), then
       // the shot's own cone flashes as before
-      // THE CHARGE CONES, BACK (owner, 2026-10-23: "Visually bring back the SOL firing animation"; gone with the 6.12 rework): SOL_AIM_DEG
-      // at the charge's start sweeping in to the lock cone (st.cone) at the shot, from the tower and again off the target along the
-      // FORKS' NEXT TARGETS (owner, 2026-10-23: "...should point to the next target": solHeads, re-picked SOL_AIM_EVERY s at most, each
-      // cone SLIDING to its new aim the short way round - owner, 2026-10-21: "slide the cone, don't teleport"); none in range: no cone
-      const real = (st.cone || SOL_CONE) * Math.PI / 180, half = Math.max(real, SOL_AIM_DEG * Math.PI / 180) * (1 - p) + real * p, al = Math.cbrt(p), col = TOWERS[t.kind].color;
-      const d = Math.hypot(l.e.x - t.x, l.e.y - t.y), aim = Math.atan2(l.e.y - t.y, l.e.x - t.x), now = performance.now();
-      drawCone({ x: t.x, y: t.y, a: aim, half, len: d * 1.6, color: col }, al);
-      if (!(l.aimAt > now - SOL_AIM_EVERY * 1000)) { l.aimAt = now; l.aimHeads = solHeads(t, st, l.e); }
-      const dt = Math.min(0.1, (now - (l.aimShownAt || now)) / 1000); l.aimShownAt = now; l.aimShown = l.aimShown || [];
-      (l.aimHeads || []).forEach((h, i) => {
-        if (h.dead) return;
-        const want = Math.atan2(h.y - l.e.y, h.x - l.e.x), was = l.aimShown[i] ?? want, off = Math.atan2(Math.sin(want - was), Math.cos(want - was));
-        l.aimShown[i] = was + off * (1 - Math.exp(-dt / SOL_AIM_SLIDE));
-        drawCone({ x: l.e.x, y: l.e.y, a: l.aimShown[i], half, len: Math.hypot(h.x - l.e.x, h.y - l.e.y), color: col }, al);
-      });
+      // THE CHARGE CONE (owner, 2026-10-23: "Visually bring back the SOL firing animation"; 2026-10-26: one cone, from 0 to the real one)
+      const real = (st.cone || SOL_CONE) * Math.PI / 180, half = real * p, al = Math.cbrt(p), col = TOWERS[t.kind].color; // GROWS from 0 to the real cone (owner, 2026-10-26: "start at 0deg and expand"; was SOL_AIM_DEG narrowing in)
+      const aim = Math.atan2(l.e.y - t.y, l.e.x - t.x);
+      drawCone({ x: t.x, y: t.y, a: aim, half, len: SOL_CONE_EDGE / SOL_CONE_LEN_K, color: col }, al); // to the screen's edge, as the shot's (one cone - the fork cones off the target are gone, owner 2026-10-26)
       ctx.strokeStyle = COL[col];
       ctx.globalAlpha = 0.32 + 0.32 * p * p; // never below half its full strength (owner)
       const len = Math.hypot(l.e.x - t.x, l.e.y - t.y) || 1, px = -(l.e.y - t.y) / len, py = (l.e.x - t.x) / len;

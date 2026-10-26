@@ -128,5 +128,5 @@ function formOffset(e, p, s = e.s) {
   const along = a0 * cs - e.lat * sn, across = a0 * sn + e.lat * cs;
   const b = pathAtInto(e.pi, c + along, e.ang, FORM_B), q = pathAtInto(e.pi, c + along + 3, e.ang, FORM_Q), tx = q.x - b.x, ty = q.y - b.y, L = Math.hypot(tx, ty) || 1;
   const k = across * Math.min(1, Math.hypot(b.x - CX, b.y - CY) / FORM_FADE_R) / L;
-  p.x = b.x - ty * k; p.y = b.y + tx * k;
+  p.x = b.x - ty * k; p.y = b.y + tx * k; if (s === e.s) e.faceA = Math.atan2(ty, tx); /* (not a trail point's - aspira-enemies.js) */ // ITS OWN SPOT'S LANE heading - a corner points along the lane (owner, 2026-10-26)
 }

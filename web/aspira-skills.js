@@ -140,7 +140,11 @@ const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
 // range, and Voltage still lengthens it by the old x1.15 / 1.3 / 1.45
 // TWO STRIKES (owner, 2026-10-24: "fire 2 strikes in quick succession from the get go at 1/2 damage"): every ARC attack goes off twice,
 // ARC_ECHO_S apart, each at ARC_ECHO_K of the hit (t.echo, the tower step in aspira-game.js) - twice the hits pop twice the shields
-const ARC_ECHO_K = 0.5, ARC_ECHO_S = 0.12;
+// THE BURST (owner, 2026-10-26: "I want the attacks to be 0.15s apart, and I want the beam duration to reflect that / So zapzapzap wait
+// wait wait zapzapzap"), then "don't change hits per second": ARC_BURST_N strikes ARC_ECHO_S apart, the bursts at ARC_BURST_RATE x the curve's
+// 3 attacks/s - 2 a second, a 0.5 s cycle (0.3 s of zaps, 0.2 s rest) - so still 6 strikes a second, each ARC_ECHO_K (0.5) of an attack
+// (was 2 strikes 0.12 s apart at 0.5 - the same hits and damage a second)
+const ARC_BURST_N = 3, ARC_ECHO_S = 0.15, ARC_BURST_RATE = 2 / 3, ARC_ECHO_K = 1 / (ARC_BURST_N * ARC_BURST_RATE);
 const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // VOLTAGE PIERCES ARMOR (owner, 2026-10-11: "make upgrade choices matter" - Voltage was ARC's dead axis, worst on every
 // type): its arcs ignore this share of armor - Voltage is ARC's armor answer, Conductivity the shields, Capacitance the fast
@@ -148,7 +152,7 @@ function arcSkillStats(t, s, b) {
   const c = skillOf(t, "conductivity"), v = skillOf(t, "voltage"), z = skillOf(t, "capacitance");
   curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24; was ARC_VOLTAGE_DMG x ARC_SIDE_DMG x2 x Conductivity's d)
   const sh = ARC_CONDUCTIVITY[c]; // Conductivity: strikes and jumps; Voltage the forks (VOLT_FORK)
-  s.rate *= nudge(sh.q || 1); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.dmg *= ARC_ECHO_K; // (dmgCurve / rateCurve: the curve plus nudges, before a mechanic splits it)
+  s.rate *= nudge(sh.q || 1); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= ARC_BURST_RATE; s.dmg *= ARC_ECHO_K; // (dmgCurve / rateCurve: the curve plus nudges, before a mechanic splits it)
   s.arcRange = ARC_JUMP_BASE * ARC_VOLTAGE_JUMP[v] * sh.r; s.targets = sh.s; s.branch = VOLT_FORK[v]; s.layers = Math.max(sh.j, s.branch > 1 ? 1 : 0); s.revisit = sh.v || 0; // a fork with no chain splits the strike once
   s.carry = VOLT_CARRY_N[v]; s.arcFall = ARC_VOLTAGE_FALL[v]; s.arcShrink = ARC_SHRINK; s.charge = ARC_CAPACITANCE[z]; s.statSlow = ARC_STAT_SLOW[z]; s.skill = true;
 }
@@ -297,22 +301,17 @@ function skillHopTo(c, node, nxt, depth) {
 
 // ---------- SOL's chart: Focus beams, Refract cone, Pierce Breaches ----------
 // Breach stacks per hit (owner: "each beam permanently weakens the target's armor" - Breach is what strips it; the base SOL strips nothing)
-// Refraction from the start (owner, 2026-10-08): one hop in a 40-degree cone at tier 0; every tier one more hop than before
-// (were 0 / 2 / 5 / 9 / 12 / 15); V has NO limit - every enemy ahead in the cone, then on out of sight (solRefraction)
 const SOL_SHIELD_POP = 1 /* ONE NUMBER (tier redesign 2026-10-25: it was 1 at every tier) */ /* one charge a beam, however deep the Focus (owner, 2026-10-16: "SOL should only pop based on the number of beams"); was 1 2 3 4 5 6, */ /* more per Focus tier (owner, 2026-10-12: SOL's shield help; was 1 1 2 2 3 3) */; /* (SOL_REFRACT_POP, a refracted ray's extra pops, was 0 at every tier since 2026-10-23 - gone with the tier redesign) */ // 2026-10-11: a concentrated beam punches through more than one shield
 // (SOL_BEAMS - Focus's beam count, 2 3 10 17, capstone 25 - GONE: SOL is ALWAYS ONE BEAM, owner 2026-10-25)
-const SOL_REFRACTION = [1, 2, 4, 6] /* REFLECTIONS in the chain (SOL rework, 2026-10-22; were 1 3 6 10 13 and every enemy in the cone) */;
+const SOL_SPLIT = [1, 2, 2, 3, 3, 4]; /* SPLITS A HIT by Diffraction tier 0..V (owner, 2026-10-26: "SOL should start with bouncing ... bounces have no limit" - solSpread, aspira-sol.js; Claude's numbers. Was SOL_REFRACTION, a chain's length 0 2 3 6 9 9) */
 // BREACH IS SOL'S OWN, from the start (owner, 2026-10-08): every hit strips SOL_BREACH_ARMOR armor for good
 // (below zero too: a flat bonus on every later hit from every tower); the Breach axis massively
 // increases the strip
 // BREACH STRIPS A FLAT AMOUNT, big from the start (owner, 2026-10-12: "SOL with any upgrades should be good vs armor", then
 // "dont scale breach with enemy armor" - it was x the wave's armor for an hour): a bare SOL strips 80 a hit (was 3)
 const SOL_BREACH_ARMOR = [0, 127, 200, 550, 2359, 3216] /* 0..V written whole (2026-10-25 SOL axes: Breach I strips - it is the armor axis now; was tier01 0 and the capstone push 3216) */ /* bigger tiers (owner, 2026-10-12: "increase breach effect to make it better" - the Breach build: armor 61-69 16% -> 12%, 81-89 9% -> 5%); was 80 120 160 210 270 330, before that 3 24 72 150 261 300 */ /* x1.5 for the crit chance it no longer gives (owner, 2026-10-12: "remove extra crit chance, just reduce armor more") */ /* doubled back (2026-10-12, trio sim: ARC+FRZ+SOL, the trio without ACD, leaked 57% of armor at 81-89 - 45% with this) */ /* halved, rounded down (2026-10-08; was 2 16 49 101 174 200) */; // (SOL_BREACH_CRIT, crit chance a hit, was 0 at every tier since 2026-10-12 - gone with the tier redesign)
-// a refraction lands within SOL_CONE degrees of the first shot's direction (at
-// any distance); one Breach = BREACH_ARMOR armor off
-// the cone's half-angle by Refraction tier (owner, 2026-10-08: it WIDENS with the tier and starts wider, since every hop
-// must now travel forward - see solRefraction; was a flat 8, before that 25)
-const SOL_CONE_BY = [3, 6, 8, 9] /* NARROW (owner, 2026-10-19: "SOL should not be good vs swarm whatsoever" - the cone is the lever) */ /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit)
+// the shot's cone half-angle (solInCone, aspira-sol.js)
+const SOL_CONE_BY = [15, 18, 22, 26, 30, 36] /* WIDENS with Diffraction (owner, 2026-10-26: "cone size increases with diffraction level" - ladder A, Diffraction focus 79% leaked -> 67) */ /* +/- 15 from the TOWER (owner, 2026-10-26: "go back to +/-15 first" - the shot's cone; +/- 30 for a day, "yes go to +/- 30"; before that "widen cone to 30deg (+/- 15 deg)" - bounces go anywhere in it; was 3 6 8 9, capstone 12) */ /* NARROW (owner, 2026-10-19: "SOL should not be good vs swarm whatsoever" - the cone is the lever) */ /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */, SOL_CONE = SOL_CONE_BY[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit)
 // SOL's crit hits x SOL_CRIT_K - ONE number since the tier redesign (owner, 2026-10-25: "fix all the left for later things": a factor on the
 // tower's own damage is one constant, the curve carries the rest; was 3 5 9 25, V 33 by Breach tier)
 const SOL_CRIT_K = 3;
@@ -320,7 +319,7 @@ const SOL_CRIT_K = 3;
 // saturates): each Focus beam's share of the shot by tier, and each Refract
 // hop's damage by tier (a hop is far weaker than the first hit)
 // (owner 2026-10-06: every Focus beam is a FULL hit - 1 / 2 / 3 / 4 beams, no share - so no stat falls; SOL's base damage pays for it)
-const SOL_HOP = [0.5, 0.55, 0.6, 0.7, 0.8, 0.9]; /* THE CARRY, PER ENEMY HIT (owner, 2026-10-25: "pierce carryover applies per enemy hit whether reflection or pierce"): every enemy past the first, on a reflection chain or the pass-through line, takes this x the hit before it */ /* by BREACH tier 0..V (owner, 2026-10-25: "Breach increases more reflection carry and burn"; was fixed 0.5 by Reflection - 2026-10-23 "reflection just increases the reflections") */ // REFLECTION'S SHARE, FIXED (owner, 2026-10-23: "reflection just increases the reflections"; was 0.5 .. 0.75, VI 0.8): each reflection hits at this x the last one's (compounding: p, p^2, p^3..); (SOL rework 2026-10-22) was 1 a hop // every refraction hop a full strike (overnight fit 2026-10-08: even 1.5x reached only 133% - Refraction needs a mechanic change, not numbers) // II / III raised 2026-10-07 (were 0.3 / 0.455) with the cone narrowed to 8 degrees: fewer hops land, so each counts more
+const SOL_HOP = [0.8, 0.82, 0.84, 0.86, 0.88, 0.9]; /* by DIFFRACTION tier since 2026-10-26 (was Breach's) */ /* CAPPED at 0.9 (owner, 2026-10-26: "we should cap carry to 0.9 or something" - 1.0 never fell, so a split chain ran the whole cone; was 0.8 0.85 0.9 0.95 1 1) */ /* raised (axis balance, owner 2026-10-25: "Try increasing carryover"; was 0.5 0.55 0.6 0.7 0.8 0.9) */ /* THE CARRY, PER ENEMY HIT (owner, 2026-10-25: "pierce carryover applies per enemy hit whether reflection or pierce"): every enemy past the first, on a reflection chain or the pass-through line, takes this x the hit before it */ /* by BREACH tier 0..V (owner, 2026-10-25: "Breach increases more reflection carry and burn"; was fixed 0.5 by Reflection - 2026-10-23 "reflection just increases the reflections") */ // REFLECTION'S SHARE, FIXED (owner, 2026-10-23: "reflection just increases the reflections"; was 0.5 .. 0.75, VI 0.8): each reflection hits at this x the last one's (compounding: p, p^2, p^3..); (SOL rework 2026-10-22) was 1 a hop // every refraction hop a full strike (overnight fit 2026-10-08: even 1.5x reached only 133% - Refraction needs a mechanic change, not numbers) // II / III raised 2026-10-07 (were 0.3 / 0.455) with the cone narrowed to 8 degrees: fewer hops land, so each counts more
 // Refraction peaked at I (107%) and fell by III (93%): range alone spread its fire
 // thin, so II / III also hit harder (owner, 2026-10-07)
 // (LIGHT OUTRUNS THE FAST, Refraction x the fast, removed 2026-10-12 - owner: no extra damage by enemy type)
@@ -333,65 +332,23 @@ const SOL_PIERCE_OLD = [0.35, 0.6, 0.8, 1]; /* by Breach STOP: 0 35%, I 60%, II 
 function solSkillStats(t, s, b) {
   curveBase(t, s, b); s.rate = b.rate; s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.crit = LVL_SOL_CRIT[0]; // the STAT CURVE (tier redesign 2026-10-24); SOL's rate never rises (owner, 2026-10-23)
   s.shieldPop = SOL_SHIELD_POP; s.beams = 1; // ONE BEAM, always (owner, 2026-10-25)
-  s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "breach")]; s.fan = SOL_FAN_BY[skillOf(t, "refraction")]; // the chains off the first enemy (solRefraction)
+  s.split = SOL_SPLIT[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; /* the carry is DIFFRACTION's (owner, 2026-10-26: "move the carry increase from breach to diffraction") */
   const bk = skillOf(t, "breach");
   s.breach = 1; s.pierce = 1; const sc = skillOf(t, "focus"); s.dot = sc ? { k: SOL_SCORCH_TICK_K, n: SOL_SCORCH_N[sc], t: SOL_SCORCH_N[sc] * SOL_SCORCH_Q } : null; /* SCORCH (owner, 2026-10-25): a burn of frac x the hit that landed - reflections and pass-throughs burn at their own falloff - stacking without cap (solScorch) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
 }
-// THE SOL REWORK (owner, 2026-10-22: "SOL beam always goes through at 100% after enemy in a straight line, starts with one reflection as
-// usual. However, reflection deals less than 100% damage and also passes through" / "refraction -> increases passthrough% and additional
-// reflections (passthrough is multiplicative for each reflection)" / "reflection VI makes 3 reflections off the first enemy (must hit
-// different targets)", "they dont split"): from fireRay, the first enemy reflects the beam on to st.refraction more in a CHAIN (each the
-// next SOL's targeting picks off the last, no cone, no reach limit), the k-th at st.hop^k of the shot; every reflection passes through
-// along its own line like the main beam (rayHit -> solPierce). st.fan chains (2, VI 6), each starting on a different enemy.
-// (Was: the reflections inside a light cone off the first enemy, VI two opposite cones - solConeDir; ARCHAEOLOGY.md)
-// THE FORK (owner, 2026-10-23: "Maybe start it at 2" / "relection VI goes to 6" / "add more reflections to keep fire rate the same"):
-// the first enemy forks SOL_FAN[0] chains, Reflection VI SOL_FAN[1] (were 1, VI 3)
-const SOL_FAN = [2, 6];
-const SOL_FAN_BY = [0, 1, SOL_FAN[0], SOL_FAN[0], SOL_FAN[0], SOL_FAN[1]]; // by Reflection tier 0..V: tier I one bounce, one chain (tier redesign 2026-10-24)
-// IN RANGE (owner, 2026-10-23: "All reflection targets need to be withing SOL rnage"): a fork or a bounce only to an enemy inside
-// the tower's own range; none left there, the chain stops. solHeads: the first enemy's forks (also the charge cones' aim, drawAims)
-const solOut = (t, st, hit) => { const r2 = (st.range || 0) ** 2; return x => hit.has(x) || (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > r2; };
-function solHeads(t, st, e, hit = new Set([e])) {
-  if (!st.refraction) return []; // no Reflection, no bounce to aim at (tier redesign 2026-10-24)
-  const out = solOut(t, st, hit), heads = [];
-  for (let c = 0; c < (st.fan || 1); c++) { const o = chainPick(t, e, Infinity, out); if (!o) break; hit.add(o); heads.push(o); }
-  return heads;
-}
-// a light CONE off a struck enemy, POINTED AT THE NEXT ONE (owner, 2026-10-23: "SOL reflection cone animations off of the hit of each
-// enemy hit should point to the next target"); the tower's own cone along the shot
-const solCone = (t, st, a, b) => fx.push({ k: "cone", x: a.x, y: a.y, a: Math.atan2(b.y - a.y, b.x - a.x), half: (st.cone || SOL_CONE) * Math.PI / 180, len: Math.hypot(b.x - a.x, b.y - a.y) + 30, color: TOWERS[t.kind].color, t: 0, life: SOL_CONE_LIFE });
-function solRefraction(t, st, e) {
-  const hit = new Set([e]), out = solOut(t, st, hit), heads = solHeads(t, st, e, hit);
-  solCone(t, st, t, e);
-  for (const h of heads) {
-    let prev = e, nxt = h, m = st.hop || 1;
-    for (let k = 1; ; k++) {
-      solCone(t, st, prev, nxt); rayHit(t, st, nxt, st.dmg * m, prev);
-      if (k >= st.refraction) break;
-      prev = nxt; nxt = chainPick(t, prev, Infinity, out);
-      if (!nxt) break;
-      hit.add(nxt); m *= st.hop || 1;
-    }
-  }
-}
-// a shot that runs OUT OF TARGETS goes on from the last enemy struck, along its last leg, far past the screen's edge (owner, 2026-10-08)
+// THE SHOT (owner, 2026-10-22 rework .. 2026-10-26): one beam that goes on STRAIGHT through every hit and SPLITS at each one to st.split
+// more enemies inside the shot's cone (st.cone degrees either side of tower -> first enemy, seen from the tower, each farther from SOL than
+// the one before), every hit at st.hop x the one before, ending only under 5% of the shot - solSpread, aspira-sol.js (history ARCHAEOLOGY.md)
+const SOL_CONE_EDGE = 1600; // the charge cone's reach, to the screen's edge (drawAims - the only cone drawn, owner 2026-10-26)
+// a shot goes on past its last enemy far beyond the screen's edge (owner, 2026-10-08), FIXED where it struck (2026-10-26: no visual tracks the enemy)
 const SOL_OUT_LEN = 3000;
-// it FOLLOWS, like every other beam (owner, 2026-10-08: "should track dead enemies like arc to avoid jumps"):
-// it starts on the struck enemy (dead or alive - a ghost keeps moving) and its far end is read live
-// along a -> b, so the extension never detaches from the leg it continues
-function solOutOfSight(t, st, a, b) {
-  const far = { get x() { const dx = b.x - a.x, dy = b.y - a.y; return b.x + dx / (Math.hypot(dx, dy) || 1) * SOL_OUT_LEN; },
-    get y() { const dx = b.x - a.x, dy = b.y - a.y; return b.y + dy / (Math.hypot(dx, dy) || 1) * SOL_OUT_LEN; } };
-  beam(b, far, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, st.dmg, true);
-}
-const SOL_CONE_LIFE = 0.6; // game seconds (1x runs BASE_SPEED 0.8 game s a real s): long enough to see the cubic fade
 // UI (drawFx): the Refract light cone, a faint wedge that fades FAST (owner):
 // its opacity falls with the cube of the time left, and with DISTANCE from the
 // tower - full at the source, gone by SOL_CONE_FADE of its length (owner)
 const SOL_CONE_FADE = 0.8;
 // TWICE AS LONG AND TWICE AS STRONG (owner, 2026-10-21: "double opacity and length of SOL cones (should still fade to 0 by the end)"):
 // every cone drawn SOL_CONE_LEN_K x its length at SOL_CONE_A (was 0.5), still clear by SOL_CONE_FADE of the way out
-const SOL_CONE_LEN_K = 2, SOL_CONE_A = 0.7; // then 30% fainter (owner, 2026-10-21: "reduce SOL cone opacity by 30%"; 1)
+const SOL_CONE_LEN_K = 2, SOL_CONE_A = 0.525 /* x0.75 (owner, 2026-10-26: "reduce cone opacity by 25%"; was 0.7) */; // then 30% fainter (owner, 2026-10-21: "reduce SOL cone opacity by 30%"; 1)
 function drawCone(f0, k) {
   const f = { ...f0, len: f0.len * SOL_CONE_LEN_K }, a = Math.min(1, SOL_CONE_A * k * k * k);
   if (typeof fxGlCone === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { fxGlCone(f, a); return; } // 3D: by the GPU (aspira-glctx.js)
@@ -406,5 +363,5 @@ function drawCone(f0, k) {
 // reflection - burns; each tick a loud-free hit that pops one shield charge (SOL_DOT_ST, owner 2026-10-23)
 // MORE TICKS, SAME TICK (owner, 2026-10-25: "Scorch more burn ticks same damage?"): every tick SOL_SCORCH_TICK_K x the hit, one every
 // SOL_SCORCH_Q s; Scorch buys SOL_SCORCH_N ticks a burn (tier I = the old 1.05 of a hit over 2s; was SOL_SCORCH_KS 1.05 .. 2.6 total, 2s)
-const SOL_SCORCH_TICK_K = 0.0525, SOL_SCORCH_Q = 0.1, SOL_SCORCH_N = [0, 20, 26, 32, 40, 52];
+const SOL_SCORCH_TICK_K = 0.21 /* x2 again (axis balance 2026-10-25, the ticks run past the enemy - only a bigger tick helps); x2 for the 0.05s tick it lost; was 0.0525 */, SOL_SCORCH_Q = 0.1 /* THE FASTEST TICK ANYWHERE (owner, 2026-10-25: "Fastest tick rate should be 0.1/s, on anything") */, SOL_SCORCH_N = [0, 60, 78, 96, 120, 156] /* x2, longer burns at the max tick rate pop more shields - each stack its own (owner, 2026-10-26: "make scorch pop more shields by lasting longer at max tick rate"; Breach build shield 61-69 47% -> 34) */ /* x1.5 (axis balance 2026-10-25, owner's order: carry, count, ticks; was 20 26 32 40 52) */;
 const SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 1 }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)

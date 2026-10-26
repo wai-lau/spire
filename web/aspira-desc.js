@@ -31,7 +31,7 @@ const DESCRIBE = {
     const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
     const fork = " fork" + (f > 2 ? " " + NUM_WORD[f] + " ways" : "") + " for " + pc;
     const tree = !layers ? "" : f > 1 ? (sh.j ? " that chain" + times + " and" + fork : " that" + fork) : " that chain" + times + " for " + pc;
-    return cap(NUM_WORD[2 * sh.s]) + " bolts of lightning" + tree + "." + (sh.v ? " Lightning can strike the same place more than once." : "") +
+    return cap(NUM_WORD[ARC_BURST_N * sh.s]) + " bolts of lightning" /* a burst of ARC_BURST_N a target (2026-10-26; was 2) */ + tree + "." + (sh.v ? " Lightning can strike the same place more than once." : "") +
       (n ? " Hits leave " + (n > 1 ? NUM_WORD[n] + " charges that slow and deal" : "a charge that slows and deals") + " damage when popped." : "");
   },
   // FRZ (owner, 2026-10-22, shorter): "Emits an aura that slows enemies by 67% and hurts more the slower they are. Enemies in the aura take
@@ -45,13 +45,12 @@ const DESCRIBE = {
       (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost bite for " + pc(FRZ_RIME_BITE0 * FRZ_TEMP_TICK[0]) /* a bite: FRZ_RIME_BITE0 full ticks */ + ", pop a shield charge, permanently slow by " + pct(FRZ_RIME[rm]) + " and break up to " + dmgUnits(FRZ_RIME_CRACK[rm] * armorRefOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) + " armor on every hit." : "") +
       (mn ? " " + (mn > 1 ? cap(NUM_WORD[mn]) + " moons copy" : "A moon copies") + " the aura at " + pc(FRZ_MOON_BY[mo]) + (sub ? ", each with " + NUM_WORD[sub] + " satellite" + (sub > 1 ? "s" : "") + " at " + pc(FRZ_MOON_BY[mo] * FRZ_SUBMOON.k) : "") + "." : "");
   },
-  // SOL (owner, 2026-10-25: one beam always): the pass-through and reflections (SOL_REFRACTION in a chain, SOL_FAN_BY forks), each enemy at
-  // SOL_HOP (Breach) x the one before; the armor every hit strips (SOL_BREACH_ARMOR, Breach); the stacking burn (SOL_SCORCH_N ticks, Scorch) - read live
+  // SOL (owner, 2026-10-26): one beam, straight through every hit and splitting at each to SOL_SPLIT more (Diffraction), each hit SOL_HOP
+  // (Diffraction) x the one before; the armor every hit strips (SOL_BREACH_ARMOR, Breach); the stacking burn (SOL_SCORCH_N ticks, Scorch) - read live
   sol(sk) {
-    const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, k = SOL_REFRACTION[r], p = Math.round(SOL_HOP[b] * 100), TIMES = ["", "once", "twice"];
-    const fan = SOL_FAN_BY[r], br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_N[f];
-    return "Fires a beam through every enemy in its line, each one after the first taking " + p + "% of the hit before." +
-      (k ? " Diffracts " + (TIMES[k] || k + " times") + ", carrying the same falloff." + (fan > 1 ? " First diffraction splits " + NUM_WORD[fan] + " ways." : "") : "") /* (owner: st.fan, two chains, VI six) */ +
+    const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, k = SOL_SPLIT[r], p = Math.round(SOL_HOP[r] * 100);
+    const br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_N[f];
+    return "Fires a beam that splits at every hit to the " + (k > 1 ? NUM_WORD[k] + " nearest enemies" : "nearest enemy") + " further down its cone, or flies on and bounces off the cone's edge; each hit takes " + p + "% of the hit before, until under 5%." +
       (br ? " Every hit breaks " + dmgUnits(br * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor." : "") +
       (sc ? " Every hit scorches for " + ticking(sc * SOL_SCORCH_TICK_K, sc, sc * SOL_SCORCH_Q) + "; burns stack without limit." : "");
   },
