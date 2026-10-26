@@ -66,7 +66,7 @@ const CAPSTONE_NUM = [
   [ARC_CONDUCTIVITY, { s: 4 /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, q: 1.225, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 0.2656 /* x0.25 (axis balance 2026-10-25: Capacitance focus leaked 0%; was 1.0625) */ /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
   // FRZ: Temp a far deeper chill; Rime the fastest, deepest rings; Moons three moons with three moonlets each, burning far harder (capped 2026-10-20)
   /* (FRZ_TEMP_SLOW, _TICK, BRITTLE, RIME, RIME_PERIOD: written 0..V in aspira-frz.js since 2026-10-26) */ [FRZ_RIME_CRACK, 2.4 /* x2 with its table (2026-10-25) */],
-  [FRZ_SUBMOON_N, 3] /* (owner, 2026-10-20: max 3 and 3; were 5 and 6) */,
+
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
   [SOL_SHIELD_POP, 1],
   
