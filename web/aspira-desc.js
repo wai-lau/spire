@@ -70,13 +70,13 @@ const DESCRIBE = {
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
   car(sk) {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
-    const nb = CRR_BOLTS_BY[a], tn = CRR_TETHER_N[l], vo = CRR_AMMO[a]; // tier 0: one interceptor, one bolt a volley, no tether; 100% = a volley (CRR_VOLLEY_K x st.dmg)
+    const nb = CRR_BOLTS_BY[a], tn = CRR_TETHER_N[l], vo = CRR_AMMO[a]; // tier 0: one interceptor, one bolt a volley, no tether; 100% = one bolt (st.dmg, 2026-10-26)
     // (owner, 2026-10-26): "fires Y volleys per sortie for a total of Y%td, X interceptors can be stored in orbit" / "fires Y volleys and
     // tethers the target ... Tethered targets are slowed by Y% take an additional X% damage per tether" / Armament V "does not need to state rebuilt"
     return "Launches " + (CRR_HANGAR[h] > 1 ? CRR_HANGAR[h] + " interceptors " + (h ? carSalvoN(h) + " at a time" : "one by one") : "an interceptor") + ". Each flies to an enemy, fires " +
-      vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " per sortie for a total of " + pc(vo) + " damage" +
+      vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " per sortie for a total of " + pc(vo * nb) + " damage" /* td = one bolt (2026-10-26) */ +
       (l ? (tn === 1 ? ", the first one tethering" : " and tethers") + " its target" : "") +
-      ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K / CRR_VOLLEY_K) + " damage." : "flies home to reload.") +
+      ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : "flies home to reload.") +
       (h ? ((n => " " + n + (n > 1 ? " interceptors" : " interceptor") + " can be stored in orbit.")(Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]))) : "") +
       (l ? " Tethered targets are slowed by " + pc(CRR_TETHER_SLOW[l]) + " and take " + pc(CRR_TETHER_AMP[l]) + " more damage per tether" + (l >= CAPSTONE_TIER ? "; tethers run on to one more enemy nearby." : ".") : "");
   },

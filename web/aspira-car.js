@@ -33,10 +33,9 @@ const CRR_TETHER_SLOW = [0.35 /* every CRR tethers a little (owner, 2026-10-18: 
 const CRR_TETHER_AMP = [0, 0.1, 0.15, 0.2, 0.25, 0.3]; // + damage taken a tether, by Tether tier 0..V (written whole) - a first guess, the battery fits it
 const CRR_SLOW = 0.2, CRR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CRR_BOLT_PAIR = 2, CRR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
-const CRR_BOLTS = Math.ceil(6 / CRR_BOLT_PAIR) * CRR_BOLT_PAIR; /* 10 -> 6, each x1.67 (owner, 2026-10-18: CRR less good vs shield - every bolt pops one) */ /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CRR_BOLTS of the hit
 // BOLTS A VOLLEY by Armament tier 0..V (tier redesign, owner 2026-10-24: tier 0 "one interceptor", Armament I "shots split in two"): one bolt, then
-// two, then CRR_BOLTS - the volley's damage the same, split
-const CRR_BOLTS_BY = [1, 2, CRR_BOLTS, CRR_BOLTS, CRR_BOLTS, CRR_BOLTS];
+// two, then one more a tier - each bolt the tower's damage (2026-10-26)
+const CRR_BOLTS_BY = [1, 2, 3, 4, 5, 6]; // EVERY BOLT IS THE TOWER'S DAMAGE (td) - more bolts, more damage: Armament's mechanic (owner, 2026-10-26: "use a single bolt in a volley as the td" / "an axis can raise damage using a mechanic"); was 1 2 6 6 6 6 splitting one volley's damage
 // interceptors that TETHER, by Tether tier 0..V: none at 0, Tether I "one tethered drone", then all of them
 const CRR_TETHER_N = [0, 1, Infinity, Infinity, Infinity, Infinity];
 const CRR_GAP = 0.15; /* 0.11 -> 0.15 with the reload x0.5 (owner, 2026-10-16: "reduce launch rate of interceptors, but reduce reload time to compensate"; countermx 61-69 spread 30/2/0/21 -> 25/0/0/15 - at 0.25 no reload made up for it: 70% of swarms leaked) */ /* x1/1.75 (owner, 2026-10-16: "interceptor spawn speed"; was 0.2) */ // s between launches (owner: "one by one")
@@ -54,7 +53,7 @@ const carR = i => CRR_ORBIT * (1 + CRR_ORBIT_JIT * Math.sin(i.jp || 0));
 const CRR_TURN_R = 50; // the tightest turn, in u: turn rate = speed / this (twice the circle's, so the circle can be held)
 const CRR_LEASH = 7.4; /* ~1180 at range 160 (as simmed 2026-10-16) */ /* the 960 chase at range 130 (owner, 2026-10-16: "Interceptor range should still be huge") */ /* 4: a 960 chase at range 240 (2026-10-16: 780, 960 and 1200 all leaked the same - the chase is not what binds) */ /* the same 780 chase at range 330 (2026-10-16) */ /* 3 at range 260: the same 780 chase now the range is 460 (2026-10-16) */ // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
 // enemies left reach mid-sortie and ATC, built against fast, leaked them worst - counter matrix 2026-10-15)
-const CRR_BURST_N = 10, CRR_BURST_K = 1.5, CRR_PELLET_V = 340, CRR_PELLET_REACH = 90, CRR_PELLET_HIT = 3; // Autopilot's pellets
+const CRR_BURST_N = 10, CRR_BURST_K = 0.375 /* x td: /4 when a bolt became td (2026-10-26; was 1.5 of the old st.dmg) */, CRR_PELLET_V = 340, CRR_PELLET_REACH = 90, CRR_PELLET_HIT = 3; // Autopilot's pellets
 
 SKILL_TREES.car = [
   { id: "hangar", name: "Hangar", tiers: [{ name: "Bay" }, { name: "Hold" }, { name: "Fleet" }] },
@@ -94,8 +93,8 @@ const carDist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 function carTarget(t, st) {
   const sent = new Map(), cand = pickTargets(t, st, st.wing);
   if (!cand.length) return null;
-  for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg * CRR_VOLLEY_K); /* a volley is CRR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
-  return cand.find(e => e.hp + (e.shield || 0) * st.dmg / 2 > (sent.get(e.id) || 0)) || null;
+  for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg * st.bolts); /* a bolt is td */ /* a volley is CRR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
+  return cand.find(e => e.hp + (e.shield || 0) * st.dmg > (sent.get(e.id) || 0)) || null;
 }
 // A WAIT CUT SHORT (owner, 2026-10-16: "if a wave is spawned from the previous wave being completely cleared, ATC should spawn
 // interceptors (rounded down) based on the time that was cut short"): the cut seconds / the reload, rounded down, of the
@@ -233,7 +232,7 @@ function carOrbit(i, e, st, d, dt) {
   const f = Math.max(0, Math.min(1, (r - R * 1.2) / (R * 2))); // full Launch speed until 3 R out, easing to CRR_ORBIT_V by 1.2 R
   carSteer(i, -(x * q + y * k), -(y * q - x * k), CRR_ORBIT_V + (Math.max(st.speed, CRR_ORBIT_V) - CRR_ORBIT_V) * f, dt);
 }
-// a shot: CRR_BOLTS light-blue bolts, each 1/CRR_BOLTS of the hit - armor takes its flat cut from each: ATC's armor weakness (with
+// a shot: st.bolts light-blue bolts, each the tower's damage - armor takes its flat cut from each: ATC's armor weakness (with
 // the steep hit tables a single big hit shrugged armor off). A STREAM (owner, 2026-10-16: "bolts should come from the center of the
 // interceptor (from underneath) and shoot in a constant stream", "4 bolts evenly distributed over the time it takes to fire one
 // salvo", "homing, and just keep going straight if the enemy dies"): one bolt every 1 / (rate x CRR_BOLTS) s, a projectile that
@@ -244,7 +243,7 @@ const CRR_BOLT_ON = 0; /* was 0.08 (2026-10-19, CRR AWAY from swarm - owner: wea
 const CRR_BOLT_V = 900, CRR_BOLT_REACH = 390 /* x1.5 with the orbit (was 260) */, CRR_BOLT_HIT = 3; // u/s; u flown before it fades; u added to the enemy's size
 function carBolt(i, e, t, st, side = 0) { // side: u across its flight, left or right of the interceptor (a pair)
   const a = Math.atan2(e.y - i.y, e.x - i.x);
-  (t.carBolts ||= []).push({ x: i.x - Math.sin(a) * side, y: i.y + Math.cos(a) * side, e, vx: Math.cos(a) * CRR_BOLT_V, vy: Math.sin(a) * CRR_BOLT_V, left: CRR_BOLT_REACH / CRR_BOLT_V, dmg: st.dmg * CRR_VOLLEY_K / st.bolts, icp: i });
+  (t.carBolts ||= []).push({ x: i.x - Math.sin(a) * side, y: i.y + Math.cos(a) * side, e, vx: Math.cos(a) * CRR_BOLT_V, vy: Math.sin(a) * CRR_BOLT_V, left: CRR_BOLT_REACH / CRR_BOLT_V, dmg: st.dmg, icp: i });
 }
 const CRR_ONE = [null];
 function stepCarBolts(t, st, dt) {

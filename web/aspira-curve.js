@@ -4,20 +4,24 @@
 // lo at level 0 (a bare tower, below the old bare one), hi at SKILL_POINTS, a POWER CURVE between (CURVE_P below; it was geometric - the late
 // points add the most). The axes add MECHANICS - never range, movement or damage (owner, 2026-10-26); only ARC's Conductivity nudges RATE (NUDGE_MAX).
 // Loaded after aspira-capstone.js (the simulator too, scripts/aspira-sim/sim.mjs FILES); the stats functions call curveBase.
-// hi: MEASURED on the old tables (the mean of the three V/IV/IV builds, 2026-10-24), floored at x2 where the old damage sat in
-// per-hit K tables (FRZ, SOL, GRV) and x20 for IFR (its meteor's x53 at the top) - PLACEHOLDERS, the balance battery fits them
+// (hi: was MEASURED per tower on the old tables, 2026-10-24 - replaced by CURVE_DMG_X below, one growth for all, 2026-10-26)
 // SLIDE ON THE CURVE TOO (owner, 2026-10-26: "no axis should directly increase tower range, tower movement, or tower damage ... this should
 // all be based on the tower's cumulative tier"): the slide row's hi is the old best axis slide (SKILL_MOVE, gone) - range has no axis nudge
 // NO RATE ON THE CURVE (owner, 2026-10-25: "as a general rule, rate does not grow with just tiers, only tower range, tower mvmt and damage"):
 // every rate row is flat (lo = hi); a rate gain lives in an axis (GRV's Nova) - ARC's old x1.18 folded into its damage
+// ONE DAMAGE GROWTH FOR EVERY TOWER (owner, 2026-10-26: "everything should grow similarly"): a tower's damage rises from its lo (dmg[0], the
+// duo rule's tier 0) to lo x CURVE_DMG_X at SKILL_POINTS - the same curve shape and the same x for all seven. Its strength against the others
+// is its base hit and its mechanics, never its growth (the old per-tower hi ran x1.26 for SOL to x375 for CRR - placeholders folded from
+// the old tables). (let: the sims sweep it)
+let CURVE_DMG_X = 18; // (tribal 2026-10-26 at 12: 2 of 35 trios won both seeds - too weak)
 const STAT_CURVE = {
-  arc: { dmg: [0.95, 192.3 /* x1.18, its old rate gain (2026-10-25) */], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
-  frz: { dmg: [0.8, 2], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
-  sol: { dmg: [0.95, 2], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
-  acd: { dmg: [0.8, 16.2], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
-  grv: { dmg: [0.8, 5 /* axsweep 2026-10-25 (3.6 placed first);  the old x4.76 rate gain split: x1.8 here, Nova's GRV_NOVA_RATE the rest (2026-10-25) */], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
-  car: { dmg: [0.8, 20300], rate: [2, 2], range: [1, 1], slide: [1, 1] },
-  ifr: { dmg: [0.8, 20], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
+  arc: { dmg: [1.137], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
+  frz: { dmg: [0.791], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
+  sol: { dmg: [1.109], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
+  acd: { dmg: [0.978], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
+  grv: { dmg: [0.831], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
+  car: { dmg: [1.042], rate: [2, 2], range: [1, 1], slide: [1, 1] },
+  ifr: { dmg: [0.589], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
 };
 // lo: the DUO RULE's (plan 3, 2026-10-25 - scripts/aspira-sim/duo0.mjs): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
 // and CRR's tier 0 RATE x2.5 / x2 (one meteor, one interceptor: a third and two thirds of the old bare tower's hits) - each still below
@@ -32,7 +36,7 @@ const towerLevel = t => (SKILL_TREES[t.kind] || []).reduce((a, ax) => a + (((t.s
 const curveStat = ([lo, hi], L) => lo + (hi - lo) * (Math.max(0, Math.min(SKILL_POINTS, L)) / SKILL_POINTS) ** CURVE_P;
 function curveAt(kind, L) {
   const c = STAT_CURVE[kind];
-  return { dmg: curveStat(c.dmg, L), rate: curveStat(c.rate, L), range: curveStat(c.range, L), slide: curveStat(c.slide, L) };
+  return { dmg: curveStat([c.dmg[0], c.dmg[0] * CURVE_DMG_X], L), rate: curveStat(c.rate, L), range: curveStat(c.range, L), slide: curveStat(c.slide, L) };
 }
 // a stats function's first line: the tower's base stats off the curve
 function curveBase(t, s, b) {
