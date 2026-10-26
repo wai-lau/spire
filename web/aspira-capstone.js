@@ -63,7 +63,7 @@ function skillScaleFix(g) {
 const CAPSTONE_NUM = [
   // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit; Capacitance eight charges
   [ARC_VOLTAGE_FALL, 2.56 /* x1.6 with its table (2026-10-25); was 1.6 */], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
-  [ARC_CONDUCTIVITY, { s: 4 /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, q: 1.225, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 0.2656 /* x0.25 (axis balance 2026-10-25: Capacitance focus leaked 0%; was 1.0625) */ /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
+  [ARC_CONDUCTIVITY, { s: 8 /* s + v (2026-10-26: re-strikes became bolts; was 4) */ /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, q: 1.225, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 0.2656 /* x0.25 (axis balance 2026-10-25: Capacitance focus leaked 0%; was 1.0625) */ /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
   // FRZ: Temp a far deeper chill; Rime the fastest, deepest rings; Moons three moons with three moonlets each, burning far harder (capped 2026-10-20)
   /* (FRZ_TEMP_SLOW, _TICK, BRITTLE, RIME, RIME_PERIOD: written 0..V in aspira-frz.js since 2026-10-26) */ [FRZ_RIME_CRACK, 4.8 /* x2 with its table again (owner, 2026-10-26: rime rate halved, effect doubled; was 2.4) */],
 

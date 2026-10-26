@@ -128,7 +128,7 @@ function refreshUpgradePreview(t) {
 // a row no section names lands in "Tower" (with Kills), shown first. "now -> next" where the pulled points change a value
 // (statRow paints a change for the worse red); rows the tower has not got yet ("—") are left out, and so is a section left empty
 const STAT_SECTIONS = {
-  arc: [["Arc", ["Damage (td)", "Rate", "Range", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
+  arc: [["Arc", ["Damage (td)", "Rate", "Range", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
   frz: [["Freeze Aura", ["Aura slow", "Aura tick", "Ticks", "Cold bite", "Brittle", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
   sol: [["Beam", ["Damage (td)", "Rate", "Range", "Crit", "Crit ×", "Locks"]], ["Scorch", ["Scorch tick", "Scorch ticks", "Cone scorch"]], ["Diffraction", ["Splits", "Carry", "Prism"]], ["Breach", ["Breach", "Bleed"]]],
   car: [["Hangar", ["Interceptors"]], ["Tether", ["Tether slow", "Tether amp", "Chain"]], ["Armament", ["Damage (td)", "Rate", "Ammo", "Autopilot", "Slow"]]],

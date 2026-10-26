@@ -31,7 +31,7 @@ const DESCRIBE = {
     const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
     const fork = " fork" + (f > 2 ? " " + NUM_WORD[f] + " ways" : "") + " for " + pc;
     const tree = !layers ? "" : f > 1 ? (sh.j ? " that chain" + times + " and" + fork : " that" + fork) : " that chain" + times + " for " + pc;
-    return cap(NUM_WORD[ARC_BURST_N * sh.s]) + " bolts of lightning" /* a burst of ARC_BURST_N a target (2026-10-26; was 2) */ + tree + "." + (sh.v ? " Lightning can strike the same place more than once." : "") +
+    return cap(NUM_WORD[ARC_BURST_N * sh.s] || String(ARC_BURST_N * sh.s)) + " bolts of lightning" /* (past twelve: digits) */ /* a burst of ARC_BURST_N a target (2026-10-26; was 2) */ + tree + "." + /* (no re-strikes: one bolt strikes a unit once - owner, 2026-10-26) */
       (n ? " Hits leave " + (n > 1 ? NUM_WORD[n] + " charges that slow and deal" : "a charge that slows and deals") + " damage when popped." : "");
   },
   // FRZ (owner, 2026-10-22, shorter): "Emits an aura that slows enemies by 67% and hurts more the slower they are. Enemies in the aura take

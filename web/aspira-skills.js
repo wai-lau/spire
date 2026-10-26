@@ -104,7 +104,7 @@ const ARC_VOLTAGE_FALL = [0.8, 1.04, 1.6, 2]; /* x1.6 (axis balance, owner 2026-
 // Conductivity's shape by tier (owner): strikes (separate first targets),
 // jumps, and forks per jump - 3, 7, 13, then two separate 13-hit attacks -
 // and r, how much further each JUMP reaches (owner; Voltage owns the tower's range); q: a fire-rate nudge (x1.2 at most, nudge())
-let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 1, r: 0.7, v: 0 }, { s: 1, j: 2, f: 1, r: 0.84, v: 0 }, { s: 2, j: 3, f: 1, r: 1.12, q: 1.225, v: 1 }, { s: 3, j: 3, f: 2, r: 1.68, q: 1.155, v: 3 }] /* the SHIELD POPPER (owner, 2026-10-24, marks target C: "A4 ... seem OK"): reach x0.7, two forks fewer (at least 1), d x0.5 - it no longer clears every crowd; were f 2 2 3 4, r 1 1.2 1.6 2.4, d 1 1 2.02 3.05 */ /* strikes 3 / 4 -> 2 / 3, the lost share split root-wise into q (fire rate) and d, d x1.1 (owner, 2026-10-24: "conductivity hit counts should not go up so fast" / "maybe conductivity increases damage and fire rate"; d was 1.5 / 2.4) */ /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
+let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 1, r: 0.7, v: 0 }, { s: 1, j: 2, f: 1, r: 0.84, v: 0 }, { s: 3, j: 3, f: 1, r: 1.12, q: 1.225, v: 1 }, { s: 6, j: 3, f: 2, r: 1.68, q: 1.155, v: 3 }] /* s + v: the re-strikes became bolts (owner, 2026-10-26: one bolt strikes a unit once - "increase number of bolts if necessary"; s was 2, 3) */ /* the SHIELD POPPER (owner, 2026-10-24, marks target C: "A4 ... seem OK"): reach x0.7, two forks fewer (at least 1), d x0.5 - it no longer clears every crowd; were f 2 2 3 4, r 1 1.2 1.6 2.4, d 1 1 2.02 3.05 */ /* strikes 3 / 4 -> 2 / 3, the lost share split root-wise into q (fire rate) and d, d x1.1 (owner, 2026-10-24: "conductivity hit counts should not go up so fast" / "maybe conductivity increases damage and fire rate"; d was 1.5 / 2.4) */ /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
 // v: how many times a bolt may RETURN to an enemy it already struck (owner, 2026-10-08): from III a jump may hit any
 // enemy but the one it leaps from - III once more (2 hits an enemy), IV twice (3), V three times (4)
 // Capacitance by tier (owner, 2026-10-07): the charge, x the hit that left it, and
@@ -194,10 +194,10 @@ function voltCarry(c, e, left) {
   const seen = new Set([e]);
   for (let k = 0; k < c.st.carry && left > 0; k++) {
     let o = null, bd = (c.st.arcRange * VOLT_CARRY_R) ** 2;
-    for (const x of G.enemies) { if (x.dead || !x.seen || seen.has(x)) continue; const dd = (x.x - e.x) ** 2 + (x.y - e.y) ** 2; if (dd < bd) { bd = dd; o = x; } }
+    for (const x of G.enemies) { if (x.dead || !x.seen || seen.has(x) || c.hits.has(x.id)) continue; /* never one its bolt already struck */ const dd = (x.x - e.x) ** 2 + (x.y - e.y) ** 2; if (dd < bd) { bd = dd; o = x; } }
     if (!o) return;
     beam(e, o, TOWERS.arc.color, arcBeamLife(c.st), 1, left); Object.assign(fx[fx.length - 1], { soft: true, alpha: ARC_A }); // a glow like every ARC beam (owner, 2026-10-24)
-    const h = o.hp; fromHit(e, () => damage(o, left, c.t, false, false, c.st)); seen.add(o);
+    const h = o.hp; fromHit(e, () => damage(o, left, c.t, false, false, c.st)); seen.add(o); c.hits.set(o.id, 1);
     if (!o.dead) return; left -= Math.max(0, h); e = o;
   }
 }
@@ -272,8 +272,9 @@ function chainPick(t, from, r2, skip) {
 const ARC_JUMP_K = 1 /* the FULL range (owner, 2026-10-26: "*100% of arc range on chain"; half for an hour) */, arcJumpR = st => st.range * ARC_JUMP_K;
 function skillHop(c, node, depth) {
   const r = arcJumpR(c.st);
-  // never the enemy it leaps from; an enemy already struck only while its hits are under 1 + st.revisit (Conductivity III+)
-  const max = 1 + (c.st.revisit || 0);
+  // ONE BOLT STRIKES A UNIT ONCE (owner, 2026-10-26: "lightning from the same bolt can never strike the same unit more than once (so a
+  // unit can be hit once for each bolt)"; Conductivity III+ let it re-strike, st.revisit, before)
+  const max = 1;
   return chainPick(c.t, node.e, r * r, o => o.id === node.e.id || (c.hits.get(o.id) || 0) >= max);
 }
 function skillHopTo(c, node, nxt, depth) {
