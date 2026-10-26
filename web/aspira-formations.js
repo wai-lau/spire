@@ -69,8 +69,8 @@ function swarmLanes(pi, k, n) { // [{ ang, main }], the main three first
   const t = laneBestTurn(pi, SWARM_MAIN, n, "swarm"), all = Array.from({ length: k }, (_, i) => ({ ang: (t + i * 2 * Math.PI / k) % (2 * Math.PI), main: i % (k / SWARM_MAIN) === 0 }));
   return [...all.filter(l => l.main), ...all.filter(l => !l.main)];
 }
-function swarmParts(N, k) { // bodies a lane, in swarmLanes' order: SWARM_MAIN_SHARE over the main three, the rest over the others (each lane at least none)
-  const m = Math.min(N, Math.round(N * SWARM_MAIN_SHARE)), share = (n, j) => Array.from({ length: j }, (_, i) => Math.floor(n / j) + (i < n % j ? 1 : 0));
+function swarmParts(N, k) { // bodies a lane, in swarmLanes' order: SWARM_MAIN_SHARE over the main three, the rest SPREAD EVENLY round the others
+  const m = Math.min(N, Math.round(N * SWARM_MAIN_SHARE)), share = (n, j) => Array.from({ length: j }, (_, i) => Math.floor((i + 1) * n / j) - Math.floor(i * n / j)); // n over j lanes, evenly spaced (the remainder went to the FIRST lanes - all beside one main lane - till 2026-10-26)
   return [...share(m, SWARM_MAIN), ...share(N - m, k - SWARM_MAIN)];
 }
 const normInv = p => { /* the standard normal's quantile (Acklam's rational fit, |err| < 1.2e-9) */

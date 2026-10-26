@@ -274,7 +274,7 @@ function laneSoon() {
   const n = G.wave + 1;
   if (!G.started || G.over || !(G.nextIn > 0 && G.nextIn <= LANE_LEAD) || n % STAR_EVERY === 0 || G.wave % STAR_EVERY === 0 /* the wave after a boss: no early lanes (owner, 2026-10-24: "after boss wave, no need to show lanes early") */ || (typeof bossUp === "function" && bossUp())) return [];
   const p = wavePlan(n, G.lastType), pi = laneMap(n)[p.type], k = firstOne(n) ? 1 : Math.min(p.count, formSplit(p.type, p.count, n)), a = 1 - G.nextIn / LANE_LEAD;
-  if (p.type === "swarm" && k - k % SWARM_MAIN > SWARM_MAIN) { const k3 = k - k % SWARM_MAIN, sz = swarmParts(p.count, k3); return swarmLanes(pi, k3, n).map((l, i) => ({ pi, ang: l.ang, color: ENEMIES.swarm.color, n, star: false, swarm: true, alive: 0, a, sent: sz[i] })); } // (the same three main lanes + the rest, each with its share of the swarm: sendWave)
+  if (p.type === "swarm" && k - k % SWARM_MAIN > SWARM_MAIN) { const k3 = k - k % SWARM_MAIN, sz = swarmParts(p.count, k3); return swarmLanes(pi, k3, n).map((l, i) => ({ pi, ang: l.ang, color: ENEMIES.swarm.color, n, star: false, swarm: true, alive: 0, a, sent: sz[i] })).filter(u => u.sent > 0); } // (a lane that gets no one is no preview) // (the same three main lanes + the rest, each with its share of the swarm: sendWave)
   return Array.from({ length: k }, (_, j) => ({ pi, ang: (laneBestTurn(pi, k, n, p.type) + (j / k) * Math.PI * 2) % (Math.PI * 2), color: ENEMIES[p.type].color, n, star: false, swarm: p.type === "swarm", alive: 0, a }));
 }
 function activeLanes() {
