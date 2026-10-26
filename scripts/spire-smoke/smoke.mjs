@@ -366,7 +366,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (r.launched !== 1) return "a launch fired " + r.launched + " meteors (expected one)";
   if (r.fires1 !== 1 || !(r.fireAt < 30)) return "the homing meteor: fires " + r.fires1 + ", " + r.fireAt + " u from its target (expected a hit on it, one fire)";
   if (r.fanR.some(k => Math.abs(k - 0.25) > 1e-9)) return "fan meteors are " + r.fanR[0] + " x the launched one's size (expected a quarter, owner 2026-10-20)";
-  if (r.fanV.some(v => Math.abs(v - 0.25) > 1e-9)) return "fan meteors fly at " + r.fanV[0] + " x the launch speed (expected a quarter, owner 2026-10-20)";
+  if (r.fanV.some(v => Math.abs(v - 1) > 1e-9)) return "burst meteors fly at " + r.fanV[0] + " x the launch speed (expected the same, owner 2026-10-26)";
   if (r.fan !== r.want || r.want !== 6) return "the impact burst at Meteor I: " + r.fan + " meteors (its st.fan " + r.want + ", expected 6 - owner, 2026-10-26: the burst starts at 6, only the capstone grows it)";
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
   if (Math.abs(r.wait4Mean / r.waitMean - 2) > 0.15) return "a fan 4x as big releases over " + (r.wait4Mean / r.waitMean).toFixed(2) + "x the time (expected 2: the root of the count)";
