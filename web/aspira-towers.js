@@ -214,7 +214,7 @@ const aimAt = (t, e) => Math.atan2(e.y - t.y, e.x - t.x);
 const inSolCone = (t, st, a, e) => solInBand(t, st, e, a, t);
 function stepSol(t, dt) {
   const st = towerStats(t);
-  t.period = 1 / st.rate;
+  t.period = 1 / st.rate; solRodStep(t, st, dt); // (the scorch rods in flight - aspira-sol.js)
   // a lock can only START inside st.range (pickTargets); once charging it HOLDS its target WHEREVER it goes and fires,
   // but a target outside st.range when it fires is let go - no new charge on it until it is back in range (owner, 2026-10-26:
   // "if a target were to exit SOL's range as it is charging, it can keep charging and fire, but it cannot start charging again
@@ -293,8 +293,8 @@ function rayHit(t, st, e, base, from) {
   }
 }
 function fireRay(t, st, e) {
-  const n0 = fx.length; solAim = st.pierce ? Math.atan2(e.y - t.y, e.x - t.x) : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's cone axis (aspira-sol.js)
-  if (t.kind === "sol" && solAim != null) t.solShot = { a: solAim, half: st.band || SOL_BAND0, fx: fx.slice(n0).filter(f => f.k === "beam") }; // its cone stays up while these beams last (owner, 2026-10-26)
+  solAim = st.pierce ? Math.atan2(e.y - t.y, e.x - t.x) : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's cone axis (aspira-sol.js)
+  if (t.kind === "sol" && solAim != null) solRodFire(t, st, solAim); // the scorch ROD slides out along the shot (aspira-sol.js); the prism itself persists and fades on its own (drawAims)
   if (!st.ricochet) return;
   // Ricochet / Shredder: hop to the nearest enemy not yet hit, at full damage
   const hit = new Set([e]);

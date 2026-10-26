@@ -132,9 +132,11 @@ check("SOL's scorch stacks burn independently (owner, 2026-10-26): two stacks po
   if (r !== 2) return r + " charges popped (expected 2: a stack, a pop)";
 });
 
-check("SOL's band scorches (owner, 2026-10-26): Scorch I puts one burn on an enemy in the band it never hits, and a burn is 1x the shot's hit at most", () => {
+check("SOL's scorch ROD (owner, 2026-10-26): Scorch I's rod sweeps one burn onto an enemy in the band it never hits, none outside it; a burn is 1x the shot's hit at most", () => {
   const r = run(`(() => { const { t, es, st } = tierRig("sol", { focus: 1 }, [[60, 0], [200, 10], [60, 90]]); st.split = 0; for (const e of es) e.hp = e.max = 1e9; fireRay(t, st, es[0]);
-    const d = es[1].dots || []; return { n: d.length, total: d.reduce((a, s) => a + s.d * s.left, 0) / st.dmg, out: (es[2].dots || []).length }; })()`);
+    const d0 = (es[1].dots || []).length; for (let i = 0; i < 4; i++) solRodStep(t, st, 0.05); /* the rod out past 200 u, no burn ticks */
+    const d = es[1].dots || []; return { d0, n: d.length, total: d.reduce((a, s) => a + s.d * s.left, 0) / st.dmg, out: (es[2].dots || []).length }; })()`);
+  if (r.d0 !== 0) return "a burn before the rod reached it: " + JSON.stringify(r);
   if (r.n !== 1 || Math.abs(r.total - 1) > 1e-6 || r.out) return JSON.stringify(r) + " (expected one 1x burn in the band, none outside it)";
 });
 

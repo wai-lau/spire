@@ -40,14 +40,26 @@ function solNext(t, skip) {
   }
   return best;
 }
-// the shot's cone scorch: every enemy in it (tower to the screen's edge) takes st.dot.cone burns of the shot's hit (SOL_CONE_STACKS)
-function solConeScorch(t, st) {
-  if (!st.dot || !st.dot.cone || solAim == null) return;
-  for (const o of G.enemies) if (!o.dead && o.seen && solInBand(t, st, o, solAim, t)) for (let k = 0; k < st.dot.cone; k++) solScorch(o, t, st);
+// THE SCORCH ROD (owner, 2026-10-26: "instead of having the prism do the scorch, add a horizontal beam when SOL fires (across the width
+// of the prism) same thickness as initial beam that quickly slides from the tower until off the screen (opacity should fade in at 50u
+// away from tower) / anything that this rod touches deals 1 stack of scorch"): a line across the band, SOL_ROD_V u/s out from where the
+// tower fired along the shot's aim, to SOL_CONE_EDGE; an enemy it sweeps over takes ONE scorch stack, once a rod. Scorch I+ only
+const SOL_ROD_V = 1400, SOL_ROD_FADE_U = 50;
+function solRodFire(t, st, a) { if (!st.dot) return; (t.rods ||= []).push({ x: t.x, y: t.y, a, half: st.band || SOL_BAND0, s: 0, hit: new Set() }); }
+function solRodStep(t, st, dt) {
+  if (!t.rods || !t.rods.length) return;
+  for (const r of t.rods) {
+    const s0 = r.s; r.s += SOL_ROD_V * dt; const c = Math.cos(r.a), sn = Math.sin(r.a);
+    for (const o of G.enemies) {
+      if (o.dead || !o.seen || r.hit.has(o.id)) continue;
+      const dx = o.x - r.x, dy = o.y - r.y, along = dx * c + dy * sn, across = Math.abs(dy * c - dx * sn), R = ENEMIES[o.type].size * (o.sizeMul || 1);
+      if (along + R >= s0 && along - R <= r.s && across <= r.half + R) { r.hit.add(o.id); solScorch(o, t, st); }
+    }
+  }
+  t.rods = t.rods.filter(r => r.s < SOL_CONE_EDGE);
 }
 function solSpread(t, st, from, e, full, share = 1) {
   if (!(st.pierce > 0) || full <= 0) return;
-  if (from === t) solConeScorch(t, st); // once a shot, as it fires
   const col = TOWERS[t.kind].color, hit = new Set([e]), L0 = Math.hypot(e.x - from.x, e.y - from.y) || 1;
   const seg = (a, b, d, al) => { beam(a, b, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); };
   const strike = (o, at, d) => { hit.add(o); fromHit(at, () => damage(o, d, t, false, false, st)); onHit(o, t, st, d); bleed(o, st, t); };
@@ -80,7 +92,7 @@ function solSpread(t, st, from, e, full, share = 1) {
 }
 // (solLineSort - the first target by the most enemies on its line - GONE with the pierce, owner 2026-10-26: "Get rid of piercing")
 // SCORCH STACKS (owner, 2026-10-25: "Burn DoT ... stacking no cap"; 2026-10-26: the same for any hit): every hit, and the cone, adds its
-// own burn: st.dot.n ticks of st.dot.k x the SHOT's hit (SOL_SCORCH_N, by Scorch tier) - 1x it in all; no cap on the stacks
+// own burn - and the rod (solRodStep) one more: st.dot.n ticks of st.dot.k x the SHOT's hit (SOL_SCORCH_N, by Scorch tier) - 1x it in all; no cap on the stacks
 // EACH STACK ITS OWN BURN (owner, 2026-10-26: "when then scorch stacks, each stack should apply their burns independently"): a stack ticks
 // on its own clock from its hit, ONE damage call a tick - so each pops its own shield charge (was every stack summed into one tick)
 function solScorch(e, t, st) {

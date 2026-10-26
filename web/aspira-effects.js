@@ -6,24 +6,40 @@
 // It deals nothing; the damage comes with the bright flash on firing.
 function drawAims() {
   ctx.lineCap = "round"; ctx.lineWidth = 0.8;
+  const now = performance.now() / 1000;
   for (const t of G.towers) {
     if (t.kind !== "sol") continue;
-    // THE SHOT'S CONE stays up, full width, until every beam of that shot is gone (owner, 2026-10-26: "the cone should stay visible until all beams disappear")
-    if (t.solShot) { if (t.solShot.fx.some(f => f.t < f.life)) drawBand({ x: t.x, y: t.y, a: t.solShot.a, half: t.solShot.half, len: SOL_CONE_EDGE, color: TOWERS[t.kind].color }, 1); else t.solShot = null; }
-    if (!t.locks || !t.period) continue;
-    ctx.strokeStyle = COL[TOWERS[t.kind].color];
-    const st = towerStats(t), n = st.beams || 1; // as many lines as the shot has BEAMS (owner)
-    for (const l of t.locks) { // each lock's line brightens on its own charge
+    const st = towerStats(t), n = st.beams || 1, col = TOWERS[t.kind].color, real = st.band || SOL_BAND0;
+    // THE PRISM PERSISTS (owner, 2026-10-26: "keep the prism rendered, instead slowly reduce the prism opacity. If another unit is being
+    // targetted, swing the existing prism over there instead of starting over" / "prism width animation should only happen when charging if
+    // the prism is not being re-used ... let the beam indicate charging / when the prism needs to go, fade it out slowly"): t.prism - a NEW
+    // one widens from 0 as its first charge fills; a re-used one keeps its width and SWINGS to the new aim (SOL_PRISM_SWING rad/s), coming
+    // back to full over SOL_PRISM_IN_S; with no lock it fades over SOL_PRISM_OUT_S and goes
+    const lock = (t.locks || []).find(l => !l.e.dead), pr = t.prism, dt = pr ? Math.min(0.1, Math.max(0, now - pr.t)) : 0;
+    if (lock && t.period) {
+      const aim = Math.atan2(lock.e.y - t.y, lock.e.x - t.x), p = Math.min(1, Math.max(0, 1 - lock.cd / t.period));
+      if (!pr || pr.alpha <= 0) t.prism = { a: aim, half: real * p, alpha: p, t: now, fresh: true };
+      else if (pr.fresh) { pr.a = aim; pr.half = real * p; pr.alpha = p; pr.t = now; if (p >= 1) pr.fresh = false; }
+      else { const d = ((aim - pr.a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI, w = SOL_PRISM_SWING * dt; pr.a += Math.max(-w, Math.min(w, d)); pr.half = real; pr.alpha = Math.min(1, pr.alpha + dt / SOL_PRISM_IN_S); pr.t = now; }
+    } else if (pr) { pr.alpha -= dt / SOL_PRISM_OUT_S; pr.t = now; if (pr.alpha <= 0) t.prism = null; }
+    if (t.prism && t.prism.alpha > 0) drawBand({ x: t.x, y: t.y, a: t.prism.a, half: t.prism.half, len: SOL_CONE_EDGE, color: col }, Math.cbrt(t.prism.alpha)); // (cbrt: drawBand cubes it - linear in alpha)
+    // THE SCORCH RODS (solRodStep): a line across the band at each rod's distance, as thick as the shot's first beam, clear at the tower
+    // and full by SOL_ROD_FADE_U out (owner, 2026-10-26)
+    if (t.rods && t.rods.length) {
+      const w = beamWidth(st.dmg) * SOL_THIN * SOL_BEAM_W; ctx.lineCap = "butt";
+      for (const r of t.rods) {
+        const c = Math.cos(r.a), sn = Math.sin(r.a), x = r.x + c * r.s, y = r.y + sn * r.s, al = Math.min(1, r.s / SOL_ROD_FADE_U);
+        ctx.beginPath(); ctx.moveTo(x + sn * r.half, y - c * r.half); ctx.lineTo(x - sn * r.half, y + c * r.half);
+        ctx.strokeStyle = COL[col]; ctx.globalAlpha = al * SOL_GLOW_A * BEAM_BRIGHT; ctx.lineWidth = w * 2; ctx.stroke();
+        ctx.strokeStyle = COL.white; ctx.globalAlpha = al; ctx.lineWidth = w; ctx.stroke();
+      }
+      ctx.lineCap = "round";
+    }
+    if (!lock || !t.period) continue;
+    for (const l of t.locks) { // each lock's CHARGE LINE brightens on its own charge - the charging read (owner, 2026-10-26)
       if (l.e.dead) continue;
       const p = Math.min(1, Math.max(0, 1 - l.cd / t.period));
-      // Refraction's light CONE builds while it CHARGES (owner, 2026-10-06), then
-      // the shot's own cone flashes as before
-      // THE CHARGE CONE (owner, 2026-10-23: "Visually bring back the SOL firing animation"; 2026-10-26: one cone, from 0 to the real one)
-      const real = st.band || SOL_BAND0, half = real * p, al = Math.cbrt(p), col = TOWERS[t.kind].color; // GROWS from 0 to the real cone (owner, 2026-10-26: "start at 0deg and expand"; was SOL_AIM_DEG narrowing in)
-      const aim = Math.atan2(l.e.y - t.y, l.e.x - t.x);
-      drawBand({ x: t.x, y: t.y, a: aim, half, len: SOL_CONE_EDGE, color: col }, al); // the band WIDENS from 0 as it charges (owner, 2026-10-26: "an expanding rectangle") // to the screen's edge, as the shot's (one cone - the fork cones off the target are gone, owner 2026-10-26)
-      ctx.strokeStyle = COL[col];
-      ctx.globalAlpha = 0.32 + 0.32 * p * p; // never below half its full strength (owner)
+      ctx.strokeStyle = COL[col]; ctx.globalAlpha = 0.32 + 0.32 * p * p; ctx.lineWidth = 0.8; // never below half its full strength (owner)
       const len = Math.hypot(l.e.x - t.x, l.e.y - t.y) || 1, px = -(l.e.y - t.y) / len, py = (l.e.x - t.x) / len;
       ctx.beginPath();
       for (let i = 0; i < n; i++) {
@@ -35,6 +51,7 @@ function drawAims() {
   }
   ctx.globalAlpha = 1;
 }
+const SOL_PRISM_SWING = 4, SOL_PRISM_IN_S = 0.3, SOL_PRISM_OUT_S = 1.5; // rad/s a re-used prism swings; s back to full; s to fade out
 
 // ACD: each line thin and faint at first, thicker and brighter as its burn
 // ramps (a Residue line, out of range, at half strength); Plague's circle

@@ -96,6 +96,14 @@ function solidGeom(e) {
     const scr = ([x, y, z]) => [P.x + k * x * size, P.y + k * (p.c * y * size - p.s * z * size)], [x0, y0] = scr([0, 0, -H / size]), [x1, y1] = scr([0, 0, H / size]);
     spike = { a: { x: x0, y: y0, z: -H }, b: { x: x1, y: y1, z: H }, w: (1.2 + SOLID_BREACH_W * n) * cam.k };
   }
+  // SCORCH STACKS (owner, 2026-10-26: "scorch stacks should look like breach stacks, except, the other 2 axes on the enemy, the more
+  // stacks, the bigger"): the same spike along the die's x and y axes, on the floor, longer and thicker per stack (to BREACH_SPOKES)
+  let scorch = null;
+  if (e.dots && e.dots.length) {
+    const n = Math.min(BREACH_SPOKES, e.dots.length), H = size * (1.3 + SOLID_BREACH_LEN * n), w = (1.2 + SOLID_BREACH_W * n) * cam.k;
+    const scr = ([x, y, z]) => [P.x + k * x * size, P.y + k * (p.c * y * size - p.s * z * size)], h = H / size;
+    scorch = [[scr([-h, 0, 0]), scr([h, 0, 0])], [scr([0, -h, 0]), scr([0, h, 0])]].map(([a, b]) => ({ a: { x: a[0], y: a[1] }, b: { x: b[0], y: b[1] }, w }));
+  }
   // FROZEN: its own colour with FRZ's cyan laid over at SOLID_FROZEN_A (owner, 2026-10-09: "FRZ color change should just be
   // 50% opaque, not 100" - it was all cyan)
   // its EDGES once: each with how many visible faces share it (1: the outline, 2: an inner edge)
@@ -106,7 +114,7 @@ function solidGeom(e) {
     const E = se[i], sa = slot[E[2]], sb = slot[E[3]];
     if (sa >= 0 || sb >= 0) edges.push({ v: Q[E[0]], w: Q[E[1]], n: (sa >= 0) + (sb >= 0), f: sa < 0 ? [sb] : sb < 0 ? [sa] : [sa, sb] });
   }
-  return { faces, edges, spike, size, fa, col: COL[d.color], ocol: COL[ENEMIES[e.aug || e.type].color], /* ocol: the OUTLINE's - an augmented enemy's in its augment's colour */ frz: SOLID_FROZEN_A * frostK(e), rime: rimeK(e), lw: (e.armor ? 2.2 : 1.2) * cam.k };
+  return { faces, edges, spike, scorch, size, fa, col: COL[d.color], ocol: COL[ENEMIES[e.aug || e.type].color], /* ocol: the OUTLINE's - an augmented enemy's in its augment's colour */ frz: SOLID_FROZEN_A * frostK(e), rime: rimeK(e), lw: (e.armor ? 2.2 : 1.2) * cam.k };
 }
 // the opacity the floor's slices give depth z (aspira-fog.js warpBands): 1 at the floor, down to the deepest slice's
 const belowFade = z => Math.max(1 - (WARP_FADE_BANDS - 0.5) / WARP_FADE_BANDS, Math.min(1, 1 + z / WARP_FADE_Z));
@@ -200,6 +208,7 @@ function warpSolidWhole(e) {
   // the breach spike WHOLE, at full strength, in the pass above the floor: centred on the floor (owner, 2026-10-09: "SOL
   // breach effect should be centered on floor" - its lower half faded with the floor, so it read as rising from the die)
   if (g.spike && (!band || band.lo === 0)) { ctx.beginPath(); ctx.moveTo(g.spike.a.x, g.spike.a.y); ctx.lineTo(g.spike.b.x, g.spike.b.y); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9 * fa; ctx.lineWidth = g.spike.w; ctx.stroke(); }
+  if (g.scorch && (!band || band.lo === 0)) for (const q of g.scorch) { ctx.beginPath(); ctx.moveTo(q.a.x, q.a.y); ctx.lineTo(q.b.x, q.b.y); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9 * fa; ctx.lineWidth = q.w; ctx.stroke(); } // the scorch stacks' two floor spikes (owner, 2026-10-26)
   // PERF (2026-10-09): each face ONE fill of its layers blended up front (background, colour, frost - source-over
   // is associative, so it is the same colour), and the edges stroked once for the whole die: the outline (an edge of
   // one face) once, the inner edges (shared by two faces) as their two strokes blended

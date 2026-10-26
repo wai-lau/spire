@@ -71,7 +71,7 @@ const SPEC = {
     ...(st.skill ? [["Carry", "×" + st.hop + " / enemy"]] : []) /* one beam always (2026-10-25): the pass-through and reflection falloff */, ...(st.skill ? [["Splits", st.split + " / hit"], ["Prism", Math.round(2 * st.band) + " wide"]] : []),
     // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)
     [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + dmgW(st.bleedArmor) + " armor" + (st.bleedCrit ? ", +" + Math.round(st.bleedCrit * 100) + "% crit" : "") + (st.breach > 1 ? " ×" + st.breach : "") + "/hit" : "—"],
-    ...(st.skill && st.dot ? [["Scorch tick", +(st.dot.k * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n + " · " + +st.dot.t.toFixed(1) + "s"] /* stacking unsaid: the default (owner, 2026-10-26) */, ["Cone scorch", st.dot.cone + " / shot"]] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]],
+    ...(st.skill && st.dot ? [["Scorch tick", +(st.dot.k * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n + " · " + +st.dot.t.toFixed(1) + "s"] /* stacking unsaid: the default (owner, 2026-10-26) */] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]],
 };
 
 // One stat row: "now" alone at max level, "now -> next" when an upgrade
