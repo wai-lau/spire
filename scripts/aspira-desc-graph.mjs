@@ -28,7 +28,7 @@ const MECH = {
   },
   sol: {
     focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${pct(V("SOL_SCORCH_TOTAL"))} of itself over ${V("SOL_SCORCH_N")[k]} ticks, the cone ${V("SOL_CONE_STACKS")[k]} burn(s) of the shot on every enemy in it, one every ${V("SOL_SCORCH_Q")}s, stacking without cap` : "no burn") + ``,
-    refraction: k => `every hit splits to the ${V("SOL_SPLIT")[k]} nearest enemies further down a +/-${V("SOL_CONE_BY")[k]} degree cone (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`,
+    refraction: k => `every hit splits to the ${V("SOL_SPLIT")[k]} nearest enemies further down a band ${V("SOL_BAND_W")[k]} u either side of the aim (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`,
     breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good, crit x${V("SOL_CRIT_K")}`,
   },
   acd: {

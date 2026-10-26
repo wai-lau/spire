@@ -9,7 +9,7 @@ function drawAims() {
   for (const t of G.towers) {
     if (t.kind !== "sol") continue;
     // THE SHOT'S CONE stays up, full width, until every beam of that shot is gone (owner, 2026-10-26: "the cone should stay visible until all beams disappear")
-    if (t.solShot) { if (t.solShot.fx.some(f => f.t < f.life)) drawCone({ x: t.x, y: t.y, a: t.solShot.a, half: t.solShot.half, len: SOL_CONE_EDGE / SOL_CONE_LEN_K, color: TOWERS[t.kind].color }, 1); else t.solShot = null; }
+    if (t.solShot) { if (t.solShot.fx.some(f => f.t < f.life)) drawBand({ x: t.x, y: t.y, a: t.solShot.a, half: t.solShot.half, len: SOL_CONE_EDGE, color: TOWERS[t.kind].color }, 1); else t.solShot = null; }
     if (!t.locks || !t.period) continue;
     ctx.strokeStyle = COL[TOWERS[t.kind].color];
     const st = towerStats(t), n = st.beams || 1; // as many lines as the shot has BEAMS (owner)
@@ -19,9 +19,9 @@ function drawAims() {
       // Refraction's light CONE builds while it CHARGES (owner, 2026-10-06), then
       // the shot's own cone flashes as before
       // THE CHARGE CONE (owner, 2026-10-23: "Visually bring back the SOL firing animation"; 2026-10-26: one cone, from 0 to the real one)
-      const real = (st.cone || SOL_CONE) * Math.PI / 180, half = real * p, al = Math.cbrt(p), col = TOWERS[t.kind].color; // GROWS from 0 to the real cone (owner, 2026-10-26: "start at 0deg and expand"; was SOL_AIM_DEG narrowing in)
+      const real = st.band || SOL_BAND0, half = real * p, al = Math.cbrt(p), col = TOWERS[t.kind].color; // GROWS from 0 to the real cone (owner, 2026-10-26: "start at 0deg and expand"; was SOL_AIM_DEG narrowing in)
       const aim = Math.atan2(l.e.y - t.y, l.e.x - t.x);
-      drawCone({ x: t.x, y: t.y, a: aim, half, len: SOL_CONE_EDGE / SOL_CONE_LEN_K, color: col }, al); // to the screen's edge, as the shot's (one cone - the fork cones off the target are gone, owner 2026-10-26)
+      drawBand({ x: t.x, y: t.y, a: aim, half, len: SOL_CONE_EDGE, color: col }, al); // the band WIDENS from 0 as it charges (owner, 2026-10-26: "an expanding rectangle") // to the screen's edge, as the shot's (one cone - the fork cones off the target are gone, owner 2026-10-26)
       ctx.strokeStyle = COL[col];
       ctx.globalAlpha = 0.32 + 0.32 * p * p; // never below half its full strength (owner)
       const len = Math.hypot(l.e.x - t.x, l.e.y - t.y) || 1, px = -(l.e.y - t.y) / len, py = (l.e.x - t.x) / len;

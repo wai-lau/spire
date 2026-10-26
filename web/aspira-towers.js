@@ -213,8 +213,8 @@ function shatterAt(e) {
 // new one; if it only leaves range the Reaper re-targets but keeps its charge;
 // with no target at all it sits uncharged, so every shot is telegraphed.
 const aimAt = (t, e) => Math.atan2(e.y - t.y, e.x - t.x);
-// e within SOL's cone (st.cone degrees either side) of direction a from the tower
-const inSolCone = (t, st, a, e) => Math.abs(((aimAt(t, e) - a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI) <= (st.cone || SOL_CONE) * Math.PI / 180;
+// e within SOL's band (st.band u either side of the line from the tower along a, ahead of it)
+const inSolCone = (t, st, a, e) => solInBand(t, st, e, a, t);
 function stepSol(t, dt) {
   const st = towerStats(t);
   t.period = 1 / st.rate;
@@ -295,7 +295,7 @@ function rayHit(t, st, e, base, from) {
 }
 function fireRay(t, st, e) {
   const n0 = fx.length; solAim = st.pierce ? Math.atan2(e.y - t.y, e.x - t.x) : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's cone axis (aspira-sol.js)
-  if (t.kind === "sol" && solAim != null) t.solShot = { a: solAim, half: (st.cone || SOL_CONE) * Math.PI / 180, fx: fx.slice(n0).filter(f => f.k === "beam") }; // its cone stays up while these beams last (owner, 2026-10-26)
+  if (t.kind === "sol" && solAim != null) t.solShot = { a: solAim, half: st.band || SOL_BAND0, fx: fx.slice(n0).filter(f => f.k === "beam") }; // its cone stays up while these beams last (owner, 2026-10-26)
   if (!st.ricochet) return;
   // Ricochet / Shredder: hop to the nearest enemy not yet hit, at full damage
   const hit = new Set([e]);

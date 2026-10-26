@@ -4,23 +4,22 @@
 const SOL_BEAM_THIN = 1.5;
 // every SOL beam's width x SOL_THIN (owner, 2026-10-23: "Make beams way thinner each"); its opacity x share^2 (f.share, rayHit)
 const SOL_THIN = 0.4;
-// THE SHOT'S CONE (owner, 2026-10-26): every enemy a SOL shot hits after the first lies within st.cone degrees of the line tower -> first
-// enemy (solAim, set by fireRay), seen from the tower, out to the screen's edge - and farther from the tower than the enemy before it
+// THE SHOT'S BAND (owner, 2026-10-26: "instead of a cone, change the shape (not just visually) to an expanding rectangle"): every enemy a
+// SOL shot hits after the first lies within st.band u either side of the line tower -> first enemy (solAim, set by fireRay), ahead of
+// the tower, out to the screen's edge - and farther from the tower than the enemy before it. Its walls are PARALLEL: a mirrored line
+// zig-zags down the band (the cone's diverging walls let it bounce only a few times)
 let solAim = null;
-function solInCone(t, st, x, a, at) {
-  const half = (st.cone || SOL_CONE) * Math.PI / 180, d = Math.abs(((Math.atan2(x.y - t.y, x.x - t.x) - a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI);
-  return d <= half && (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > (at.x - t.x) ** 2 + (at.y - t.y) ** 2;
+function solInBand(t, st, x, a, at) {
+  const dx = x.x - t.x, dy = x.y - t.y, c = Math.cos(a), s = Math.sin(a);
+  return dx * c + dy * s > 0 && Math.abs(dy * c - dx * s) <= (st.band || SOL_BAND0) && dx * dx + dy * dy > (at.x - t.x) ** 2 + (at.y - t.y) ** 2;
 }
-// where the line from -> e, carried on past e, leaves the shot's cone (its nearer wall), or null if it never does
-function solConeEdge(t, st, from, e) {
-  const L = Math.hypot(e.x - from.x, e.y - from.y) || 1, ux = (e.x - from.x) / L, uy = (e.y - from.y) / L, half = (st.cone || SOL_CONE) * Math.PI / 180;
-  let best = Infinity, wa = 0;
-  for (const sg of [1, -1]) {
-    const vx = Math.cos(solAim + sg * half), vy = Math.sin(solAim + sg * half), den = ux * vy - uy * vx; if (Math.abs(den) < 1e-9) continue;
-    const wx = t.x - e.x, wy = t.y - e.y, lam = (wx * vy - wy * vx) / den, mu = (wx * uy - wy * ux) / den;
-    if (lam > 1e-6 && mu > 0 && lam < best) { best = lam; wa = solAim + sg * half; }
-  }
-  return best < Infinity ? { x: e.x + ux * best, y: e.y + uy * best, wa } : null; // wa: the wall's angle (a mirror off it - solSpread)
+// where the line from -> e, carried on past e, leaves the shot's band (the wall it meets first), or null if it never does
+function solBandEdge(t, st, from, e) {
+  const L = Math.hypot(e.x - from.x, e.y - from.y) || 1, ux = (e.x - from.x) / L, uy = (e.y - from.y) / L, W = st.band || SOL_BAND0;
+  const nx = -Math.sin(solAim), ny = Math.cos(solAim), un = ux * nx + uy * ny, pn = (e.x - t.x) * nx + (e.y - t.y) * ny; // across the band
+  if (Math.abs(un) < 1e-9) return null; // running along it: it never meets a wall
+  const lam = ((un > 0 ? W : -W) - pn) / un;
+  return lam > 1e-6 ? { x: e.x + ux * lam, y: e.y + uy * lam, wa: solAim } : null; // wa: the wall's angle (a mirror off it - solSpread)
 }
 // THE SPREAD (owner, 2026-10-26: "SOL should start with bouncing ... bounces have no limit" / "only reason a beam stops at an enemy is if
 // there is less than 5% damage left" / "Get rid of piercing" / "Split, else fly on"): every hit SPLITS the beam to st.split more enemies
@@ -28,7 +27,7 @@ function solConeEdge(t, st, from, e) {
 // lets the beam FLY ON straight past it, striking no one on its line, to the cone's wall - a bounce (a carry step): it splits from the
 // wall, or with no one there MIRRORS off it (angle in = angle out) and flies on - or out of the cone's open end to the screen's edge.
 // An enemy is struck once a shot; a beam ends only under SOL_END_K of the shot; SOL_SHOT_CAP hits a shot guard the frame
-const SOL_SHOT_CAP = 512, SOL_WALLS = 16; // SOL_WALLS: mirrors off the cone's walls a line, at most (a wedge lets a line bounce only a few times)
+const SOL_SHOT_CAP = 512, SOL_WALLS = 16; // SOL_WALLS: mirrors off the band's walls a line, at most (parallel walls: a line can zig-zag far)
 // A BEAM ENDS below SOL_END_K of the shot (owner, 2026-10-26: "when carryover damage goes below 5%, end the beam")
 const SOL_END_K = 0.05;
 // THE NEXT NEAREST TO SOL (owner, 2026-10-26: "for diffraction targets, always choose the next nearest target to SOL"): of the enemies a
@@ -44,7 +43,7 @@ function solNext(t, skip) {
 // the shot's cone scorch: every enemy in it (tower to the screen's edge) takes st.dot.cone burns of the shot's hit (SOL_CONE_STACKS)
 function solConeScorch(t, st) {
   if (!st.dot || !st.dot.cone || solAim == null) return;
-  for (const o of G.enemies) if (!o.dead && o.seen && solInCone(t, st, o, solAim, t)) for (let k = 0; k < st.dot.cone; k++) solScorch(o, t, st);
+  for (const o of G.enemies) if (!o.dead && o.seen && solInBand(t, st, o, solAim, t)) for (let k = 0; k < st.dot.cone; k++) solScorch(o, t, st);
 }
 function solSpread(t, st, from, e, full, share = 1) {
   if (!(st.pierce > 0) || full <= 0) return;
@@ -52,7 +51,7 @@ function solSpread(t, st, from, e, full, share = 1) {
   const col = TOWERS[t.kind].color, hit = new Set([e]), L0 = Math.hypot(e.x - from.x, e.y - from.y) || 1;
   const seg = (a, b, d, al) => { beam(a, b, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); };
   const strike = (o, at, d) => { hit.add(o); fromHit(at, () => damage(o, d, t, false, false, st)); onHit(o, t, st, d); bleed(o, st, t); };
-  const out = last => x => hit.has(x) || (solAim != null && !solInCone(t, st, x, solAim, last)); // inside the shot's cone, farther from SOL
+  const out = last => x => hit.has(x) || (solAim != null && !solInBand(t, st, x, solAim, last)); // inside the shot's cone, farther from SOL
   let n = 0;
   const split = (b, at, carry, al) => { // st.split more off `at`, each farther than b.last: how many it found
     let k = 0;
@@ -69,7 +68,7 @@ function solSpread(t, st, from, e, full, share = 1) {
     if (carry < SOL_END_K * st.dmg) continue; // too faint: this beam ENDS here
     if (!b.wall && split(b, b.p, carry, al)) continue; // a hit: it splits (a mirrored line struck no one: it only flies)
     // FLY ON straight past it, through everyone, to the cone's wall
-    const via = solAim != null ? solConeEdge(t, st, { x: b.p.x - b.ux, y: b.p.y - b.uy }, b.p) : null;
+    const via = solAim != null ? solBandEdge(t, st, { x: b.p.x - b.ux, y: b.p.y - b.uy }, b.p) : null;
     if (!via) { seg(b.p, { x: b.p.x + b.ux * SOL_OUT_LEN, y: b.p.y + b.uy * SOL_OUT_LEN }, carry, al); continue; } // out the open end
     // THE WALL IS A BOUNCE (owner, 2026-10-26: "count that as a bounce, except there's no pierce"): a carry step, then split from it - or
     // with no one there A MIRROR ("just reflect off the cone (mirror angle across perpendicular line to cone edge)"), flying on from it

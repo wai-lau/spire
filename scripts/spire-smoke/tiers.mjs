@@ -84,23 +84,23 @@ check("ARC: tier 0 strikes one enemy; Conductivity I chains once; Voltage I fork
 
 // ---------- SOL ----------
 towerTierChecks("sol", ["diffract", "scorch", "break"]);
-check("SOL (owner, 2026-10-26): tier 0 goes straight through its line AND splits at every hit within the cone; Scorch I burns and stacks; Diffraction I carries 70%; Breach I strips armor, no burn", () => {
-  const shot = (sk, n = 1) => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [230, 30], [40, 60]]);
+check("SOL (owner, 2026-10-26): tier 0 goes straight through its line AND splits at every hit within the band (owner, 2026-10-26: an expanding rectangle); Scorch I burns and stacks; Diffraction I carries 70%; Breach I strips armor, no burn", () => {
+  const shot = (sk, n = 1) => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [230, 30], [40, 80]]);
     es[0].armor = es[0].armor0 = 50; for (const e of es) e.hp = e.max = 1e7;
     for (let i = 0; i < ${n}; i++) fireRay(t, st, es[0]); const stacks = (es[0].dots || []).length; for (let i = 0; i < 30; i++) step(1 / 60);
     return { hit: es.map(e => e.hp < e.max), burn: stacks, armor: es[0].armor, split: st.split, hop: st.hop }; })()`);
   const z = shot({}), f = shot({ focus: 1 }, 2), r = shot({ refraction: 1 }), b = shot({ breach: 1 });
-  if (JSON.stringify(z.hit) !== "[true,true,true,true,false]") return "tier 0 hit " + JSON.stringify(z.hit) + " (expected the line, the one off it inside the cone, not the one at 56 degrees)";
+  if (JSON.stringify(z.hit) !== "[true,true,true,true,false]") return "tier 0 hit " + JSON.stringify(z.hit) + " (expected the line, the one off it inside the band, not the one 80 u across - outside the 60 u band)";
   if (z.burn || z.armor !== 50 || z.split !== 1) return "tier 0: " + JSON.stringify(z);
   if (f.burn < 2) return "Scorch I: " + JSON.stringify(f) + " (expected two stacking burns)";
   if (r.split !== 1 || r.hop !== 0.7) return "Diffraction I: splits " + r.split + ", carry " + r.hop + " (expected 1 split at 70% carry - owner, 2026-10-26)";
   if (b.burn || !(b.armor < 50)) return "Breach I: " + JSON.stringify(b) + " (expected armor stripped, no burn)";
 });
 
-check("SOL's shot cone (owner, 2026-10-26): after the first enemy every hit lies inside +/-15 degrees of tower -> first enemy, seen from the tower, each farther from SOL than the last", () => {
-  const r = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[100, 0], [60, 8], [180, 60], [260, 20]]);
+check("SOL's shot band (owner, 2026-10-26): after the first enemy every hit lies within st.band u of the line tower -> first enemy, ahead of the tower, each farther from SOL than the last", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[100, 0], [60, 8], [180, 90], [260, 20]]);
     for (const e of es) e.hp = e.max = 1e7; fireRay(t, st, es[0]); return es.map(e => e.hp < e.max); })()`);
-  if (JSON.stringify(r) !== "[true,false,false,true]") return "hit " + JSON.stringify(r) + " (expected the first, not the nearer one in the cone, not the one outside it, the farther one inside)";
+  if (JSON.stringify(r) !== "[true,false,false,true]") return "hit " + JSON.stringify(r) + " (expected the first, not the nearer one in the band, not the one outside it, the farther one inside)";
 });
 
 check("SOL's splits have no limit (owner, 2026-10-26: \"bounces have no limit\"): enemies zig-zagging off the line inside the cone, each farther, are ALL struck at Diffraction V's 100% carry: each split takes the next nearest to SOL (2026-10-26)", () => {
@@ -117,13 +117,13 @@ check("SOL has no pierce (owner, 2026-10-26: \"Get rid of piercing\" / \"Split, 
   if (!r.far) return "no straight line on to the edge";
 });
 
-check("SOL's mirror (owner, 2026-10-26: \"If there is no diffraction target, then just reflect off the cone\"): a line leaving the cone with no one to split to mirrors off the wall, angle in = angle out", () => {
-  const r = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[100, 0], [140, 60]]); es[1].hp = es[1].max = 1e7; es[0].hp = es[0].max = 1e7; solAim = 0; fx.length = 0;
-    solSpread(t, st, { x: t.x + 100, y: t.y - 30 }, es[0], st.dmg); // a line in at an angle: on from es[0] it reaches the +15 wall; es[1] lies outside the cone, so no one to split to
+check("SOL's mirror (owner, 2026-10-26: \"If there is no diffraction target, then just reflect off the cone\" - the band's walls now): a line leaving the band with no one to split to mirrors off the wall, angle in = angle out", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[100, 0], [140, 90]]); es[1].hp = es[1].max = 1e7; es[0].hp = es[0].max = 1e7; solAim = 0; fx.length = 0;
+    solSpread(t, st, { x: t.x + 100, y: t.y - 30 }, es[0], st.dmg); // straight across: on from es[0] it reaches the band's wall 60 u over; es[1] lies outside the band, so no one to split to
     const walls = fx.filter(f => f.k === "beam" && f.share != null).map(f => Math.atan2(f.y2 - f.y1, f.x2 - f.x1));
     return { n: walls.length, angs: walls.map(a => +a.toFixed(4)) }; })()`);
   const up = Math.atan2(30, 0); // (the way in, from (100,-30) to (100,0): straight down the screen, +90 degrees)
-  if (!r.angs.some(a => Math.abs(a - (2 * (15 * Math.PI / 180) - up)) < 1e-3)) return "no mirrored line off the +15 degree wall: " + JSON.stringify(r);
+  if (!r.angs.some(a => Math.abs(a + up) < 1e-3)) return "no mirrored line off the band's wall (expected straight back across, -90 degrees): " + JSON.stringify(r);
 });
 
 check("SOL's scorch stacks burn independently (owner, 2026-10-26): two stacks pop two shield charges in a tick's time, one each", () => {
@@ -132,10 +132,10 @@ check("SOL's scorch stacks burn independently (owner, 2026-10-26): two stacks po
   if (r !== 2) return r + " charges popped (expected 2: a stack, a pop)";
 });
 
-check("SOL's cone scorches (owner, 2026-10-26): Scorch I puts one burn on an enemy in the cone it never hits, and a burn is 1x the shot's hit at most", () => {
-  const r = run(`(() => { const { t, es, st } = tierRig("sol", { focus: 1 }, [[60, 0], [200, 10], [60, 60]]); st.split = 0; for (const e of es) e.hp = e.max = 1e9; fireRay(t, st, es[0]);
+check("SOL's band scorches (owner, 2026-10-26): Scorch I puts one burn on an enemy in the band it never hits, and a burn is 1x the shot's hit at most", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("sol", { focus: 1 }, [[60, 0], [200, 10], [60, 90]]); st.split = 0; for (const e of es) e.hp = e.max = 1e9; fireRay(t, st, es[0]);
     const d = es[1].dots || []; return { n: d.length, total: d.reduce((a, s) => a + s.d * s.left, 0) / st.dmg, out: (es[2].dots || []).length }; })()`);
-  if (r.n !== 1 || Math.abs(r.total - 1) > 1e-6 || r.out) return JSON.stringify(r) + " (expected one 1x burn in the cone, none outside it)";
+  if (r.n !== 1 || Math.abs(r.total - 1) > 1e-6 || r.out) return JSON.stringify(r) + " (expected one 1x burn in the band, none outside it)";
 });
 
 check("SOL's burns tick IN THE GAME LOOP (a stack once sat untouched: dotT lost, 2026-10-26): one Scorch I burn pops shield charges as the game steps", () => {

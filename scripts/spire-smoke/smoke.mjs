@@ -282,11 +282,11 @@ check("IFR: each axis scales only its own numbers", () => {
   if (r.oldOk !== true) return "a cleaned IFR threw on resume: " + r.oldOk;
   return "";
 });
-check("IFR: one charge orbiting the tower at CRR's hold radius (owner, 2026-10-26), launched from there the moment it is full and a target is in range", () => {
+check("IFR: one charge orbiting the tower close and fast (IFR_ORB_R, owner 2026-10-26), launched from there the moment it is full and a target is in range", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e6; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = G.towers[0], st = towerStats(t), out = { ballR: st.ballR, R: CRR_HOLD_R };
+    const t = G.towers[0], st = towerStats(t), out = { ballR: st.ballR, R: IFR_ORB_R };
     for (let i = 0; i < 90; i++) { for (const e of G.enemies) e.stunT = 1e9; step(1 / 30); } // 3 s: charged (2 s untaken), wave 1 held at the gate, out of range
     out.charge = t.ifrCharge; out.ballsBefore = t.ifrBalls.length;
     ifrNear("armor", t, 100); step(1 / 30);
