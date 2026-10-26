@@ -343,7 +343,7 @@ function stepPellets(t, st, dt) {
 }
 
 // ---------- the PELLETS, drawn: a short coral streak along each one's flight ----------
-const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 2.2 * 1.6 /* x1.6 (tier redesign, owner 2026-10-24: Radiation's pellets "need to be visually more intense") */, GRV_PEL_BANDS = 4; // s of flight the streak spans; its width
+const GRV_PELLET_TAIL = 0.03, GRV_PELLET_PX = 0.9 /* a quarter (owner, 2026-10-26: "make GRV radiation way thinner"; was 2.2 x 1.6 = 3.52, 2026-10-24 "visually more intense") */, GRV_PEL_BANDS = 4; // s of flight the streak spans; its width
 function drawGrvPellets() {
   ctx.strokeStyle = COL.violet; ctx.lineCap = "round"; ctx.lineWidth = GRV_PELLET_PX; /* GRV purple (owner, 2026-10-15) */ ctx.globalAlpha = 1;
   // ONE path a band of opacity (perf: a stroke each was most of drawGrv's 4 ms a frame at wave 89): GRV_PEL_BANDS steps of GRV_PEL_A x j

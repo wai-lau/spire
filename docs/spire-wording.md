@@ -16,7 +16,7 @@ A tier that only moves a number changes no words - the stat row shows it (2026-1
 
 ## Sentence rules
 
-1. **Damage is a share of tower damage, written `X%td`.** `td` = the card's "Tower Damage (td)" row, and 100% is still written
+1. **Damage is a share of tower damage, written `X%td`.** `td` = the card's "Damage (td)" row, and 100% is still written
    (`100%td`) (2026-10-26). A share is anything sized off the tower's hit: a bolt, a tick total, a pellet, a pool burn.
 2. **A change is not a share** and keeps its words: "20% less damage every chain", "losing 30% intensity every hit", "take 35% more
    damage" (2026-10-25).
@@ -59,7 +59,7 @@ A renamed axis or tower is renamed everywhere: card, stat rows, sections, commen
 
 ## Stat block rules
 
-1. The tower's damage row is labelled **"Tower Damage (td)"**; a share in a row reads `X%td` (2026-10-26).
+1. The tower's damage row is labelled **"Damage (td)"**; a share in a row reads `X%td` (2026-10-26).
 2. **A ticking thing shows two rows**: damage per tick and ticks a second (2026-10-25); its hit count belongs here, not in the sentence.
 3. **One number a row** so each reads now -> next and colours on its own (2026-10-07).
 4. **Rows the tower lacks are left out**; a mechanic not bought yet reads `—`, and a row that appears shows the new value with no `— ->`

@@ -128,18 +128,18 @@ function refreshUpgradePreview(t) {
 // a row no section names lands in "Tower" (with Kills), shown first. "now -> next" where the pulled points change a value
 // (statRow paints a change for the worse red); rows the tower has not got yet ("—") are left out, and so is a section left empty
 const STAT_SECTIONS = {
-  arc: [["Arc", ["Tower Damage (td)", "Rate", "Range", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
+  arc: [["Arc", ["Damage (td)", "Rate", "Range", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
   frz: [["Freeze Aura", ["Aura slow", "Aura tick", "Ticks", "Cold bite", "Brittle", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
-  sol: [["Beam", ["Tower Damage (td)", "Rate", "Range", "Crit", "Crit ×", "Locks"]], ["Scorch", ["Scorch tick", "Scorch ticks", "Cone scorch"]], ["Diffraction", ["Splits", "Carry", "Prism"]], ["Breach", ["Breach", "Bleed"]]],
-  car: [["Hangar", ["Interceptors"]], ["Tether", ["Tether slow", "Tether amp", "Chain"]], ["Armament", ["Tower Damage (td)", "Rate", "Ammo", "Autopilot", "Slow"]]],
+  sol: [["Beam", ["Damage (td)", "Rate", "Range", "Crit", "Crit ×", "Locks"]], ["Scorch", ["Scorch tick", "Scorch ticks", "Cone scorch"]], ["Diffraction", ["Splits", "Carry", "Prism"]], ["Breach", ["Breach", "Bleed"]]],
+  car: [["Hangar", ["Interceptors"]], ["Tether", ["Tether slow", "Tether amp", "Chain"]], ["Armament", ["Damage (td)", "Rate", "Ammo", "Autopilot", "Slow"]]],
   grv: [["Nova", ["Nova hit", "Nova reach", "Armor strip", "Rate", "Range"]], ["Void", ["Void", "Crush tick", "Crush ticks", "Particles"]], ["Acceleration", ["Aura size", "Aura slow", "Particle hit", "Particle reach"]], ["Sphere", ["Mass"]] /* the GRV rework (2026-10-25): sections by axis */ /* void and aura by name (owner, 2026-10-25: "always call it a void, and an aura") */],
-  ifr: [["Meteor", ["Tower Damage (td)", "Meteors", "Stored", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire flares"]], ["Flare", ["Flare", "Flare tick", "Flare ticks", "Flare lasts", "Flare capstone"]]],
+  ifr: [["Meteor", ["Damage (td)", "Meteors", "Stored", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire flares"]], ["Flare", ["Flare", "Flare tick", "Flare ticks", "Flare lasts", "Flare capstone"]]],
   acd: [["Jets", ["Jet tick", "Ticks", "Builds", "Peak tick", "Jets", "Carry", "Jet slow", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
 function cardStats(t, pv) {
   const b = TOWERS[t.kind], st = towerStats(t), nx = pv ? towerStats(pv) : null, spN = nx ? SPEC[t.kind](nx, pv) : null;
   const rows = [];
-  if (b.dmg && t.kind !== "acd" && t.kind !== "grv") rows.push(["Tower Damage (td)", dmgUnits(st.dmg), nx && dmgUnits(nx.dmg)]); // "Tower Damage (td)" (owner, 2026-10-26: the share every sentence counts in) (ACD's Jet tick row is its damage)
+  if (b.dmg && t.kind !== "acd" && t.kind !== "grv") rows.push(["Damage (td)", dmgUnits(st.dmg), nx && dmgUnits(nx.dmg)]); // "Damage (td)" (owner, 2026-10-26: the share every sentence counts in) (ACD's Jet tick row is its damage)
   rows.push(["Range", Math.round(st.range), nx && Math.round(nx.range)], ["Rate", st.rate.toFixed(2) + "/s", nx && nx.rate.toFixed(2) + "/s"],
     ["Leash", slideSpan(t), nx && slideSpan(pv)]);
   SPEC[t.kind](st, t).forEach((r, k) => rows.push([r[0], r[1], spN ? spN[k][1] : null]));

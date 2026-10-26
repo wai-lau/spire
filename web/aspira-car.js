@@ -38,7 +38,6 @@ const CRR_BOLT_PAIR = 2, CRR_BOLT_SIDE = 6; /* bolts a time and the u between th
 const CRR_BOLTS_BY = [1, 2, 3, 4, 5, 6]; // EVERY BOLT IS THE TOWER'S DAMAGE (td) - more bolts, more damage: Armament's mechanic (owner, 2026-10-26: "use a single bolt in a volley as the td" / "an axis can raise damage using a mechanic"); was 1 2 6 6 6 6 splitting one volley's damage
 // interceptors that TETHER, by Tether tier 0..V: none at 0, Tether I "one tethered drone", then all of them
 const CRR_TETHER_N = [0, 1, Infinity, Infinity, Infinity, Infinity];
-const CRR_GAP = 0.15; /* 0.11 -> 0.15 with the reload x0.5 (owner, 2026-10-16: "reduce launch rate of interceptors, but reduce reload time to compensate"; countermx 61-69 spread 30/2/0/21 -> 25/0/0/15 - at 0.25 no reload made up for it: 70% of swarms leaked) */ /* x1/1.75 (owner, 2026-10-16: "interceptor spawn speed"; was 0.2) */ // s between launches (owner: "one by one")
 // (Hangar's FOCUS FIRE - each wingmate on the same target +X% a shot - removed: owner, 2026-10-26, "Remove the increased damage from hangar")
 // (Launch's STRAFING PASS - a ram on arrival - was removed: owner, 2026-10-17, "I dont like the strafe idea")
 // THE FLIGHT (owner, 2026-10-16: "a much smoother almost elliptical path, with a circle going around the enemy (stay about 100u
@@ -111,24 +110,21 @@ function stepCar(t, dt) {
   const st = towerStats(t);
   carWing(t, st);
   stepCarPellets(t, dt); stepCarBolts(t, st, dt); carObstacles(t);
-  t.launchCd = Math.max(0, (t.launchCd || 0) - dt);
   for (const i of t.icp) stepIcp(i, t, st, dt);
 }
-// a SALVO: interceptors sent at once, then CRR_GAP - one more per Hangar level (owner, 2026-10-17: "each level of hangar should increase the
-// number of interceptors deployed at once"), times the relay's RELAY_MUL
-const carSalvoN = h => 1 + Math.floor(TIER_LEVEL[h]); /* whole interceptors: tier I's half step launches one (tier redesign 2026-10-24) */ // interceptors launched at a time: one more than the Hangar's old ladder step (aspira-skills.js TIER_LEVEL)
-const carSalvo = t => carSalvoN(skillOf(t, "hangar")) * relayMul(t);
+// (the SALVO - carSalvoN at a time, then CRR_GAP - is gone: every ready interceptor launches at once, owner 2026-10-26: "Always launch as many
+// interceptors as available")
 function stepIcp(i, t, st, dt) {
   if (i.state === "home") {
     i.reload = Math.max(0, i.reload - dt);
     const held = st.hold > 0 && i.reload <= 0 && (i.hold || t.icp.reduce((n, o) => n + (o.hold ? 1 : 0), 0) < st.hold); // HELD: charged and orbiting the carrier, while the Hangar has room (st.hold of them)
     if (held) carHoldOrbit(i, t, dt); else { i.x = t.x; i.y = t.y; i.ho = undefined; }
     i.hold = held;
-    if (i.reload > 0 || t.launchCd > 0) return; // held or not, ONE BY ONE on CRR_GAP (owner, 2026-10-16: "carrier should not spawn all waiting interceptors at once ... just that unused interceptors can be stored in orbit")
+    if (i.reload > 0) return; // EVERY ready interceptor goes the moment there is a target (owner, 2026-10-26: "Always launch as many interceptors as available"; one by one on CRR_GAP before)
     const e = carTarget(t, st);
     if (!e) return;
     const fx = held ? i.x : t.x, fy = held ? i.y : t.y;
-    i.e = e; i.ammo = st.ammo; i.bk = 0; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; t.launchN = (t.launchN || 0) + 1; if (t.launchN >= carSalvo(t)) { t.launchN = 0; t.launchCd = CRR_GAP; } sfx("car"); /* RELAYED: RELAY_MUL leave per CRR_GAP slot, not one (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1") */
+    i.e = e; i.ammo = st.ammo; i.bk = 0; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; sfx("car"); /* RELAYED: RELAY_MUL leave per CRR_GAP slot, not one (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1") */
     i.v = st.speed; i.ang = held ? i.ang : Math.atan2(e.y - fy, e.x - fx); i.jp = Math.random() * 6.283; i.jw = CRR_JIT_W[0] + Math.random() * (CRR_JIT_W[1] - CRR_JIT_W[0]); // (held: out along its orbit, turning in)
     for (let k = 0; k < 4 && !held; k++) { const [ax, ay] = carAvoid(i, e.x - fx, e.y - fy, 1); i.ang = Math.atan2(ay, ax); } // leaves already bent round the core (a carrier by it has no room to turn)
     return;

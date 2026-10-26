@@ -27,7 +27,7 @@ function upgradeCard(t, o, i) {
   // only the stats this option CHANGES (owner), in the tower card's two columns
   const base = [["Range", Math.round(st.range), Math.round(nx.range)], ["Rate", st.rate.toFixed(2) + "/s", nx.rate.toFixed(2) + "/s"],
     ["Leash", slideSpan(t), slideSpan(nt)]];
-  if (b.dmg) base.unshift(["Tower Damage (td)", Math.round(st.dmg), Math.round(nx.dmg)]); // (owner, 2026-10-26: "Tower damage")
+  if (b.dmg) base.unshift(["Damage (td)", Math.round(st.dmg), Math.round(nx.dmg)]); // (owner, 2026-10-26: "Tower damage")
   const spec = SPEC[t.kind](st, t).map((r, k) => [r[0], r[1], spN[k][1]]);
   const changed = rows => rows.filter(r => String(r[1]) !== String(r[2])).map(r => statRow(r[0], r[1], r[2])).join("");
   const title = hasSkills(t) ? o.name : towerTitle(nt) + " · L" + nt.lvl + " of " + maxLvl(nt);
