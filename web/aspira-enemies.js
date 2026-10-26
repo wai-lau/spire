@@ -138,9 +138,9 @@ function drawStatus(e, d, size, solid) {
     ctx.strokeStyle = COL.cyan; ctx.globalAlpha = 0.9; ctx.lineWidth = 2.5; ctx.stroke();
   }
   // BLEED (SOL's Impale): a pink outline, for good (owner)
-  // (BREACH: one upright spike through the die - warpSolid); SCORCH: acid's dotted circle in SOL's pink (owner, 2026-10-26: "use the
-  // same dotted circle as acid, except pink"; the x / y spikes of an hour before are gone), a step further out than acid's
-  if (e.dots && e.dots.length) {
+  // BREACH: acid's dotted circle in SOL's pink, a step further out than acid's (owner, 2026-10-26: "breach uses the dotted circle as
+  // acd / scorch uses z axis line" - the upright spike, warpSolid)
+  if (e.breachN > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + (e.corrodeT > 0 ? 7 : 3), 0, 6.283);
     ctx.setLineDash([2, 4]); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
   }

@@ -87,12 +87,12 @@ function solidGeom(e) {
     slot[fi] = faces.length;
     faces.push({ poly3, lo, hi, fA: (0.2 + 0.7 * lit) * (0.5 + 0.5 * f) });
   }
-  // BREACH in 3D (owner, 2026-10-09: "breach effect should look like vertical spoke going through the enemy center of
-  // mass, increasing in size the more breach"): one upright spike through the die's centre, longer and thicker per stack
-  // (to BREACH_SPOKES), drawn before the faces so the die hides its middle
+  // SCORCH in 3D (owner, 2026-10-26: "scorch uses z axis line" - the upright spike that was Breach's since 2026-10-09, "vertical
+  // spoke going through the enemy center of mass, increasing in size the more"): one spike through the die's centre, longer and
+  // thicker per scorch stack (to BREACH_SPOKES), drawn before the faces so the die hides its middle. Breach is a dotted ring (drawStatus)
   let spike = null;
-  if (e.breachN > 0) {
-    const n = Math.min(BREACH_SPOKES, Math.max(1, e.breachN || 1)), H = size * (1.3 + SOLID_BREACH_LEN * n);
+  if (e.dots && e.dots.length) {
+    const n = Math.min(BREACH_SPOKES, e.dots.length), H = size * (1.3 + SOLID_BREACH_LEN * n);
     const scr = ([x, y, z]) => [P.x + k * x * size, P.y + k * (p.c * y * size - p.s * z * size)], [x0, y0] = scr([0, 0, -H / size]), [x1, y1] = scr([0, 0, H / size]);
     spike = { a: { x: x0, y: y0, z: -H }, b: { x: x1, y: y1, z: H }, w: (1.2 + SOLID_BREACH_W * n) * cam.k };
   }
