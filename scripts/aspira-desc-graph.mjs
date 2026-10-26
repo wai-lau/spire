@@ -26,9 +26,9 @@ const MECH = {
     moons: k => (V("FRZ_MOON_COUNT")[k] ? `${V("FRZ_MOON_COUNT")[k]} moon${V("FRZ_MOON_COUNT")[k] > 1 ? "s" : ""} at ${pct(V("FRZ_MOON_BY")[k])} of the tower${V("FRZ_SUBMOON_N")[k] ? `, each with ${V("FRZ_SUBMOON_N")[k]} small moon${V("FRZ_SUBMOON_N")[k] > 1 ? "s" : ""}` : ""}` : "no moons"),
   },
   sol: {
-    focus: k => (V("SOL_SCORCH_KS")[k] ? `every hit burns ${pct(V("SOL_SCORCH_KS")[k])} of itself over ${V("SOL_SCORCH_T")}s, stacking without cap` : "no burn") + `, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
-    refraction: k => `${V("SOL_REFRACTION")[k]} reflection${V("SOL_REFRACTION")[k] === 1 ? "" : "s"} in a chain, ${V("SOL_FAN_BY")[k]} chain${V("SOL_FAN_BY")[k] === 1 ? "" : "s"} off the first enemy, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
-    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good, each enemy past the first (pass-through or reflection) takes ${pct(V("SOL_HOP")[k])} of the one before, crit x${V("SOL_CRIT_K")}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
+    focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${V("SOL_SCORCH_N")[k]} ticks of ${pct(V("SOL_SCORCH_TICK_K"))} of itself, one every ${V("SOL_SCORCH_Q")}s, stacking without cap` : "no burn") + `, range x${x(V("SKILL_MOVE").sol.focus[k][0])}`,
+    refraction: k => `${V("SOL_REFRACTION")[k]} diffraction${V("SOL_REFRACTION")[k] === 1 ? "" : "s"} in a chain, ${V("SOL_FAN_BY")[k]} chain${V("SOL_FAN_BY")[k] === 1 ? "" : "s"} off the first enemy, range x${x(V("SKILL_MOVE").sol.refraction[k][0])}`,
+    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor for good, each enemy past the first (pass-through or diffraction) takes ${pct(V("SOL_HOP")[k])} of the one before, crit x${V("SOL_CRIT_K")}, slide x${x(V("SKILL_MOVE").sol.breach[k][1])}`,
   },
   acd: {
     corrosion: k => (V("ACD_CORRODE")[k] ? `a tick strips ${pct(V("ACD_CORRODE")[k])} of its damage from armor, below zero; eaten armor drops goo (pull ${V("ACD_DRIP_PULL")[k]})` : "no armor strip"),

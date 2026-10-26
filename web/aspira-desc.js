@@ -46,14 +46,14 @@ const DESCRIBE = {
       (mn ? " " + (mn > 1 ? cap(NUM_WORD[mn]) + " moons copy" : "A moon copies") + " the aura at " + pc(FRZ_MOON_BY[mo]) + (sub ? ", each with " + NUM_WORD[sub] + " satellite" + (sub > 1 ? "s" : "") + " at " + pc(FRZ_MOON_BY[mo] * FRZ_SUBMOON.k) : "") + "." : "");
   },
   // SOL (owner, 2026-10-25: one beam always): the pass-through and reflections (SOL_REFRACTION in a chain, SOL_FAN_BY forks), each enemy at
-  // SOL_HOP (Breach) x the one before; the armor every hit strips (SOL_BREACH_ARMOR, Breach); the stacking burn (SOL_SCORCH_KS, Scorch) - read live
+  // SOL_HOP (Breach) x the one before; the armor every hit strips (SOL_BREACH_ARMOR, Breach); the stacking burn (SOL_SCORCH_N ticks, Scorch) - read live
   sol(sk) {
     const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, k = SOL_REFRACTION[r], p = Math.round(SOL_HOP[b] * 100), TIMES = ["", "once", "twice"];
-    const fan = SOL_FAN_BY[r], br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_KS[f];
+    const fan = SOL_FAN_BY[r], br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_N[f];
     return "Fires a beam through every enemy in its line, each one after the first taking " + p + "% of the hit before." +
-      (k ? " Reflects " + (TIMES[k] || k + " times") + ", carrying the same falloff." + (fan > 1 ? " First reflection splits " + NUM_WORD[fan] + " ways." : "") : "") /* (owner: st.fan, two chains, VI six) */ +
+      (k ? " Diffracts " + (TIMES[k] || k + " times") + ", carrying the same falloff." + (fan > 1 ? " First diffraction splits " + NUM_WORD[fan] + " ways." : "") : "") /* (owner: st.fan, two chains, VI six) */ +
       (br ? " Every hit breaks " + dmgUnits(br * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor." : "") +
-      (sc ? " Every hit scorches for " + ticking(sc, SOL_SCORCH_TICKS, SOL_SCORCH_T) + "; burns stack without limit." : "");
+      (sc ? " Every hit scorches for " + ticking(sc * SOL_SCORCH_TICK_K, sc, sc * SOL_SCORCH_Q) + "; burns stack without limit." : "");
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY), the pools' slow (ACD_POOL_SLOW, Contagion's since the tier redesign),

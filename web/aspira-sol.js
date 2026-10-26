@@ -52,16 +52,16 @@ function solLineSort(t, c) {
   return top.sort((a, b) => n.get(b) - n.get(a)).concat(c.slice(SOL_LINE_TOP));
 }
 // SCORCH STACKS (owner, 2026-10-25: "Burn DoT, damage follows beam falloff, stacking no cap"): every hit adds its own burn, frac x the
-// hit that landed, over st.dot.t; the stacks add up with no cap and tick together, ONE damage call a tick - one shield pop (one-pop rule)
+// hit that landed: st.dot.n ticks of st.dot.k x it (SOL_SCORCH_N, by Scorch tier); the stacks add up with no cap and tick together, ONE damage call a tick - one shield pop (one-pop rule)
 function solScorch(e, t, st, amt) {
-  (e.dots ||= []).push({ dps: amt * st.dot.frac / st.dot.t, left: st.dot.t }); e.dotT = Math.max(e.dotT || 0, st.dot.t); e.dotSrc = t;
+  (e.dots ||= []).push({ d: amt * st.dot.k, left: st.dot.n }); e.dotT = Math.max(e.dotT || 0, st.dot.t); e.dotSrc = t;
 }
 function solScorchTick(e, dt) {
-  const q = SOL_SCORCH_T / SOL_SCORCH_TICKS; e.dotAcc = (e.dotAcc || 0) + Math.min(dt, e.dotT); e.dotT -= dt;
+  const q = SOL_SCORCH_Q; e.dotAcc = (e.dotAcc || 0) + Math.min(dt, e.dotT); e.dotT -= dt;
   while (e.dotAcc >= q - 1e-9 && !e.dead && e.dots && e.dots.length) {
     e.dotAcc -= q; let d = 0;
-    for (const s of e.dots) { d += s.dps * Math.min(q, s.left); s.left -= q; }
-    e.dots = e.dots.filter(s => s.left > 1e-9);
+    for (const s of e.dots) { d += s.d; s.left--; }
+    e.dots = e.dots.filter(s => s.left > 0);
     if (d > 0) damage(e, d, e.dotSrc, false, false, SOL_DOT_ST);
   }
   if (e.dotT <= 0) { e.dotAcc = 0; e.dots = null; }

@@ -82,8 +82,8 @@ check("ARC: tier 0 strikes one enemy; Conductivity I chains once; Voltage I fork
 });
 
 // ---------- SOL ----------
-towerTierChecks("sol", ["reflect", "scorch", "break"]);
-check("SOL (owner, 2026-10-25): one beam through every enemy on its line, each at the carry x the one before; Scorch I burns and stacks; Reflection I bounces once; Breach I strips armor, no burn", () => {
+towerTierChecks("sol", ["diffract", "scorch", "break"]);
+check("SOL (owner, 2026-10-25): one beam through every enemy on its line, each at the carry x the one before; Scorch I burns and stacks; Diffraction I bounces once; Breach I strips armor, no burn", () => {
   const shot = (sk, n = 1) => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [40, 60], [40, -60]]);
     es[0].armor = es[0].armor0 = 50; for (const e of es) e.hp = e.max = 1e7; const h0 = es[0].hp;
     for (let i = 0; i < ${n}; i++) fireRay(t, st, es[0]); const stacks = (es[0].dots || []).length; for (let i = 0; i < 30; i++) step(1 / 60);
@@ -92,7 +92,7 @@ check("SOL (owner, 2026-10-25): one beam through every enemy on its line, each a
   if (!(z.lost[0] > 0 && z.lost[1] > 0 && z.lost[1] < z.lost[0])) return "tier 0 line " + JSON.stringify(z) + " (expected both hit, the second less)";
   if (z.side || z.burn || z.armor !== 50) return "tier 0: " + JSON.stringify(z);
   if (f.burn < 2) return "Scorch I: " + JSON.stringify(f) + " (expected two stacking burns)";
-  if (r.side !== 1) return "Reflection I hit " + JSON.stringify(r) + " (expected one bounce)";
+  if (r.side !== 1) return "Diffraction I hit " + JSON.stringify(r) + " (expected one bounce)";
   if (b.burn || !(b.armor < 50)) return "Breach I: " + JSON.stringify(b) + " (expected armor stripped, no burn)";
 });
 
@@ -194,7 +194,7 @@ check("review: the card's rows show no mechanic the tower lacks - CRR shields by
   if (i0.Meteors !== "1") return "IFR tier 0 Meteors reads " + i0.Meteors;
   if (ih.Fire === "—" || ifl.Flare === "—") return "IFR Hellfire I / Flare I rows blank";
 });
-check("review: a SOL without Reflection aims no reflection cone (solHeads)", () => {
+check("review: a SOL without Diffraction aims no diffraction cone (solHeads)", () => {
   const n = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[40, 0], [70, 20]]); return solHeads(t, st, es[0]).length; })()`);
   if (n !== 0) return "tier 0 SOL aims " + n + " reflection heads";
 });
@@ -215,7 +215,7 @@ check("GRV merge (owner, 2026-10-25): two voids' caps do not add - the mass past
 
 // ---------- the left-for-later list (owner, 2026-10-25: "zero" / "fix all the left for later things") ----------
 const statsOf = (kind, sk) => run(`(() => { G = newGame(); const sk = ${JSON.stringify(sk)}; const st = towerStats({ id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, true);
-  return { critMul: st.critMul, scorch: st.dot ? st.dot.frac : 0, brittle: st.brittle, fireHK: st.fireHK, hfK: st.hfK }; })()`);
+  return { critMul: st.critMul, scorch: st.dot ? st.dot.n : 0, brittle: st.brittle, fireHK: st.fireHK, hfK: st.hfK }; })()`);
 check("later: tier I adds no extra numbers the spec does not name - SOL Breach I crit as tier 0, FRZ Sublimation I no Brittle", () => {
   const s0 = statsOf("sol", {}), s1 = statsOf("sol", { breach: 1 }), f1 = statsOf("frz", { temp: 1 });
   if (s1.critMul !== s0.critMul) return "SOL Breach I crit x" + s1.critMul + " (tier 0 x" + s0.critMul + ")";

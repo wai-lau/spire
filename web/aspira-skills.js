@@ -60,7 +60,7 @@ SKILL_TREES.frz = [
 // 4 beams x 6 = 24 Breaches a volley on one target.
 SKILL_TREES.sol = [
   { id: "focus", name: "Scorch" /* (owner, 2026-10-25: SOL is always one beam - Focus became Scorch; the id stays - saves, sims) */, tiers: [{ name: "Sear" }, { name: "Blaze" }, { name: "Inferno" }] },
-  { id: "refraction", name: "Reflection" /* (owner, 2026-10-22: "rename refraction to reflection"; the id stays - saves) */, tiers: [{ name: "Lens" }, { name: "Spectrum" }, { name: "Aurora" }] },
+  { id: "refraction", name: "Diffraction" /* (owner, 2026-10-25: "Rename Reflection to Diffraction"; 2026-10-22 Reflection; the id stays - saves) */, tiers: [{ name: "Lens" }, { name: "Spectrum" }, { name: "Aurora" }] },
   { id: "breach", name: "Breach", tiers: [{ name: "Pierce" }, { name: "Flare" }, { name: "Sunfire" }] },
 ];
 // ACD (owner, 2026-10-05): its lines DRIP burning PUDDLES onto the lane by
@@ -335,7 +335,7 @@ function solSkillStats(t, s, b) {
   s.shieldPop = SOL_SHIELD_POP; s.beams = 1; // ONE BEAM, always (owner, 2026-10-25)
   s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "breach")]; s.fan = SOL_FAN_BY[skillOf(t, "refraction")]; // the chains off the first enemy (solRefraction)
   const bk = skillOf(t, "breach");
-  s.breach = 1; s.pierce = 1; const sc = skillOf(t, "focus"); s.dot = sc ? { frac: SOL_SCORCH_KS[sc], t: SOL_SCORCH_T } : null; /* SCORCH (owner, 2026-10-25): a burn of frac x the hit that landed - reflections and pass-throughs burn at their own falloff - stacking without cap (solScorch) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
+  s.breach = 1; s.pierce = 1; const sc = skillOf(t, "focus"); s.dot = sc ? { k: SOL_SCORCH_TICK_K, n: SOL_SCORCH_N[sc], t: SOL_SCORCH_N[sc] * SOL_SCORCH_Q } : null; /* SCORCH (owner, 2026-10-25): a burn of frac x the hit that landed - reflections and pass-throughs burn at their own falloff - stacking without cap (solScorch) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
 }
 // THE SOL REWORK (owner, 2026-10-22: "SOL beam always goes through at 100% after enemy in a straight line, starts with one reflection as
 // usual. However, reflection deals less than 100% damage and also passes through" / "refraction -> increases passthrough% and additional
@@ -402,10 +402,9 @@ function drawCone(f0, k) {
   ctx.arc(f.x, f.y, f.len, f.a - f.half, f.a + f.half); ctx.closePath(); ctx.fill();
 }
 // ACD's chart numbers, stats and puddles live in aspira-acid.js
-// SCORCH (owner, 2026-10-22: "replace shrapnel with short, high damage DoT"; the BREACH SHRAPNEL a breached death burst into is gone -
-// ARCHAEOLOGY.md): every SOL hit - beam, pass-through, reflection - sets a burn of SOL_SCORCH_K x that hit (from Breach I; ONE number since the tier redesign, 2026-10-25 - was 1 1.1 1.3 1.5, V 1.7 by Breach tier) over SOL_SCORCH_T s
-// (onHit's st.dot: the strongest burn holds, a new hit restarts the clock - Focus's beams do not stack it). Balanced overnight
-// SHORT AND BIG, POPS SHIELDS (owner, 2026-10-23: "pops shield (dont all other dots pop shields?) make this short and big"): over
-// SOL_SCORCH_T s in SOL_SCORCH_TICKS whole ticks (few big ticks, so flat armor bites less; was every frame over 1s), each a loud-free hit
-// that pops a shield charge like IFR's burn and ACD's pools (SOL_DOT_ST; it bounced off shields unpopped until then)
-const SOL_SCORCH_KS = [0, 1.05, 1.3, 1.6, 2, 2.6]; /* by SCORCH tier 0..V (owner, 2026-10-25: Scorch = the burn axis, its stacks uncapped - good vs shield; placeholders) */ const SOL_SCORCH_K = SOL_SCORCH_KS[1], SOL_SCORCH_T = 2, SOL_SCORCH_TICKS = 20 /* a stack lasts 2s in 0.1s ticks so a tower's next shots stack on it (was 0.4s in 4) */, SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 1 }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)
+// SCORCH (owner, 2026-10-22: "replace shrapnel with short, high damage DoT"; history ARCHAEOLOGY.md): every SOL hit - beam, pass-through,
+// reflection - burns; each tick a loud-free hit that pops one shield charge (SOL_DOT_ST, owner 2026-10-23)
+// MORE TICKS, SAME TICK (owner, 2026-10-25: "Scorch more burn ticks same damage?"): every tick SOL_SCORCH_TICK_K x the hit, one every
+// SOL_SCORCH_Q s; Scorch buys SOL_SCORCH_N ticks a burn (tier I = the old 1.05 of a hit over 2s; was SOL_SCORCH_KS 1.05 .. 2.6 total, 2s)
+const SOL_SCORCH_TICK_K = 0.0525, SOL_SCORCH_Q = 0.1, SOL_SCORCH_N = [0, 20, 26, 32, 40, 52];
+const SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 1 }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)
