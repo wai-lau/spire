@@ -62,8 +62,8 @@ function skillScaleFix(g) {
 // (Armament 38). SOL Breach (81) and ARC's single-target axes stay behind: count-limited, a mechanic question, not a number
 const CAPSTONE_NUM = [
   // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit; Capacitance eight charges
-  [ARC_VOLTAGE_FALL, 1.6], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
-  [ARC_CONDUCTIVITY, { s: 4 /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, q: 1.225, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 1.0625 /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
+  [ARC_VOLTAGE_FALL, 2.56 /* x1.6 with its table (2026-10-25); was 1.6 */], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
+  [ARC_CONDUCTIVITY, { s: 4 /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, q: 1.225, v: 4 }], [ARC_CAPACITANCE, { n: 6, frac: 0.2656 /* x0.25 (axis balance 2026-10-25: Capacitance focus leaked 0%; was 1.0625) */ /* was 0.15, kept above V when V went to 0.14 (2026-10-12) */ }],
   // FRZ: Temp a far deeper chill; Rime the fastest, deepest rings; Moons three moons with three moonlets each, burning far harder (capped 2026-10-20)
   [FRZ_TEMP_SLOW, 0.67], [FRZ_TEMP_TICK, 0.0495], [FRZ_BRITTLE, 9.0185], [FRZ_RIME, 0.9], [FRZ_RIME_PERIOD, 0.1925] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 1.2],
   [FRZ_MOON_COUNT, 3], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 3] /* (owner, 2026-10-20: max 3 and 3; were 5 and 6) */,

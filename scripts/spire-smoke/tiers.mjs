@@ -74,11 +74,11 @@ function towerTierChecks(kind, tier0Words) {
 
 // ---------- ARC ----------
 towerTierChecks("arc", ["fork", "charge", "same place"]);
-check("ARC: tier 0 strikes one enemy; Conductivity I chains once; Voltage I forks the strike two ways (tier redesign 2026-10-24)", () => {
+check("ARC: tier 0 strikes one enemy; Conductivity I chains once; Voltage I forks the strike three ways (tier redesign 2026-10-24; VOLT_FORK x1.5, axis balance 2026-10-25)", () => {
   const n = sk => run(`(() => { const { t, es, st } = tierRig("arc", ${JSON.stringify(sk)}, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20]]);
     fireSkillChain(t, st, es[0]); for (let i = 0; i < 30; i++) stepChains(0.05); return ${hitCount("es")}; })()`);
   const r = [n({}), n({ conductivity: 1 }), n({ voltage: 1 }), n({ capacitance: 1 })];
-  if (JSON.stringify(r) !== "[1,2,3,1]") return "enemies hit (tier 0, Cond I, Volt I, Cap I): " + r + " (expected 1, 2, 3, 1)";
+  if (JSON.stringify(r) !== "[1,2,4,1]") return "enemies hit (tier 0, Cond I, Volt I, Cap I): " + r + " (expected 1, 2, 4, 1)";
 });
 
 // ---------- SOL ----------
@@ -248,8 +248,8 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
 check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightning.\" / Conductivity \"chains\" / Voltage \"forks for X% less damage every chain\"; FRZ tier 0 \"slows and deals X% damage\"", () => {
   const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 1 }), Math.round(ARC_VOLTAGE_FALL[1] * 100), describeTower("arc", { conductivity: 1 }), describeTower("arc", { conductivity: 1, voltage: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP * 100)]`);
   if (r[0] !== "Two bolts of lightning.") return "tier 0: " + r[0];
-  if (r[1] !== "Two bolts of lightning that fork for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
+  if (r[1] !== "Two bolts of lightning that fork three ways for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
   if (!/that chain once for \d+% less damage every chain\.$/.test(r[3])) return "Conductivity I: " + r[3];
-  if (!/that chain once and fork for \d+% less damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
+  if (!/that chain once and fork three ways for \d+% less damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
   if (!r[5].includes("slows enemies by") || !r[5].includes(" and deals " + r[6] + "% damage over ")) return "FRZ tier 0: " + r[5];
 });

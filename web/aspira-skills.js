@@ -115,7 +115,7 @@ function skillMove(t, s) {
 // ARC's HIT, SPREAD over its three axes (owner, 2026-10-15: "spread the damage across the upgrades, but keep it mainly in
 // voltage" -> "spread out a bit more" - a build without Voltage hit for 24 whatever it bought): the old Voltage curve's log shared
 // 50% Voltage, 25% each Conductivity and Capacitance (ARC_SIDE_DMG); a full ARC (Voltage VI, the others V) x53.5, was x69.9 on Voltage alone - ARC_SIDE_DMG and ARC_VOLTAGE_DMG GONE (tier redesign 2026-10-24): the hit is the stat curve's (aspira-curve.js)
-const ARC_VOLTAGE_FALL = [0.5, 0.65, 1, 1.25]; // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
+const ARC_VOLTAGE_FALL = [0.8, 1.04, 1.6, 2]; /* x1.6 (axis balance, owner 2026-10-25 "Go": Voltage focus 31% leaked, Capacitance 0) */ // IV / V (2026-10-07): a jump carries MORE than the hit before it // its RANGE is in SKILL_MOVE
 // Conductivity's shape by tier (owner): strikes (separate first targets),
 // jumps, and forks per jump - 3, 7, 13, then two separate 13-hit attacks -
 // and r, how much further each JUMP reaches (owner; Voltage owns the tower's range); q: a fire-rate nudge (x1.2 at most, nudge())
@@ -130,7 +130,7 @@ let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 1, r: 0.7, v: 0 }, { s: 1, j: 2, f: 1, 
 // charges instead of arcing more ... hits add more and more charges as you level up"): an ARC hit leaves `n`
 // charges, each worth `frac` of the hit; the next hit from anything sets them ALL off, each a BURST of radius
 // ARC_BURST_R round the enemy hitting everything inside (each burst its own hit: armor bites each, each pops a shield)
-const ARC_CAPACITANCE = [null, { n: 1, frac: 0.14 }, { n: 4, frac: 0.875 }, { n: 5, frac: 0.745 }]; // frac 0.1 -> 0.14 (2026-10-12, chartvalue 30-60: tier III read 96% of the 2/2/2 team and 3/0/3 92% - now 99% / 98%) // a burst hits all round it, so each charge is small: isolation I..V 110 119 150 167 184% (with the slows below)
+const ARC_CAPACITANCE = [null, { n: 1, frac: 0.035 }, { n: 4, frac: 0.219 }, { n: 5, frac: 0.186 }]; /* frac x0.25 (axis balance 2026-10-25: Capacitance focus leaked 0%, Voltage 31; was 0.14 0.875 0.745) */ // frac 0.1 -> 0.14 (2026-10-12, chartvalue 30-60: tier III read 96% of the 2/2/2 team and 3/0/3 92% - now 99% / 98%) // a burst hits all round it, so each charge is small: isolation I..V 110 119 150 167 184% (with the slows below)
 const ARC_BURST_R = 70, ARC_BURST_A = 0.45;
 // each jump hits ARC_FALL as hard and reaches ARC_SHRINK as far as the one before (owner)
 const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
@@ -197,7 +197,7 @@ function fireSkillChain(t, st, e, seen) {
 const VOLT_CARRY_N = [0, 1, 3, 6, 8], VOLT_CARRY_R = 0.8;
 // VOLTAGE FORKS (tier redesign, owner 2026-10-24: "Voltage determines forking, Conductivity determines chaining"): ways each jump
 // splits, by Voltage tier 0..V - tier I one fork (two ways); the forks Conductivity held (f 1 1 1 2, V 2) moved here
-const VOLT_FORK = [1, 2, 2, 2, 3, 3];
+const VOLT_FORK = [1, 3, 3, 3, 5, 5]; /* x1.5, rounded (axis balance 2026-10-25, count first; was 1 2 2 2 3 3) */
 function voltCarry(c, e, left) {
   const seen = new Set([e]);
   for (let k = 0; k < c.st.carry && left > 0; k++) {
