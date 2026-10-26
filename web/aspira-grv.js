@@ -19,11 +19,12 @@ const GRV_NOVA_R = [71, 85, 112, 185]; // Supernova: the nova's reach (x1.7 with
 // not grow with just tiers, only tower range, tower mvmt and damage") - GRV's rate is Nova's alone
 const GRV_NOVA_RATE = [1, 1.2, 1.5, 1.9, 2.4, 3.1]; // Nova: the implosions' rate, x the tower's (tier 0 slow - TOWERS.grv.rate)
 const GRV_NOVA_STRIP = [0, 0.5, 0.8, 1.2, 1.8, 4]; /* x2 (axsweep, 2026-10-25: armor leaked 33-49% at x1) */ // (V: just more - owner, 2026-10-25: "Nova V, just removes more armor, not half") // Nova: armor each nova strips from what it hits, x its hit; the stripped armor sizes the void with the damage
-const GRV_INNER_K = [7.2, 7.2, 7.2, 7.2, 7.6, 8.4]; // Void: the crush a second, x the tower's damage x mass - tier 0 x3 its first cut for the duo rule (with GRV_CORE_PX x4); flat to III, the void's SIZE the axis's gain (axsweep 2026-10-25: 3.67 .. 12 left GRV leaking 1%)
+const GRV_INNER_K = [2.4, 3.67, 4.6, 6, 8, 12]; // Void: the crush a second, x the tower's damage x mass (the void small again - its pellets carry the duo rule, owner 2026-10-25)
 const GRV_ACC_R = [1, 1.4, 1.55, 1.7, 1.85, 2]; // Acceleration: the aura's radius, x the VOID's (its black core, grvCoreR) - never past x2 (owner, 2026-10-25: "because voids are so big, auras should be smaller / aura radius never exceeds 2x void radius"; was x the void's field, 2.4 .. 6)
-const GRV_PELLET_K = [0.5, 0.808, 1.1, 1.5, 2, 2.8]; // Acceleration: a pellet's hit, x the tower's damage
+const GRV_PELLET_K = [0.5, 2.42, 3.3, 4.5, 6, 8.4]; // Acceleration: a pellet's hit, x the tower's damage - x3 from tier I (axsweep 2026-10-25, with GRV_ACC_PEL: Accel focus 42% leaked -> 12, Void 13, Nova 4)
 const GRV_PEL_RANGE = [1, 1.4, 1.8, 2.3, 2.9, 3.6]; // Acceleration: a pellet's flight, x the void's field
-let GRV_PEL_PER_MASS = 4; /* (axsweep 2026-10-25, a void a shot at mass 3: 12 spread 1% leaked, 4 5%; the old GRV 13%) (let: the simulator sweeps it) */ // pellets a unit of mass lost to decay (or past the cap in a merge) gives off
+const GRV_ACC_PEL = [1, 1.1, 1.2, 1.3, 1.4, 1.5]; // Acceleration: x the pellets a void sheds (count first, to x1.5 - owner 2026-10-25: "Add pellets")
+let GRV_PEL_PER_MASS = 20; /* the duo rule (2026-10-25, the void small again and pellets at tier 0: 4 clean 17/21, 12 19/21, 20 21/21) (let: the simulator sweeps it) */ // pellets a unit of mass lost to decay (or past the cap in a merge) gives off
 let GRV_AURA_K = 0.48; /* x0.8 (2026-10-24 marks target: less vs armor) */ // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
 const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1) - x2 faster (owner, 2026-10-16: "some bh taking too long to evaporate if merged with too many / increase bh evaporation speed significantly"; was 5)
 // EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction
@@ -78,7 +79,7 @@ function grvSkillStats(t, s, b) {
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= GRV_NOVA_RATE[n]; s.hdmg = s.dmg; s.evapK = 1; s.targets = 1; // (rateCurve: the curve's, before Nova)
   s.hole = true; s.auraOn = r > 0; s.auraR = GRV_AURA_R[v]; s.accR = GRV_ACC_R[r]; s.slow = GRV_SLOW[r]; s.innerK = GRV_INNER_K[v]; s.horizon = r >= CAPSTONE_TIER;
   s.novaR = GRV_NOVA_R[Math.max(n, v)]; s.strip = GRV_NOVA_STRIP[n];
-  s.pellets = v > 0 || r > 0 ? GRV_PEL_PER_MASS : 0; s.novaN = n > 0 ? GRV_NOVA_N : 0; s.startM = GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1); s.pelletK = GRV_PELLET_K[r]; s.pelReach = GRV_PEL_RANGE[r]; s.big = v >= CAPSTONE_TIER; s.skill = true; // pellets from Void I or Acceleration I (owner, 2026-10-25: Accel alone too - "Yes"), novas from Nova I
+  s.pellets = GRV_PEL_PER_MASS * GRV_ACC_PEL[r]; /* every void, tier 0 too (owner, 2026-10-25: "Add pellets instead" of a bigger void) */ s.novaN = n > 0 ? GRV_NOVA_N : 0; s.startM = GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1); s.pelletK = GRV_PELLET_K[r]; s.pelReach = GRV_PEL_RANGE[r]; s.big = v >= CAPSTONE_TIER; s.skill = true; // pellets from Void I or Acceleration I (owner, 2026-10-25: Accel alone too - "Yes"), novas from Nova I
 }
 
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
@@ -443,7 +444,7 @@ function drawSphere(sp, st, auraOwn = true) {
 // the CENTRE and its ACCRETION DISK - black in a yellow ring and a thin pink rim (the image's core), as big as its aura is (it
 // grows and shrinks with it). ABOVE the damage numbers (owner, 2026-10-15): in 2D the board draws them first; in 3D the pop-up
 // pass calls drawGrvCores after them, `at` placing each at its spot like a number
-let GRV_CORE_PX = 46.8, GRV_CORE_A = 34; /* x4 (duo rule, 2026-10-25: the crush reaches only the black core - at 11.7 a tier 0 void, a void alone, caught ~14u of the lane and every GRV pair leaked; x4 + crush x3 clean 21/21) (let: the simulator sweeps it) */ // a base aura (68u) keeps its 13u centre; x2 the aura 19u (linear: 24), x4 26u (linear: 46)
+let GRV_CORE_PX = 11.7, GRV_CORE_A = 34; /* (x4 for a few hours, 2026-10-25, for the duo rule - owner: "Instead of making void bigger / Add pellets instead") (let: the simulator sweeps it) */ // a base aura (68u) keeps its 13u centre; x2 the aura 19u (linear: 24), x4 26u (linear: 46)
 const grvCoreR = ar => GRV_CORE_PX * Math.log(1 + ar / GRV_CORE_A); // the black centre's radius for an aura's
 // pass: 0 the pink rim, 1 the yellow ring, 2 the BLACK - each pass for EVERY sphere before the next (drawGrvCores), so two disks that
 // overlap join into one, the dark of each over all the rings (owner, 2026-10-16: "accretion disks should connect, not be drawn over
