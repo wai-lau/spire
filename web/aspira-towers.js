@@ -18,7 +18,7 @@
 // the arc delay is a QUARTER of the tower's shot interval (owner), so it
 // follows fire-rate upgrades: 1.5 shots/s -> 0.17s per layer
 // beam lives (x BEAM_LIFE_MUL; look only - owner, 2026-10-08: SOL longer, ARC slightly shorter; were 0.2 / 0.083)
-const CHAIN_BEAM_LIFE = 0.15 /* ARC's beams last one burst gap, ARC_ECHO_S (owner, 2026-10-26: "I want the beam duration to reflect that"; was 0.16) */, RAY_BEAM_LIFE = 0.075 /* SOL's beams, halved (owner, 2026-10-26: "maybe the beam lasts too long, halve the visual duration"; was 0.15) */, CHAIN_HOP_FRAC = 0.25;
+const CHAIN_BEAM_LIFE = 0.15 /* ARC's beams last one burst gap, ARC_ECHO_S (owner, 2026-10-26: "I want the beam duration to reflect that"; was 0.16) */, RAY_BEAM_LIFE = 0.15 /* SOL's beams, x2 (owner, 2026-10-26: "Make the beams last 2x as long visually"; halved to 0.075 earlier that day) */, CHAIN_HOP_FRAC = 0.25;
 const hopDelay = st => CHAIN_HOP_FRAC / st.rate;
 // arcs only land on enemies within the REACH, measured from the TOWER (owner;
 // drawn as a dashed outer ring): CHAIN_LEASH x range for the base 1-layer
@@ -294,7 +294,8 @@ function rayHit(t, st, e, base, from) {
   }
 }
 function fireRay(t, st, e) {
-  solAim = st.pierce ? Math.atan2(e.y - t.y, e.x - t.x) : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's cone axis (aspira-sol.js)
+  const n0 = fx.length; solAim = st.pierce ? Math.atan2(e.y - t.y, e.x - t.x) : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's cone axis (aspira-sol.js)
+  if (t.kind === "sol" && solAim != null) t.solShot = { a: solAim, half: (st.cone || SOL_CONE) * Math.PI / 180, fx: fx.slice(n0).filter(f => f.k === "beam") }; // its cone stays up while these beams last (owner, 2026-10-26)
   if (!st.ricochet) return;
   // Ricochet / Shredder: hop to the nearest enemy not yet hit, at full damage
   const hit = new Set([e]);

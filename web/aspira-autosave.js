@@ -33,7 +33,7 @@ async function runDo(mode, fn) {
 // built on, its moment-to-moment state dropped (cooldowns, locks, pools, holes, pellets, interceptors, bolts, drags, an active Relay),
 // the field empty - only what was BOUGHT (kind, slot, skills, mode, spent) and its stats kept. Applied to the copy that is saved, and
 // again on resume (an older save). The resume lands between waves after a boss, so the Challenge button is up (afterBoss)
-const RUN_TOWER_DROP = ["cd", "spin", "posT", "goal", "auraT", "rimeT", "pulses", "period", "locks", "lines", "spare", "puddles", "poolSumT",
+const RUN_TOWER_DROP = ["cd", "spin", "posT", "solShot", "goal", "auraT", "rimeT", "pulses", "period", "locks", "lines", "spare", "puddles", "poolSumT",
   "spheres", "pellets", "icp", "launchCd", "launchN", "carBolts", "fling", "held", "leashHint", "links", "relayUntil", "tc", "ve",
   "ifrSlot0", "ifrCharge", "ifrReady", "ifrLaunchCd", "ifrBalls", "ifrRings", "ifrPellets", "ifrFlares", "ifrFs", "ifrFires", "ifrInit0", "ifrGap", "ifrOrb"]; /* IFR: all of it - ifrInit rebuilds it on the first step (ifrInit0 unset); the 6.4 keys too */
 function runClean(g) {

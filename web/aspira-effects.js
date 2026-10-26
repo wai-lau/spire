@@ -7,7 +7,10 @@
 function drawAims() {
   ctx.lineCap = "round"; ctx.lineWidth = 0.8;
   for (const t of G.towers) {
-    if (t.kind !== "sol" || !t.locks || !t.period) continue;
+    if (t.kind !== "sol") continue;
+    // THE SHOT'S CONE stays up, full width, until every beam of that shot is gone (owner, 2026-10-26: "the cone should stay visible until all beams disappear")
+    if (t.solShot) { if (t.solShot.fx.some(f => f.t < f.life)) drawCone({ x: t.x, y: t.y, a: t.solShot.a, half: t.solShot.half, len: SOL_CONE_EDGE / SOL_CONE_LEN_K, color: TOWERS[t.kind].color }, 1); else t.solShot = null; }
+    if (!t.locks || !t.period) continue;
     ctx.strokeStyle = COL[TOWERS[t.kind].color];
     const st = towerStats(t), n = st.beams || 1; // as many lines as the shot has BEAMS (owner)
     for (const l of t.locks) { // each lock's line brightens on its own charge
