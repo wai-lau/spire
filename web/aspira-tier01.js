@@ -16,7 +16,7 @@ ARC_CONDUCTIVITY[1] = { ...ARC_CONDUCTIVITY[0], j: 1 };
 CRR_HANGAR[0] = 1; CRR_HANGAR[1] = 2; CRR_TETHER_SLOW[0] = 0; CRR_TETHER_SLOW[1] = 0.35;
 
 // FRZ: Sublimation I is the hurt alone - no Brittle until II, today's I (owner, 2026-10-25: "zero" - tierMid gave it +7%)
-FRZ_BRITTLE[1] = 1;
+// (FRZ_BRITTLE written 0..V since 2026-10-26: I = 1)
 
 // ACD: one acid ray, no pools (ACD_CONTAGION null); Flow I two rays and the carry; Contagion I the ray drips a slowing pool (ACD_POOL_SLOW)
 ACD_LINES[0] = 1; ACD_LINES[1] = 2; ACD_CONTAGION[0] = null;
