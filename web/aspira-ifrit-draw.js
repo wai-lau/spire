@@ -4,7 +4,8 @@
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
 function drawIfrCharge(t, st, low) {
   if (t.ifrCharge <= 0) return;
-  const c = ifrCentre(t); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * t.ifrCharge), true, low); /* grows to the meteor it launches */
+  const n = Math.max(1, st.store || 1); // the stored meteors, evenly round the orbit; the one still charging grows to the meteor it launches
+  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n), f = Math.min(1, t.ifrCharge - k); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * f), true, low); }
 }
 // the ring's glow at radius r, alpha a (0.9 = full): IFR_RING_GLOW's layers, the blast's and the ball's alike
 function drawIfrRingAt(x, y, r, a, low, wk = 1, cols = null) { // wk: x every layer's width (the fire's ring: IFR_FIRE_W); cols: a layer colour map (the fire's: IFR_HF_COL)

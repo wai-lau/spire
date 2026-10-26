@@ -25,10 +25,12 @@ const CRR_VOLLEY_K = 4; /* 2 -> 4 with CRR_AMMO halved (2026-10-18) */
 // axis) dealt 2192/s on fast at wave 61, ARC 17449, SOL 22899 - ARC chains, and an interceptor spends ~40% flying and reloading
 // (CRR_SHOT_MUL and CRR_SIDE_DMG - Armament's and the side axes' raw hit - GONE with the tier redesign, 2026-10-24: the stat curve's)
 // TETHER (owner, 2026-10-17: "replace Launch with Tether"): once an interceptor fires at an enemy a BEAM joins them while it keeps at it;
-// it SLOWS that enemy (the old Pin, which needs Tether now, and harder) and PULSES every CRR_TETHER_PULSE s for CRR_TETHER_K x the shot,
-// a real hit that pops a shield charge; both grow with the tier. Capstone (Chain): the beam runs on to the nearest other enemy within
-// the interceptor's circling range of its target, slowing and pulsing it too. Index 0 = untaken; capstone.js pushes VI
-const CRR_TETHER_SLOW = [0.35 /* every CRR tethers a little (owner, 2026-10-18: CRR better vs fast) */, 0.45, 0.55, 0.65], CRR_TETHER_K0 = 2 /* the pulse, x the hit, from Tether II (today's I) on - ONE number since the tier redesign (2026-10-24; was 0 2 36 210.6, V 351) */, CRR_TETHER_PULSE = 0.5, CRR_TETHER_ST = { noFx: true };
+// it SLOWS that enemy and MARKS it to take CRR_TETHER_AMP more damage from every tower - EACH TETHER its own slow and mark, so they
+// stack (owner, 2026-10-26: "Each tether should add it's own slow, remove damage from the tether"; the pulse that hit for CRR_TETHER_K0
+// x the shot is gone). Capstone (Chain): the beam runs on to the nearest other enemy within the interceptor's circling range of its
+// target, slowing and marking it too. Index 0 = untaken; capstone.js pushes VI
+const CRR_TETHER_SLOW = [0.35 /* every CRR tethers a little (owner, 2026-10-18: CRR better vs fast) */, 0.45, 0.55, 0.65], CRR_TETHER_PULSE = 0.5 /* the beam's flash only */;
+const CRR_TETHER_AMP = [0, 0.1, 0.15, 0.2, 0.25, 0.3]; // + damage taken a tether, by Tether tier 0..V (written whole) - a first guess, the battery fits it
 const CRR_SLOW = 0.2, CRR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CRR_BOLT_PAIR = 2, CRR_BOLT_SIDE = 6; /* bolts a time and the u between them (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 const CRR_BOLTS = Math.ceil(6 / CRR_BOLT_PAIR) * CRR_BOLT_PAIR; /* 10 -> 6, each x1.67 (owner, 2026-10-18: CRR less good vs shield - every bolt pops one) */ /* 5 -> 10 with the volleys halved (2026-10-16); a whole number of pairs */ /* 4 -> 5 with the trio-scale x1.33 hit (2026-10-16: armor leak 8% -> 16%) */ /* 3 -> 4 (owner, 2026-10-16: "if armor is still strong, split interceptor shots into even more pellets per shot"; countermx 61-69 spread armor leak 3 bolts 9%, 4 17%, 5 37%) */ // bolts a shot, each 1/CRR_BOLTS of the hit
@@ -38,9 +40,7 @@ const CRR_BOLTS_BY = [1, 2, CRR_BOLTS, CRR_BOLTS, CRR_BOLTS, CRR_BOLTS];
 // interceptors that TETHER, by Tether tier 0..V: none at 0, Tether I "one tethered drone", then all of them
 const CRR_TETHER_N = [0, 1, Infinity, Infinity, Infinity, Infinity];
 const CRR_GAP = 0.15; /* 0.11 -> 0.15 with the reload x0.5 (owner, 2026-10-16: "reduce launch rate of interceptors, but reduce reload time to compensate"; countermx 61-69 spread 30/2/0/21 -> 25/0/0/15 - at 0.25 no reload made up for it: 70% of swarms leaked) */ /* x1/1.75 (owner, 2026-10-16: "interceptor spawn speed"; was 0.2) */ // s between launches (owner: "one by one")
-// Hangar's FOCUS FIRE (owner, 2026-10-15): every OTHER interceptor looping the same target adds this share to each shot on it -
-// width turns into depth when the wing outnumbers the targets (they spread first: carTarget prefers an unheld enemy)
-const CRR_FOCUS = [0, 0.15, 0.3, 0.45];
+// (Hangar's FOCUS FIRE - each wingmate on the same target +X% a shot - removed: owner, 2026-10-26, "Remove the increased damage from hangar")
 // (Launch's STRAFING PASS - a ram on arrival - was removed: owner, 2026-10-17, "I dont like the strafe idea")
 // THE FLIGHT (owner, 2026-10-16: "a much smoother almost elliptical path, with a circle going around the enemy (stay about 100u
 // away)"): a heading that turns at a capped rate, steered by a guidance field that spirals onto a CRR_ORBIT circle round the
@@ -71,7 +71,7 @@ function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.targets = 1; // the STAT CURVE (tier redesign 2026-10-24; was CRR_SHOT_MUL x CRR_SIDE_DMG)
   s.bolts = CRR_BOLTS_BY[a]; s.tetherN = CRR_TETHER_N[l];
-  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V; s.reload = CRR_RELOAD_S; s.tSlow = CRR_TETHER_SLOW[l]; s.tK = l >= 2 ? CRR_TETHER_K0 : 0; s.tChain = l >= CRR_CHAIN_FROM; s.focus = CRR_FOCUS[h]; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]); s.skill = true;
+  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V; s.reload = CRR_RELOAD_S; s.tSlow = CRR_TETHER_SLOW[l]; s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]); s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -169,11 +169,11 @@ const carTethered = (t, i, st) => i.state === "out" && !!i.ve && !i.ve.dead && t
 function carTether(i, t, st, dt) {
   const e = i.ve, r2 = (CRR_ORBIT * 1.2) ** 2;
   if (st.tChain && (!i.tc || i.tc.dead || i.tc === e || carDist2(i.tc, e) > r2)) { i.tc = null; let bd = r2; for (const o of G.enemies) { if (o.dead || !o.seen || o === e) continue; const d = carDist2(o, e); if (d < bd) { bd = d; i.tc = o; } } }
-  applySlow(e, st.tSlow, 0.15, "tether:" + t.id); if (i.tc) applySlow(i.tc, st.tSlow, 0.15, "tether:" + t.id); // (doubled on fast, never the shielded - applySlow)
+  const key = i.tkey ||= "tether:" + t.id + ":" + t.icp.indexOf(i); // EACH TETHER its own slow and mark: they stack (owner, 2026-10-26)
+  for (const o of [e, i.tc]) if (o && !o.dead) { applySlow(o, st.tSlow, 0.15, key); if (st.tAmp) applyMark(o, 1 + st.tAmp, 0.15, key); } // (doubled on fast, never the shielded - applySlow)
   i.tp = (i.tp || 0) + dt;
   if (i.tp < CRR_TETHER_PULSE) return;
   i.tp -= CRR_TETHER_PULSE; i.tf = 1; // (the beam's flash - drawCar)
-  if (st.tK) for (const o of [e, i.tc]) if (o && !o.dead) { damage(o, st.dmg * st.tK, t, false, false, CRR_TETHER_ST); onHit(o, t, st, st.dmg * st.tK); } // (a bare tether only slows: no pulse to pop a shield)
 }
 // THE HOLD (owner, 2026-10-16: "hangar upgrades should allow the atc tower to have charged interceptors orbit it (with orbit distance
 // jitter) when idle, so that they can be released at once"): with any Hangar, an interceptor reloaded and given nothing to hit
@@ -243,10 +243,8 @@ const CRR_FIRE_R = 340; /* 260 -> 340 (2026-10-19): a chaser on a fast enemy ope
 const CRR_BOLT_ON = 0; /* was 0.08 (2026-10-19, CRR AWAY from swarm - owner: weak to swarm): a volley's spare bolts no longer fly on into the next swarmer */ // s a bolt flies on past a dead target (~70u)
 const CRR_BOLT_V = 900, CRR_BOLT_REACH = 390 /* x1.5 with the orbit (was 260) */, CRR_BOLT_HIT = 3; // u/s; u flown before it fades; u added to the enemy's size
 function carBolt(i, e, t, st, side = 0) { // side: u across its flight, left or right of the interceptor (a pair)
-  let n = 0;
-  if (st.focus) for (const o of t.icp) if (o !== i && o.e === e && o.orb && o.state === "out") n++; // FOCUS FIRE: the others on it
   const a = Math.atan2(e.y - i.y, e.x - i.x);
-  (t.carBolts ||= []).push({ x: i.x - Math.sin(a) * side, y: i.y + Math.cos(a) * side, e, vx: Math.cos(a) * CRR_BOLT_V, vy: Math.sin(a) * CRR_BOLT_V, left: CRR_BOLT_REACH / CRR_BOLT_V, dmg: st.dmg * CRR_VOLLEY_K * (1 + st.focus * n) / st.bolts, icp: i });
+  (t.carBolts ||= []).push({ x: i.x - Math.sin(a) * side, y: i.y + Math.cos(a) * side, e, vx: Math.cos(a) * CRR_BOLT_V, vy: Math.sin(a) * CRR_BOLT_V, left: CRR_BOLT_REACH / CRR_BOLT_V, dmg: st.dmg * CRR_VOLLEY_K / st.bolts, icp: i });
 }
 const CRR_ONE = [null];
 function stepCarBolts(t, st, dt) {

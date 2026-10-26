@@ -43,12 +43,12 @@ const MECH = {
     radiation: k => { const s = ST("grv", "radiation", k); return (s.auraOn ? `aura x${s.accR} the void's radius, slow ${pct(s.slow)} (x2 inside${s.horizon ? ", all of it" : ""}), ` : "no aura, ") + `pellets ${x(s.pelletK)}x the hit, reach x${s.pelReach}, ${x(s.pellets)} a mass lost`; },
   },
   car: {
-    hangar: k => { const s = ST("car", "hangar", k); return `${s.wing} interceptor${s.wing > 1 ? "s" : ""}, ${s.hold} held circling${s.focus ? `, focus fire +${pct(s.focus)} a wingmate` : ""}`; },
-    launch: k => { const s = ST("car", "launch", k); return s.tSlow ? `tether slow ${pct(s.tSlow)}${s.tK ? `, a pulse x${s.tK} the hit` : ""}${s.tChain ? ", chains to one more" : ""}` : "no tether"; },
+    hangar: k => { const s = ST("car", "hangar", k); return `${s.wing} interceptor${s.wing > 1 ? "s" : ""}, ${s.hold} held circling`; },
+    launch: k => { const s = ST("car", "launch", k); return s.tSlow ? `tether slow ${pct(s.tSlow)}, +${pct(s.tAmp)} damage taken, each tether its own${s.tChain ? ", chains to one more" : ""}` : "no tether"; },
     armament: k => { const s = ST("car", "armament", k); return `${s.bolts} bolt${s.bolts > 1 ? "s" : ""} a volley, ${s.ammo} shots${s.autopilot ? ", autopilot" : ""}`; },
   },
   ifr: {
-    meteor: k => { const s = ST("ifr", "meteor", k); return s.fan ? `1 meteor + a fan of ${s.fan}${s.fissure ? ", fissure" : ""}` : "1 meteor"; },
+    meteor: k => { const s = ST("ifr", "meteor", k); return `1 meteor + a burst of ${s.fan}, ${s.store} stored in orbit, charge ${+s.chargeS.toFixed(2)}s`; },
     hellfire: k => { const s = ST("ifr", "hellfire", k); return s.fire ? `a fire, radius ${x(s.fireR)}, growth ${x(s.fireV)}` : "no fire"; },
     firaga: k => { const s = ST("ifr", "firaga", k); return s.flares ? `flares ${x(s.beamL)} long, ${x(s.beamW)} wide, burning ${x(s.burnS)}s at a tick every ${s.tickS}s${s.triple ? ", three at the impact" : ""}` : "no flares"; },
   },

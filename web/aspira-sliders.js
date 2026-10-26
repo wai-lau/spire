@@ -131,9 +131,9 @@ const STAT_SECTIONS = {
   arc: [["Arc", ["Tower Damage (td)", "Rate", "Range", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Re-strikes", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
   frz: [["Freeze Aura", ["Aura slow", "Aura tick", "Ticks", "Cold bite", "Brittle", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
   sol: [["Beam", ["Tower Damage (td)", "Rate", "Range", "Crit", "Crit ×", "Locks"]], ["Scorch", ["Scorch tick", "Scorch ticks", "Cone scorch"]], ["Diffraction", ["Splits", "Carry", "Cone"]], ["Breach", ["Breach", "Bleed"]]],
-  car: [["Hangar", ["Interceptors", "Focus fire"]], ["Tether", ["Tether slow", "Tether pulse", "Pulses", "Chain"]], ["Armament", ["Tower Damage (td)", "Rate", "Ammo", "Autopilot", "Slow"]]],
-  grv: [["Nova", ["Nova hit", "Nova reach", "Armor strip", "Rate", "Range"]], ["Void", ["Void", "Crush tick", "Crush ticks", "Pellets"]], ["Acceleration", ["Aura size", "Aura slow", "Pellet hit", "Pellet reach"]], ["Sphere", ["Mass"]] /* the GRV rework (2026-10-25): sections by axis */ /* void and aura by name (owner, 2026-10-25: "always call it a void, and an aura") */],
-  ifr: [["Meteor", ["Tower Damage (td)", "Meteors", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire flares"]], ["Flare", ["Flare", "Flare tick", "Flare ticks", "Flare lasts", "Flare capstone"]]],
+  car: [["Hangar", ["Interceptors"]], ["Tether", ["Tether slow", "Tether amp", "Chain"]], ["Armament", ["Tower Damage (td)", "Rate", "Ammo", "Autopilot", "Slow"]]],
+  grv: [["Nova", ["Nova hit", "Nova reach", "Armor strip", "Rate", "Range"]], ["Void", ["Void", "Crush tick", "Crush ticks", "Particles"]], ["Acceleration", ["Aura size", "Aura slow", "Particle hit", "Particle reach"]], ["Sphere", ["Mass"]] /* the GRV rework (2026-10-25): sections by axis */ /* void and aura by name (owner, 2026-10-25: "always call it a void, and an aura") */],
+  ifr: [["Meteor", ["Tower Damage (td)", "Meteors", "Stored", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire flares"]], ["Flare", ["Flare", "Flare tick", "Flare ticks", "Flare lasts", "Flare capstone"]]],
   acd: [["Jets", ["Jet tick", "Ticks", "Builds", "Peak tick", "Jets", "Carry", "Jet slow", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
 function cardStats(t, pv) {

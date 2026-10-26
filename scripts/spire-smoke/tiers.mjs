@@ -208,15 +208,17 @@ check("GRV rework (owner, 2026-10-25): tier 0 a tiny void that sheds pellets - n
 
 // ---------- IFR ----------
 towerTierChecks("ifr", ["fan", "fire", "flare", "hellfire"]);
-check("IFR: tier 0 a meteor that just hits; Meteor I a fan of two; Hellfire I one fire riding its enemy; Flare I one flare at the impact (tier redesign 2026-10-24)", () => {
+check("IFR: tier 0 a meteor that hits and bursts into 6 (owner, 2026-10-26); Meteor I stores two in orbit, the burst still 6; Hellfire I one fire riding its enemy; Flare I one flare at the impact", () => {
   const go = sk => run(`(() => { const { t, es } = tierLane("ifr", ${JSON.stringify(sk)}, [70]); const e = es[0]; G.started = true;
     let spawned = 0, fires = 0, flares = 0, rides = null; const K = Math.min(45, Math.floor(towerStats(t).chargeS * 60)); for (let k = 0; k < K; k++) { step(1 / 60); // one volley (a faster curve rate would launch the next inside 45 frames)
       spawned = Math.max(spawned, (t.ifrBalls || []).filter(b => b.gen).length); fires = Math.max(fires, (t.ifrFires || []).length); flares = Math.max(flares, (t.ifrFlares || []).filter(f => !f.hf).length);
       if (rides == null && (t.ifrFires || []).length) rides = t.ifrFires[0].eid === e.id; if (e.max > e.hp && (t.ifrBalls || []).length === 0 && k > 30) break; }
     return { dealt: e.max - e.hp, spawned, fires, flares, rides }; })()`);
   const z = go({}), m = go({ meteor: 1 }), h = go({ hellfire: 1 }), f = go({ firaga: 1 });
-  if (!(z.dealt > 0) || z.spawned || z.fires || z.flares) return "tier 0: " + JSON.stringify(z) + " (expected a hit and nothing else)";
-  if (m.spawned !== 2) return "Meteor I fanned " + m.spawned + " (expected 2)";
+  if (!(z.dealt > 0) || z.spawned !== 6 || z.fires || z.flares) return "tier 0: " + JSON.stringify(z) + " (expected a hit and a burst of 6, no fire or flare)";
+  if (m.spawned !== 6) return "Meteor I burst " + m.spawned + " (expected 6: Meteor never grows the burst below its capstone)";
+  const sto = run(`[towerStats({ kind: "ifr", lvl: 1, skills: {} }).store, towerStats({ kind: "ifr", lvl: 2, skills: { meteor: 1 } }).store]`);
+  if (sto[0] !== 1 || sto[1] !== 2) return "IFR stored in orbit " + sto + " (expected 1, 2)";
   if (h.fires !== 1 || !h.rides) return "Hellfire I: " + JSON.stringify(h) + " (expected one fire riding the struck enemy)";
   if (f.flares !== 1 || f.fires) return "Flare I: " + JSON.stringify(f) + " (expected one flare, no fire)";
 });
@@ -238,7 +240,7 @@ check("review: the card's rows show no mechanic the tower lacks - no Shields row
   for (const k of ["car", "sol"]) if ("Shields" in rows(k, {}).rows) return k + " still shows a Shields row";
   const i0 = rows("ifr", {}).rows, ih = rows("ifr", { hellfire: 1 }).rows, ifl = rows("ifr", { firaga: 1 }).rows;
   for (const k of ["Fire", "Fire flares", "Flare", "Flare tick", "Flare ticks", "Flare lasts"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
-  if (i0.Meteors !== "1") return "IFR tier 0 Meteors reads " + i0.Meteors;
+  if (i0.Meteors !== "1 + a burst of 6") return "IFR tier 0 Meteors reads " + i0.Meteors;
   if (ih.Fire === "—" || ifl.Flare === "—") return "IFR Hellfire I / Flare I rows blank";
 });
 check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
@@ -278,7 +280,7 @@ check("later: the card rows read no zero mechanic - ARC Jumps at tier 0, FRZ Col
 check("later: ACD's sentence says the jet, not Jets, when it sprays one", () => {
   const d = run(`describeTower("acd", { corrosion: 1, contagion: 1, flow: 0 })`);
   if (/Jets/.test(d)) return d;
-  if (!/The jet eats armor/.test(d) || !/The jet leaves/.test(d)) return "no singular jet: " + d;
+  if (!/The jet dissolves armor/.test(d) || !/The jet leaves/.test(d)) return "no singular jet: " + d;
 });
 check("later: towerLevel counts only the tower's own axes (a stray key in a save adds nothing)", () => {
   const n = run(`towerLevel({ kind: "arc", skills: { conductivity: 2, void: 3, junk: 9 } })`);

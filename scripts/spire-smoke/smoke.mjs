@@ -131,7 +131,7 @@ check("tiers are purchases (owner, 2026-10-23): five slots in every per-tier tab
   const r = run(`(() => {
     const out = { len: [], price: [] };
     for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) out.len.push(ax.tiers.length);
-    for (const T of [ARC_CONDUCTIVITY, VOLT_FORK, ARC_CAPACITANCE, SOL_SPLIT, SOL_BREACH_ARMOR, SOL_SCORCH_N, ACD_LINES, ACD_CONTAGION, FRZ_MOON_COUNT, GRV_AURA_R, CRR_HANGAR, IFR_FAN, IFR_BEAM_L, IFR_BEAM_W, VOLT_CARRY_N, CAP_BURST_K]) out.len.push(T.length);
+    for (const T of [ARC_CONDUCTIVITY, VOLT_FORK, ARC_CAPACITANCE, SOL_SPLIT, SOL_BREACH_ARMOR, SOL_SCORCH_N, ACD_LINES, ACD_CONTAGION, FRZ_MOON_COUNT, GRV_AURA_R, CRR_HANGAR, IFR_STORE, IFR_METEOR_RATE, IFR_BEAM_L, IFR_BEAM_W, VOLT_CARRY_N, CAP_BURST_K]) out.len.push(T.length);
     G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0]; G.money = 1e9;
     for (let k = 0; k < 5; k++) { const lvl = t.lvl, m = G.money; upgradeTower(t, "focus", true); out.price.push([skillOf(t, "focus"), t.lvl - lvl, Math.round(m - G.money) === skillPointsCost({ ...t, lvl }, t.lvl - lvl)]); }
     for (let k = 0; k < 4; k++) { upgradeTower(t, "refraction", true); upgradeTower(t, "breach", true); } out.full = [t.lvl, nextBuy(t)];
@@ -282,11 +282,11 @@ check("IFR: each axis scales only its own numbers", () => {
   if (r.oldOk !== true) return "a cleaned IFR threw on resume: " + r.oldOk;
   return "";
 });
-check("IFR: one charge at its centre, launched the moment it is full and a target is in range", () => {
+check("IFR: one charge orbiting the tower at CRR's hold radius (owner, 2026-10-26), launched from there the moment it is full and a target is in range", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e6; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = G.towers[0], st = towerStats(t), out = { ballR: st.ballR };
+    const t = G.towers[0], st = towerStats(t), out = { ballR: st.ballR, R: CRR_HOLD_R };
     for (let i = 0; i < 90; i++) { for (const e of G.enemies) e.stunT = 1e9; step(1 / 30); } // 3 s: charged (2 s untaken), wave 1 held at the gate, out of range
     out.charge = t.ifrCharge; out.ballsBefore = t.ifrBalls.length;
     ifrNear("armor", t, 100); step(1 / 30);
@@ -298,36 +298,36 @@ check("IFR: one charge at its centre, launched the moment it is full and a targe
   })()`);
   if (r.charge !== 1 || r.ballsBefore) return "after 3 s with no target: charge " + r.charge + ", balls " + r.ballsBefore + " (expected a full charge, held)";
   if (r.balls !== 1 || r.chargeAfter >= 1) return "no single launch at a target in range: balls " + r.balls + ", charge after " + r.chargeAfter;
-  if (!(r.fromCentre < 0.5)) return "the meteor left " + r.fromCentre + " u from the tower's centre";
+  if (!(Math.abs(r.fromCentre - r.R) < 0.5)) return "the meteor left " + r.fromCentre + " u from the tower's centre (expected the orbit, " + r.R + ")";
   if (r.r !== r.ballR) return "the meteor's radius " + r.r + " is not the Meteor size " + r.ballR;
   if (r.rAfter !== r.r) return "upgrading mid-flight changed a live meteor's size: " + r.r + " -> " + r.rAfter;
   return "";
 });
-check("IFR meteors: ONE homes onto its target from any distance; its first hit makes the fire and a 360-degree fan (Meteor's count, bell-curve release round 0.4 s) whose meteors home within 50 u, hit only, fissure at the capstone", () => {
+check("IFR meteors: ONE homes onto its target from any distance; its first hit makes the fire and a 360-degree fan (Meteor's count, bell-curve release round 0.4 s) whose meteors home within 50 u, hit only, never fissure (owner, 2026-10-26: capstone does not make it split again)", () => {
   const r = run(`(() => {
     const fresh = m => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < m; k++) upgradeTower(t, "meteor", true); ifrAll(t); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
     const out = {};
     /* the launch: ONE meteor, homing onto its target however far off its first heading */
-    let t = fresh(1), st = towerStats(t); const tgt = held(t, t.x + 120, t.y + 60); egridAt = NaN; t.ifrCharge = 1; ifrLaunch(t, st);
+    let t = fresh(1), st = towerStats(t); const tgt = held(t, t.x + 120, t.y + 60); egridAt = NaN; t.ifrCharge = 1; t.ifrGap = 0; ifrLaunch(t, st);
     out.launched = t.ifrBalls.length; const m0 = t.ifrBalls[0]; m0.vx = -Math.abs(m0.vx); m0.vy = -Math.abs(m0.vy); /* turned AWAY: it must home back */
     let n = 0; while (t.ifrFires.length === 0 && n++ < 600) stepIfrBalls(t, st, 1 / 60);
     out.fires1 = t.ifrFires.length; out.fireAt = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - tgt.x, t.ifrFires[0].y - tgt.y) : NaN;
     const fan = t.ifrBalls.filter(b => b.gen === 1); out.fan = fan.length; out.want = st.fan; out.fanR = fan.map(b => b.r / st.ballR); out.fanV = fan.map(b => Math.hypot(b.vx, b.vy) / st.ballV);
     const angs = fan.map(b => (Math.atan2(b.vy, b.vx) + 2 * Math.PI) % (2 * Math.PI)).sort((a, b) => a - b); out.maxGap = Math.max(...angs.map((a, i) => (i ? a - angs[i - 1] : a + 2 * Math.PI - angs[angs.length - 1]))) * 180 / Math.PI;
-    const w = Array.from({ length: 2000 }, () => ifrFanDelay(IFR_FAN_REF)); const w4 = Array.from({ length: 2000 }, () => ifrFanDelay(4 * IFR_FAN_REF)); out.wait4Mean = w4.reduce((a, b) => a + b, 0) / w4.length; out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= IFR_FAN_MAX_S * Math.sqrt(st.fan / IFR_FAN[0]) + 1e-9); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
+    const w = Array.from({ length: 2000 }, () => ifrFanDelay(IFR_FAN_REF)); const w4 = Array.from({ length: 2000 }, () => ifrFanDelay(4 * IFR_FAN_REF)); out.wait4Mean = w4.reduce((a, b) => a + b, 0) / w4.length; out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= IFR_FAN_MAX_S * Math.sqrt(st.fan / IFR_FAN_REF) + 1e-9); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
     tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; /* the fan hits nothing here: no new fire */
     /* the LAUNCHED meteor never goes silently (owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening"): locked, the
        view does not cull it (its seen target may sit where the camera does not reach), and out of time it bursts where it is */
     { for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
       const v = held(t, t.x + 90, t.y - 40); egridAt = NaN; const ov = ifrOnView; /* (inside IFR's range, 140 since 2026-10-20) */ ifrOnView = () => false; /* the camera sees nothing */
-      try { t.ifrCharge = 1; ifrLaunch(t, st); let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60); } finally { ifrOnView = ov; }
+      try { t.ifrCharge = 1; t.ifrGap = 0; ifrLaunch(t, st); let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60); } finally { ifrOnView = ov; }
       out.culledFire = t.ifrFires.length; v.dead = true; for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
       ifrMeteor(t, st, t.x, t.y, 0, 0, null); t.ifrBalls[0].left = 0.05; for (let i = 0; i < 10 && !t.ifrFires.length; i++) stepIfrBalls(t, st, 1 / 60);
       out.timeoutFire = t.ifrFires.length; for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0; }
     /* its target dies in flight: it flies on to the CORPSE (owner, 2026-10-20: "if target dies, lock on to corpse") and bursts there */
     for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
-    { const v = held(t, t.x + 100, t.y - 40); egridAt = NaN; t.ifrCharge = 1; ifrLaunch(t, st); stepIfrBalls(t, st, 1 / 60); const vx = v.x, vy = v.y; v.dead = true;
+    { const v = held(t, t.x + 100, t.y - 40); egridAt = NaN; t.ifrCharge = 1; t.ifrGap = 0; ifrLaunch(t, st); stepIfrBalls(t, st, 1 / 60); const vx = v.x, vy = v.y; v.dead = true;
       const decoy = held(t, t.x - 120, t.y + 40); egridAt = NaN; /* the nearest live enemy: it must NOT re-lock onto it */
       let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60);
       out.corpseFire = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - vx, t.ifrFires[0].y - vy) : NaN; out.decoy = 50 - decoy.shield; decoy.dead = true;
@@ -367,7 +367,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (r.fires1 !== 1 || !(r.fireAt < 30)) return "the homing meteor: fires " + r.fires1 + ", " + r.fireAt + " u from its target (expected a hit on it, one fire)";
   if (r.fanR.some(k => Math.abs(k - 0.25) > 1e-9)) return "fan meteors are " + r.fanR[0] + " x the launched one's size (expected a quarter, owner 2026-10-20)";
   if (r.fanV.some(v => Math.abs(v - 0.25) > 1e-9)) return "fan meteors fly at " + r.fanV[0] + " x the launch speed (expected a quarter, owner 2026-10-20)";
-  if (r.fan !== r.want || r.want !== 2) return "the impact fan at Meteor I: " + r.fan + " meteors (its st.fan " + r.want + ", expected 2 - \"a fan of two meteors\", tier redesign 2026-10-24)";
+  if (r.fan !== r.want || r.want !== 6) return "the impact burst at Meteor I: " + r.fan + " meteors (its st.fan " + r.want + ", expected 6 - owner, 2026-10-26: the burst starts at 6, only the capstone grows it)";
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
   if (Math.abs(r.wait4Mean / r.waitMean - 2) > 0.15) return "a fan 4x as big releases over " + (r.wait4Mean / r.waitMean).toFixed(2) + "x the time (expected 2: the root of the count)";
   if (!r.fanWaits || Math.abs(r.waitMean - 0.4) > 0.05 || r.waitMin < 0 || r.waitMax > 1 || r.waitMax - r.waitMin < 0.3) return "fan release times: mean " + r.waitMean.toFixed(2) + " in [" + r.waitMin.toFixed(2) + ", " + r.waitMax.toFixed(2) + "] (expected a bell round 0.4 s, sd 0.3)";
@@ -378,7 +378,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (r.armEarly !== 0 || r.armLate !== 1) return "a spawned meteor 30 u from an enemy hit it " + r.armEarly + " times in its first 45 u (expected 0), " + r.armLate + " after (expected 1)";
   if (!(r.fuseMean > 190 && r.fuseMean < 235) || r.fuseFlares !== 40 || r.fuseLeft || r.fuseAt.some(d => d < 150 - 2 || d > 300 + 2)) return "spawned meteors' fuses: mean " + r.fuseMean.toFixed(0) + " u, " + r.fuseFlares + " burst of 40, " + r.fuseLeft + " still flying, at " + Math.min(...r.fuseAt).toFixed(0) + ".." + Math.max(...r.fuseAt).toFixed(0) + " (expected round 200 u, all between 150 and 300 - owner 2026-10-20)";
   if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire !== 1) return "a fan meteor: near (35 u) hit " + r.homeNear + ", far (90 u) " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 1: its own Hellfire)";
-  if (!r.fissure || JSON.stringify(r.kids) !== "[-30,30]" || r.kidGen.some(g => g !== 2) || r.cHits !== 1) return "capstone fissure: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen + ", parent's enemy hit " + r.cHits;
+  if (r.fissure || r.kidGen.some(g => g === 2)) return "the capstone still fissures: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen;
   if (!r.offGone || r.offFires || r.offSteps < 5) return "off view: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires;
   return "";
 });

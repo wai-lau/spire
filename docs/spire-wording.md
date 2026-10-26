@@ -44,9 +44,16 @@ A tier that only moves a number changes no words - the stat row shows it (2026-1
 | forks for X% less damage every chain | per-jump falloff numbers | 2026-10-25 |
 | aura, void (GRV, always) | field, hole, well | 2026-10-25 |
 | satellites (FRZ moons' moons) | moonlets | owner |
-| refracts, light cone, scorch (SOL) | bounce, pierce | 2026-10-26 |
+| refracts within a light prism, diffracts into N rays, scorch (SOL) | bounce, pierce, cone | 2026-10-26 |
+| particles radiate (GRV) | pellets, shed | 2026-10-26 |
+| a wall of fire expands, flares singe (IFR Hellfire); meteor impacts light a bright flare (Flare) | rides, spreads N towers wide | 2026-10-26 |
+| dissolve armor, corrosive goo (ACD Corrosion) | eats armor down to | 2026-10-26 |
 | jets, pools, eat, burn (ACD) | heat, fire | acid terms (2026-10-07) |
 | plain sizes ("grows up to 4x by hitting") | engine units ("mass 2") | 2026-10-16 "no one knows what mass 2 means" |
+
+**Stored things** read "N interceptors / meteors can be stored in orbit"; a sortie's total reads "fires Y volleys per sortie for a total of Z%td";
+a multiplier on damage taken reads "take X% more damage" (never "an additional X% damage": that reads as a share) (2026-10-26).
+**Drop** what the player cannot act on: how far a fire spreads, that voids merge and shed, that an interceptor is rebuilt at home (2026-10-26).
 
 A renamed axis or tower is renamed everywhere: card, stat rows, sections, comments, sim scripts, docs.
 

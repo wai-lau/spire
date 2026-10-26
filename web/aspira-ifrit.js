@@ -3,7 +3,7 @@
 // corpse if it dies. Its FIRST hit makes the FIRE (Hellfire: it grows to its max, burns what stands in it in many small ticks, lingers, and
 // once grown lights flares inside it, as many as its area) and a 360-degree FAN of meteors (Meteor's count) that home within 50 u and hit
 // for damage, each lighting a FLARE where it lands (Flare, id firaga: their size, damage and burn; its capstone three a landing). Meteor's
-// capstone fissures each fan hit into two. Loaded after aspira-car.js (the simulator too); the look is aspira-ifrit-draw.js. Every list
+// capstone bursts into IFR_FAN_CAP, no fissure (owner, 2026-10-26). Loaded after aspira-car.js (the simulator too); the look is aspira-ifrit-draw.js. Every list
 // on the tower holds plain objects (ids and coordinates, never enemy refs): autosave clones G.
 // Spec: docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md (much changed since by the owner's notes, 2026-10-20 - the code is the truth)
 
@@ -11,7 +11,10 @@
 const IFR_CHARGE_S0 = 1.4; // s to fill THE charge at tier 0 - the STAT CURVE's rate shortens it (tier redesign 2026-10-24; was Meteor's table 1.4 1.4 1.4 1.2, V 0.6)
 const IFR_BALL_V = [360, 390, 450, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
 const IFR_ROUTE_K0 = 1.5; // the meteor's hit, x the tower's damage - ONE number since the tier redesign (2026-10-24; was Meteor's 1.5 2 3 80, V 800 - the curve's now)
-const IFR_FAN = [6, 7, 7, 8] /* BATTERY 6.6.0 (2026-10-20): fewer at the top (each fan hit pops a shield - Meteor was the shield answer); VI 9 */; // Meteor: the meteors the first impact fans out round 360 degrees (owner, 2026-10-20: "initial fan counts should be something like 0:5 1:7 2:9 3:12"; VI 12, its fissure the capstone)
+const IFR_FAN_N = 6, IFR_FAN_CAP = 9; /* EVERY meteor bursts into 6, tier 0 too; only Meteor's capstone bursts bigger, and nothing splits again (owner, 2026-10-26: "IFR meteor burst should start at 6" / "Does not increase burst size except for capstone / And capstone does not make it split again"); was IFR_FAN 0 2 6 7 7 8, V 9 + the fissure */
+// METEOR (owner, 2026-10-26: "Increasing levels of meteor increases charge rate and allows more meteors to be stored in orbit"), 0..V written whole:
+// x the charge rate, and the meteors held charged in orbit (they launch IFR_LAUNCH_GAP s apart once an enemy is in range)
+const IFR_METEOR_RATE = [1, 1.2, 1.4, 1.6, 1.8, 2.2], IFR_STORE = [1, 2, 2, 3, 3, 4], IFR_LAUNCH_GAP = 0.15; // Meteor: the meteors the first impact fans out round 360 degrees (owner, 2026-10-20: "initial fan counts should be something like 0:5 1:7 2:9 3:12"; VI 12, its fissure the capstone)
 const IFR_FAN_T = 0.4, IFR_FAN_SD = 0.3, IFR_FAN_MAX_S = 1; // the fan's release times: a bell round FAN_T s, sd FAN_SD, kept in [0, FAN_MAX_S] ("increase timing jitter to 0.3s around 0.4s")
 let IFR_HOME_R = 400; // BATTERY 6.6.0: 50 -> 400 (owner's lever: homing distance). (let: the sims sweep it) // HOMING (owner, 2026-10-20: "start homing in on target at 50u"): an enemy whose body comes within this of a meteor is locked and the meteor steers straight at it
 const IFR_FORK_DEG = 60, IFR_FISSURE_DEG = 30, IFR_FLY_S = 10, IFR_FLY_R = 1400; // the capstone's two fissure meteors fly this far either side of the one that hit; a meteor's longest flight (s); the simulator's 'off screen' (no view): this far from the core
@@ -71,7 +74,7 @@ function ifrSkillStats(t, s, b) {
   s.targets = 1;
   // EACH AXIS ITS OWN PART, ITS OWN DAMAGE (owner, 2026-10-20: "axes don't feel unique nor impactful"), every hit x TOWERS.ifr.dmg:
   // Meteor the meteors, Hellfire the fire the first one leaves, Flare (id firaga) the flares
-  s.fan = IFR_FAN[m]; s.fissure = m >= CAPSTONE_TIER;
+  s.fan = m >= CAPSTONE_TIER ? IFR_FAN_CAP : IFR_FAN_N; s.fissure = false; s.store = IFR_STORE[m];
   s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K0;
   s.fire = h > 0; s.flares = f > 0; // tier 0: a meteor that just hits - the fire is Hellfire's, the flares Flare's (tier redesign 2026-10-24)
   s.fireR = Math.max(s.ballR * IFR_FIRE_FLOOR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireDens = IFR_FIRE_DENS[h]; s.fireHK = IFR_FIRE_HK; 
@@ -79,19 +82,21 @@ function ifrSkillStats(t, s, b) {
   s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareK = IFR_TICK_K0;
   // every hit is st.dmg x its axis's K AT THE HIT, so what towerStats does to dmg after this (the DAM core power, an aura) reaches all of them
   const c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.range = b.range * RANGE_BONUS * c.range; // the STAT CURVE (tier redesign 2026-10-24)
-  s.chargeS = IFR_CHARGE_S0 / c.rate; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
+  s.chargeS = IFR_CHARGE_S0 / c.rate / IFR_METEOR_RATE[m]; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
   s.skill = true;
 }
 // ---------- the charge ----------
 // ONE CHARGE (owner, 2026-10-20: "always one charge ... charge is centered on the hexagon formed by intersection of tower and floor"):
 // it fills over chargeS at the tower's centre and waits there, full, until an enemy is in range
 const ifrCentre = t => { const c = CELLS[t.cell]; return { x: t.x ?? c.x, y: t.y ?? c.y }; };
+// THE CHARGE ORBITS (owner, 2026-10-26: "charged meteor orbits like Hangar"): round the tower at CRR's hold radius and speed; it launches from there
+const ifrChargeAt = (t, k = 0, n = 1) => { const c = ifrCentre(t), a = (t.ifrOrb || 0) + 2 * Math.PI * k / n; return { x: c.x + Math.cos(a) * CRR_HOLD_R, y: c.y + Math.sin(a) * CRR_HOLD_R }; }; // k of n evenly round
 function ifrInit(t) {
   if (t.ifrInit0) return;
   for (const k of ["ifrSlot0", "ifrReady", "ifrLaunchCd", "ifrRings", "ifrFs"]) delete t[k]; /* a 6.4 tower's slots */
   t.ifrInit0 = true; t.ifrCharge = 1; /* built CHARGED - no wind-up before its first meteor (owner, 2026-10-20) */ t.ifrBalls = []; t.ifrFires = []; t.ifrFlares = [];
 }
-function ifrCharge(t, st, dt) { t.ifrCharge = Math.min(1, t.ifrCharge + dt / Math.max(0.01, st.chargeS)); }
+function ifrCharge(t, st, dt) { t.ifrCharge = Math.min(st.store || 1, t.ifrCharge + dt / Math.max(0.01, st.chargeS)); t.ifrGap = Math.max(0, (t.ifrGap || 0) - dt); t.ifrOrb = ((t.ifrOrb || 0) + CRR_HOLD_V / CRR_HOLD_R * dt) % (2 * Math.PI); }
 // "Always launch when meteor available" (owner): full + an enemy in range (the tower's targeting) = it flies, LED (owner, 2026-10-20:
 // "fire the meteor with lead"; never led before - it was the fast weakness): aimed where the enemy will be when it lands; its size is fixed at launch
 // where e will be when a meteor from c at speed v reaches it: its spot on its lane IFR_LEAD_N flight times on (its current offset from the lane kept)
@@ -104,12 +109,12 @@ function ifrLead(c, e, v) {
   return a;
 }
 function ifrLaunch(t, st) {
-  if (t.ifrCharge < 1) return;
+  if (t.ifrCharge < 1 || t.ifrGap > 0) return;
   const e = pickTargets(t, st, 1)[0];
   if (!e) return;
-  const c = ifrCentre(t), a = ifrLead(c, e, st.ballV);
+  const c = ifrChargeAt(t), a = ifrLead(c, e, st.ballV);
   ifrMeteor(t, st, c.x, c.y, Math.atan2(a.y - c.y, a.x - c.x), 0, null); t.ifrBalls[t.ifrBalls.length - 1].lock = e.id; /* ONE meteor, homing onto e from any distance */
-  t.ifrCharge = 0; t.shots = (t.shots || 0) + 1; sfx("ifr");
+  t.ifrCharge -= 1; t.ifrGap = IFR_LAUNCH_GAP; t.ifrOrb = (t.ifrOrb || 0) + 2 * Math.PI / Math.max(1, st.store || 1); /* the next one steps into slot 0 */ t.shots = (t.shots || 0) + 1; sfx("ifr");
 }
 function stepIfr(t, dt) {
   ifrInit(t);
