@@ -338,7 +338,7 @@ function starRed() {
 // ---------- the boss's HP, on the board (UI only; aspira-draw.js calls it) ----------
 // a THICK line in the boss's colour (owner) - along its lane since 2026-10-26 (drawBossBar below). Drawn before the inversion, so cyan reads red.
 const BOSS_BAR_W = 2.2, BOSS_BAR_TRACK = 0.3; // as thin as a lit lane's opaque core, LIT_LINE_SOFT's last (owner, 2026-10-26: "a lot thinner"; was 21); the track = full HP, translucent
-const BOSS_BAR_MARKS = [0.8, 0.6, 0.4, 0.2, 0.1, 0.05], BOSS_MARK_U = 14; // %HP ticks across the lane (owner, 2026-10-26: "add markers at 80 60 40 20 10 and 5% hp along the lane"), BOSS_MARK_U long
+const BOSS_BAR_MARKS = [0.8, 0.6, 0.4, 0.2, 0.1, 0.05, 0], BOSS_MARK_U = 14; // ...and 0% at the core (owner, 2026-10-26) // %HP ticks across the lane (owner, 2026-10-26: "add markers at 80 60 40 20 10 and 5% hp along the lane"), BOSS_MARK_U long
 // THE BOSS SHOWN under the powers (owner, 2026-10-23: "Game should start by saying The Star / Get rid of \"The Source\" / Then just have the
 // boss name and poem on the right"): the live boss (or its fleet), else the one on its way this wave, else the NEXT boss
 const bossShownN = () => {
@@ -356,15 +356,28 @@ const bossHint = () => arcanaOf(bossShownN()).hint.join("\n");
 // the boss rides in along it. Once the boss is INSIDE the bar (its HP share at or past the lane it has left) the bar turns WHITE:
 // it arrives with HP to spare at this pace; before that it is the boss's own colour. One bar a boss (the Lovers two, the Devil
 // six); on the board, so 3D warps it onto the floor (a line along the horizon through the core, 2026-10-09 .. 10-26)
-const BOSS_LANE_STEP = 10;
-function drawBossBar() {
+// THE BAR'S SPAN (owner, 2026-10-26: "start 100% 50u onto the screen, end the hp bar about 100u before the boss lane reaches the core" /
+// "the HP should be the lane color, the non-hp should be a white core (remember these colors are inverted or sth)"): from BOSS_BAR_IN u
+// past the mouth (100%) to BOSS_BAR_OUT u short of the core (0%); the HP left in the lane's colour, drawn as the lane is (it turns over
+// with the lane under the sky), the rest a WHITE core kept white under the sky (skyKeep - drawSceneTop)
+const BOSS_LANE_STEP = 10, BOSS_BAR_IN = 50, BOSS_BAR_OUT = 0; // OUT 100 for a minute, then (owner, 2026-10-26): "for 0% boss label, you can leave it at core"
+const bossSpan = e => { const P = PATHS[e.pi], a = entryS(e.pi) + BOSS_BAR_IN, b = P.len - BOSS_BAR_OUT; return { a, b, hp: b - (b - a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
+function bossTrace(e, a, b) { ctx.beginPath(); for (let s = a, k = 0; ; s += BOSS_LANE_STEP, k++) { const q = pathAt(e.pi, Math.min(s, b), e.ang || 0); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); if (s >= b) break; } ctx.stroke(); }
+function drawBossBar() { // the HP left, in the lane's colour (before the sky's flip, like the lane)
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const P = PATHS[e.pi], s0 = entryS(e.pi), hpStart = P.len - (P.len - s0) * Math.max(0, e.hp) / e.max, inside = e.s >= hpStart;
-    const trace = (a, b) => { ctx.beginPath(); for (let s = a, k = 0; ; s += BOSS_LANE_STEP, k++) { const q = pathAt(e.pi, Math.min(s, b), e.ang || 0); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); if (s >= b) break; } ctx.stroke(); };
-    ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = BOSS_BAR_TRACK; trace(s0, P.len); // the ORIGINAL HP as a translucent track (owner), the HP left solid over it
-    ctx.strokeStyle = COL[inside ? "white" : ENEMIES.bonus.color]; ctx.globalAlpha = 1; if (hpStart < P.len - 1) trace(hpStart, P.len);
+    const { b, hp } = bossSpan(e);
+    ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round"; ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
+    if (hp < b - 1) bossTrace(e, hp, b);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawBossTrack() { // the HP gone: a white core from the 100% end to where the HP left begins (kept white under the sky)
+  for (const e of G.enemies) {
+    if (!e.arcana || e.dead) continue;
+    const { a, hp } = bossSpan(e);
+    ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round"; ctx.strokeStyle = COL.white; ctx.globalAlpha = 0.9;
+    if (hp > a + 1) bossTrace(e, a, hp);
   }
   ctx.globalAlpha = 1;
 }
@@ -376,10 +389,10 @@ const BOSS_LABEL_PX = 9, BOSS_LABEL_OFF = 13;
 function drawBossMarks() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const P = PATHS[e.pi], s0 = entryS(e.pi), hp = Math.max(0, e.hp) / e.max;
+    const { a: A, b: B } = bossSpan(e), hp = Math.max(0, e.hp) / e.max;
     ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.globalAlpha = 0.9;
     for (const f of BOSS_BAR_MARKS) {
-      const s = P.len - (P.len - s0) * f /* f of the lane out from the core, where the bar's mouth end sits at f HP */, col = hp >= f ? "threat" : "grid", a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
+      const s = B - (B - A) * f /* f of the bar's span back from its 0% end */, col = hp >= f ? "threat" : "grid", a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
       const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / L, ny = (b.x - a.x) / L;
       ctx.strokeStyle = COL[col]; ctx.beginPath(); ctx.moveTo(q.x - nx * BOSS_MARK_U / 2, q.y - ny * BOSS_MARK_U / 2); ctx.lineTo(q.x + nx * BOSS_MARK_U / 2, q.y + ny * BOSS_MARK_U / 2); ctx.stroke();
     }
@@ -391,11 +404,11 @@ function drawBossMarks() {
 function drawBossLabels(at = (x, y, fn) => fn()) {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const P = PATHS[e.pi], s0 = entryS(e.pi), hp = Math.max(0, e.hp) / e.max;
+    const { a: A, b: B } = bossSpan(e), hp = Math.max(0, e.hp) / e.max;
     for (const f of BOSS_BAR_MARKS) {
-      const s = P.len - (P.len - s0) * f, a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
+      const s = B - (B - A) * f, a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
       const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, x = q.x - (b.y - a.y) / L * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF), y = q.y + (b.x - a.x) / L * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF);
-      at(x, y, () => { ctx.globalAlpha = 1; text(Math.round(f * 100) + "%", x, y, BOSS_LABEL_PX, hp >= f ? "threat" : "grid", true); });
+      at(x, y, () => { ctx.globalAlpha = 1; text(Math.round(f * 100) + "%", x, y, BOSS_LABEL_PX, hp >= f ? "threat" : "grid", false); }); // no outline (owner, 2026-10-26)
     }
   }
 }

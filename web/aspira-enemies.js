@@ -138,12 +138,11 @@ function drawStatus(e, d, size, solid) {
     ctx.strokeStyle = COL.cyan; ctx.globalAlpha = 0.9; ctx.lineWidth = 2.5; ctx.stroke();
   }
   // BLEED (SOL's Impale): a pink outline, for good (owner)
-  // (BREACH: one upright spike through the die - warpSolid); SCORCH stacks: a cross through it along its other two axes, bigger the
-  // more stacks (owner, 2026-10-26; 3D: warpSolid's floor spikes)
+  // (BREACH: one upright spike through the die - warpSolid); SCORCH: acid's dotted circle in SOL's pink (owner, 2026-10-26: "use the
+  // same dotted circle as acid, except pink"; the x / y spikes of an hour before are gone), a step further out than acid's
   if (e.dots && e.dots.length) {
-    const n = Math.min(BREACH_SPOKES, e.dots.length), h = size * (1.3 + SOLID_BREACH_LEN * n), c = Math.cos(e.rot), s = Math.sin(e.rot);
-    ctx.beginPath(); ctx.moveTo(e.x - c * h, e.y - s * h); ctx.lineTo(e.x + c * h, e.y + s * h); ctx.moveTo(e.x + s * h, e.y - c * h); ctx.lineTo(e.x - s * h, e.y + c * h);
-    ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9; ctx.lineWidth = 1.2 + SOLID_BREACH_W * n; ctx.stroke();
+    ctx.beginPath(); ctx.arc(e.x, e.y, size + (e.corrodeT > 0 ? 7 : 3), 0, 6.283);
+    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
   }
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
