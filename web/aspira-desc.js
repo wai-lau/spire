@@ -48,11 +48,11 @@ const DESCRIBE = {
   // SOL (owner, 2026-10-26): one beam, straight through every hit and splitting at each to SOL_SPLIT more (Diffraction), each hit SOL_HOP
   // (Diffraction) x the one before; the armor every hit strips (SOL_BREACH_ARMOR, Breach); the stacking burn (SOL_SCORCH_N ticks, Scorch) - read live
   sol(sk) {
-    const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, k = SOL_SPLIT[r], p = Math.round(SOL_HOP[r] * 100);
+    const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, k = SOL_SPLIT[r], p = Math.round(SOL_HOP[r] * 100), TIMES = ["", "once", "twice"];
     const br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_N[f];
-    return "Fires a beam that splits at every hit to the " + (k > 1 ? NUM_WORD[k] + " nearest enemies" : "nearest enemy") + " further down its cone, or flies on and bounces off the cone's edge; each hit takes " + p + "% of the hit before, until under 5%." +
+    return "A solar ray that refracts " + (k > 1 ? (TIMES[k] || NUM_WORD[k] + " times") + " " : "") + "within a cone, losing " + (100 - p) + "% intensity every hit." + /* (owner, 2026-10-26: "0: A solar ray that refracts within a cone, losing Y% intensity every hit." / "diffraction 2 should say, refracts twice") */
       (br ? " Every hit breaks " + dmgUnits(br * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor." : "") +
-      (sc ? " Every hit scorches for " + ticking(sc * SOL_SCORCH_TICK_K, sc, sc * SOL_SCORCH_Q) + "; burns stack without limit." : "");
+      (sc ? " Every hit scorches for " + ticking(SOL_SCORCH_TOTAL, sc, sc * SOL_SCORCH_Q) + ", and every shot scorches " + (SOL_CONE_STACKS[f] > 1 ? NUM_WORD[SOL_CONE_STACKS[f]] + " times" : "once") + " every enemy in its cone; burns stack without limit." : "");
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY), the pools' slow (ACD_POOL_SLOW, Contagion's since the tier redesign),
