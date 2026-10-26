@@ -220,9 +220,9 @@ check("later: tier I adds no extra numbers the spec does not name - SOL Breach I
   if (s1.critMul !== s0.critMul) return "SOL Breach I crit x" + s1.critMul + " (tier 0 x" + s0.critMul + ")";
   if (f1.brittle !== 1) return "FRZ Sublimation I Brittle x" + f1.brittle + " (expected 1)";
 });
-check("later: a factor on the tower's OWN damage is one constant, on from its first tier (SOL crit + scorch, IFR fire hit + Flare's fire boost)", () => {
+check("later: a factor on the tower's OWN damage is one constant, on from its first tier (SOL crit, IFR fire hit + Flare's fire boost)", () => {
   const same = (kind, ax, key, from) => { const v = [1, 2, 3, 4, 5].map(n => statsOf(kind, { [ax]: n })[key]); return v.every(x => x === v[0]) && statsOf(kind, {})[key] === from ? "" : kind + " " + ax + " " + key + " " + JSON.stringify(v) + " (tier 0 " + statsOf(kind, {})[key] + ")"; };
-  return same("sol", "breach", "critMul", 3) || same("sol", "breach", "scorch", 0) || same("ifr", "hellfire", "fireHK", statsOf("ifr", { hellfire: 1 }).fireHK) || same("ifr", "firaga", "hfK", 1);
+  return same("sol", "breach", "critMul", 3) /* (SOL scorch left this rule 2026-10-25: Breach "increases ... burn" again) */ || same("ifr", "hellfire", "fireHK", statsOf("ifr", { hellfire: 1 }).fireHK) || same("ifr", "firaga", "hfK", 1);
 });
 check("later: the card rows read no zero mechanic - ARC Jumps at tier 0, FRZ Cold bite before Sublimation (the nip is flat)", () => {
   const a0 = rows("arc", {}).rows, a1 = rows("arc", { conductivity: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;

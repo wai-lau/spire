@@ -319,7 +319,7 @@ const SOL_CRIT_K = 3;
 // saturates): each Focus beam's share of the shot by tier, and each Refract
 // hop's damage by tier (a hop is far weaker than the first hit)
 // (owner 2026-10-06: every Focus beam is a FULL hit - 1 / 2 / 3 / 4 beams, no share - so no stat falls; SOL's base damage pays for it)
-const SOL_HOP = [0.5, 0.5, 0.5, 0.5]; // REFLECTION'S SHARE, FIXED (owner, 2026-10-23: "reflection just increases the reflections"; was 0.5 .. 0.75, VI 0.8): each reflection hits at this x the last one's (compounding: p, p^2, p^3..); (SOL rework 2026-10-22) was 1 a hop // every refraction hop a full strike (overnight fit 2026-10-08: even 1.5x reached only 133% - Refraction needs a mechanic change, not numbers) // II / III raised 2026-10-07 (were 0.3 / 0.455) with the cone narrowed to 8 degrees: fewer hops land, so each counts more
+const SOL_HOP = [0.5, 0.55, 0.6, 0.7, 0.8, 0.9]; /* by BREACH tier 0..V (owner, 2026-10-25: "Breach increases more reflection carry and burn"; was fixed 0.5 by Reflection - 2026-10-23 "reflection just increases the reflections") */ // REFLECTION'S SHARE, FIXED (owner, 2026-10-23: "reflection just increases the reflections"; was 0.5 .. 0.75, VI 0.8): each reflection hits at this x the last one's (compounding: p, p^2, p^3..); (SOL rework 2026-10-22) was 1 a hop // every refraction hop a full strike (overnight fit 2026-10-08: even 1.5x reached only 133% - Refraction needs a mechanic change, not numbers) // II / III raised 2026-10-07 (were 0.3 / 0.455) with the cone narrowed to 8 degrees: fewer hops land, so each counts more
 // Refraction peaked at I (107%) and fell by III (93%): range alone spread its fire
 // thin, so II / III also hit harder (owner, 2026-10-07)
 // (LIGHT OUTRUNS THE FAST, Refraction x the fast, removed 2026-10-12 - owner: no extra damage by enemy type)
@@ -336,9 +336,9 @@ const SOL_PASS_N = [0, 1, Infinity, Infinity, Infinity, Infinity];
 function solSkillStats(t, s, b) {
   curveBase(t, s, b); s.rate = b.rate; s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.crit = LVL_SOL_CRIT[0]; // the STAT CURVE (tier redesign 2026-10-24); SOL's rate never rises (owner, 2026-10-23)
   s.shieldPop = SOL_SHIELD_POP; s.pass = SOL_PASS[skillOf(t, "focus")]; s.passN = SOL_PASS_N[skillOf(t, "focus")]; // FOCUS pierces shields: each beam pops this many (SOL's shield help, counter matrix)
-  s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "refraction")]; s.fan = SOL_FAN_BY[skillOf(t, "refraction")]; // the chains off the first enemy (solRefraction)
+  s.beams = SOL_BEAMS[skillOf(t, "focus")]; s.refraction = SOL_REFRACTION[skillOf(t, "refraction")]; s.cone = SOL_CONE_BY[skillOf(t, "refraction")] /* (the LOCK cone only now - aspira-towers.js) */; s.hop = SOL_HOP[skillOf(t, "breach")]; s.fan = SOL_FAN_BY[skillOf(t, "refraction")]; // the chains off the first enemy (solRefraction)
   const bk = skillOf(t, "breach");
-  s.breach = 1; s.pierce = 1; s.dot = bk ? { frac: SOL_SCORCH_K, t: SOL_SCORCH_T } : null; /* no burn at Breach 0 (tier redesign) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
+  s.breach = 1; s.pierce = 1; s.dot = bk ? { frac: SOL_SCORCH_KS[bk], t: SOL_SCORCH_T, full: true } : null; /* full: every hit - reflection, pass-through - burns as the first does (owner, 2026-10-25: "burn same for all hits not only first") */ /* no burn at Breach 0 (tier redesign) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
 }
 // THE SOL REWORK (owner, 2026-10-22: "SOL beam always goes through at 100% after enemy in a straight line, starts with one reflection as
 // usual. However, reflection deals less than 100% damage and also passes through" / "refraction -> increases passthrough% and additional
@@ -411,4 +411,4 @@ function drawCone(f0, k) {
 // SHORT AND BIG, POPS SHIELDS (owner, 2026-10-23: "pops shield (dont all other dots pop shields?) make this short and big"): over
 // SOL_SCORCH_T s in SOL_SCORCH_TICKS whole ticks (few big ticks, so flat armor bites less; was every frame over 1s), each a loud-free hit
 // that pops a shield charge like IFR's burn and ACD's pools (SOL_DOT_ST; it bounced off shields unpopped until then)
-const SOL_SCORCH_K = 1.05 /* its tier I value */, SOL_SCORCH_T = 0.4, SOL_SCORCH_TICKS = 4, SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 1 }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)
+const SOL_SCORCH_KS = [0, 1.05, 1.3, 1.6, 2, 2.6]; /* by Breach tier again (owner, 2026-10-25: Breach "increases ... burn"; ONE number 1.05 since 2026-10-25 - placeholders) */ const SOL_SCORCH_K = SOL_SCORCH_KS[1], SOL_SCORCH_T = 0.4, SOL_SCORCH_TICKS = 4, SOL_DOT_ST = { noFx: true, noNum: true, shieldPop: 1 }; // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)

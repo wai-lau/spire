@@ -186,7 +186,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
 // Side effects of a landed hit, from the tower's upgrade mods.
 function onHit(e, t, st, amt) {
   if (st.shred) applyMark(e, st.shred.mul, st.shred.t, t ? t.id : "x");
-  if (st.dot) { e.dotDps = Math.max(e.dotT > 0 ? e.dotDps : 0, amt * st.dot.frac / st.dot.t); e.dotT = st.dot.t; e.dotSrc = t; }
+  if (st.dot) { e.dotDps = Math.max(e.dotT > 0 ? e.dotDps : 0, (st.dot.full ? Math.max(amt, st.dmg) : amt) * st.dot.frac / st.dot.t); e.dotT = st.dot.t; e.dotSrc = t; }
   if (st.stun && Math.random() < st.stun.p) e.stunT = Math.max(e.stunT, st.stun.t);
   if (st.hitSlow) applySlow(e, st.hitSlow.f, st.hitSlow.t, t ? t.id : "x");
   // Melt (ARC): every hit strips armor for good, past zero (owner: every armor

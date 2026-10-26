@@ -48,8 +48,8 @@ const DESCRIBE = {
   // SOL (owner, 2026-10-22, the rework): the beams on one enemy (SOL_BEAMS), the pass-through (SOL_PASS, by Focus), the reflections (SOL_REFRACTION in a
   // chain, each SOL_HOP x the last; VI three chains) and the armor every hit strips (SOL_BREACH_ARMOR) - every number read live
   sol(sk) {
-    const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, n = SOL_BEAMS[f], k = SOL_REFRACTION[r], p = Math.round(SOL_HOP[r] * 100), TIMES = ["", "once", "twice"];
-    const pn = SOL_PASS_N[f], fan = SOL_FAN_BY[r], br = SOL_BREACH_ARMOR[b], sc = b ? SOL_SCORCH_K : 0, scorch = "scorch for " + ticking(sc, SOL_SCORCH_TICKS, SOL_SCORCH_T); // tier 0: one beam, stopping at its enemy (tier redesign 2026-10-24)
+    const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, n = SOL_BEAMS[f], k = SOL_REFRACTION[r], p = Math.round(SOL_HOP[b] * 100) /* the carry is Breach's (2026-10-25) */, TIMES = ["", "once", "twice"];
+    const pn = SOL_PASS_N[f], fan = SOL_FAN_BY[r], br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_KS[b], scorch = "scorch for " + ticking(sc, SOL_SCORCH_TICKS, SOL_SCORCH_T); // tier 0: one beam, stopping at its enemy (tier redesign 2026-10-24)
     return "Focuses " + (n > 1 ? n + " beams" : "a beam") + " onto an enemy" + (pn === 1 ? ", passing through to one more at " + Math.round(SOL_PASS[f] * 100) + "%" : pn ? ", passing through at " + Math.round(SOL_PASS[f] * 100) + "%" : "") + "." + /* Focus: beams + pass-through (owner, 2026-10-23) */
       (k ? " Reflects " + (TIMES[k] || k + " times") + " for " + (100 - p) + "% less damage" + (k > 1 ? " every reflection" : "") + "." + (fan > 1 ? " First reflection splits " + NUM_WORD[fan] + " ways." : "") : "") /* (owner: st.fan, two chains, VI six) */ +
       (br ? " Beams break " + dmgUnits(br * scaleOf(Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1))) /* x the LATE SCALE */ + " armor" + (sc ? " and " + scorch : "") + "." : sc ? " Beams " + scorch + "." : ""); // (owner: "Break X armor and scorch" / "and scorch for ...")

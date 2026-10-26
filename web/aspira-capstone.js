@@ -69,7 +69,7 @@ const CAPSTONE_NUM = [
   [FRZ_MOON_COUNT, 3], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 3] /* (owner, 2026-10-20: max 3 and 3; were 5 and 6) */,
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
   [SOL_BEAMS, 25], [SOL_PASS, 1], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, 6] /* IV: six chains of six (SOL rework, s.fan; three until 2026-10-23) */,
-  [SOL_CONE_BY, 12], [SOL_HOP, 0.5], [SOL_BREACH_ARMOR, 3216],
+  [SOL_CONE_BY, 12], [SOL_BREACH_ARMOR, 3216],
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
   [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9],
   [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }],
