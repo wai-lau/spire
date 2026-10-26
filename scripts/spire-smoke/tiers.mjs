@@ -145,7 +145,7 @@ check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry;
 
 // ---------- GRV ----------
 towerTierChecks("grv", ["aura", "strip"]); // (its tiny void and the pellets it sheds ARE tier 0 - GRV rework 2026-10-25)
-check("GRV rework (owner, 2026-10-25): tier 0 a tiny void alone - no nova, aura, strip or pellets; Nova I novas that strip armor; Void I a bigger void that sheds pellets; Acceleration I an aura that slows", () => {
+check("GRV rework (owner, 2026-10-25): tier 0 a tiny void alone - no nova, aura, strip or pellets; Nova I novas that strip armor; Void I a bigger void that sheds pellets; Acceleration I an aura that slows, pellets too", () => {
   const go = sk => run(`(() => { const { t, es, st } = tierLane("grv", ${JSON.stringify(sk)}, [40, 60]); const e = es[0]; e.armor = e.armor0 = 500; G.started = true;
     novaAt(t, st, e); let slowed = false, pel = 0, sph = 0; /* the hole-leaving shot (GRV_BH_EVERY) */ for (let k = 0; k < 90; k++) { step(1 / 60); t.cd = 1e9; if (e.slowT > 0) slowed = true; pel = Math.max(pel, (t.pellets || []).length); if (k === 40) sph = (t.spheres || []).length; }
     const s = towerStats(t); return { dealt: e.max - e.hp, sph, slowed, armor: e.armor, pel, hole: !!s.hole, aura: !!s.auraOn, voidR: s.auraR, name: SKILL_TREES.grv[1].name, acc: SKILL_TREES.grv[2].name }; })()`);
@@ -153,7 +153,7 @@ check("GRV rework (owner, 2026-10-25): tier 0 a tiny void alone - no nova, aura,
   if (!(z.dealt > 0) || !z.sph || z.slowed || z.armor !== 500 || z.pel) return "tier 0: " + JSON.stringify(z) + " (expected a void that crushes, no slow, strip or pellets)";
   if (!(v.voidR > z.voidR) || v.slowed || v.armor !== 500 || !v.pel) return "Void I: " + JSON.stringify(v);
   if (!(n.armor < 500) || n.slowed) return "Nova I: " + JSON.stringify(n);
-  if (!r.slowed || !r.aura) return "Acceleration I: " + JSON.stringify(r);
+  if (!r.slowed || !r.aura || !r.pel) return "Acceleration I: " + JSON.stringify(r);
   if (z.name !== "Nova" || z.acc !== "Acceleration") return "GRV's axes read " + z.name + " / " + z.acc;
 });
 

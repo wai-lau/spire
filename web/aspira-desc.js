@@ -80,9 +80,9 @@ const DESCRIBE = {
     // (owner, 2026-10-25): "0: void only" / "the void crushes" / "always call it a void, and an aura" / "122% to X% depending on the size"
     return (n ? NUM_WORD[GRV_NOVA_N][0].toUpperCase() + NUM_WORD[GRV_NOVA_N].slice(1) + " novas implode in quick succession, each stripping armor worth " + pc(GRV_NOVA_STRIP[n]) + " of its hit; then a" : "A") +
       (v ? "" : " tiny") + " void forms" + (v >= CAPSTONE_TIER ? ", twice as heavy," : "") + " and crushes for " + pc(lo) + " to " + ticking(lo * GRV_MASS_MAX, 1 / GRV_TICK, 1) + " as it grows." +
-      (v ? " As it decays it sheds pellets of " + pc(GRV_PELLET_K[r] / GRV_NOVA_K) + " damage." : "") +
-      (r ? " An aura around it pulls enemies together and slows them, twice as hard inside the void" + (r >= CAPSTONE_TIER ? " - and as hard all the way out" : "") + (v ? ", and flings its pellets farther." : ".") : "") +
-      " Nearby voids pull together and merge" + (v ? ", shedding what they cannot hold as pellets." : ".");
+      (v || r ? " As it decays it sheds pellets of " + pc(GRV_PELLET_K[r] / GRV_NOVA_K) + " damage." : "") +
+      (r ? " An aura around it pulls enemies together and slows them, twice as hard inside the void" + (r >= CAPSTONE_TIER ? " - and as hard all the way out" : "") + ", and flings its pellets farther." : "") +
+      " Nearby voids pull together and merge" + (v || r ? ", shedding what they cannot hold as pellets." : ".");
   },
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
   // towers across); Flare the flares - bigger, hotter, longer (its capstone: three a landing)

@@ -78,7 +78,7 @@ function grvSkillStats(t, s, b) {
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= GRV_NOVA_RATE[n]; s.hdmg = s.dmg; s.evapK = 1; s.targets = 1; // (rateCurve: the curve's, before Nova)
   s.hole = true; s.auraOn = r > 0; s.auraR = GRV_AURA_R[v]; s.accR = GRV_ACC_R[r]; s.slow = GRV_SLOW[r]; s.innerK = GRV_INNER_K[v]; s.horizon = r >= CAPSTONE_TIER;
   s.novaR = GRV_NOVA_R[Math.max(n, v)]; s.strip = GRV_NOVA_STRIP[n];
-  s.pellets = v > 0 ? GRV_PEL_PER_MASS : 0; s.novaN = n > 0 ? GRV_NOVA_N : 0; s.startM = GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1); s.pelletK = GRV_PELLET_K[r]; s.pelReach = GRV_PEL_RANGE[r]; s.big = v >= CAPSTONE_TIER; s.skill = true; // pellets from Void I, novas from Nova I (owner, 2026-10-25)
+  s.pellets = v > 0 || r > 0 ? GRV_PEL_PER_MASS : 0; s.novaN = n > 0 ? GRV_NOVA_N : 0; s.startM = GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1); s.pelletK = GRV_PELLET_K[r]; s.pelReach = GRV_PEL_RANGE[r]; s.big = v >= CAPSTONE_TIER; s.skill = true; // pellets from Void I or Acceleration I (owner, 2026-10-25: Accel alone too - "Yes"), novas from Nova I
 }
 
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
