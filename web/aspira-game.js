@@ -81,7 +81,7 @@ function spawnEnemy(type, n, pi, ang = 0) {
     // swarm members wander widely off the lane, each at its own speed (+-50%, its own roll - never tied to its size)
     // and its own wobble rate, so a clump churns as it moves
     jit: type === "swarm" ? 18 + Math.random() * 45 : 0, /* x1.5 wider (owner, 2026-10-12: "swarm units spread wider across lane"; was 12 + 30) */ ph: Math.random() * 6.283, // owner: tripled, halved twice, doubled 2026-10-08
-    spd: (type === "swarm" ? 0.5 + Math.random() /* +-50% (owner, 2026-10-14: "increase their speed jitter significantly, not correlated to size" - a swarm strings out instead of arriving as one clump; was 0.8 + 0.4) */ : type === "fast" ? lateK(n, "fast") * (n === 1 ? FIRST_FAST_SPD : 1) : 1) * speedRamp(n) * (ENEMIES[type].star ? 1 : speedGrow(n) * tune(type, "speed", n)), /* (aspira-defs.js) */ phr: 0.6 + Math.random(),
+    spd: (type === "swarm" ? 0.5 + Math.random() /* +-50% (owner, 2026-10-14: "increase their speed jitter significantly, not correlated to size" - a swarm strings out instead of arriving as one clump; was 0.8 + 0.4) */ : type === "fast" ? lateK(n, "fast") * (n === 1 ? FIRST_FAST_SPD : 1) : 1) * speedRamp(n) * (ENEMIES[type].star ? 1 : speedGrow(n) * tune(type, "speed", n) * PLAIN_SPEED_K), /* (aspira-defs.js; PLAIN_SPEED_K: half speed, owner 2026-10-26 - a boss's fleet takes it back, bossFleet) */ phr: 0.6 + Math.random(),
     id: G.id++, type, n, hp, max: hp, pi, ang, s: s0, x: p0.x, y: p0.y, rot: Math.random() * 6,
     // fractional, so a cheap swarmer really pays its share (owner: halved
     // swarm bounty must hold; money is shown rounded down)
@@ -363,8 +363,8 @@ function stepSpawns(dt) {
       const m = formSpawn(w, type) || (spawnEnemy(type, w.n, w.lanes[type], w.ang || 0), 1);
       // spacing is a balance lever: swarms stream evenly and very densely
       // (5x the bodies in the same time as before), trains spread ~60+ apart; a formation waits its members' worth
-      w.timer += w.gaps ? w.gaps[w.idx - 1] : type === "fast" ? FAST_PAIR / (ENEMIES.fast.speed * ENEMY_SPEED * (w.n === 1 ? FIRST_FAST_SPD : 1)) // fast pairs: the next one FAST_PAIR behind (aspira-formations.js)
-        : m * (type === "swarm" ? 0.024 : type === "shield" ? SHIELD_POD_GAP : 0.8) / ENEMY_SPEED;
+      w.timer += (ENEMIES[type].star ? 1 : 1 / PLAIN_SPEED_K) * (w.gaps ? w.gaps[w.idx - 1] : type === "fast" ? FAST_PAIR / (ENEMIES.fast.speed * ENEMY_SPEED * (w.n === 1 ? FIRST_FAST_SPD : 1)) // fast pairs: the next one FAST_PAIR behind (aspira-formations.js)
+        : m * (type === "swarm" ? 0.024 : type === "shield" ? SHIELD_POD_GAP : 0.8) / ENEMY_SPEED); // (x 1 / PLAIN_SPEED_K: the same gaps in distance at half speed)
       // a boss's FLEET rides around it: the next boss on the same lane (the Lovers' second) waits till both fleets clear
       const lb = type === "bonus" && G.lastBoss;
       if (lb && lb.fleetSpan) w.timer = Math.max(w.timer, (lb.fleetSpan + FLEET_GAP) / Math.max(1, effSpeed(lb)));

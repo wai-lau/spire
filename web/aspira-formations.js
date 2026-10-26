@@ -64,7 +64,7 @@ const SHIELD_LANES = [2, 3]; // 2-3 (owner, 2026-10-12; briefly 3 or 5, never 4)
 // contains the rest"): the main three are 120 degrees apart at laneBestTurn's pick for THREE copies; the rest sit between them on the k
 // grid. A main lane's bodies are released on a BELL (fixed normal quantiles, +-SWARM_BELL_Z sd over SWARM_BELL_SPAN x the even stream's
 // time) - dense mid-stream, thin at the head and the tail; the others stream evenly as before
-const SWARM_MAIN = 3, SWARM_MAIN_SHARE = 0.8, SWARM_BELL_SPAN = 2, SWARM_BELL_Z = 2.5;
+const SWARM_MAIN = 3, SWARM_MAIN_SHARE = 0.8, SWARM_BELL_SPAN = 4 /* x2 (owner, 2026-10-26: "last swarm units need to arrive much later than first ones (bigger time spread for main lanes)"; was 2) */, SWARM_BELL_Z = 2.5;
 function swarmLanes(pi, k, n) { // [{ ang, main }], the main three first
   const t = laneBestTurn(pi, SWARM_MAIN, n, "swarm"), all = Array.from({ length: k }, (_, i) => ({ ang: (t + i * 2 * Math.PI / k) % (2 * Math.PI), main: i % (k / SWARM_MAIN) === 0 }));
   return [...all.filter(l => l.main), ...all.filter(l => !l.main)];
@@ -83,6 +83,9 @@ function bellGaps(m, gap) { // m bodies' waits AFTER each (the last 0): an even 
   const S = m * gap * SWARM_BELL_SPAN, at = Array.from({ length: m }, (_, i) => S * (0.5 + Math.max(-SWARM_BELL_Z, Math.min(SWARM_BELL_Z, normInv((i + 0.5) / m))) / (2 * SWARM_BELL_Z)));
   return at.map((t, i) => (i + 1 < m ? at[i + 1] - t : 0));
 }
+// HALF SPEED (owner, 2026-10-26: "cut speed of all non-boss/boss-fleet enemies in half"): every plain enemy spawns at PLAIN_SPEED_K
+// (spawnEnemy's spd; a boss's fleet rides at the boss's own pace - bossFleet); a stream's gaps stretch to match (stepSpawns)
+const PLAIN_SPEED_K = 0.5;
 function formSplit(type, count, n) {
   if (type === "armor") return ARMOR_ONE_BLOCK ? 1 : ARMOR_LANES; // always (laneCount rounds up)
   if (type === "swarm") return SWARM_LANES[Math.floor(fixedRand(n, 3) * SWARM_LANES.length)];

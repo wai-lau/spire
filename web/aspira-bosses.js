@@ -187,7 +187,7 @@ function bossFleet(e, n) {
         }
         // in FORMATION: at the boss's own pace, so the spacing holds (a fast escort behind would run through it)
         m.spd = (e.spd || 1) * ENEMIES.bonus.speed / ENEMIES[k].speed; m.jit = 0; // (a swarmer's wander would carry it into its neighbours)
-        m.bossKin = true; m.fleetSpd = m.spd; e.fleet.push(m);
+        m.bossKin = true; m.fleetSpd = m.spd; e.fleet.push(m); // (its spd is the boss's pace, set above: no half speed for a fleet)
         // not onto Temperance: her regen is a share of her HP (2026-10-11: w60 killed 11 of 32 two-tower openings)
         const moved = isA(e, "temperance") ? 0 : Math.floor(m.max * FLEET_TO_BOSS);
         m.max -= moved; m.hp = m.max; e.max += moved; e.hp = e.max; // (was swallowed by the comment above from 2026-10-11 to 10-14)
