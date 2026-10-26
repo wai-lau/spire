@@ -27,7 +27,6 @@ const hopDelay = st => CHAIN_HOP_FRAC / st.rate;
 const CHAIN_LEASH = 1.5, LEASH_PER_LAYER = 0.5;
 const chainReach = st => (st.skill ? st.range + st.arcRange * (1 - st.arcShrink ** st.layers) / (1 - st.arcShrink) // a chart ARC: its jumps, each shorter
   : st.range * (CHAIN_LEASH + LEASH_PER_LAYER * (st.layers - 1)));
-const SOL_HOLD = 2; // a Reaper's lock holds out to 2x the range it can start one in
 
 // The tree is built of NODES (an enemy can appear in several once arcs
 // bounce back): node = { e, fx: the beam that reached it, up: parent node,
@@ -218,8 +217,10 @@ const inSolCone = (t, st, a, e) => solInBand(t, st, e, a, t);
 function stepSol(t, dt) {
   const st = towerStats(t);
   t.period = 1 / st.rate;
-  // two ranges (owner): a lock can only START inside st.range (pickTargets),
-  // but once charging it HOLDS out to SOL_HOLD x that range. It holds up
+  // a lock can only START inside st.range (pickTargets); once charging it HOLDS its target WHEREVER it goes and fires,
+  // but a target outside st.range when it fires is let go - no new charge on it until it is back in range (owner, 2026-10-26:
+  // "if a target were to exit SOL's range as it is charging, it can keep charging and fire, but it cannot start charging again
+  // until it enters SOLs range again"; it held out to SOL_HOLD x the range before). It holds up
   // to st.targets locks - 1 at base; more are PARKED for a Reaper upgrade
   // (owner: a `targets` mod) - EACH WITH ITS OWN CHARGE TIMER (owner):
   // a new lock charges from empty, fires its own ray when full and charges
@@ -229,7 +230,7 @@ function stepSol(t, dt) {
   // target inside the Refraction cone (st.cone either side) of the lost one's direction from
   // the tower; anywhere else the new lock charges from empty
   const lost = [];
-  t.locks = (t.locks || []).filter(l => { const ok = !l.e.dead && Math.hypot(l.e.x - t.x, l.e.y - t.y) <= st.range * SOL_HOLD; if (!ok) lost.push({ a: aimAt(t, l.e), cd: l.cd }); return ok; });
+  t.locks = (t.locks || []).filter(l => { const ok = !l.e.dead; if (!ok) lost.push({ a: aimAt(t, l.e), cd: l.cd }); return ok; });
   if (t.locks.length < st.targets) {
     for (const e of pickTargets(t, st, st.targets + t.locks.length)) {
       if (t.locks.length >= st.targets) break;
@@ -248,10 +249,10 @@ function stepSol(t, dt) {
     // there does the charge carry over (owner, 2026-10-08); else it fires where it was
     const a0 = aimAt(t, l.e), pick = pickTargets(t, st, st.targets + t.locks.length).find(e => e === l.e || (!t.locks.some(o => o.e === e) && inSolCone(t, st, a0, e)));
     if (pick) l.e = pick;
-    fireRay(t, st, l.e); l.cd = t.period; fired = true;
+    fireRay(t, st, l.e); l.cd = t.period; fired = true; l.out = Math.hypot(l.e.x - t.x, l.e.y - t.y) > st.range; // out of range now: let go once it has fired
     t.shots = (t.shots || 0) + 1;
   }
-  if (fired) sfx(t.kind);
+  if (fired) { sfx(t.kind); t.locks = t.locks.filter(l => !l.out); }
 }
 
 

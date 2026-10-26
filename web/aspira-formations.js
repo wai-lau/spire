@@ -56,9 +56,33 @@ const NO_LANES = 4; // NOTHING rides exactly four lanes (owner, 2026-10-13: "mak
 // SWARM on 20 or 24 lanes, FOUR times its old 5-6 (owner, 2026-10-12: "double swarm lanes ... keep the number of enemies the
 // same"; doubled again 2026-10-13, "mostly a visual change, double the swarm lanes again, but keep the counts"): the count is
 // still rounded to the old lane-fulls (k / SWARM_K), then shared over the k lanes, some one more (sendWave)
-const SWARM_LANES = [20, 24], SWARM_K = 4; // (kept with HALF the bodies - owner, 2026-10-14: "no same number of lanes")
+const SWARM_LANES = [21, 24], SWARM_K = 4; // (kept with HALF the bodies - owner, 2026-10-14: "no same number of lanes"); 21 not 20 so three MAIN lanes sit on the grid (2026-10-26)
 const ARMOR_LANES = 2; // ALWAYS two (owner, 2026-10-12: "armor should always use 2 paths"; was 1-3)
 const SHIELD_LANES = [2, 3]; // 2-3 (owner, 2026-10-12; briefly 3 or 5, never 4)
+// THREE MAIN LANES (owner, 2026-10-26: "choose 3 main lanes (these are the ones that the game should be rotating to equalize time on
+// screen) / they should contain about 80% of the swarm, with a bell curve in terms of arrival density over distance / the remaining
+// contains the rest"): the main three are 120 degrees apart at laneBestTurn's pick for THREE copies; the rest sit between them on the k
+// grid. A main lane's bodies are released on a BELL (fixed normal quantiles, +-SWARM_BELL_Z sd over SWARM_BELL_SPAN x the even stream's
+// time) - dense mid-stream, thin at the head and the tail; the others stream evenly as before
+const SWARM_MAIN = 3, SWARM_MAIN_SHARE = 0.8, SWARM_BELL_SPAN = 2, SWARM_BELL_Z = 2.5;
+function swarmLanes(pi, k, n) { // [{ ang, main }], the main three first
+  const t = laneBestTurn(pi, SWARM_MAIN, n, "swarm"), all = Array.from({ length: k }, (_, i) => ({ ang: (t + i * 2 * Math.PI / k) % (2 * Math.PI), main: i % (k / SWARM_MAIN) === 0 }));
+  return [...all.filter(l => l.main), ...all.filter(l => !l.main)];
+}
+function swarmParts(N, k) { // bodies a lane, in swarmLanes' order: SWARM_MAIN_SHARE over the main three, the rest over the others (each lane at least none)
+  const m = Math.min(N, Math.round(N * SWARM_MAIN_SHARE)), share = (n, j) => Array.from({ length: j }, (_, i) => Math.floor(n / j) + (i < n % j ? 1 : 0));
+  return [...share(m, SWARM_MAIN), ...share(N - m, k - SWARM_MAIN)];
+}
+const normInv = p => { /* the standard normal's quantile (Acklam's rational fit, |err| < 1.2e-9) */
+  const a = [-39.6968302866538, 220.946098424521, -275.928510446969, 138.357751867269, -30.6647980661472, 2.50662827745924], b = [-54.4760987982241, 161.585836858041, -155.698979859887, 66.8013118877197, -13.2806815528857], c = [-0.00778489400243029, -0.322396458041136, -2.40075827716184, -2.54973253934373, 4.37466414146497, 2.93816398269878], d = [0.00778469570904146, 0.32246712907004, 2.445134137143, 3.75440866190742];
+  const q0 = Math.min(p, 1 - p);
+  if (q0 < 0.02425) { const q = Math.sqrt(-2 * Math.log(q0)), x = (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); return p < 0.5 ? x : -x; }
+  const q = p - 0.5, r = q * q; return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+};
+function bellGaps(m, gap) { // m bodies' waits AFTER each (the last 0): an even stream's gap x SWARM_BELL_SPAN spread on the bell
+  const S = m * gap * SWARM_BELL_SPAN, at = Array.from({ length: m }, (_, i) => S * (0.5 + Math.max(-SWARM_BELL_Z, Math.min(SWARM_BELL_Z, normInv((i + 0.5) / m))) / (2 * SWARM_BELL_Z)));
+  return at.map((t, i) => (i + 1 < m ? at[i + 1] - t : 0));
+}
 function formSplit(type, count, n) {
   if (type === "armor") return ARMOR_ONE_BLOCK ? 1 : ARMOR_LANES; // always (laneCount rounds up)
   if (type === "swarm") return SWARM_LANES[Math.floor(fixedRand(n, 3) * SWARM_LANES.length)];
@@ -73,7 +97,7 @@ function formSplit(type, count, n) {
 const laneCount = (type, count, k) => {
   if (type === "shield") { let per = Math.ceil(count / k); while (!vFits(per)) per++; return per * k; }
   if (type === "armor") return Math.ceil(count / k) * k; // rounded UP to fill every lane (a short last row sits centred)
-  if (type === "swarm") return Math.max(1, Math.round(count / (k / SWARM_K))) * (k / SWARM_K); // to the NEAREST lane-full: rounded down, wave 7 brought 6 to wave 1's 12 (2026-10-12)
+  if (type === "swarm") return Math.max(1, Math.round(count)); // the swarm is SHARED by weight over its lanes now (swarmParts), no lane-fulls (2026-10-26)
   const unit = FORM_GROUP[type] || 1; return Math.floor(count / (k * unit)) * k * unit || count;
 };
 // THE SPACING IS FOR THE 1x ZONE, AND NOTHING POPS IN (owner, 2026-10-21: "they get compressed as they slow down / The formations

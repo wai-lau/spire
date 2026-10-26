@@ -216,6 +216,16 @@ function sendWave() {
     // FORMATIONS stay whole (aspira-formations.js): shields split only into whole Vs, armor into whole rows
     const want = boss ? bossSplit(G.wave) : firstOne(G.wave) ? 1 : formSplit(list[0], list.length, G.wave);
     const k = Math.min(list.length, want), per = Math.floor(list.length / k), share = list[0] === "swarm"; // swarm: the remainder SHARED out, one more on the first lanes
+    const k3 = k - k % SWARM_MAIN; // (a short swarm: its lanes down to a multiple of three, so the main three sit on the grid)
+    if (share && !boss && k3 > SWARM_MAIN) { // THREE MAIN LANES, 80% of the swarm on a bell (swarmLanes, aspira-formations.js)
+      const ls = swarmLanes(lanes.swarm, k3, G.wave), sz = swarmParts(list.length, k3), gap = 0.024 / ENEMY_SPEED;
+      for (let j = 0, at = 0; j < k3; j++) {
+        const part = list.slice(at, at + sz[j]); at += sz[j]; if (!part.length) continue;
+        G.spawns.push({ n: G.wave, list: part, lanes, ang: ls[j].ang, idx: 0, timer: 0, gaps: ls[j].main ? bellGaps(part.length, gap) : null });
+        const key = laneKey(lanes.swarm, ls[j].ang); (G.laneTotals ||= {})[key] = (G.laneTotals[key] || 0) + part.length;
+      }
+      return;
+    }
     for (let j = 0, at = 0; j < k; j++) {
       const len = share ? per + (j < list.length - per * k ? 1 : 0) : per, part = list.slice(at, at + len); at += len;
       if (!part.length) continue;
@@ -264,6 +274,7 @@ function laneSoon() {
   const n = G.wave + 1;
   if (!G.started || G.over || !(G.nextIn > 0 && G.nextIn <= LANE_LEAD) || n % STAR_EVERY === 0 || G.wave % STAR_EVERY === 0 /* the wave after a boss: no early lanes (owner, 2026-10-24: "after boss wave, no need to show lanes early") */ || (typeof bossUp === "function" && bossUp())) return [];
   const p = wavePlan(n, G.lastType), pi = laneMap(n)[p.type], k = firstOne(n) ? 1 : Math.min(p.count, formSplit(p.type, p.count, n)), a = 1 - G.nextIn / LANE_LEAD;
+  if (p.type === "swarm" && k - k % SWARM_MAIN > SWARM_MAIN) return swarmLanes(pi, k - k % SWARM_MAIN, n).map(l => ({ pi, ang: l.ang, color: ENEMIES.swarm.color, n, star: false, swarm: true, alive: 0, a })); // (the same three main lanes + the rest: sendWave)
   return Array.from({ length: k }, (_, j) => ({ pi, ang: (laneBestTurn(pi, k, n, p.type) + (j / k) * Math.PI * 2) % (Math.PI * 2), color: ENEMIES[p.type].color, n, star: false, swarm: p.type === "swarm", alive: 0, a }));
 }
 function activeLanes() {

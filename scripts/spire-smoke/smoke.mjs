@@ -893,6 +893,16 @@ check("a built tower moves with its slot when the box switches", () => {
   for (const k in r) if (!(r[k] < 1e-6)) return k + " off by " + r[k];
 });
 
+check("swarm (owner, 2026-10-26): three MAIN lanes 120 degrees apart carry about 80% of a swarm, on a bell - dense mid-stream; the rest on the other lanes", () => {
+  const r = run(`(() => { G = newGame(); let n = 41; while (wavePlan(n, null).type !== "swarm" || n % STAR_EVERY === 0) n++; G.wave = n - 1; G.lastType = null; G.spawns = []; G.started = true; sendWave();
+    const sw = G.spawns.filter(w => w.list[0] === "swarm"), main = sw.filter(w => w.gaps), tot = sw.reduce((a, w) => a + w.list.length, 0), mt = main.reduce((a, w) => a + w.list.length, 0);
+    const angs = main.map(w => w.ang).sort((a, b) => a - b), g = main[0] ? main[0].gaps : [];
+    return { m: g.length, lanes: sw.length, n: main.length, share: mt / tot, d1: angs[1] - angs[0], d2: angs[2] - angs[1], mid: g[Math.floor(g.length / 2)], edge: g[0] }; })()`);
+  if (r.n !== 3 || r.lanes <= 3) return "main lanes " + r.n + " of " + r.lanes;
+  if (Math.abs(r.share - 0.8) > 0.05) return "main share " + r.share.toFixed(3) + " (expected about 0.8)";
+  if (Math.abs(r.d1 - 2 * Math.PI / 3) > 1e-6 || Math.abs(r.d2 - 2 * Math.PI / 3) > 1e-6) return "main lanes not 120 degrees apart: " + r.d1 + ", " + r.d2;
+  if (!(r.m >= 6 && r.mid < r.edge)) return "no bell: " + r.m + " on a main lane, mid-stream gap " + r.mid + " vs the head's " + r.edge;
+});
 check("lanes: every pick has the smallest copy spread (within slack)", () => {
   const e = boot({}, { w: 390, h: 844 });
   const bad = e.run(`(() => { const out = []; for (let pi = 1; pi < PATHS.length; pi += 2) for (const k of [2, 3, 6]) {

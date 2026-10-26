@@ -341,17 +341,15 @@ const SOL_CONE_FADE = 0.8;
 const SOL_CONE_LEN_K = 2, SOL_CONE_A = 0.525 /* x0.75 (owner, 2026-10-26: "reduce cone opacity by 25%"; was 0.7) */; // then 30% fainter (owner, 2026-10-21: "reduce SOL cone opacity by 30%"; 1)
 // THE BAND (owner, 2026-10-26: "an expanding rectangle" / "the indicator should fade to 0% opacity as it nears the tower, opacity should
 // increase as distance from the tower increases and go back down starting around 10 towers away"): f.half u either side of the line from
-// (f.x, f.y) along f.a, f.len long, drawn as SOL_BAND_N strips: clear at the tower, full by SOL_BAND_RISE towers out, fading from
+// (f.x, f.y) along f.a, f.len long, drawn as ONE gradient: clear at the tower, full by SOL_BAND_RISE towers out, fading from
 // SOL_BAND_FALL towers to clear at SOL_BAND_GONE (a tower: its hexagon's width, 2 x CELL_S x TOWER_K)
-const SOL_BAND_N = 96, SOL_BAND_RISE = 3, SOL_BAND_FALL = 10, SOL_BAND_GONE = 20; // N: the GPU's strips - fine enough to read as a gradient (owner, 2026-10-26: "fade gradually instead of step")
+const SOL_BAND_RISE = 3, SOL_BAND_FALL = 10, SOL_BAND_GONE = 20; // (one gradient, 2D and GPU alike - owner, 2026-10-26: "fade gradually instead of step", "a gradient, not steps!")
 const SOL_BAND_A = 0.2625; // the band's full opacity: half the cone's SOL_CONE_A (owner, 2026-10-26: "half current opacity")
-function solBandA(d) { const T = 2 * CELL_S * TOWER_K, u = d / T; return u < SOL_BAND_RISE ? u / SOL_BAND_RISE : u < SOL_BAND_FALL ? 1 : Math.max(0, 1 - (u - SOL_BAND_FALL) / (SOL_BAND_GONE - SOL_BAND_FALL)); }
 function drawBand(f, k) {
   const a = Math.min(1, SOL_BAND_A * k * k * k), c = Math.cos(f.a), s = Math.sin(f.a), T = 2 * CELL_S * TOWER_K, len = Math.min(f.len, T * SOL_BAND_GONE);
   if (!(f.half > 0) || !(a > 0)) return;
-  if (typeof fxGlPush === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { // 3D: thin butt-ended strips through the GPU (aspira-fxgl.js)
-    const step = len / SOL_BAND_N;
-    for (let i = 0; i < SOL_BAND_N; i++) { const d0 = i * step, al = a * solBandA(d0 + step / 2); if (al > 0.002) fxGlPush(f.x + c * d0, f.y + s * d0, f.x + c * (d0 + step), f.y + s * (d0 + step), f.half, 0, COL[f.color], al, COL[f.color], 0, 2); }
+  if (typeof fxGlBand === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { // 3D: ONE quad, the profile per pixel (aspira-fxgl.js shape 8) - no steps
+    fxGlBand(f.x, f.y, f.x + c * len, f.y + s * len, f.half, COL[f.color], a, Math.min(1, SOL_BAND_RISE * T / len), Math.min(1, SOL_BAND_FALL * T / len), Math.min(1, SOL_BAND_GONE * T / len));
     return;
   }
   const g = ctx.createLinearGradient(0, 0, len, 0), at = u => Math.min(1, u * T / len); // 2D: ONE rectangle, a linear gradient through the profile's corners
