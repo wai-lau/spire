@@ -336,12 +336,8 @@ function starRed() {
 }
 
 // ---------- the boss's HP, on the board (UI only; aspira-draw.js calls it) ----------
-// owner: a THICK line in the boss's colour under the core, stretching to both
-// sides in proportion to the HP left (BOSS_BAR_R at full), never past the
-// inverted sky's spreading edge (bossInv.r) - so it grows out with the circle
-// and shrinks back as it collapses. The boss's NAME sits just above it, where
-// the interest line is otherwise. Drawn before the inversion, so cyan reads red.
-const BOSS_BAR_R = 400, BOSS_BAR_W = 21, BOSS_BAR_TRACK = 0.3; // 3x thicker (owner); the track = full HP, translucent
+// a THICK line in the boss's colour (owner) - along its lane since 2026-10-26 (drawBossBar below). Drawn before the inversion, so cyan reads red.
+const BOSS_BAR_W = 21, BOSS_BAR_TRACK = 0.3; // 3x thicker (owner); the track = full HP, translucent
 // THE BOSS SHOWN under the powers (owner, 2026-10-23: "Game should start by saying The Star / Get rid of \"The Source\" / Then just have the
 // boss name and poem on the right"): the live boss (or its fleet), else the one on its way this wave, else the NEXT boss
 const bossShownN = () => {
@@ -352,30 +348,22 @@ const bossShownN = () => {
 // the shown boss's haiku for the HTML above the title (updateHud)
 const bossHint = () => arcanaOf(bossShownN()).hint.join("\n");
 // (the boss's NAME is the page title while it is out now - updateHud, aspira-ui.js; drawBossTitle drew it on the board)
-// the bar ENDS INSIDE the phone's screen, BOSS_BAR_EDGE clear of its sides (owner, 2026-10-18: "boss hp bar should end before the mobile
-// edges"): BOSS_BAR_R at most, else the widest half that still lies on the screen (phoneInside: 2D box or 3D view), by halving
-const BOSS_BAR_EDGE = 24;
-function bossBarR() {
-  if (typeof phoneInside !== "function") return BOSS_BAR_R;
-  const on = r => phoneInside(CX - r, CY, BOSS_BAR_EDGE) && phoneInside(CX + r, CY, BOSS_BAR_EDGE);
-  if (on(BOSS_BAR_R)) return BOSS_BAR_R;
-  let lo = 0, hi = BOSS_BAR_R;
-  for (let i = 0; i < 10; i++) { const m = (lo + hi) / 2; if (on(m)) lo = m; else hi = m; }
-  return lo;
-}
+// THE BOSS'S HP ALONG ITS LANE (owner, 2026-10-26: "show the boss HPs along their lane, this way we can tell if we need to step our
+// game up"): from the boss toward the core, a translucent track over the lane it still has to ride, and the HP left as a solid bar
+// whose length is that share of the WHOLE lane - a bar that reaches the core says the boss arrives with HP to spare at a steady
+// pace, and turns the threat colour. One bar a boss (the Lovers two, the Devil six); on the board, so 3D warps it onto the floor
+// (it was a line along the horizon through the core, BOSS_BAR_R wide at full HP, 2026-10-09 .. 2026-10-26)
+const BOSS_LANE_STEP = 10;
 function drawBossBar() {
-  const bosses = G.enemies.filter(e => e.arcana && !e.dead);
-  if (!bosses.length) return;
-  const hp = bosses.reduce((a, e) => a + Math.max(0, e.hp), 0), max = bosses.reduce((a, e) => a + e.max, 0);
-  const R = bossBarR(), reach = bossInv.r || 0, half = Math.min(R * hp / max, reach), col = ENEMIES.bonus.color;
-  const by = CY, track = Math.min(R, reach); // ON the horizon through the core, under the core (owner)
-  if (track <= 0) return;
-  ctx.strokeStyle = COL[col]; ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt";
-  // the ORIGINAL HP as a translucent track (owner), the HP left solid over it
-  ctx.globalAlpha = BOSS_BAR_TRACK;
-  ctx.beginPath(); ctx.moveTo(CX - track, by); ctx.lineTo(CX + track, by); ctx.stroke();
+  for (const e of G.enemies) {
+    if (!e.arcana || e.dead) continue;
+    const P = PATHS[e.pi], L = P.len - entryS(e.pi), left = P.len - e.s, hpL = L * Math.max(0, e.hp) / e.max, over = hpL >= left - 1;
+    const trace = (s0, s1) => { ctx.beginPath(); for (let s = s0, k = 0; ; s += BOSS_LANE_STEP, k++) { const q = pathAt(e.pi, Math.min(s, s1), e.ang || 0); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); if (s >= s1) break; } ctx.stroke(); };
+    ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round";
+    ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = BOSS_BAR_TRACK; trace(e.s, P.len); // the ORIGINAL HP as a translucent track (owner), the HP left solid over it
+    ctx.strokeStyle = COL[over ? "threat" : ENEMIES.bonus.color]; ctx.globalAlpha = 1; if (hpL > 0) trace(e.s, Math.min(P.len, e.s + hpL));
+  }
   ctx.globalAlpha = 1;
-  if (half > 0) { ctx.beginPath(); ctx.moveTo(CX - half, by); ctx.lineTo(CX + half, by); ctx.stroke(); }
 }
 
 // THE SKY'S FLIP (owner, 2026-10-09: "make inversion animation way less laggy, need like 10x improvement"): the frame is

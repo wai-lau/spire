@@ -15,13 +15,13 @@
 // the old tables). (let: the sims sweep it)
 let CURVE_DMG_X = 18; // (tribal 2026-10-26 at 12: 2 of 35 trios won both seeds - too weak)
 const STAT_CURVE = {
-  arc: { dmg: [4.5], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
-  frz: { dmg: [0.791], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
-  sol: { dmg: [1.109], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
-  acd: { dmg: [1.7], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
-  grv: { dmg: [0.2], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
-  car: { dmg: [5.5], rate: [2, 2], range: [1, 1], slide: [1, 1] },
-  ifr: { dmg: [0.15], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
+  arc: { dmg: [5.13], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
+  frz: { dmg: [0.824], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
+  sol: { dmg: [1.248], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
+  acd: { dmg: [1.724], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
+  grv: { dmg: [0.211], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
+  car: { dmg: [5.186], rate: [2, 2], range: [1, 1], slide: [1, 1] },
+  ifr: { dmg: [0.132], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
 };
 // lo: the DUO RULE's (plan 3, 2026-10-25 - scripts/aspira-sim/duo0.mjs): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
 // and CRR's tier 0 RATE x2.5 / x2 (one meteor, one interceptor: a third and two thirds of the old bare tower's hits) - each still below

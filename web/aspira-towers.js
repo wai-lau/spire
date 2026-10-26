@@ -275,7 +275,7 @@ function rayHit(t, st, e, base, from) {
   const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1);
   const m = crit ? st.critMul : 1, d = shotDamage(t, st, e, base) * m;
   const n = st.beams || 1, part = d; // every beam is a FULL hit (owner, 2026-10-06; was a fitted share of the shot)
-  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, (m > 1 ? 5 : 3) * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d, true, !st.pierce); // a SOL beam is FIXED where it struck, like its pass-through (owner, 2026-10-26: "neither visual should track the enemy") // a chart SOL's beams THIN (owner, 2026-10-22)
+  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, 3 * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d / m, true, !st.pierce); /* a CRIT draws no wider: the beam's width reads the plain hit, 3 wide (owner, 2026-10-26: "don't thicken beams on crit"; was 5 wide and the crit's hit) */ // a SOL beam is FIXED where it struck, like its pass-through (owner, 2026-10-26: "neither visual should track the enemy") // a chart SOL's beams THIN (owner, 2026-10-22)
   if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
   // OPACITY = THE SHARE (owner, 2026-10-23: "the section of beam should reflect the % of damage it carries compared to the initial beam" /
   // "Opacity"): a SOL reflection's beam at base / st.dmg (its st.hop^k), the pass-through on from it x st.hop an enemy (solSpread) - drawn at
