@@ -286,10 +286,14 @@ const TWIN_GAP = 3.5; // Charge's parallel beams sit 2 x this apart
 // background beneath everything else (owner); "shots" = beams/rings/sparks;
 // "text" = every other floating text, on top.
 // at / map (3D, warpEntities): each effect drawn flat at its spot; a beam STRAIGHT between its projected ends (owner: "make beams 3d and ignore the curvature")
+// BEAMS OVER THE ENEMIES (owner, 2026-10-26: "enemies should always be occluded by [beams]" - "Beams + bolts"): in 3D a beam is not the
+// floor's - it is drawn on the enemies' layer after the dice (pass "beams", warpEntities), so a strike into a lattice of armor shows
+const beamsUp = () => typeof q3d === "function" && q3d() && typeof warp !== "undefined" && !!warp.ent;
 function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
   const glFx = pass === "shots" && typeof fxGlTake === "function" && fxGlTake(); // 3D: hits, sparks, flashes and rings go to the GPU in one batch (aspira-fxgl.js)
+  const up = beamsUp();
   for (const f of fx) {
-    const kind = f.k !== "text" ? "shots" : f.under ? "dmg" : "text";
+    const kind = f.k !== "text" ? (f.k === "beam" && up ? "beams" : "shots") : f.under ? "dmg" : "text";
     if (kind !== pass || f.t >= f.life) continue; // a retired damage number (dmgNumber) is not drawn
     // full strength for the first half of the effect's life, then fade out
     const k = 1 - f.t / f.life;
