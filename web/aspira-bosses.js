@@ -349,19 +349,20 @@ const bossShownN = () => {
 const bossHint = () => arcanaOf(bossShownN()).hint.join("\n");
 // (the boss's NAME is the page title while it is out now - updateHud, aspira-ui.js; drawBossTitle drew it on the board)
 // THE BOSS'S HP ALONG ITS LANE (owner, 2026-10-26: "show the boss HPs along their lane, this way we can tell if we need to step our
-// game up"): from the boss toward the core, a translucent track over the lane it still has to ride, and the HP left as a solid bar
-// whose length is that share of the WHOLE lane - a bar that reaches the core says the boss arrives with HP to spare at a steady
-// pace, and turns the threat colour. One bar a boss (the Lovers two, the Devil six); on the board, so 3D warps it onto the floor
-// (it was a line along the horizon through the core, BOSS_BAR_R wide at full HP, 2026-10-09 .. 2026-10-26)
+// game up" / "it should stay in place"): the bar lies STILL on the lane from its mouth toward the core, its length the HP left as a
+// share of the whole lane, over a translucent track of the whole lane (full HP); the boss rides along it. While the boss is still
+// inside the bar (its HP share ahead of its progress) the bar is the threat colour - it arrives with HP to spare at this pace; once
+// the boss has passed the bar's end it is the boss's own colour. One bar a boss (the Lovers two, the Devil six); on the board, so
+// 3D warps it onto the floor (it was a line along the horizon through the core, BOSS_BAR_R wide at full HP, 2026-10-09 .. 10-26)
 const BOSS_LANE_STEP = 10;
 function drawBossBar() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const P = PATHS[e.pi], L = P.len - entryS(e.pi), left = P.len - e.s, hpL = L * Math.max(0, e.hp) / e.max, over = hpL >= left - 1;
-    const trace = (s0, s1) => { ctx.beginPath(); for (let s = s0, k = 0; ; s += BOSS_LANE_STEP, k++) { const q = pathAt(e.pi, Math.min(s, s1), e.ang || 0); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); if (s >= s1) break; } ctx.stroke(); };
+    const P = PATHS[e.pi], s0 = entryS(e.pi), hpEnd = s0 + (P.len - s0) * Math.max(0, e.hp) / e.max, passed = e.s >= hpEnd;
+    const trace = (a, b) => { ctx.beginPath(); for (let s = a, k = 0; ; s += BOSS_LANE_STEP, k++) { const q = pathAt(e.pi, Math.min(s, b), e.ang || 0); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); if (s >= b) break; } ctx.stroke(); };
     ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round";
-    ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = BOSS_BAR_TRACK; trace(e.s, P.len); // the ORIGINAL HP as a translucent track (owner), the HP left solid over it
-    ctx.strokeStyle = COL[over ? "threat" : ENEMIES.bonus.color]; ctx.globalAlpha = 1; if (hpL > 0) trace(e.s, Math.min(P.len, e.s + hpL));
+    ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = BOSS_BAR_TRACK; trace(s0, P.len); // the ORIGINAL HP as a translucent track (owner), the HP left solid over it
+    ctx.strokeStyle = COL[passed ? ENEMIES.bonus.color : "threat"]; ctx.globalAlpha = 1; if (hpEnd > s0 + 1) trace(s0, hpEnd);
   }
   ctx.globalAlpha = 1;
 }
