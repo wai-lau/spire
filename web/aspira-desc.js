@@ -2,7 +2,7 @@
 // per tower composed from its chart, each axis swapping a few words in one
 // template, so the card's track changes (aspira-sliders.js) read as a single
 // small edit from the locked tiers to the pulled ones. Loaded after
-// aspira-skills.js (the simulator too, for scripts/aspira-desc-graph.mjs).
+// aspira-skills.js (the simulator too, for scripts/aspira-desc-graph.mjs). THE WORDING RULES: docs/spire-wording.md
 const cap = s => s[0].toUpperCase() + s.slice(1);
 // DAMAGE AS A SHARE OF THE TOWER'S (owner, 2026-10-25: "for all damage things we should show it as a percentage of the tower damage"):
 // 100% = the tower's MAIN hit - an ARC bolt, a second of FRZ's full aura, a SOL beam, a second of an ACD jet, a second of a tier 0 GRV void's crush, a CRR volley, an
