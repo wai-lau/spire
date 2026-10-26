@@ -18,6 +18,10 @@ const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), TYPES = ["swa
 const TEAM = process.env.TEAM === "1", N = TEAM ? 1 : Number(process.env.N || 3), POINTS = Number(process.env.POINTS || 8);
 const WINDOWS = (process.env.WINDOWS || "41-49,61-69").split(",").map(w => { const [r, p] = w.split(":"); return [...r.split("-").map(Number), p ? Number(p) : POINTS]; });
 const PATCH = process.env.BV_PATCH ? fs.readFileSync(process.env.BV_PATCH, "utf8") : "";
+// HELD (plan 3 Task 5, owner 2026-10-25: "make countermx consistent at the 4 different game chapters"): the build a perfect player
+// HOLDS per tower in each window, from trioplan's buy logs - JSON {"13-19": {"arc": {"conductivity": 2, ...}, ...}, ...}. It replaces
+// "spread" (same row label, so marks.py reads it unchanged); a tower's level is 1 + its tiers bought
+const HELD = process.env.HELD ? JSON.parse(process.env.HELD.startsWith("{") ? process.env.HELD : fs.readFileSync(process.env.HELD, "utf8")) : null;
 
 export default async function task({ kind, build, type, from, to, seed, points: POINTS, mates }) {
   const g = makeGame(seed, PATCH); g.reset();
@@ -27,9 +31,11 @@ export default async function task({ kind, build, type, from, to, seed, points: 
   const sc = cellScores(g, kind), open = g.run("CELLS.map((c, i) => i).filter(cellOpen)").sort((a, b) => sc[b] - sc[a]);
   const axes = g.run(`SKILL_TREES[${JSON.stringify(kind)}].map(a => a.id)`);
   const sk = {};
-  Object.assign(sk, build === "spread" ? spreadStops(axes, POINTS) : focusStops(axes, build, POINTS)); // by TIER (stops.mjs)
+  const held = build === "spread" && HELD && HELD[`${from}-${to}`]?.[kind];
+  Object.assign(sk, held ? Object.fromEntries(axes.map(a => [a, held[a] || 0])) : build === "spread" ? spreadStops(axes, POINTS) : focusStops(axes, build, POINTS)); // by TIER (stops.mjs)
+  const lvl = held ? 1 + Object.values(sk).reduce((a, v) => a + v, 0) : 1 + POINTS;
   let placed = 0;
-  for (const ci of open) { if (placed >= N) break; const t = g.place(kind, ci); if (!t) continue; t.skills = { ...sk }; t.lvl = 1 + POINTS; placed++; }
+  for (const ci of open) { if (placed >= N) break; const t = g.place(kind, ci); if (!t) continue; t.skills = { ...sk }; t.lvl = lvl; placed++; }
   if (TEAM) for (const m of mates || ["arc", "frz", "sol", "acd"].filter(k => k !== kind)) {
     const ax = g.run(`SKILL_TREES[${JSON.stringify(m)}].map(a => a.id)`), ms = {};
     Object.assign(ms, spreadStops(ax, POINTS)); // by TIER (stops.mjs; the raw point-levels it was included the ones that cannot be bought)
