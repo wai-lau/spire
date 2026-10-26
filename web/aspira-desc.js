@@ -5,7 +5,7 @@
 // aspira-skills.js (the simulator too, for scripts/aspira-desc-graph.mjs).
 const cap = s => s[0].toUpperCase() + s.slice(1);
 // DAMAGE AS A SHARE OF THE TOWER'S (owner, 2026-10-25: "for all damage things we should show it as a percentage of the tower damage"):
-// 100% = the tower's MAIN hit - an ARC bolt, a second of FRZ's full aura, a SOL beam, a second of an ACD jet, a GRV nova, a CRR volley, an
+// 100% = the tower's MAIN hit - an ARC bolt, a second of FRZ's full aura, a SOL beam, a second of an ACD jet, a second of a tier 0 GRV void's crush, a CRR volley, an
 // IFR meteor; and what TICKS reads "X% damage over Y hits in Z seconds" (owner), a steady burn over 1s
 const pc = x => Math.round(x * 100) + "%";
 const secs = x => +x.toFixed(2) + "s";
@@ -76,11 +76,11 @@ const DESCRIBE = {
   // Void a bigger void, pellets shed as it decays (Singularity: heavier); Acceleration the aura - pull, slow - and the pellets' damage and
   // range (Event Horizon: the whole aura slows as hard as its inside)
   grv(sk) {
-    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0, lo = GRV_INNER_K[v] * GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1) / GRV_NOVA_K; // 100% = a nova's hit (GRV_NOVA_K x st.dmg)
+    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0, U = GRV_INNER_K[0] * GRV_START_MASS, lo = GRV_INNER_K[v] * GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1) / U; // 100% = a second of a tier 0 void's crush (owner, 2026-10-25: "yes" - it was a nova's hit, and tier 0 has none)
     // (owner, 2026-10-25): "0: void only" / "the void crushes" / "always call it a void, and an aura" / "122% to X% depending on the size"
-    return (n ? NUM_WORD[GRV_NOVA_N][0].toUpperCase() + NUM_WORD[GRV_NOVA_N].slice(1) + " novas implode in quick succession, each stripping armor worth " + pc(GRV_NOVA_STRIP[n]) + " of its hit; then a" : "A") +
+    return (n ? NUM_WORD[GRV_NOVA_N][0].toUpperCase() + NUM_WORD[GRV_NOVA_N].slice(1) + " novas implode in quick succession, each dealing " + pc(GRV_NOVA_K / U) + " damage and stripping armor worth " + pc(GRV_NOVA_STRIP[n]) + " of its hit; then a" : "A") +
       (v ? "" : " tiny") + " void forms" + (v >= CAPSTONE_TIER ? ", twice as heavy," : "") + " and crushes for " + pc(lo) + " to " + ticking(lo * GRV_MASS_MAX, 1 / GRV_TICK, 1) + " as it grows." +
-      (v || r ? " As it decays it sheds pellets of " + pc(GRV_PELLET_K[r] / GRV_NOVA_K) + " damage." : "") +
+      (v || r ? " As it decays it sheds pellets of " + pc(GRV_PELLET_K[r] / U) + " damage." : "") +
       (r ? " An aura around it pulls enemies together and slows them, twice as hard inside the void" + (r >= CAPSTONE_TIER ? " - and as hard all the way out" : "") + ", and flings its pellets farther." : "") +
       " Nearby voids pull together and merge" + (v || r ? ", shedding what they cannot hold as pellets." : ".");
   },
