@@ -71,7 +71,7 @@ function onTap(ev) {
   ui.hover = p;
   // a tower's CARD opens from its home SLOT or its BODY (owner, 2026-10-18: "bring back tapping tower to upgrade"; 2026-10-17 had
   // made it the slot alone); an armed Relay takes the tower tapped, body or slot
-  const ci = cellAt(p.x, p.y), pk = pickAt(ev), home = ci >= 0 && G.towers.find(t => t.cell === ci); // (aspira-pick.js)
+  const ci = cellAt(p.x, p.y), pk = pickAt(ev), h0 = ci >= 0 && G.towers.find(t => t.cell === ci), home = h0 && upReady(h0) ? h0 : null; // (aspira-pick.js) - the home TILE is a button only while its upgrade chevron shows (owner, 2026-10-26: "floor upgrade buttons should not be clickable when not visible")
   if (relayArmTap(home || (pk && pk.t))) { refreshPanels(); return; } // an armed Relay: this tower takes it, anything else disarms (aspira-powers.js)
   const hit = home || (pk && pk.t);
   if (hit) { ui.sel = hit.id; ui.build = null; }

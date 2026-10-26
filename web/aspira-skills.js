@@ -269,7 +269,7 @@ function chainPick(t, from, r2, skip) {
 // A JUMP REACHES HALF ARC'S RANGE FROM THE ENEMY IT LEAPS FROM, anywhere - not confined to ARC's own range (owner, 2026-10-26: "do not
 // restrict ARC jumps to within arc range" / "each chain should be able to jump to an enemy within 1/2 arc range of enemy"; was
 // st.arcRange x arcShrink a depth, inside the tower's range - "Confine all targets to within arc range", 2026-10-24)
-const ARC_JUMP_K = 0.5, arcJumpR = st => st.range * ARC_JUMP_K;
+const ARC_JUMP_K = 1 /* the FULL range (owner, 2026-10-26: "*100% of arc range on chain"; half for an hour) */, arcJumpR = st => st.range * ARC_JUMP_K;
 function skillHop(c, node, depth) {
   const r = arcJumpR(c.st);
   // never the enemy it leaps from; an enemy already struck only while its hits are under 1 + st.revisit (Conductivity III+)
