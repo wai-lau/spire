@@ -116,7 +116,8 @@ function laneHold(live) {
 }
 // an ordinary lit lane, MUCH more apparent (owner, 2026-10-12: "make the non boss lanes much more apparent"; was
 // line 0.3 x1.4, haze 0.03, glow 0.22) - a boss lane keeps the old numbers, scaled by BOSS_LANE_K / BOSS_LANE_W
-const SWARM_LANE_A = 0.25; // (halved again - owner, 2026-10-12; was 0.5) a swarm's lanes at half strength: it rides 10-12 of them (aspira-formations.js)
+const SWARM_LANE_MIN = 0.1; // a swarm lane's brightness is its SHARE of the swarm - the fullest lane of its wave at 1, the rest in proportion, never under this (owner, 2026-10-26: "swarm lane opacity should be correlated to the number of units in that lane"; was a flat SWARM_LANE_A 0.25 on every one)
+const swarmMax = (live, n) => live.reduce((m, v) => (v.swarm && v.n === n ? Math.max(m, v.sent || 0) : m), 0);
 const LIT_GLOW_A = 0.34; // (the line's numbers are LIT_LINE_SOFT, below)
 const BOSS_LANE_W = 3.5, BOSS_LANE_K = 1.5; // a boss lane: x its glow's widths, x brightness (its line: BOSS_LINE_SOFT) (owner, 2026-10-09: "make boss lanes half as intense"; was 3)
 function drawLaneStrokes(all) {
@@ -246,7 +247,7 @@ function litLanes() {
   const now = performance.now(), fm = laneFadeMs();
   for (const key of laneSeen.keys()) if (!live.some(u => u.pi + ":" + u.ang === key)) laneSeen.delete(key); // gone dark: fades in again next time
   for (const u of live) {
-    if (u.swarm) { u.a *= SWARM_LANE_A; u.a0 *= SWARM_LANE_A; }
+    if (u.swarm) { const m = swarmMax(live, u.n), sh = m ? Math.max(SWARM_LANE_MIN, (u.sent || 0) / m) : 1; u.a *= sh; u.a0 *= sh; }
     u.rise = !(u.star && bossInv.phase === "out"); // (a boss lane fading OUT stays on the board, stepped)
     if (u.star) { u.f = u.a0 > 0 ? Math.min(1, u.a / u.a0) : 1; continue; }
     const key = u.pi + ":" + u.ang; if (!laneSeen.has(key)) laneSeen.set(key, now);

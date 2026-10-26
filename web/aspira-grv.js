@@ -378,7 +378,7 @@ const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // ones are laid on a scratch layer at A / CAP each and that layer on the board at CAP - one alone is A, stacked they near CAP, never past it
 // ...and an aura's own opacity grows with its SIZE (owner, 2026-10-22: "correlate opacity with size, so that opacity stays the same after merge"):
 // k base auras' area (radius^2 / area a mass, never under 1) shows as k of them stacked would - CAP (1 - (1 - A / CAP)^k): a merge keeps the look
-const GRV_AURA_A = 0.1, GRV_AURA_CAP = 0.17; // a third of the old 0.3 / 0.5, the overlap curve kept (owner, 2026-10-24: x0.1 first - 0.03 / 0.05 read as no aura at all, "wait the whole aura is gone")
+const GRV_AURA_A = 0.3, GRV_AURA_CAP = 0.5; // BACK to 0.3 / 0.5 (owner, 2026-10-26: "void still has no aura" - the aura is a ring x1.4-2 the void since 2026-10-25, a third as wide as when 0.1 / 0.17 read fine); were a third of these (owner, 2026-10-24: x0.1 first - 0.03 / 0.05 read as no aura at all, "wait the whole aura is gone")
 const grvAuraAlpha = (sp, ar) => GRV_AURA_CAP * (1 - Math.pow(1 - GRV_AURA_A / GRV_AURA_CAP, Math.max(1, ar * ar / Math.max(1e-6, sp.apm || ar * ar))));
 let grvAuraCv = null;
 // THE BANDS RUN OVER THE VISIBLE RING (owner, 2026-10-26: "GRV aura not visible"): from the void's black core (inner) out to the aura's

@@ -274,7 +274,7 @@ function laneSoon() {
   const n = G.wave + 1;
   if (!G.started || G.over || !(G.nextIn > 0 && G.nextIn <= LANE_LEAD) || n % STAR_EVERY === 0 || G.wave % STAR_EVERY === 0 /* the wave after a boss: no early lanes (owner, 2026-10-24: "after boss wave, no need to show lanes early") */ || (typeof bossUp === "function" && bossUp())) return [];
   const p = wavePlan(n, G.lastType), pi = laneMap(n)[p.type], k = firstOne(n) ? 1 : Math.min(p.count, formSplit(p.type, p.count, n)), a = 1 - G.nextIn / LANE_LEAD;
-  if (p.type === "swarm" && k - k % SWARM_MAIN > SWARM_MAIN) return swarmLanes(pi, k - k % SWARM_MAIN, n).map(l => ({ pi, ang: l.ang, color: ENEMIES.swarm.color, n, star: false, swarm: true, alive: 0, a })); // (the same three main lanes + the rest: sendWave)
+  if (p.type === "swarm" && k - k % SWARM_MAIN > SWARM_MAIN) { const k3 = k - k % SWARM_MAIN, sz = swarmParts(p.count, k3); return swarmLanes(pi, k3, n).map((l, i) => ({ pi, ang: l.ang, color: ENEMIES.swarm.color, n, star: false, swarm: true, alive: 0, a, sent: sz[i] })); } // (the same three main lanes + the rest, each with its share of the swarm: sendWave)
   return Array.from({ length: k }, (_, j) => ({ pi, ang: (laneBestTurn(pi, k, n, p.type) + (j / k) * Math.PI * 2) % (Math.PI * 2), color: ENEMIES[p.type].color, n, star: false, swarm: p.type === "swarm", alive: 0, a }));
 }
 function activeLanes() {
@@ -285,10 +285,16 @@ function activeLanes() {
     if (u) { u.alive++; if (ENEMIES[e.type].star && !u.star) Object.assign(u, { star: true, color: ENEMIES[e.type].color }); } // a boss lane whichever rider comes first
     else out.set(key, { pi: e.pi, ang: e.ang || 0, color: ENEMIES[e.type].color, n: e.n, star: !!ENEMIES[e.type].star, swarm: e.type === "swarm", alive: 1 });
   }
-  const queued = new Set();
-  for (const w of G.spawns) for (let i = w.idx; i < w.list.length; i++) queued.add(laneKey(w.lanes[w.list[i]], w.ang || 0));
+  // A LANE IS LIT FROM THE MOMENT ITS WAVE IS SENT (owner, 2026-10-26: "lane previews disappear before lane appears, should just use those as
+  // the lanes instead of spawning a second set"): its units still queued count as on it, so the preview (laneSoon) hands straight over at
+  // full brightness and the lane drains as they die - not dark till the first unit is out, then 1/N (a boss's lane still waits for its sky)
+  const queued = new Map();
+  for (const w of G.spawns) for (let i = w.idx; i < w.list.length; i++) {
+    const t = w.list[i], key = laneKey(w.lanes[t], w.ang || 0); queued.set(key, (queued.get(key) || 0) + 1);
+    if (!out.has(key) && !ENEMIES[t].star) out.set(key, { pi: w.lanes[t], ang: w.ang || 0, color: ENEMIES[t].color, n: w.n, star: false, swarm: t === "swarm", alive: 0 });
+  }
   for (const key in totals) if (!out.has(key) && !queued.has(key)) delete totals[key];
-  for (const [key, u] of out) u.a = Math.min(1, u.alive / (totals[key] || u.alive));
+  for (const [key, u] of out) { const q = queued.get(key) || 0; u.sent = totals[key] || u.alive + q; u.a = Math.min(1, (u.alive + q) / u.sent); } // sent: a swarm lane's share of the swarm (litLanes)
   for (const u of laneSoon()) { const key = laneKey(u.pi, u.ang); if (!out.has(key)) out.set(key, u); } // the next wave's lanes, early
   return out;
 }
