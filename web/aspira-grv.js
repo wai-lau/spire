@@ -20,7 +20,7 @@ const GRV_NOVA_R = [71, 85, 112, 185]; // Supernova: the nova's reach (x1.7 with
 const GRV_NOVA_RATE = [1, 1.2, 1.5, 1.9, 2.4, 3.1]; // Nova: the implosions' rate, x the tower's (tier 0 slow - TOWERS.grv.rate)
 const GRV_NOVA_STRIP = [0, 0.5, 0.8, 1.2, 1.8, 4]; /* x2 (axsweep, 2026-10-25: armor leaked 33-49% at x1) */ // (V: just more - owner, 2026-10-25: "Nova V, just removes more armor, not half") // Nova: armor each nova strips from what it hits, x its hit; the stripped armor sizes the void with the damage
 const GRV_INNER_K = [7.2, 7.2, 7.2, 7.2, 7.6, 8.4]; // Void: the crush a second, x the tower's damage x mass - tier 0 x3 its first cut for the duo rule (with GRV_CORE_PX x4); flat to III, the void's SIZE the axis's gain (axsweep 2026-10-25: 3.67 .. 12 left GRV leaking 1%)
-const GRV_ACC_R = [1, 2.4, 3, 3.8, 4.8, 6]; /* x2 (axsweep: off the tiny void, x1 slowed ~1% of the field) */ // Acceleration: the aura's reach, x the void's field (no aura at 0)
+const GRV_ACC_R = [1, 1.4, 1.55, 1.7, 1.85, 2]; // Acceleration: the aura's radius, x the VOID's (its black core, grvCoreR) - never past x2 (owner, 2026-10-25: "because voids are so big, auras should be smaller / aura radius never exceeds 2x void radius"; was x the void's field, 2.4 .. 6)
 const GRV_PELLET_K = [0.5, 0.808, 1.1, 1.5, 2, 2.8]; // Acceleration: a pellet's hit, x the tower's damage
 const GRV_PEL_RANGE = [1, 1.4, 1.8, 2.3, 2.9, 3.6]; // Acceleration: a pellet's flight, x the void's field
 let GRV_PEL_PER_MASS = 4; /* (axsweep 2026-10-25, a void a shot at mass 3: 12 spread 1% leaked, 4 5%; the old GRV 13%) (let: the simulator sweeps it) */ // pellets a unit of mass lost to decay (or past the cap in a merge) gives off
@@ -220,7 +220,7 @@ function stepSphere(sp, t, st, dt) {
   while (sp.tick >= GRV_TICK) {
     sp.tick -= GRV_TICK;
     const ring = Math.min(GRV_SLOW_MAX, st.slow * k), core = Math.min(GRV_CORE_MAX, ring * GRV_CORE_MUL), outer = st.horizon ? core : ring; // Acceleration V: the WHOLE aura the inside's slow (owner, 2026-10-25)
-    const inner = grvCoreR(ar), reach = st.auraOn ? ar * st.accR : inner; // the aura reaches past the void by Acceleration; no aura, only the void itself crushes // the INNER AURA is the black core's own size (owner, 2026-10-16: "the inner aura should be the size of the core sphere"; was GRV_CORE_FRAC of the aura)
+    const inner = grvCoreR(ar), reach = st.auraOn ? inner * st.accR : inner; // the aura reaches past the void by Acceleration; no aura, only the void itself crushes // the INNER AURA is the black core's own size (owner, 2026-10-16: "the inner aura should be the size of the core sphere"; was GRV_CORE_FRAC of the aura)
     for (const e of G.enemies) {
       const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
       if (e.dead || !e.seen || d2 > reach * reach) continue;
@@ -407,7 +407,7 @@ function drawGrv() {
   for (const t of G.towers) {
     if (t.kind !== "grv" || !t.spheres) continue;
     const st = towerStats(t, true);
-    for (const sp of t.spheres) all.push([sp, st, grvAuraNow(sp, st) * st.accR]);
+    for (const sp of t.spheres) all.push([sp, st, grvCoreR(grvAuraNow(sp, st)) * st.accR]);
   }
   const over = all.filter(([sp, st, ar]) => ar > 1 && st.auraOn && all.some(([q, qs, qr]) => q !== sp && qr > 1 && qs.auraOn && Math.hypot(q.x - sp.x, q.y - sp.y) < ar + qr));
   const capped = over.length > 1 && grvAurasCapped(over.map(([sp, , ar]) => [sp, ar])); // (the lone ones are drawn by drawSphere, at A)
@@ -416,7 +416,7 @@ function drawGrv() {
   ctx.globalAlpha = 1;
 }
 function drawSphere(sp, st, auraOwn = true) {
-  const k = grvMassK(sp), ar = grvAuraNow(sp, st) * st.accR; // the AURA's reach (Acceleration), past the void's field
+  const k = grvMassK(sp), ar = grvCoreR(grvAuraNow(sp, st)) * st.accR; // the AURA's reach (Acceleration): x the void's own radius, x2 at most
   if (ar > 1 && st.auraOn) { // the aura: clear at the sphere, its alpha (grvAuraAlpha) at mid-radius, clear at the edge (auraOwn false: drawn capped with its overlaps - drawGrv)
     if (auraOwn) grvAura(ctx, sp, ar, grvAuraAlpha(sp, ar));
     // its REACH, shown like Permafrost's rings (owner, 2026-10-16: "for bh aura, show range of aura using a range indicator similar to
