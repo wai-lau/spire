@@ -35,9 +35,16 @@ function drawIfrFires(t, low) {
   for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2, 1, IFR_FIRE_W, IFR_HF_COL); /* RED, its flares' colours (owner, 2026-10-22: "hellfire's fire ring should be red") */ // grown, it stays at half till its flares are out (owner, 2026-10-21)
 }
 const IFR_FADE_IN_U = 8; // a burst meteor is full within 8 u of flight (owner, 2026-10-26: "IFR should fade in faster"; was 25)
-const IFR_SHARD_DRAW = 1 / 3; // a burst meteor DRAWN at a third of its size - its reach unchanged (owner, 2026-10-26: "make shards also visible 1/3 the current size")
+const IFR_SHARD_DRAW = 1 / 3, IFR_TRACER_U = 60; // IFR_TRACER_U: the launched meteor's tracer, u (owner, 2026-10-26) // a burst meteor DRAWN at a third of its size - its reach unchanged (owner, 2026-10-26: "make shards also visible 1/3 the current size")
 function drawIfrBalls(t, low) {
-  for (const b of t.ifrBalls) if (!(b.wait > 0)) drawIfrMeteor(b.x, b.y, b.gen ? b.r * IFR_SHARD_DRAW : b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1); /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
+  for (const b of t.ifrBalls) if (!(b.wait > 0)) {
+    if (!b.gen) { // the launched meteor's TRACER (owner, 2026-10-26): a streak IFR_TRACER_U back along its flight, bright at the meteor, clear at the tail
+      const v = Math.hypot(b.vx, b.vy) || 1, ux = b.vx / v, uy = b.vy / v, L = Math.min(IFR_TRACER_U, b.flown || IFR_TRACER_U);
+      for (let i = 3; i >= 1; i--) { ctx.strokeStyle = COL[i === 1 ? "yellow" : "orange"]; ctx.globalAlpha = 0.5 / i; ctx.lineWidth = b.r * (0.35 + 0.4 * i); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(b.x - ux * L / i, b.y - uy * L / i); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+    drawIfrMeteor(b.x, b.y, b.gen ? b.r * IFR_SHARD_DRAW : b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
+  } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)

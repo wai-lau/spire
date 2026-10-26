@@ -243,7 +243,7 @@ function applySlow(e, f, dur, src = "x", shape = "refresh") {
   if (!e.seen) return false; // (off-screen: immune - enemySeen)
   const core = typeof src === "string" && src.startsWith("core:"); // (a number - a tower's id - never is: no String() a call, perf)
   if (e.shield > 0 && !core) return false;
-  if (e.arcana && !(core && isA(e, "strength"))) { f *= bossSlowMul(e); if (f <= 0) return true; } // BOSS_SLOW_K (aspira-bosses.js) - but Temporal Drive stops Strength DEAD (owner, 2026-10-21: "temporal drive should work on strength")
+  if (e.arcana && !core) { f *= bossSlowMul(e); if (f <= 0) return true; } // BOSS_SLOW_K (aspira-bosses.js) - a TOWER's slow; Temporal Drive stops EVERY boss dead (owner, 2026-10-21: "temporal drive should work on strength"; 2026-10-26: "temporal overdrive is not working on temperance" - it took her 0.5)
   if (e.type === "fast") f *= FAST_SLOW_MUL;
   // only Temporal Drive ("core:") is a FULL stop: a tower's slow stays under 1, so it is always shaped by the cap (owner,
   // 2026-10-12, a recording: two fast enemies stopped dead - capstone Temp's 0.55 doubled on the fast made 1.1, read as a stop)

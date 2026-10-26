@@ -241,9 +241,9 @@ const rows = (kind, sk) => run(`(() => { const sk = ${JSON.stringify(sk)}, t = {
 check("review: the card's rows show no mechanic the tower lacks - no Shields row (any damage pops one charge, unsaid: owner 2026-10-26), IFR's fire / flares / fan only once bought", () => {
   for (const k of ["car", "sol"]) if ("Shields" in rows(k, {}).rows) return k + " still shows a Shields row";
   const i0 = rows("ifr", {}).rows, ih = rows("ifr", { hellfire: 1 }).rows, ifl = rows("ifr", { firaga: 1 }).rows;
-  for (const k of ["Fire", "Fire flares", "Flare", "Flare tick", "Flare ticks", "Flare lasts"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
-  if (i0.Meteors !== "1 + a burst of 6") return "IFR tier 0 Meteors reads " + i0.Meteors;
-  if (ih.Fire === "—" || ifl.Flare === "—") return "IFR Hellfire I / Flare I rows blank";
+  for (const k of ["Fire", "Fire speed", "Fire flares", "Flare length", "Flare width", "Flare tick", "Flare ticks", "Flare lasts"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
+  if (i0.Burst !== "6 meteors") return "IFR tier 0 Burst reads " + i0.Burst;
+  if (ih.Fire === "—" || ifl["Flare length"] === "—") return "IFR Hellfire I / Flare I rows blank";
 });
 check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
   const r = run(`(() => { const t = { id: 99, kind: "frz", x: CX, y: CY, lvl: 2, skills: { rime: 1 } }; G = newGame(); const a = towerStats(t, true).biteDmg; G.power.DAM = 1; const b = towerStats(t, true).biteDmg; G.power.DAM = 0;
@@ -275,7 +275,7 @@ check("later: a factor on the tower's OWN damage is one constant, on from its fi
 check("later: the card rows read no zero mechanic - ARC Jumps at tier 0, FRZ Cold bite before Sublimation (the nip is flat)", () => {
   const a0 = rows("arc", {}).rows, a1 = rows("arc", { conductivity: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;
   if (a0.Jumps !== "—") return "ARC tier 0 Jumps reads " + a0.Jumps;
-  if (!/^1 jump/.test(a1.Jumps)) return "ARC Conductivity I Jumps reads " + a1.Jumps;
+  if (String(a1.Jumps) !== "1") return "ARC Conductivity I Jumps reads " + a1.Jumps;
   if (f0["Cold bite"] !== "—") return "FRZ tier 0 Cold bite reads " + f0["Cold bite"];
   if (f1["Cold bite"] === "—") return "FRZ Sublimation I Cold bite blank";
 });

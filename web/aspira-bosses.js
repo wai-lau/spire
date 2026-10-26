@@ -361,7 +361,10 @@ const bossHint = () => arcanaOf(bossShownN()).hint.join("\n");
 // past the mouth (100%) to BOSS_BAR_OUT u short of the core (0%); the HP left in the lane's colour, drawn as the lane is (it turns over
 // with the lane under the sky), the rest a WHITE core kept white under the sky (skyKeep - drawSceneTop)
 const BOSS_LANE_STEP = 10, BOSS_BAR_IN = 50; const bossBarOut = () => (typeof coreOuterR === "function" ? coreOuterR() : CORE_R); // the 0% end AT the core - its rim, not its centre, or the last few % hide under it (owner, 2026-10-26: "leave it at core" / "disappears before boss dies")
-const bossSpan = e => { const P = PATHS[e.pi], a = entryS(e.pi) + BOSS_BAR_IN, b = P.len - bossBarOut(); return { a, b, hp: b - (b - a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
+// the 100% end: where the boss first comes within a tower's reach on its lane (owner, 2026-10-26: "boss label should start where the boss is
+// hittable, not at the edge of the screen"), else BOSS_BAR_IN past the mouth
+function bossHitS(e) { const P = PATHS[e.pi], s0 = entryS(e.pi), reach = typeof reachCircles === "function" ? reachCircles() : []; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) if (inReach(pathAt(e.pi, s, e.ang || 0), reach)) return s; return s0 + BOSS_BAR_IN; }
+const bossSpan = e => { const P = PATHS[e.pi], a = bossHitS(e), b = P.len - bossBarOut(); return { a, b, hp: b - (b - a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
 function bossTrace(e, a, b) { ctx.beginPath(); for (let s = a, k = 0; ; s += BOSS_LANE_STEP, k++) { const q = pathAt(e.pi, Math.min(s, b), e.ang || 0); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); if (s >= b) break; } ctx.stroke(); }
 function drawBossBar() { // the HP left, in the lane's colour (before the sky's flip, like the lane)
   for (const e of G.enemies) {

@@ -128,13 +128,13 @@ function refreshUpgradePreview(t) {
 // a row no section names lands in "Tower" (with Kills), shown first. "now -> next" where the pulled points change a value
 // (statRow paints a change for the worse red); rows the tower has not got yet ("—") are left out, and so is a section left empty
 const STAT_SECTIONS = {
-  arc: [["Arc", ["Rate", "Range", "Delay"]], ["Chain", ["Hits", "Jumps", "Arc dmg", "Arc hop", "Reach"]], ["Charge", ["Charge", "Burst slow"]]],
-  frz: [["Freeze Aura", ["Aura slow", "Aura tick", "Ticks", "Cold bite", "Brittle", "Range", "Rate"]], ["Permafrost", ["Permafrost", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
-  sol: [["Beam", ["Rate", "Range", "Crit", "Crit ×", "Locks"]], ["Scorch", ["Scorch tick", "Scorch ticks"]], ["Diffraction", ["Splits", "Carry", "Prism"]], ["Breach", ["Breach", "Bleed"]]],
-  car: [["Hangar", ["Interceptors"]], ["Tether", ["Tether slow", "Tether amp", "Chain"]], ["Armament", ["Rate", "Ammo", "Autopilot", "Slow"]]],
-  grv: [["Nova", ["Nova hit", "Nova reach", "Armor strip", "Rate", "Range"]], ["Void", ["Void", "Grows", "Lasts", "Crush tick", "Crush ticks", "Particles"]], ["Acceleration", ["Aura size", "Aura slow", "Particle hit", "Particle reach"]], ["Sphere", ["Mass"]] /* the GRV rework (2026-10-25): sections by axis */ /* void and aura by name (owner, 2026-10-25: "always call it a void, and an aura") */],
-  ifr: [["Meteor", ["Meteors", "Stored", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire flares"]], ["Flare", ["Flare", "Flare tick", "Flare ticks", "Flare lasts", "Flare capstone"]]],
-  acd: [["Jets", ["Jet tick", "Ticks", "Builds", "Peak tick", "Jets", "Carry", "Jet slow", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
+  arc: [["Arc", ["Rate", "Range", "Delay"]], ["Chain", ["Bolts", "Hits", "Jumps", "Jump reach", "Arc dmg", "Arc hop", "Reach"]], ["Charge", ["Charges", "Charge pop", "Pop burst", "Burst slow", "Burst lasts"]]],
+  frz: [["Freeze Aura", ["Aura slow", "Aura tick", "Ticks", "Cold bite", "Brittle", "Range", "Rate"]], ["Permafrost", ["Pulse every", "Pulse slow", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
+  sol: [["Beam", ["Rate", "Range", "Crit", "Crit ×", "Locks"]], ["Scorch", ["Scorch tick", "Scorch ticks", "Scorch lasts"]], ["Diffraction", ["Splits", "Carry", "Prism"]], ["Breach", ["Breach", "Bleed", "Bleed crit"]]],
+  car: [["Hangar", ["Interceptors"]], ["Tether", ["Tether slow", "Tether amp", "Chain"]], ["Armament", ["Rate", "Ammo", "Pellets", "Pellet hit", "Slow", "Slow lasts"]]],
+  grv: [["Nova", ["Novas", "Nova hit", "Nova reach", "Armor strip", "Rate", "Range"]], ["Void", ["Void", "Grows", "Lasts", "Crush tick", "Crush ticks", "Particles"]], ["Acceleration", ["Aura size", "Aura slow", "Inner slow", "Particle hit", "Particle reach"]], ["Sphere", ["Mass"]] /* the GRV rework (2026-10-25): sections by axis */ /* void and aura by name (owner, 2026-10-25: "always call it a void, and an aura") */],
+  ifr: [["Meteor", ["Burst", "Stored", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire speed", "Fire flares"]], ["Flare", ["Flare length", "Flare width", "Flare tick", "Flare ticks", "Flare lasts", "Flare capstone"]]],
+  acd: [["Jets", ["Jet tick", "Ticks", "Doubles every", "Peak tick", "Jets", "Carry", "Jet slow", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo", "Goo pull"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
 function cardStats(t, pv) {
   const b = TOWERS[t.kind], st = towerStats(t), nx = pv ? towerStats(pv) : null, spN = nx ? SPEC[t.kind](nx, pv) : null;
