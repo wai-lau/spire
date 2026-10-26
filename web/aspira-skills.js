@@ -340,19 +340,20 @@ const SOL_CONE_LEN_K = 2, SOL_CONE_A = 0.525 /* x0.75 (owner, 2026-10-26: "reduc
 // increase as distance from the tower increases and go back down starting around 10 towers away"): f.half u either side of the line from
 // (f.x, f.y) along f.a, f.len long, drawn as SOL_BAND_N strips: clear at the tower, full by SOL_BAND_RISE towers out, fading from
 // SOL_BAND_FALL towers to clear at SOL_BAND_GONE (a tower: its hexagon's width, 2 x CELL_S x TOWER_K)
-const SOL_BAND_N = 24, SOL_BAND_RISE = 3, SOL_BAND_FALL = 10, SOL_BAND_GONE = 20;
+const SOL_BAND_N = 96, SOL_BAND_RISE = 3, SOL_BAND_FALL = 10, SOL_BAND_GONE = 20; // N: the GPU's strips - fine enough to read as a gradient (owner, 2026-10-26: "fade gradually instead of step")
+const SOL_BAND_A = 0.2625; // the band's full opacity: half the cone's SOL_CONE_A (owner, 2026-10-26: "half current opacity")
 function solBandA(d) { const T = 2 * CELL_S * TOWER_K, u = d / T; return u < SOL_BAND_RISE ? u / SOL_BAND_RISE : u < SOL_BAND_FALL ? 1 : Math.max(0, 1 - (u - SOL_BAND_FALL) / (SOL_BAND_GONE - SOL_BAND_FALL)); }
 function drawBand(f, k) {
-  const a = Math.min(1, SOL_CONE_A * k * k * k), c = Math.cos(f.a), s = Math.sin(f.a), len = Math.min(f.len, 2 * CELL_S * TOWER_K * SOL_BAND_GONE), step = len / SOL_BAND_N;
+  const a = Math.min(1, SOL_BAND_A * k * k * k), c = Math.cos(f.a), s = Math.sin(f.a), T = 2 * CELL_S * TOWER_K, len = Math.min(f.len, T * SOL_BAND_GONE);
   if (!(f.half > 0) || !(a > 0)) return;
-  const gl = typeof fxGlPush === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D); // 3D: butt-ended strips through the GPU (aspira-fxgl.js)
-  if (!gl) { ctx.fillStyle = COL[f.color]; ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.a); }
-  for (let i = 0; i < SOL_BAND_N; i++) {
-    const d0 = i * step, al = a * solBandA(d0 + step / 2); if (al <= 0.003) continue;
-    if (gl) fxGlPush(f.x + c * d0, f.y + s * d0, f.x + c * (d0 + step), f.y + s * (d0 + step), f.half, 0, COL[f.color], al, COL[f.color], 0, 2);
-    else { ctx.globalAlpha = al; ctx.fillRect(d0, -f.half, step + 0.5, 2 * f.half); }
+  if (typeof fxGlPush === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { // 3D: thin butt-ended strips through the GPU (aspira-fxgl.js)
+    const step = len / SOL_BAND_N;
+    for (let i = 0; i < SOL_BAND_N; i++) { const d0 = i * step, al = a * solBandA(d0 + step / 2); if (al > 0.002) fxGlPush(f.x + c * d0, f.y + s * d0, f.x + c * (d0 + step), f.y + s * (d0 + step), f.half, 0, COL[f.color], al, COL[f.color], 0, 2); }
+    return;
   }
-  if (!gl) ctx.restore();
+  const g = ctx.createLinearGradient(0, 0, len, 0), at = u => Math.min(1, u * T / len); // 2D: ONE rectangle, a linear gradient through the profile's corners
+  g.addColorStop(0, "transparent"); g.addColorStop(at(SOL_BAND_RISE), COL[f.color]); g.addColorStop(at(SOL_BAND_FALL), COL[f.color]); g.addColorStop(at(SOL_BAND_GONE), "transparent");
+  ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.a); ctx.fillStyle = g; ctx.globalAlpha = a; ctx.fillRect(0, -f.half, len, 2 * f.half); ctx.restore();
 }
 function drawCone(f0, k) {
   const f = { ...f0, len: f0.len * SOL_CONE_LEN_K }, a = Math.min(1, SOL_CONE_A * k * k * k);
