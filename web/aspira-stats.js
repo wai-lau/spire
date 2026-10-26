@@ -26,7 +26,7 @@ const SPEC = {
       ["Re-strikes", st.revisit ? "up to " + st.revisit + "× an enemy" : "—"],
       ["Burst slow", st.statSlow ? Math.round(st.statSlow * 100) + "% · " + STAT_SLOW_T + "s" : "—"], // the prose's "slowing all near" (ARC_STAT_SLOW)
       // a chart ARC: no reach from the tower - EACH JUMP its own, shrinking (owner)
-      ...(st.skill ? [["Jumps", st.layers ? st.layers + (st.layers > 1 ? " jumps" : " jump") + " · first " + Math.round(st.arcRange) : "—"]] /* "—" at tier 0: no chain (tier redesign) */ // (the first jump's reach LAST: it only rises, the card reads the last number)
+      ...(st.skill ? [["Jumps", st.layers ? st.layers + (st.layers > 1 ? " jumps" : " jump") + " · reach " + Math.round(arcJumpR(st)) : "—"]] /* "—" at tier 0: no chain (tier redesign) */ // (the first jump's reach LAST: it only rises, the card reads the last number)
         : [["Arc hop", Math.round(st.arcRange)], ["Reach", Math.round(chainReach(st))]]),
       ["Delay", hopDelay(st).toFixed(2) + "s"]];
   },
