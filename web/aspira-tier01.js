@@ -8,9 +8,8 @@
 ARC_CONDUCTIVITY[0] = { ...ARC_CONDUCTIVITY[0], j: 0 };
 ARC_CONDUCTIVITY[1] = { ...ARC_CONDUCTIVITY[0], j: 1 };
 
-// SOL: one beam that stops at its first enemy (SOL_PASS_N), no reflection, no burn, no armor strip; Focus I one beam passing one more,
-// Reflection I one bounce (SOL_FAN_BY one chain), Breach I a short burn that pops a shield (its strip from II, today's I)
-SOL_BEAMS[0] = 1; SOL_BEAMS[1] = 1; SOL_REFRACTION[0] = 0; SOL_REFRACTION[1] = 1; SOL_BREACH_ARMOR[0] = 0; SOL_BREACH_ARMOR[1] = 0;
+// SOL: one beam passing through at the carry, no reflection, no burn, no armor strip; Reflection I one bounce (SOL_FAN_BY one chain)
+SOL_REFRACTION[0] = 0; SOL_REFRACTION[1] = 1; // (one beam always, armor strip written 0..V - aspira-skills.js, 2026-10-25)
 
 // CRR: one interceptor, no tether, one bolt a volley (CRR_BOLTS_BY); Hangar I two interceptors, one held circling (CRR_HOLD_FRAC's tier I);
 // Tether I one tethered drone (CRR_TETHER_N) at today's base slow, its pulse from II

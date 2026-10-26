@@ -186,7 +186,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
 // Side effects of a landed hit, from the tower's upgrade mods.
 function onHit(e, t, st, amt) {
   if (st.shred) applyMark(e, st.shred.mul, st.shred.t, t ? t.id : "x");
-  if (st.dot) { e.dotDps = Math.max(e.dotT > 0 ? e.dotDps : 0, (st.dot.full ? Math.max(amt, st.dmg) : amt) * st.dot.frac / st.dot.t); e.dotT = st.dot.t; e.dotSrc = t; }
+  if (st.dot) solScorch(e, t, st, amt); // SOL's burn stacks (aspira-sol.js)
   if (st.stun && Math.random() < st.stun.p) e.stunT = Math.max(e.stunT, st.stun.t);
   if (st.hitSlow) applySlow(e, st.hitSlow.f, st.hitSlow.t, t ? t.id : "x");
   // Melt (ARC): every hit strips armor for good, past zero (owner: every armor
@@ -394,7 +394,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       if (e.corrodeT > 0) e.corrodeT -= dt; // Corrosion ring
       if (e.burnT > 0) e.burnT -= dt; // under an ACD burn (Fresh targeting)
       if (e.marks) sumMarks(e, dt);
-      if (e.dotT > 0) { const q = SOL_SCORCH_T / SOL_SCORCH_TICKS; e.dotAcc = (e.dotAcc || 0) + Math.min(dt, e.dotT); e.dotT -= dt; while (e.dotAcc >= q - 1e-9 && !e.dead) { e.dotAcc -= q; damage(e, e.dotDps * q, e.dotSrc, false, false, SOL_DOT_ST); } if (e.dotT <= 0) e.dotAcc = 0; if (e.dead) continue; } // SOL's scorch in few big ticks, popping shields (aspira-skills.js)
+      if (e.dotT > 0) { solScorchTick(e, dt); if (e.dead) continue; } // SOL's scorch stacks, popping shields (aspira-sol.js)
       { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; e.s += (m ? Math.min(effSpeed(e), effSpeed(m)) : effSpeed(e)) * ((e.seen && inReach(e, reach)) || (m && m.seen && inReach(m, reach)) ? 1 : OFF_SCREEN_SPEED) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") */
     }
     const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)

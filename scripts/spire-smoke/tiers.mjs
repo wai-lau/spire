@@ -82,17 +82,18 @@ check("ARC: tier 0 strikes one enemy; Conductivity I chains once; Voltage I fork
 });
 
 // ---------- SOL ----------
-towerTierChecks("sol", ["reflect", "pass", "scorch", "break"]);
-check("SOL: tier 0 stops at its first enemy, no burn, no strip; Focus I passes one more; Reflection I bounces once; Breach I burns and pops (tier redesign 2026-10-24)", () => {
-  const shot = sk => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [40, 60], [40, -60]]);
-    es[0].armor = es[0].armor0 = 50; es[0].shield = es[0].shieldMax = 3; const sh0 = es[0].shield;
-    fireRay(t, st, es[0]); const pops = sh0 - es[0].shield; const h0 = es[0].hp; for (let i = 0; i < 30; i++) step(1 / 60);
-    return { line: [es[1].hp < es[1].max, es[2].hp < es[2].max], side: es.slice(3).filter(e => e.hp < e.max).length, burn: !!(es[0].dotT > 0 || es[0].hp < h0), armor: es[0].armor, pops }; })()`);
-  const z = shot({}), f = shot({ focus: 1 }), r = shot({ refraction: 1 }), b = shot({ breach: 1 });
-  if (z.line[0] || z.side || z.burn || z.armor !== 50) return "tier 0: " + JSON.stringify(z);
-  if (!f.line[0] || f.line[1]) return "Focus I line hits " + f.line + " (expected the second, not the third)";
-  if (r.side + (r.line[0] ? 1 : 0) !== 1) return "Reflection I hit " + JSON.stringify(r) + " (expected one bounce)";
-  if (!b.burn || b.armor !== 50) return "Breach I: " + JSON.stringify(b) + " (expected a burn, armor kept)";
+towerTierChecks("sol", ["reflect", "scorch", "break"]);
+check("SOL (owner, 2026-10-25): one beam through every enemy on its line, each at the carry x the one before; Scorch I burns and stacks; Reflection I bounces once; Breach I strips armor, no burn", () => {
+  const shot = (sk, n = 1) => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [40, 60], [40, -60]]);
+    es[0].armor = es[0].armor0 = 50; for (const e of es) e.hp = e.max = 1e7; const h0 = es[0].hp;
+    for (let i = 0; i < ${n}; i++) fireRay(t, st, es[0]); const stacks = (es[0].dots || []).length; for (let i = 0; i < 30; i++) step(1 / 60);
+    return { lost: es.slice(1, 3).map(e => e.max - e.hp), side: es.slice(3).filter(e => e.hp < e.max).length, burn: stacks, armor: es[0].armor, hop: st.hop }; })()`);
+  const z = shot({}), f = shot({ focus: 1 }, 2), r = shot({ refraction: 1 }), b = shot({ breach: 1 });
+  if (!(z.lost[0] > 0 && z.lost[1] > 0 && z.lost[1] < z.lost[0])) return "tier 0 line " + JSON.stringify(z) + " (expected both hit, the second less)";
+  if (z.side || z.burn || z.armor !== 50) return "tier 0: " + JSON.stringify(z);
+  if (f.burn < 2) return "Scorch I: " + JSON.stringify(f) + " (expected two stacking burns)";
+  if (r.side !== 1) return "Reflection I hit " + JSON.stringify(r) + " (expected one bounce)";
+  if (b.burn || !(b.armor < 50)) return "Breach I: " + JSON.stringify(b) + " (expected armor stripped, no burn)";
 });
 
 // ---------- CRR ----------
@@ -174,7 +175,7 @@ check("IFR: tier 0 a meteor that just hits; Meteor I a fan of two; Hellfire I on
 
 // ---------- names ----------
 check("tier I names: every axis's first hint is named (no placeholder), GRV's second axis is Nova (tier redesign 2026-10-24)", () => {
-  const want = { conductivity: "Lead", voltage: "Fork", capacitance: "Charge", focus: "Lance", refraction: "Glint", breach: "Singe", hangar: "Escort", launch: "Line", armament: "Twin",
+  const want = { conductivity: "Lead", voltage: "Fork", capacitance: "Charge", focus: "Singe", refraction: "Glint", breach: "Crack", hangar: "Escort", launch: "Line", armament: "Twin",
     temp: "Nip", rime: "Rime", moons: "Crescent", corrosion: "Pit", spray: "Drip", contagion: "Seep", void: "Sink", supernova: "Halo", radiation: "Ember", meteor: "Split", hellfire: "Cinder", firaga: "Flicker" };
   const r = run(`(() => { const out = {}; for (const k in SKILL_TREES) for (const ax of SKILL_TREES[k]) out[ax.id] = ax.tiers.map(x => x.name); return { names: out, nova: SKILL_TREES.grv[1].name }; })()`);
   for (const [id, n] of Object.entries(want)) if (!r.names[id] || r.names[id][0] !== n) return id + " tier I is " + (r.names[id] || [])[0] + " (expected " + n + ")";

@@ -68,8 +68,8 @@ const CAPSTONE_NUM = [
   [FRZ_TEMP_SLOW, 0.67], [FRZ_TEMP_TICK, 0.0495], [FRZ_BRITTLE, 9.0185], [FRZ_RIME, 0.9], [FRZ_RIME_PERIOD, 0.1283 /* /1.5 with its table (2026-10-25) */] /* both halved 2026-10-14; were 0.3, 0.7 */, [FRZ_RIME_CRACK, 2.4 /* x2 with its table (2026-10-25) */],
   [FRZ_MOON_COUNT, 3], [FRZ_MOON_BY, 1.625], [FRZ_SUBMOON_N, 3] /* (owner, 2026-10-20: max 3 and 3; were 5 and 6) */,
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
-  [SOL_BEAMS, 25], [SOL_PASS, 1], [SOL_SHIELD_POP, 1], [SOL_REFRACTION, 6] /* IV: six chains of six (SOL rework, s.fan; three until 2026-10-23) */,
-  [SOL_CONE_BY, 12], [SOL_BREACH_ARMOR, 3216],
+  [SOL_SHIELD_POP, 1], [SOL_REFRACTION, 6] /* IV: six chains of six (SOL rework, s.fan; three until 2026-10-23) */,
+  [SOL_CONE_BY, 12],
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
   [ACD_CORRODE, 0.9], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9],
   [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }],
@@ -147,7 +147,7 @@ for (const T of FULL_TIER_TABLES) if (T.length === CAPSTONE_TIER) T.splice(0, T.
 for (const kind of Object.keys(SKILL_MOVE)) for (const id of Object.keys(SKILL_MOVE[kind])) if (SKILL_MOVE[kind][id].length === CAPSTONE_TIER) SKILL_MOVE[kind][id] = withTierI(SKILL_MOVE[kind][id]);
 // TIER I NAMES (tier redesign 2026-10-24; Claude's calls, the design doc lists them for the owner): each axis's first hint, put in front of
 // its written tiers here, after the capstone's name is pushed (that push keys on the written count, so the trees cannot hold them)
-const TIER_I_NAMES = { conductivity: "Lead", voltage: "Fork", capacitance: "Charge", focus: "Lance", refraction: "Glint", breach: "Singe",
+const TIER_I_NAMES = { conductivity: "Lead", voltage: "Fork", capacitance: "Charge", focus: "Singe", refraction: "Glint", breach: "Crack",
   hangar: "Escort", launch: "Line", armament: "Twin", temp: "Nip", rime: "Rime", moons: "Crescent", corrosion: "Pit", spray: "Drip", contagion: "Seep",
   void: "Sink", supernova: "Halo", radiation: "Ember", meteor: "Split", hellfire: "Cinder", firaga: "Flicker" };
 for (const axes of Object.values(SKILL_TREES)) for (const ax of axes) if (ax.tiers.length === CAPSTONE_TIER - 1) ax.tiers.unshift({ name: TIER_I_NAMES[ax.id] || "?" });

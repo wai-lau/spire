@@ -64,10 +64,10 @@ const SPEC = {
     ["Aura size", st.auraOn ? "×" + st.accR + " the void's radius" : "—"] /* (the aura "—" until Acceleration buys it) */,
     ["Aura slow", st.auraOn ? Math.round(Math.min(GRV_SLOW_MAX, st.slow) * 100) + "% · inner " + Math.round(Math.min(GRV_CORE_MAX, Math.min(GRV_SLOW_MAX, st.slow) * GRV_CORE_MUL) * 100) + "%" + (st.horizon ? " · all inner" : "") : "—"]]  /* (no "Shields -1 / hit" row: every hit pops one - owner, 2026-10-16: "isn't this just default behaviour? maybe no need to list") */,
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
-    ["Beams", st.beams || 1], ...(st.skill && st.shieldPop > 1 ? [["Shields", "−" + st.shieldPop + " / beam"]] : []) /* only when over the default 1 (owner, 2026-10-20) */ /* SOL_SHIELD_POP + SOL_REFRACT_POP */, ...(st.skill ? [["Reflect", st.refraction ? (st.fan > 1 ? st.fan + " × " : "") + st.refraction + " at ×" + st.hop + " each" : "—"]] : []),
+    ...(st.skill ? [["Carry", "×" + st.hop + " / enemy"]] : []) /* one beam always (2026-10-25): the pass-through and reflection falloff */, ...(st.skill && st.shieldPop > 1 ? [["Shields", "−" + st.shieldPop + " / beam"]] : []) /* only when over the default 1 (owner, 2026-10-20) */ /* SOL_SHIELD_POP + SOL_REFRACT_POP */, ...(st.skill ? [["Reflect", st.refraction ? (st.fan > 1 ? st.fan + " × " : "") + st.refraction : "—"]] : []),
     // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)
     [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + dmgW(st.bleedArmor) + " armor" + (st.bleedCrit ? ", +" + Math.round(st.bleedCrit * 100) + "% crit" : "") + (st.breach > 1 ? " ×" + st.breach : "") + "/hit" : "—"],
-    ...(st.skill && st.dot ? [["Scorch tick", Math.round(st.dot.frac / SOL_SCORCH_TICKS * 100) + "% of a hit"], ["Scorch ticks", +(SOL_SCORCH_TICKS / st.dot.t).toFixed(1) + "/s · " + st.dot.t + "s"]] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]],
+    ...(st.skill && st.dot ? [["Scorch", Math.round(st.dot.frac * 100) + "% of a hit · " + st.dot.t + "s · stacks"]] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]],
 };
 
 // One stat row: "now" alone at max level, "now -> next" when an upgrade

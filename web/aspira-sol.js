@@ -11,11 +11,13 @@ const SOL_THIN = 0.4;
 // ALWAYS (owner, 2026-10-19: "make beams always pass through the max amount for breach level" - no kill needed): every hit sends the
 // beam on with SOL_PIERCE[breach] of the FULL hit, the same at every hop, up to SOL_PIERCE_HOPS enemies along its line
 // AS A REFLECTION (owner, 2026-10-22: "make the piercing beam the same visual intensity and damage as the reflected beam"): the beam
-// on carries st.pass (SOL_PASS by FOCUS tier since 2026-10-23; was st.hop) of the hit, drawn like a reflection's beam (one beam's damage, full alpha, thin)
+// on carries st.hop x the hit before (per enemy since 2026-10-25; SOL_PASS by Focus 2026-10-23..25), drawn like a reflection's beam (one beam's damage, full alpha, thin)
+// PER ENEMY (owner, 2026-10-25: "pierce carryover applies per enemy hit whether reflection or pierce"): each enemy on the line takes
+// st.hop x the one before it, compounding, every tier (the SOL_PASS share and SOL_PASS_N count are gone)
 function solPierce(t, st, from, e, full, share = 1) {
-  const carry = full * (st.pierce || 0) * (st.pass || 1), seen = carry / (st.beams || 1), al = share * (st.pierce || 0) * (st.pass || 1); if (carry <= 0) return; // al: its opacity, the share of the first beam it carries (rayHit)
-  const hops = Math.min(SOL_PIERCE_HOPS, st.passN ?? SOL_PIERCE_HOPS); if (!hops) return; // Focus's count (SOL_PASS_N): tier 0 stops at its first enemy (tier redesign 2026-10-24)
-  for (let k = 0; k < hops; k++) {
+  let carry = full * (st.pierce || 0), al = share * (st.pierce || 0); if (carry <= 0) return; // al: its opacity, the share of the first beam it carries (rayHit)
+  for (let k = 0; k < SOL_PIERCE_HOPS; k++) {
+    carry *= st.hop || 1; al *= st.hop || 1; const seen = carry;
     const dx = e.x - from.x, dy = e.y - from.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
     let o = null, best = SOL_PIERCE_LEN;
     for (const x of G.enemies) {
@@ -48,4 +50,19 @@ function solLineSort(t, c) {
     n.set(a, k);
   }
   return top.sort((a, b) => n.get(b) - n.get(a)).concat(c.slice(SOL_LINE_TOP));
+}
+// SCORCH STACKS (owner, 2026-10-25: "Burn DoT, damage follows beam falloff, stacking no cap"): every hit adds its own burn, frac x the
+// hit that landed, over st.dot.t; the stacks add up with no cap and tick together, ONE damage call a tick - one shield pop (one-pop rule)
+function solScorch(e, t, st, amt) {
+  (e.dots ||= []).push({ dps: amt * st.dot.frac / st.dot.t, left: st.dot.t }); e.dotT = Math.max(e.dotT || 0, st.dot.t); e.dotSrc = t;
+}
+function solScorchTick(e, dt) {
+  const q = SOL_SCORCH_T / SOL_SCORCH_TICKS; e.dotAcc = (e.dotAcc || 0) + Math.min(dt, e.dotT); e.dotT -= dt;
+  while (e.dotAcc >= q - 1e-9 && !e.dead && e.dots && e.dots.length) {
+    e.dotAcc -= q; let d = 0;
+    for (const s of e.dots) { d += s.dps * Math.min(q, s.left); s.left -= q; }
+    e.dots = e.dots.filter(s => s.left > 1e-9);
+    if (d > 0) damage(e, d, e.dotSrc, false, false, SOL_DOT_ST);
+  }
+  if (e.dotT <= 0) { e.dotAcc = 0; e.dots = null; }
 }
