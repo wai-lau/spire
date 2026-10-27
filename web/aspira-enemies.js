@@ -73,7 +73,7 @@ const SHRINK_MIN = 0.05, SHRINK_MIN_BOSS = 0.1;
 const hpShrink = (e, f) => { const m = e.arcana ? SHRINK_MIN_BOSS : SHRINK_MIN; return m + (1 - m) * f; };
 // OFF SCREEN = FAINT (owner, 2026-10-19: "enemies off screen should have their opacity reduced by 80%, and fade in over 1s as they enter
 // the screen"): ENEMY_OFF_A until e.seen latches (enemySeen), then up to full over ENEMY_FADE_S of real time (e.seenAt, stepEnemies - the same second at any game speed)
-const ENEMY_OFF_A = 0.2, ENEMY_FADE_S = 1;
+const ENEMY_OFF_A = 0.05, ENEMY_FADE_S = 0.4; // OFF the board, an enemy and all it carries (shields, tracers, marks) at ENEMY_OFF_A, then a quick fade in over ENEMY_FADE_S s once seen (owner, 2026-10-26; were 0.2 / 1 s)
 const enemyVis = e => !e.seen ? ENEMY_OFF_A : e.seenAt == null ? 1 : Math.min(1, ENEMY_OFF_A + (1 - ENEMY_OFF_A) * (performance.now() - e.seenAt) / (1000 * ENEMY_FADE_S));
 function drawEnemy(e, solid) {
   // damage shows as both size and opacity: full HP = full size, solid; near death small (hpShrink), faint
@@ -97,13 +97,14 @@ function drawEnemy(e, solid) {
   }
   ctx.globalAlpha = 1;
   if (e.charged || e.charge) { // ARC's Static charge: a border in ARC's colour just outside the outline (owner) - ONE PER CHARGE held (Capacitance, 2026-10-08)
-    ctx.strokeStyle = COL[TOWERS.arc.color]; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.6; // ARC's colour, whatever it is - thin and faint (owner, 2026-10-08: "reduce intensity")
+    ctx.strokeStyle = COL[TOWERS.arc.color]; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.6 * enemyVis(e); // ARC's colour, whatever it is - thin and faint (owner, 2026-10-08: "reduce intensity")
     const n = e.charge ? Math.min(5, e.charge.list.length) : 1;
     // ALWAYS an UPWARD TRIANGLE (owner, 2026-10-21: "arc capacitance outline should always be an upward triangle"; was the enemy's own
     // shape, turning with it), its INNER radius where the old border sat - so the body stays inside: the corners at twice that
     for (let k = 0; k < n; k++) { poly(e.x, e.y, 2 * (size + 4 + 3 * k), 3, -Math.PI / 2, false); ctx.stroke(); }
     ctx.globalAlpha = 1;
   }
+  ctx.globalAlpha = enemyVis(e); // (every mark below: off the board as faint as the body - owner, 2026-10-26)
   if (e.stunT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 6, 0, 6.283);
     ctx.strokeStyle = COL.pink; ctx.lineWidth = 2.5; ctx.stroke();
@@ -111,6 +112,7 @@ function drawEnemy(e, solid) {
   if (e.markT > 0) {
     ctx.fillStyle = COL.orange; ctx.beginPath(); ctx.arc(e.x + size, e.y - size, 4, 0, 6.283); ctx.fill();
   }
+  ctx.globalAlpha = 1;
   drawStatus(e, d, size, solid);
 }
 
@@ -122,31 +124,32 @@ function drawEnemy(e, solid) {
 //   Corrosion  a DOTTED ring tight around it while its armor is being eaten
 // (Permafrost's thicker freeze outline is drawn with the outline itself)
 function drawStatus(e, d, size, solid) {
+  const vis = enemyVis(e); // (off the board: as faint as the body - owner, 2026-10-26)
   if (e.biteT > 0) {
     poly(e.x, e.y, size, d.sides, e.rot, d.pointy);
-    ctx.fillStyle = COL.tfrz; ctx.globalAlpha = 0.45 * Math.min(1, e.biteT * 2); ctx.fill();
+    ctx.fillStyle = COL.tfrz; ctx.globalAlpha = (0.45 * Math.min(1, e.biteT * 2)) * vis; ctx.fill();
   }
   if (e.brittle > 1 && e.slowT > 0) {
     const s = size * 0.7, c = Math.cos(e.rot), n = Math.sin(e.rot);
     const pt = (u, v) => [e.x + c * u - n * v, e.y + n * u + c * v];
     ctx.beginPath(); ctx.moveTo(...pt(-s, -s * 0.2)); ctx.lineTo(...pt(-s * 0.3, s * 0.25));
     ctx.lineTo(...pt(s * 0.2, -s * 0.25)); ctx.lineTo(...pt(s, s * 0.15));
-    ctx.strokeStyle = COL.white; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = COL.white; ctx.globalAlpha = (0.85) * vis; ctx.lineWidth = 1.5; ctx.stroke();
   }
   if (e.slows && Object.keys(e.slows).some(k => k.endsWith(":chill"))) {
     poly(e.x, e.y, size + 9, 6, Math.PI / 6, false);
-    ctx.strokeStyle = COL.cyan; ctx.globalAlpha = 0.9; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.strokeStyle = COL.cyan; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2.5; ctx.stroke();
   }
   // BLEED (SOL's Impale): a pink outline, for good (owner)
   // BREACH: acid's dotted circle in SOL's pink, a step further out than acid's (owner, 2026-10-26: "breach uses the dotted circle as
   // acd / scorch uses z axis line" - the upright spike, warpSolid)
   if (e.breachN > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + (e.corrodeT > 0 ? 7 : 3), 0, 6.283);
-    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
   }
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
-    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
   }
   ctx.globalAlpha = 1;
 }
