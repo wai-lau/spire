@@ -45,8 +45,8 @@ function solNext(t, skip) {
 // away from tower) / anything that this rod touches deals 1 stack of scorch"): a line across the band, SOL_ROD_V u/s out from where the
 // tower fired along the shot's aim, to SOL_CONE_EDGE; an enemy it sweeps over takes ONE scorch stack, once a rod. Scorch I+ only
 const SOL_ROD_V = 1400, SOL_ROD_FADE_U = 50;
-// its TRACER (owner, 2026-10-27: "give it a massive tracer (like meteor, but longer)" / "sol scorch should not taper"): a band the rod's
-// full width, SOL_ROD_TRACER_U behind it, the tower's colour fading to nothing at the tail; never behind the tower
+// its TRACER (owner, 2026-10-27: "give it a massive tracer (like meteor, but longer)"): the meteor's tapered shape (drawMeteorTrail) - the
+// rod's full width at its head to a point SOL_ROD_TRACER_U behind, the tower's colour fading to nothing; never behind the tower
 const SOL_ROD_TRACER_U = 300, SOL_ROD_TRACER_A = 0.55; // u (5x IFR_TRACER_U); the meteor's 0.55
 function solRodFire(t, st, a) { if (!st.dot) return; (t.rods ||= []).push({ x: t.x, y: t.y, a, half: st.band || SOL_BAND0, s: 0, hit: new Set() }); }
 function solRodStep(t, st, dt) {

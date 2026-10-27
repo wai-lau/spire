@@ -32,7 +32,7 @@ function drawAims() {
         const tl = Math.min(r.s, SOL_ROD_TRACER_U), tx = x - c * tl, ty = y - sn * tl; // the TRACER, under the rod (SOL_ROD_TRACER_U, aspira-sol.js)
         if (tl > 1 && [x, y, tx, ty].every(Number.isFinite)) { // (a NaN end: the gradient THROWS)
           const g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, COL[col]); g.addColorStop(1, "transparent");
-          ctx.beginPath(); ctx.moveTo(x + sn * r.half, y - c * r.half); ctx.lineTo(x - sn * r.half, y + c * r.half); ctx.lineTo(tx - sn * r.half, ty + c * r.half); ctx.lineTo(tx + sn * r.half, ty - c * r.half); ctx.closePath(); /* NO TAPER (owner, 2026-10-27): the rod's full width all the way back */
+          ctx.beginPath(); ctx.moveTo(x + sn * r.half, y - c * r.half); ctx.lineTo(x - sn * r.half, y + c * r.half); ctx.lineTo(tx, ty); ctx.closePath();
           ctx.fillStyle = g; ctx.globalAlpha = al * SOL_ROD_TRACER_A; ctx.fill();
         }
         ctx.beginPath(); ctx.moveTo(x + sn * r.half, y - c * r.half); ctx.lineTo(x - sn * r.half, y + c * r.half);

@@ -167,11 +167,9 @@ function bossClip() {
 // and slowly approaching like an armada of ships, then, look they are slamming into place" / "they should start off screen, slide to
 // armada position, and then when everything is in armada pos, slam one at a time"): three acts once the boss sky is FULL (bossInv.t0 +
 // BOSS_SKY_T).
-//   1. THE APPROACH, the first BAR_APPROACH s: every piece slides in along its own spoke from just past the PLAY BOX's edge there
-//      (BAR_FROM_OUT u out of it - owner, 2026-10-27: "the segments should start right around where play area starts"; from past the
-//      screen's farthest corner before) to the armada line, BAR_ARM_IN u inside the box's edge (never nearer its own place than
-//      BAR_RING_MIN) - pieces from every turn stacked along the edge, overlapping - each on its own schedule by hash (arriving between
-//      0.6 and 1 of the act, over 0.5 to 1 of the time before that), easing to a stop.
+//   1. THE APPROACH, the first BAR_APPROACH s: every piece slides in along its own spoke from past the screen's farthest corner
+//      (barFlyFrom) to ONE ring, BAR_RING_PAD past the bar's outermost piece - pieces from every turn stacked there, overlapping - each
+//      on its own schedule by hash (arriving between 0.6 and 1 of the act, over 0.5 to 1 of the time before that), easing to a stop.
 //   2. THE ARMADA: there it drifts in slowly, BAR_DRIFT u/s (+-BAR_DRIFT_JIT), until its moment.
 //   3. THE SLAM, ring by ring (owner, 2026-10-27: "group the pieces into rings - a ring has no overlapping segments along the spoke -
 //      then slam them group by group" / "starting with innermost group" / "within a group, slam one at a time"): the pieces in rings,
@@ -182,8 +180,7 @@ function bossClip() {
 // Before the sky is full every piece waits off-screen. The boss's lane and glow light only after the last slam (bossBarInT - litLanes,
 // aspira-lanes.js: "draw lane and lane glow after hp slides in"), and the numbers fade in then, over BAR_LABEL_FADE s (owner, 2026-10-27:
 // "fade in the numbers at the end") - they never fly. Each landing THUDS (barThud), pitched to the piece's area.
-const BAR_APPROACH = 1.6, BAR_FLY_LEAD = 0.4, BAR_FLY_SPAN = 2.5, BAR_RING_PAUSE = 0, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_FROM_OUT = 20, BAR_ARM_IN = 40, BAR_RING_MIN = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5;
-const barBoxR = th => Math.min(BOX_HX / Math.max(1e-9, Math.abs(Math.cos(th))), BOX_HY / Math.max(1e-9, Math.abs(Math.sin(th)))); // u from the core to where the spoke at th leaves the play box (aspira-positioning.js)
+const BAR_APPROACH = 1.6, BAR_FLY_LEAD = 0.4, BAR_FLY_SPAN = 2.5, BAR_RING_PAUSE = 0, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_RING_PAD = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5; // BAR_RING_PAD: the ring sits this far past the bar's outermost piece - on screen wherever the outer turn is
 const BAR_LABEL_FADE = 0.6; // s: the numbers' fade-in, from the last slam
 const bossBarInT = () => BAR_APPROACH + BAR_FLY_LEAD + BAR_FLY_SPAN; // s after the sky is full until the bar is in
 const barInT = () => (typeof bossInv === "undefined" || bossInv.phase !== "in") ? Infinity : performance.now() / 1000 - (bossInv.t0 + BOSS_SKY_T); // s since the boss sky filled (Infinity: no fly-in on - every piece home); BOSS_SKY_T: the spokes, then the triangle - aspira-bosses.js
@@ -204,10 +201,11 @@ function barRings(e) { // the pieces in RINGS - no two of a ring on one spoke, t
   const seq = new Array(P.length); let q = 0; for (const M of rings) { for (let a = M.length - 1; a > 0; a--) { const b = Math.floor(bossHash(e, M[a], 10) * (a + 1)); [M[a], M[b]] = [M[b], M[a]]; } for (const i of M) seq[i] = q++; } // seq: the piece's turn to slam - ring by ring from the innermost (owner, 2026-10-27: "starting with innermost group"; a random order was asked first, then this), within a ring one at a time in an order drawn by hash ("within a group, slam one at a time" / "within a group, I want random"; a sweep round the core was tried between): Fisher-Yates, the same every frame, another per boss
   return { ring, seq, n: rings.length };
 }
+const barFar = () => Math.max(...[[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY))); // u from the core to the screen's farthest corner
+const barFlyFrom = () => barFar() * 1.1 + 100; // u out along a spoke: past that corner
 function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, u (0: in place)
-  const t = barInT(); if (t === Infinity) return 0; const g = e.bar && e.bar.pieces[i]; if (!g) return 0;
-  const r = barR(g), m = g.Lp[g.Lp.length >> 1], edge = barBoxR(Math.atan2(m.y - CY, m.x - CX)), arm = Math.max(edge - BAR_ARM_IN, r + BAR_RING_MIN) - r, far = Math.max(edge, arm + r) + BAR_FROM_OUT - r; // out of place: on the armada line inside the box's edge, and just past the edge
-  if (t < 0) return far;
+  const t = barInT(); if (t === Infinity) return 0; const far = barFlyFrom(); if (t < 0) return far;
+  const g = e.bar && e.bar.pieces[i]; if (!g) return 0; const arm = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(barR))) + BAR_RING_PAD - barR(g); // out of place: at the armada's ring, and off-screen
   const h = k => bossHash(e, i, k), arrive = BAR_APPROACH * (0.6 + 0.4 * h(8)), dur = arrive * (0.5 + 0.5 * h(9)), launch = arrive - dur; // act 1, its own
   if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return arm + (far - arm) * (1 - ease); }
   const R = e.bar.rings ||= barRings(e), N = e.bar.pieces.length, pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)), land = BAR_APPROACH + BAR_FLY_LEAD + R.seq[i] * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, N - 1) + R.ring[i] * pause, slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam; // act 3: at its ring's turn
