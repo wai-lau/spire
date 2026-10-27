@@ -6,9 +6,10 @@
 const DEV = typeof location !== "undefined" ? new URLSearchParams(location.search) : null, DEV_SCENE = DEV ? DEV.get("dev") || "" : "";
 const DEV_BOSS_HP = 0.55, DEV_BOSS_IN_U = 150;
 if (DEV_SCENE === "boss") {
-  let built = false;
+  let built = false; const devLog = window.devLog = []; // (devLog: what each tick did - read it from the console when a scene misbehaves)
   const tickDev = () => {
     if (typeof G === "undefined" || typeof CELLS === "undefined" || !CELLS.length) return;
+    devLog.push([Math.round(performance.now()), built, G.wave, G.enemies.length, G.enemies.filter(e => e.arcana).length, ui.paused]);
     const card = document.getElementById("asp-resume"); if (card) { card.remove(); ui.paused = false; }
     if (!built) {
       if (typeof runSavedAt !== "undefined") runSavedAt = Infinity; // (no checkpoint of this scene over the real run - aspira-autosave.js)
@@ -16,7 +17,8 @@ if (DEV_SCENE === "boss") {
       G.started = true; G.wave = STAR_EVERY - 1; G.lastType = "fast"; G.enemies.length = 0; G.fleetQ.length = 0; G.spawns.length = 0; G.nextIn = 0;
       built = true; return;
     }
-    const b = G.enemies.find(e => e.arcana && !e.dead); if (!b || b.s < entryS(b.pi) + DEV_BOSS_IN_U) return;
+    const b = G.enemies.find(e => e.arcana && !e.dead); if (!b) return;
+    for (let i = 0; i < 2000 && b.s < entryS(b.pi) + DEV_BOSS_IN_U && !b.dead; i++) step(0.05); // fast-forwarded DEV_BOSS_IN_U in (real steps, not a moved boss): the scene is up at once
     b.hp = b.max * (Number(DEV.get("hp")) || DEV_BOSS_HP); ui.paused = true; ui.pauseBtn = true; clearInterval(devTimer);
   };
   const devTimer = setInterval(tickDev, 100);
