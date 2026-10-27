@@ -218,12 +218,12 @@ function cellPath(c, k = 1) {
 // upgrade chevron on its tile, drawn flat at their spots on the TOP layer right after the bar, inside its clip - so a tower's prism or
 // a die in front still covers them (bossClip). up: warpEntities' placer (x, y, fn, height); skyAt: under a SPREADING boss sky at that spot
 // (the floor there is turned over, so a slot takes the inverted palette like its prism does). Called in part B's palette - the whole
-// frame's inverted one under a FULL sky - so the slot's "white" comes out as the prism's did; the chevron keeps its TOWER'S colour on a
-// boss sky (owner, 2026-10-16), as the towers do (skyOwn): own colours
+// frame's inverted one under a FULL sky - so both come out TURNED OVER on a boss sky, the chevron and its rings too (owner, 2026-10-27:
+// "for the build tower things, they should be inverted during boss"; they kept the tower's colour since 2026-10-16)
 function drawButtonsOver(up, cellTop, skyAt) {
-  const hh = WARP.prism.slot / 2;
-  CELLS.forEach((c, ci) => { const fn = cellOpen(ci) && !G.towers.some(t => t.cell === ci) && cellTop(c); if (!fn) return; const draw = () => up(c.x, c.y, fn, hh); if (skyAt(c)) withPalette(draw); else draw(); });
-  ownColours(() => drawUpPlus((c, fn) => up(c.x, c.y, fn, 0)));
+  const hh = WARP.prism.slot / 2, flip = (c, draw) => (skyAt(c) ? withPalette(draw) : draw());
+  CELLS.forEach((c, ci) => { const fn = cellOpen(ci) && !G.towers.some(t => t.cell === ci) && cellTop(c); if (fn) flip(c, () => up(c.x, c.y, fn, hh)); });
+  drawUpPlus((c, fn) => flip(c, () => up(c.x, c.y, fn, 0)));
 }
 // Shown while placing: every OPEN slot at full strength (owner: "fully show"),
 // free cells in the colour of the tower being placed (owner), occupied ones grey.

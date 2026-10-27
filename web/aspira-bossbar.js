@@ -180,33 +180,39 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
   }
   ctx.globalAlpha = 1;
 }
-// THE %HP MARKS AND THEIR LABELS (owner, 2026-10-26: "label the boss lane hp markers, ensure that the inversion doesn't affect the orange
-// color / when the hp is below marker, make the label grey"): a tick across the lane and its "80%" beside it, orange (the threat colour)
-// while the boss's HP is still at or above that share, grey once under it; drawn through skyKeep (drawSceneTop) so the boss sky's
-// inversion leaves the orange alone
-const BOSS_LABEL_PX = 9, BOSS_LABEL_OFF = 13;
-function drawBossMarks(at = (x, y, fn) => fn()) {
+// THE %HP MARKS AS CALLOUTS (owner, 2026-10-27: "label the sections using an arrow pointed along the spoke connected to a horizontal
+// line with the number on top of the horizontal line"; 2026-10-26: "when the hp is below marker, make the label grey"): from the mark on
+// the lane an arrow runs out along its spoke BOSS_LEAD_U, its head at the mark pointing in, then a horizontal bar BOSS_LEAD_BAR long
+// toward the side the spoke leans to, the "80%" centred over the bar; orange (the threat colour) while the boss's HP is still at or
+// above that share, grey once under it. Screen space on the top layer, crisp, sized by the perspective at the mark
+// (owner, 2026-10-27: "make the arrows thinner, point them at the center of the nearest gap / scale number size based on distance from
+// core (further = bigger)": the arrow's tip sits in the middle of the gap between pieces nearest the mark, the number BOSS_LABEL_PX[0] at
+// the core to [1] at the 100% end)
+const BOSS_LABEL_PX = [6, 12], BOSS_LEAD_U = 16, BOSS_LEAD_BAR = 18, BOSS_LEAD_HEAD = 3, BOSS_LEAD_W = 1;
+function bossLead(e, f) { // the callout at share f: M the mark on screen, T the arrow's tail, E the bar's end, k px a u there, px its number's size, col
+  const { a: A, b: B } = bossSpan(e), s = B - (B - A) * f, P = e.bar.pieces; let sg = s, best = Infinity;
+  for (let i = 0; i + 1 < P.length; i++) { const g = (P[i].s1 + P[i + 1].s0) / 2, d = Math.abs(g - s); if (d < best) { best = d; sg = g; } } // the nearest gap's middle
+  const q = pathAt(e.pi, sg, e.ang || 0), M = warpProject(q.x, q.y), C = warpProject(CX, CY), k = cam.k * (M.s || 1);
+  let ux = M.x - C.x, uy = M.y - C.y; const l = Math.hypot(ux, uy) || 1; ux /= l; uy /= l; // the spoke on screen, outward
+  const T = { x: M.x + ux * BOSS_LEAD_U * k, y: M.y + uy * BOSS_LEAD_U * k }, E = { x: T.x + (ux >= 0 ? 1 : -1) * BOSS_LEAD_BAR * k, y: T.y };
+  return { M, T, E, ux, uy, k, px: BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, col: Math.max(0, e.hp) / e.max >= f ? "threat" : "grid" };
+}
+function drawBossMarks() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineJoin = "round";
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const { a: A, b: B } = bossSpan(e), hp = Math.max(0, e.hp) / e.max;
     for (const f of BOSS_BAR_MARKS) {
-      const s = B - (B - A) * f /* f of the bar's span back from its 0% end */, col = hp >= f ? "threat" : "grid", a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
-      const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / L, ny = (b.x - a.x) / L;
-      at(q.x, q.y, () => { ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.globalAlpha = 0.9; ctx.strokeStyle = COL[col]; ctx.beginPath(); ctx.moveTo(q.x - nx * BOSS_MARK_U / 2, q.y - ny * BOSS_MARK_U / 2); ctx.lineTo(q.x + nx * BOSS_MARK_U / 2, q.y + ny * BOSS_MARK_U / 2); ctx.stroke(); });
+      const { M, T, E, ux, uy, k, col } = bossLead(e, f), h = BOSS_LEAD_HEAD * k;
+      ctx.strokeStyle = COL[col]; ctx.fillStyle = COL[col]; ctx.lineWidth = BOSS_LEAD_W * k; ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.moveTo(M.x + ux * h, M.y + uy * h); ctx.lineTo(T.x, T.y); ctx.lineTo(E.x, E.y); ctx.stroke(); // the spoke leg, then the bar
+      ctx.beginPath(); ctx.moveTo(M.x, M.y); ctx.lineTo(M.x + (2 * ux - uy) * h, M.y + (2 * uy + ux) * h); ctx.lineTo(M.x + (2 * ux + uy) * h, M.y + (2 * uy - ux) * h); ctx.closePath(); ctx.fill(); // the head: its tip at the mark
     }
   }
   ctx.globalAlpha = 1;
 }
-// ...their LABELS on the top layer, flat at each mark's spot like a damage number (owner, 2026-10-26: "boss labels are unreadable? wrong
-// layer?" - on the floor 3D warped them); at: 3D's placer (warpEntities' popRun), 2D draws in place
-function drawBossLabels(at = (x, y, fn) => fn()) {
+function drawBossLabels() { // the number centred over the bar, flat like a damage number (owner, 2026-10-26: "boss labels are unreadable? wrong layer?" - on the floor 3D warped them)
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const { a: A, b: B } = bossSpan(e), hp = Math.max(0, e.hp) / e.max;
-    for (const f of BOSS_BAR_MARKS) {
-      const s = B - (B - A) * f, a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
-      const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, x = q.x - (b.y - a.y) / L * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF), y = q.y + (b.x - a.x) / L * (BOSS_MARK_U / 2 + BOSS_LABEL_OFF);
-      at(x, y, () => { ctx.globalAlpha = 1; text(Math.round(f * 100) + "%", x, y, BOSS_LABEL_PX, hp >= f ? "threat" : "grid", false); }); // no outline (owner, 2026-10-26)
-    }
+    for (const f of BOSS_BAR_MARKS) { const { T, E, k, px, col } = bossLead(e, f); ctx.setTransform(k, 0, 0, k, (T.x + E.x) / 2, T.y - px * 0.75 * k); ctx.globalAlpha = 1; text(Math.round(f * 100) + "%", 0, 0, px, col, false); } // no outline (owner, 2026-10-26)
   }
 }
