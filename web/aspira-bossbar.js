@@ -174,12 +174,13 @@ function bossClip() {
 //   3. THE SLAM, ring by ring (owner, 2026-10-27: "group the pieces into rings - a ring has no overlapping segments along the spoke -
 //      then slam them group by group" / "starting with innermost group" / "within a group, slam one at a time"): the pieces in rings,
 //      no two of a ring on one spoke (barRings), the innermost ring first, a ring's pieces one at a time in a random order (by hash); the
-//      landings BAR_FLY_SPAN s in all from BAR_FLY_LEAD after the approach, evenly, with BAR_RING_PAUSE s more between rings - each piece
+//      landings BAR_FLY_SPAN s in all from BAR_FLY_LEAD after the approach, evenly, BAR_RING_PAUSE s more between rings (0: owner,
+//      2026-10-27, "no time gap between rings") - each piece
 //      covering the rest of its spoke over BAR_SLAM s (+-BAR_SLAM_JIT), eased IN (motionless, then faster and faster).
 // Before the sky is full every piece waits off-screen. The boss's lane and glow light only after the last slam (bossBarInT - litLanes,
 // aspira-lanes.js: "draw lane and lane glow after hp slides in"), and the numbers fade in then, over BAR_LABEL_FADE s (owner, 2026-10-27:
 // "fade in the numbers at the end") - they never fly
-const BAR_APPROACH = 1.6, BAR_FLY_LEAD = 0.4, BAR_FLY_SPAN = 3.5, BAR_RING_PAUSE = 0.2, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_RING_PAD = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5; // BAR_RING_PAD: the ring sits this far past the bar's outermost piece - on screen wherever the outer turn is
+const BAR_APPROACH = 1.6, BAR_FLY_LEAD = 0.4, BAR_FLY_SPAN = 2.5, BAR_RING_PAUSE = 0, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_RING_PAD = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5; // BAR_RING_PAD: the ring sits this far past the bar's outermost piece - on screen wherever the outer turn is
 const BAR_LABEL_FADE = 0.6; // s: the numbers' fade-in, from the last slam
 const bossBarInT = () => BAR_APPROACH + BAR_FLY_LEAD + BAR_FLY_SPAN; // s after the sky is full until the bar is in
 const barInT = () => (typeof bossInv === "undefined" || bossInv.phase !== "in") ? Infinity : performance.now() / 1000 - (bossInv.t0 + BOSS_SKY_T); // s since the boss sky filled (Infinity: no fly-in on - every piece home); BOSS_SKY_T: the spokes, then the triangle - aspira-bosses.js
