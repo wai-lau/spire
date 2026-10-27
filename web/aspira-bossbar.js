@@ -135,14 +135,14 @@ function barSplit(P, bar, hp, keepCore) {
 // EVERY POINT PROJECTED (owner, 2026-10-27: "why is the outer layer jagged" - a piece drawn flat about its midpoint, as the dice are, sat up
 // to 54 px off the lane's projection at its ends, so each stepped against its neighbour): the outline is traced in canvas px through
 // warpProjectScratch (aspira-warp.js), its widths by the perspective's scale at the piece's middle
-function barPiece(g, bar, hp, keepCore, fill, line) { // the piece's part on keepCore's side of the HP boundary at hp (hp null: the whole piece)
-  let Lp = g.Lp, Rp = g.Rp;
+function barPiece(g, bar, hp, keepCore, fill, line, off = 0) { // the piece's part on keepCore's side of the HP boundary at hp (hp null: the whole piece); off: u out along its spoke (the fly-in)
+  let Lp = g.Lp, Rp = g.Rp; const sh = off ? q => { const dx = q.x - CX, dy = q.y - CY, r = Math.hypot(dx, dy) || 1, k = (r + off) / r; return { x: CX + dx * k, y: CY + dy * k }; } : q => q;
   if (hp != null) { if (keepCore ? hp >= g.s1 : hp <= g.s0) return; if (keepCore ? hp > g.s0 : hp < g.s1) { Lp = barSplit(Lp, bar, hp, keepCore); Rp = barSplit(Rp, bar, hp, keepCore); } }
   if (Lp.length < 2 || Rp.length < 2) return;
   const mp = Lp[Lp.length >> 1], k = cam.k * (warpProjectScratch(mp.x, mp.y).s || 1), rad = g.rad * k;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath();
-  Lp.forEach((p, i) => { const P = warpProjectScratch(p.x, p.y); if (i) ctx.lineTo(P.x, P.y); else ctx.moveTo(P.x, P.y); });
-  for (let i = Rp.length - 1; i >= 0; i--) { const P = warpProjectScratch(Rp[i].x, Rp[i].y); ctx.lineTo(P.x, P.y); }
+  Lp.forEach((p, i) => { const q = sh(p), P = warpProjectScratch(q.x, q.y); if (i) ctx.lineTo(P.x, P.y); else ctx.moveTo(P.x, P.y); });
+  for (let i = Rp.length - 1; i >= 0; i--) { const q = sh(Rp[i]), P = warpProjectScratch(q.x, q.y); ctx.lineTo(P.x, P.y); }
   ctx.closePath(); ctx.lineJoin = "round";
   ctx.strokeStyle = line; ctx.lineWidth = 2 * (rad + g.out * k); ctx.stroke();
   ctx.fillStyle = fill; ctx.fill(); if (rad > 0.01) { ctx.strokeStyle = fill; ctx.lineWidth = 2 * rad; ctx.stroke(); } // (a square piece at the core: no rounding stroke - a 0 lineWidth would keep the last)
@@ -162,6 +162,21 @@ function bossClip() {
   for (const e of G.enemies) { if (e.dead || !e.seen) continue; const P = warpProject(e.x, e.y), r = solidSize(e) * BOSS_OCCLUDE_K * cam.k * (P.s || 1); if (!(r > 0)) continue; ctx.moveTo(P.x + r, P.y); ctx.arc(P.x, P.y, r, 0, Math.PI * 2, true); }
   ctx.clip();
 }
+// THE FLY-IN (owner, 2026-10-27: "after the triangle fully expands, have the segments fly in from off-screen into place; jitter their
+// speeds and launch time, but the arrival time should be ordered"): once the boss sky is FULL (bossInv.t0 + BOSS_INV_T), piece i lands
+// at BAR_FLY_LEAD + BAR_FLY_SPAN x (1 - i / (n - 1)) s after it - the core end first, the 100% end last (owner: "reverse arrival
+// order") - having flown in along its own spoke from past the screen's farthest corner (barFlyFrom) over BAR_FLY_DUR s, +-BAR_FLY_JIT
+// by its hash, so launches scatter while landings keep their order; eased IN (owner: "start motionless off screen and accelerate"). Before the sky is full every piece waits off-screen. The boss's lane and glow light only
+// after the last piece lands (bossBarInT - litLanes, aspira-lanes.js: "draw lane and lane glow after hp slides in")
+const BAR_FLY_LEAD = 0.2, BAR_FLY_SPAN = 1.2, BAR_FLY_DUR = 0.6, BAR_FLY_JIT = 0.6;
+const bossBarInT = () => BAR_FLY_LEAD + BAR_FLY_SPAN; // s after the sky is full until the bar is in
+const barFlyFrom = () => { const cs = [[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY)); return Math.max(...cs) * 1.1 + 100; }; // u out along a spoke: past the farthest corner
+function barFlyOff(e, i, n) { // piece i of n: how far out along its spoke it still is, u (0: in place)
+  if (typeof bossInv === "undefined" || bossInv.phase !== "in") return 0;
+  const now = performance.now() / 1000, full = bossInv.t0 + BOSS_INV_T; if (now < full) return barFlyFrom();
+  const land = full + BAR_FLY_LEAD + BAR_FLY_SPAN * (n > 1 ? 1 - i / (n - 1) : 0), dur = BAR_FLY_DUR * (1 + BAR_FLY_JIT * (2 * bossHash(e, i, 6) - 1)), u = Math.max(0, Math.min(1, (now - (land - dur)) / dur));
+  return u >= 1 ? 0 : (1 - Math.pow(u, 3)) * barFlyFrom(); // (ease IN: motionless off-screen, then faster and faster into place)
+}
 function drawBossBar() { // the HP left, in the lane's SHOWN colour: each piece's part past where the HP left begins
   // the top layer sits above the sky's flip, so a piece under the sky takes the INVERTED colour by hand - the lane's own under it has been
   // turned over by the shader (owner, 2026-10-27: "why are the segments white and blue" - cyan, the Star's own, over the flipped red lane)
@@ -169,7 +184,7 @@ function drawBossBar() { // the HP left, in the lane's SHOWN colour: each piece'
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e); ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, true, c, c); }
+    e.bar.pieces.forEach((g, i, P) => { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, true, c, c, barFlyOff(e, i, P.length)); });
   }
   ctx.globalAlpha = 1;
 }
@@ -177,7 +192,7 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color], inv = invertColor(own); ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, false, COL.white, c); } // hollow: white in the lane's outline
+    e.bar.pieces.forEach((g, i, P) => { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, false, COL.white, c, barFlyOff(e, i, P.length)); }); // hollow: white in the lane's outline
   }
   ctx.globalAlpha = 1;
 }
@@ -204,28 +219,28 @@ function drawBossLabels() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0, wind = e.bar.sgn;
-    for (const p of e.bar.pieces) {
-      if (!(p.mi >= 0)) continue;
-      const f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? COL.white : inSkyPt(mp.x, mp.y) ? invertColor(own) : own);
+    e.bar.pieces.forEach((p, pi, PP) => {
+      if (!(p.mi >= 0)) return;
+      const off = barFlyOff(e, pi, PP.length), f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? COL.white : inSkyPt(mp.x, mp.y) ? invertColor(own) : own);
       // a cut of the piece: the lane point there, its angle round the core and radius, the way into the piece round the core (dir: +1
       // with the lane's winding past the start cut, against it before the end cut)
       const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), rx = Q.x - CX, ry = Q.y - CY; return { cs, sg, th: Math.atan2(ry, rx), r: Math.hypot(rx, ry) || 1, gap, dir: sg * wind }; };
       const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), S0 = warpProject(CX + Math.cos(e0.th) * e0.r, CY + Math.sin(e0.th) * e0.r), S1 = warpProject(CX + Math.cos(e1.th) * e1.r, CY + Math.sin(e1.th) * e1.r), E = S1.y <= S0.y ? e0 : e1; // the bottom: the cut the other lies ABOVE on the screen
       // the number's size: its height, BOSS_LABEL_PX by its share, no more than the piece's extent round the core at its radius less
       // the two half gaps and the pads, its width by the sprite's own shape, no more than the piece's width
-      const rc = E.r + p.d, span = Math.abs(((e1.th - e0.th) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI), room = span * rc - (p.g0 + p.g1) / 2 - 2 * BOSS_LABEL_PAD; // span: the piece's angle round the core, cut to cut
+      const rc = E.r + p.d + off, span = Math.abs(((e1.th - e0.th) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI), room = span * rc - (p.g0 + p.g1) / 2 - 2 * BOSS_LABEL_PAD; // span: the piece's angle round the core, cut to cut
       // the number's uprights run ALONG THE LANE, as the piece's sides do (owner, 2026-10-27: "this 65 should look skewed towards the core not
       // away" - square to the spoke they matched no edge): t the lane's tangent where the number sits - just past its cut, not the piece's
       // middle (the spiral turns 30 degrees over a long piece: "the left side of the 25 looks slanted off the segment") - turned toward the
       // top; square where the lane runs nearly along the spoke; sn its slant off the spoke - a side of the number is h long along t, h * sn across
       const um = { x: Math.cos(E.th), y: Math.sin(E.th) }, nx = -um.y * E.dir, ny = um.x * E.dir, sq = E.cs + E.sg * (E.gap / 2 + BOSS_LABEL_PAD + BOSS_LABEL_PX[1] / 2), Qm = pathAt(e.pi, sq, ang), Qm2 = pathAt(e.pi, sq + 1, ang), tl0 = Math.hypot(Qm2.x - Qm.x, Qm2.y - Qm.y) || 1;
       let tx = (Qm2.x - Qm.x) / tl0, ty = (Qm2.y - Qm.y) / tl0; if (tx * nx + ty * ny < 0) { tx = -tx; ty = -ty; } let sn = Math.abs(tx * um.y - ty * um.x); if (sn < BOSS_CUT_MIN) { tx = nx; ty = ny; sn = 1; }
-      let h = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, room / sn), w = h * sp.w / sp.h; if (w > p.w - 2 * BOSS_LABEL_PAD) { w = p.w - 2 * BOSS_LABEL_PAD; h = w * sp.h / sp.w; } if (h < 2) continue;
+      let h = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, room / sn), w = h * sp.w / sp.h; if (w > p.w - 2 * BOSS_LABEL_PAD) { w = p.w - 2 * BOSS_LABEL_PAD; h = w * sp.h / sp.w; } if (h < 2) return;
       // the wedge: its bottom the cut line itself (the spoke through the lane point, half a gap and the pad over, into the piece), from
       // the piece's outer corner at that cut, the pad in, w along it toward the core - against the OUTER side (owner, 2026-10-27: "left-or
       // right align them, whichever side is the outer side"; centred along the spoke before); its top the ray through the core standing
       // the number's rise above the bottom at rc; a point of the top: from its point on the bottom along t to that ray
-      const inset = E.gap / 2 + BOSS_LABEL_PAD, ub = { x: Math.cos(E.th), y: Math.sin(E.th) }, ox = -ub.y * E.dir * inset, oy = ub.x * E.dir * inset, tt = E.th + E.dir * (inset + h * sn) / rc, v = { x: Math.cos(tt), y: Math.sin(tt) }, cL = E === e0 ? p.Lp[0] : p.Lp[p.Lp.length - 1], cR = E === e0 ? p.Rp[0] : p.Rp[p.Rp.length - 1], r1 = Math.max(Math.hypot(cL.x - CX, cL.y - CY), Math.hypot(cR.x - CX, cR.y - CY)) - BOSS_LABEL_PAD, r0 = r1 - w, txv = tx * v.y - ty * v.x || 1e-9; // against the piece's OUTER corner at that cut (owner, 2026-10-27: "left-or right align them, whichever side is the outer side")
+      const inset = E.gap / 2 + BOSS_LABEL_PAD, ub = { x: Math.cos(E.th), y: Math.sin(E.th) }, ox = -ub.y * E.dir * inset, oy = ub.x * E.dir * inset, tt = E.th + E.dir * (inset + h * sn) / rc, v = { x: Math.cos(tt), y: Math.sin(tt) }, cL = E === e0 ? p.Lp[0] : p.Lp[p.Lp.length - 1], cR = E === e0 ? p.Rp[0] : p.Rp[p.Rp.length - 1], r1 = Math.max(Math.hypot(cL.x - CX, cL.y - CY), Math.hypot(cR.x - CX, cR.y - CY)) - BOSS_LABEL_PAD + off, r0 = r1 - w, txv = tx * v.y - ty * v.x || 1e-9; // against the piece's OUTER corner at that cut (owner, 2026-10-27: "left-or right align them, whichever side is the outer side")
       const bot = x => ({ x: CX + ub.x * (r0 + (r1 - r0) * x) + ox, y: CY + ub.y * (r0 + (r1 - r0) * x) + oy }), top = x => { const B = bot(x), bx = B.x - CX, by = B.y - CY, la = -(bx * v.y - by * v.x) / txv; return { x: B.x + tx * la, y: B.y + ty * la }; };
       const pr = q => warpProject(q.x, q.y), Bl = pr(bot(0)), Br = pr(bot(1)), Tl = pr(top(0)), flip = (Br.x - Bl.x) * (Tl.y - Bl.y) - (Br.y - Bl.y) * (Tl.x - Bl.x) > 0; // read the way that is not mirrored
       const N = BOSS_LABEL_STRIPS, at = (fn, x) => pr(fn(flip ? 1 - x : x)), sw = sp.w / N;
@@ -236,6 +251,6 @@ function drawBossLabels() {
         ctx.drawImage(sp.cv, i * sw, 0, sw + 1, sp.h, 0, 0, sw + 1, sp.h); // (a px of overlap: no seam)
         B0 = B1; T0 = T1;
       }
-    }
+    });
   }
 }
