@@ -17,7 +17,8 @@ if (DEV_SCENE === "boss") {
       G.started = true; G.wave = STAR_EVERY - 1; G.lastType = "fast"; G.enemies.length = 0; G.fleetQ.length = 0; G.spawns.length = 0; G.nextIn = 0;
       built = true; return;
     }
-    const b = G.enemies.find(e => e.arcana && !e.dead); if (!b) return;
+    let b = G.enemies.find(e => e.arcana && !e.dead);
+    if (!b) { for (let i = 0; i < 40 && !b; i++) { step(0.05); b = G.enemies.find(e => e.arcana && !e.dead); } if (!b) return; } // (2 s of game a tick till the boss is out: no waiting through its warning)
     for (let i = 0; i < 2000 && b.s < entryS(b.pi) + DEV_BOSS_IN_U && !b.dead; i++) step(0.05); // fast-forwarded DEV_BOSS_IN_U in (real steps, not a moved boss): the scene is up at once
     b.hp = b.max * (Number(DEV.get("hp")) || DEV_BOSS_HP); ui.paused = true; ui.pauseBtn = true; clearInterval(devTimer);
   };

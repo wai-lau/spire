@@ -295,6 +295,17 @@ const bossPays = e => !(isA(e, "devil") && G.enemies.some(o => o !== e && !o.dea
 // (bossInv.full -> #asp.asp-boss).
 const BOSS_INV_T = 3;
 const bossInv = { phase: "off", t0: 0, x: 0, y: 0, full: false, r: 0 };
+// THE SKY SPREADS AS A TRIANGLE pointing down (owner, 2026-10-27: "replace the expanding circle with an expanding triangle for bosses /
+// point down"): bossInv.r is still the radius that must reach the farthest corner - the triangle's INSCRIBED circle, so its corners sit
+// at 2 x r (apex below the boss, base above). skyTri: the three corners (world); inSkyPt: is a world point under the sky
+const SKY_TRI_K = 2;
+function skyTri() { const R = bossInv.r * SKY_TRI_K, s = Math.sqrt(3) / 2; return [{ x: bossInv.x, y: bossInv.y + R }, { x: bossInv.x + R * s, y: bossInv.y - R / 2 }, { x: bossInv.x - R * s, y: bossInv.y - R / 2 }]; }
+function inSkyPt(px, py) {
+  if (bossInv.phase === "off") return false; if (bossInv.full) return true;
+  const [a, b, c] = skyTri(), cr = (p, q) => (q.x - p.x) * (py - p.y) - (q.y - p.y) * (px - p.x), s1 = cr(a, b), s2 = cr(b, c), s3 = cr(c, a);
+  return (s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0);
+}
+function skyTriPath(fn) { for (const [i, p] of skyTri().entries()) fn(p.x, p.y, i); } // (the three corners, in order)
 // the game HOLDS while the sky turns over, both ways (owner, 2026-10-12: "maybe we should pause the game while inverting"):
 // BOSS_INV_T of real time with nothing moving, so the flip is watched, not fought through
 const skyTurning = () => (bossInv.phase === "in" && !bossInv.full) || bossInv.phase === "out";
@@ -363,7 +374,7 @@ function skyKeep(fn) {
   if (!skyOn()) { ownColours(fn); return; }
   const flipped = () => withPalette(() => { inverted = false; try { fn(); } finally { inverted = true; } });
   if (skyAll()) { flipped(); return; } // (3D: the bell's picture stays plain and its shader turns it over - warpDraw)
-  const circle = () => { ctx.beginPath(); ctx.arc(bossInv.x, bossInv.y, bossInv.r, 0, 6.283); };
+  const circle = () => { ctx.beginPath(); skyTriPath((x, y, i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); }; // (the sky's triangle - skyTri)
   ctx.save(); circle(); ctx.rect(CX - 4000, CY - 4000, 8000, 8000); ctx.clip("evenodd"); fn(); ctx.restore();
   ctx.save(); circle(); ctx.clip(); flipped(); ctx.restore();
 }

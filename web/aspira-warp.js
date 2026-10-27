@@ -337,7 +337,7 @@ function warpEntities() {
     const drawSolid = (o, tops) => { if (o.pre) o.pre(); if (tops && o.under) o.under(); warpPrism(o); /* under: drawn with the tops, before the prism - so it covers it */ if (tops) o.top(); if (o.post) o.post(); };
     // a TOWER under the boss sky keeps its own colours, as in 2D (owner, 2026-10-09: "colors also buggy on boss spawn" - the
     // top layer's difference flipped them): drawn in the INVERTED palette, so that flip turns it back
-    const inSky = o => bossInv.phase !== "off" && (bossInv.full || Math.hypot(o.x - bossInv.x, o.y - bossInv.y) < bossInv.r);
+    const inSky = o => inSkyPt(o.x, o.y); // (under the sky's triangle - aspira-bosses.js)
     const drawSolids = tops => { for (const o of solids) if (o.own && inSky(o)) skyOwn(o, () => drawSolid(o, tops)); else drawSolid(o, tops); };
     // BELOW the floor, fading slice by slice, then the tracers and marks on it, then ABOVE (aspira-fog.js; owner: "geometry
     // should just start losing opacity in a gradient when lower than the floor")
@@ -382,7 +382,7 @@ function warpEntities() {
       // the circle on the floor; a point of it BEHIND the camera (a big circle, spreading or collapsing) would make a
       // garbage polygon that flips the colours frame to frame (owner: "colors rapidly switch as the boss dies") - such a
       // circle covers the whole view, so the whole view is inverted
-      const ring = bossInv.full ? null : Array.from({ length: 64 }, (_, i) => { const a = i * Math.PI / 32; return warpProject(bossInv.x + Math.cos(a) * bossInv.r, bossInv.y + Math.sin(a) * bossInv.r, 0); });
+      const ring = bossInv.full ? null : (() => { const T = skyTri(), out = []; for (let k = 0; k < 3; k++) { const p = T[k], q = T[(k + 1) % 3]; for (let i = 0; i < 22; i++) { const f = i / 22; out.push(warpProject(p.x + (q.x - p.x) * f, p.y + (q.y - p.y) * f, 0)); } } return out; })(); // the sky's TRIANGLE, each edge in 22 steps (straight in the world, bent by the warp)
       if (!ring || ring.some(Q => !(Q.s > 0) || !isFinite(Q.x) || !isFinite(Q.y))) ctx.rect(0, 0, cnv.width, cnv.height);
       else ring.forEach((Q, i) => (i ? ctx.lineTo(Q.x, Q.y) : ctx.moveTo(Q.x, Q.y)));
       ctx.fill();

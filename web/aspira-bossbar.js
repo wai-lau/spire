@@ -88,19 +88,19 @@ function bossClip() {
 function drawBossBar(at = (x, y, fn) => fn()) { // the HP left, in the lane's SHOWN colour: each piece's part past where the HP left begins
   // the top layer sits above the sky's flip, so a piece under the sky takes the INVERTED colour by hand - the lane's own under it has been
   // turned over by the shader (owner, 2026-10-27: "why are the segments white and blue" - cyan, the Star's own, over the flipped red lane)
-  const own = COL[ENEMIES.bonus.color], inv = invertColor(own), all = skyPal(), on = skyOn();
+  const own = COL[ENEMIES.bonus.color], inv = invertColor(own);
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e); ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) { const m = g.pts[g.pts.length >> 1], c = all || (on && Math.hypot(m.x - bossInv.x, m.y - bossInv.y) < bossInv.r) ? inv : own; bossPiece(g, Math.max(g.s0, hp), g.s1, at, c, c); }
+    for (const g of e.bar.pieces) { const m = g.pts[g.pts.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; bossPiece(g, Math.max(g.s0, hp), g.s1, at, c, c); }
   }
   ctx.globalAlpha = 1;
 }
 function drawBossTrack(at = (x, y, fn) => fn()) { // the HP gone: the pieces' white part from the 100% end to where the HP left begins
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color], inv = invertColor(own), all = skyPal(), on = skyOn(); ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) { const m = g.pts[g.pts.length >> 1], c = all || (on && Math.hypot(m.x - bossInv.x, m.y - bossInv.y) < bossInv.r) ? inv : own; bossPiece(g, g.s0, Math.min(g.s1, hp), at, COL.white, c); } // hollow: white in the lane's outline
+    const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color], inv = invertColor(own); ctx.globalAlpha = 1;
+    for (const g of e.bar.pieces) { const m = g.pts[g.pts.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; bossPiece(g, g.s0, Math.min(g.s1, hp), at, COL.white, c); } // hollow: white in the lane's outline
   }
   ctx.globalAlpha = 1;
 }
