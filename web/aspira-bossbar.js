@@ -71,8 +71,8 @@ function barGeo(e) {
     for (const dth of [-TAU, TAU]) { let best = null; for (const p of L) if (Math.abs(p.th - (m.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } if (best !== null) rs.push(Math.abs(best - rm) - BOSS_SEG_GAP); }
     return Math.max(4, Math.min(cap, ...rs)); };
   // piece i's width at s: the taper (BOSS_PIECE_W at the core end .. the 100% end) jittered by its hash, inside the corridor, never under BOSS_PIECE_FLOOR
-  const marksS = BOSS_BAR_MARKS.map(f => b - (b - a) * f), markIn = (s0, s1) => marksS.findIndex(m => m >= s0 - 1e-6 && m <= s1 + 1e-6); // the mark (its index in BOSS_BAR_MARKS) between s0 and s1, -1 none: the piece holding one carries its number and is at least BOSS_LABEL_W wide at the 100% end, tapering to the core like the floor (owner, 2026-10-27: "min thickness of segment with a number should be 50", then "apply the ratio based on proximity to core to this 50u")
-  const wOf = (i, s, s0, s1) => Math.min(corrAt(s), Math.max(markIn(s0, s1) >= 0 ? BOSS_LABEL_W * Math.max(BOSS_FLOOR_CORE, share(s)) : 0, floorAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))); // (the corridor last: the floor never pushes a piece into the next turn)
+  const marksS = BOSS_BAR_MARKS.map(f => b - (b - a) * f), markIn = (s0, s1) => marksS.findIndex(m => m >= s0 - 1e-6 && m <= s1 + 1e-6); // the mark (its index in BOSS_BAR_MARKS) between s0 and s1, -1 none: the piece holding one carries its number and is at least BOSS_LABEL_W wide - the 0's BOSS_LABEL_W0 - where the turns allow (owner, 2026-10-27: "min thickness of segment with a number should be 50" / "except for 0, allow it to be 30u"; a taper to the core was tried and dropped)
+  const wOf = (i, s, s0, s1) => { const mk = markIn(s0, s1); return Math.min(corrAt(s), Math.max(mk < 0 ? 0 : BOSS_BAR_MARKS[mk] === 0 ? BOSS_LABEL_W0 : BOSS_LABEL_W, floorAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))); }; // (the corridor last: the floor never pushes a piece into the next turn)
   // the piece's slide along its spoke: at most BOSS_SLIDE_MAX (owner, 2026-10-27: "cap spoke jitter to +/-30u so that they cover lane"), and
   // at most the room left between its width and the turns either side (half each way, so two turns' pieces slid toward each other still
   // keep the gap - the real pitch, not BOSS_CORRIDOR). Along the lane a slide changes nothing: the piece is cut after it slides
@@ -192,7 +192,7 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
 // together (one canvas affine cannot bend a box into a wedge). The bottom is the cut whose way into the piece is UP on the screen, read
 // the way that is not mirrored: never upside down. White over the HP left; the lane's colour as shown (turned over under the sky) over
 // the HP gone
-const BOSS_LABEL_PX = [12, 24], BOSS_LABEL_PAD = 2, BOSS_LABEL_W = 50, BOSS_LABEL_STRIPS = 16, BOSS_LABEL_SPRITE_PX = 96, labelSprites = new Map();
+const BOSS_LABEL_PX = [12, 24], BOSS_LABEL_PAD = 2, BOSS_LABEL_W = 50, BOSS_LABEL_W0 = 30, BOSS_LABEL_STRIPS = 16, BOSS_LABEL_SPRITE_PX = 96, labelSprites = new Map();
 function labelSprite(str, col) { // the number drawn once, cropped to its glyphs' box (digits: baseline to cap height)
   const key = str + "|" + col, hit = labelSprites.get(key); if (hit) return hit;
   const m = document.createElement("canvas"), x = m.getContext("2d"); x.font = BOSS_LABEL_SPRITE_PX + "px " + CANVAS_FONT;
