@@ -13,17 +13,18 @@
 // duo rule's tier 0) to lo x CURVE_DMG_X at SKILL_POINTS - the same curve shape and the same x for all seven. Its strength against the others
 // is its base hit and its mechanics, never its growth (the old per-tower hi ran x1.26 for SOL to x375 for CRR - placeholders folded from
 // the old tables). (let: the sims sweep it)
-let CURVE_DMG_X = 18; // (tribal 2026-10-26 at 12: 2 of 35 trios won both seeds - too weak)
+let CURVE_DMG_X = 18; // (tribal 2026-10-26 at 12: 2 of 35 trios won both seeds - too weak; at 18, round 4: 8 of 35)
 const STAT_CURVE = {
-  arc: { dmg: [5.13], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
-  frz: { dmg: [0.824], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
-  sol: { dmg: [1.248], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
-  acd: { dmg: [1.724], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
-  grv: { dmg: [0.211], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
-  car: { dmg: [5.186], rate: [2, 2], range: [1, 1], slide: [1, 1] },
-  ifr: { dmg: [0.132], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
+  arc: { dmg: [5.597], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
+  frz: { dmg: [0.8265], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
+  sol: { dmg: [1.463], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
+  acd: { dmg: [1.798], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
+  grv: { dmg: [0.2298], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
+  car: { dmg: [4.673], rate: [2, 2], range: [1, 1], slide: [1, 1] },
+  ifr: { dmg: [0.1216], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
 };
-// lo: the DUO RULE's (plan 3, 2026-10-25 - scripts/aspira-sim/duo0.mjs): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
+// lo: the DUO RULE's (plan 3, 2026-10-25 - scripts/aspira-sim/duo0.mjs), then x each tribal round's factor (triscale.py; round 4
+// 2026-10-26: arc 1.09, sol 1.17, acd 1.04, grv 1.09, car 0.90, ifr 0.92): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
 // and CRR's tier 0 RATE x2.5 / x2 (one meteor, one interceptor: a third and two thirds of the old bare tower's hits) - each still below
 // the old bare tower in all, with the waves 1-12 ease (aspira-waves.js) and FRZ's nip (aspira-frz.js)
 let CURVE_P = 2.5; // the steepening: lo + (hi - lo) x (L / SKILL_POINTS) ** CURVE_P. Was GEOMETRIC (lo x (hi/lo) ** share, plan 2): with ARC's x171 and CRR's x25000 spans
