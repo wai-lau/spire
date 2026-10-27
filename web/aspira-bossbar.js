@@ -185,8 +185,8 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
 // aligned with one of the spokes" / "drop the % and resize numbers to fit on the segment they are on / min thickness of segment with a
 // number should be 50" / "align the top of the number with a new spoke pointed at the core" - "letters don't need to fill"; 2026-10-26:
 // the marks): each number lies on the piece that holds its mark (barGeo makes that piece BOSS_LABEL_W wide where the turns allow), at
-// its natural size - BOSS_LABEL_PX[0] at the core to [1] at the 100% end, shrunk to the piece - centred along the spoke on the piece's
-// own radius, its bottom on one of the piece's cut lines (a spoke), its top a ray through the core the number's height above it at
+// its natural size - BOSS_LABEL_PX[0] at the core to [1] at the 100% end, shrunk to the piece - against the piece's outer side
+// along the spoke, its bottom on one of the piece's cut lines (a spoke), its top a ray through the core the number's height above it at
 // that radius, its sides along the lane like the piece's: the number is a wedge, narrower toward the core, skewed like the piece. It is a cached sprite drawn in
 // BOSS_LABEL_STRIPS strips, each a parallelogram between the two lines at its place, so it takes the wedge and the floor's perspective
 // together (one canvas affine cannot bend a box into a wedge). The bottom is the cut whose way into the piece is UP on the screen, read
@@ -221,10 +221,10 @@ function drawBossLabels() {
       let tx = (Qm2.x - Qm.x) / tl0, ty = (Qm2.y - Qm.y) / tl0; if (tx * nx + ty * ny < 0) { tx = -tx; ty = -ty; } let sn = Math.abs(tx * um.y - ty * um.x); if (sn < BOSS_CUT_MIN) { tx = nx; ty = ny; sn = 1; }
       let h = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, room / sn), w = h * sp.w / sp.h; if (w > p.w - 2 * BOSS_LABEL_PAD) { w = p.w - 2 * BOSS_LABEL_PAD; h = w * sp.h / sp.w; } if (h < 2) continue;
       // the wedge: its bottom the cut line itself (the spoke through the lane point, half a gap and the pad over, into the piece), from
-      // rc - w / 2 to rc + w / 2 along it - centred ALONG THE SPOKE on the piece's own radius (owner, 2026-10-27: "center them on segment,
-      // based on the bottom" / "center along the spoke, not the lane axis of the segment"); its top the ray through the core standing
+      // the piece's outer corner at that cut, the pad in, w along it toward the core - against the OUTER side (owner, 2026-10-27: "left-or
+      // right align them, whichever side is the outer side"; centred along the spoke before); its top the ray through the core standing
       // the number's rise above the bottom at rc; a point of the top: from its point on the bottom along t to that ray
-      const inset = E.gap / 2 + BOSS_LABEL_PAD, ub = { x: Math.cos(E.th), y: Math.sin(E.th) }, ox = -ub.y * E.dir * inset, oy = ub.x * E.dir * inset, tt = E.th + E.dir * (inset + h * sn) / rc, v = { x: Math.cos(tt), y: Math.sin(tt) }, r0 = rc - w / 2, r1 = rc + w / 2, txv = tx * v.y - ty * v.x || 1e-9;
+      const inset = E.gap / 2 + BOSS_LABEL_PAD, ub = { x: Math.cos(E.th), y: Math.sin(E.th) }, ox = -ub.y * E.dir * inset, oy = ub.x * E.dir * inset, tt = E.th + E.dir * (inset + h * sn) / rc, v = { x: Math.cos(tt), y: Math.sin(tt) }, cL = E === e0 ? p.Lp[0] : p.Lp[p.Lp.length - 1], cR = E === e0 ? p.Rp[0] : p.Rp[p.Rp.length - 1], r1 = Math.max(Math.hypot(cL.x - CX, cL.y - CY), Math.hypot(cR.x - CX, cR.y - CY)) - BOSS_LABEL_PAD, r0 = r1 - w, txv = tx * v.y - ty * v.x || 1e-9; // against the piece's OUTER corner at that cut (owner, 2026-10-27: "left-or right align them, whichever side is the outer side")
       const bot = x => ({ x: CX + ub.x * (r0 + (r1 - r0) * x) + ox, y: CY + ub.y * (r0 + (r1 - r0) * x) + oy }), top = x => { const B = bot(x), bx = B.x - CX, by = B.y - CY, la = -(bx * v.y - by * v.x) / txv; return { x: B.x + tx * la, y: B.y + ty * la }; };
       const pr = q => warpProject(q.x, q.y), Bl = pr(bot(0)), Br = pr(bot(1)), Tl = pr(top(0)), flip = (Br.x - Bl.x) * (Tl.y - Bl.y) - (Br.y - Bl.y) * (Tl.x - Bl.x) > 0; // read the way that is not mirrored
       const N = BOSS_LABEL_STRIPS, at = (fn, x) => pr(fn(flip ? 1 - x : x)), sw = sp.w / N;
