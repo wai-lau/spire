@@ -168,7 +168,7 @@ function bossClip() {
 // order") - having flown in along its own spoke from past the screen's farthest corner (barFlyFrom) over BAR_FLY_DUR s, +-BAR_FLY_JIT
 // by its hash, so launches scatter while landings keep their order; eased IN (owner: "start motionless off screen and accelerate"). Before the sky is full every piece waits off-screen. The boss's lane and glow light only
 // after the last piece lands (bossBarInT - litLanes, aspira-lanes.js: "draw lane and lane glow after hp slides in")
-const BAR_FLY_LEAD = 0.2, BAR_FLY_SPAN = 1.2, BAR_FLY_DUR = 0.6, BAR_FLY_JIT = 0.6;
+const BAR_FLY_LEAD = 0.2, BAR_FLY_SPAN = 2, BAR_FLY_DUR = 2.4, BAR_FLY_JIT = 0.6; // (owner, 2026-10-27: "greatly slow down segment slide speed" - a flight was 0.6 s over a 1.2 s spread)
 const bossBarInT = () => BAR_FLY_LEAD + BAR_FLY_SPAN; // s after the sky is full until the bar is in
 const barFlyFrom = () => { const cs = [[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY)); return Math.max(...cs) * 1.1 + 100; }; // u out along a spoke: past the farthest corner
 function barFlyOff(e, i, n) { // piece i of n: how far out along its spoke it still is, u (0: in place)
@@ -177,22 +177,27 @@ function barFlyOff(e, i, n) { // piece i of n: how far out along its spoke it st
   const land = full + BAR_FLY_LEAD + BAR_FLY_SPAN * (n > 1 ? 1 - i / (n - 1) : 0), dur = BAR_FLY_DUR * (1 + BAR_FLY_JIT * (2 * bossHash(e, i, 6) - 1)), u = Math.max(0, Math.min(1, (now - (land - dur)) / dur));
   return u >= 1 ? 0 : (1 - Math.pow(u, 3)) * barFlyFrom(); // (ease IN: motionless off-screen, then faster and faster into place)
 }
-function drawBossBar() { // the HP left, in the lane's SHOWN colour: each piece's part past where the HP left begins
-  // the top layer sits above the sky's flip, so a piece under the sky takes the INVERTED colour by hand - the lane's own under it has been
-  // turned over by the shader (owner, 2026-10-27: "why are the segments white and blue" - cyan, the Star's own, over the flipped red lane)
-  const own = COL[ENEMIES.bonus.color], inv = invertColor(own);
+// ON THE ENTITY LAYER AT THE FLOOR'S LEVEL (owner, 2026-10-27: "tower ranges and effects should appear above hp"): the bar is drawn in
+// warpEntities' part A, between the floor and the dice - so the dice, the beams, the shield lines and the towers' layer cover it, and
+// the ranges (drawRangesOver) go right over it. Part A is drawn BEFORE the sky's flip (the difference inside a spreading triangle,
+// the whole inverted palette under a full one), so a piece takes the lane's OWN colour and comes out turned over with it; what must
+// show WHITE on screen (the HP-gone boxes, the numbers) is drawn in whatever that flip turns into white - barWhite
+const barWhite = pt => (inverted || (skyOn() && !skyPal() && inSkyPt(pt.x, pt.y))) ? invertColor(COL.white) : COL.white;
+function drawBossBarFloor() { drawBossBar(); drawBossTrack(); drawBossLabels(); }
+function drawBossBar() { // the HP left, in the lane's own colour (turned over with it under the sky): each piece's part past where the HP left begins
+  const own = COL[ENEMIES.bonus.color];
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e); ctx.globalAlpha = 1;
-    e.bar.pieces.forEach((g, i, P) => { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, true, c, c, barFlyOff(e, i, P.length)); });
+    e.bar.pieces.forEach((g, i, P) => barPiece(g, e.bar, hp, true, own, own, barFlyOff(e, i, P.length)));
   }
   ctx.globalAlpha = 1;
 }
 function drawBossTrack() { // the HP gone: the pieces' white part from the 100% end to where the HP left begins
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color], inv = invertColor(own); ctx.globalAlpha = 1;
-    e.bar.pieces.forEach((g, i, P) => { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, false, COL.white, c, barFlyOff(e, i, P.length)); }); // hollow: white in the lane's outline
+    const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
+    e.bar.pieces.forEach((g, i, P) => { const m = g.Lp[g.Lp.length >> 1]; barPiece(g, e.bar, hp, false, barWhite(m), own, barFlyOff(e, i, P.length)); }); // hollow: white in the lane's outline
   }
   ctx.globalAlpha = 1;
 }
@@ -221,7 +226,7 @@ function drawBossLabels() {
     const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0, wind = e.bar.sgn;
     e.bar.pieces.forEach((p, pi, PP) => {
       if (!(p.mi >= 0)) return;
-      const off = barFlyOff(e, pi, PP.length), f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? COL.white : inSkyPt(mp.x, mp.y) ? invertColor(own) : own);
+      const off = barFlyOff(e, pi, PP.length), f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? barWhite(mp) : own); // (over the HP gone: the lane's own colour, turned over with the box's outline)
       // a cut of the piece: the lane point there, its angle round the core and radius, the way into the piece round the core (dir: +1
       // with the lane's winding past the start cut, against it before the end cut)
       const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), rx = Q.x - CX, ry = Q.y - CY; return { cs, sg, th: Math.atan2(ry, rx), r: Math.hypot(rx, ry) || 1, gap, dir: sg * wind }; };

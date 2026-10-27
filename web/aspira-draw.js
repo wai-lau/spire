@@ -244,6 +244,15 @@ function drawCells(at = (c, fn) => fn()) { // at: 3D draws each slot flat at its
   ctx.globalAlpha = 1;
 }
 
+// THE RANGES OVER THE BOSS'S HP BAR (owner, 2026-10-27: "tower ranges and effects should appear above hp"): every tower's reach ring -
+// a moon tower's moons' circles, ARC's dashed reach, a chart FRZ's moon orbit - as a projected polygon on the entity layer at the floor's
+// level (warpEntities' part A, after drawBossBarFloor), so it lies over the bar and under the dice, the beams and the towers. The
+// selected tower's at full strength with its disc, the rest faint; under a boss sky every one white at full strength ("range should be
+// visible during boss waves"), in the frame's palette so it turns over with the rest - drawTowerRange itself, with a projection
+function drawRangesOver() {
+  const sel = ui.sel && G.towers.find(t => t.id === ui.sel), k = skyOn() ? "white" : undefined; // (sky: every one at full strength, white)
+  for (const t of G.towers) if (t !== sel) drawTowerRange(t, !k, k, warpProjectScratch); if (sel) drawTowerRange(sel, false, k, warpProjectScratch);
+}
 // pink cross: "can't place here"
 function drawBlocked(x, y, r) {
   ctx.strokeStyle = COL.pink; ctx.lineWidth = 3.5; ctx.globalAlpha = 0.9;
@@ -254,29 +263,37 @@ function drawBlocked(x, y, r) {
 
 // Every tower's reach is always drawn faintly; the selected tower (and the
 // build ghost) draws at full strength. dim = the faint pass.
-function drawRange(x, y, r, color, dim = false) {
-  ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283);
+// proj (3D, drawRangesOver): the ring as a projected polygon on the entity layer, its widths by the perspective there; without it, on
+// the board in board units (2D, the build ghost)
+const RANGE_PTS = 64;
+function rangePath(at, proj) { // the closed path through at(0 .. 2 pi), projected or not; returns the px a unit at its first point
+  if (proj) ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); let k = 1;
+  for (let i = 0; i <= RANGE_PTS; i++) { let [x, y] = at(i / RANGE_PTS * 6.283); if (proj) { const P = proj(x, y); if (!i) k = cam.k * (P.s || 1); x = P.x; y = P.y; } if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }
+  return k;
+}
+function drawRange(x, y, r, color, dim = false, proj) {
+  const k = rangePath(th => [x + Math.cos(th) * r, y + Math.sin(th) * r], proj);
   // only the SELECTED tower's disc is filled: a dim one's 2.5% fill was all
   // but invisible, and nine big discs (three a moon tower) were the costliest
   // single draw of a late frame (2026-10-05)
   if (!dim) { ctx.fillStyle = COL[color]; ctx.globalAlpha = 0.08; ctx.fill(); }
-  ctx.strokeStyle = COL[color]; ctx.globalAlpha = dim ? 0.35 : 0.75; ctx.lineWidth = dim ? 2 : 3.5; ctx.stroke();
+  ctx.strokeStyle = COL[color]; ctx.globalAlpha = dim ? 0.35 : 0.75; ctx.lineWidth = (dim ? 2 : 3.5) * k; ctx.stroke();
   ctx.globalAlpha = 1;
 }
 
 // a tower's range; the Reaper's outer HOLD ring (2x) is not drawn (owner),
 // ARC's REACH ring (how far its arcs may land, chainReach) is, dashed (owner)
-function drawTowerRange(t, dim, colKey) {
+function drawTowerRange(t, dim, colKey, proj) {
   const st = towerStats(t), r = st.range, col = colKey || TOWERS[t.kind].color;
   // Moons / Desolation: each moon's slowing circle INSTEAD of the tower's range (owner)
-  if (st.moons) { for (const m of moonSpots(t, st)) drawRange(m.x, m.y, r, col, dim); return; }
-  drawRange(t.x, t.y, r, col, dim);
+  if (st.moons) { for (const m of moonSpots(t, st)) drawRange(m.x, m.y, r, col, dim, proj); return; }
+  drawRange(t.x, t.y, r, col, dim, proj);
   // a chart FRZ's moon ORBIT, drawn like its range (owner, 2026-10-08): faint always, bright when selected
-  if (st.moonN) { const o = moonOrbit(t, st.moonN); ctx.beginPath(); ctx.ellipse(o.x, o.y, o.a, o.b, o.phi, 0, 6.283); ctx.strokeStyle = COL[col]; ctx.globalAlpha = (dim ? 0.35 : 0.75) * MOON_FX; ctx.lineWidth = dim ? 2 : 3.5; ctx.stroke(); ctx.globalAlpha = 1; }
+  if (st.moonN) { const o = moonOrbit(t, st.moonN), k = rangePath(th => { const c = Math.cos(th) * o.a, s = Math.sin(th) * o.b; return [o.x + c * Math.cos(o.phi) - s * Math.sin(o.phi), o.y + c * Math.sin(o.phi) + s * Math.cos(o.phi)]; }, proj); ctx.strokeStyle = COL[col]; ctx.globalAlpha = (dim ? 0.35 : 0.75) * MOON_FX; ctx.lineWidth = (dim ? 2 : 3.5) * k; ctx.stroke(); ctx.globalAlpha = 1; }
   if (t.kind !== "arc") return;
   if (st.skill) return; // a chart ARC has no reach from the tower: each jump reaches from its own enemy (owner)
-  ctx.beginPath(); ctx.arc(t.x, t.y, chainReach(st), 0, 6.283);
-  ctx.strokeStyle = COL[col]; ctx.setLineDash([8, 10]); ctx.lineWidth = dim ? 1.5 : 2.5;
+  const rr = chainReach(st), k = rangePath(th => [t.x + Math.cos(th) * rr, t.y + Math.sin(th) * rr], proj);
+  ctx.strokeStyle = COL[col]; ctx.setLineDash([8 * k, 10 * k]); ctx.lineWidth = (dim ? 1.5 : 2.5) * k;
   ctx.globalAlpha = dim ? 0.2 : 0.5; ctx.stroke();
   ctx.setLineDash([]); ctx.globalAlpha = 1;
 }
@@ -434,8 +451,8 @@ function drawSceneBase() {
 function drawSceneTop() {
   /* (the boss's HP lane, its marks and labels: the top layer - warpEntities, aspira-warp.js - crisp at device resolution, 2026-10-26) */ // a live boss's HP along its lane, UNDER the towers and their effects (owner); its %HP marks keep their orange under the sky (owner, 2026-10-26)
   const sel = ui.sel && G.towers.find(t => t.id === ui.sel);
-  const ranges = k => () => { for (const t of G.towers) if (t !== sel) drawTowerRange(t, !k, k); if (sel) drawTowerRange(sel, false, k); }; // (sky: every one at full strength - "range should be visible during boss waves") // tower colours survive the boss sky (2026-10-11) - but RANGES go white, unkept, so the inversion turns them BLACK (owner, 2026-10-12)
-  if (skyOn()) ranges("white")(); else skyKeep(ranges());
+  /* the ranges: the ENTITY layer now, over the boss's HP bar (drawRangesOver, below; owner, 2026-10-27) */ const ranges = k => () => { for (const t of G.towers) if (t !== sel) drawTowerRange(t, !k, k); if (sel) drawTowerRange(sel, false, k); }; // (sky: every one at full strength - "range should be visible during boss waves") // tower colours survive the boss sky (2026-10-11) - but RANGES go white, unkept, so the inversion turns them BLACK (owner, 2026-10-12)
+  if (typeof warp === "undefined") { if (skyOn()) ranges("white")(); else skyKeep(ranges()); } // (2D only - the game is 3D)
   // BEAMS turn over with the boss sky (owner, 2026-10-11: "inversion should invert tower movement indicators and tower
   // beams"; they kept their colours since earlier that day) - only the towers and their ranges keep theirs
   drawTethers(); drawAcd(); drawGrv(); drawCar(); drawIfr(); skyKeep(() => drawIfr(true)); skyKeep(() => drawCar(true)); drawAims(); drawFx("shots"); // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
