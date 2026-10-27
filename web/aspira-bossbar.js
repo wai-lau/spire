@@ -23,7 +23,7 @@ const bossSpan = e => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - 
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
 // end, BOSS_BAR_WIDEN x that at the 100% end, each piece's width jittered the same and the piece set across the lane by up to its own
 // width. A fixed hash a piece (the boss's id, the piece's index): the layout holds still from frame to frame
-const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 0.2, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 0, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's slide along its mean ray, of its width - 0: none (owner, 2026-10-27: "try it without the segment position jitter"; a full width was "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
+const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 0, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 0, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's slide along its mean ray, of its width - 0: none (owner, 2026-10-27: "try it without the segment position jitter"; a full width was "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
 // THE CUTS (owner, 2026-10-27: "choose 24 points on the edge of the screen equally radially distant around the core, then add some radial
 // jitter, these are the lines that chop up the hp bar into segments. Each of these lines should cut the hp bar exactly once, at which
 // intersection is randomly decided"): BOSS_RAYS rays from the core, evenly spaced round it, each turned by up to BOSS_RAY_JIT of the
@@ -106,19 +106,20 @@ function barSplit(P, bar, hp, keepCore) {
 // a piece is a BOX with an outline and slightly rounded corners (owner, 2026-10-27: "add a red outline to the boxes / round the corners",
 // then "roundness of edge should be ~5% of thickness"): the quad filled, then its outline stroked with round joins - BOSS_PIECE_ROUND of
 // the width in the fill colour (the corners' radius), the outline colour BOSS_PIECE_OUT further out, under it
-function barPiece(g, bar, hp, keepCore, at, fill, line) { // the piece's part on keepCore's side of the HP boundary at hp (hp null: the whole piece)
+// EVERY POINT PROJECTED (owner, 2026-10-27: "why is the outer layer jagged" - a piece drawn flat about its midpoint, as the dice are, sat up
+// to 54 px off the lane's projection at its ends, so each stepped against its neighbour): the outline is traced in canvas px through
+// warpProjectScratch (aspira-warp.js), its widths by the perspective's scale at the piece's middle
+function barPiece(g, bar, hp, keepCore, fill, line) { // the piece's part on keepCore's side of the HP boundary at hp (hp null: the whole piece)
   let Lp = g.Lp, Rp = g.Rp;
   if (hp != null) { if (keepCore ? hp >= g.s1 : hp <= g.s0) return; if (keepCore ? hp > g.s0 : hp < g.s1) { Lp = barSplit(Lp, bar, hp, keepCore); Rp = barSplit(Rp, bar, hp, keepCore); } }
   if (Lp.length < 2 || Rp.length < 2) return;
-  const rad = g.w * BOSS_PIECE_ROUND, mp = Lp[Lp.length >> 1];
-  at(mp.x, mp.y, () => {
-    ctx.beginPath();
-    Lp.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
-    for (let i = Rp.length - 1; i >= 0; i--) ctx.lineTo(Rp[i].x, Rp[i].y);
-    ctx.closePath(); ctx.lineJoin = "round";
-    ctx.strokeStyle = line; ctx.lineWidth = 2 * (rad + BOSS_PIECE_OUT); ctx.stroke();
-    ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = fill; ctx.lineWidth = 2 * rad; ctx.stroke();
-  });
+  const mp = Lp[Lp.length >> 1], k = cam.k * (warpProjectScratch(mp.x, mp.y).s || 1), rad = g.w * BOSS_PIECE_ROUND * k;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath();
+  Lp.forEach((p, i) => { const P = warpProjectScratch(p.x, p.y); if (i) ctx.lineTo(P.x, P.y); else ctx.moveTo(P.x, P.y); });
+  for (let i = Rp.length - 1; i >= 0; i--) { const P = warpProjectScratch(Rp[i].x, Rp[i].y); ctx.lineTo(P.x, P.y); }
+  ctx.closePath(); ctx.lineJoin = "round";
+  ctx.strokeStyle = line; ctx.lineWidth = 2 * (rad + BOSS_PIECE_OUT * k); ctx.stroke();
+  ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = fill; ctx.lineWidth = 2 * rad; ctx.stroke();
 }
 
 // EVERYTHING THAT IS NOT BACKGROUND OCCLUDES THE BAR (owner, 2026-10-27): on the top layer it would lie over the towers' prisms and
@@ -135,22 +136,22 @@ function bossClip() {
   for (const e of G.enemies) { if (e.dead || !e.seen) continue; const P = warpProject(e.x, e.y), r = solidSize(e) * BOSS_OCCLUDE_K * cam.k * (P.s || 1); if (!(r > 0)) continue; ctx.moveTo(P.x + r, P.y); ctx.arc(P.x, P.y, r, 0, Math.PI * 2, true); }
   ctx.clip();
 }
-function drawBossBar(at = (x, y, fn) => fn()) { // the HP left, in the lane's SHOWN colour: each piece's part past where the HP left begins
+function drawBossBar() { // the HP left, in the lane's SHOWN colour: each piece's part past where the HP left begins
   // the top layer sits above the sky's flip, so a piece under the sky takes the INVERTED colour by hand - the lane's own under it has been
   // turned over by the shader (owner, 2026-10-27: "why are the segments white and blue" - cyan, the Star's own, over the flipped red lane)
   const own = COL[ENEMIES.bonus.color], inv = invertColor(own);
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e); ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, true, at, c, c); }
+    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, true, c, c); }
   }
   ctx.globalAlpha = 1;
 }
-function drawBossTrack(at = (x, y, fn) => fn()) { // the HP gone: the pieces' white part from the 100% end to where the HP left begins
+function drawBossTrack() { // the HP gone: the pieces' white part from the 100% end to where the HP left begins
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color], inv = invertColor(own); ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, false, at, COL.white, c); } // hollow: white in the lane's outline
+    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, false, COL.white, c); } // hollow: white in the lane's outline
   }
   ctx.globalAlpha = 1;
 }
