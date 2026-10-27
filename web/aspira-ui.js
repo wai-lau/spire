@@ -133,6 +133,8 @@ const ICON_SOUND = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><p
 const ICON_MUTED = '<svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
 // the bottom speed bar's height, live, so the wave list and build buttons sit
 // just above it (--foot-h, aspira.css)
+// and the HEADER's height (--head-h): the wave list sits under it (aspira.css .asp-left)
+new ResizeObserver(() => $("asp").style.setProperty("--head-h", document.querySelector(".asp-head").getBoundingClientRect().height + "px")).observe(document.querySelector(".asp-head"));
 new ResizeObserver(() => $("asp").style.setProperty("--foot-h", document.querySelector(".asp-foot").getBoundingClientRect().height + "px")).observe(document.querySelector(".asp-foot"));
 // the mute button sits ABOVE the vertical volume slider, top-right (owner)
 const volBox = document.createElement("div");
@@ -307,7 +309,7 @@ const CARD_GAP = 8;
 function cardLift(w) {
   const cr = cv.getBoundingClientRect(), x = Math.max(CARD_GAP, (cr.width - w) / 2);
   let lift = CARD_GAP;
-  for (const sel of [".asp-left", ".asp-buildcol", ".asp-foot"]) { // the build buttons + the title under them
+  for (const sel of [".asp-buildcol", ".asp-foot"]) { // the build buttons + the title under them (the wave list moved to the top, 2026-10-27)
     const r = document.querySelector(sel).getBoundingClientRect();
     if (!r.height || r.right - cr.left <= x || r.left - cr.left >= x + w) continue; // beside it, not under it
     lift = Math.max(lift, cr.bottom - r.top + CARD_GAP);

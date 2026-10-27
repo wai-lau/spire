@@ -59,11 +59,11 @@
 #asp-speed { width: 100%; max-width: calc(var(--space-8) * 20); flex-wrap: nowrap; }
 #asp .asp-controls #asp-speed > button:not(#asp-mute) { flex: 1 1 0; min-width: 0; }
 
-/* BOTTOM-LEFT (owner, 2026-10-02): the next waves, the title under them */
+/* TOP-LEFT, UNDER THE LIVES (owner, 2026-10-27: "move the wave indicator under the lives"; was bottom-left, 2026-10-02): the next waves */
 .asp-left {
   position: absolute;
   left: var(--space-3); /* snapped to the left edge (owner, 2026-10-07; was space-6 and centred) */
-  bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px) + var(--foot-h, 0px) + var(--space-3)); /* above the bottom speed bar (and a phone's home bar) */
+  top: calc(var(--space-4) + var(--head-h, 0px) + var(--space-3)); /* under the header (--head-h, aspira-ui.js) */
   z-index: var(--z-raised);
   display: flex;
   flex-direction: column;
