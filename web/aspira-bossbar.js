@@ -188,10 +188,10 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
 // (owner, 2026-10-27: "make the arrows thinner, point them at the center of the nearest gap / scale number size based on distance from
 // core (further = bigger)": the arrow's tip sits in the middle of the gap between pieces nearest the mark, the number BOSS_LABEL_PX[0] at
 // the core to [1] at the 100% end)
-const BOSS_LABEL_PX = [6, 12], BOSS_LEAD_U = 16, BOSS_LEAD_BAR = 18, BOSS_LEAD_HEAD = 3, BOSS_LEAD_W = 1;
+const BOSS_LABEL_PX = [6, 12], BOSS_LEAD_U = 16, BOSS_LEAD_BAR = 18, BOSS_LEAD_HEAD = 3, BOSS_LEAD_W = 1, BOSS_LEAD_HALO = 1;
 function bossLead(e, f) { // the callout at share f: M the mark on screen, T the arrow's tail, E the bar's end, k px a u there, px its number's size, col
   const { a: A, b: B } = bossSpan(e), s = B - (B - A) * f, P = e.bar.pieces; let sg = s, best = Infinity;
-  for (let i = 0; i + 1 < P.length; i++) { const g = (P[i].s1 + P[i + 1].s0) / 2, d = Math.abs(g - s); if (d < best) { best = d; sg = g; } } // the nearest gap's middle
+  for (const g of [A, B, ...P.slice(0, -1).map((p, i) => (p.s1 + P[i + 1].s0) / 2)]) { const d = Math.abs(g - s); if (d < best) { best = d; sg = g; } } // the nearest gap's middle - the span's two ends count (owner, 2026-10-27: "the 0% was at the correct place" - at the core's rim)
   const q = pathAt(e.pi, sg, e.ang || 0), M = warpProject(q.x, q.y), C = warpProject(CX, CY), k = cam.k * (M.s || 1);
   let ux = M.x - C.x, uy = M.y - C.y; const l = Math.hypot(ux, uy) || 1; ux /= l; uy /= l; // the spoke on screen, outward
   const T = { x: M.x + ux * BOSS_LEAD_U * k, y: M.y + uy * BOSS_LEAD_U * k }, E = { x: T.x + (ux >= 0 ? 1 : -1) * BOSS_LEAD_BAR * k, y: T.y };
@@ -202,10 +202,13 @@ function drawBossMarks() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     for (const f of BOSS_BAR_MARKS) {
-      const { M, T, E, ux, uy, k, col } = bossLead(e, f), h = BOSS_LEAD_HEAD * k;
-      ctx.strokeStyle = COL[col]; ctx.fillStyle = COL[col]; ctx.lineWidth = BOSS_LEAD_W * k; ctx.globalAlpha = 0.9;
-      ctx.beginPath(); ctx.moveTo(M.x + ux * h, M.y + uy * h); ctx.lineTo(T.x, T.y); ctx.lineTo(E.x, E.y); ctx.stroke(); // the spoke leg, then the bar
-      ctx.beginPath(); ctx.moveTo(M.x, M.y); ctx.lineTo(M.x + (2 * ux - uy) * h, M.y + (2 * uy + ux) * h); ctx.lineTo(M.x + (2 * ux + uy) * h, M.y + (2 * uy - ux) * h); ctx.closePath(); ctx.fill(); // the head: its tip at the mark
+      const { M, T, E, ux, uy, k, col } = bossLead(e, f), h = BOSS_LEAD_HEAD * k; ctx.globalAlpha = 1;
+      // WHITE under it all (owner, 2026-10-27: "add a white fill to the arrow (white after inversion)" - own colours here, so white it stays):
+      // a halo BOSS_LEAD_HALO wide round the leg and the bar, the head filled white, then the colour on top
+      const leg = () => { ctx.beginPath(); ctx.moveTo(M.x + ux * h, M.y + uy * h); ctx.lineTo(T.x, T.y); ctx.lineTo(E.x, E.y); }; // the spoke leg, then the bar
+      const head = () => { ctx.beginPath(); ctx.moveTo(M.x, M.y); ctx.lineTo(M.x + (2 * ux - uy) * h, M.y + (2 * uy + ux) * h); ctx.lineTo(M.x + (2 * ux + uy) * h, M.y + (2 * uy - ux) * h); ctx.closePath(); }; // the head: its tip at the mark
+      ctx.strokeStyle = COL.white; ctx.lineWidth = (BOSS_LEAD_W + 2 * BOSS_LEAD_HALO) * k; leg(); ctx.stroke(); head(); ctx.stroke(); ctx.fillStyle = COL.white; ctx.fill();
+      ctx.strokeStyle = COL[col]; ctx.lineWidth = BOSS_LEAD_W * k; leg(); ctx.stroke(); head(); ctx.stroke();
     }
   }
   ctx.globalAlpha = 1;
