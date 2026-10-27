@@ -17,7 +17,7 @@ const BOSS_LANE_STEP = 10, BOSS_BAR_IN = 50; const bossBarOut = () => (typeof co
 // the 100% end: where the boss first comes within a tower's reach on its lane (owner, 2026-10-26: "boss label should start where the boss is
 // hittable, not at the edge of the screen"), else BOSS_BAR_IN past the mouth
 function bossHitS(e) { const P = PATHS[e.pi], s0 = entryS(e.pi), reach = typeof reachCircles === "function" ? reachCircles() : []; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) if (inReach(pathAt(e.pi, s, e.ang || 0), reach)) return s; return s0 + BOSS_BAR_IN; }
-const bossSpan = e => { const g = bossGeo(e); return { a: g.a, b: g.b, hp: g.b - (g.b - g.a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
+const bossSpan = e => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - (g.b - g.a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
 // THE BAR IN PIECES (owner, 2026-10-26: "the width should increase as we approach the edge / chop up the hp lane into segments and
 // jitter the size of each segment, jitter segments spatially on axis perpendicular to lane, but never more than 100% of the segment's
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
@@ -34,12 +34,12 @@ const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0;
 // COMPUTED ONCE A BOSS (owner, 2026-10-26: "can we precompute these if slow?"): the span, the lane's points over it, the cuts and every
 // piece, kept on the boss (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each
 // piece's part either side of where the HP left begins
-function bossGeo(e) {
+function barGeo(e) {
   const reach = typeof reachCircles === "function" ? reachCircles() : [], key = reach.map(c => Math.round(c.x) + "," + Math.round(c.y) + "," + Math.round(c.r)).join("|");
   if (e.bar && e.bar.key === key) return e.bar;
   const a = bossHitS(e), b = PATHS[e.pi].len - bossBarOut(), ang = e.ang || 0, TAU = Math.PI * 2;
   const L = []; let prevA = null, turn = 0; // the lane over the span: s, the point, its normal, its angle round the core UNWRAPPED (th)
-  for (let s = a; ; s += BOSS_PIECE_STEP) {
+  for (let s = Math.max(0, a - BOSS_CORRIDOR * 2); ; s += BOSS_PIECE_STEP) { // (from before the 100% end: its ray cut reaches back past it on one side)
     const u = Math.min(s, b), q = pathAt(e.pi, u, ang), q2 = pathAt(e.pi, u + 1, ang), l = Math.hypot(q2.x - q.x, q2.y - q.y) || 1, nx = -(q2.y - q.y) / l, ny = (q2.x - q.x) / l;
     const th0 = Math.atan2(q.y - CY, q.x - CX); if (prevA !== null) { const d = th0 - prevA; if (d > Math.PI) turn -= TAU; else if (d < -Math.PI) turn += TAU; } prevA = th0;
     L.push({ s: u, x: q.x, y: q.y, nx, ny, th: th0 + turn }); if (s >= b) break;
@@ -48,42 +48,42 @@ function bossGeo(e) {
   const cuts = [];
   for (let i = 0; i < BOSS_RAYS; i++) {
     const th = (i + BOSS_RAY_JIT * (2 * bossHash(e, i, 4) - 1)) * TAU / BOSS_RAYS, xs = [];
-    for (let j = 1; j < L.length; j++) { const p = L[j - 1], q = L[j], k0 = Math.floor((p.th - th) / TAU), k1 = Math.floor((q.th - th) / TAU); if (k0 !== k1) { const f = (th + Math.max(k0, k1) * TAU - p.th) / (q.th - p.th || 1e-9); xs.push(p.s + (q.s - p.s) * Math.max(0, Math.min(1, f))); } }
+    for (let j = 1; j < L.length; j++) { const p = L[j - 1], q = L[j]; if (q.s < a) continue; const k0 = Math.floor((p.th - th) / TAU), k1 = Math.floor((q.th - th) / TAU); if (k0 !== k1) { const f = (th + Math.max(k0, k1) * TAU - p.th) / (q.th - p.th || 1e-9); xs.push(p.s + (q.s - p.s) * Math.max(0, Math.min(1, f))); } } // (crossings inside the span only)
     if (xs.length) cuts.push({ s: xs[Math.floor(bossHash(e, i, 5) * xs.length) % xs.length], d: { x: Math.cos(th), y: Math.sin(th) } });
   }
   cuts.sort((p, q) => p.s - q.s);
-  // the slant of a cut: how far along the lane a side h off the lane meets the ray's line, per unit of h (cot of ray against lane);
-  // 0 = square (a ray flatter than BOSS_CUT_MIN against the lane cuts square - its line would run along the lane)
-  const cot = c => { if (!c.d) return 0; const C = at(c.s), tx = C.ny, ty = -C.nx, sn = Math.abs(tx * c.d.y - ty * c.d.x); return sn < BOSS_CUT_MIN ? 0 : Math.abs(tx * c.d.x + ty * c.d.y) / sn; };
+  const sgn = Math.sign(L[L.length - 1].th - L[0].th) || 1; // the lane's winding round the core: +1 its angle grows toward the core
+  // the slant of a cut: how far along the lane a side h off the lane meets the cut's ray, per unit of h (cot of ray against lane)
+  const cot = c => { const C = at(c.s), tx = C.ny, ty = -C.nx, rx = C.x - CX, ry = C.y - CY, rl = Math.hypot(rx, ry) || 1, sn = Math.abs(tx * ry - ty * rx) / rl; return sn < BOSS_CUT_MIN ? 1 / BOSS_CUT_MIN : Math.abs(tx * rx + ty * ry) / rl / sn; };
   // the corridor at s: the lane one turn in and one turn out (the same angle round the core, +-2 pi) less a gap - a piece this wide
   // keeps a gap to the next turn (the inner turns sit closer than BOSS_CORRIDOR)
   const corrAt = s => { const m = at(s), rm = Math.hypot(m.x - CX, m.y - CY) || 1, rs = [];
     for (const dth of [-TAU, TAU]) { let best = null; for (const p of L) if (Math.abs(p.th - (m.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } if (best !== null) rs.push(Math.abs(best - rm) - BOSS_SEG_GAP); }
     return Math.max(4, Math.min(BOSS_CORRIDOR, ...rs)); };
   const wAt = s => Math.min(corrAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT)); // the widest a piece can be at s
-  // THE PIECES' BOUNDS: a cut is kept only if the piece before it has room for both slanted ends and a gap - else the cut is skipped
-  // (the piece runs on to the next); so no piece's ends ever cross (a bow-tie that read as overlap)
-  const bounds = [{ s: a, d: null }];
-  for (const c of [...cuts, { s: b, d: null }]) { const last = bounds[bounds.length - 1], need = BOSS_SEG_GAP + (wAt(last.s) / 2) * cot(last) + (wAt(c.s) / 2) * cot(c) + 2; if (c.s - last.s > need || !c.d) { if (!c.d && c.s - last.s <= need && bounds.length > 1) bounds.pop(); bounds.push(c); } }
-  // THE PIECES: each between two bounds, its ends ALONG THE RAYS (owner, 2026-10-27: "the aligned spoke is more important, don't need square
-  // ends") - a side is cut exactly where it crosses the ray's line shifted BOSS_SEG_GAP / 2 toward the piece, whatever the slant. The 100%
-  // and 0% ends, and the HP boundary, stay square (by s)
-  const pieces = [], g2 = BOSS_SEG_GAP / 2;
-  const sideCut = (pts, i, C, ex, ey, back) => { // from pts[i] (inside) toward the piece's start (back) or end: the first point past the line (P - C) . e = g2, interpolated; null if none
-    const val = q => (q.x - C.x) * ex + (q.y - C.y) * ey - g2; if (val(pts[i]) < 0) return null;
+  // THE PIECES' BOUNDS: the 100% end, the cuts, the 0% end - EVERY one a ray through the core (owner, 2026-10-27: "the cuts don't all seem
+  // to use the core as a vanishing point"); a cut is kept only if the piece before it has room for both slanted ends and a gap, else it
+  // is skipped and the piece runs on to the next - so no piece's ends ever cross (a bow-tie that read as overlap)
+  const bounds = [{ s: a, gap: 0 }];
+  for (const c of [...cuts.map(c => ({ s: c.s, gap: BOSS_SEG_GAP })), { s: b, gap: 0 }]) { const last = bounds[bounds.length - 1], need = BOSS_SEG_GAP + (wAt(last.s) / 2) * cot(last) + (wAt(c.s) / 2) * cot(c) + 2; if (c.s - last.s > need) bounds.push(c); else if (!c.gap) { if (bounds.length > 1) bounds.pop(); bounds.push(c); } }
+  // a cut's LINE: the ray from the core through the lane point there, turned by half its gap (as an angle at that radius) toward the piece;
+  // val(P) > 0 inside the piece. toward: +1 the piece lies at greater s than the cut, -1 at less
+  const rayLine = (c, toward) => { const C = at(c.s), r = Math.hypot(C.x - CX, C.y - CY) || 1, al = Math.atan2(C.y - CY, C.x - CX) + toward * sgn * (c.gap / 2) / r, ca = Math.cos(al), sa = Math.sin(al), k = toward * sgn; return P => k * (ca * (P.y - CY) - sa * (P.x - CX)); };
+  // a side cut at a line: from pts[i] (inside) toward the piece's start (back) or end, the first point past the line, interpolated; null if none
+  const sideCut = (pts, i, val, back) => {
+    if (val(pts[i]) < 0) return null;
     for (let j = i; back ? j > 0 : j < pts.length - 1; j += back ? -1 : 1) { const q = pts[j], r = pts[j + (back ? -1 : 1)], vq = val(q), vr = val(r); if (vr < 0) { const f = vq / (vq - vr || 1e-9); return { x: q.x + (r.x - q.x) * f, y: q.y + (r.y - q.y) * f, s: q.s + (r.s - q.s) * f, j }; } }
     return null;
   };
+  const pieces = [];
   for (let i = 0; i + 1 < bounds.length; i++) {
     const c0 = bounds[i], c1 = bounds[i + 1], f = (b - (c0.s + c1.s) / 2) / (b - a); // f: 1 at the 100% end, 0 at the core
     const w = Math.min(corrAt((c0.s + c1.s) / 2), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)));
     const rad = w * BOSS_PIECE_ROUND, h = w / 2 - rad, reach = w * 4 + BOSS_SEG_GAP, base = L.filter(p => p.s >= c0.s - reach && p.s <= c1.s + reach); if (base.length < 2) continue;
     const side = sg => base.map(p => ({ s: p.s, x: p.x + p.nx * sg * h, y: p.y + p.ny * sg * h })), mi = base.findIndex(p => p.s >= (c0.s + c1.s) / 2), m = mi < 0 ? base.length >> 1 : mi;
-    // each cut's line: through the lane point C at the cut, along the ray d; e: across it, toward the piece
-    const cutLine = (c, toward) => { if (!c.d) return null; const C = at(c.s), tx = C.ny, ty = -C.nx; if (Math.abs(tx * c.d.y - ty * c.d.x) < BOSS_CUT_MIN) return null; let ex = -c.d.y, ey = c.d.x; if ((ex * tx + ey * ty) * toward < 0) { ex = -ex; ey = -ey; } return { C, ex, ey }; }; // (null: a square end - no ray, or one too flat against the lane)
-    const l0 = cutLine(c0, 1), l1 = cutLine(c1, -1), s0 = c0.d ? c0.s + g2 : c0.s, s1 = c1.d ? c1.s - g2 : c1.s; // (s0 / s1: the square fallback)
-    const sides = [1, -1].map(sg => { let P = side(sg); // the side cut at its two ends: along the ray where there is one, square (by s) otherwise
-      const e0 = l0 ? sideCut(P, m, l0.C, l0.ex, l0.ey, true) : null, e1 = l1 ? sideCut(P, m, l1.C, l1.ex, l1.ey, false) : null;
+    const v0 = rayLine(c0, 1), v1 = rayLine(c1, -1), s0 = c0.s + c0.gap / 2, s1 = c1.s - c1.gap / 2; // (s0 / s1: the square fallback, and the piece's reach along the lane)
+    const sides = [1, -1].map(sg => { let P = side(sg); // the side cut at its two ends along the rays, square (by s) where a ray never crosses it
+      const e0 = sideCut(P, m, v0, true), e1 = sideCut(P, m, v1, false);
       const from = e0 ? e0.j : P.findIndex(p => p.s >= s0), to = e1 ? e1.j : (P.length - 1 - [...P].reverse().findIndex(p => p.s <= s1));
       if (from < 0 || to < from) return null;
       P = P.slice(from, to + 1); if (e0) P.unshift({ x: e0.x, y: e0.y, s: e0.s }); if (e1) P.push({ x: e1.x, y: e1.y, s: e1.s });
@@ -91,28 +91,25 @@ function bossGeo(e) {
     if (!sides[0] || !sides[1]) continue;
     pieces.push({ s0, s1, w, Lp: sides[0], Rp: sides[1] });
   }
-  return e.bar = { key, a, b, pieces };
+  return e.bar = { key, a, b, pieces, L, sgn };
 }
-const bossLerp = (p, q, f) => ({ x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f, s: p.s + (q.s - p.s) * f });
-function bossRun(P, from, to, cutFrom, cutTo) { // a side's points for the stretch [from, to] of s: the ray-cut end kept whole where the stretch reaches it, else cut square at from / to
-  const out = [];
-  for (let i = 0; i < P.length; i++) {
-    const p = P[i];
-    if (!cutFrom && p.s < from) { if (i + 1 < P.length && P[i + 1].s > from) out.push(bossLerp(p, P[i + 1], (from - p.s) / (P[i + 1].s - p.s))); continue; }
-    if (!cutTo && p.s > to) { if (i > 0 && P[i - 1].s < to) out.push(bossLerp(P[i - 1], p, (to - P[i - 1].s) / (p.s - P[i - 1].s))); break; }
-    out.push(p);
-  }
+// the piece's part on one side of the HP boundary - a RAY through the core at the lane point of hp (so it points at the core like
+// every cut): keepCore keeps the part toward the core (the HP left), else the part toward the mouth (the HP gone)
+function barSplit(P, bar, hp, keepCore) {
+  const L = bar.L; let lo = 0, hi = L.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (L[m].s <= hp) lo = m; else hi = m; }
+  const p = L[lo], q = L[Math.min(L.length - 1, lo + 1)], f = q.s > p.s ? (hp - p.s) / (q.s - p.s) : 0, x = p.x + (q.x - p.x) * f, y = p.y + (q.y - p.y) * f, al = Math.atan2(y - CY, x - CX), ca = Math.cos(al), sa = Math.sin(al), k = (keepCore ? 1 : -1) * bar.sgn;
+  const val = pt => k * (ca * (pt.y - CY) - sa * (pt.x - CX)), out = []; let prev = null;
+  for (const pt of P) { const v = val(pt); if (prev && (v >= 0) !== (prev.v >= 0)) { const fr = prev.v / (prev.v - v || 1e-9); out.push({ x: prev.x + (pt.x - prev.x) * fr, y: prev.y + (pt.y - prev.y) * fr }); } if (v >= 0) out.push(pt); prev = { x: pt.x, y: pt.y, v }; }
   return out;
 }
 // a piece is a BOX with an outline and slightly rounded corners (owner, 2026-10-27: "add a red outline to the boxes / round the corners",
 // then "roundness of edge should be ~5% of thickness"): the quad filled, then its outline stroked with round joins - BOSS_PIECE_ROUND of
 // the width in the fill colour (the corners' radius), the outline colour BOSS_PIECE_OUT further out, under it
-function bossPiece(g, from, to, at, fill, line) { // the piece's stretch [from, to] along the lane (the whole piece: g.s0 .. g.s1)
-  if (to - from < 1) return;
-  const rad = g.w * BOSS_PIECE_ROUND, cutFrom = Math.abs(from - g.s0) < 1e-6, cutTo = Math.abs(to - g.s1) < 1e-6;
-  const Lp = bossRun(g.Lp, from, to, cutFrom, cutTo), Rp = bossRun(g.Rp, from, to, cutFrom, cutTo);
+function barPiece(g, bar, hp, keepCore, at, fill, line) { // the piece's part on keepCore's side of the HP boundary at hp (hp null: the whole piece)
+  let Lp = g.Lp, Rp = g.Rp;
+  if (hp != null) { if (keepCore ? hp >= g.s1 : hp <= g.s0) return; if (keepCore ? hp > g.s0 : hp < g.s1) { Lp = barSplit(Lp, bar, hp, keepCore); Rp = barSplit(Rp, bar, hp, keepCore); } }
   if (Lp.length < 2 || Rp.length < 2) return;
-  const mp = Lp[Lp.length >> 1];
+  const rad = g.w * BOSS_PIECE_ROUND, mp = Lp[Lp.length >> 1];
   at(mp.x, mp.y, () => {
     ctx.beginPath();
     Lp.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
@@ -144,7 +141,7 @@ function drawBossBar(at = (x, y, fn) => fn()) { // the HP left, in the lane's SH
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e); ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; bossPiece(g, Math.max(g.s0, hp), g.s1, at, c, c); }
+    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, true, at, c, c); }
   }
   ctx.globalAlpha = 1;
 }
@@ -152,7 +149,7 @@ function drawBossTrack(at = (x, y, fn) => fn()) { // the HP gone: the pieces' wh
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color], inv = invertColor(own); ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; bossPiece(g, g.s0, Math.min(g.s1, hp), at, COL.white, c); } // hollow: white in the lane's outline
+    for (const g of e.bar.pieces) { const m = g.Lp[g.Lp.length >> 1], c = inSkyPt(m.x, m.y) ? inv : own; barPiece(g, e.bar, hp, false, at, COL.white, c); } // hollow: white in the lane's outline
   }
   ctx.globalAlpha = 1;
 }
