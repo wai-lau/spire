@@ -93,7 +93,7 @@ check("SOL (owner, 2026-10-26): tier 0 goes straight through its line AND splits
   if (JSON.stringify(z.hit) !== "[true,true,true,true,false]") return "tier 0 hit " + JSON.stringify(z.hit) + " (expected the line, the one off it inside the band, not the one 80 u across - outside the 60 u band)";
   if (z.burn || z.armor !== 50 || z.split !== 1) return "tier 0: " + JSON.stringify(z);
   if (f.burn < 2) return "Scorch I: " + JSON.stringify(f) + " (expected two stacking burns)";
-  if (r.split !== 1 || r.hop !== 0.7) return "Diffraction I: splits " + r.split + ", carry " + r.hop + " (expected 1 split at 70% carry - owner, 2026-10-26)";
+  if (r.split !== 1 || r.hop !== 0.8) return "Diffraction I: splits " + r.split + ", carry " + r.hop + " (expected 1 split at 80% carry - owner, 2026-10-27; 70% from 2026-10-26, over tier 0's 50%)";
   if (b.burn || !(b.armor < 50)) return "Breach I: " + JSON.stringify(b) + " (expected armor stripped, no burn)";
 });
 

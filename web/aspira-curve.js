@@ -13,7 +13,7 @@
 // duo rule's tier 0) to lo x CURVE_DMG_X at SKILL_POINTS - the same curve shape and the same x for all seven. Its strength against the others
 // is its base hit and its mechanics, never its growth (the old per-tower hi ran x1.26 for SOL to x375 for CRR - placeholders folded from
 // the old tables). (let: the sims sweep it)
-let CURVE_DMG_X = 18; // (tribal 2026-10-26 at 12: 2 of 35 trios won both seeds - too weak; at 18, round 4: 8 of 35)
+let CURVE_DMG_X = 11; // (tribal 2026-10-26 at 12: 2 of 35 trios won both seeds - too weak; at 18, round 4: 8 of 35; 18 -> 11 2026-10-27: planner b87 at 18 won with 20-27 buys, eight winners under the 30-of-39 target - level 10 is to hit as level 7 did)
 const STAT_CURVE = {
   arc: { dmg: [5.821], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
   frz: { dmg: [0.8728], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
