@@ -1,7 +1,7 @@
 // THE BOSS'S HP ALONG ITS LANE - the bar, its pieces, marks and labels, split out of aspira-bosses.js (the 500-line cap, 2026-10-27);
 // drawn on the top layer through warpEntities (aspira-warp.js) and clipped out under every tower and die (bossClip)
 const BOSS_BAR_W = 2.2, BOSS_BAR_TRACK = 0.3; // as thin as a lit lane's opaque core, LIT_LINE_SOFT's last (owner, 2026-10-26: "a lot thinner"; was 21); the track = full HP, translucent
-const BOSS_BAR_MARKS = [0.8, 0.6, 0.4, 0.2, 0.1, 0.05, 0]; // the %HP marks along the lane (owner, 2026-10-26: "add markers at 80 60 40 20 10 and 5% hp along the lane"), ...and 0% at the core (owner, 2026-10-26) - drawn as numbers on the bar (drawBossLabels)
+const BOSS_BAR_MARKS = [0.85, 0.65, 0.4, 0.25, 0.1, 0]; // the %HP marks along the lane (owner, 2026-10-27: "the numbers: 0 10 25 40 60 90", then "90 and 60 are confusing, use 65 and 85"; 2026-10-26: 80 60 40 20 10 5 and 0 at the core) - drawn as numbers on the bar (drawBossLabels)
 // THE BOSS'S HP ALONG ITS LANE (owner, 2026-10-26: "show the boss HPs along their lane, this way we can tell if we need to step our
 // game up" / "it should stay in place" / "hp removal should come from outside in, not inside out / it should make the lane white
 // instead of red"): the bar lies STILL on the lane, anchored at the CORE and reaching out toward the mouth by the HP left as a share
@@ -183,37 +183,49 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
 }
 // THE %HP NUMBERS ON THE BAR (owner, 2026-10-27: "get rid of the arrows / numbers in white, on the hp bar / have the bottom of the number
 // aligned with one of the spokes" / "drop the % and resize numbers to fit on the segment they are on / min thickness of segment with a
-// number should be 50"; 2026-10-26: the marks at 80 60 40 20 10 5 and 0%): each number lies ON the piece that holds its mark (barGeo
-// makes that piece BOSS_LABEL_W wide where the turns allow), its bottom along one of the piece's two cut lines (spokes) - the one whose
-// way into the piece is UP on the screen, so it never reads upside down - half a gap plus BOSS_LABEL_PAD in from it, centred on the
-// piece's own radius (its slide included), reading along the spoke; BOSS_LABEL_PX[0] at the core to [1] at the 100% end, shrunk to fit
-// the piece's width (its length along the spoke) and length (its height). White over the HP left; the lane's colour over the HP gone
-const BOSS_LABEL_PX = [12, 24], BOSS_LABEL_PAD = 2, BOSS_LABEL_W = 50, BOSS_LABEL_CAP = 0.8; // BOSS_LABEL_CAP: a number's height, of its size
+// number should be 50" / "align the top of the number with a new spoke pointed at the core" - "letters don't need to fill"; 2026-10-26:
+// the marks): each number lies on the piece that holds its mark (barGeo makes that piece BOSS_LABEL_W wide where the turns allow), at
+// its natural size - BOSS_LABEL_PX[0] at the core to [1] at the 100% end, shrunk to the piece - centred on the piece's own radius. Its
+// bottom runs along one of the piece's cuts (a spoke), BOSS_LABEL_PAD in; its TOP is another ray through the core, as high as the
+// number at its middle: the number is a wedge, narrower toward the core, like the piece. It is a cached sprite drawn in
+// BOSS_LABEL_STRIPS strips, each a parallelogram between the two lines at its place, so it takes the wedge and the floor's perspective
+// together (one canvas affine cannot bend a box into a wedge). The bottom is the cut whose way into the piece is UP on the screen, read
+// the way that is not mirrored: never upside down. White over the HP left; the lane's colour as shown (turned over under the sky) over
+// the HP gone
+const BOSS_LABEL_PX = [12, 24], BOSS_LABEL_PAD = 2, BOSS_LABEL_W = 50, BOSS_LABEL_STRIPS = 16, BOSS_LABEL_SPRITE_PX = 96, labelSprites = new Map();
+function labelSprite(str, col) { // the number drawn once, cropped to its glyphs' box (digits: baseline to cap height)
+  const key = str + "|" + col, hit = labelSprites.get(key); if (hit) return hit;
+  const m = document.createElement("canvas"), x = m.getContext("2d"); x.font = BOSS_LABEL_SPRITE_PX + "px " + CANVAS_FONT;
+  const mt = x.measureText(str), asc = Math.ceil(mt.actualBoundingBoxAscent || BOSS_LABEL_SPRITE_PX * 0.72), desc = Math.ceil(mt.actualBoundingBoxDescent || 0), w = Math.ceil(mt.width) + 2;
+  m.width = w; m.height = asc + desc + 2; x.font = BOSS_LABEL_SPRITE_PX + "px " + CANVAS_FONT; x.textBaseline = "alphabetic"; x.fillStyle = col; x.fillText(str, 1, 1 + asc);
+  const sp = { cv: m, w, h: m.height }; if (labelSprites.size > 32) labelSprites.clear(); labelSprites.set(key, sp); return sp;
+}
 function drawBossLabels() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0;
+    const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0, wind = e.bar.sgn;
     for (const p of e.bar.pieces) {
       if (!(p.mi >= 0)) continue;
-      const f = BOSS_BAR_MARKS[p.mi], str = String(Math.round(f * 100));
-      // a cut of the piece: the spoke through the lane point there (the cut line is parallel to it), and the way INTO the piece square to
-      // the spoke - on the lane tangent's side (+s past the start cut, -s before the end cut); all on screen, so the number's bottom
-      // lies exactly along the cut as drawn (owner, 2026-10-27: "numbers not really aligned with spoke" - it stood square to the lane)
-      const edge = (cs, gap, sg) => {
-        const Q = pathAt(e.pi, cs, ang), Q2 = pathAt(e.pi, cs + 1, ang), tl = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1, tx = (Q2.x - Q.x) / tl * sg, ty = (Q2.y - Q.y) / tl * sg, rx = Q.x - CX, ry = Q.y - CY, rl = Math.hypot(rx, ry) || 1, ux = rx / rl, uy = ry / rl;
-        const dot = -uy * tx + ux * ty, nx = dot >= 0 ? -uy : uy, ny = dot >= 0 ? ux : -ux, sn = Math.abs(tx * uy - ty * ux), inset = gap / 2 + BOSS_LABEL_PAD; // (nx, ny): into the piece, square to the spoke; sn: the lane's slant off the spoke
-        const W = { x: Q.x + ux * p.d + nx * inset, y: Q.y + uy * p.d + ny * inset }, S = warpProject(W.x, W.y), B2 = warpProject(W.x + ux * 10, W.y + uy * 10), U2 = warpProject(W.x + nx * 10, W.y + ny * 10); // the baseline's middle, on the piece's own radius
-        let bx = B2.x - S.x, by = B2.y - S.y; const bl = Math.hypot(bx, by) || 1; bx /= bl; by /= bl; let upx = by, upy = -bx; if (upx * (U2.x - S.x) + upy * (U2.y - S.y) < 0) { upx = -upx; upy = -upy; } // the spoke on screen, and its perpendicular the way in (only to pick the edge)
-        return { W, nx, ny, upy, inset, sn };
-      };
-      const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), E = e0.upy <= e1.upy ? e0 : e1; // the cut whose way in is more UP on the screen: never upside down
-      ctx.font = "100px " + CANVAS_FONT; const w100 = ctx.measureText(str).width || 60; // the string's width at 100 px: the fit along the spoke
-      const px = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, (p.w - 2 * BOSS_LABEL_PAD) * 100 / w100, ((p.s1 - p.s0) * E.sn - E.inset - BOSS_LABEL_PAD) / BOSS_LABEL_CAP); // (the piece's length across the spoke: its length along the lane, slanted)
-      if (px < 3) continue;
-      // ON THE FLOOR, warped as the lane is (owner, 2026-10-27: "apply the same 3d distortion as the lane to those numbers"): the floor's own
-      // affine at the baseline's middle (warpFrame, as a prism's top is placed), the text turned in the WORLD so its bottom runs along the spoke
-      const [fa, fb, fc, fd, fe, ff] = warpFrame(E.W.x, E.W.y, 0), ph = Math.atan2(E.nx, -E.ny); ctx.setTransform(fa, fb, fc, fd, fe, ff); ctx.transform(Math.cos(ph), Math.sin(ph), -Math.sin(ph), Math.cos(ph), E.W.x, E.W.y); ctx.globalAlpha = 1;
-      text(str, 0, -px * 0.45, px, hp >= f ? "white" : ENEMIES.bonus.color, false); // (text centres on y: the bottom sits on the line)
+      const f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? COL.white : inSkyPt(mp.x, mp.y) ? invertColor(own) : own);
+      // a cut of the piece: the lane point there, its angle round the core and radius, the way into the piece round the core (dir: +1
+      // with the lane's winding past the start cut, against it before the end cut) and the lane's slant off the spoke there (sn)
+      const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), Q2 = pathAt(e.pi, cs + 1, ang), rx = Q.x - CX, ry = Q.y - CY, r = Math.hypot(rx, ry) || 1, th = Math.atan2(ry, rx), tl = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1; return { th, r, gap, dir: sg * wind, sn: Math.abs(((Q2.x - Q.x) * ry - (Q2.y - Q.y) * rx) / tl / r) }; };
+      const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), S0 = warpProject(CX + Math.cos(e0.th) * e0.r, CY + Math.sin(e0.th) * e0.r), S1 = warpProject(CX + Math.cos(e1.th) * e1.r, CY + Math.sin(e1.th) * e1.r), E = S1.y <= S0.y ? e0 : e1; // the bottom: the cut the other lies ABOVE on the screen
+      // the number's size: its height, BOSS_LABEL_PX by its share, no more than the piece's length across the spoke less the insets, its width by the sprite's own shape, no more than the piece's width
+      const rc = E.r + p.d, inset = E.gap / 2 + BOSS_LABEL_PAD, room = (p.s1 - p.s0) * E.sn - inset - BOSS_LABEL_PAD; let h = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, room), w = h * sp.w / sp.h; if (w > p.w - 2 * BOSS_LABEL_PAD) { w = p.w - 2 * BOSS_LABEL_PAD; h = w * sp.h / sp.w; } if (h < 2) continue;
+      // the wedge: the bottom along the cut line (the spoke through the lane point, half a gap and the pad over, into the piece), from
+      // rc - w / 2 to rc + w / 2 out along it; the top the ray at the angle that stands h above the bottom at rc
+      const ux = Math.cos(E.th), uy = Math.sin(E.th), nx = -uy * E.dir, ny = ux * E.dir, tt = E.th + E.dir * (inset + h) / rc, vx = Math.cos(tt), vy = Math.sin(tt), r0 = rc - w / 2, r1 = rc + w / 2;
+      let bl = { x: CX + ux * r0 + nx * inset, y: CY + uy * r0 + ny * inset }, br = { x: CX + ux * r1 + nx * inset, y: CY + uy * r1 + ny * inset }, tl = { x: CX + vx * r0, y: CY + vy * r0 }, tr = { x: CX + vx * r1, y: CY + vy * r1 };
+      const pr = q => warpProject(q.x, q.y), Bl = pr(bl), Br = pr(br), Tl = pr(tl); if ((Br.x - Bl.x) * (Tl.y - Bl.y) - (Br.y - Bl.y) * (Tl.x - Bl.x) > 0) { [bl, br] = [br, bl]; [tl, tr] = [tr, tl]; } // read the way that is not mirrored
+      const N = BOSS_LABEL_STRIPS, at = (a, b, x) => pr({ x: a.x + (b.x - a.x) * x, y: a.y + (b.y - a.y) * x }), sw = sp.w / N;
+      let B0 = at(bl, br, 0), T0 = at(tl, tr, 0);
+      for (let i = 0; i < N; i++) { // strip i: the sprite's slice [i * sw, (i + 1) * sw] onto the parallelogram B0 -> B1 along the bottom, T0 up
+        const B1 = at(bl, br, (i + 1) / N), T1 = at(tl, tr, (i + 1) / N), ax = ((B1.x - B0.x) + (T1.x - T0.x)) / 2 / sw, ay = ((B1.y - B0.y) + (T1.y - T0.y)) / 2 / sw;
+        ctx.setTransform(ax, ay, (B0.x - T0.x) / sp.h, (B0.y - T0.y) / sp.h, T0.x, T0.y); ctx.globalAlpha = 1;
+        ctx.drawImage(sp.cv, i * sw, 0, sw + 1, sp.h, 0, 0, sw + 1, sp.h); // (a px of overlap: no seam)
+        B0 = B1; T0 = T1;
+      }
     }
   }
 }
