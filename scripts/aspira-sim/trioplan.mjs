@@ -70,7 +70,10 @@ if (isMainThread && process.argv[1].endsWith("trioplan.mjs")) {
   let trios = [];
   if (process.env.TRIOS) trios = process.env.TRIOS.split(",").map(s => s.split("+"));
   else for (let a = 0; a < ALL.length; a++) for (let b = a + 1; b < ALL.length; b++) for (let c = b + 1; c < ALL.length; c++) trios.push([ALL[a], ALL[b], ALL[c]]);
-  const res = await runPool(new URL(import.meta.url), trios.map(trio => ({ trio, seed: SEED, beam: BEAM })), { quiet: true });
+  // STREAMED AND RESUMABLE (owner, 2026-10-27: "break it into smaller actionable chunks" - a 3 h run wrote nothing till its end): every
+  // trio lands in OUT.pool as it finishes ({ args, res }, runPool), a re-run skips the trios already there; OUT itself (flat rows, held.py)
+  // is written at the end as before. Chunk a run with TRIOS=... (battery.sh `plan:` stages)
+  const res = await runPool(new URL(import.meta.url), trios.map(trio => ({ trio, seed: SEED, beam: BEAM })), { quiet: true, out: OUT ? OUT + ".pool" : null });
   if (OUT) fs.writeFileSync(OUT, res.map(r => JSON.stringify(r)).join("\n") + "\n");
   console.log(`BEST UPGRADE SEQUENCE A TRIO (beam ${BEAM}, seed ${SEED}): credits left after Death`);
   for (const r of res.sort((a, b) => b.won - a.won || b.money - a.money))
