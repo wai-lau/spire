@@ -364,23 +364,61 @@ const BOSS_LANE_STEP = 10, BOSS_BAR_IN = 50; const bossBarOut = () => (typeof co
 // the 100% end: where the boss first comes within a tower's reach on its lane (owner, 2026-10-26: "boss label should start where the boss is
 // hittable, not at the edge of the screen"), else BOSS_BAR_IN past the mouth
 function bossHitS(e) { const P = PATHS[e.pi], s0 = entryS(e.pi), reach = typeof reachCircles === "function" ? reachCircles() : []; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) if (inReach(pathAt(e.pi, s, e.ang || 0), reach)) return s; return s0 + BOSS_BAR_IN; }
-const bossSpan = e => { const P = PATHS[e.pi], a = bossHitS(e), b = P.len - bossBarOut(); return { a, b, hp: b - (b - a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
-function bossTrace(e, a, b) { ctx.beginPath(); for (let s = a, k = 0; ; s += BOSS_LANE_STEP, k++) { const q = pathAt(e.pi, Math.min(s, b), e.ang || 0); if (k) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); if (s >= b) break; } ctx.stroke(); }
-function drawBossBar() { // the HP left, in the lane's colour (before the sky's flip, like the lane)
+const bossSpan = e => { const g = bossGeo(e); return { a: g.a, b: g.b, hp: g.b - (g.b - g.a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
+// THE BAR IN PIECES (owner, 2026-10-26: "the width should increase as we approach the edge / chop up the hp lane into segments and
+// jitter the size of each segment, jitter segments spatially on axis perpendicular to lane, but never more than 100% of the segment's
+// width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
+// end, BOSS_BAR_WIDEN x that at the 100% end, each piece's width jittered the same and the piece set across the lane by up to its own
+// width. A fixed hash a piece (the boss's id, the piece's index): the layout holds still from frame to frame
+const BOSS_SEG_U = 18, BOSS_SEG_GAP = 3, BOSS_SEG_JIT = 0.4, BOSS_BAR_WIDEN = 6, BOSS_PIECE_STEP = 2; // BOSS_PIECE_STEP: u between a piece's points (owner: "resolution too low" at the lane's 10)
+const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0; h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }; // 0..1
+// COMPUTED ONCE A BOSS (owner, 2026-10-26: "can we precompute these if slow?"): the span and every piece's points, kept on the boss
+// (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each piece's part either
+// side of where the HP left begins
+function bossGeo(e) {
+  const reach = typeof reachCircles === "function" ? reachCircles() : [], key = reach.map(c => Math.round(c.x) + "," + Math.round(c.y) + "," + Math.round(c.r)).join("|");
+  if (e.bar && e.bar.key === key) return e.bar;
+  const a = bossHitS(e), b = PATHS[e.pi].len - bossBarOut(), ang = e.ang || 0, pieces = []; let s = a, i = 0;
+  while (s < b) {
+    const s1 = Math.min(b, s + BOSS_SEG_U * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 1) - 1))), f = (b - (s + s1) / 2) / (b - a); // f: 1 at the 100% end, 0 at the core
+    const w = BOSS_BAR_W * (1 + (BOSS_BAR_WIDEN - 1) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)), off = w * (2 * bossHash(e, i, 3) - 1), pts = [];
+    for (let t = s; ; t += BOSS_PIECE_STEP) {
+      const u = Math.min(t, s1), q = pathAt(e.pi, u, ang), q2 = pathAt(e.pi, u + 1, ang), l = Math.hypot(q2.x - q.x, q2.y - q.y) || 1, nx = -(q2.y - q.y) / l, ny = (q2.x - q.x) / l;
+      pts.push({ s: u, x: q.x + nx * off, y: q.y + ny * off, nx, ny }); if (t >= s1) break;
+    }
+    pieces.push({ s0: s, s1, w, pts }); s = s1 + BOSS_SEG_GAP; i++;
+  }
+  return e.bar = { key, a, b, pieces };
+}
+const bossLerp = (p, q, f) => ({ x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f, nx: p.nx, ny: p.ny });
+function bossPiece(g, from, to) { // the piece's stretch [from, to] as a quad g.w wide: its points inside, the ends interpolated
+  if (to - from < 1) return;
+  const P = g.pts, sel = [];
+  for (let i = 0; i < P.length; i++) {
+    const p = P[i];
+    if (p.s < from) { if (i + 1 < P.length && P[i + 1].s > from) sel.push(bossLerp(p, P[i + 1], (from - p.s) / (P[i + 1].s - p.s))); continue; }
+    if (p.s > to) { if (i > 0 && P[i - 1].s < to) sel.push(bossLerp(P[i - 1], p, (to - P[i - 1].s) / (p.s - P[i - 1].s))); break; }
+    sel.push(p);
+  }
+  if (sel.length < 2) return;
+  const h = g.w / 2; ctx.beginPath();
+  for (let i = 0; i < sel.length; i++) { const p = sel[i]; if (i) ctx.lineTo(p.x + p.nx * h, p.y + p.ny * h); else ctx.moveTo(p.x + p.nx * h, p.y + p.ny * h); }
+  for (let i = sel.length - 1; i >= 0; i--) { const p = sel[i]; ctx.lineTo(p.x - p.nx * h, p.y - p.ny * h); }
+  ctx.closePath(); ctx.fill();
+}
+function drawBossBar() { // the HP left, in the lane's colour (before the sky's flip, like the lane): each piece's part past where the HP left begins
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const { b, hp } = bossSpan(e);
-    ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round"; ctx.strokeStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
-    if (hp < b - 1) bossTrace(e, hp, b);
+    const { hp } = bossSpan(e); ctx.fillStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
+    for (const g of e.bar.pieces) bossPiece(g, Math.max(g.s0, hp), g.s1);
   }
   ctx.globalAlpha = 1;
 }
-function drawBossTrack() { // the HP gone: a white core from the 100% end to where the HP left begins (kept white under the sky)
+function drawBossTrack() { // the HP gone: the pieces' white part from the 100% end to where the HP left begins (kept white under the sky)
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const { a, hp } = bossSpan(e);
-    ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.lineJoin = "round"; ctx.strokeStyle = COL.white; ctx.globalAlpha = 0.9;
-    if (hp > a + 1) bossTrace(e, a, hp);
+    const { hp } = bossSpan(e); ctx.fillStyle = COL.white; ctx.globalAlpha = 0.9;
+    for (const g of e.bar.pieces) bossPiece(g, g.s0, Math.min(g.s1, hp));
   }
   ctx.globalAlpha = 1;
 }
