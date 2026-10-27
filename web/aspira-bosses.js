@@ -294,6 +294,22 @@ const bossPays = e => !(isA(e, "devil") && G.enemies.some(o => o !== e && !o.dea
 // The HTML over the board flips by CSS once the circle covers the screen
 // (bossInv.full -> #asp.asp-boss).
 const BOSS_INV_T = 3;
+// THE SPOKES BEFORE THE SKY (owner, 2026-10-27: "before the triangle spreads, add three white spokes coming off the core, aligned with the
+// tips of the triangle" / "the spokes should grow out of the core and reach the edge of the screen before the triangle starts"): for
+// the first BOSS_SPOKE_T s of the sky's "in" phase the triangle holds at nothing while three white lines grow from the core along the
+// rays to its corners, out to the screen's edge; then the triangle spreads over BOSS_INV_T as before, the spokes fading with it.
+// The whole sky takes BOSS_SKY_T; the bar's fly-in and the boss lane's fade-in wait on that
+const BOSS_SPOKE_T = 0.8, BOSS_SKY_T = BOSS_SPOKE_T + BOSS_INV_T, BOSS_SPOKE_W = 3;
+function drawSkySpokes() { // on the top layer (warpEntities' part B), crisp; bossInv.spoke: their growth 0..1 (bossSkyStep)
+  if (bossInv.phase !== "in" || bossInv.full || !bossInv.triS || !bossInv.coreS) return;
+  const c = bossInv.coreS, g = bossInv.spoke || 0, ease = g * (2 - g), W = cv.width, H = cv.height, a = 1 - (bossInv.k || 0); // (ease out of the core; gone as the triangle fills)
+  if (!(ease > 0) || !(a > 0)) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.strokeStyle = COL.white; ctx.lineWidth = BOSS_SPOKE_W; ctx.lineCap = "round"; ctx.globalAlpha = a; ctx.beginPath();
+  for (const T of bossInv.triS) { const dx = T.x - c.x, dy = T.y - c.y, l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l; // the ray to this corner...
+    let exit = Infinity; for (const [e, u, o] of [[0, -ux, c.x], [W, ux, W - c.x], [0, -uy, c.y], [H, uy, H - c.y]]) if (u > 1e-9) exit = Math.min(exit, o / u); // ...and where it leaves the screen
+    if (!isFinite(exit)) continue; ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + ux * exit * ease, c.y + uy * exit * ease); }
+  ctx.stroke(); ctx.globalAlpha = 1;
+}
 const bossInv = { phase: "off", t0: 0, x: 0, y: 0, full: false, r: 0 };
 // THE SKY SPREADS AS A TRIANGLE pointing down (owner, 2026-10-27: "replace the expanding circle with an expanding triangle for bosses /
 // point down" / "change the shape of the triangle so that the diagonal sides touch the screen corner at the same time as the top side"):
@@ -344,7 +360,8 @@ function bossSkyStep() {
   // the circle must reach the canvas corner furthest from its centre
   const corners = [[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => ({ x: (px - cam.ox) / cam.k, y: (py - cam.oy) / cam.k }));
   const R = Math.max(...corners.map(c => Math.hypot(c.x - bossInv.x, c.y - bossInv.y))) * 1.05;
-  const p = Math.min(1, (now - bossInv.t0) / BOSS_INV_T), ease = p * p * (3 - 2 * p);
+  const tin = now - bossInv.t0, p = Math.min(1, Math.max(0, bossInv.phase === "in" ? (tin - BOSS_SPOKE_T) / BOSS_INV_T : tin / BOSS_INV_T)), ease = p * p * (3 - 2 * p); // ("in": the spokes' BOSS_SPOKE_T first, the triangle still)
+  bossInv.spoke = bossInv.phase === "in" ? Math.min(1, tin / BOSS_SPOKE_T) : 0;
   bossInv.r = bossInv.phase === "in" ? R * ease : R * (1 - ease); // the boss's HP line grows and shrinks with this edge (drawBossBar)
   bossInv.k = bossInv.phase === "in" ? ease : 1 - ease; // (the triangle itself: skyLayout, under the view camera)
   bossInv.full = bossInv.phase === "in" && p >= 1;

@@ -165,7 +165,7 @@ function bossClip() {
 // THE FLY-IN (owner, 2026-10-27: "after the triangle fully expands, have the segments fly in from off-screen into place; jitter their
 // speeds and launch time, but the arrival time should be ordered" / "reverse arrival order" / "I want to see all the segments overlapping
 // and slowly approaching like an armada of ships, then, look they are slamming into place"): once the boss sky is FULL (bossInv.t0 +
-// BOSS_INV_T) every piece stands on ONE ring, BAR_RING_PAD past the bar's outermost piece - pieces from every turn stacked
+// BOSS_SKY_T) every piece stands on ONE ring, BAR_RING_PAD past the bar's outermost piece - pieces from every turn stacked
 // there, overlapping - and drifts in along its own spoke at BAR_DRIFT u/s (+-BAR_DRIFT_JIT by its hash: the armada loosens), until
 // its own moment: piece i lands at BAR_FLY_LEAD + BAR_FLY_SPAN x (1 - i / (n - 1)) s after the sky is full - the core end first, the
 // 100% end last - slamming the rest of the way in over BAR_SLAM s (+-BAR_SLAM_JIT), eased IN (motionless, then faster and faster).
@@ -177,7 +177,7 @@ const barFar = () => Math.max(...[[0, 0], [cv.width, 0], [0, cv.height], [cv.wid
 const barFlyFrom = () => barFar() * 1.1 + 100; // u out along a spoke: past that corner
 function barFlyOff(e, i, n) { // piece i of n: how far out along its spoke it still is, u (0: in place)
   if (typeof bossInv === "undefined" || bossInv.phase !== "in") return 0;
-  const t = performance.now() / 1000 - (bossInv.t0 + BOSS_INV_T); if (t < 0) return barFlyFrom();
+  const t = performance.now() / 1000 - (bossInv.t0 + BOSS_SKY_T); if (t < 0) return barFlyFrom(); // (BOSS_SKY_T: the spokes, then the triangle - aspira-bosses.js)
   const g = e.bar && e.bar.pieces[i]; if (!g) return 0; const rOf = q => { const m = q.Lp[q.Lp.length >> 1]; return Math.hypot(m.x - CX, m.y - CY); }, r = rOf(g), ring = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(rOf))) + BAR_RING_PAD; // its own radius, and the armada's
   const land = BAR_FLY_LEAD + BAR_FLY_SPAN * (n > 1 ? 1 - i / (n - 1) : 0), slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * bossHash(e, i, 6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * bossHash(e, i, 7) - 1)), t0 = land - slam;
   const drift = tt => Math.max(0, ring - v * tt - r); // out of place while the armada drifts in (never past its place)
