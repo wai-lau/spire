@@ -11,7 +11,8 @@ export default async function task({ trio, seed }) {
   return { won: r.won, wave: r.wave, lives: r.lives, rewinds: r.rewinds || 0 };
 }
 if (isMainThread && process.argv[1].endsWith("tribal.mjs")) {
-  const trios = []; for (let a = 0; a < ALL.length; a++) for (let b = a + 1; b < ALL.length; b++) for (let c = b + 1; c < ALL.length; c++) trios.push([ALL[a], ALL[b], ALL[c]]);
+  const only = (process.env.TRIOS || "").split(",").filter(Boolean).map(t => t.split("+").sort().join("+")); // TRIOS=arc+grv+ifr,...: a chunk (battery.sh tribal <kind>: the trios holding one tower, ~20 min - a whole run is a 45 min monolith, 2026-10-27)
+  const trios = []; for (let a = 0; a < ALL.length; a++) for (let b = a + 1; b < ALL.length; b++) for (let c = b + 1; c < ALL.length; c++) { const t = [ALL[a], ALL[b], ALL[c]]; if (!only.length || only.includes(t.slice().sort().join("+"))) trios.push(t); }
   const jobs = []; for (const trio of trios) for (const seed of (process.env.SEEDS || "1,2").split(",").map(Number)) jobs.push({ trio, seed });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true, out: process.argv[2] || null });
   console.log("EVERY TRIO, perfect play (smart saver, both powers) to wave 120: wins / games, wave reached each game, lives left each game");
