@@ -182,20 +182,24 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
 }
 // THE %HP MARKS AS CALLOUTS (owner, 2026-10-27: "label the sections using an arrow pointed along the spoke connected to a horizontal
 // line with the number on top of the horizontal line"; 2026-10-26: "when the hp is below marker, make the label grey"): from the mark on
-// the lane an arrow runs out along its spoke BOSS_LEAD_U, its head at the mark pointing in, then a horizontal bar BOSS_LEAD_BAR long
+// the lane a leg runs out along its spoke (its length by the pieces' thickness there, below), a dot on the mark, then a horizontal bar
 // toward the side the spoke leans to, the "80%" centred over the bar; orange (the threat colour) while the boss's HP is still at or
 // above that share, grey once under it. Screen space on the top layer, crisp, sized by the perspective at the mark
 // (owner, 2026-10-27: "make the arrows thinner, point them at the center of the nearest gap / scale number size based on distance from
 // core (further = bigger)": the arrow's tip sits in the middle of the gap between pieces nearest the mark, the number BOSS_LABEL_PX[0] at
 // the core to [1] at the 100% end)
-const BOSS_LABEL_PX = [6, 12], BOSS_LEAD_U = 16, BOSS_LEAD_BAR = 18, BOSS_LEAD_DOT = 2.5, BOSS_LEAD_W = 1, BOSS_LEAD_HALO = 1; // BOSS_LEAD_DOT: the dot's radius on the mark, u
+// the leg up the spoke: BOSS_LEAD_PAD plus BOSS_LEAD_K of the wider piece either side of the gap, at most BOSS_LEAD_MAX (owner, 2026-10-27:
+// "the segment of the arrow along the spoke should increase in length according to the thickness"); the bar BOSS_LEAD_BAR of the number's
+// size, so the number fits over it ("make the numbers 2x as big": 12 px at the core to 24 at the 100% end)
+const BOSS_LABEL_PX = [12, 24], BOSS_LEAD_PAD = 4, BOSS_LEAD_K = 1, BOSS_LEAD_MAX = 40, BOSS_LEAD_BAR = 2, BOSS_LEAD_DOT = 2.5, BOSS_LEAD_W = 1, BOSS_LEAD_HALO = 1; // BOSS_LEAD_DOT: the dot's radius on the mark, u
 function bossLead(e, f) { // the callout at share f: M the mark on screen, T the arrow's tail, E the bar's end, k px a u there, px its number's size, col
-  const { a: A, b: B } = bossSpan(e), s = B - (B - A) * f, P = e.bar.pieces; let sg = s, best = Infinity;
-  for (const g of [A, B, ...P.slice(0, -1).map((p, i) => (p.s1 + P[i + 1].s0) / 2)]) { const d = Math.abs(g - s); if (d < best) { best = d; sg = g; } } // the nearest gap's middle - the span's two ends count (owner, 2026-10-27: "the 0% was at the correct place" - at the core's rim)
-  const q = pathAt(e.pi, sg, e.ang || 0), M = warpProject(q.x, q.y), C = warpProject(CX, CY), k = cam.k * (M.s || 1);
+  const { a: A, b: B } = bossSpan(e), s = B - (B - A) * f, P = e.bar.pieces; let sg = s, best = Infinity, w = 0;
+  // the nearest gap's middle, and the wider piece beside it - the span's two ends count (owner, 2026-10-27: "the 0% was at the correct place" - at the core's rim)
+  for (const [g, ww] of [[A, P.length ? P[0].w : 0], [B, P.length ? P[P.length - 1].w : 0], ...P.slice(0, -1).map((p, i) => [(p.s1 + P[i + 1].s0) / 2, Math.max(p.w, P[i + 1].w)])]) { const d = Math.abs(g - s); if (d < best) { best = d; sg = g; w = ww; } }
+  const q = pathAt(e.pi, sg, e.ang || 0), M = warpProject(q.x, q.y), C = warpProject(CX, CY), k = cam.k * (M.s || 1), px = BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f;
   let ux = M.x - C.x, uy = M.y - C.y; const l = Math.hypot(ux, uy) || 1; ux /= l; uy /= l; // the spoke on screen, outward
-  const T = { x: M.x + ux * BOSS_LEAD_U * k, y: M.y + uy * BOSS_LEAD_U * k }, E = { x: T.x + (ux >= 0 ? 1 : -1) * BOSS_LEAD_BAR * k, y: T.y };
-  return { M, T, E, ux, uy, k, px: BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, col: Math.max(0, e.hp) / e.max >= f ? "threat" : "grid" };
+  const leg = Math.min(BOSS_LEAD_MAX, BOSS_LEAD_PAD + BOSS_LEAD_K * w) * k, T = { x: M.x + ux * leg, y: M.y + uy * leg }, E = { x: T.x + (ux >= 0 ? 1 : -1) * BOSS_LEAD_BAR * px * k, y: T.y };
+  return { M, T, E, ux, uy, k, px, col: Math.max(0, e.hp) / e.max >= f ? "threat" : "grid" };
 }
 function drawBossMarks() {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineJoin = "round";
