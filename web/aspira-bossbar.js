@@ -30,7 +30,7 @@ const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 1 /* (owner, 2026-10-27: "5x thickness j
 // spacing; a ray crosses the spiral lane once a turn - EVERY crossing inside the span is a cut (owner, 2026-10-27: "without placement
 // jitter"; one a ray, picked by hash, left long uncut runs), and the piece ends there lie ALONG THE RAY (owner, 2026-10-27: "the aligned
 // spoke is more important") - so the cuts on every turn line up as spokes
-const BOSS_RAYS = 24, BOSS_RAY_JIT = 0.4, BOSS_CUT_MIN = 0.25, BOSS_PIECE_ROUND = 0.05, BOSS_PIECE_MIN = 0.5; // BOSS_PIECE_MIN: a piece at least this much of its width long, else the cut is skipped; BOSS_CUT_MIN: a ray flatter than this against the lane (its sine) cuts square; BOSS_PIECE_ROUND: a piece's corner radius, of its width
+const BOSS_RAYS = 24, BOSS_RAY_JIT = 0.4, BOSS_CUT_MIN = 0.25, BOSS_PIECE_ROUND = 0.05, BOSS_PIECE_MIN = 0.5, BOSS_PIECE_FLOOR = 10; // BOSS_PIECE_MIN: a piece at least this much of its width long, else the cut is skipped; BOSS_PIECE_FLOOR: no piece thinner, u (owner, 2026-10-27: "floor 10u"; was 4); BOSS_CUT_MIN: a ray flatter than this against the lane (its sine) cuts square; BOSS_PIECE_ROUND: a piece's corner radius, of its width
 const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0; h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }; // 0..1
 // COMPUTED ONCE A BOSS (owner, 2026-10-26: "can we precompute these if slow?"): the span, the lane's points over it, the cuts and every
 // piece, kept on the boss (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each
@@ -61,8 +61,8 @@ function barGeo(e) {
   const corrAt = s => { const m = at(s), rm = Math.hypot(m.x - CX, m.y - CY) || 1, rs = [];
     for (const dth of [-TAU, TAU]) { let best = null; for (const p of L) if (Math.abs(p.th - (m.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } if (best !== null) rs.push(Math.abs(best - rm) - BOSS_SEG_GAP); }
     return Math.max(4, Math.min(BOSS_CORRIDOR, ...rs)); };
-  // piece i's width at s: the taper (BOSS_PIECE_W at the core end .. the 100% end) jittered by its hash, inside the corridor, never under 4 u
-  const wOf = (i, s) => Math.max(4, Math.min(corrAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))));
+  // piece i's width at s: the taper (BOSS_PIECE_W at the core end .. the 100% end) jittered by its hash, inside the corridor, never under BOSS_PIECE_FLOOR
+  const wOf = (i, s) => Math.max(BOSS_PIECE_FLOOR, Math.min(corrAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))));
   // THE PIECES' BOUNDS: the 100% end, the cuts, the 0% end - EVERY one a ray through the core (owner, 2026-10-27: "the cuts don't all seem
   // to use the core as a vanishing point"); a cut is kept only if the piece before it has room for both slanted ends and a gap, else it
   // is skipped and the piece runs on to the next - so no piece's ends ever cross (a bow-tie that read as overlap)
