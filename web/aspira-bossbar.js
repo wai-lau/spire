@@ -18,7 +18,20 @@ const BOSS_LANE_STEP = 10, BOSS_BAR_IN = 50; const bossBarOut = () => (typeof co
 // hittable, not at the edge of the screen") - and inside the play box by BOSS_BAR_EDGE; else the first point that far in, else BOSS_BAR_IN past the mouth
 const BOSS_BAR_EDGE = 60; // u: the 100% end at least this far inside the play box, so its piece is ON SCREEN (owner, 2026-10-27: "make sure that the last piece (the one that would contain 100) ends up on screen"; the widest piece is 44 u across, slid up to BOSS_SLIDE_MAX out)
 const bossInBox = p => Math.abs(p.x - CX) <= BOX_HX - BOSS_BAR_EDGE && Math.abs(p.y - CY) <= BOX_HY - BOSS_BAR_EDGE;
-function bossHitS(e) { const P = PATHS[e.pi], s0 = entryS(e.pi); let sIn = -1; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) { const p = pathAt(e.pi, s, e.ang || 0); if (bossInBox(p)) { sIn = s; break; } } return Math.max(sIn, s0 + BOSS_BAR_IN); } // the 100% end where the lane comes INTO the play box (owner, 2026-10-27: "it's like, not taking advantage of the screen space"; was where it first met a tower's reach)
+// THE 100% END AT THE SCREEN'S EDGE (owner, 2026-10-27: "it's like, not taking advantage of the screen space" / "start the bar at the
+// screen edge"; was where the lane first met a tower's reach, inside the play box): the first lane point that projects ON SCREEN, BOSS_SCREEN_EDGE
+// u in (the 100% piece stays visible; 30, owner: "lane on the right feels like it could use one more segment" - 60 left one off) - read with the real camera on the overlay pass (drawBossBarFloor), kept on the boss as e.screenS
+const BOSS_SCREEN_EDGE = 30;
+function bossScreenS(e) {
+  if (typeof warp === "undefined" || !warp.ent || typeof warpProject !== "function") return null;
+  const P = PATHS[e.pi], s0 = entryS(e.pi), W = warp.ent.width / (warp.entScale || 1), H = warp.ent.height / (warp.entScale || 1);
+  for (let s = Math.max(0, s0 - 2000); s < P.len; s += BOSS_LANE_STEP) {
+    const p = pathAt(e.pi, s, e.ang || 0), Q = warpProject(p.x, p.y); if (!(Q.s > 0)) continue;
+    const m = BOSS_SCREEN_EDGE * cam.k * Q.s; if (Q.x >= m && Q.x <= W - m && Q.y >= m && Q.y <= H - m) return s;
+  }
+  return null;
+}
+function bossHitS(e) { if (e.screenS != null) return e.screenS; const P = PATHS[e.pi], s0 = entryS(e.pi); let sIn = -1; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) { const p = pathAt(e.pi, s, e.ang || 0); if (bossInBox(p)) { sIn = s; break; } } return Math.max(sIn, s0 + BOSS_BAR_IN); } // the 100% end where the lane comes INTO the play box (owner, 2026-10-27: "it's like, not taking advantage of the screen space"; was where it first met a tower's reach)
 const bossSpan = (e, f = Math.max(0, e.hp) / e.max) => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - (g.b - g.a) * f }; };
 // ONE BAR A LANE (owner, 2026-10-27: two Devils a lane drew two bars over each other - "also looks off"): the bosses on one lane copy share a
 // bar, drawn on the first of them alive (the lowest id), its HP theirs together: [{ e, f }]
@@ -48,7 +61,7 @@ const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0;
 // piece, kept on the boss (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each
 // piece's part either side of where the HP left begins
 function barGeo(e) {
-  const reach = typeof reachCircles === "function" ? reachCircles() : [], key = (BOX_WIDE ? "w|" : "p|") + reach.map(c => Math.round(c.x) + "," + Math.round(c.y) + "," + Math.round(c.r)).join("|"); // (the box's shape too: the 100% end keeps inside it)
+  const key = (BOX_WIDE ? "w|" : "p|") + Math.round((e.screenS ?? -1) / 20); // (the box's shape, and where the screen's edge cuts the lane - bossScreenS)
   if (e.bar && e.bar.key === key) return e.bar;
   const a = bossHitS(e), b = PATHS[e.pi].len - bossBarOut(), ang = e.ang || 0, TAU = Math.PI * 2, thin = BOSS_BAR_THIN[e.arcana] || 1, slideK = BOSS_BAR_SLIDE[e.arcana] || 1;
   const L = []; let prevA = null, turn = 0; // the lane over the span: s, the point, its normal, its angle round the core UNWRAPPED (th)
@@ -152,9 +165,11 @@ function barPiece(g, bar, hp, keepCore, fill, line, off = 0) { // the piece's pa
   if (hp != null) { if (keepCore ? hp >= g.s1 : hp <= g.s0) return; if (keepCore ? hp > g.s0 : hp < g.s1) { Lp = barSplit(Lp, bar, hp, keepCore); Rp = barSplit(Rp, bar, hp, keepCore); } }
   if (Lp.length < 2 || Rp.length < 2) return;
   const mp = Lp[Lp.length >> 1], k = cam.k * (warpProjectScratch(mp.x, mp.y).s || 1), rad = g.rad * k;
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath();
-  Lp.forEach((p, i) => { const q = sh(p), P = warpProjectScratch(q.x, q.y); if (i) ctx.lineTo(P.x, P.y); else ctx.moveTo(P.x, P.y); });
-  for (let i = Rp.length - 1; i >= 0; i--) { const q = sh(Rp[i]), P = warpProjectScratch(q.x, q.y); ctx.lineTo(P.x, P.y); }
+  // NEVER BEHIND THE CAMERA (owner, 2026-10-27: "what's with half the screen being orange"): a piece flown out along its spoke past the
+  // horizon had a corner behind the 3D camera, projected flipped - one polygon over half the screen. Such a piece is off-screen: skipped
+  const S = []; for (const p of Lp) { const q = sh(p), P = warpProjectScratch(q.x, q.y); if (!(P.s > 0) || !Number.isFinite(P.x) || !Number.isFinite(P.y)) return; S.push(P.x, P.y); }
+  for (let i = Rp.length - 1; i >= 0; i--) { const q = sh(Rp[i]), P = warpProjectScratch(q.x, q.y); if (!(P.s > 0) || !Number.isFinite(P.x) || !Number.isFinite(P.y)) return; S.push(P.x, P.y); }
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); ctx.moveTo(S[0], S[1]); for (let i = 2; i < S.length; i += 2) ctx.lineTo(S[i], S[i + 1]);
   ctx.closePath(); ctx.lineJoin = "round";
   ctx.strokeStyle = line; ctx.lineWidth = 2 * (rad + g.out * k); ctx.stroke();
   ctx.fillStyle = fill; ctx.fill(); if (rad > 0.01) { ctx.strokeStyle = fill; ctx.lineWidth = 2 * rad; ctx.stroke(); } // (a square piece at the core: no rounding stroke - a 0 lineWidth would keep the last)
@@ -237,7 +252,7 @@ function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, 
 // show WHITE on screen (the HP-gone boxes, the numbers) is drawn in whatever that flip turns into white - barWhite
 const barWhite = pt => (inverted || (skyOn() && !skyPal() && inSkyPt(pt.x, pt.y))) ? invertColor(COL.white) : COL.white;
 let barLeadSet = [], barLeadKey = ""; // this draw's lane leads (barLeads), once for the three passes and every piece's fly-in
-function drawBossBarFloor() { barLeadSet = barLeads(); barLeadKey = barLeadSet.map(o => o.e.id).join(","); drawBossBar(); drawBossTrack(); drawBossLabels(); }
+function drawBossBarFloor() { barLeadSet = barLeads(); if (typeof warpBossBarFlat === "undefined" || !warpBossBarFlat) for (const { e } of barLeadSet) { const s = bossScreenS(e); if (s != null) e.screenS = s; } /* (the overlay's real camera only - not the board's flat pass) */ barLeadKey = barLeadSet.map(o => o.e.id).join(","); drawBossBar(); drawBossTrack(); drawBossLabels(); }
 function drawBossBar() { // the HP left, in the lane's own colour (turned over with it under the sky): each piece's part past where the HP left begins
   const own = COL[ENEMIES.bonus.color];
   for (const { e, f } of barLeadSet) {

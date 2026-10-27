@@ -71,10 +71,11 @@ const bossBarOnBoard = () => typeof drawBossBarFloor === "function" && typeof ba
 const bossBoardSig = () => bossBarOnBoard() ? G.enemies.filter(e => e.arcana && !e.dead && e.bar).map(e => e.id + ":" + Math.round(Math.max(0, e.hp) / e.max * BOSS_BOARD_STEPS)).join(",") : "";
 // the same drawing (aspira-bossbar.js), its projection swapped for the board's flat one (world -> picture px, no perspective); under a
 // FULL sky the GPU turns the whole board over (warpFlip), so the bar's whites go down pre-inverted (`inverted`, as barWhite reads it)
+let warpBossBarFlat = false; // (the bar's board pass: bossScreenS must not read the flat projection)
 function warpBossBarBoard() {
   const wp = warpProject, ws = warpProjectScratch, inv = inverted, flat = (x, y) => ({ x: x * cam.k + cam.ox, y: y * cam.k + cam.oy, s: 1 });
-  warpProject = flat; warpProjectScratch = flat; if (skyPal()) inverted = true;
-  ctx.save(); try { drawBossBarFloor(); } finally { ctx.restore(); warpProject = wp; warpProjectScratch = ws; inverted = inv; }
+  warpProject = flat; warpProjectScratch = flat; warpBossBarFlat = true; if (skyPal()) inverted = true;
+  ctx.save(); try { drawBossBarFloor(); } finally { ctx.restore(); warpProject = wp; warpProjectScratch = ws; warpBossBarFlat = false; inverted = inv; }
 }
 // both layers onto their texture units for the bell (warpDraw): the board sent up only when it was redrawn
 function warpLayersBind(gl, u) {
