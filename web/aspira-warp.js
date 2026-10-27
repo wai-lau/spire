@@ -272,7 +272,7 @@ function ctxDefaults(x) {
   x.shadowBlur = 0; x.shadowOffsetX = 0; x.shadowOffsetY = 0; x.shadowColor = "transparent"; x.setLineDash([]); x.lineDashOffset = 0;
   x.textAlign = "start"; x.textBaseline = "alphabetic"; x.font = "10px sans-serif"; x.fillStyle = COL.bg; x.strokeStyle = COL.bg; x.imageSmoothingEnabled = true;
 }
-function warpEntities() {
+function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid out on this frame's screen - aspira-bosses.js)
   if (!warp.ent) {
     const c = document.createElement("canvas");
     c.id = "asp-ent"; c.setAttribute("aria-hidden", "true");
@@ -382,7 +382,7 @@ function warpEntities() {
       // the circle on the floor; a point of it BEHIND the camera (a big circle, spreading or collapsing) would make a
       // garbage polygon that flips the colours frame to frame (owner: "colors rapidly switch as the boss dies") - such a
       // circle covers the whole view, so the whole view is inverted
-      const ring = bossInv.full ? null : (() => { const T = skyTri(), out = []; for (let k = 0; k < 3; k++) { const p = T[k], q = T[(k + 1) % 3]; for (let i = 0; i < 22; i++) { const f = i / 22; out.push(warpProject(p.x + (q.x - p.x) * f, p.y + (q.y - p.y) * f, 0)); } } return out; })(); // the sky's TRIANGLE, each edge in 22 steps (straight in the world, bent by the warp)
+      const ring = bossInv.full ? null : skyTriS().map(p => ({ x: p.x, y: p.y, s: 1 })); // the sky's TRIANGLE, laid out on the screen (aspira-bosses.js)
       if (!ring || ring.some(Q => !(Q.s > 0) || !isFinite(Q.x) || !isFinite(Q.y))) ctx.rect(0, 0, cnv.width, cnv.height);
       else ring.forEach((Q, i) => (i ? ctx.lineTo(Q.x, Q.y) : ctx.moveTo(Q.x, Q.y)));
       ctx.fill();

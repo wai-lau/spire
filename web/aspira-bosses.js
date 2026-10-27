@@ -297,13 +297,30 @@ const BOSS_INV_T = 3;
 const bossInv = { phase: "off", t0: 0, x: 0, y: 0, full: false, r: 0 };
 // THE SKY SPREADS AS A TRIANGLE pointing down (owner, 2026-10-27: "replace the expanding circle with an expanding triangle for bosses /
 // point down" / "change the shape of the triangle so that the diagonal sides touch the screen corner at the same time as the top side"):
-// the FULL triangle (bossInv.tri, world) is the equilateral one round the screen - its top side along the screen's top edge, its two
-// sides through the bottom corners - and the sky is that triangle scaled about the boss by bossInv.k (0..1), so every side reaches its
-// corners in the same frame. skyTri: the three corners now; inSkyPt: is a world point under the sky. (bossInv.r stays for skyOn)
-function skyTri() { const k = bossInv.k || 0, T = bossInv.tri; return T ? T.map(p => ({ x: bossInv.x + (p.x - bossInv.x) * k, y: bossInv.y + (p.y - bossInv.y) * k })) : [{ x: bossInv.x, y: bossInv.y }, { x: bossInv.x, y: bossInv.y }, { x: bossInv.x, y: bossInv.y }]; }
+// the FULL triangle is laid out ON THE SCREEN (view pixels - the 3D view is what the player sees; owner: "isosceles / the sides touch
+// the bottom corners, the top touch the top of screen" / "center of mass of the triangle is where core is"): its top side along the
+// screen's top edge, its two sides through the bottom corners, its centroid on the core's screen point (isosceles when the core is
+// centred); the sky is that triangle scaled about the core by bossInv.k (0..1). skyTriS: the three corners now, screen; skyTri: the
+// same on the floor (floorAt), for the board-space clip; inSkyPt: is a world point under the sky (its screen point tested).
+// (bossInv.r stays for skyOn)
+function skyTriS() { const k = bossInv.k || 0, T = bossInv.triS, c = bossInv.coreS; return T && c ? T.map(p => ({ x: c.x + (p.x - c.x) * k, y: c.y + (p.y - c.y) * k })) : [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }]; }
+function skyTri() { const k = bossInv.k || 0, T = bossInv.triW; return T ? T.map(p => ({ x: CX + (p.x - CX) * k, y: CY + (p.y - CY) * k })) : [{ x: CX, y: CY }, { x: CX, y: CY }, { x: CX, y: CY }]; } // (the full floor triangle scaled about the core: near enough for the board-space clip)
+// THE LAYOUT, under the VIEW camera (warpEntities, aspira-warp.js - bossSkyStep runs under the board texture's camera, where the screen
+// is not the screen): the full screen triangle and the core's screen point, and the floor under the triangle (a corner above the
+// horizon, with no floor, is pushed far out along its edge from the core)
+function skyLayout() {
+  if (bossInv.phase === "off") return;
+  const sc = typeof warp !== "undefined" && warp.cv ? warp.cv : cv, W = sc.width, H = sc.height, c = warpProject(CX, CY, 0);
+  // height h puts the centroid (a third of the way down) on the core; the apex xa and base ends x1, x2 then follow from the sides passing
+  // through the bottom corners and the centroid's x on the core (a core in the top third of the screen gets a triangle just past the bottom)
+  const h = Math.max(H * 1.02, 3 * c.y), f = H / h, xa = Math.abs(1 - 3 * f) < 0.05 ? c.x : (3 * c.x * (1 - f) - W) / (1 - 3 * f), x1 = -xa * f / (1 - f), x2 = (W - xa * f) / (1 - f);
+  bossInv.triS = [{ x: xa, y: h }, { x: x2, y: 0 }, { x: x1, y: 0 }]; bossInv.coreS = { x: c.x, y: c.y };
+  bossInv.triW = bossInv.triS.map(p => { const w = typeof floorAt === "function" ? floorAt(p.x, p.y) : null; if (w) return w; const dx = p.x - c.x, dy = p.y - c.y, l = Math.hypot(dx, dy) || 1; return { x: CX + dx / l * 1e5, y: CY + dy / l * 1e5 }; });
+}
 function inSkyPt(px, py) {
   if (bossInv.phase === "off") return false; if (bossInv.full) return true;
-  const [a, b, c] = skyTri(), cr = (p, q) => (q.x - p.x) * (py - p.y) - (q.y - p.y) * (px - p.x), s1 = cr(a, b), s2 = cr(b, c), s3 = cr(c, a);
+  const P = typeof warpProject === "function" ? warpProject(px, py, 0) : { x: cam.ox + px * cam.k, y: cam.oy + py * cam.k }, sx = P.x, sy = P.y;
+  const [a, b, c] = skyTriS(), cr = (p, q) => (q.x - p.x) * (sy - p.y) - (q.y - p.y) * (sx - p.x), s1 = cr(a, b), s2 = cr(b, c), s3 = cr(c, a);
   return (s1 >= 0 && s2 >= 0 && s3 >= 0) || (s1 <= 0 && s2 <= 0 && s3 <= 0);
 }
 function skyTriPath(fn) { for (const [i, p] of skyTri().entries()) fn(p.x, p.y, i); } // (the three corners, in order)
@@ -329,9 +346,7 @@ function bossSkyStep() {
   const R = Math.max(...corners.map(c => Math.hypot(c.x - bossInv.x, c.y - bossInv.y))) * 1.05;
   const p = Math.min(1, (now - bossInv.t0) / BOSS_INV_T), ease = p * p * (3 - 2 * p);
   bossInv.r = bossInv.phase === "in" ? R * ease : R * (1 - ease); // the boss's HP line grows and shrinks with this edge (drawBossBar)
-  { const xs = corners.map(c => c.x), ys = corners.map(c => c.y), L = Math.min(...xs), Rt = Math.max(...xs), T = Math.min(...ys), B = Math.max(...ys), W = Rt - L, H = B - T; // the screen, world
-    const h = H + Math.sqrt(3) * W / 2, a = (W / 2) * h / (h - H), cx = (L + Rt) / 2; // equilateral: height h, half-base a - the sides pass through the bottom corners
-    bossInv.tri = [{ x: cx, y: T + h }, { x: cx + a, y: T }, { x: cx - a, y: T }]; bossInv.k = bossInv.phase === "in" ? ease : 1 - ease; }
+  bossInv.k = bossInv.phase === "in" ? ease : 1 - ease; // (the triangle itself: skyLayout, under the view camera)
   bossInv.full = bossInv.phase === "in" && p >= 1;
 }
 
