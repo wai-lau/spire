@@ -104,8 +104,7 @@ function layoutCards(el, row, cols2 = false) {
 const BTN_ROOM = 56;
 function spendRoom() { const cv0 = cv.getBoundingClientRect(); return cv0.bottom - document.querySelector(".asp-foot").getBoundingClientRect().top + BTN_ROOM; }
 // close the cards (nothing was charged); a pick pays through upgradeTower
-// the BUILD dialog UNPAUSES when it closes - a tower built or the cancel (owner,
-// 2026-10-07), whatever the pause before it; the upgrade chooser puts the old pause back
+// the BUILD dialog puts the old pause back like the upgrade chooser - except at GAME START (G.started unset), where it UNPAUSES (owner, 2026-10-27; was every build, 2026-10-07)
 // the EMPTY bar right of the speed buttons (where the screen is wide enough to leave some) closes the open window -
 // the build / upgrade chooser, else the tower card (closeCard, aspira-ui.js) (owner, 2026-10-14: "make the area to the right of the speed controls
 // close the window too"). Only a tap on the bar itself: the buttons, and the gaps between them, keep their own job
@@ -117,7 +116,7 @@ function closeChooser() {
   if (!chooser.t) return;
   const building = chooser.ci != null;
   chooser.t = null; chooser.ci = null; chooserEl().classList.remove("asp-building");
-  $("asp-chooser").hidden = true; ui.paused = building ? false : chooser.wasPaused;
+  $("asp-chooser").hidden = true; ui.paused = building && !G.started ? false : chooser.wasPaused; /* only the game-start build unpauses (owner, 2026-10-27: "except for game start, don't auto-unpause on tower-build") */
   $("asp").classList.remove("asp-choosing");
   hideSpend(); refreshPanels(); // the card under it (if any) takes the spend bar back
 }
