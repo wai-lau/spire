@@ -75,7 +75,7 @@ const CAPSTONE_NUM = [
   // GRV (rework 2026-10-25): Void the biggest void (Singularity: twice the start mass, four times the cap); Nova the fastest novas, stripping the most (Hypernova);
   // Acceleration the widest, coldest aura (Event Horizon: the whole aura slows as hard as its inner tier)
   // CRR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
-  [CRR_HANGAR, 17], [CRR_TETHER_SLOW, 0.75], [CRR_AMMO, 36 /* x1.5 again with its table (2026-10-27; was 24) */ /* x1.5 with its table (2026-10-24 marks target); was 16, under IV - smoke "a capstone value never runs against its table" */],
+  [CRR_HANGAR, 17], [CRR_TETHER_SLOW, 0.75], [CRR_AMMO, 24 /* (36 with the backed-out x1.5, 2026-10-27) */ /* x1.5 with its table (2026-10-24 marks target); was 16, under IV - smoke "a capstone value never runs against its table" */],
   [GRV_AURA_R, 279.5], [GRV_SLOW, 1.2012 /* x1.3 x1.5 with its table (2026-10-24); was 0.616, under IV */], [GRV_NOVA_R, 230], /* (GRV_PELLETS gone with the GRV rework, 2026-10-25: its new tables are written 0..V in aspira-grv.js) */
   // IFR (axes redone 2026-10-20): Meteor a fan of 12 that fissures (Impact); Hellfire a fire six towers across; Flare the biggest, hottest, longest flares, three a landing
   [IFR_BALL_V, 540], [IFR_BALL_RAD, 5.4], [IFR_FIRE_R, 180], [IFR_FIRE_V, 660], [IFR_FIRE_DENS, 7.9], [IFR_BEAM_L, 100], [IFR_BEAM_W, 16], [IFR_BURN_S, 10], [IFR_TICK_S, 0.4 /* x2 (2026-10-24; was 0.2) */],
