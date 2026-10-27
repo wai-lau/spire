@@ -89,10 +89,11 @@ function barGeo(e) {
     const q = pts[j], r = pts[j + d], vq = val(q), vr = val(r), f = vq / (vq - vr || 1e-9);
     return { x: q.x + (r.x - q.x) * f, y: q.y + (r.y - q.y) * f, s: q.s + (r.s - q.s) * f, j };
   };
-  const pieces = [];
+  const pieces = [], rCore = bossBarOut(), A0 = at(a), rA = Math.hypot(A0.x - CX, A0.y - CY); // (rCore / rA: the 0% end's radius - the core's rim - and the 100% end's)
   for (let i = 0; i + 1 < bounds.length; i++) {
     const c0 = bounds[i], c1 = bounds[i + 1], w = wOf(i, (c0.s + c1.s) / 2);
-    const rad = w * BOSS_PIECE_ROUND, h = w / 2 - rad, reach = w * 4 + BOSS_SEG_GAP, base = L.filter(p => p.s >= c0.s - reach && p.s <= c1.s + reach); if (base.length < 2) continue;
+    const mid = at((c0.s + c1.s) / 2), rr = Math.hypot(mid.x - CX, mid.y - CY), rad = w * BOSS_PIECE_ROUND * Math.max(0, Math.min(1, (rr - rCore) / (rA - rCore || 1))); // the corners rounder the farther from the core, square at it (owner, 2026-10-27: "reduce the corner roundedness correlated to distance from core, no roundness at core")
+    const h = w / 2 - rad, reach = w * 4 + BOSS_SEG_GAP, base = L.filter(p => p.s >= c0.s - reach && p.s <= c1.s + reach); if (base.length < 2) continue;
     const side = sg => base.map(p => ({ s: p.s, x: p.x + p.nx * sg * h, y: p.y + p.ny * sg * h })), mi = base.findIndex(p => p.s >= (c0.s + c1.s) / 2), m = mi < 0 ? base.length >> 1 : mi;
     const v0 = rayLine(c0, 1), v1 = rayLine(c1, -1), s0 = c0.s + c0.gap / 2, s1 = c1.s - c1.gap / 2; // (s0 / s1: the square fallback, and the piece's reach along the lane)
     const sides = [1, -1].map(sg => { let P = side(sg); // the side cut at its two ends along the rays, square (by s) where a ray never crosses it
@@ -103,7 +104,7 @@ function barGeo(e) {
       return P.length >= 2 ? P : null; });
     if (!sides[0] || !sides[1]) continue;
     const d = slideOf(i, (c0.s + c1.s) / 2, w);
-    pieces.push({ s0, s1, w, d, Lp: slid(sides[0], d), Rp: slid(sides[1], d) });
+    pieces.push({ s0, s1, w, d, rad, Lp: slid(sides[0], d), Rp: slid(sides[1], d) });
   }
   return e.bar = { key, a, b, pieces, L, sgn };
 }
@@ -126,13 +127,13 @@ function barPiece(g, bar, hp, keepCore, fill, line) { // the piece's part on kee
   let Lp = g.Lp, Rp = g.Rp;
   if (hp != null) { if (keepCore ? hp >= g.s1 : hp <= g.s0) return; if (keepCore ? hp > g.s0 : hp < g.s1) { Lp = barSplit(Lp, bar, hp, keepCore); Rp = barSplit(Rp, bar, hp, keepCore); } }
   if (Lp.length < 2 || Rp.length < 2) return;
-  const mp = Lp[Lp.length >> 1], k = cam.k * (warpProjectScratch(mp.x, mp.y).s || 1), rad = g.w * BOSS_PIECE_ROUND * k;
+  const mp = Lp[Lp.length >> 1], k = cam.k * (warpProjectScratch(mp.x, mp.y).s || 1), rad = g.rad * k;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath();
   Lp.forEach((p, i) => { const P = warpProjectScratch(p.x, p.y); if (i) ctx.lineTo(P.x, P.y); else ctx.moveTo(P.x, P.y); });
   for (let i = Rp.length - 1; i >= 0; i--) { const P = warpProjectScratch(Rp[i].x, Rp[i].y); ctx.lineTo(P.x, P.y); }
   ctx.closePath(); ctx.lineJoin = "round";
   ctx.strokeStyle = line; ctx.lineWidth = 2 * (rad + BOSS_PIECE_OUT * k); ctx.stroke();
-  ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = fill; ctx.lineWidth = 2 * rad; ctx.stroke();
+  ctx.fillStyle = fill; ctx.fill(); if (rad > 0.01) { ctx.strokeStyle = fill; ctx.lineWidth = 2 * rad; ctx.stroke(); } // (a square piece at the core: no rounding stroke - a 0 lineWidth would keep the last)
 }
 
 // EVERYTHING THAT IS NOT BACKGROUND OCCLUDES THE BAR (owner, 2026-10-27): on the top layer it would lie over the towers' prisms and
