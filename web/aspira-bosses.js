@@ -391,7 +391,10 @@ function bossGeo(e) {
   return e.bar = { key, a, b, pieces };
 }
 const bossLerp = (p, q, f) => ({ x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f, nx: p.nx, ny: p.ny });
-function bossPiece(g, from, to) { // the piece's stretch [from, to] as a quad g.w wide: its points inside, the ends interpolated
+// ON THE TOP LAYER (owner, 2026-10-26: "I want it crisp like the numbers"): the bar, its track and marks are drawn through warpEntities'
+// pop (at), straight onto the screen at device resolution like the %HP labels and the damage numbers - on the board's moving layer they
+// were a texture resampled through the warp, soft at any zoom
+function bossPiece(g, from, to, at) { // the piece's stretch [from, to] as a quad g.w wide: its points inside, the ends interpolated
   if (to - from < 1) return;
   const P = g.pts, sel = [];
   for (let i = 0; i < P.length; i++) {
@@ -401,24 +404,27 @@ function bossPiece(g, from, to) { // the piece's stretch [from, to] as a quad g.
     sel.push(p);
   }
   if (sel.length < 2) return;
-  const h = g.w / 2; ctx.beginPath();
-  for (let i = 0; i < sel.length; i++) { const p = sel[i]; if (i) ctx.lineTo(p.x + p.nx * h, p.y + p.ny * h); else ctx.moveTo(p.x + p.nx * h, p.y + p.ny * h); }
-  for (let i = sel.length - 1; i >= 0; i--) { const p = sel[i]; ctx.lineTo(p.x - p.nx * h, p.y - p.ny * h); }
-  ctx.closePath(); ctx.fill();
+  const h = g.w / 2, m = sel[sel.length >> 1];
+  at(m.x, m.y, () => {
+    ctx.beginPath();
+    for (let i = 0; i < sel.length; i++) { const p = sel[i]; if (i) ctx.lineTo(p.x + p.nx * h, p.y + p.ny * h); else ctx.moveTo(p.x + p.nx * h, p.y + p.ny * h); }
+    for (let i = sel.length - 1; i >= 0; i--) { const p = sel[i]; ctx.lineTo(p.x - p.nx * h, p.y - p.ny * h); }
+    ctx.closePath(); ctx.fill();
+  });
 }
-function drawBossBar() { // the HP left, in the lane's colour (before the sky's flip, like the lane): each piece's part past where the HP left begins
+function drawBossBar(at = (x, y, fn) => fn()) { // the HP left, in the boss's colour: each piece's part past where the HP left begins
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e); ctx.fillStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) bossPiece(g, Math.max(g.s0, hp), g.s1);
+    for (const g of e.bar.pieces) bossPiece(g, Math.max(g.s0, hp), g.s1, at);
   }
   ctx.globalAlpha = 1;
 }
-function drawBossTrack() { // the HP gone: the pieces' white part from the 100% end to where the HP left begins (kept white under the sky)
+function drawBossTrack(at = (x, y, fn) => fn()) { // the HP gone: the pieces' white part from the 100% end to where the HP left begins
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e); ctx.fillStyle = COL.white; ctx.globalAlpha = 0.9;
-    for (const g of e.bar.pieces) bossPiece(g, g.s0, Math.min(g.s1, hp));
+    for (const g of e.bar.pieces) bossPiece(g, g.s0, Math.min(g.s1, hp), at);
   }
   ctx.globalAlpha = 1;
 }
@@ -427,15 +433,14 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
 // while the boss's HP is still at or above that share, grey once under it; drawn through skyKeep (drawSceneTop) so the boss sky's
 // inversion leaves the orange alone
 const BOSS_LABEL_PX = 9, BOSS_LABEL_OFF = 13;
-function drawBossMarks() {
+function drawBossMarks(at = (x, y, fn) => fn()) {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { a: A, b: B } = bossSpan(e), hp = Math.max(0, e.hp) / e.max;
-    ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.globalAlpha = 0.9;
     for (const f of BOSS_BAR_MARKS) {
       const s = B - (B - A) * f /* f of the bar's span back from its 0% end */, col = hp >= f ? "threat" : "grid", a = pathAt(e.pi, s - 2, e.ang || 0), b = pathAt(e.pi, s + 2, e.ang || 0), q = pathAt(e.pi, s, e.ang || 0);
       const L = Math.hypot(b.x - a.x, b.y - a.y) || 1, nx = -(b.y - a.y) / L, ny = (b.x - a.x) / L;
-      ctx.strokeStyle = COL[col]; ctx.beginPath(); ctx.moveTo(q.x - nx * BOSS_MARK_U / 2, q.y - ny * BOSS_MARK_U / 2); ctx.lineTo(q.x + nx * BOSS_MARK_U / 2, q.y + ny * BOSS_MARK_U / 2); ctx.stroke();
+      at(q.x, q.y, () => { ctx.lineWidth = BOSS_BAR_W; ctx.lineCap = "butt"; ctx.globalAlpha = 0.9; ctx.strokeStyle = COL[col]; ctx.beginPath(); ctx.moveTo(q.x - nx * BOSS_MARK_U / 2, q.y - ny * BOSS_MARK_U / 2); ctx.lineTo(q.x + nx * BOSS_MARK_U / 2, q.y + ny * BOSS_MARK_U / 2); ctx.stroke(); });
     }
   }
   ctx.globalAlpha = 1;
