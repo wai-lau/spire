@@ -165,8 +165,16 @@ function barSplit(P, bar, hp, keepCore) {
 // EVERY POINT PROJECTED (owner, 2026-10-27: "why is the outer layer jagged" - a piece drawn flat about its midpoint, as the dice are, sat up
 // to 54 px off the lane's projection at its ends, so each stepped against its neighbour): the outline is traced in canvas px through
 // warpProjectScratch (aspira-warp.js), its widths by the perspective's scale at the piece's middle
-function barPiece(g, bar, hp, keepCore, fill, line, off = 0) { // the piece's part on keepCore's side of the HP boundary at hp (hp null: the whole piece); off: u out along its spoke (the fly-in)
-  let Lp = g.Lp, Rp = g.Rp; const sh = off ? q => { const dx = q.x - CX, dy = q.y - CY, r = Math.hypot(dx, dy) || 1, k = (r + off) / r; return { x: CX + dx * k, y: CY + dy * k }; } : q => q;
+// THE FLY-IN TILT (owner, 2026-10-27: "spawn them with the segments rotated so that line on the bottom (facing core) of the trapezoid is
+// as tangential as possible" / "when slamming, unrotate the shape"): a piece flies turned about its middle by g.tilt - the turn that lays
+// its core-side edge (first point to last) square to the spoke through its middle - and turns back as it slams (rk: the share of the tilt)
+const barTilt = g => { if (g.tilt != null) return g.tilt; const a = g.Lp[g.Lp.length >> 1], b = g.Rp[g.Rp.length >> 1], r = q => Math.hypot(q.x - CX, q.y - CY), I = r(a) <= r(b) ? g.Lp : g.Rp;
+  const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2, p = I[0], q = I[I.length - 1], d = Math.atan2(cy - CY, cx - CX) + Math.PI / 2 - Math.atan2(q.y - p.y, q.x - p.x);
+  g.mid = { x: cx, y: cy }; return (g.tilt = Math.atan(Math.tan(d))); }; // (atan(tan): the turn folded into +-90 degrees - either way along the tangent)
+function barPiece(g, bar, hp, keepCore, fill, line, off = 0, rk = 0) { // the piece's part on keepCore's side of the HP boundary at hp (hp null: the whole piece); off: u out along its spoke (the fly-in); rk: the share of its tilt (barTilt)
+  let Lp = g.Lp, Rp = g.Rp; const ta = rk ? barTilt(g) * rk : 0, tc = Math.cos(ta), ts = Math.sin(ta), M = g.mid;
+  const rot = ta ? q => ({ x: M.x + (q.x - M.x) * tc - (q.y - M.y) * ts, y: M.y + (q.x - M.x) * ts + (q.y - M.y) * tc }) : q => q;
+  const sh = off || ta ? q0 => { const q = rot(q0), dx = q.x - CX, dy = q.y - CY, r = Math.hypot(dx, dy) || 1, k = (r + off) / r; return { x: CX + dx * k, y: CY + dy * k }; } : q => q;
   if (hp != null) { if (keepCore ? hp >= g.s1 : hp <= g.s0) return; if (keepCore ? hp > g.s0 : hp < g.s1) { Lp = barSplit(Lp, bar, hp, keepCore); Rp = barSplit(Rp, bar, hp, keepCore); } }
   if (Lp.length < 2 || Rp.length < 2) return;
   const mp = Lp[Lp.length >> 1], k = cam.k * (warpProjectScratch(mp.x, mp.y).s || 1), rad = g.rad * k;
@@ -240,15 +248,16 @@ function barRings() {
 }
 const barFar = () => Math.max(...[[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY))); // u from the core to the screen's farthest corner
 const barFlyFrom = () => barFar() * 1.1 + 100; // u out along a spoke: past that corner
+let barFlyRk = 0; // the share of its tilt the last barFlyOff piece still has (1 until its slam, 0 home) - read right after it
 function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, u (0: in place)
-  const t = barInT(); if (t === Infinity) return 0; const far = barFlyFrom(); if (t < 0) return far;
-  const g = e.bar && e.bar.pieces[i]; if (!g) return 0; const arm = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(barR))) + BAR_RING_PAD - barR(g); // out of place: at the armada's ring, and off-screen
+  barFlyRk = 0; const t = barInT(); if (t === Infinity) return 0; const far = barFlyFrom(); barFlyRk = 1; if (t < 0) return far;
+  const g = e.bar && e.bar.pieces[i]; if (!g) return (barFlyRk = 0); const arm = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(barR))) + BAR_RING_PAD - barR(g); // out of place: at the armada's ring, and off-screen
   const h = k => bossHash(e, i, k), arrive = BAR_APPROACH * (0.6 + 0.4 * h(8)), dur = arrive * (0.5 + 0.5 * h(9)), launch = arrive - dur; // act 1, its own
   if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return arm + (far - arm) * (1 - ease); }
   if (!e.bar.rings || e.bar.rings.key !== barLeadKey) barRings(); const R = e.bar.rings || { ring: [], seq: [], n: 1, N: 1 }, N = R.N, pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)), land = BAR_APPROACH + BAR_FLY_LEAD + R.seq[i] * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, N - 1) + R.ring[i] * pause, slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam; // act 3: at its ring's turn
   const drift = tt => Math.max(0, arm - v * (tt - arrive)); // act 2: from where it stopped, in slowly (never past its place)
-  if (t >= land) { if (!g.home) { g.home = true; barThud(e, g); } return 0; } if (t < t0) return drift(t); // (home: its thud once, the frame it lands - bar and track both ask)
-  const u = (t - t0) / slam; return (1 - u * u * u) * drift(t0); // act 3
+  if (t >= land) { if (!g.home) { g.home = true; barThud(e, g); } return (barFlyRk = 0); } if (t < t0) return drift(t); // (home: its thud once, the frame it lands - bar and track both ask)
+  const u = (t - t0) / slam; barFlyRk = 1 - u * u * u; return barFlyRk * drift(t0); // act 3 (the tilt unwinds on the slam's ease)
 }
 // ON THE ENTITY LAYER AT THE FLOOR'S LEVEL (owner, 2026-10-27: "tower ranges and effects should appear above hp"): the bar is drawn in
 // warpEntities' part A, between the floor and the dice - so the dice, the beams, the shield lines and the towers' layer cover it, and
@@ -262,14 +271,14 @@ function drawBossBar() { // the HP left, in the lane's own colour (turned over w
   const own = COL[ENEMIES.bonus.color];
   for (const { e, f } of barLeadSet) {
     const { hp } = bossSpan(e, f); ctx.globalAlpha = 1;
-    e.bar.pieces.forEach((g, i) => barPiece(g, e.bar, hp, true, own, own, barFlyOff(e, i)));
+    e.bar.pieces.forEach((g, i) => barPiece(g, e.bar, hp, true, own, own, barFlyOff(e, i), barFlyRk));
   }
   ctx.globalAlpha = 1;
 }
 function drawBossTrack() { // the HP gone: the pieces' white part from the 100% end to where the HP left begins
   for (const { e, f } of barLeadSet) {
     const { hp } = bossSpan(e, f), own = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
-    e.bar.pieces.forEach((g, i) => { const m = g.Lp[g.Lp.length >> 1]; barPiece(g, e.bar, hp, false, barWhite(m), own, barFlyOff(e, i)); }); // hollow: white in the lane's outline
+    e.bar.pieces.forEach((g, i) => { const m = g.Lp[g.Lp.length >> 1]; barPiece(g, e.bar, hp, false, barWhite(m), own, barFlyOff(e, i), barFlyRk); }); // hollow: white in the lane's outline
   }
   ctx.globalAlpha = 1;
 }
