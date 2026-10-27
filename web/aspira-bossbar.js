@@ -1,7 +1,7 @@
 // THE BOSS'S HP ALONG ITS LANE - the bar, its pieces, marks and labels, split out of aspira-bosses.js (the 500-line cap, 2026-10-27);
 // drawn on the top layer through warpEntities (aspira-warp.js) and clipped out under every tower and die (bossClip)
 const BOSS_BAR_W = 2.2, BOSS_BAR_TRACK = 0.3; // as thin as a lit lane's opaque core, LIT_LINE_SOFT's last (owner, 2026-10-26: "a lot thinner"; was 21); the track = full HP, translucent
-const BOSS_BAR_MARKS = [0.8, 0.6, 0.4, 0.2, 0.1, 0.05, 0], BOSS_MARK_U = 14; // ...and 0% at the core (owner, 2026-10-26) // %HP ticks across the lane (owner, 2026-10-26: "add markers at 80 60 40 20 10 and 5% hp along the lane"), BOSS_MARK_U long
+const BOSS_BAR_MARKS = [0.8, 0.6, 0.4, 0.2, 0.1, 0.05, 0]; // the %HP marks along the lane (owner, 2026-10-26: "add markers at 80 60 40 20 10 and 5% hp along the lane"), ...and 0% at the core (owner, 2026-10-26) - drawn as numbers on the bar (drawBossLabels)
 // THE BOSS'S HP ALONG ITS LANE (owner, 2026-10-26: "show the boss HPs along their lane, this way we can tell if we need to step our
 // game up" / "it should stay in place" / "hp removal should come from outside in, not inside out / it should make the lane white
 // instead of red"): the bar lies STILL on the lane, anchored at the CORE and reaching out toward the mouth by the HP left as a share
@@ -180,46 +180,27 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
   }
   ctx.globalAlpha = 1;
 }
-// THE %HP MARKS AS CALLOUTS (owner, 2026-10-27: "label the sections using an arrow pointed along the spoke connected to a horizontal
-// line with the number on top of the horizontal line"; 2026-10-26: "when the hp is below marker, make the label grey"): from the mark on
-// the lane a leg runs out along its spoke (its length by the pieces' thickness there, below), a dot on the mark, then a horizontal bar
-// toward the side the spoke leans to, the "80%" centred over the bar; orange (the threat colour) while the boss's HP is still at or
-// above that share, grey once under it. Screen space on the top layer, crisp, sized by the perspective at the mark
-// (owner, 2026-10-27: "make the arrows thinner, point them at the center of the nearest gap / scale number size based on distance from
-// core (further = bigger)": the arrow's tip sits in the middle of the gap between pieces nearest the mark, the number BOSS_LABEL_PX[0] at
-// the core to [1] at the 100% end)
-// the leg up the spoke: BOSS_LEAD_PAD plus BOSS_LEAD_K of the wider piece either side of the gap, at most BOSS_LEAD_MAX (owner, 2026-10-27:
-// "the segment of the arrow along the spoke should increase in length according to the thickness"); the bar BOSS_LEAD_BAR of the number's
-// size, so the number fits over it ("make the numbers 2x as big": 12 px at the core to 24 at the 100% end)
-const BOSS_LABEL_PX = [12, 24], BOSS_LEAD_PAD = 4, BOSS_LEAD_K = 1, BOSS_LEAD_MAX = 40, BOSS_LEAD_BAR = 2, BOSS_LEAD_DOT = 2.5, BOSS_LEAD_W = 1, BOSS_LEAD_HALO = 1; // BOSS_LEAD_DOT: the dot's radius on the mark, u
-function bossLead(e, f) { // the callout at share f: M the mark on screen, T the arrow's tail, E the bar's end, k px a u there, px its number's size, col
-  const { a: A, b: B } = bossSpan(e), s = B - (B - A) * f, P = e.bar.pieces; let sg = s, best = Infinity, w = 0;
-  // the nearest gap's middle, and the wider piece beside it - the span's two ends count (owner, 2026-10-27: "the 0% was at the correct place" - at the core's rim)
-  for (const [g, ww] of [[A, P.length ? P[0].w : 0], [B, P.length ? P[P.length - 1].w : 0], ...P.slice(0, -1).map((p, i) => [(p.s1 + P[i + 1].s0) / 2, Math.max(p.w, P[i + 1].w)])]) { const d = Math.abs(g - s); if (d < best) { best = d; sg = g; w = ww; } }
-  const q = pathAt(e.pi, sg, e.ang || 0), M = warpProject(q.x, q.y), C = warpProject(CX, CY), k = cam.k * (M.s || 1), px = BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f;
-  let ux = M.x - C.x, uy = M.y - C.y; const l = Math.hypot(ux, uy) || 1; ux /= l; uy /= l; // the spoke on screen, outward
-  const leg = Math.min(BOSS_LEAD_MAX, BOSS_LEAD_PAD + BOSS_LEAD_K * w) * k, T = { x: M.x + ux * leg, y: M.y + uy * leg }, E = { x: T.x + (ux >= 0 ? 1 : -1) * BOSS_LEAD_BAR * px * k, y: T.y };
-  return { M, T, E, ux, uy, k, px, col: Math.max(0, e.hp) / e.max >= f ? "threat" : "grid" };
-}
-function drawBossMarks() {
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineJoin = "round";
+// THE %HP NUMBERS ON THE BAR (owner, 2026-10-27: "get rid of the arrows / numbers in white, on the hp bar / have the bottom of the number
+// aligned with one of the spokes"; 2026-10-26: the marks at 80 60 40 20 10 5 and 0%): each number lies ON the piece beside the gap nearest
+// its mark, its bottom along that gap's cut line (a spoke) half a gap plus BOSS_LABEL_PAD in from it, centred on the piece's own radius
+// (its slide included), reading along the spoke the way up that is UP on the screen (never upside down); BOSS_LABEL_PX[0] at the core
+// to [1] at the 100% end. White over the HP left; over the HP gone (a white box) the lane's own colour, else it would vanish
+const BOSS_LABEL_PX = [12, 24], BOSS_LABEL_PAD = 2;
+function drawBossLabels() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
+    const { a: A, b: B } = bossSpan(e), P = e.bar.pieces, hp = Math.max(0, e.hp) / e.max; if (P.length < 2) continue;
     for (const f of BOSS_BAR_MARKS) {
-      const { M, T, E, ux, uy, k, col } = bossLead(e, f), h = BOSS_LEAD_DOT * k; ctx.globalAlpha = 1;
-      // WHITE under it all (owner, 2026-10-27: "add a white fill to the arrow (white after inversion)" - own colours here, so white it stays):
-      // a halo BOSS_LEAD_HALO wide round the leg and the bar, the dot filled white, then the colour on top
-      const leg = () => { ctx.beginPath(); ctx.moveTo(M.x + ux * h, M.y + uy * h); ctx.lineTo(T.x, T.y); ctx.lineTo(E.x, E.y); }; // the spoke leg, then the bar
-      const head = () => { ctx.beginPath(); ctx.arc(M.x, M.y, h, 0, Math.PI * 2); }; // a DOT on the mark (owner, 2026-10-27: "replace the arrowhead with a circle")
-      ctx.strokeStyle = COL.white; ctx.lineWidth = (BOSS_LEAD_W + 2 * BOSS_LEAD_HALO) * k; leg(); ctx.stroke(); head(); ctx.stroke(); ctx.fillStyle = COL.white; ctx.fill();
-      ctx.strokeStyle = COL[col]; ctx.lineWidth = BOSS_LEAD_W * k; leg(); ctx.stroke(); head(); ctx.stroke();
+      const s = B - (B - A) * f; let gi = 0, best = Infinity; // the nearest gap: between pieces gi and gi + 1
+      for (let i = 0; i + 1 < P.length; i++) { const d = Math.abs((P[i].s1 + P[i + 1].s0) / 2 - s); if (d < best) { best = d; gi = i; } }
+      const p0 = P[gi], p1 = P[gi + 1], g = (p0.s1 + p1.s0) / 2, gap = p1.s0 - p0.s1, Q = pathAt(e.pi, g, e.ang || 0), Q2 = pathAt(e.pi, g + 1, e.ang || 0);
+      const tl = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1, tx = (Q2.x - Q.x) / tl, ty = (Q2.y - Q.y) / tl, rx = Q.x - CX, ry = Q.y - CY, rl = Math.hypot(rx, ry) || 1, ux = rx / rl, uy = ry / rl; // the lane's tangent (+s) and the spoke, outward, in the world
+      // the side of the gap whose "up" (into its piece, along the lane) points UP on the screen - that piece carries the number
+      const S0 = warpProject(Q.x, Q.y), S1 = warpProject(Q.x + tx * 10, Q.y + ty * 10), sg = S1.y - S0.y <= 0 ? 1 : -1, p = sg > 0 ? p1 : p0, vx = tx * sg, vy = ty * sg;
+      const W = { x: CX + ux * (rl + p.d) + vx * (gap / 2 + BOSS_LABEL_PAD), y: CY + uy * (rl + p.d) + vy * (gap / 2 + BOSS_LABEL_PAD) }, S = warpProject(W.x, W.y), k = cam.k * (S.s || 1); // the baseline's middle
+      const Up = warpProject(W.x + vx * 10, W.y + vy * 10), ex = Up.x - S.x, ey = Up.y - S.y, el = Math.hypot(ex, ey) || 1, upx = ex / el, upy = ey / el, th = Math.atan2(upx, -upy), px = BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f; // "up" on the screen -> the text's rotation
+      ctx.setTransform(k * Math.cos(th), k * Math.sin(th), -k * Math.sin(th), k * Math.cos(th), S.x, S.y); ctx.globalAlpha = 1;
+      text(Math.round(f * 100) + "%", 0, -px * 0.45, px, hp >= f ? "white" : ENEMIES.bonus.color, false); // (text centres on y: the bottom sits on the line)
     }
-  }
-  ctx.globalAlpha = 1;
-}
-function drawBossLabels() { // the number centred over the bar, flat like a damage number (owner, 2026-10-26: "boss labels are unreadable? wrong layer?" - on the floor 3D warped them)
-  for (const e of G.enemies) {
-    if (!e.arcana || e.dead) continue;
-    for (const f of BOSS_BAR_MARKS) { const { T, E, k, px, col } = bossLead(e, f); ctx.setTransform(k, 0, 0, k, (T.x + E.x) / 2, T.y - px * 0.75 * k); ctx.globalAlpha = 1; text(Math.round(f * 100) + "%", 0, 0, px, col, false); } // no outline (owner, 2026-10-26)
   }
 }
