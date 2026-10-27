@@ -380,9 +380,20 @@ const SOL_OUT_LEN = 3000;
 // it FOLLOWS, like every other beam (owner, 2026-10-08: "should track dead enemies like arc to avoid jumps"):
 // it starts on the struck enemy (dead or alive - a ghost keeps moving) and its far end is read live
 // along a -> b, so the extension never detaches from the leg it continues
+// it ENDS AT THE PLAY BOX's edge (owner, 2026-10-27: "SOL shooting backwards? / when SOL is above target"): a far end 3000 u down
+// the screen fell BEHIND the 3D camera and projected flipped - the line drawn up past the tower
+function solOutLen(x, y, ux, uy) {
+  if (typeof phoneBox !== "function") return SOL_OUT_LEN;
+  const bx = phoneBox(); let k = SOL_OUT_LEN;
+  if (ux > 1e-9) k = Math.min(k, (bx.x1 - x) / ux); else if (ux < -1e-9) k = Math.min(k, (bx.x0 - x) / ux);
+  if (uy > 1e-9) k = Math.min(k, (bx.y1 - y) / uy); else if (uy < -1e-9) k = Math.min(k, (bx.y0 - y) / uy);
+  k = Math.max(0, k);
+  if (typeof warp !== "undefined" && warp && warp.gl && typeof warpProject === "function") for (let i = 0; i < 12 && k > 1 && !(warpProject(x + ux * k, y + uy * k, 0).s > 0); i++) k /= 2; /* 3D: never behind the camera */
+  return k;
+}
 function solOutOfSight(t, st, a, b) {
-  const far = { get x() { const dx = b.x - a.x, dy = b.y - a.y; return b.x + dx / (Math.hypot(dx, dy) || 1) * SOL_OUT_LEN; },
-    get y() { const dx = b.x - a.x, dy = b.y - a.y; return b.y + dy / (Math.hypot(dx, dy) || 1) * SOL_OUT_LEN; } };
+  const end = () => { const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, k = solOutLen(b.x, b.y, ux, uy); return [b.x + ux * k, b.y + uy * k]; };
+  const far = { get x() { return end()[0]; }, get y() { return end()[1]; } };
   beam(b, far, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, st.dmg, true);
 }
 const SOL_CONE_LIFE = 0.6; // game seconds (1x runs BASE_SPEED 0.8 game s a real s): long enough to see the cubic fade
