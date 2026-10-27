@@ -23,7 +23,7 @@ const bossSpan = e => { const g = bossGeo(e); return { a: g.a, b: g.b, hp: g.b -
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
 // end, BOSS_BAR_WIDEN x that at the 100% end, each piece's width jittered the same and the piece set across the lane by up to its own
 // width. A fixed hash a piece (the boss's id, the piece's index): the layout holds still from frame to frame
-const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 0.4, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
+const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 0.2, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 0.25, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's shove toward / away from the core, of its width (owner, 2026-10-27: a full width "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
 // THE CUTS (owner, 2026-10-27: "choose 24 points on the edge of the screen equally radially distant around the core, then add some radial
 // jitter, these are the lines that chop up the hp bar into segments. Each of these lines should cut the hp bar exactly once, at which
 // intersection is randomly decided"): BOSS_RAYS rays from the core, evenly spaced round it, each turned by up to BOSS_RAY_JIT of the
@@ -61,8 +61,12 @@ function bossGeo(e) {
     // homothety about the core by k - the rays through the core map to themselves, so a shoved piece's ends still lie along its cuts; it
     // shrinks inward and grows outward with its sector, width too; its gap along the lane is set / k so the gap across the cut stays
     const c0 = bounds[i], c1 = bounds[i + 1], mid = at((c0.s + c1.s) / 2), rm = Math.hypot(mid.x - CX, mid.y - CY) || 1;
-    const f = (b - (c0.s + c1.s) / 2) / (b - a), w0 = Math.min(BOSS_CORRIDOR, (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))), lim = (BOSS_CORRIDOR - w0) / 2; // f: 1 at the 100% end, 0 at the core
-    const shove = Math.max(-lim, Math.min(lim, w0 * (2 * bossHash(e, i, 3) - 1))), k = 1 + shove / rm, w = w0 * k; // shove: up to its width, inside the corridor
+    // the corridor HERE: the lane one turn in and one turn out (the same angle round the core, +-2 pi) - a piece and its shove stay
+    // inside the nearer of the two (owner, 2026-10-27: "they ... overlap" - the inner turns sit closer than BOSS_CORRIDOR)
+    const turnR = dth => { let best = null; for (const p of L) if (Math.abs(p.th - (mid.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } return best; };
+    const rIn = turnR(-TAU), rOut = turnR(TAU), corr = Math.min(BOSS_CORRIDOR, ...[rIn, rOut].filter(r => r !== null).map(r => Math.abs(r - rm) * 0.9));
+    const f = (b - (c0.s + c1.s) / 2) / (b - a), w0 = Math.min(corr, (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))), lim = (corr - w0) / 2; // f: 1 at the 100% end, 0 at the core
+    const shove = Math.max(-lim, Math.min(lim, BOSS_SHOVE * w0 * (2 * bossHash(e, i, 3) - 1))), k = 1 + shove / rm, w = w0 * k; // shove: BOSS_SHOVE of its width, inside the corridor
     const s0 = c0.d ? c0.s + BOSS_SEG_GAP / 2 / slant(c0) / k : c0.s, s1 = c1.d ? c1.s - BOSS_SEG_GAP / 2 / slant(c1) / k : c1.s; // the gap, measured across the cut, on the shoved piece
     if (s1 - s0 < 2) continue;
     const pts = L.filter(p => p.s >= s0 - BOSS_CORRIDOR && p.s <= s1 + BOSS_CORRIDOR).map(p => ({ s: p.s, x: CX + (p.x - CX) * k, y: CY + (p.y - CY) * k, nx: p.nx, ny: p.ny })); // (a margin each end: the slanted cuts reach past s0 / s1 on one side)
