@@ -195,16 +195,22 @@ function drawBossLabels() {
     const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0;
     for (const p of e.bar.pieces) {
       if (!(p.mi >= 0)) continue;
-      const f = BOSS_BAR_MARKS[p.mi], str = String(Math.round(f * 100)), tan = s => { const Q = pathAt(e.pi, s, ang), Q2 = pathAt(e.pi, s + 1, ang), l = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1; return { Q, tx: (Q2.x - Q.x) / l, ty: (Q2.y - Q.y) / l }; };
-      // the edge: the start cut (into the piece: +s) if +s is up on the screen there, else the end cut (into the piece: -s)
-      const E0 = tan(p.cs0), S0 = warpProject(E0.Q.x, E0.Q.y), S1 = warpProject(E0.Q.x + E0.tx * 10, E0.Q.y + E0.ty * 10), start = S1.y - S0.y <= 0;
-      const E = start ? E0 : tan(p.cs1), sg = start ? 1 : -1, gap = start ? p.g0 : p.g1, vx = E.tx * sg, vy = E.ty * sg, rx = E.Q.x - CX, ry = E.Q.y - CY, rl = Math.hypot(rx, ry) || 1;
-      const inset = gap / 2 + BOSS_LABEL_PAD, W = { x: CX + rx / rl * (rl + p.d) + vx * inset, y: CY + ry / rl * (rl + p.d) + vy * inset }, S = warpProject(W.x, W.y), k = cam.k * (S.s || 1); // the baseline's middle
-      const Up = warpProject(W.x + vx * 10, W.y + vy * 10), ex = Up.x - S.x, ey = Up.y - S.y, el = Math.hypot(ex, ey) || 1, th = Math.atan2(ex / el, -ey / el); // "up" on the screen -> the text's rotation
+      const f = BOSS_BAR_MARKS[p.mi], str = String(Math.round(f * 100));
+      // a cut of the piece: the spoke through the lane point there (the cut line is parallel to it), and the way INTO the piece square to
+      // the spoke - on the lane tangent's side (+s past the start cut, -s before the end cut); all on screen, so the number's bottom
+      // lies exactly along the cut as drawn (owner, 2026-10-27: "numbers not really aligned with spoke" - it stood square to the lane)
+      const edge = (cs, gap, sg) => {
+        const Q = pathAt(e.pi, cs, ang), Q2 = pathAt(e.pi, cs + 1, ang), tl = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1, tx = (Q2.x - Q.x) / tl * sg, ty = (Q2.y - Q.y) / tl * sg, rx = Q.x - CX, ry = Q.y - CY, rl = Math.hypot(rx, ry) || 1, ux = rx / rl, uy = ry / rl;
+        const dot = -uy * tx + ux * ty, nx = dot >= 0 ? -uy : uy, ny = dot >= 0 ? ux : -ux, sn = Math.abs(tx * uy - ty * ux), inset = gap / 2 + BOSS_LABEL_PAD; // (nx, ny): into the piece, square to the spoke; sn: the lane's slant off the spoke
+        const W = { x: Q.x + ux * p.d + nx * inset, y: Q.y + uy * p.d + ny * inset }, S = warpProject(W.x, W.y), B2 = warpProject(W.x + ux * 10, W.y + uy * 10), U2 = warpProject(W.x + nx * 10, W.y + ny * 10); // the baseline's middle, on the piece's own radius
+        let bx = B2.x - S.x, by = B2.y - S.y; const bl = Math.hypot(bx, by) || 1; bx /= bl; by /= bl; let upx = by, upy = -bx; if (upx * (U2.x - S.x) + upy * (U2.y - S.y) < 0) { upx = -upx; upy = -upy; } // the spoke on screen, and its perpendicular the way in
+        return { S, upx, upy, inset, sn, k: cam.k * (S.s || 1) };
+      };
+      const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), E = e0.upy <= e1.upy ? e0 : e1, th = Math.atan2(E.upx, -E.upy); // the cut whose way in is more UP on the screen: never upside down
       ctx.font = "100px " + CANVAS_FONT; const w100 = ctx.measureText(str).width || 60; // the string's width at 100 px: the fit along the spoke
-      const px = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, (p.w - 2 * BOSS_LABEL_PAD) * 100 / w100, (p.s1 - p.s0 - inset - BOSS_LABEL_PAD) / BOSS_LABEL_CAP);
+      const px = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, (p.w - 2 * BOSS_LABEL_PAD) * 100 / w100, ((p.s1 - p.s0) * E.sn - E.inset - BOSS_LABEL_PAD) / BOSS_LABEL_CAP); // (the piece's length across the spoke: its length along the lane, slanted)
       if (px < 3) continue;
-      ctx.setTransform(k * Math.cos(th), k * Math.sin(th), -k * Math.sin(th), k * Math.cos(th), S.x, S.y); ctx.globalAlpha = 1;
+      ctx.setTransform(E.k * Math.cos(th), E.k * Math.sin(th), -E.k * Math.sin(th), E.k * Math.cos(th), E.S.x, E.S.y); ctx.globalAlpha = 1;
       text(str, 0, -px * 0.45, px, hp >= f ? "white" : ENEMIES.bonus.color, false); // (text centres on y: the bottom sits on the line)
     }
   }
