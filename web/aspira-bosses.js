@@ -412,11 +412,14 @@ function bossPiece(g, from, to, at) { // the piece's stretch [from, to] as a qua
     ctx.closePath(); ctx.fill();
   });
 }
-function drawBossBar(at = (x, y, fn) => fn()) { // the HP left, in the boss's colour: each piece's part past where the HP left begins
+function drawBossBar(at = (x, y, fn) => fn()) { // the HP left, in the lane's SHOWN colour: each piece's part past where the HP left begins
+  // the top layer sits above the sky's flip, so a piece under the sky takes the INVERTED colour by hand - the lane's own under it has been
+  // turned over by the shader (owner, 2026-10-27: "why are the segments white and blue" - cyan, the Star's own, over the flipped red lane)
+  const own = COL[ENEMIES.bonus.color], inv = invertColor(own), all = skyPal(), on = skyOn();
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const { hp } = bossSpan(e); ctx.fillStyle = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
-    for (const g of e.bar.pieces) bossPiece(g, Math.max(g.s0, hp), g.s1, at);
+    const { hp } = bossSpan(e); ctx.globalAlpha = 1;
+    for (const g of e.bar.pieces) { const m = g.pts[g.pts.length >> 1]; ctx.fillStyle = all || (on && Math.hypot(m.x - bossInv.x, m.y - bossInv.y) < bossInv.r) ? inv : own; bossPiece(g, Math.max(g.s0, hp), g.s1, at); }
   }
   ctx.globalAlpha = 1;
 }
