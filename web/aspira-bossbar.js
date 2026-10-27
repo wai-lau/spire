@@ -185,9 +185,9 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
 // aligned with one of the spokes" / "drop the % and resize numbers to fit on the segment they are on / min thickness of segment with a
 // number should be 50" / "align the top of the number with a new spoke pointed at the core" - "letters don't need to fill"; 2026-10-26:
 // the marks): each number lies on the piece that holds its mark (barGeo makes that piece BOSS_LABEL_W wide where the turns allow), at
-// its natural size - BOSS_LABEL_PX[0] at the core to [1] at the 100% end, shrunk to the piece - centred on the piece's own radius. Its
-// bottom runs along one of the piece's cuts (a spoke), BOSS_LABEL_PAD in; its TOP is another ray through the core, as high as the
-// number at its middle: the number is a wedge, narrower toward the core, like the piece. It is a cached sprite drawn in
+// its natural size - BOSS_LABEL_PX[0] at the core to [1] at the 100% end, shrunk to the piece - centred along the spoke on the piece's
+// own radius, its bottom on one of the piece's cut lines (a spoke), its top a ray through the core the number's height above it at
+// that radius, its sides along the lane like the piece's: the number is a wedge, narrower toward the core, skewed like the piece. It is a cached sprite drawn in
 // BOSS_LABEL_STRIPS strips, each a parallelogram between the two lines at its place, so it takes the wedge and the floor's perspective
 // together (one canvas affine cannot bend a box into a wedge). The bottom is the cut whose way into the piece is UP on the screen, read
 // the way that is not mirrored: never upside down. White over the HP left; the lane's colour as shown (turned over under the sky) over
@@ -208,20 +208,29 @@ function drawBossLabels() {
       if (!(p.mi >= 0)) continue;
       const f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? COL.white : inSkyPt(mp.x, mp.y) ? invertColor(own) : own);
       // a cut of the piece: the lane point there, its angle round the core and radius, the way into the piece round the core (dir: +1
-      // with the lane's winding past the start cut, against it before the end cut) and the lane's slant off the spoke there (sn)
-      const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), Q2 = pathAt(e.pi, cs + 1, ang), rx = Q.x - CX, ry = Q.y - CY, r = Math.hypot(rx, ry) || 1, th = Math.atan2(ry, rx), tl = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1; return { th, r, gap, dir: sg * wind, sn: Math.abs(((Q2.x - Q.x) * ry - (Q2.y - Q.y) * rx) / tl / r) }; };
+      // with the lane's winding past the start cut, against it before the end cut)
+      const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), rx = Q.x - CX, ry = Q.y - CY; return { th: Math.atan2(ry, rx), r: Math.hypot(rx, ry) || 1, gap, dir: sg * wind }; };
       const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), S0 = warpProject(CX + Math.cos(e0.th) * e0.r, CY + Math.sin(e0.th) * e0.r), S1 = warpProject(CX + Math.cos(e1.th) * e1.r, CY + Math.sin(e1.th) * e1.r), E = S1.y <= S0.y ? e0 : e1; // the bottom: the cut the other lies ABOVE on the screen
-      // the number's size: its height, BOSS_LABEL_PX by its share, no more than the piece's length across the spoke less the insets, its width by the sprite's own shape, no more than the piece's width
-      const rc = E.r + p.d, inset = E.gap / 2 + BOSS_LABEL_PAD, room = (p.s1 - p.s0) * E.sn - inset - BOSS_LABEL_PAD; let h = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, room), w = h * sp.w / sp.h; if (w > p.w - 2 * BOSS_LABEL_PAD) { w = p.w - 2 * BOSS_LABEL_PAD; h = w * sp.h / sp.w; } if (h < 2) continue;
-      // the wedge: the bottom along the cut line (the spoke through the lane point, half a gap and the pad over, into the piece), from
-      // rc - w / 2 to rc + w / 2 out along it; the top the ray at the angle that stands h above the bottom at rc
-      const ux = Math.cos(E.th), uy = Math.sin(E.th), nx = -uy * E.dir, ny = ux * E.dir, tt = E.th + E.dir * (inset + h) / rc, vx = Math.cos(tt), vy = Math.sin(tt), r0 = rc - w / 2, r1 = rc + w / 2;
-      let bl = { x: CX + ux * r0 + nx * inset, y: CY + uy * r0 + ny * inset }, br = { x: CX + ux * r1 + nx * inset, y: CY + uy * r1 + ny * inset }, tl = { x: CX + vx * r0, y: CY + vy * r0 }, tr = { x: CX + vx * r1, y: CY + vy * r1 };
-      const pr = q => warpProject(q.x, q.y), Bl = pr(bl), Br = pr(br), Tl = pr(tl); if ((Br.x - Bl.x) * (Tl.y - Bl.y) - (Br.y - Bl.y) * (Tl.x - Bl.x) > 0) { [bl, br] = [br, bl]; [tl, tr] = [tr, tl]; } // read the way that is not mirrored
-      const N = BOSS_LABEL_STRIPS, at = (a, b, x) => pr({ x: a.x + (b.x - a.x) * x, y: a.y + (b.y - a.y) * x }), sw = sp.w / N;
-      let B0 = at(bl, br, 0), T0 = at(tl, tr, 0);
+      // the number's size: its height, BOSS_LABEL_PX by its share, no more than the piece's extent round the core at its radius less
+      // the two half gaps and the pads, its width by the sprite's own shape, no more than the piece's width
+      const rc = E.r + p.d, span = Math.abs(((e1.th - e0.th) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI), room = span * rc - (p.g0 + p.g1) / 2 - 2 * BOSS_LABEL_PAD; // span: the piece's angle round the core, cut to cut
+      // the number's uprights run ALONG THE LANE, as the piece's sides do (owner, 2026-10-27: "this 65 should look skewed towards the core not
+      // away" - square to the spoke they matched no edge): t the lane's tangent at the piece's middle, turned toward the top; square where
+      // the lane runs nearly along the spoke; sn its slant off the spoke - a side of the number is h long along t, h * sn across
+      const tm = E.th + E.dir * span / 2, um = { x: Math.cos(tm), y: Math.sin(tm) }, nx = -um.y * E.dir, ny = um.x * E.dir, Qm = pathAt(e.pi, (p.cs0 + p.cs1) / 2, ang), Qm2 = pathAt(e.pi, (p.cs0 + p.cs1) / 2 + 1, ang), tl0 = Math.hypot(Qm2.x - Qm.x, Qm2.y - Qm.y) || 1;
+      let tx = (Qm2.x - Qm.x) / tl0, ty = (Qm2.y - Qm.y) / tl0; if (tx * nx + ty * ny < 0) { tx = -tx; ty = -ty; } let sn = Math.abs(tx * um.y - ty * um.x); if (sn < BOSS_CUT_MIN) { tx = nx; ty = ny; sn = 1; }
+      let h = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, room / sn), w = h * sp.w / sp.h; if (w > p.w - 2 * BOSS_LABEL_PAD) { w = p.w - 2 * BOSS_LABEL_PAD; h = w * sp.h / sp.w; } if (h < 2) continue;
+      // the wedge: its bottom the cut line itself (the spoke through the lane point, half a gap and the pad over, into the piece), from
+      // rc - w / 2 to rc + w / 2 along it - centred ALONG THE SPOKE on the piece's own radius (owner, 2026-10-27: "center them on segment,
+      // based on the bottom" / "center along the spoke, not the lane axis of the segment"); its top the ray through the core standing
+      // the number's rise above the bottom at rc; a point of the top: from its point on the bottom along t to that ray
+      const inset = E.gap / 2 + BOSS_LABEL_PAD, ub = { x: Math.cos(E.th), y: Math.sin(E.th) }, ox = -ub.y * E.dir * inset, oy = ub.x * E.dir * inset, tt = E.th + E.dir * (inset + h * sn) / rc, v = { x: Math.cos(tt), y: Math.sin(tt) }, r0 = rc - w / 2, r1 = rc + w / 2, txv = tx * v.y - ty * v.x || 1e-9;
+      const bot = x => ({ x: CX + ub.x * (r0 + (r1 - r0) * x) + ox, y: CY + ub.y * (r0 + (r1 - r0) * x) + oy }), top = x => { const B = bot(x), bx = B.x - CX, by = B.y - CY, la = -(bx * v.y - by * v.x) / txv; return { x: B.x + tx * la, y: B.y + ty * la }; };
+      const pr = q => warpProject(q.x, q.y), Bl = pr(bot(0)), Br = pr(bot(1)), Tl = pr(top(0)), flip = (Br.x - Bl.x) * (Tl.y - Bl.y) - (Br.y - Bl.y) * (Tl.x - Bl.x) > 0; // read the way that is not mirrored
+      const N = BOSS_LABEL_STRIPS, at = (fn, x) => pr(fn(flip ? 1 - x : x)), sw = sp.w / N;
+      let B0 = at(bot, 0), T0 = at(top, 0);
       for (let i = 0; i < N; i++) { // strip i: the sprite's slice [i * sw, (i + 1) * sw] onto the parallelogram B0 -> B1 along the bottom, T0 up
-        const B1 = at(bl, br, (i + 1) / N), T1 = at(tl, tr, (i + 1) / N), ax = ((B1.x - B0.x) + (T1.x - T0.x)) / 2 / sw, ay = ((B1.y - B0.y) + (T1.y - T0.y)) / 2 / sw;
+        const B1 = at(bot, (i + 1) / N), T1 = at(top, (i + 1) / N), ax = ((B1.x - B0.x) + (T1.x - T0.x)) / 2 / sw, ay = ((B1.y - B0.y) + (T1.y - T0.y)) / 2 / sw;
         ctx.setTransform(ax, ay, (B0.x - T0.x) / sp.h, (B0.y - T0.y) / sp.h, T0.x, T0.y); ctx.globalAlpha = 1;
         ctx.drawImage(sp.cv, i * sw, 0, sw + 1, sp.h, 0, 0, sw + 1, sp.h); // (a px of overlap: no seam)
         B0 = B1; T0 = T1;
