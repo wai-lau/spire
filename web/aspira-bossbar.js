@@ -15,8 +15,10 @@ const BOSS_BAR_MARKS = [0.85, 0.65, 0.4, 0.25, 0.1, 0.05]; // the %HP marks alon
 // with the lane under the sky), the rest a WHITE core kept white under the sky (skyKeep - drawSceneTop)
 const BOSS_LANE_STEP = 10, BOSS_BAR_IN = 50; const bossBarOut = () => (typeof coreOuterR === "function" ? coreOuterR() : CORE_R); // the 0% end AT the core - its rim, not its centre, or the last few % hide under it (owner, 2026-10-26: "leave it at core" / "disappears before boss dies")
 // the 100% end: where the boss first comes within a tower's reach on its lane (owner, 2026-10-26: "boss label should start where the boss is
-// hittable, not at the edge of the screen"), else BOSS_BAR_IN past the mouth
-function bossHitS(e) { const P = PATHS[e.pi], s0 = entryS(e.pi), reach = typeof reachCircles === "function" ? reachCircles() : []; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) if (inReach(pathAt(e.pi, s, e.ang || 0), reach)) return s; return s0 + BOSS_BAR_IN; }
+// hittable, not at the edge of the screen") - and inside the play box by BOSS_BAR_EDGE; else the first point that far in, else BOSS_BAR_IN past the mouth
+const BOSS_BAR_EDGE = 60; // u: the 100% end at least this far inside the play box, so its piece is ON SCREEN (owner, 2026-10-27: "make sure that the last piece (the one that would contain 100) ends up on screen"; the widest piece is 44 u across, slid up to BOSS_SLIDE_MAX out)
+const bossInBox = p => Math.abs(p.x - CX) <= BOX_HX - BOSS_BAR_EDGE && Math.abs(p.y - CY) <= BOX_HY - BOSS_BAR_EDGE;
+function bossHitS(e) { const P = PATHS[e.pi], s0 = entryS(e.pi), reach = typeof reachCircles === "function" ? reachCircles() : []; let sIn = -1; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) { const p = pathAt(e.pi, s, e.ang || 0); if (!bossInBox(p)) continue; if (sIn < 0) sIn = s; if (inReach(p, reach)) return s; } return Math.max(sIn, s0 + BOSS_BAR_IN); }
 const bossSpan = e => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - (g.b - g.a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
 // THE BAR IN PIECES (owner, 2026-10-26: "the width should increase as we approach the edge / chop up the hp lane into segments and
 // jitter the size of each segment, jitter segments spatially on axis perpendicular to lane, but never more than 100% of the segment's
@@ -36,7 +38,7 @@ const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0;
 // piece, kept on the boss (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each
 // piece's part either side of where the HP left begins
 function barGeo(e) {
-  const reach = typeof reachCircles === "function" ? reachCircles() : [], key = reach.map(c => Math.round(c.x) + "," + Math.round(c.y) + "," + Math.round(c.r)).join("|");
+  const reach = typeof reachCircles === "function" ? reachCircles() : [], key = (BOX_WIDE ? "w|" : "p|") + reach.map(c => Math.round(c.x) + "," + Math.round(c.y) + "," + Math.round(c.r)).join("|"); // (the box's shape too: the 100% end keeps inside it)
   if (e.bar && e.bar.key === key) return e.bar;
   const a = bossHitS(e), b = PATHS[e.pi].len - bossBarOut(), ang = e.ang || 0, TAU = Math.PI * 2;
   const L = []; let prevA = null, turn = 0; // the lane over the span: s, the point, its normal, its angle round the core UNWRAPPED (th)
