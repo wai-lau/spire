@@ -171,22 +171,37 @@ function bossClip() {
 //      (barFlyFrom) to ONE ring, BAR_RING_PAD past the bar's outermost piece - pieces from every turn stacked there, overlapping - each
 //      on its own schedule by hash (arriving between 0.6 and 1 of the act, over 0.5 to 1 of the time before that), easing to a stop.
 //   2. THE ARMADA: there it drifts in slowly, BAR_DRIFT u/s (+-BAR_DRIFT_JIT), until its moment.
-//   3. THE SLAM, one at a time: piece i lands BAR_FLY_LEAD + BAR_FLY_SPAN x (1 - i / (n - 1)) s after the approach - the core end first,
-//      the 100% end last - covering the rest of its spoke over BAR_SLAM s (+-BAR_SLAM_JIT), eased IN (motionless, then faster and faster).
+//   3. THE SLAM, ring by ring (owner, 2026-10-27: "group the pieces into rings - a ring has no overlapping segments along the spoke -
+//      then slam them group by group" / "starting with innermost group" / "within a group, slam one at a time"): the pieces in rings,
+//      no two of a ring on one spoke (barRings), the innermost ring first, a ring's pieces one at a time in a random order (by hash); the
+//      landings BAR_FLY_SPAN s in all from BAR_FLY_LEAD after the approach, evenly, with BAR_RING_PAUSE s more between rings - each piece
+//      covering the rest of its spoke over BAR_SLAM s (+-BAR_SLAM_JIT), eased IN (motionless, then faster and faster).
 // Before the sky is full every piece waits off-screen. The boss's lane and glow light only after the last slam (bossBarInT - litLanes,
-// aspira-lanes.js: "draw lane and lane glow after hp slides in")
-const BAR_APPROACH = 1.6, BAR_FLY_LEAD = 0.4, BAR_FLY_SPAN = 2.5, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_RING_PAD = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5; // BAR_RING_PAD: the ring sits this far past the bar's outermost piece - on screen wherever the outer turn is
+// aspira-lanes.js: "draw lane and lane glow after hp slides in"), and the numbers fade in then, over BAR_LABEL_FADE s (owner, 2026-10-27:
+// "fade in the numbers at the end") - they never fly
+const BAR_APPROACH = 1.6, BAR_FLY_LEAD = 0.4, BAR_FLY_SPAN = 3.5, BAR_RING_PAUSE = 0.2, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_RING_PAD = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5; // BAR_RING_PAD: the ring sits this far past the bar's outermost piece - on screen wherever the outer turn is
+const BAR_LABEL_FADE = 0.6; // s: the numbers' fade-in, from the last slam
 const bossBarInT = () => BAR_APPROACH + BAR_FLY_LEAD + BAR_FLY_SPAN; // s after the sky is full until the bar is in
+const barInT = () => (typeof bossInv === "undefined" || bossInv.phase !== "in") ? Infinity : performance.now() / 1000 - (bossInv.t0 + BOSS_SKY_T); // s since the boss sky filled (Infinity: no fly-in on - every piece home); BOSS_SKY_T: the spokes, then the triangle - aspira-bosses.js
+const barLabelA = () => Math.max(0, Math.min(1, (barInT() - bossBarInT()) / BAR_LABEL_FADE)); // the numbers' alpha
+const barR = g => { const m = g.Lp[g.Lp.length >> 1]; return Math.hypot(m.x - CX, m.y - CY); }; // a piece's radius, u: its middle's
+function barRings(e) { // the pieces in RINGS - no two of a ring on one spoke, their angles round the core disjoint - and each ring's turn to slam
+  const P = e.bar.pieces, wrap = d => Math.atan2(Math.sin(d), Math.cos(d)), thAt = cs => { const Q = pathAt(e.pi, cs, e.ang || 0); return Math.atan2(Q.y - CY, Q.x - CX); };
+  const A = P.map(g => { const t0 = thAt(g.cs0), d = wrap(thAt(g.cs1) - t0); return { th: t0 + d / 2, hs: Math.abs(d) / 2 }; }); // each: its SPINE's angle round the core, cut to cut, and half span - the lane's line, not the outline: a square cut's corner pokes past its ray by w / 2 / r, and that sliver is no shared spoke (it stranded a piece in a ring of its own)
+  const apart = (i, j) => Math.abs(wrap(A[i].th - A[j].th)) >= A[i].hs + A[j].hs, rings = [], ring = new Array(P.length);
+  for (const i of P.map((g, a) => a).sort((a, b) => barR(P[a]) - barR(P[b]))) { let k = rings.findIndex(R => R.every(j => apart(i, j))); if (k < 0) { k = rings.length; rings.push([]); } rings[k].push(i); ring[i] = k; } // first fit from the core out: ring k is the k-th turn, near enough
+  const seq = new Array(P.length); let q = 0; for (const M of rings) { for (let a = M.length - 1; a > 0; a--) { const b = Math.floor(bossHash(e, M[a], 10) * (a + 1)); [M[a], M[b]] = [M[b], M[a]]; } for (const i of M) seq[i] = q++; } // seq: the piece's turn to slam - ring by ring from the innermost (owner, 2026-10-27: "starting with innermost group"; a random order was asked first, then this), within a ring one at a time in an order drawn by hash ("within a group, slam one at a time" / "within a group, I want random"; a sweep round the core was tried between): Fisher-Yates, the same every frame, another per boss
+  return { ring, seq, n: rings.length };
+}
 const barFar = () => Math.max(...[[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY))); // u from the core to the screen's farthest corner
 const barFlyFrom = () => barFar() * 1.1 + 100; // u out along a spoke: past that corner
-function barFlyOff(e, i, n) { // piece i of n: how far out along its spoke it still is, u (0: in place)
-  if (typeof bossInv === "undefined" || bossInv.phase !== "in") return 0;
-  const t = performance.now() / 1000 - (bossInv.t0 + BOSS_SKY_T), far = barFlyFrom(); if (t < 0) return far; // (BOSS_SKY_T: the spokes, then the triangle - aspira-bosses.js)
-  const g = e.bar && e.bar.pieces[i]; if (!g) return 0; const rOf = q => { const m = q.Lp[q.Lp.length >> 1]; return Math.hypot(m.x - CX, m.y - CY); }, r = rOf(g), ring = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(rOf))) + BAR_RING_PAD - r; // out of place: at the ring, and off-screen
+function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, u (0: in place)
+  const t = barInT(); if (t === Infinity) return 0; const far = barFlyFrom(); if (t < 0) return far;
+  const g = e.bar && e.bar.pieces[i]; if (!g) return 0; const arm = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(barR))) + BAR_RING_PAD - barR(g); // out of place: at the armada's ring, and off-screen
   const h = k => bossHash(e, i, k), arrive = BAR_APPROACH * (0.6 + 0.4 * h(8)), dur = arrive * (0.5 + 0.5 * h(9)), launch = arrive - dur; // act 1, its own
-  if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return ring + (far - ring) * (1 - ease); }
-  const land = BAR_APPROACH + BAR_FLY_LEAD + BAR_FLY_SPAN * (n > 1 ? 1 - i / (n - 1) : 0), slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam;
-  const drift = tt => Math.max(0, ring - v * (tt - arrive)); // act 2: from where it stopped, in slowly (never past its place)
+  if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return arm + (far - arm) * (1 - ease); }
+  const R = e.bar.rings ||= barRings(e), N = e.bar.pieces.length, pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)), land = BAR_APPROACH + BAR_FLY_LEAD + R.seq[i] * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, N - 1) + R.ring[i] * pause, slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam; // act 3: at its ring's turn
+  const drift = tt => Math.max(0, arm - v * (tt - arrive)); // act 2: from where it stopped, in slowly (never past its place)
   if (t >= land) return 0; if (t < t0) return drift(t);
   const u = (t - t0) / slam; return (1 - u * u * u) * drift(t0); // act 3
 }
@@ -202,7 +217,7 @@ function drawBossBar() { // the HP left, in the lane's own colour (turned over w
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e); ctx.globalAlpha = 1;
-    e.bar.pieces.forEach((g, i, P) => barPiece(g, e.bar, hp, true, own, own, barFlyOff(e, i, P.length)));
+    e.bar.pieces.forEach((g, i) => barPiece(g, e.bar, hp, true, own, own, barFlyOff(e, i)));
   }
   ctx.globalAlpha = 1;
 }
@@ -210,7 +225,7 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
     const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
-    e.bar.pieces.forEach((g, i, P) => { const m = g.Lp[g.Lp.length >> 1]; barPiece(g, e.bar, hp, false, barWhite(m), own, barFlyOff(e, i, P.length)); }); // hollow: white in the lane's outline
+    e.bar.pieces.forEach((g, i) => { const m = g.Lp[g.Lp.length >> 1]; barPiece(g, e.bar, hp, false, barWhite(m), own, barFlyOff(e, i)); }); // hollow: white in the lane's outline
   }
   ctx.globalAlpha = 1;
 }
@@ -236,17 +251,17 @@ function labelSprite(str, col) { // the number drawn once, cropped to its glyphs
 function drawBossLabels() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0, wind = e.bar.sgn;
-    e.bar.pieces.forEach((p, pi, PP) => {
+    const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0, wind = e.bar.sgn, la = barLabelA(); if (la <= 0) continue; // (the numbers fade in once the last ring is home)
+    e.bar.pieces.forEach(p => {
       if (!(p.mi >= 0)) return;
-      const off = barFlyOff(e, pi, PP.length), f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? barWhite(mp) : own); // (over the HP gone: the lane's own colour, turned over with the box's outline)
+      const f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? barWhite(mp) : own); // (over the HP gone: the lane's own colour, turned over with the box's outline)
       // a cut of the piece: the lane point there, its angle round the core and radius, the way into the piece round the core (dir: +1
       // with the lane's winding past the start cut, against it before the end cut)
       const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), rx = Q.x - CX, ry = Q.y - CY; return { cs, sg, th: Math.atan2(ry, rx), r: Math.hypot(rx, ry) || 1, gap, dir: sg * wind }; };
       const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), S0 = warpProject(CX + Math.cos(e0.th) * e0.r, CY + Math.sin(e0.th) * e0.r), S1 = warpProject(CX + Math.cos(e1.th) * e1.r, CY + Math.sin(e1.th) * e1.r), E = S1.y <= S0.y ? e0 : e1; // the bottom: the cut the other lies ABOVE on the screen
       // the number's size: its height, BOSS_LABEL_PX by its share, no more than the piece's extent round the core at its radius less
       // the two half gaps and the pads, its width by the sprite's own shape, no more than the piece's width
-      const rc = E.r + p.d + off, span = Math.abs(((e1.th - e0.th) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI), room = span * rc - (p.g0 + p.g1) / 2 - 2 * BOSS_LABEL_PAD; // span: the piece's angle round the core, cut to cut
+      const rc = E.r + p.d, span = Math.abs(((e1.th - e0.th) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI), room = span * rc - (p.g0 + p.g1) / 2 - 2 * BOSS_LABEL_PAD; // span: the piece's angle round the core, cut to cut
       // the number's uprights run ALONG THE LANE, as the piece's sides do (owner, 2026-10-27: "this 65 should look skewed towards the core not
       // away" - square to the spoke they matched no edge): t the lane's tangent where the number sits - just past its cut, not the piece's
       // middle (the spiral turns 30 degrees over a long piece: "the left side of the 25 looks slanted off the segment") - turned toward the
@@ -258,14 +273,14 @@ function drawBossLabels() {
       // the piece's outer corner at that cut, the pad in, w along it toward the core - against the OUTER side (owner, 2026-10-27: "left-or
       // right align them, whichever side is the outer side"; centred along the spoke before); its top the ray through the core standing
       // the number's rise above the bottom at rc; a point of the top: from its point on the bottom along t to that ray
-      const inset = E.gap / 2 + BOSS_LABEL_PAD, ub = { x: Math.cos(E.th), y: Math.sin(E.th) }, ox = -ub.y * E.dir * inset, oy = ub.x * E.dir * inset, tt = E.th + E.dir * (inset + h * sn) / rc, v = { x: Math.cos(tt), y: Math.sin(tt) }, cL = E === e0 ? p.Lp[0] : p.Lp[p.Lp.length - 1], cR = E === e0 ? p.Rp[0] : p.Rp[p.Rp.length - 1], r1 = Math.max(Math.hypot(cL.x - CX, cL.y - CY), Math.hypot(cR.x - CX, cR.y - CY)) - BOSS_LABEL_PAD + off, r0 = r1 - w, txv = tx * v.y - ty * v.x || 1e-9; // against the piece's OUTER corner at that cut (owner, 2026-10-27: "left-or right align them, whichever side is the outer side")
+      const inset = E.gap / 2 + BOSS_LABEL_PAD, ub = { x: Math.cos(E.th), y: Math.sin(E.th) }, ox = -ub.y * E.dir * inset, oy = ub.x * E.dir * inset, tt = E.th + E.dir * (inset + h * sn) / rc, v = { x: Math.cos(tt), y: Math.sin(tt) }, cL = E === e0 ? p.Lp[0] : p.Lp[p.Lp.length - 1], cR = E === e0 ? p.Rp[0] : p.Rp[p.Rp.length - 1], r1 = Math.max(Math.hypot(cL.x - CX, cL.y - CY), Math.hypot(cR.x - CX, cR.y - CY)) - BOSS_LABEL_PAD, r0 = r1 - w, txv = tx * v.y - ty * v.x || 1e-9; // against the piece's OUTER corner at that cut (owner, 2026-10-27: "left-or right align them, whichever side is the outer side")
       const bot = x => ({ x: CX + ub.x * (r0 + (r1 - r0) * x) + ox, y: CY + ub.y * (r0 + (r1 - r0) * x) + oy }), top = x => { const B = bot(x), bx = B.x - CX, by = B.y - CY, la = -(bx * v.y - by * v.x) / txv; return { x: B.x + tx * la, y: B.y + ty * la }; };
       const pr = q => warpProject(q.x, q.y), Bl = pr(bot(0)), Br = pr(bot(1)), Tl = pr(top(0)), flip = (Br.x - Bl.x) * (Tl.y - Bl.y) - (Br.y - Bl.y) * (Tl.x - Bl.x) > 0; // read the way that is not mirrored
       const N = BOSS_LABEL_STRIPS, at = (fn, x) => pr(fn(flip ? 1 - x : x)), sw = sp.w / N;
       let B0 = at(bot, 0), T0 = at(top, 0);
       for (let i = 0; i < N; i++) { // strip i: the sprite's slice [i * sw, (i + 1) * sw] onto the parallelogram B0 -> B1 along the bottom, T0 up
         const B1 = at(bot, (i + 1) / N), T1 = at(top, (i + 1) / N), ax = ((B1.x - B0.x) + (T1.x - T0.x)) / 2 / sw, ay = ((B1.y - B0.y) + (T1.y - T0.y)) / 2 / sw;
-        ctx.setTransform(ax, ay, (B0.x - T0.x) / sp.h, (B0.y - T0.y) / sp.h, T0.x, T0.y); ctx.globalAlpha = 1;
+        ctx.setTransform(ax, ay, (B0.x - T0.x) / sp.h, (B0.y - T0.y) / sp.h, T0.x, T0.y); ctx.globalAlpha = la;
         ctx.drawImage(sp.cv, i * sw, 0, sw + 1, sp.h, 0, 0, sw + 1, sp.h); // (a px of overlap: no seam)
         B0 = B1; T0 = T1;
       }
