@@ -187,7 +187,7 @@ const barInT = () => (typeof bossInv === "undefined" || bossInv.phase !== "in") 
 const barLabelA = () => Math.max(0, Math.min(1, (barInT() - bossBarInT()) / BAR_LABEL_FADE)); // the numbers' alpha
 const barR = g => { const m = g.Lp[g.Lp.length >> 1]; return Math.hypot(m.x - CX, m.y - CY); }; // a piece's radius, u: its middle's
 const barArea = g => { let a = 0; const Q = g.Lp.concat(g.Rp.slice().reverse()); for (let i = 0; i < Q.length; i++) { const p = Q[i], q = Q[(i + 1) % Q.length]; a += p.x * q.y - q.x * p.y; } return Math.abs(a) / 2; }; // a piece's area, u^2 (shoelace round its outline)
-const BAR_THUD_HZ = [45, 180], BAR_THUD_VOL = [0.16, 0.36]; // the biggest piece's thud .. the smallest's; the loudness the other way
+const BAR_THUD_HZ = [30, 45], BAR_THUD_VOL = [0.16, 0.36]; // (owner, 2026-10-27: "smallest piece should be 45" - after 60-360, 45-180) // the biggest piece's thud .. the smallest's; the loudness the other way
 function barThud(e, g) { // a piece slamming home: a thud, lower and louder the bigger the piece (owner, 2026-10-27: "play a thud sound, pitched to area of segment") - by log area between the bar's own smallest and biggest
   if (typeof sfx !== "function") return; const B = e.bar; if (!B.lnA) { const ls = B.pieces.map(q => Math.log(q.area ||= barArea(q))); B.lnA = [Math.min(...ls), Math.max(...ls)]; }
   const k = (Math.log(g.area ||= barArea(g)) - B.lnA[0]) / Math.max(1e-6, B.lnA[1] - B.lnA[0]); // 0 the smallest .. 1 the biggest

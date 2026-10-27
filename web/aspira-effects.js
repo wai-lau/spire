@@ -29,6 +29,12 @@ function drawAims() {
       const w = beamWidth(st.dmg) * SOL_THIN * SOL_BEAM_W; ctx.lineCap = "butt";
       for (const r of t.rods) {
         const c = Math.cos(r.a), sn = Math.sin(r.a), x = r.x + c * r.s, y = r.y + sn * r.s, al = Math.min(1, r.s / SOL_ROD_FADE_U);
+        const tl = Math.min(r.s, SOL_ROD_TRACER_U), tx = x - c * tl, ty = y - sn * tl; // the TRACER, under the rod (SOL_ROD_TRACER_U, aspira-sol.js)
+        if (tl > 1 && [x, y, tx, ty].every(Number.isFinite)) { // (a NaN end: the gradient THROWS)
+          const g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, COL[col]); g.addColorStop(1, "transparent");
+          ctx.beginPath(); ctx.moveTo(x + sn * r.half, y - c * r.half); ctx.lineTo(x - sn * r.half, y + c * r.half); ctx.lineTo(tx, ty); ctx.closePath();
+          ctx.fillStyle = g; ctx.globalAlpha = al * SOL_ROD_TRACER_A; ctx.fill();
+        }
         ctx.beginPath(); ctx.moveTo(x + sn * r.half, y - c * r.half); ctx.lineTo(x - sn * r.half, y + c * r.half);
         ctx.strokeStyle = COL[col]; ctx.globalAlpha = al * SOL_GLOW_A * BEAM_BRIGHT; ctx.lineWidth = w * 2; ctx.stroke();
         ctx.strokeStyle = COL.white; ctx.globalAlpha = al; ctx.lineWidth = w; ctx.stroke();
