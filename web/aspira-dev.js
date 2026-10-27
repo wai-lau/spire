@@ -1,14 +1,16 @@
 // DEV SCENES (owner, 2026-10-27: "serve on a different page the boss screen, and make it so (for that specific page) when I refresh,
 // it just takes me to the same state, except with the latest code"): /spire?dev=boss rebuilds the boss scene on EVERY load - the
-// resume card dropped, a FRZ on the first open cell, the Star sent at once, its HP set to DEV_BOSS_HP once it is well onto the
+// resume card dropped, a FRZ on the first open cell, the Star sent AT THE FIRST TAP (the audio needs a gesture before it can make a
+// sound - sent on load the whole scene was silent, owner 2026-10-27: "no sound"), its HP set to DEV_BOSS_HP once it is well onto the
 // board, then the game paused (1x resumes). Never touches the real run: the autosave's checkpoint is parked (runSavedAt).
 // ?dev=boss&hp=0.3 for another HP share; ?dev=boss&t=<kind> for another tower. Loaded last (aspira.html); does nothing without ?dev=.
 const DEV = typeof location !== "undefined" ? new URLSearchParams(location.search) : null, DEV_SCENE = DEV ? DEV.get("dev") || "" : "";
 const DEV_BOSS_HP = 0.55, DEV_BOSS_IN_U = 150;
 if (DEV_SCENE === "boss") {
-  let built = false; const devLog = window.devLog = []; // (devLog: what each tick did - read it from the console when a scene misbehaves)
+  let built = false, tapped = false; const devLog = window.devLog = []; // (devLog: what each tick did - read it from the console when a scene misbehaves)
+  document.addEventListener("pointerdown", () => { tapped = true; }, { once: true }); document.addEventListener("keydown", () => { tapped = true; }, { once: true }); // (the same gestures aspira-sfx.js unlocks the audio on)
   const tickDev = () => {
-    if (typeof G === "undefined" || typeof CELLS === "undefined" || !CELLS.length) return;
+    if (!tapped || typeof G === "undefined" || typeof CELLS === "undefined" || !CELLS.length) return;
     devLog.push([Math.round(performance.now()), built, G.wave, G.enemies.length, G.enemies.filter(e => e.arcana).length, ui.paused]);
     const card = document.getElementById("asp-resume"); if (card) { card.remove(); ui.paused = false; }
     if (!built) {

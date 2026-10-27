@@ -118,7 +118,7 @@ const SFX = {
   kill:    () => tone({ type: "triangle", f0: 520, f1: 1040, dur: 0.07, vol: 0.16 }),
   // a piece of the boss's HP bar slamming home (owner, 2026-10-27: "play a thud sound, pitched to area of segment"): a low sine
   // dropping fast with a knock of noise on top - the pitch and the loudness from the piece's area (aspira-bossbar.js barThud)
-  thud:    (f = 160, vol = 0.18) => { tone({ type: "sine", f0: f * 1.6, f1: f * 0.55, dur: 0.16, vol }); noise({ dur: 0.03, vol: vol * 0.5, freq: f * 6, q: 0.8 }); },
+  thud:    (f = 100, vol = 0.25) => { tone({ type: "sine", f0: f * 1.5, f1: f * 0.5, dur: 0.26, vol }); tone({ type: "triangle", f0: f * 2, f1: f * 0.7, dur: 0.1, vol: vol * 0.2 }); noise({ dur: 0.025, vol: vol * 0.35, freq: f * 5, q: 0.8 }); }, // BASS (owner, 2026-10-27: "much more bass-y"): the sine body long and low, a faint triangle an octave up so a phone's speaker, with nothing under ~150 Hz, still hears the knock
   // the core is hit: a SHUTDOWN (owner) - a click, then the power sliding
   // away, everything falling to nothing like a machine switching off
   leak:    () => {
