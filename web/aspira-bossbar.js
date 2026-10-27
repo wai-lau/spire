@@ -71,7 +71,8 @@ function barGeo(e) {
     for (const dth of [-TAU, TAU]) { let best = null; for (const p of L) if (Math.abs(p.th - (m.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } if (best !== null) rs.push(Math.abs(best - rm) - BOSS_SEG_GAP); }
     return Math.max(4, Math.min(cap, ...rs)); };
   // piece i's width at s: the taper (BOSS_PIECE_W at the core end .. the 100% end) jittered by its hash, inside the corridor, never under BOSS_PIECE_FLOOR
-  const wOf = (i, s) => Math.min(corrAt(s), Math.max(floorAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))); // (the corridor last: the floor never pushes a piece into the next turn)
+  const marksS = BOSS_BAR_MARKS.map(f => b - (b - a) * f), markIn = (s0, s1) => marksS.findIndex(m => m >= s0 - 1e-6 && m <= s1 + 1e-6); // the mark (its index in BOSS_BAR_MARKS) between s0 and s1, -1 none: the piece holding one carries its number and is at least BOSS_LABEL_W wide (owner, 2026-10-27: "min thickness of segment with a number should be 50")
+  const wOf = (i, s, s0, s1) => Math.min(corrAt(s), Math.max(markIn(s0, s1) >= 0 ? BOSS_LABEL_W : 0, floorAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))); // (the corridor last: the floor never pushes a piece into the next turn)
   // the piece's slide along its spoke: at most BOSS_SLIDE_MAX (owner, 2026-10-27: "cap spoke jitter to +/-30u so that they cover lane"), and
   // at most the room left between its width and the turns either side (half each way, so two turns' pieces slid toward each other still
   // keep the gap - the real pitch, not BOSS_CORRIDOR). Along the lane a slide changes nothing: the piece is cut after it slides
@@ -82,7 +83,7 @@ function barGeo(e) {
   // is skipped and the piece runs on to the next - so no piece's ends ever cross (a bow-tie that read as overlap)
   const bounds = [{ s: a, gap: 0 }];
   // ...and no piece shorter than BOSS_PIECE_MIN of its width (owner, 2026-10-27: "min piece length sure" - two jittered spokes 3 degrees apart made a sliver)
-  for (const c of [...cuts.map(c => ({ s: c.s, gap: gapAt(c.s) })), { s: b, gap: 0 }]) { const last = bounds[bounds.length - 1], w = wOf(bounds.length - 1, (last.s + c.s) / 2) /* (the piece this cut would close: its own width) */, gap = (last.gap + c.gap) / 2, need = Math.max(gap + (w / 2) * (cot(last) + cot(c)) + BOSS_CUT_MARGIN * Math.max(BOSS_GAP_CORE, share(c.s)), gap + BOSS_PIECE_MIN * w); if (c.s - last.s > need) bounds.push(c); else if (!c.gap) { if (bounds.length > 1) bounds.pop(); bounds.push(c); } }
+  for (const c of [...cuts.map(c => ({ s: c.s, gap: gapAt(c.s) })), { s: b, gap: 0 }]) { const last = bounds[bounds.length - 1], w = wOf(bounds.length - 1, (last.s + c.s) / 2, last.s, c.s) /* (the piece this cut would close: its own width) */, gap = (last.gap + c.gap) / 2, need = Math.max(gap + (w / 2) * (cot(last) + cot(c)) + BOSS_CUT_MARGIN * Math.max(BOSS_GAP_CORE, share(c.s)), gap + BOSS_PIECE_MIN * w); if (c.s - last.s > need) bounds.push(c); else if (!c.gap) { if (bounds.length > 1) bounds.pop(); bounds.push(c); } }
   // a cut's LINE: the ray from the core through the lane point there, turned by half its gap (as an angle at that radius) toward the piece;
   // val(P) > 0 inside the piece. toward: +1 the piece lies at greater s than the cut, -1 at less
   const rayLine = (c, toward) => { const C = at(c.s), tx = C.ny, ty = -C.nx, rx = C.x - CX, ry = C.y - CY, r = Math.hypot(rx, ry) || 1;
@@ -101,7 +102,7 @@ function barGeo(e) {
   };
   const pieces = [];
   for (let i = 0; i + 1 < bounds.length; i++) {
-    const c0 = bounds[i], c1 = bounds[i + 1], w = wOf(i, (c0.s + c1.s) / 2);
+    const c0 = bounds[i], c1 = bounds[i + 1], w = wOf(i, (c0.s + c1.s) / 2, c0.s, c1.s), mk = markIn(c0.s, c1.s);
     const mid = (c0.s + c1.s) / 2, rad = w * BOSS_PIECE_ROUND * share(mid), out = outAt(mid); // the corners rounder the farther from the core, square at it (owner, 2026-10-27: "reduce the corner roundedness correlated to distance from core, no roundness at core")
     const h = w / 2 - rad, reach = w * 4 + BOSS_SEG_GAP, base = L.filter(p => p.s >= c0.s - reach && p.s <= c1.s + reach); if (base.length < 2) continue;
     const side = sg => base.map(p => ({ s: p.s, x: p.x + p.nx * sg * h, y: p.y + p.ny * sg * h })), mi = base.findIndex(p => p.s >= (c0.s + c1.s) / 2), m = mi < 0 ? base.length >> 1 : mi;
@@ -115,7 +116,7 @@ function barGeo(e) {
       P = P.slice(from, to + 1); if (e0) P.unshift({ x: e0.x, y: e0.y, s: e0.s }); if (e1) P.push({ x: e1.x, y: e1.y, s: e1.s });
       return P.length >= 2 ? P : null; });
     if (!sides[0] || !sides[1]) continue;
-    pieces.push({ s0, s1, w, d, rad, out, Lp: sides[0], Rp: sides[1] });
+    pieces.push({ s0, s1, w, d, rad, out, mi: mk, cs0: c0.s, cs1: c1.s, g0: c0.gap, g1: c1.gap, Lp: sides[0], Rp: sides[1] }); // (mi: the mark it carries, -1 none; cs0 / cs1, g0 / g1: its cuts and their gaps - drawBossLabels)
   }
   return e.bar = { key, a, b, pieces, L, sgn };
 }
@@ -181,26 +182,30 @@ function drawBossTrack() { // the HP gone: the pieces' white part from the 100% 
   ctx.globalAlpha = 1;
 }
 // THE %HP NUMBERS ON THE BAR (owner, 2026-10-27: "get rid of the arrows / numbers in white, on the hp bar / have the bottom of the number
-// aligned with one of the spokes"; 2026-10-26: the marks at 80 60 40 20 10 5 and 0%): each number lies ON the piece beside the gap nearest
-// its mark, its bottom along that gap's cut line (a spoke) half a gap plus BOSS_LABEL_PAD in from it, centred on the piece's own radius
-// (its slide included), reading along the spoke the way up that is UP on the screen (never upside down); BOSS_LABEL_PX[0] at the core
-// to [1] at the 100% end. White over the HP left; over the HP gone (a white box) the lane's own colour, else it would vanish
-const BOSS_LABEL_PX = [12, 24], BOSS_LABEL_PAD = 2;
+// aligned with one of the spokes" / "drop the % and resize numbers to fit on the segment they are on / min thickness of segment with a
+// number should be 50"; 2026-10-26: the marks at 80 60 40 20 10 5 and 0%): each number lies ON the piece that holds its mark (barGeo
+// makes that piece BOSS_LABEL_W wide where the turns allow), its bottom along one of the piece's two cut lines (spokes) - the one whose
+// way into the piece is UP on the screen, so it never reads upside down - half a gap plus BOSS_LABEL_PAD in from it, centred on the
+// piece's own radius (its slide included), reading along the spoke; BOSS_LABEL_PX[0] at the core to [1] at the 100% end, shrunk to fit
+// the piece's width (its length along the spoke) and length (its height). White over the HP left; the lane's colour over the HP gone
+const BOSS_LABEL_PX = [12, 24], BOSS_LABEL_PAD = 2, BOSS_LABEL_W = 50, BOSS_LABEL_CAP = 0.8; // BOSS_LABEL_CAP: a number's height, of its size
 function drawBossLabels() {
   for (const e of G.enemies) {
     if (!e.arcana || e.dead) continue;
-    const { a: A, b: B } = bossSpan(e), P = e.bar.pieces, hp = Math.max(0, e.hp) / e.max; if (P.length < 2) continue;
-    for (const f of BOSS_BAR_MARKS) {
-      const s = B - (B - A) * f; let gi = 0, best = Infinity; // the nearest gap: between pieces gi and gi + 1
-      for (let i = 0; i + 1 < P.length; i++) { const d = Math.abs((P[i].s1 + P[i + 1].s0) / 2 - s); if (d < best) { best = d; gi = i; } }
-      const p0 = P[gi], p1 = P[gi + 1], g = (p0.s1 + p1.s0) / 2, gap = p1.s0 - p0.s1, Q = pathAt(e.pi, g, e.ang || 0), Q2 = pathAt(e.pi, g + 1, e.ang || 0);
-      const tl = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1, tx = (Q2.x - Q.x) / tl, ty = (Q2.y - Q.y) / tl, rx = Q.x - CX, ry = Q.y - CY, rl = Math.hypot(rx, ry) || 1, ux = rx / rl, uy = ry / rl; // the lane's tangent (+s) and the spoke, outward, in the world
-      // the side of the gap whose "up" (into its piece, along the lane) points UP on the screen - that piece carries the number
-      const S0 = warpProject(Q.x, Q.y), S1 = warpProject(Q.x + tx * 10, Q.y + ty * 10), sg = S1.y - S0.y <= 0 ? 1 : -1, p = sg > 0 ? p1 : p0, vx = tx * sg, vy = ty * sg;
-      const W = { x: CX + ux * (rl + p.d) + vx * (gap / 2 + BOSS_LABEL_PAD), y: CY + uy * (rl + p.d) + vy * (gap / 2 + BOSS_LABEL_PAD) }, S = warpProject(W.x, W.y), k = cam.k * (S.s || 1); // the baseline's middle
-      const Up = warpProject(W.x + vx * 10, W.y + vy * 10), ex = Up.x - S.x, ey = Up.y - S.y, el = Math.hypot(ex, ey) || 1, upx = ex / el, upy = ey / el, th = Math.atan2(upx, -upy), px = BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f; // "up" on the screen -> the text's rotation
+    const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0;
+    for (const p of e.bar.pieces) {
+      if (!(p.mi >= 0)) continue;
+      const f = BOSS_BAR_MARKS[p.mi], str = String(Math.round(f * 100)), tan = s => { const Q = pathAt(e.pi, s, ang), Q2 = pathAt(e.pi, s + 1, ang), l = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1; return { Q, tx: (Q2.x - Q.x) / l, ty: (Q2.y - Q.y) / l }; };
+      // the edge: the start cut (into the piece: +s) if +s is up on the screen there, else the end cut (into the piece: -s)
+      const E0 = tan(p.cs0), S0 = warpProject(E0.Q.x, E0.Q.y), S1 = warpProject(E0.Q.x + E0.tx * 10, E0.Q.y + E0.ty * 10), start = S1.y - S0.y <= 0;
+      const E = start ? E0 : tan(p.cs1), sg = start ? 1 : -1, gap = start ? p.g0 : p.g1, vx = E.tx * sg, vy = E.ty * sg, rx = E.Q.x - CX, ry = E.Q.y - CY, rl = Math.hypot(rx, ry) || 1;
+      const inset = gap / 2 + BOSS_LABEL_PAD, W = { x: CX + rx / rl * (rl + p.d) + vx * inset, y: CY + ry / rl * (rl + p.d) + vy * inset }, S = warpProject(W.x, W.y), k = cam.k * (S.s || 1); // the baseline's middle
+      const Up = warpProject(W.x + vx * 10, W.y + vy * 10), ex = Up.x - S.x, ey = Up.y - S.y, el = Math.hypot(ex, ey) || 1, th = Math.atan2(ex / el, -ey / el); // "up" on the screen -> the text's rotation
+      ctx.font = "100px " + CANVAS_FONT; const w100 = ctx.measureText(str).width || 60; // the string's width at 100 px: the fit along the spoke
+      const px = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, (p.w - 2 * BOSS_LABEL_PAD) * 100 / w100, (p.s1 - p.s0 - inset - BOSS_LABEL_PAD) / BOSS_LABEL_CAP);
+      if (px < 3) continue;
       ctx.setTransform(k * Math.cos(th), k * Math.sin(th), -k * Math.sin(th), k * Math.cos(th), S.x, S.y); ctx.globalAlpha = 1;
-      text(Math.round(f * 100) + "%", 0, -px * 0.45, px, hp >= f ? "white" : ENEMIES.bonus.color, false); // (text centres on y: the bottom sits on the line)
+      text(str, 0, -px * 0.45, px, hp >= f ? "white" : ENEMIES.bonus.color, false); // (text centres on y: the bottom sits on the line)
     }
   }
 }
