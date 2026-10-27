@@ -35,14 +35,27 @@ function drawIfrFires(t, low) {
   for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2, 1, IFR_FIRE_W, IFR_HF_COL); /* RED, its flares' colours (owner, 2026-10-22: "hellfire's fire ring should be red") */ // grown, it stays at half till its flares are out (owner, 2026-10-21)
 }
 const IFR_FADE_IN_U = 8; // a burst meteor is full within 8 u of flight (owner, 2026-10-26: "IFR should fade in faster"; was 25)
-const IFR_SHARD_DRAW = 1 / 3, IFR_TRACER_U = 60; // IFR_TRACER_U: the launched meteor's tracer, u (owner, 2026-10-26) // a burst meteor DRAWN at a third of its size - its reach unchanged (owner, 2026-10-26: "make shards also visible 1/3 the current size")
+const IFR_SHARD_DRAW = 1 / 3; // (IFR_TRACER_U: aspira-ifrit.js - the sim loads no draw file)
+// THE LAUNCHED METEOR'S TRACER, like an enemy's (owner, 2026-10-26: "meteor tracer should depend on movement and fade out like enemies"):
+// the path it FLEW (b.trail, the last IFR_TRACER_U of it - stepIfrBalls), not a line along its heading, as one tapered shape fading
+// from the meteor's colour to nothing at the tail (drawStarTrail, aspira-enemies.js)
+function drawMeteorTrail(b) {
+  const tr = b.trail; if (!tr || tr.length < 2) return;
+  const pts = [{ x: b.x, y: b.y }]; for (let i = tr.length - 1; i >= 0; i--) pts.push(tr[i]);
+  const n = pts.length - 1, L = [], R = [];
+  for (let i = 0; i <= n; i++) {
+    const a = pts[Math.max(0, i - 1)], c = pts[Math.min(n, i + 1)], len = Math.hypot(c.x - a.x, c.y - a.y) || 1;
+    const w = b.r * 0.8 * (1 - i / n), nx = -(c.y - a.y) / len * w, ny = (c.x - a.x) / len * w;
+    L.push({ x: pts[i].x + nx, y: pts[i].y + ny }); R.push({ x: pts[i].x - nx, y: pts[i].y - ny });
+  }
+  const ends = [pts[0].x, pts[0].y, pts[n].x, pts[n].y]; if (!ends.every(Number.isFinite)) return; // (a NaN end: the gradient THROWS)
+  const g = ctx.createLinearGradient(...ends); g.addColorStop(0, COL.orange); g.addColorStop(1, "transparent");
+  ctx.beginPath(); ctx.moveTo(L[0].x, L[0].y); for (const p of L) ctx.lineTo(p.x, p.y); for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i].x, R[i].y); ctx.closePath();
+  ctx.fillStyle = g; ctx.globalAlpha = 0.55; ctx.fill(); ctx.globalAlpha = 1;
+} // a burst meteor DRAWN at a third of its size - its reach unchanged (owner, 2026-10-26: "make shards also visible 1/3 the current size")
 function drawIfrBalls(t, low) {
   for (const b of t.ifrBalls) if (!(b.wait > 0)) {
-    if (!b.gen) { // the launched meteor's TRACER (owner, 2026-10-26): a streak IFR_TRACER_U back along its flight, bright at the meteor, clear at the tail
-      const v = Math.hypot(b.vx, b.vy) || 1, ux = b.vx / v, uy = b.vy / v, L = Math.min(IFR_TRACER_U, b.flown || IFR_TRACER_U);
-      for (let i = 3; i >= 1; i--) { ctx.strokeStyle = COL[i === 1 ? "yellow" : "orange"]; ctx.globalAlpha = 0.5 / i; ctx.lineWidth = b.r * (0.35 + 0.4 * i); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(b.x - ux * L / i, b.y - uy * L / i); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-      ctx.globalAlpha = 1;
-    }
+    if (!b.gen) drawMeteorTrail(b);
     drawIfrMeteor(b.x, b.y, b.gen ? b.r * IFR_SHARD_DRAW : b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
   } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }

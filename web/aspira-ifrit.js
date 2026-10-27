@@ -198,13 +198,21 @@ function ifrLandFlares(t, st, x, y) {
   if (!st.triple) { ifrFlare(t, st, x, y); return; }
   for (let i = 0; i < 3; i++) { const a = Math.random() * 2 * Math.PI, d = IFR_TRIPLE_JIT * Math.sqrt(Math.random()); ifrFlare(t, st, x + Math.cos(a) * d, y + Math.sin(a) * d); }
 }
+// the launched meteor's TRACER record: the last IFR_TRACER_U of the path it flew (drawn by drawMeteorTrail, aspira-ifrit-draw.js)
+const IFR_TRACER_U = 60; // u (owner, 2026-10-26)
+function ifrTrailPush(b) {
+  const tr = (b.trail ||= []), last = tr[tr.length - 1];
+  if (last && Math.hypot(b.x - last.x, b.y - last.y) < 3) return;
+  tr.push({ x: b.x, y: b.y });
+  let len = 0; for (let i = tr.length - 1; i > 0; i--) { len += Math.hypot(tr[i].x - tr[i - 1].x, tr[i].y - tr[i - 1].y); if (len > IFR_TRACER_U) { tr.splice(0, i); break; } }
+}
 function stepIfrBalls(t, st, dt) {
   if (!t.ifrBalls.length) return;
   const all = G.enemies, born = [];
   for (const b of t.ifrBalls) {
     if (b.wait > 0) { b.wait -= dt; continue; } /* a fan meteor not released yet */
     const homes = !b.gen || (b.flown || 0) >= IFR_ARM_U, armed = !b.gen || (b.flown || 0) >= IFR_ARM_HIT_U, atCorpse = homes && ifrHome(b, all, dt); /* a spawned one flies straight for IFR_ARM_U, hits only from IFR_ARM_HIT_U */
-    if (!atCorpse) { b.x += b.vx * dt; b.y += b.vy * dt; b.flown = (b.flown || 0) + Math.hypot(b.vx, b.vy) * dt; }
+    if (!atCorpse) { b.x += b.vx * dt; b.y += b.vy * dt; b.flown = (b.flown || 0) + Math.hypot(b.vx, b.vy) * dt; if (!b.gen) ifrTrailPush(b); }
     b.left -= dt;
     let hit = null;
     if (armed) for (const e of all) { /* every enemy, not projGrid's cell (a few meteors a tower - cheap); a spawned one only once armed */
