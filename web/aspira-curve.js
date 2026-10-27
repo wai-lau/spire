@@ -28,7 +28,7 @@ const STAT_CURVE = {
 // car 0.98, ifr 0.90): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
 // and CRR's tier 0 RATE x2.5 / x2 (one meteor, one interceptor: a third and two thirds of the old bare tower's hits) - each still below
 // the old bare tower in all, with the waves 1-12 ease (aspira-waves.js) and FRZ's nip (aspira-frz.js)
-let CURVE_P = 2.5; // the steepening: lo + (hi - lo) x (L / SKILL_POINTS) ** CURVE_P. Was GEOMETRIC (lo x (hi/lo) ** share, plan 2): with ARC's x171 and CRR's x25000 spans
+let CURVE_P = 1.5; // 2.5 -> 1.5 (owner, 2026-10-27: "if there is a buy that looks bad and then pays off too much later, then there's a problem with the scaling curve" - at 2.5 the first seven points bought a fifth of the growth and the last three half: banking beat buying, the planner hoarded 317k, a tower at 10 points died inside chapter 4 that was fine at 13; at 1.5 each point pays about the same) // the steepening: lo + (hi - lo) x (L / SKILL_POINTS) ** CURVE_P. Was GEOMETRIC (lo x (hi/lo) ** share, plan 2): with ARC's x171 and CRR's x25000 spans
 // that held the mid game near lo - ARC hit 82 at five points (master's Voltage IV 310), and the axes that only SHAPE damage (Voltage, Conductivity,
 // Armament, Tether, Permafrost) lost 4 of 16 pushed first (axis.mjs, plan 3 Task 2b, 2026-10-25). A power curve rises at every point for every kind
 const NUDGE_MAX = 1.2; // an axis's stat nudge, all of a tower's together: x1 .. x1.2 (spec, Calls for the build)
