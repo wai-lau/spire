@@ -48,6 +48,16 @@
 #asp-asc > * { flex-shrink: 0; }
 #asp-asc > #asp-asc-board { flex: 1 1 0; min-height: 0; }
 #asp #asp-ov-btn { margin-top: var(--space-3); } /* Play again UNDER the leak list (owner, 2026-10-19; was between the stats and it) */
+/* PORTRAIT: Play again ABOVE the title ("eclipsed by the star"), under the top players board (owner, 2026-10-27: "when the screen is
+   vertical, have the play again button above") - #asp-ov-right is display: contents here, so its items take the overlay's order */
+@media (orientation: portrait) {
+  #asp-ov > #asp-asc { order: 1; }
+  #asp #asp-ov-btn { order: 2; margin-top: 0; }
+  #asp-ov-title { order: 3; }
+  #asp-ov-text { order: 4; }
+  #asp-ov-stats { order: 5; }
+  #asp-ov-leaks { order: 6; }
+}
 /* WIDE SCREENS: two columns (owner, 2026-10-20: "score screen on wide screen, two columns, one for top players + initials left, and everything
    else right") - the board and its initials form fill the left, the title, stats, leak list and Play again stack on the right */
 @media (orientation: landscape) and (width >= 700px) {

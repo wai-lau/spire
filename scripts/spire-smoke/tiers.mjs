@@ -109,10 +109,10 @@ check("SOL's splits have no limit (owner, 2026-10-26: \"bounces have no limit\")
   if (r !== 10) return r + " of 10 struck";
 });
 
-check("SOL has no pierce (owner, 2026-10-26: \"Get rid of piercing\" / \"Split, else fly on\"): with no one to split to the beam flies on straight past its enemy to the edge, striking no one on its line", () => {
+check("SOL has no pierce (owner, 2026-10-26: \"Get rid of piercing\" / \"Split, else fly on\"): with no one to split to the beam flies on straight past its enemy to the edge, striking no one on its line; it ends at the play box's edge", () => {
   const r = run(`(() => { const { t, es, st } = tierRig("sol", {}, [[60, 0], [140, 0]]); st.split = 0; for (const e of es) e.hp = e.max = 1e7; fx.length = 0; fireRay(t, st, es[0]);
     const a0 = Math.atan2(es[0].y - t.y, es[0].x - t.x), segs = fx.filter(f => f.k === "beam" && f.share != null && f.share < 1);
-    return { second: es[1].hp < es[1].max, far: segs.some(f => Math.abs(Math.atan2(f.y2 - f.y1, f.x2 - f.x1) - a0) < 1e-6 && Math.hypot(f.x2 - f.x1, f.y2 - f.y1) > 1000) }; })()`);
+    return { second: es[1].hp < es[1].max, far: segs.some(f => Math.abs(Math.atan2(f.y2 - f.y1, f.x2 - f.x1) - a0) < 1e-6 && Math.abs(Math.hypot(f.x2 - f.x1, f.y2 - f.y1) - solOutLen(f.x1, f.y1, Math.cos(a0), Math.sin(a0))) < 1) }; })()`); /* to the play box's edge (solOutLen, owner 2026-10-27; was > 1000 u) */
   if (r.second) return "the enemy on the line behind was struck (a pierce)";
   if (!r.far) return "no straight line on to the edge";
 });

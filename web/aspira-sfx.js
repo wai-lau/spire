@@ -116,6 +116,9 @@ const SFX = {
   grvaura: () => tone({ type: "sine", f0: 55, f1: 90, dur: 0.35, vol: 0.14 }),
   grv:     () => { tone({ type: "sine", f0: 70, f1: 140, dur: 0.3, vol: 0.22 }); noise({ dur: 0.12, vol: 0.12, freq: 2200, q: 1.5 }); },
   kill:    () => tone({ type: "triangle", f0: 520, f1: 1040, dur: 0.07, vol: 0.16 }),
+  // a piece of the boss's HP bar slamming home (owner, 2026-10-27: "play a thud sound, pitched to area of segment"): a low sine
+  // dropping fast with a knock of noise on top - the pitch and the loudness from the piece's area (aspira-bossbar.js barThud)
+  thud:    (f = 160, vol = 0.18) => { tone({ type: "sine", f0: f * 1.6, f1: f * 0.55, dur: 0.16, vol }); noise({ dur: 0.03, vol: vol * 0.5, freq: f * 6, q: 0.8 }); },
   // the core is hit: a SHUTDOWN (owner) - a click, then the power sliding
   // away, everything falling to nothing like a machine switching off
   leak:    () => {
@@ -136,7 +139,7 @@ const SFX = {
   powerrelay: () => notes([330, 494], 0.09, { type: "square", dur: 0.12, vol: 0.12 }),
 };
 // minimum seconds between two plays of the same sound
-const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08 };
+const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08, thud: 0.015 }; // (thud: the bar's pieces land 30 ms apart - the default 0.03 ate every other)
 
 // returns whatever the sound returns (a stop() handle for long sounds), or null
 // Optional SAMPLES (owner, 2026-10-02: Brood War sounds) replace a synth
@@ -192,7 +195,7 @@ let curSound = null; // the synth sound being built, so envelope() can count it
 // upgrade/build sound stand well above the towers' shots - about 10 dB
 // (TOWER_GAIN 0.6 vs LOUD_GAIN 2)
 const TOWER_GAIN = 0.6, LOUD_GAIN = 1; /* 2 -> 1 (owner, 2026-10-16: "some audio (like the boss intro sounds and the carrier sounds) sound much louder than others"): the voice lines and build / upgrade / boss cues sat 10-15 dB over the towers' shots (measured: -11..-15 vs -23 dB), now 4-8 */
-const LOUD = /^(bosswarn|bossvoice|coreup|up|build)/;
+const LOUD = /^(bosswarn|bossvoice|coreup|up|build|thud)/; // (thud: in the LOUD class for the game-speed exemption - every landing sounds)
 // per-sound trims (owner): the ship explosion on every kill was too loud
 const SOUND_GAIN = { kill: 0.4 };
 const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? SOUND_GAIN[name.split(".")[0]] ?? 1); // ("kill.fast" trimmed as "kill")

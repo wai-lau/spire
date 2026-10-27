@@ -179,13 +179,20 @@ function bossClip() {
 //      covering the rest of its spoke over BAR_SLAM s (+-BAR_SLAM_JIT), eased IN (motionless, then faster and faster).
 // Before the sky is full every piece waits off-screen. The boss's lane and glow light only after the last slam (bossBarInT - litLanes,
 // aspira-lanes.js: "draw lane and lane glow after hp slides in"), and the numbers fade in then, over BAR_LABEL_FADE s (owner, 2026-10-27:
-// "fade in the numbers at the end") - they never fly
+// "fade in the numbers at the end") - they never fly. Each landing THUDS (barThud), pitched to the piece's area.
 const BAR_APPROACH = 1.6, BAR_FLY_LEAD = 0.4, BAR_FLY_SPAN = 2.5, BAR_RING_PAUSE = 0, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_RING_PAD = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5; // BAR_RING_PAD: the ring sits this far past the bar's outermost piece - on screen wherever the outer turn is
 const BAR_LABEL_FADE = 0.6; // s: the numbers' fade-in, from the last slam
 const bossBarInT = () => BAR_APPROACH + BAR_FLY_LEAD + BAR_FLY_SPAN; // s after the sky is full until the bar is in
 const barInT = () => (typeof bossInv === "undefined" || bossInv.phase !== "in") ? Infinity : performance.now() / 1000 - (bossInv.t0 + BOSS_SKY_T); // s since the boss sky filled (Infinity: no fly-in on - every piece home); BOSS_SKY_T: the spokes, then the triangle - aspira-bosses.js
 const barLabelA = () => Math.max(0, Math.min(1, (barInT() - bossBarInT()) / BAR_LABEL_FADE)); // the numbers' alpha
 const barR = g => { const m = g.Lp[g.Lp.length >> 1]; return Math.hypot(m.x - CX, m.y - CY); }; // a piece's radius, u: its middle's
+const barArea = g => { let a = 0; const Q = g.Lp.concat(g.Rp.slice().reverse()); for (let i = 0; i < Q.length; i++) { const p = Q[i], q = Q[(i + 1) % Q.length]; a += p.x * q.y - q.x * p.y; } return Math.abs(a) / 2; }; // a piece's area, u^2 (shoelace round its outline)
+const BAR_THUD_HZ = [60, 360], BAR_THUD_VOL = [0.1, 0.26]; // the biggest piece's thud .. the smallest's; the loudness the other way
+function barThud(e, g) { // a piece slamming home: a thud, lower and louder the bigger the piece (owner, 2026-10-27: "play a thud sound, pitched to area of segment") - by log area between the bar's own smallest and biggest
+  if (typeof sfx !== "function") return; const B = e.bar; if (!B.lnA) { const ls = B.pieces.map(q => Math.log(q.area ||= barArea(q))); B.lnA = [Math.min(...ls), Math.max(...ls)]; }
+  const k = (Math.log(g.area ||= barArea(g)) - B.lnA[0]) / Math.max(1e-6, B.lnA[1] - B.lnA[0]); // 0 the smallest .. 1 the biggest
+  sfx("thud", BAR_THUD_HZ[1] + (BAR_THUD_HZ[0] - BAR_THUD_HZ[1]) * k, BAR_THUD_VOL[0] + (BAR_THUD_VOL[1] - BAR_THUD_VOL[0]) * k);
+}
 function barRings(e) { // the pieces in RINGS - no two of a ring on one spoke, their angles round the core disjoint - and each ring's turn to slam
   const P = e.bar.pieces, wrap = d => Math.atan2(Math.sin(d), Math.cos(d)), thAt = cs => { const Q = pathAt(e.pi, cs, e.ang || 0); return Math.atan2(Q.y - CY, Q.x - CX); };
   const A = P.map(g => { const t0 = thAt(g.cs0), d = wrap(thAt(g.cs1) - t0); return { th: t0 + d / 2, hs: Math.abs(d) / 2 }; }); // each: its SPINE's angle round the core, cut to cut, and half span - the lane's line, not the outline: a square cut's corner pokes past its ray by w / 2 / r, and that sliver is no shared spoke (it stranded a piece in a ring of its own)
@@ -203,7 +210,7 @@ function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, 
   if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return arm + (far - arm) * (1 - ease); }
   const R = e.bar.rings ||= barRings(e), N = e.bar.pieces.length, pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)), land = BAR_APPROACH + BAR_FLY_LEAD + R.seq[i] * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, N - 1) + R.ring[i] * pause, slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam; // act 3: at its ring's turn
   const drift = tt => Math.max(0, arm - v * (tt - arrive)); // act 2: from where it stopped, in slowly (never past its place)
-  if (t >= land) return 0; if (t < t0) return drift(t);
+  if (t >= land) { if (!g.home) { g.home = true; barThud(e, g); } return 0; } if (t < t0) return drift(t); // (home: its thud once, the frame it lands - bar and track both ask)
   const u = (t - t0) / slam; return (1 - u * u * u) * drift(t0); // act 3
 }
 // ON THE ENTITY LAYER AT THE FLOOR'S LEVEL (owner, 2026-10-27: "tower ranges and effects should appear above hp"): the bar is drawn in

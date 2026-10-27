@@ -81,7 +81,7 @@ function solSpread(t, st, from, e, full, share = 1) {
     if (!b.wall && split(b, b.p, carry, al)) continue; // a hit: it splits (a mirrored line struck no one: it only flies)
     // FLY ON straight past it, through everyone, to the cone's wall
     const via = solAim != null ? solBandEdge(t, st, { x: b.p.x - b.ux, y: b.p.y - b.uy }, b.p) : null;
-    if (!via) { seg(b.p, { x: b.p.x + b.ux * SOL_OUT_LEN, y: b.p.y + b.uy * SOL_OUT_LEN }, carry, al); continue; } // out the open end
+    if (!via) { const k = solOutLen(b.p.x, b.p.y, b.ux, b.uy); seg(b.p, { x: b.p.x + b.ux * k, y: b.p.y + b.uy * k }, carry, al); continue; } // out the open end, to the play box's edge (solOutLen)
     // THE WALL IS A BOUNCE (owner, 2026-10-26: "count that as a bounce, except there's no pierce"): a carry step, then split from it - or
     // with no one there A MIRROR ("just reflect off the cone (mirror angle across perpendicular line to cone edge)"), flying on from it
     seg(b.p, via, carry, al); const c2 = carry * (st.hop || 1), a2 = al * (st.hop || 1);

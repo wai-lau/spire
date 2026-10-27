@@ -2,7 +2,7 @@
 // cap): one row per wave still alive and the next ones - Roman number, the
 // enemies as one icon each sized by HP (tessellating when long), the name.
 // UI only; loaded before aspira-ui.js, whose updateHud calls updateWaveList.
-const WAVE_ROWS = 10, WAVE_DEAD_A = 0.18, WAVE_ICON = [5, 18], WAVE_SPAN = 110, WAVE_SPAN_PHONE = 95, SWARM_MIN = 4, WAVE_ROW_H = 22, WAVE_ROW_H_PHONE = 14, WAVE_BOSS_PX = 22; // WAVE_ROW_H: every row's height (owner: consistent) // SWARM_MIN: the smallest tessellated diamond box (px); a boss's icon, always the biggest // the upcoming-wave icons' size range (px); rows up to this many never overlap
+const WAVE_NEXT = 3 /* the next 3 waves only (owner, 2026-10-27: "only show the next 3 waves, not 10"; was filled to 10 rows) */, WAVE_DEAD_A = 0.18, WAVE_ICON = [5, 18], WAVE_SPAN = 110, WAVE_SPAN_PHONE = 95, SWARM_MIN = 4, WAVE_ROW_H = 22, WAVE_ROW_H_PHONE = 14, WAVE_BOSS_PX = 22; // WAVE_ROW_H: every row's height (owner: consistent) // SWARM_MIN: the smallest tessellated diamond box (px); a boss's icon, always the biggest // the upcoming-wave icons' size range (px); rows up to this many never overlap
 // the list's headings: the boxed live waves, then the rest (owner, 2026-10-09)
 const WAVE_HEAD = { now: "warped in", next: "warping in..." }; // (owner: "replace upcoming waves with: warping in...")
 
@@ -95,8 +95,7 @@ function updateWaveList() {
   // is named by type in lowercase, a boss by its arcana, its icon inverted as
   // on its own sky.
   // the list keeps every wave still ALIVE (an enemy alive or yet to spawn) and
-  // the current one, then fills with upcoming waves to WAVE_ROWS (at least 3
-  // upcoming) (owner). A live wave's icons: `alive` solid, the dead faded.
+  // the current one, then the next WAVE_NEXT upcoming waves (owner). A live wave's icons: `alive` solid, the dead faded.
   const live = liveWaves(), rows = [];
   const rowOf = (n, w) => {
     WAVE_PLANS.set(n, w); // (the wave card reads it - aspira-wavecard.js)
@@ -110,7 +109,7 @@ function updateWaveList() {
   }
   let prev = G.lastType;
   // nothing past the last boss (owner): the game is won at WIN_WAVE
-  for (let i = 1; (rows.length < WAVE_ROWS || i <= 3) && G.wave + i <= WIN_WAVE; i++) {
+  for (let i = 1; i <= WAVE_NEXT && G.wave + i <= WIN_WAVE; i++) {
     const n = G.wave + i, w = wavePlan(n, prev);
     if (w.type !== "bonus") prev = w.type; // the boss wave does not break the alternation
     rows.push(rowOf(n, w));

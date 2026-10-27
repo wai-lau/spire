@@ -337,6 +337,17 @@ function solSkillStats(t, s, b) {
 const SOL_CONE_EDGE = 1600; // the charge cone's reach, to the screen's edge (drawAims - the only cone drawn, owner 2026-10-26)
 // a shot goes on past its last enemy far beyond the screen's edge (owner, 2026-10-08), FIXED where it struck (2026-10-26: no visual tracks the enemy)
 const SOL_OUT_LEN = 3000;
+// it ENDS AT THE PLAY BOX's edge (owner, 2026-10-27: "SOL shooting backwards? / when SOL is above target"): a far end 3000 u down
+// the screen fell BEHIND the 3D camera and projected flipped - the line drawn up past the tower
+function solOutLen(x, y, ux, uy) {
+  if (typeof phoneBox !== "function") return SOL_OUT_LEN;
+  const bx = phoneBox(); let k = SOL_OUT_LEN;
+  if (ux > 1e-9) k = Math.min(k, (bx.x1 - x) / ux); else if (ux < -1e-9) k = Math.min(k, (bx.x0 - x) / ux);
+  if (uy > 1e-9) k = Math.min(k, (bx.y1 - y) / uy); else if (uy < -1e-9) k = Math.min(k, (bx.y0 - y) / uy);
+  k = Math.max(0, k);
+  if (typeof warp !== "undefined" && warp && warp.gl && typeof warpProject === "function") for (let i = 0; i < 12 && k > 1 && !(warpProject(x + ux * k, y + uy * k, 0).s > 0); i++) k /= 2; /* 3D: never behind the camera */
+  return k;
+}
 // UI (drawFx): the Refract light cone, a faint wedge that fades FAST (owner):
 // its opacity falls with the cube of the time left, and with DISTANCE from the
 // tower - full at the source, gone by SOL_CONE_FADE of its length (owner)

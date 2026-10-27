@@ -96,7 +96,7 @@ too. The lanes' CORE TWIST (§2.1) gives the same time to the core instead. The 
 | Pauses (`towersFrozen` while paused and while the sky turns) | Pauses | On close |
 |---|---|---|
 | tower card, core card, upgrade chooser, an armed Relay | yes | restores the previous pause |
-| build dialog | yes | **always unpauses** (built or cancelled) |
+| build dialog | yes | restores the previous pause - **unpauses only at game start** (the first build, `G.started` unset; owner 2026-10-27) |
 | focus loss | no | a hidden tab just gets no frames; the slow logs ignore it |
 
 ## 4. Towers
@@ -587,10 +587,10 @@ with a chooser open 1-4 pick the first four of its cards instead (the build choo
 
 | Surface | Design |
 |---|---|
-| wave list | ten rows: live waves plus upcoming (at least 3), one icon an enemy sized by log HP, long rows tessellating; live waves in one green box; "warped in" / "warping in..." with the countdown, hidden while a boss holds the timer |
+| wave list | the live waves plus the next 3 (`WAVE_NEXT`), one icon an enemy sized by log HP, long rows tessellating; live waves in one green box; "warped in" / "warping in..." with the countdown, hidden while a boss holds the timer |
 | wave card | a tap on a wave's icons or name (`data-n`) opens its stats (`aspira-wavecard.js`): units, lanes, HP each / in all, shields, armor, speed, time to core, credits, a late trait - read off ONE sample enemy made by `spawnEnemy` and taken back out (RNG held at 0.5), rows of 0 / N/A hidden; pauses like the changelog |
 | threat | a mark on the three closest enemies within 4 s of the core; a leak's ring bounces out from the core with the lives left |
-| end screen | one overlay for loss and win: TOP PLAYERS (§9.1) first, taking the spare height: the entry form on a win or a loss past wave 10; then the title (`ascendant`, the breaching boss's phrase, or `core breached`), the furthest wave, a line a tower ranked by damage and named by its two strongest axes' tier names (`aspira-endstats.js`), "Play again", then the waves that TOOK lives, most lives first, three rows tall (scrolls) |
+| end screen | one overlay for loss and win: TOP PLAYERS (§9.1) first, taking the spare height: the entry form on a win or a loss past wave 10; on a PORTRAIT screen "Play again" comes next, above the title (`order`, `aspira-endstats.css`); then the title (`ascendant`, the breaching boss's phrase, or `core breached`), the furthest wave, a line a tower ranked by damage and named by its two strongest axes' tier names (`aspira-endstats.js`), "Play again", then the waves that TOOK lives, most lives first, three rows tall (scrolls) |
 
 ## 8. Rendering, audio, performance
 
@@ -792,7 +792,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | view | headless WebKit renders ~1 fps: a screenshot before the first frame is blank, not a bug |
 | UI | `.asp-ov[hidden] { display:none }` is load-bearing (`.asp-ov { display:flex }` beats the UA `[hidden]` rule) |
 | UI | `--fs-xs` does NOT exist in chrome.css: use `--fs-2xs` |
-| UI | cards never scroll and sit at `--z-bubble`; the build dialog always unpauses on close, every other card restores the pause; a card closed unbought drops its basket |
+| UI | cards never scroll and sit at `--z-bubble`; every card restores the pause on close, the build dialog too - except at game start, where it unpauses; a card closed unbought drops its basket |
 | UI | iOS: `#asp` needs `user-select: none` AND the prefixed `-webkit-user-select` plus `-webkit-touch-callout: none`; the canvas preventDefaults `touchstart` (non-passive), `contextmenu`, `selectstart`; a power's hold survives `HOLD_SLOP`; the no-funds red uses a timer, not `animationend` |
 | UI | nothing on the page may shift the board; wave-list rows are all one size; the list rebuilds 4x a second, the HUD 10x |
 | rules | a shield holds off every slow; Strength shrugs all of them; Temporal Drive is the only full stop and is never shaped |
