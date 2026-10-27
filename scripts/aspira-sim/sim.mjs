@@ -80,8 +80,10 @@ export function makeGame(seed, patch = "") {
       return { x: CX + dx * t[0] - dy * t[1], y: CY + dx * t[1] + dy * t[0] };
     };
     // the economy's own ledger (players.mjs): what interest paid in all
+    var BOSS_SKIP = ${process.env.BOSS_SKIP === "1"}; // (sims only - see stepEnemies below)
     var __sw = sendWave; sendWave = function () { const m = G.money; __sw(); G.interestTotal = (G.interestTotal || 0) + Math.max(0, G.money - m); };
     var __se = stepEnemies; stepEnemies = function (dt) {
+      if (BOSS_SKIP) for (const e of G.enemies) if (!e.dead && e.wave % STAR_EVERY === 0) { kill(e); if (!e.dead) kill(e); } // BOSS WAVES IGNORED (owner, 2026-10-27: "ignore boss waves, for now, just assuming instakill and get rewards"): every unit of a boss wave dies the step it is on the board, through kill() - its bounty, the boss's drop, the lives owed and the unlocks all paid; a riser (Judgement, Death) is killed twice. env BOSS_SKIP=1 - the planner, tribal and axis runs; never the duo check, whose rule names the Star
       if (G.enemies.some(e => e.dead)) { // (no ghost: nothing to drop - no Set, no new list; most steps, perf 2026-10-16)
         const tracked = new Set((G.chains || []).map(p => p.node.e));
         G.enemies = G.enemies.filter(e => !e.dead || tracked.has(e));
