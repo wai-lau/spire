@@ -350,8 +350,11 @@ const SOL_FAN = [2, 6];
 // IN RANGE (owner, 2026-10-23: "All reflection targets need to be withing SOL rnage"): a fork or a bounce only to an enemy inside
 // the tower's own range; none left there, the chain stops. solHeads: the first enemy's forks (also the charge cones' aim, drawAims)
 const solOut = (t, st, hit) => { const r2 = (st.range || 0) ** 2; return x => hit.has(x) || (x.x - t.x) ** 2 + (x.y - t.y) ** 2 > r2; };
+// FORWARD ONLY (owner, 2026-10-27: a reflection bounced back across the tower, its pass-through out the far edge - "SOL shooting
+// backwards?"): a reflection picks only enemies AHEAD of the leg it is on (within 90 degrees of a -> b, past b); none there, it stops
+const solAhead = (a, b, skip) => { const dx = b.x - a.x, dy = b.y - a.y; return x => skip(x) || (x.x - b.x) * dx + (x.y - b.y) * dy <= 0; };
 function solHeads(t, st, e, hit = new Set([e])) {
-  const out = solOut(t, st, hit), heads = [];
+  const out = solAhead(t, e, solOut(t, st, hit)), heads = [];
   for (let c = 0; c < (st.fan || 1); c++) { const o = chainPick(t, e, Infinity, out); if (!o) break; hit.add(o); heads.push(o); }
   return heads;
 }
@@ -366,7 +369,7 @@ function solRefraction(t, st, e) {
     for (let k = 1; ; k++) {
       solCone(t, st, prev, nxt); rayHit(t, st, nxt, st.dmg * m, prev);
       if (k >= st.refraction) break;
-      prev = nxt; nxt = chainPick(t, prev, Infinity, out);
+      const p0 = prev; prev = nxt; nxt = chainPick(t, prev, Infinity, solAhead(p0, prev, out));
       if (!nxt) break;
       hit.add(nxt); m *= st.hop || 1;
     }
