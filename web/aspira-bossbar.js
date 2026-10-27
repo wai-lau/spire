@@ -23,7 +23,7 @@ const bossSpan = e => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - 
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
 // end, BOSS_BAR_WIDEN x that at the 100% end, each piece's width jittered the same and the piece set across the lane by up to its own
 // width. A fixed hash a piece (the boss's id, the piece's index): the layout holds still from frame to frame
-const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 0.2, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 0, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's slide along its mean ray, of its width - 0: none (owner, 2026-10-27: "try it without the segment position jitter"; a full width was "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
+const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 1 /* (owner, 2026-10-27: "5x thickness jitter"; was 0.2) */, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 0, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's slide along its mean ray, of its width - 0: none (owner, 2026-10-27: "try it without the segment position jitter"; a full width was "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
 // THE CUTS (owner, 2026-10-27: "choose 24 points on the edge of the screen equally radially distant around the core, then add some radial
 // jitter, these are the lines that chop up the hp bar into segments. Each of these lines should cut the hp bar exactly once, at which
 // intersection is randomly decided"): BOSS_RAYS rays from the core, evenly spaced round it, each turned by up to BOSS_RAY_JIT of the
@@ -61,13 +61,14 @@ function barGeo(e) {
   const corrAt = s => { const m = at(s), rm = Math.hypot(m.x - CX, m.y - CY) || 1, rs = [];
     for (const dth of [-TAU, TAU]) { let best = null; for (const p of L) if (Math.abs(p.th - (m.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } if (best !== null) rs.push(Math.abs(best - rm) - BOSS_SEG_GAP); }
     return Math.max(4, Math.min(BOSS_CORRIDOR, ...rs)); };
-  const wAt = s => Math.min(corrAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT)); // the widest a piece can be at s
+  // piece i's width at s: the taper (BOSS_PIECE_W at the core end .. the 100% end) jittered by its hash, inside the corridor, never under 4 u
+  const wOf = (i, s) => Math.max(4, Math.min(corrAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))));
   // THE PIECES' BOUNDS: the 100% end, the cuts, the 0% end - EVERY one a ray through the core (owner, 2026-10-27: "the cuts don't all seem
   // to use the core as a vanishing point"); a cut is kept only if the piece before it has room for both slanted ends and a gap, else it
   // is skipped and the piece runs on to the next - so no piece's ends ever cross (a bow-tie that read as overlap)
   const bounds = [{ s: a, gap: 0 }];
   // ...and no piece shorter than BOSS_PIECE_MIN of its width (owner, 2026-10-27: "min piece length sure" - two jittered spokes 3 degrees apart made a sliver)
-  for (const c of [...cuts.map(c => ({ s: c.s, gap: BOSS_SEG_GAP })), { s: b, gap: 0 }]) { const last = bounds[bounds.length - 1], need = Math.max(BOSS_SEG_GAP + (wAt(last.s) / 2) * cot(last) + (wAt(c.s) / 2) * cot(c) + 2, BOSS_SEG_GAP + BOSS_PIECE_MIN * wAt((last.s + c.s) / 2)); if (c.s - last.s > need) bounds.push(c); else if (!c.gap) { if (bounds.length > 1) bounds.pop(); bounds.push(c); } }
+  for (const c of [...cuts.map(c => ({ s: c.s, gap: BOSS_SEG_GAP })), { s: b, gap: 0 }]) { const last = bounds[bounds.length - 1], w = wOf(bounds.length - 1, (last.s + c.s) / 2) /* (the piece this cut would close: its own width) */, need = Math.max(BOSS_SEG_GAP + (w / 2) * (cot(last) + cot(c)) + 2, BOSS_SEG_GAP + BOSS_PIECE_MIN * w); if (c.s - last.s > need) bounds.push(c); else if (!c.gap) { if (bounds.length > 1) bounds.pop(); bounds.push(c); } }
   // a cut's LINE: the ray from the core through the lane point there, turned by half its gap (as an angle at that radius) toward the piece;
   // val(P) > 0 inside the piece. toward: +1 the piece lies at greater s than the cut, -1 at less
   const rayLine = (c, toward) => { const C = at(c.s), r = Math.hypot(C.x - CX, C.y - CY) || 1, al = Math.atan2(C.y - CY, C.x - CX) + toward * sgn * (c.gap / 2) / r, ca = Math.cos(al), sa = Math.sin(al), k = toward * sgn; return P => k * (ca * (P.y - CY) - sa * (P.x - CX)); };
@@ -79,8 +80,7 @@ function barGeo(e) {
   };
   const pieces = [];
   for (let i = 0; i + 1 < bounds.length; i++) {
-    const c0 = bounds[i], c1 = bounds[i + 1], f = (b - (c0.s + c1.s) / 2) / (b - a); // f: 1 at the 100% end, 0 at the core
-    const w = Math.min(corrAt((c0.s + c1.s) / 2), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)));
+    const c0 = bounds[i], c1 = bounds[i + 1], w = wOf(i, (c0.s + c1.s) / 2);
     const rad = w * BOSS_PIECE_ROUND, h = w / 2 - rad, reach = w * 4 + BOSS_SEG_GAP, base = L.filter(p => p.s >= c0.s - reach && p.s <= c1.s + reach); if (base.length < 2) continue;
     const side = sg => base.map(p => ({ s: p.s, x: p.x + p.nx * sg * h, y: p.y + p.ny * sg * h })), mi = base.findIndex(p => p.s >= (c0.s + c1.s) / 2), m = mi < 0 ? base.length >> 1 : mi;
     const v0 = rayLine(c0, 1), v1 = rayLine(c1, -1), s0 = c0.s + c0.gap / 2, s1 = c1.s - c1.gap / 2; // (s0 / s1: the square fallback, and the piece's reach along the lane)
