@@ -296,10 +296,11 @@ const bossPays = e => !(isA(e, "devil") && G.enemies.some(o => o !== e && !o.dea
 const BOSS_INV_T = 3;
 const bossInv = { phase: "off", t0: 0, x: 0, y: 0, full: false, r: 0 };
 // THE SKY SPREADS AS A TRIANGLE pointing down (owner, 2026-10-27: "replace the expanding circle with an expanding triangle for bosses /
-// point down"): bossInv.r is still the radius that must reach the farthest corner - the triangle's INSCRIBED circle, so its corners sit
-// at 2 x r (apex below the boss, base above). skyTri: the three corners (world); inSkyPt: is a world point under the sky
-const SKY_TRI_K = 2;
-function skyTri() { const R = bossInv.r * SKY_TRI_K, s = Math.sqrt(3) / 2; return [{ x: bossInv.x, y: bossInv.y + R }, { x: bossInv.x + R * s, y: bossInv.y - R / 2 }, { x: bossInv.x - R * s, y: bossInv.y - R / 2 }]; }
+// point down" / "change the shape of the triangle so that the diagonal sides touch the screen corner at the same time as the top side"):
+// the FULL triangle (bossInv.tri, world) is the equilateral one round the screen - its top side along the screen's top edge, its two
+// sides through the bottom corners - and the sky is that triangle scaled about the boss by bossInv.k (0..1), so every side reaches its
+// corners in the same frame. skyTri: the three corners now; inSkyPt: is a world point under the sky. (bossInv.r stays for skyOn)
+function skyTri() { const k = bossInv.k || 0, T = bossInv.tri; return T ? T.map(p => ({ x: bossInv.x + (p.x - bossInv.x) * k, y: bossInv.y + (p.y - bossInv.y) * k })) : [{ x: bossInv.x, y: bossInv.y }, { x: bossInv.x, y: bossInv.y }, { x: bossInv.x, y: bossInv.y }]; }
 function inSkyPt(px, py) {
   if (bossInv.phase === "off") return false; if (bossInv.full) return true;
   const [a, b, c] = skyTri(), cr = (p, q) => (q.x - p.x) * (py - p.y) - (q.y - p.y) * (px - p.x), s1 = cr(a, b), s2 = cr(b, c), s3 = cr(c, a);
@@ -322,12 +323,15 @@ function bossSkyStep() {
     Object.assign(bossInv, { phase: "out", t0: now, x: CX, y: CY }); // collapses onto the CORE too (owner)
   }
   if (bossInv.phase === "out" && now - bossInv.t0 >= BOSS_INV_T) { bossInv.phase = "off"; bossInv.offAt = now; } // offAt: the Challenge button waits on it (CHALLENGE_DELAY)
-  if (bossInv.phase === "off") { bossInv.full = false; bossInv.r = 0; return; }
+  if (bossInv.phase === "off") { bossInv.full = false; bossInv.r = 0; bossInv.k = 0; return; }
   // the circle must reach the canvas corner furthest from its centre
   const corners = [[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => ({ x: (px - cam.ox) / cam.k, y: (py - cam.oy) / cam.k }));
   const R = Math.max(...corners.map(c => Math.hypot(c.x - bossInv.x, c.y - bossInv.y))) * 1.05;
   const p = Math.min(1, (now - bossInv.t0) / BOSS_INV_T), ease = p * p * (3 - 2 * p);
   bossInv.r = bossInv.phase === "in" ? R * ease : R * (1 - ease); // the boss's HP line grows and shrinks with this edge (drawBossBar)
+  { const xs = corners.map(c => c.x), ys = corners.map(c => c.y), L = Math.min(...xs), Rt = Math.max(...xs), T = Math.min(...ys), B = Math.max(...ys), W = Rt - L, H = B - T; // the screen, world
+    const h = H + Math.sqrt(3) * W / 2, a = (W / 2) * h / (h - H), cx = (L + Rt) / 2; // equilateral: height h, half-base a - the sides pass through the bottom corners
+    bossInv.tri = [{ x: cx, y: T + h }, { x: cx + a, y: T }, { x: cx - a, y: T }]; bossInv.k = bossInv.phase === "in" ? ease : 1 - ease; }
   bossInv.full = bossInv.phase === "in" && p >= 1;
 }
 
