@@ -23,49 +23,85 @@ const bossSpan = e => { const g = bossGeo(e); return { a: g.a, b: g.b, hp: g.b -
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
 // end, BOSS_BAR_WIDEN x that at the 100% end, each piece's width jittered the same and the piece set across the lane by up to its own
 // width. A fixed hash a piece (the boss's id, the piece's index): the layout holds still from frame to frame
-const BOSS_SEG_U = 280, BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 0.4, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SEG_U: every piece this long, no jitter along the lane (owner, 2026-10-27); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn (owner: "ensure that there is no overlap") // ("way thicker", "increase spacing" - owner, 2026-10-27) // BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible"); BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points (owner: "resolution too low" at the lane's 10)
+const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 0.4, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
+// THE CUTS (owner, 2026-10-27: "choose 24 points on the edge of the screen equally radially distant around the core, then add some radial
+// jitter, these are the lines that chop up the hp bar into segments. Each of these lines should cut the hp bar exactly once, at which
+// intersection is randomly decided"): BOSS_RAYS rays from the core, evenly spaced round it, each turned by up to BOSS_RAY_JIT of the
+// spacing; a ray crosses the spiral lane once a turn - ONE of its crossings inside the span, picked by hash, is its cut, and the piece
+// ends there are cut ALONG THE RAY (bossPiece trims each side by the cut's slant). The 100% and 0% ends stay square
+const BOSS_RAYS = 24, BOSS_RAY_JIT = 0.4, BOSS_CUT_SIN = 0.3; // BOSS_CUT_SIN: the flattest cut allowed (the sine of ray against lane), for the gap and the trims
 const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0; h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }; // 0..1
-// COMPUTED ONCE A BOSS (owner, 2026-10-26: "can we precompute these if slow?"): the span and every piece's points, kept on the boss
-// (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each piece's part either
-// side of where the HP left begins
+// COMPUTED ONCE A BOSS (owner, 2026-10-26: "can we precompute these if slow?"): the span, the lane's points over it, the cuts and every
+// piece, kept on the boss (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each
+// piece's part either side of where the HP left begins
 function bossGeo(e) {
   const reach = typeof reachCircles === "function" ? reachCircles() : [], key = reach.map(c => Math.round(c.x) + "," + Math.round(c.y) + "," + Math.round(c.r)).join("|");
   if (e.bar && e.bar.key === key) return e.bar;
-  const a = bossHitS(e), b = PATHS[e.pi].len - bossBarOut(), ang = e.ang || 0, pieces = []; let s = a, i = 0;
-  while (s < b) {
-    const s1 = Math.min(b, s + BOSS_SEG_U), f = (b - (s + s1) / 2) / (b - a); // f: 1 at the 100% end, 0 at the core
-    const w = Math.min(BOSS_CORRIDOR, (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))), lim = (BOSS_CORRIDOR - w) / 2, off = Math.max(-lim, Math.min(lim, w * (2 * bossHash(e, i, 3) - 1))), pts = []; // off: up to its own width, kept inside the corridor
-    for (let t = s; ; t += BOSS_PIECE_STEP) {
-      const u = Math.min(t, s1), q = pathAt(e.pi, u, ang), q2 = pathAt(e.pi, u + 1, ang), l = Math.hypot(q2.x - q.x, q2.y - q.y) || 1, nx = -(q2.y - q.y) / l, ny = (q2.x - q.x) / l;
-      pts.push({ s: u, x: q.x + nx * off, y: q.y + ny * off, nx, ny }); if (t >= s1) break;
-    }
-    pieces.push({ s0: s, s1, w, pts }); s = s1 + BOSS_SEG_GAP; i++;
+  const a = bossHitS(e), b = PATHS[e.pi].len - bossBarOut(), ang = e.ang || 0, TAU = Math.PI * 2;
+  const L = []; let prevA = null, turn = 0; // the lane over the span: s, the point, its normal, its angle round the core UNWRAPPED (th)
+  for (let s = a; ; s += BOSS_PIECE_STEP) {
+    const u = Math.min(s, b), q = pathAt(e.pi, u, ang), q2 = pathAt(e.pi, u + 1, ang), l = Math.hypot(q2.x - q.x, q2.y - q.y) || 1, nx = -(q2.y - q.y) / l, ny = (q2.x - q.x) / l;
+    const th0 = Math.atan2(q.y - CY, q.x - CX); if (prevA !== null) { const d = th0 - prevA; if (d > Math.PI) turn -= TAU; else if (d < -Math.PI) turn += TAU; } prevA = th0;
+    L.push({ s: u, x: q.x, y: q.y, nx, ny, th: th0 + turn }); if (s >= b) break;
+  }
+  const at = s => { let lo = 0, hi = L.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (L[m].s <= s) lo = m; else hi = m; } return L[lo]; }; // the sample at s
+  const slant = c => { const p = at(c.s), tx = p.ny, ty = -p.nx; return Math.max(BOSS_CUT_SIN, Math.abs(tx * c.d.y - ty * c.d.x)); }; // |lane tangent x ray|: 1 square, small when the ray runs along the lane
+  const cuts = [];
+  for (let i = 0; i < BOSS_RAYS; i++) {
+    const th = (i + BOSS_RAY_JIT * (2 * bossHash(e, i, 4) - 1)) * TAU / BOSS_RAYS, xs = [];
+    for (let j = 1; j < L.length; j++) { const p = L[j - 1], q = L[j], k0 = Math.floor((p.th - th) / TAU), k1 = Math.floor((q.th - th) / TAU); if (k0 !== k1) { const f = (th + Math.max(k0, k1) * TAU - p.th) / (q.th - p.th || 1e-9); xs.push(p.s + (q.s - p.s) * Math.max(0, Math.min(1, f))); } }
+    if (xs.length) cuts.push({ s: xs[Math.floor(bossHash(e, i, 5) * xs.length) % xs.length], d: { x: Math.cos(th), y: Math.sin(th) } });
+  }
+  cuts.sort((p, q) => p.s - q.s);
+  const bounds = [{ s: a, d: null }]; for (const c of cuts) if (c.s - bounds[bounds.length - 1].s > BOSS_SEG_GAP * 2 && b - c.s > BOSS_SEG_GAP * 2) bounds.push(c); bounds.push({ s: b, d: null }); // (a cut within two gaps of the last: dropped)
+  const pieces = [];
+  for (let i = 0; i + 1 < bounds.length; i++) {
+    // EACH PIECE SHOVED TOWARD OR AWAY FROM THE CORE (owner, 2026-10-27: "jitter these formed segments towards or away from the core / make
+    // segments jittered inward smaller so that they do not overlap, and make outwardly pushed pieces bigger to maintain gap size"): a
+    // homothety about the core by k - the rays through the core map to themselves, so a shoved piece's ends still lie along its cuts; it
+    // shrinks inward and grows outward with its sector, width too; its gap along the lane is set / k so the gap across the cut stays
+    const c0 = bounds[i], c1 = bounds[i + 1], mid = at((c0.s + c1.s) / 2), rm = Math.hypot(mid.x - CX, mid.y - CY) || 1;
+    const f = (b - (c0.s + c1.s) / 2) / (b - a), w0 = Math.min(BOSS_CORRIDOR, (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))), lim = (BOSS_CORRIDOR - w0) / 2; // f: 1 at the 100% end, 0 at the core
+    const shove = Math.max(-lim, Math.min(lim, w0 * (2 * bossHash(e, i, 3) - 1))), k = 1 + shove / rm, w = w0 * k; // shove: up to its width, inside the corridor
+    const s0 = c0.d ? c0.s + BOSS_SEG_GAP / 2 / slant(c0) / k : c0.s, s1 = c1.d ? c1.s - BOSS_SEG_GAP / 2 / slant(c1) / k : c1.s; // the gap, measured across the cut, on the shoved piece
+    if (s1 - s0 < 2) continue;
+    const pts = L.filter(p => p.s >= s0 - BOSS_CORRIDOR && p.s <= s1 + BOSS_CORRIDOR).map(p => ({ s: p.s, x: CX + (p.x - CX) * k, y: CY + (p.y - CY) * k, nx: p.nx, ny: p.ny })); // (a margin each end: the slanted cuts reach past s0 / s1 on one side)
+    pieces.push({ s0, s1, w, k, pts, cut0: c0.d, cut1: c1.d });
   }
   return e.bar = { key, a, b, pieces };
 }
 const bossLerp = (p, q, f) => ({ x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f, nx: p.nx, ny: p.ny });
-// ON THE TOP LAYER (owner, 2026-10-26: "I want it crisp like the numbers"): the bar, its track and marks are drawn through warpEntities'
-// pop (at), straight onto the screen at device resolution like the %HP labels and the damage numbers - on the board's moving layer they
-// were a texture resampled through the warp, soft at any zoom
-// a piece is a BOX with an outline and slightly rounded corners (owner, 2026-10-27: "add a red outline to the boxes / round the corners",
-// then "roundness of edge should be ~5% of thickness"): the quad filled, then its outline stroked with round joins - BOSS_PIECE_ROUND of
-// the width in the fill colour (the corners' radius), and the outline colour BOSS_PIECE_OUT further out, under it
-const BOSS_PIECE_ROUND = 0.05;
-function bossPiece(g, from, to, at, fill, line) { // the piece's stretch [from, to]: its points inside, the ends interpolated
-  if (to - from < 1) return;
-  const P = g.pts, sel = [];
+function bossSide(P, from, to, h) { // one side of a piece: its points between from and to (the ends interpolated), h along the normal
+  const out = [];
   for (let i = 0; i < P.length; i++) {
     const p = P[i];
-    if (p.s < from) { if (i + 1 < P.length && P[i + 1].s > from) sel.push(bossLerp(p, P[i + 1], (from - p.s) / (P[i + 1].s - p.s))); continue; }
-    if (p.s > to) { if (i > 0 && P[i - 1].s < to) sel.push(bossLerp(P[i - 1], p, (to - P[i - 1].s) / (p.s - P[i - 1].s))); break; }
-    sel.push(p);
+    if (p.s < from) { if (i + 1 < P.length && P[i + 1].s > from) out.push(bossLerp(p, P[i + 1], (from - p.s) / (P[i + 1].s - p.s))); continue; }
+    if (p.s > to) { if (i > 0 && P[i - 1].s < to) out.push(bossLerp(P[i - 1], p, (to - P[i - 1].s) / (p.s - P[i - 1].s))); break; }
+    out.push(p);
   }
-  if (sel.length < 2) return;
-  const m = sel[sel.length >> 1], rad = g.w * BOSS_PIECE_ROUND, h = g.w / 2 - rad; // the quad drawn rad inside the width: the round-joined stroke brings it back out
+  return out.map(p => ({ x: p.x + p.nx * h, y: p.y + p.ny * h }));
+}
+// a piece is a BOX with an outline and slightly rounded corners (owner, 2026-10-27: "add a red outline to the boxes / round the corners",
+// then "roundness of edge should be ~5% of thickness"): each side's points between its own ends - a side's end at a ray cut is moved
+// along the lane by the cut's slant (h x cot of ray against lane), so the end edge lies ALONG the ray - then the quad filled and its
+// outline stroked with round joins: BOSS_PIECE_ROUND of the width in the fill colour (the corners' radius), the outline colour
+// BOSS_PIECE_OUT further out, under it
+const BOSS_PIECE_ROUND = 0.05;
+function bossPiece(g, from, to, at, fill, line) { // the piece's stretch [from, to] along the lane
+  if (to - from < 1) return;
+  const rad = g.w * BOSS_PIECE_ROUND, h = g.w / 2 - rad, P = g.pts;
+  const trim = (d, s, sign) => { // how far along the lane a side's end moves for a cut along ray d at s: the side sits sign x h off the lane
+    let p = P[0]; for (const q of P) { if (q.s > s) break; p = q; } const tx = p.ny, ty = -p.nx, cr = tx * d.y - ty * d.x, nd = p.nx * d.y - p.ny * d.x;
+    return Math.abs(cr) < BOSS_CUT_SIN ? 0 : -sign * h * nd / cr / (g.k || 1); // (/ k: a shoved piece's lane units are k long)
+  };
+  const c0 = Math.abs(from - g.s0) < 1e-6 ? g.cut0 : null, c1 = Math.abs(to - g.s1) < 1e-6 ? g.cut1 : null;
+  const Lp = bossSide(P, from + (c0 ? trim(c0, from, 1) : 0), to + (c1 ? trim(c1, to, 1) : 0), h), Rp = bossSide(P, from + (c0 ? trim(c0, from, -1) : 0), to + (c1 ? trim(c1, to, -1) : 0), -h);
+  if (Lp.length < 2 || Rp.length < 2) return;
+  const m = Lp[Lp.length >> 1];
   at(m.x, m.y, () => {
     ctx.beginPath();
-    for (let i = 0; i < sel.length; i++) { const p = sel[i]; if (i) ctx.lineTo(p.x + p.nx * h, p.y + p.ny * h); else ctx.moveTo(p.x + p.nx * h, p.y + p.ny * h); }
-    for (let i = sel.length - 1; i >= 0; i--) { const p = sel[i]; ctx.lineTo(p.x - p.nx * h, p.y - p.ny * h); }
+    Lp.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+    for (let i = Rp.length - 1; i >= 0; i--) ctx.lineTo(Rp[i].x, Rp[i].y);
     ctx.closePath(); ctx.lineJoin = "round";
     ctx.strokeStyle = line; ctx.lineWidth = 2 * (rad + BOSS_PIECE_OUT); ctx.stroke();
     ctx.fillStyle = fill; ctx.fill(); ctx.strokeStyle = fill; ctx.lineWidth = 2 * rad; ctx.stroke();
