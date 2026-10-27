@@ -18,8 +18,15 @@ const BOSS_LANE_STEP = 10, BOSS_BAR_IN = 50; const bossBarOut = () => (typeof co
 // hittable, not at the edge of the screen") - and inside the play box by BOSS_BAR_EDGE; else the first point that far in, else BOSS_BAR_IN past the mouth
 const BOSS_BAR_EDGE = 60; // u: the 100% end at least this far inside the play box, so its piece is ON SCREEN (owner, 2026-10-27: "make sure that the last piece (the one that would contain 100) ends up on screen"; the widest piece is 44 u across, slid up to BOSS_SLIDE_MAX out)
 const bossInBox = p => Math.abs(p.x - CX) <= BOX_HX - BOSS_BAR_EDGE && Math.abs(p.y - CY) <= BOX_HY - BOSS_BAR_EDGE;
-function bossHitS(e) { const P = PATHS[e.pi], s0 = entryS(e.pi), reach = typeof reachCircles === "function" ? reachCircles() : []; let sIn = -1; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) { const p = pathAt(e.pi, s, e.ang || 0); if (!bossInBox(p)) continue; if (sIn < 0) sIn = s; if (inReach(p, reach)) return s; } return Math.max(sIn, s0 + BOSS_BAR_IN); }
-const bossSpan = e => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - (g.b - g.a) * Math.max(0, e.hp) / e.max }; }; // a: the 100% end, b: the 0% end, hp: where the HP left begins
+function bossHitS(e) { const P = PATHS[e.pi], s0 = entryS(e.pi); let sIn = -1; for (let s = s0; s < P.len; s += BOSS_LANE_STEP) { const p = pathAt(e.pi, s, e.ang || 0); if (bossInBox(p)) { sIn = s; break; } } return Math.max(sIn, s0 + BOSS_BAR_IN); } // the 100% end where the lane comes INTO the play box (owner, 2026-10-27: "it's like, not taking advantage of the screen space"; was where it first met a tower's reach)
+const bossSpan = (e, f = Math.max(0, e.hp) / e.max) => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - (g.b - g.a) * f }; };
+// ONE BAR A LANE (owner, 2026-10-27: two Devils a lane drew two bars over each other - "also looks off"): the bosses on one lane copy share a
+// bar, drawn on the first of them alive (the lowest id), its HP theirs together: [{ e, f }]
+function barLeads() {
+  const m = new Map();
+  for (const e of G.enemies) { if (!e.arcana || e.dead) continue; const k = e.pi + ":" + (e.ang || 0).toFixed(3), g = m.get(k); if (!g) m.set(k, { e, hp: Math.max(0, e.hp), max: e.max }); else { g.hp += Math.max(0, e.hp); g.max += e.max; if (e.id < g.e.id) g.e = e; } }
+  return [...m.values()].map(g => ({ e: g.e, f: g.hp / (g.max || 1) }));
+} // a: the 100% end, b: the 0% end, hp: where the HP left begins
 // THE BAR IN PIECES (owner, 2026-10-26: "the width should increase as we approach the edge / chop up the hp lane into segments and
 // jitter the size of each segment, jitter segments spatially on axis perpendicular to lane, but never more than 100% of the segment's
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
@@ -33,6 +40,9 @@ const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 2 /* (owner, 2026-10-27: "5x thickness j
 // jitter"; one a ray, picked by hash, left long uncut runs), and the piece ends there lie ALONG THE RAY (owner, 2026-10-27: "the aligned
 // spoke is more important") - so the cuts on every turn line up as spokes
 const BOSS_RAYS = 24, BOSS_RAY_JIT = 0.4, BOSS_CUT_MIN = 0.25, BOSS_PIECE_ROUND = 0.05, BOSS_PIECE_MIN = 0.5, BOSS_PIECE_FLOOR = 40, BOSS_SLIDE_MAX = 30, BOSS_SLIDE_W = 1, BOSS_LANE_KEEP = 1, BOSS_GAP_CORE = 0.3, BOSS_OUT_CORE = 0.3, BOSS_FLOOR_CORE = 0.15, BOSS_CUT_MARGIN = 2; // BOSS_PIECE_MIN: a piece at least this much of its width long, else the cut is skipped; BOSS_PIECE_FLOOR: no piece thinner, u, unless the turns either side sit closer (owner, 2026-10-27: "floor 10u", "floor 30u", "min width should be like 20u", then "min width in general should be 2x what it is now (+ scaling)"; was 4); BOSS_SLIDE_MAX: a piece's slide along its spoke, u, at most; BOSS_SLIDE_W: ...and at most this many of its own widths; BOSS_LANE_KEEP: u of piece kept past the lane's line on its far side after a slide; BOSS_GAP_CORE / BOSS_OUT_CORE / BOSS_FLOOR_CORE: the gap, the outline and the width floor at the core, of their full values at the 100% end (owner, 2026-10-27: "outer gaps 10u / inner gaps 3u"; the outline 0.45 u, the floor 3 u); BOSS_CUT_MARGIN: u of slack a cut needs past the slant room, scaled the same; BOSS_CUT_MIN: a ray flatter than this against the lane (its sine) cuts square; BOSS_PIECE_ROUND: a piece's corner radius, of its width
+// THINNER BARS WHERE BOSSES SHARE THE BOARD (owner, 2026-10-27: "for the devil, 1/3 the thickness and spoke jitter / for lovers 1/2"): each
+// piece's width and its slide along its spoke x these, by arcana (the Devil's width doubled back - "also 2x devil boss hp thickness")
+const BOSS_BAR_THIN = { devil: 2 / 3, lovers: 1 / 2 }, BOSS_BAR_SLIDE = { devil: 1 / 3, lovers: 1 / 2 };
 const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0; h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }; // 0..1
 // COMPUTED ONCE A BOSS (owner, 2026-10-26: "can we precompute these if slow?"): the span, the lane's points over it, the cuts and every
 // piece, kept on the boss (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each
@@ -40,7 +50,7 @@ const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0;
 function barGeo(e) {
   const reach = typeof reachCircles === "function" ? reachCircles() : [], key = (BOX_WIDE ? "w|" : "p|") + reach.map(c => Math.round(c.x) + "," + Math.round(c.y) + "," + Math.round(c.r)).join("|"); // (the box's shape too: the 100% end keeps inside it)
   if (e.bar && e.bar.key === key) return e.bar;
-  const a = bossHitS(e), b = PATHS[e.pi].len - bossBarOut(), ang = e.ang || 0, TAU = Math.PI * 2;
+  const a = bossHitS(e), b = PATHS[e.pi].len - bossBarOut(), ang = e.ang || 0, TAU = Math.PI * 2, thin = BOSS_BAR_THIN[e.arcana] || 1, slideK = BOSS_BAR_SLIDE[e.arcana] || 1;
   const L = []; let prevA = null, turn = 0; // the lane over the span: s, the point, its normal, its angle round the core UNWRAPPED (th)
   for (let s = Math.max(0, a - BOSS_CORRIDOR * 2); ; s += BOSS_PIECE_STEP) { // (from before the 100% end: its ray cut reaches back past it on one side)
     const u = Math.min(s, b), q = pathAt(e.pi, u, ang), q2 = pathAt(e.pi, u + 1, ang), l = Math.hypot(q2.x - q.x, q2.y - q.y) || 1, nx = -(q2.y - q.y) / l, ny = (q2.x - q.x) / l;
@@ -74,11 +84,11 @@ function barGeo(e) {
     return Math.max(4, Math.min(cap, ...rs)); };
   // piece i's width at s: the taper (BOSS_PIECE_W at the core end .. the 100% end) jittered by its hash, inside the corridor, never under BOSS_PIECE_FLOOR
   const marksS = BOSS_BAR_MARKS.map(f => b - (b - a) * f), markIn = (s0, s1) => marksS.findIndex(m => m >= s0 - 1e-6 && m <= s1 + 1e-6); // the mark (its index in BOSS_BAR_MARKS) between s0 and s1, -1 none: the piece holding one carries its number and is at least BOSS_LABEL_W wide - the lowest mark's BOSS_LABEL_W0 - where the turns allow (owner, 2026-10-27: "min thickness of segment with a number should be 50" / "except for 0, allow it to be 30u"; a taper to the core was tried and dropped)
-  const wOf = (i, s, s0, s1) => { const mk = markIn(s0, s1); return Math.min(corrAt(s), Math.max(mk < 0 ? 0 : BOSS_BAR_MARKS[mk] <= 0.05 ? BOSS_LABEL_W0 : BOSS_LABEL_W, floorAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * Math.pow(share(s), BOSS_PIECE_POW)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))); }; // (the corridor last: the floor never pushes a piece into the next turn)
+  const wOf = (i, s, s0, s1) => { const mk = markIn(s0, s1); return Math.min(corrAt(s), Math.max(mk < 0 ? 0 : BOSS_BAR_MARKS[mk] <= 0.05 ? BOSS_LABEL_W0 : BOSS_LABEL_W, floorAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * Math.pow(share(s), BOSS_PIECE_POW)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))) * thin; }; // (the corridor last: the floor never pushes a piece into the next turn)
   // the piece's slide along its spoke: at most BOSS_SLIDE_MAX (owner, 2026-10-27: "cap spoke jitter to +/-30u so that they cover lane"), and
   // at most the room left between its width and the turns either side (half each way, so two turns' pieces slid toward each other still
   // keep the gap - the real pitch, not BOSS_CORRIDOR). Along the lane a slide changes nothing: the piece is cut after it slides
-  const slideOf = (i, s, w) => BOSS_SHOVE * Math.min(BOSS_SLIDE_MAX, BOSS_SLIDE_W * w, Math.max(0, w / 2 - BOSS_BAR_W / 2 - BOSS_LANE_KEEP), Math.max(0, (corrAt(s, Infinity) - w) / 2)) * (2 * bossHash(e, i, 3) - 1); // (BOSS_SLIDE_W * w: a thin piece slides less, in step with its width - owner, 2026-10-27: "ensure that spoke jitter is reduced proportionally to thickness"; w / 2 - the lane's half width - BOSS_LANE_KEEP: the piece still covers the lane's line - owner, 2026-10-27: "make sure that the lane is completely covered by the pieces")
+  const slideOf = (i, s, w) => slideK * BOSS_SHOVE * Math.min(BOSS_SLIDE_MAX, BOSS_SLIDE_W * w, Math.max(0, w / 2 - BOSS_BAR_W / 2 - BOSS_LANE_KEEP), Math.max(0, (corrAt(s, Infinity) - w) / 2)) * (2 * bossHash(e, i, 3) - 1); // (BOSS_SLIDE_W * w: a thin piece slides less, in step with its width - owner, 2026-10-27: "ensure that spoke jitter is reduced proportionally to thickness"; w / 2 - the lane's half width - BOSS_LANE_KEEP: the piece still covers the lane's line - owner, 2026-10-27: "make sure that the lane is completely covered by the pieces")
   const slid = (P, d) => P.map(p => { const dx = p.x - CX, dy = p.y - CY, r = Math.hypot(dx, dy) || 1, k = (r + d) / r; return { s: p.s, x: CX + dx * k, y: CY + dy * k }; });
   // THE PIECES' BOUNDS: the 100% end, the cuts, the 0% end - EVERY one a ray through the core (owner, 2026-10-27: "the cuts don't all seem
   // to use the core as a vanishing point"); a cut is kept only if the piece before it has room for both slanted ends and a gap, else it
@@ -195,13 +205,18 @@ function barThud(e, g) { // a piece slamming home: a thud, lower and louder the 
   const k = (Math.log(g.area ||= barArea(g)) - B.lnA[0]) / Math.max(1e-6, B.lnA[1] - B.lnA[0]); // 0 the smallest .. 1 the biggest
   sfx("thud", BAR_THUD_HZ[1] + (BAR_THUD_HZ[0] - BAR_THUD_HZ[1]) * k, BAR_THUD_VOL[0] + (BAR_THUD_VOL[1] - BAR_THUD_VOL[0]) * k);
 }
-function barRings(e) { // the pieces in RINGS - no two of a ring on one spoke, their angles round the core disjoint - and each ring's turn to slam
-  const P = e.bar.pieces, wrap = d => Math.atan2(Math.sin(d), Math.cos(d)), thAt = cs => { const Q = pathAt(e.pi, cs, e.ang || 0); return Math.atan2(Q.y - CY, Q.x - CX); };
-  const A = P.map(g => { const t0 = thAt(g.cs0), d = wrap(thAt(g.cs1) - t0); return { th: t0 + d / 2, hs: Math.abs(d) / 2 }; }); // each: its SPINE's angle round the core, cut to cut, and half span - the lane's line, not the outline: a square cut's corner pokes past its ray by w / 2 / r, and that sliver is no shared spoke (it stranded a piece in a ring of its own)
+// ALL THE LANES' PIECES IN ONE SET OF RINGS (owner, 2026-10-27: "when grouping segments for multiple lanes, group them all together, each lane
+// should not have their own groups"): the Lovers' and the Devil's bars ring and slam as one bar - computed over every lane's lead bar
+// (barLeads) and handed to each as e.bar.rings: its own pieces' ring and turn, out of N in all
+function barRings() {
+  const own = barLeadSet.map(o => o.e).filter(o => barGeo(o)), P = [], who = []; for (const o of own) o.bar.pieces.forEach((g, i) => { P.push(g); who.push({ o, i }); });
+  const wrap = d => Math.atan2(Math.sin(d), Math.cos(d)), thAt = (o, cs) => { const Q = pathAt(o.pi, cs, o.ang || 0); return Math.atan2(Q.y - CY, Q.x - CX); };
+  const A = P.map((g, j) => { const o = who[j].o, t0 = thAt(o, g.cs0), d = wrap(thAt(o, g.cs1) - t0); return { th: t0 + d / 2, hs: Math.abs(d) / 2 }; }); // each: its SPINE's angle round the core, cut to cut, and half span - the lane's line, not the outline: a square cut's corner pokes past its ray by w / 2 / r, and that sliver is no shared spoke (it stranded a piece in a ring of its own)
   const apart = (i, j) => Math.abs(wrap(A[i].th - A[j].th)) >= A[i].hs + A[j].hs, rings = [], ring = new Array(P.length);
   for (const i of P.map((g, a) => a).sort((a, b) => barR(P[a]) - barR(P[b]))) { let k = rings.findIndex(R => R.every(j => apart(i, j))); if (k < 0) { k = rings.length; rings.push([]); } rings[k].push(i); ring[i] = k; } // first fit from the core out: ring k is the k-th turn, near enough
-  const seq = new Array(P.length); let q = 0; for (const M of rings) { for (let a = M.length - 1; a > 0; a--) { const b = Math.floor(bossHash(e, M[a], 10) * (a + 1)); [M[a], M[b]] = [M[b], M[a]]; } for (const i of M) seq[i] = q++; } // seq: the piece's turn to slam - ring by ring from the innermost (owner, 2026-10-27: "starting with innermost group"; a random order was asked first, then this), within a ring one at a time in an order drawn by hash ("within a group, slam one at a time" / "within a group, I want random"; a sweep round the core was tried between): Fisher-Yates, the same every frame, another per boss
-  return { ring, seq, n: rings.length };
+  const seq = new Array(P.length); let q = 0; for (const M of rings) { for (let a = M.length - 1; a > 0; a--) { const b = Math.floor(bossHash(who[M[a]].o, who[M[a]].i, 10) * (a + 1)); [M[a], M[b]] = [M[b], M[a]]; } for (const i of M) seq[i] = q++; } // seq: the piece's turn to slam - ring by ring from the innermost (owner, 2026-10-27: "starting with innermost group"; a random order was asked first, then this), within a ring one at a time in an order drawn by hash ("within a group, slam one at a time" / "within a group, I want random"; a sweep round the core was tried between): Fisher-Yates, the same every frame, another per boss
+  for (const o of own) o.bar.rings = { ring: [], seq: [], n: rings.length, N: P.length, key: barLeadKey }; // (key: the leads it was rung over - a boss come later re-rings them all)
+  who.forEach(({ o, i }, j) => { o.bar.rings.ring[i] = ring[j]; o.bar.rings.seq[i] = seq[j]; });
 }
 const barFar = () => Math.max(...[[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY))); // u from the core to the screen's farthest corner
 const barFlyFrom = () => barFar() * 1.1 + 100; // u out along a spoke: past that corner
@@ -210,7 +225,7 @@ function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, 
   const g = e.bar && e.bar.pieces[i]; if (!g) return 0; const arm = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(barR))) + BAR_RING_PAD - barR(g); // out of place: at the armada's ring, and off-screen
   const h = k => bossHash(e, i, k), arrive = BAR_APPROACH * (0.6 + 0.4 * h(8)), dur = arrive * (0.5 + 0.5 * h(9)), launch = arrive - dur; // act 1, its own
   if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return arm + (far - arm) * (1 - ease); }
-  const R = e.bar.rings ||= barRings(e), N = e.bar.pieces.length, pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)), land = BAR_APPROACH + BAR_FLY_LEAD + R.seq[i] * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, N - 1) + R.ring[i] * pause, slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam; // act 3: at its ring's turn
+  if (!e.bar.rings || e.bar.rings.key !== barLeadKey) barRings(); const R = e.bar.rings || { ring: [], seq: [], n: 1, N: 1 }, N = R.N, pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)), land = BAR_APPROACH + BAR_FLY_LEAD + R.seq[i] * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, N - 1) + R.ring[i] * pause, slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam; // act 3: at its ring's turn
   const drift = tt => Math.max(0, arm - v * (tt - arrive)); // act 2: from where it stopped, in slowly (never past its place)
   if (t >= land) { if (!g.home) { g.home = true; barThud(e, g); } return 0; } if (t < t0) return drift(t); // (home: its thud once, the frame it lands - bar and track both ask)
   const u = (t - t0) / slam; return (1 - u * u * u) * drift(t0); // act 3
@@ -221,20 +236,19 @@ function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, 
 // the whole inverted palette under a full one), so a piece takes the lane's OWN colour and comes out turned over with it; what must
 // show WHITE on screen (the HP-gone boxes, the numbers) is drawn in whatever that flip turns into white - barWhite
 const barWhite = pt => (inverted || (skyOn() && !skyPal() && inSkyPt(pt.x, pt.y))) ? invertColor(COL.white) : COL.white;
-function drawBossBarFloor() { drawBossBar(); drawBossTrack(); drawBossLabels(); }
+let barLeadSet = [], barLeadKey = ""; // this draw's lane leads (barLeads), once for the three passes and every piece's fly-in
+function drawBossBarFloor() { barLeadSet = barLeads(); barLeadKey = barLeadSet.map(o => o.e.id).join(","); drawBossBar(); drawBossTrack(); drawBossLabels(); }
 function drawBossBar() { // the HP left, in the lane's own colour (turned over with it under the sky): each piece's part past where the HP left begins
   const own = COL[ENEMIES.bonus.color];
-  for (const e of G.enemies) {
-    if (!e.arcana || e.dead) continue;
-    const { hp } = bossSpan(e); ctx.globalAlpha = 1;
+  for (const { e, f } of barLeadSet) {
+    const { hp } = bossSpan(e, f); ctx.globalAlpha = 1;
     e.bar.pieces.forEach((g, i) => barPiece(g, e.bar, hp, true, own, own, barFlyOff(e, i)));
   }
   ctx.globalAlpha = 1;
 }
 function drawBossTrack() { // the HP gone: the pieces' white part from the 100% end to where the HP left begins
-  for (const e of G.enemies) {
-    if (!e.arcana || e.dead) continue;
-    const { hp } = bossSpan(e), own = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
+  for (const { e, f } of barLeadSet) {
+    const { hp } = bossSpan(e, f), own = COL[ENEMIES.bonus.color]; ctx.globalAlpha = 1;
     e.bar.pieces.forEach((g, i) => { const m = g.Lp[g.Lp.length >> 1]; barPiece(g, e.bar, hp, false, barWhite(m), own, barFlyOff(e, i)); }); // hollow: white in the lane's outline
   }
   ctx.globalAlpha = 1;
@@ -259,9 +273,8 @@ function labelSprite(str, col) { // the number drawn once, cropped to its glyphs
   const sp = { cv: m, w, h: m.height }; if (labelSprites.size > 32) labelSprites.clear(); labelSprites.set(key, sp); return sp;
 }
 function drawBossLabels() {
-  for (const e of G.enemies) {
-    if (!e.arcana || e.dead) continue;
-    const hp = Math.max(0, e.hp) / e.max, ang = e.ang || 0, wind = e.bar.sgn, la = barLabelA(); if (la <= 0) continue; // (the numbers fade in once the last ring is home)
+  for (const { e, f } of barLeadSet) {
+    if (!e.bar) continue; const hp = f, ang = e.ang || 0, wind = e.bar.sgn, la = barLabelA(); if (la <= 0) continue; // (the numbers fade in once the last ring is home)
     e.bar.pieces.forEach(p => {
       if (!(p.mi >= 0)) return;
       const f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? barWhite(mp) : own); // (over the HP gone: the lane's own colour, turned over with the box's outline)

@@ -5,7 +5,7 @@
 // disagree with the game. Pauses like the changelog card. Loaded after aspira-wavelist.js.
 let waveCardPaused = null;
 function waveSample(n, w) {
-  const pi = laneMap()[w.type] ?? 0, r0 = Math.random, id0 = G.id;
+  const pi = laneMap(n)[w.type] ?? 0, r0 = Math.random, id0 = G.id;
   Math.random = () => 0.5;
   try { spawnEnemy(w.type, n, pi, 0); } finally { Math.random = r0; }
   const e = G.enemies.pop(); G.id = id0;

@@ -15,7 +15,7 @@ const CANVAS_FONT = "'Iosevka Mayukai Monolite', monospace";
 // R0 sits past the canvas corners (707 from centre), so every lane starts
 // off-screen and enemies drift in from beyond the chart; RIM_R is the chart's
 // graduated rim, where each lane's entry marker and numeral are drawn.
-const N_PATHS = 12, R0 = 760, R1 = CORE_R, RIM_R = 482, GLOW_PATH_R = 330;
+const N_PATHS = 12, R0 = 760, R1 = CORE_R, RIM_R = 482, GLOW_PATH_R = 330, DEVIL_PI = 2, DEVIL_TURNS = 1; // DEVIL_PI / DEVIL_TURNS: the Devil's own lane (buildSpiral, laneMap)
 // Every tower stands inside the central disc. The spirals run through it to
 // the core; towers and enemies never collide, so building on a lane is fine.
 // Only SIX slots (owner, 2026-10-02): the ring of hexes around the core - THREE since 2026-10-09 (SLOT_ANGLES below).
@@ -157,7 +157,7 @@ function cellAt(x, y) {
 // AN EIGHTH OF THE TURNS (owner, 2026-10-11: towers drag twice as far, so "quarter all the current lane distances", then
 // "halve the orbits again"): each pair's distance under fire fell to about a fifth (fast 1061 -> 263, armor 4765 -> 641);
 // the radial lead-in is unchanged. Was [1.9, 5.86, 2.06, 7.22, 8.78, 7.22]
-const PAIR_TURNS = [0.2375, 4.3363 /* DOUBLE the boss lane's length from the spawn ring in (owner, 2026-10-17: "double movement speed of all bosses, but, also double their lane lengths" - 2.1975 turns gave 2712 u, 4.3363 gives 5424); the BOSS pair x1.5 (owner, 2026-10-12: "lane length only 1.5x instead of 2"; was 1.465, briefly 2.93); doubled (owner, 2026-10-11: "double all current boss lane lengths"; was 0.7325) */, 0.05 /* swarm ALMOST STRAIGHT (owner, 2026-10-12: "buff swarm, make them take an almost straight path"; was 0.2575) */, 0.6 /* shield (owner, 2026-10-12: slightly shorter, -6.7%; was 0.9025) */, 0.4 /* fast (owner, 2026-10-12: "reduce lane length for fast by 30%" - turns cannot go below ~23%; 0.4 keeps a curve: 2523 vs 3095, -18%; was 1.0975) */, 0.9025], FIRE_R = 250;
+const PAIR_TURNS = [0.2375, 2 /* WAY SHORTER (owner, 2026-10-27: "make the lanes way shorter" - the boss lanes, round now: 4.3363 turns gave 6629 u) */ /* DOUBLE the boss lane's length from the spawn ring in (owner, 2026-10-17: "double movement speed of all bosses, but, also double their lane lengths" - 2.1975 turns gave 2712 u, 4.3363 gives 5424); the BOSS pair x1.5 (owner, 2026-10-12: "lane length only 1.5x instead of 2"; was 1.465, briefly 2.93); doubled (owner, 2026-10-11: "double all current boss lane lengths"; was 0.7325) */, 0.05 /* swarm ALMOST STRAIGHT (owner, 2026-10-12: "buff swarm, make them take an almost straight path"; was 0.2575) */, 0.6 /* shield (owner, 2026-10-12: slightly shorter, -6.7%; was 0.9025) */, 0.4 /* fast (owner, 2026-10-12: "reduce lane length for fast by 30%" - turns cannot go below ~23%; 0.4 keeps a curve: 2523 vs 3095, -18%; was 1.0975) */, 0.9025], FIRE_R = 250;
 // Winding is driven by the lane's PITCH (its angle off straight-in), not by
 // angle-vs-t: theta(t) = turns * 2pi * F(t) / F(1) with F' = t^TANGENT_Q / r(t).
 // The pitch then grows smoothly from 0 (tan pitch ~ t^q), so the lane leaves
@@ -196,11 +196,11 @@ function ellipse(x, y, ax, stretch) {
 
 function buildSpiral(i) {
   const a0 = ((i + 0.5) / N_PATHS) * Math.PI * 2 - Math.PI / 2;
-  const dir = i % 2 ? 1 : -1, turns = PAIR_TURNS[i >> 1], steps = Math.round(160 * turns) + 240; // (rounded: turns may be fractional)
+  const devil = i === DEVIL_PI, dir = i % 2 || devil ? 1 : -1, turns = devil ? DEVIL_TURNS : PAIR_TURNS[i >> 1], steps = Math.round(160 * turns) + 240; // (rounded: turns may be fractional) // THE DEVIL'S OWN LANE (owner, 2026-10-27: "for devil, untwist the lanes even more"): DEVIL_PI, the boss pair's counter-clockwise twin nothing rode, clockwise at DEVIL_TURNS
   // odd pairs are elliptical: stretched along the pair's own mirror axis, so
   // the pair stays symmetric; ax = that axis, stretch = 0 for round pairs
   const ax = (((i >> 1) * 2 + 1) / N_PATHS) * Math.PI * 2 - Math.PI / 2;
-  const stretch = (i >> 1) % 2 ? ELLIPSE : 0, rEnd = R1 / (1 + stretch);
+  const stretch = (i >> 1) % 2 && (i >> 1) !== 1 ? ELLIPSE : 0, rEnd = R1 / (1 + stretch); // THE BOSS PAIR IS ROUND (owner, 2026-10-27: "change the lanes so that they never overlap / same with lovers"): the Devil's and the Lovers' ride ROTATED copies, and a stretched spiral turned about the core crosses itself, a round one never (each radius once); shorter for it ("no we can keep lane length lowered"; was 9288 u)
   const pts = [];
   let prev = null, acc = 0;
   for (let k = 0; k < 40; k++) {

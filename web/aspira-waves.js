@@ -252,9 +252,10 @@ const TYPE_PAIR = { fast: 4, bonus: 1, swarm: 2, shield: 3, armor: 0 }; // fast 
 const TYPE_ORDER = Object.keys(ENEMIES);
 const isCcw = pi => pi % 2 === 0;
 const laneTurn = n => ((n * 5) % N_PATHS) * 2 * Math.PI / N_PATHS;
-function laneMap() {
+function laneMap(n) {
   const out = {};
   for (const type of TYPE_ORDER) out[type] = 2 * TYPE_PAIR[type] + 1;
+  if (n > 0 && n % STAR_EVERY === 0 && arcanaOf(n).id === "devil") out.bonus = DEVIL_PI; // the Devil's own, untwisted lane (aspira-defs.js)
   return out;
 }
 

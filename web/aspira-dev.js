@@ -3,7 +3,7 @@
 // resume card dropped, a FRZ on the first open cell, the Star sent AT THE FIRST TAP (the audio needs a gesture before it can make a
 // sound - sent on load the whole scene was silent, owner 2026-10-27: "no sound"), its HP set to DEV_BOSS_HP once it is well onto the
 // board, then the game paused (1x resumes). Never touches the real run: the autosave's checkpoint is parked (runSavedAt).
-// ?dev=boss&hp=0.3 for another HP share; ?dev=boss&t=<kind> for another tower. Loaded last (aspira.html); does nothing without ?dev=.
+// ?dev=boss&hp=0.3 for another HP share; ?dev=boss&t=<kind> for another tower; ?dev=boss&boss=lovers (any arcana id) for another boss. Loaded last (aspira.html); does nothing without ?dev=.
 const DEV = typeof location !== "undefined" ? new URLSearchParams(location.search) : null, DEV_SCENE = DEV ? DEV.get("dev") || "" : "";
 const DEV_BOSS_HP = 0.55, DEV_BOSS_IN_U = 150;
 if (DEV_SCENE === "boss") {
@@ -16,7 +16,7 @@ if (DEV_SCENE === "boss") {
     if (!built) {
       if (typeof runSavedAt !== "undefined") runSavedAt = Infinity; // (no checkpoint of this scene over the real run - aspira-autosave.js)
       G.money = 1e9; ui.build = DEV.get("t") || "frz"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null;
-      G.started = true; G.wave = STAR_EVERY - 1; G.lastType = "fast"; G.enemies.length = 0; G.fleetQ.length = 0; G.spawns.length = 0; G.nextIn = 0;
+      G.started = true; G.wave = STAR_EVERY * (Math.max(0, ARCANA.findIndex(a => a.id === DEV.get("boss"))) + 1) - 1; /* &boss=<id>: that arcana's wave (else the Star) */ G.lastType = "fast"; G.enemies.length = 0; G.fleetQ.length = 0; G.spawns.length = 0; G.nextIn = 0;
       built = true; return;
     }
     let b = G.enemies.find(e => e.arcana && !e.dead);

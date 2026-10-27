@@ -64,7 +64,7 @@ const BOSS_SHIELD_REGEN = { star: 0, empress: 0, strength: 0, chariot: 0, lovers
 const BOSS_INTRO = 2; /* 20% shorter (owner, 2026-10-12; was 2.5) */ // s between a boss wave starting and its boss arriving (its warning plays)
 let EMPRESS_BROOD = 12; // fitted 2026-10-05 (was 30): her HP was never the lever, her brood is; let: the boss balance test (scripts/aspira-sim/bossbal.mjs, BB_BROOD) tries other broods
 const CHARIOT_EVERY = 4, CHARIOT_T = 1, CHARIOT_SPD = 3, LOVERS_SPD = 1.5;
-const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, JUSTICE_CAP = 0.02, JUDGEMENT_REVIVE = 0.5;
+const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, DEVIL_LANES = 3, JUSTICE_CAP = 0.02, JUDGEMENT_REVIVE = 0.5;
 
 // a boss's HP scaled with its lane's length while it rode a different lane each boss wave; it has ONE
 // spiral now (owner, 2026-10-08), so the old average factor (1.107 over the boss waves) stands as a constant
@@ -79,7 +79,7 @@ const arcanaOf = n => ARCANA[Math.min(ARCANA.length, Math.max(1, Math.round(n / 
 // how many bosses ride a boss wave: the Lovers come as two, the Devil as six,
 // one on each of six lane copies
 const bossCount = n => (arcanaOf(n).id === "devil" ? 1 + DEVIL_COPIES : arcanaOf(n).id === "lovers" ? 2 : 1);
-const bossSplit = n => (arcanaOf(n).id === "devil" ? 1 + DEVIL_COPIES : arcanaOf(n).id === "lovers" ? 2 : 1); // the Lovers on TWO lanes, opposite (owner, 2026-10-12; they shared one)
+const bossSplit = n => (arcanaOf(n).id === "devil" ? DEVIL_LANES /* TWO A LANE (owner, 2026-10-27: "put 2 devils per lane, so that there's only 3"; was six lanes) */ : arcanaOf(n).id === "lovers" ? 2 : 1); // the Lovers on TWO lanes, opposite (owner, 2026-10-12; they shared one)
 const isA = (e, id) => e.arcana === id;
 
 // BOSSES WEIGHTIER (owner, 2026-10-16: "make the bosses feel more significant, halve the movement speed of them and their fleet,
