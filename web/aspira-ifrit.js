@@ -119,9 +119,9 @@ function stepIfr(t, dt) {
 // should keep going until hit or offscreen"): straight on until the FIRST enemy its body touches - that one takes st.dmg x st.routeK and the
 // meteor bursts there (the fire, the fan) - or until it leaves the VIEW (ifrOnView: what the camera shows, not the play box), gone without a
 // burst. The capstone FISSURES: a hit spawns two meteors IFR_FISSURE_DEG either side of its heading (gen 1: they do not fissure, and skip that enemy) ----------
-function ifrMeteor(t, st, x, y, ang, gen, skip, wait = 0, fire = null) { // gen 0 the launched one, 1 the fan, 2 a fissure's; wait: s before it leaves; fire: the main meteor's FIRE a spawned one stays inside
+function ifrMeteor(t, st, x, y, ang, gen, skip, wait = 0) { // gen 0 the launched one, 1 the fan, 2 a fissure's; wait: s before it leaves
   const v = st.ballV * (gen ? IFR_FAN_V : 1);
-  t.ifrBalls.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, r: st.ballR * (gen ? IFR_FAN_R : 1), gen, skip, left: IFR_FLY_S, wait, fuse: gen ? ifrFuse() : null, fire });
+  t.ifrBalls.push({ x, y, vx: Math.cos(ang) * v, vy: Math.sin(ang) * v, r: st.ballR * (gen ? IFR_FAN_R : 1), gen, skip, left: IFR_FLY_S, wait, fuse: gen ? ifrFuse() : null });
 }
 // is (x, y) in the camera's view (r world units of slack)? 3D: projected onto the canvas; the simulator has no view - within IFR_FLY_R of the core
 function ifrOnView(x, y, r) {
@@ -161,9 +161,9 @@ function ifrHome(b, all, dt) {
   return false;
 }
 // THE FAN: st.fan meteors round 360 degrees from (x, y), evenly (a random start), each released after a bell-curve delay
-function ifrFan(t, born, st, x, y, skip) {
-  const n = st.fan, a0 = Math.random() * 2 * Math.PI, fire = t.ifrFires[t.ifrFires.length - 1]; /* the fire ifrImpact just lit: the fan stays inside it */
-  for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, ifrFanDelay(n), fire]);
+function ifrFan(born, st, x, y, skip) {
+  const n = st.fan, a0 = Math.random() * 2 * Math.PI;
+  for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, ifrFanDelay(n)]);
 }
 // a fan meteor's release: the bell, its mean, sd and cap all x the root of the fan's size over the untaken one's (owner, 2026-10-20: "spread them out more in time, the more of them there are")
 const ifrFanDelay = n => { const k = Math.sqrt(n / IFR_FAN[0]); return Math.min(IFR_FAN_MAX_S * k, Math.max(0, k * (IFR_FAN_T + IFR_FAN_SD * ifrNormal()))); };
@@ -191,35 +191,29 @@ function stepIfrBalls(t, st, dt) {
       try { damage(hit, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(hit, t, st, amt);
       b.left = 0; b.hitId = hit.id; /* the fire it lights rides this enemy (ifrImpact) */
       if (!b.gen) { /* THE FIRST IMPACT (owner, 2026-10-20: "only first impact causes hellfire"): the fire and the 360-degree fan */
-        b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(t, born, st, b.x, b.y, hit.id);
+        b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, hit.id);
       } else { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b, false); }
-      if (b.gen === 1 && st.fissure) { const a = Math.atan2(b.vy, b.vx), d = IFR_FISSURE_DEG * Math.PI / 180; born.push([b.x, b.y, a - d, hit.id, 2, 0, b.fire], [b.x, b.y, a + d, hit.id, 2, 0, b.fire]); } /* the capstone: a fan meteor's hit fissures */
+      if (b.gen === 1 && st.fissure) { const a = Math.atan2(b.vy, b.vx), d = IFR_FISSURE_DEG * Math.PI / 180; born.push([b.x, b.y, a - d, hit.id, 2, 0], [b.x, b.y, a + d, hit.id, 2, 0]); } /* the capstone: a fan meteor's hit fissures */
     } else if (atCorpse) { /* at its dead target's spot: the launched one bursts there (fire, the fan); a fan meteor just goes */
       b.left = 0;
-      b.ax = b.x; b.ay = b.y; if (!b.gen) { ifrImpact(t, st, b); ifrFan(t, born, st, b.x, b.y, null); } else ifrImpact(t, st, b, false);
-    } else if (b.gen && b.fire && b.fire.left > 0 && (b.x - b.fire.x) ** 2 + (b.y - b.fire.y) ** 2 >= b.fire.R * b.fire.R) { const f = b.fire, k = f.R / Math.hypot(b.x - f.x, b.y - f.y); b.left = 0; b.ax = f.x + (b.x - f.x) * k; b.ay = f.y + (b.y - f.y) * k; ifrImpact(t, st, b, false); } /* at the main FIRE's edge: it bursts there - every flare inside the fire (owner, 2026-10-27: "have it contain all the flares") */
-    else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b, false); } /* its fuse: it bursts mid-flight */
-    else if (!b.gen && b.left <= 0) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(t, born, st, b.x, b.y, null); } /* the launched one never goes silently: out of time, it bursts where it is */
+      b.ax = b.x; b.ay = b.y; if (!b.gen) { ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } else ifrImpact(t, st, b, false);
+    } else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b, false); } /* its fuse: it bursts mid-flight */
+    else if (!b.gen && b.left <= 0) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } /* the launched one never goes silently: out of time, it bursts where it is */
     else if ((b.gen || (b.lock == null && b.cx == null)) && !ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst - never the launched one while it hunts (its seen target may sit where the camera does not reach; owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening") */
   }
   keepLive(t.ifrBalls);
-  for (const [x, y, a, id, gen, wait, fire] of born) ifrMeteor(t, st, x, y, a, gen, id, wait, fire);
+  for (const [x, y, a, id, gen, wait] of born) ifrMeteor(t, st, x, y, a, gen, id, wait);
 }
 // THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), no flare (owner, 2026-10-20: "no flare on initial meteor hit"). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)
-// ONE FIRE, THE MAIN METEOR'S (owner, 2026-10-27: "only the main meteor produces a hellfire, not the others / make the main hellfire
-// bigger, and have it contain all the flares"; every meteor lit its own before, 2026-10-20): it grows IFR_FUSE_HI past Hellfire's radius -
-// the fan's whole reach - and a spawned meteor reaching its edge bursts there (stepIfrBalls); it lasts until their flares are out. Its
-// flares: as many, and the same total hit, as the 1 + fan small fires it replaces lit (each 1 / sqrt(1 + the fan) as dense and as hot).
-// Every meteor still lights a flare where it lands. main: the launched one (the fire, the sound, the Flare capstone's big centre flare)
-let IFR_ONE_FIRE_N = 1.5; // a landing's share of the fire's flares x this over the small fire's it replaced, the hit split among them (count first: the shield pops). (let: the sims sweep it)
+// EVERY METEOR'S landing (owner, 2026-10-20: "all meteors, main incl, each create their own hellfire"): a flare, and a Hellfire of its own -
+// lighting its small flares across that flare's life ("hellfire lasts the lifetime of the flare"), each Hellfire 1 / sqrt(1 + the fan) as
+// dense and as hot ("since there are more hellfires, reduce damage and density to keep similar dps"). main: the launched one (the sound, and
+// the Flare capstone's big centre flare)
 function ifrImpact(t, st, b, main = true) {
-  if (main) {
-    const hk = 1 / Math.sqrt(1 + st.fan), o = Math.max(1, Math.round(IFR_FIRE_FLARES * st.fireDens * hk * (st.fireR / IFR_FIRE_FLARE_R0) ** 2)), per = Math.max(IFR_FIRE_MIN, o) * IFR_ONE_FIRE_N, R = st.fireR + IFR_FUSE_HI; /* o: a small fire's count; per: a landing's share - at least IFR_FIRE_MIN, as each small fire lit */
-    (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, R), R, v: st.fireV, per, split: o / per, hk, cr: st.fireR, win: st.burnS, big: st.triple, left: 1, eid: b.hitId ?? null });
-    sfx("ifrblast");
-  }
+  const hk = 1 / Math.sqrt(1 + st.fan);
+  (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens * hk, hk, win: st.burnS, big: main && st.triple, left: 1, eid: b.hitId ?? null });
   ifrLandFlares(t, st, b.ax, b.ay); /* every meteor lights a flare where it strikes, the first too (owner, 2026-10-20) */
-  if (!main && b.fire && b.fire.left > 0) { const f = b.fire; f.until = Math.max(f.until || 0, (f.age0 || 0) + st.burnS); ifrFireQueue(f, { x: b.ax, y: b.ay }); } /* the fire stays until this flare is out, and lights this landing's share round it */
+  if (main) sfx("ifrblast");
 }
 // CATCHING FIRE (the flares' rule, the fire's too): an enemy burns only at a tick it was ALSO in the fire at the tick before - what stands
 // in it burns, what runs through it does not (the fast weakness). was / now: ids touching at the last tick / this one (plain data)
@@ -243,25 +237,16 @@ function ifrRingHit(t, st, f) {
 function stepIfrFires(t, st, dt) {
   if (!t.ifrFires || !t.ifrFires.length) return;
   for (const f of t.ifrFires) {
-    if (!f.flq) ifrFireQueue(f, null); /* the main hit's share, round the fire's centre */
+    if (!f.flq) { const n0 = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.dens || 1) * (f.R / IFR_FIRE_FLARE_R0) ** 2)), n = Math.max(IFR_FIRE_MIN, n0); f.split = n0 / n; f.flq = []; f.age0 = 0; /* AT LEAST IFR_FIRE_MIN, the fire's hits SPLIT among them (owner, 2026-10-21: "can't see the hellfire flares from IFR at 0 upgrades" - an untaken fire lit one) */ /* its flares' times, a bell round IFR_FIRE_FLARE_T */
+      const w = f.win ?? IFR_FIRE_WINDOW_S; for (let i = 0; i < n; i++) f.flq.push(Math.min(w, Math.max(0, w / 2 + w / 4 * ifrNormal()))); f.flq.sort((a, b) => b - a); } /* ALL within its meteor's flare's life (f.win), a bell round its middle */
     f.age0 += dt;
     if (f.eid != null) { const e = G.enemies.find(o => o.id === f.eid); if (e && !e.dead) { f.x = e.x; f.y = e.y; } else f.eid = null; } /* A FIRE RIDES ITS ENEMY (owner, 2026-10-24: "make hellfires track enemies (keep them in the center of the hellfire) / they fall off on enemy death"): the meteor's hit, kept dead centre; its death drops the fire where it fell. Flares already lit stay put */
     if (f.r < f.R) { f.r = Math.min(f.R, f.r + f.v * dt); ifrRingHit(t, st, f); }
-    while (f.flq.length && f.flq[f.flq.length - 1].t <= f.age0) { const q = f.flq.pop(), o = q.at || f, a = Math.random() * 2 * Math.PI, d = (f.cr ?? f.r) * Math.sqrt(Math.random()); /* EVEN within Hellfire's radius round its landing (owner, 2026-10-21: no centre bias) */ let x = o.x + Math.cos(a) * d, y = o.y + Math.sin(a) * d; const m = Math.hypot(x - f.x, y - f.y); if (m > f.r) { x = f.x + (x - f.x) * f.r / m; y = f.y + (y - f.y) * f.r / m; } /* inside the fire as it is then */ const fl = ifrFlare(t, st, x, y, ifrHfS(), false, true, (f.hk ?? 1) * (f.split ?? 1)); /* split: a landing's share over its small fire's count */ if (fl) fl.split = f.split; f.until = Math.max(f.until || 0, f.age0 + ((fl && fl.life) || 0)); /* (fl: a stand-in may return nothing) */
-    }
-    if (!f.flq.length && f.big && !f.bigLit && f.age0 > 0 && !t.ifrBalls.some(b => b.fire === f)) { f.bigLit = true; ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* the last one lit (every fan meteor landed), the Flare capstone's BIG flare dead centre */
-    if (!f.flq.length && f.r >= f.R && f.age0 >= (f.until || 0) && !t.ifrBalls.some(b => b.fire === f)) f.left = 0; /* nor while a fan meteor of its own flies */ /* its last flare OUT: it goes (owner, 2026-10-21: "hellfire ring should remain on screen until all hellfire flares have gone out") */
+    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.sqrt(Math.random()); /* EVEN over the fire's area (owner, 2026-10-21: "change the positional randomness to not prefer the center"; was u^IFR_LAND_POW) */ const fl = ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true, (f.hk ?? 1) * (f.split ?? 1)); if (fl) fl.split = f.split; f.until = Math.max(f.until || 0, f.age0 + ((fl && fl.life) || 0)); /* (fl: a stand-in may return nothing) */
+      if (!f.flq.length && f.big) ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* inside the fire as it is then; the last one lit, the Flare capstone's BIG flare dead centre */
+    if (!f.flq.length && f.r >= f.R && f.age0 >= (f.until || 0)) f.left = 0; /* its last flare OUT: it goes (owner, 2026-10-21: "hellfire ring should remain on screen until all hellfire flares have gone out") */
   }
   keepLive(t.ifrFires);
-}
-// THE FIRE'S FLARES CLUSTER AT THE LANDINGS (owner, 2026-10-27: the one big fire was sparse where the enemies walk - IFR's shield pops
-// went): the main hit and every fan landing each queue a share of the fire's flares (f.per: at least IFR_FIRE_MIN, as each small fire lit; the hit
-// SPLIT among them, f.split), timed on a bell over f.win from that landing and lit evenly within Hellfire's radius round it (at: null = the fire's centre)
-function ifrFireQueue(f, at) {
-  if (!f.flq) { f.acc = 0; f.flq = []; f.age0 = f.age0 || 0; }
-  f.acc += f.per; const k = Math.floor(f.acc + 1e-9), w = f.win ?? IFR_FIRE_WINDOW_S; f.acc -= k;
-  for (let i = 0; i < k; i++) f.flq.push({ t: f.age0 + Math.min(w, Math.max(0, w / 2 + w / 4 * ifrNormal())), at });
-  f.flq.sort((a, b) => b.t - a.t);
 }
 // a flare's size s (x the Flare length): a normal draw round half the max
 function ifrFlareS() { return IFR_FLARE_K * Math.min(1, Math.max(IFR_FLARE_MIN, IFR_FLARE_MEAN + IFR_FLARE_SD * ifrNormal())); }

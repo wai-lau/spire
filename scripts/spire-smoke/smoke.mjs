@@ -357,13 +357,13 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
   if (Math.abs(r.wait4Mean / r.waitMean - 2) > 0.15) return "a fan 4x as big releases over " + (r.wait4Mean / r.waitMean).toFixed(2) + "x the time (expected 2: the root of the count)";
   if (!r.fanWaits || Math.abs(r.waitMean - 0.4) > 0.05 || r.waitMin < 0 || r.waitMax > 1 || r.waitMax - r.waitMin < 0.3) return "fan release times: mean " + r.waitMean.toFixed(2) + " in [" + r.waitMin.toFixed(2) + ", " + r.waitMax.toFixed(2) + "] (expected a bell round 0.4 s, sd 0.3)";
-  if (r.firesAfter !== 1) return "fires after the fan flew: " + r.firesAfter + " (owner, 2026-10-27: only the main meteor makes a fire, not the fan)";
+  if (!(r.firesAfter > 1)) return "fires after the fan flew: " + r.firesAfter + " (owner, 2026-10-20: every meteor's landing makes its own - the fan's fuses too)";
   if (r.culledFire !== 1 || r.timeoutFire !== 1) return "the launched meteor went silently: with the view seeing nothing it burst " + r.culledFire + " times, out of time " + r.timeoutFire + " (expected 1, 1)";
   if (!(r.corpseFire < 6) || r.decoy) return "its target died: the burst landed " + r.corpseFire + " u from the corpse, a live decoy took " + r.decoy + " (expected at the corpse, none)";
   if (r.bent) return "a spawned meteor turned (homed) " + r.bent + " steps in its first 45 u (expected straight)";
   if (r.armEarly !== 0 || r.armLate !== 1) return "a spawned meteor 30 u from an enemy hit it " + r.armEarly + " times in its first 45 u (expected 0), " + r.armLate + " after (expected 1)";
   if (!(r.fuseMean > 190 && r.fuseMean < 235) || r.fuseFlares !== 40 || r.fuseLeft || r.fuseAt.some(d => d < 150 - 2 || d > 300 + 2)) return "spawned meteors' fuses: mean " + r.fuseMean.toFixed(0) + " u, " + r.fuseFlares + " burst of 40, " + r.fuseLeft + " still flying, at " + Math.min(...r.fuseAt).toFixed(0) + ".." + Math.max(...r.fuseAt).toFixed(0) + " (expected round 200 u, all between 150 and 300 - owner 2026-10-20)";
-  if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire !== 0) return "a fan meteor: near (35 u) hit " + r.homeNear + ", far (90 u) " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 0: no fire of its own - owner 2026-10-27)";
+  if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire !== 1) return "a fan meteor: near (35 u) hit " + r.homeNear + ", far (90 u) " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 1: its own Hellfire)";
   if (!r.fissure || JSON.stringify(r.kids) !== "[-30,30]" || r.kidGen.some(g => g !== 2) || r.cHits !== 1) return "capstone fissure: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen + ", parent's enemy hit " + r.cHits;
   if (!r.offGone || r.offFires || r.offSteps < 5) return "off view: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires;
   return "";
@@ -416,41 +416,24 @@ check("IFR: the fire (Hellfire, its circle drawn at 16%, then 8%, its glow twice
     const fresh = h => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < h; k++) upgradeTower(t, "hellfire", true); ifrInit(t); return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; return e; };
     let t = fresh(0), st = towerStats(t), out = {};
-    const q = held(t, CX + 2, CY); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f0 = t.ifrFires[0]; out.r0 = f0.r; out.R0 = f0.R; out.ballR = st.ballR; out.fuseHi = IFR_FUSE_HI;
+    const q = held(t, CX + 2, CY); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f0 = t.ifrFires[0]; out.r0 = f0.r; out.R0 = f0.R; out.ballR = st.ballR;
     t.ifrFlares.length = 0; const of = ifrFlare; ifrFlare = () => {}; /* flares off: the fire alone */
     try { for (let i = 0; i < 60; i++) stepIfrFires(t, st, 1 / 30); } finally { ifrFlare = of; } out.fireHits = 50 - q.shield; q.dead = true;
     t = fresh(6); st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f = t.ifrFires[t.ifrFires.length - 1]; const r0 = f.r; t.ifrFlares.length = 0;
-    const grow = (f.R - r0) / st.fireV; let tm = 0; while (f.r < f.R && tm < 10) { stepIfrFires(t, st, 1 / 30); tm += 1 / 30; }
+    const grow = (st.fireR - r0) / st.fireV; let tm = 0; while (f.r < f.R && tm < 10) { stepIfrFires(t, st, 1 / 30); tm += 1 / 30; }
     out.R6 = f.R; out.grow = tm; out.growWant = grow;
     let tl = 0, lastLit = 0; while (t.ifrFires.length && tl < 60) { const q0 = f.flq ? f.flq.length : -1; stepIfrFires(t, st, 1 / 30); tl += 1 / 30; if (f.flq && f.flq.length !== q0) lastLit = tl; }
     out.goneAfter = tl - lastLit; out.until = f.until; out.goneAt = tm + tl; /* (f.age0 counts from impact: the growth, then this loop) */ out.drawn = typeof drawIfrFires === "function" && IFR_FIRE_A === 0.16 && IFR_FIRE_W === 2;
     ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); try { G.towers = G.towers.filter(x => x !== t); for (let i = 0; i < 5; i++) step(1 / 30); out.sold = true; } catch (e) { out.sold = String(e); }
     return out;
   })()`);
-  if (r.r0 !== r.ballR || Math.abs(r.R0 - 16 * r.ballR - r.fuseHi) > 1e-9) return "Hellfire 0: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + ", then 16x it + the fan's reach " + r.fuseHi + " - owner 2026-10-27)";
+  if (r.r0 !== r.ballR || Math.abs(r.R0 - 16 * r.ballR) > 1e-9) return "Hellfire 0: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + ", then 16x it)";
   if (r.fireHits !== 1) return "the fire's ring hit an enemy " + r.fireHits + " times (expected once: owner, 2026-10-21, \"3x hellfire flare hit\")";
   if (!r.drawn) return "the fire's circle is not drawn at 16%, its glow x2 wide (drawIfrFires, IFR_FIRE_A / _W; owner 2026-10-21)";
-  if (r.R6 !== 180 + r.fuseHi) return "Hellfire IV fire grows to " + r.R6 + " (expected 180 + the fan's reach " + r.fuseHi + ")";
+  if (r.R6 !== 180) return "Hellfire IV fire grows to " + r.R6 + " (expected 180)";
   if (Math.abs(r.grow - r.growWant) > 1 / 30 + 1e-6) return "the fire took " + r.grow.toFixed(3) + " s to grow (expected " + r.growWant.toFixed(3) + ")";
   if (!(r.until >= 0) || Math.abs(r.goneAt - r.until) > 1 / 30 + 1e-6 || r.goneAfter < 0.1) return "the fire went at " + r.goneAt.toFixed(2) + " s, its last flare out at " + r.until + " (owner, 2026-10-21: it stays till its flares are out)";
   if (r.sold !== true) return "selling the tower with a live fire threw: " + r.sold;
-  return "";
-});
-check("IFR: ONE fire, the main meteor's, holds every flare - the fan's bursting at its edge - and stays till they are out (owner, 2026-10-27)", () => {
-  const r = run(`(() => {
-    G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; ifrInit(t); for (const e of G.enemies) e.dead = true;
-    const st = towerStats(t), out = { worst: 0, early: 0 }, born = []; ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); ifrFan(t, born, st, CX, CY, null);
-    for (const [x, y, a, id, gen, wait, fire] of born) ifrMeteor(t, st, x, y, a, gen, id, wait, fire);
-    const f = t.ifrFires[0]; f.R = 120; /* a fire smaller than the fuses: the fan must burst at its edge */ out.fanFire = t.ifrBalls.every(b => b.fire === f);
-    const ov = ifrOnView; ifrOnView = () => true; let k = 0;
-    try { while ((t.ifrBalls.length || t.ifrFires.length) && k++ < 4000) { stepIfrBalls(t, st, 1 / 60); stepIfrFires(t, st, 1 / 60); stepIfrFlares(t, st, 1 / 60);
-      if (t.ifrBalls.length && !t.ifrFires.length) out.early++;
-      for (const q of t.ifrFlares) if (!q.hf) out.worst = Math.max(out.worst, Math.hypot(q.x - CX, q.y - CY)); } } finally { ifrOnView = ov; }
-    out.fires = t.ifrFires.length; out.k = k; return out;
-  })()`);
-  if (!r.fanFire) return "the fan meteors do not know the main fire";
-  if (!(r.worst <= 120 + 1e-6)) return "a fan flare landed " + r.worst.toFixed(1) + " u out, outside the 120 u fire";
-  if (r.early) return "the fire went out while " + r.early + " steps of fan meteors still flew";
   return "";
 });
 check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () => {
@@ -498,7 +481,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
     /* the fire's flares are the UNTAKEN Flare's, whatever Flare's level (owner, 2026-10-20), and not the meteors' brighter kind */
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
       for (let i = 0; i < 600 && t.ifrFires.length; i++) stepIfrFires(t, st, 1 / 60); const hf = t.ifrFlares.filter(q => q.hf);
-      out.hfN = hf.length; out.hfL = Math.max(...hf.map(q => q.L)); out.hfLmax = IFR_FLARE_K * IFR_BEAM_L[0] + 1e-6; out.hfHit = hf[0] && hf[0].hit; out.hfHitWant = st.dmg * IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K / Math.sqrt(1 + st.fan) * ((hf[0] && hf[0].split) ?? 1); /* (split: a landing share over its small fire, 2026-10-27) */ out.hfK = st.hfK; /* x the fire's split (IFR_FIRE_MIN, 2026-10-21) */
+      out.hfN = hf.length; out.hfL = Math.max(...hf.map(q => q.L)); out.hfLmax = IFR_FLARE_K * IFR_BEAM_L[0] + 1e-6; out.hfHit = hf[0] && hf[0].hit; out.hfHitWant = st.dmg * IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K / Math.sqrt(1 + st.fan) * ((hf[0] && hf[0].split) ?? 1); out.hfK = st.hfK; /* x the fire's split (IFR_FIRE_MIN, 2026-10-21) */
       const k0 = Array.from({ length: 2000 }, () => ifrHfS() / IFR_FLARE_K); out.hfShapes = hf.every(q => q.L / (IFR_FLARE_K * IFR_BEAM_L[0]) <= 1 + 1e-9); out.hfKmin = Math.min(...k0); out.hfKmax = Math.max(...k0); out.hfLife = [...new Set(hf.map(q => q.life))]; { const L = Array.from({ length: 500 }, ifrHfLife); out.hfLifeMin = Math.min(...L); out.hfLifeMax = Math.max(...L); } out.hfTick = [...new Set(hf.map(q => !!q.cont))]; out.hfLifeWant = IFR_HF_LIFE; out.tick0 = IFR_TICK_S[0];
       { const q = hf[0], e = held(t, q.x + 3, q.y); e.shield = 0; e.hp = e.max = 1e9; egridAt = NaN; t.ifrFlares.length = 0; const h0 = e.hp; ifrFlare(t, st, q.x, q.y, 1, false, true, 1); const f = t.ifrFlares[0]; out.hitOnce = h0 - e.hp; out.hitWant = f.hit; for (let i = 0; i < 60; i++) stepIfrFlares(t, st, 1 / 60); out.hitAfter = h0 - e.hp - out.hitOnce; e.dead = true; }
       out.iHf = hf[0] ? ifrFlareI(hf[0]) : NaN; ifrFlare(t, st, CX, CY); const m = t.ifrFlares[t.ifrFlares.length - 1]; out.iMain = ifrFlareI({ ...m, hit: hf[0].hit }); }
@@ -511,14 +494,14 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
     return out;
   })()`);
   if (r.firstFlares !== 1) return "the first hit lit " + r.firstFlares + " flares (expected one - owner 2026-10-20: every meteor, the first too)";
-  if (r.land0.fires !== 0) return "a fan meteor's landing made " + r.land0.fires + " fires (expected none - owner 2026-10-27: only the main meteor's)";
+  if (r.land0.fires !== 1) return "a fan meteor's landing made " + r.land0.fires + " fires (expected its own Hellfire - owner 2026-10-20: every meteor)";
   if (r.land0.n !== 1 || !(r.land0.jit < 30)) return "a fan meteor's landing lit " + r.land0.n + " flares, " + r.land0.jit + " u off (expected 1 there)";
   if (r.land6.n !== 3 || !(r.land6.jit <= r.jmax + 30)) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 3, within " + r.jmax + " u)";
   for (const [k, f] of [["Hellfire 0", r.f0], ["Hellfire IV", r.f6]]) {
     if (!(f.n >= 1)) return k + ": a grown fire lit " + f.n + " flares (1 at the least)";
     if (Math.abs(f.share - f.shareWant) > 1e-9) return k + ": a fire's share " + f.share + " (expected 1 / sqrt(1 + the fan) = " + f.shareWant.toFixed(3) + ": a Hellfire a meteor, the same burn a strike)";
     if (f.n >= 1 && f.lastT > f.window + 0.02) return k + ": its flares lit until " + f.lastT.toFixed(2) + " s (expected within its meteor's flare's life, " + f.window + " s - owner 2026-10-20)";
-    if (!(f.maxD <= f.R + 1e-6)) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out (inside R " + f.R + "; even over its area - owner 2026-10-21)";
+    if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD < 0.5 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", nearer the centre)";
     if (f.n >= 5 && f.sizes < 2) return k + ": its flares are all one size";
   }
   if (Math.abs(r.beamIV[0] - 100) > 1e-6 || Math.abs(r.beamIV[1] - 16) > 1e-6 || Math.abs(r.beam0[0] - 2 * 50 * 100 / 210) > 1e-6 || Math.abs(r.beam0[1] - 2 * 10 * 16 / 24) > 1e-6 || !r.mono) return "Flare tables: IV " + r.beamIV + ", untaken " + r.beam0 + ", rising " + r.mono + " (expected IV 100 x 16, untaken doubled to 47.6 x 13.3, the rest between - owner 2026-10-20)";
@@ -528,7 +511,8 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (Math.abs(r.hitOnce - r.hitWant) > 1 || r.hitAfter) return "a fire flare hit " + r.hitOnce + " on appearing (expected " + r.hitWant + ") and " + r.hitAfter + " after (expected none: it hits once, no burn - owner 2026-10-20)";
   if (!(r.hfK > 1.3 && r.hfK < 2)) return "Flare IV raises the fire's flares x" + r.hfK + " (expected slightly - owner 2026-10-20)";
   if (!(r.iMain > r.iHf)) return "a meteor's flare (" + r.iMain + ") is not brighter than a fire's (" + r.iHf + ") at the same hit (owner, 2026-10-20: more opaque and intense)";
-  if (!(r.f6.n > r.f3.n) || !(r.f6.dens > r.f3.dens)) return "fire flares: " + r.f3.n + " at Hellfire III vs " + r.f6.n + " at IV (expected more as Hellfire levels - owner 2026-10-20)";
+  const dens3 = r.f3.n / r.f3.R ** 2, dens6 = r.f6.n / r.f6.R ** 2;
+  if (Math.abs(dens6 / dens3 / (r.f6.dens / r.f3.dens) - 1) > 0.15 || !(r.f6.dens > r.f3.dens)) return "flare density: " + r.f3.n + " in r" + r.f3.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected " + (r.f6.dens / r.f3.dens).toFixed(2) + "x denser - owner 2026-10-20: denser as Hellfire levels)";
   return "";
 });
 check("free builds (own box, owner 2026-10-21): towers and upgrades are free, a buy made then bars the leaderboard; auto-move alone charges", () => {
