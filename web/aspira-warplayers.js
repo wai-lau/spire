@@ -31,6 +31,7 @@ function warpRender() {
       { const p = (warp.statSig || "").split("|"), c = sig.split("|"); warp.statWhy = key !== warp.statKey ? "key" : p[0] !== c[0] ? "wave" : p[1] !== c[1] ? "sky" : p[2] !== c[2] ? "lanes" : "fade"; }
       warp.statKey = key; warp.statSig = sig; warp.statAt = now; warp.statNew = true;
       ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); ctx.save(); drawSceneBase(); ctx.restore();
+      if (bossBarOnBoard()) warpBossBarBoard(); // the boss's HP bar, settled: on the board, under every tower FX (below)
     }
     warp.texCam = { ...cam };
     const D = Math.max(64, Math.round(S * WARP_DYN_K)), d = warp.dynCv ||= document.createElement("canvas");
@@ -59,7 +60,21 @@ function warpBoardSig(now) {
     if (!u.star && !laneFadeGl() && laneFadeMs() && (t0 === undefined || now - t0 < laneFadeMs())) fading = true;
     return u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + u.n + ":" + litLevel(u.a, u.star);
   }).join(",");
-  return G.wave + "|" + bossInv.phase + "|" + lanes + (fading ? "|" + Math.floor(now / WARP_STAT_MS) : "");
+  return G.wave + "|" + bossInv.phase + "|" + lanes + (fading ? "|" + Math.floor(now / WARP_STAT_MS) : "") + "|" + bossBoardSig();
+}
+// THE BOSS BAR ON THE BOARD (owner, 2026-10-27: "all tower FX should appear over boss hp bar if possible" - option 1 of three): once the
+// fly-in and the numbers' fade are done the bar leaves the overlay (where it lay over the moving layer: the prism, the scorch rods, the
+// pools, fires and shots) for the BOARD - full resolution, so still crisp, and under the moving layer. The board is redrawn when a boss's
+// HP moves a 1/BOSS_BOARD_STEPS step, at most every WARP_STAT_MS: the drain steps ~7 times a second. The fly-in stays on the overlay
+const BOSS_BOARD_STEPS = 400;
+const bossBarOnBoard = () => typeof drawBossBarFloor === "function" && typeof barInT === "function" && barInT() >= bossBarInT() + BAR_LABEL_FADE; // (Infinity off the "in" phase: settled)
+const bossBoardSig = () => bossBarOnBoard() ? G.enemies.filter(e => e.arcana && !e.dead && e.bar).map(e => e.id + ":" + Math.round(Math.max(0, e.hp) / e.max * BOSS_BOARD_STEPS)).join(",") : "";
+// the same drawing (aspira-bossbar.js), its projection swapped for the board's flat one (world -> picture px, no perspective); under a
+// FULL sky the GPU turns the whole board over (warpFlip), so the bar's whites go down pre-inverted (`inverted`, as barWhite reads it)
+function warpBossBarBoard() {
+  const wp = warpProject, ws = warpProjectScratch, inv = inverted, flat = (x, y) => ({ x: x * cam.k + cam.ox, y: y * cam.k + cam.oy, s: 1 });
+  warpProject = flat; warpProjectScratch = flat; if (skyPal()) inverted = true;
+  ctx.save(); try { drawBossBarFloor(); } finally { ctx.restore(); warpProject = wp; warpProjectScratch = ws; inverted = inv; }
 }
 // both layers onto their texture units for the bell (warpDraw): the board sent up only when it was redrawn
 function warpLayersBind(gl, u) {
