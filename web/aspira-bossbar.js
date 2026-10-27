@@ -209,15 +209,16 @@ function drawBossLabels() {
       const f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? COL.white : inSkyPt(mp.x, mp.y) ? invertColor(own) : own);
       // a cut of the piece: the lane point there, its angle round the core and radius, the way into the piece round the core (dir: +1
       // with the lane's winding past the start cut, against it before the end cut)
-      const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), rx = Q.x - CX, ry = Q.y - CY; return { th: Math.atan2(ry, rx), r: Math.hypot(rx, ry) || 1, gap, dir: sg * wind }; };
+      const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), rx = Q.x - CX, ry = Q.y - CY; return { cs, sg, th: Math.atan2(ry, rx), r: Math.hypot(rx, ry) || 1, gap, dir: sg * wind }; };
       const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), S0 = warpProject(CX + Math.cos(e0.th) * e0.r, CY + Math.sin(e0.th) * e0.r), S1 = warpProject(CX + Math.cos(e1.th) * e1.r, CY + Math.sin(e1.th) * e1.r), E = S1.y <= S0.y ? e0 : e1; // the bottom: the cut the other lies ABOVE on the screen
       // the number's size: its height, BOSS_LABEL_PX by its share, no more than the piece's extent round the core at its radius less
       // the two half gaps and the pads, its width by the sprite's own shape, no more than the piece's width
       const rc = E.r + p.d, span = Math.abs(((e1.th - e0.th) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI), room = span * rc - (p.g0 + p.g1) / 2 - 2 * BOSS_LABEL_PAD; // span: the piece's angle round the core, cut to cut
       // the number's uprights run ALONG THE LANE, as the piece's sides do (owner, 2026-10-27: "this 65 should look skewed towards the core not
-      // away" - square to the spoke they matched no edge): t the lane's tangent at the piece's middle, turned toward the top; square where
-      // the lane runs nearly along the spoke; sn its slant off the spoke - a side of the number is h long along t, h * sn across
-      const tm = E.th + E.dir * span / 2, um = { x: Math.cos(tm), y: Math.sin(tm) }, nx = -um.y * E.dir, ny = um.x * E.dir, Qm = pathAt(e.pi, (p.cs0 + p.cs1) / 2, ang), Qm2 = pathAt(e.pi, (p.cs0 + p.cs1) / 2 + 1, ang), tl0 = Math.hypot(Qm2.x - Qm.x, Qm2.y - Qm.y) || 1;
+      // away" - square to the spoke they matched no edge): t the lane's tangent where the number sits - just past its cut, not the piece's
+      // middle (the spiral turns 30 degrees over a long piece: "the left side of the 25 looks slanted off the segment") - turned toward the
+      // top; square where the lane runs nearly along the spoke; sn its slant off the spoke - a side of the number is h long along t, h * sn across
+      const um = { x: Math.cos(E.th), y: Math.sin(E.th) }, nx = -um.y * E.dir, ny = um.x * E.dir, sq = E.cs + E.sg * (E.gap / 2 + BOSS_LABEL_PAD + BOSS_LABEL_PX[1] / 2), Qm = pathAt(e.pi, sq, ang), Qm2 = pathAt(e.pi, sq + 1, ang), tl0 = Math.hypot(Qm2.x - Qm.x, Qm2.y - Qm.y) || 1;
       let tx = (Qm2.x - Qm.x) / tl0, ty = (Qm2.y - Qm.y) / tl0; if (tx * nx + ty * ny < 0) { tx = -tx; ty = -ty; } let sn = Math.abs(tx * um.y - ty * um.x); if (sn < BOSS_CUT_MIN) { tx = nx; ty = ny; sn = 1; }
       let h = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, room / sn), w = h * sp.w / sp.h; if (w > p.w - 2 * BOSS_LABEL_PAD) { w = p.w - 2 * BOSS_LABEL_PAD; h = w * sp.h / sp.w; } if (h < 2) continue;
       // the wedge: its bottom the cut line itself (the spoke through the lane point, half a gap and the pad over, into the piece), from
