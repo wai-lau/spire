@@ -52,40 +52,43 @@ function bossGeo(e) {
     if (xs.length) cuts.push({ s: xs[Math.floor(bossHash(e, i, 5) * xs.length) % xs.length], d: { x: Math.cos(th), y: Math.sin(th) } });
   }
   cuts.sort((p, q) => p.s - q.s);
-  const bounds = [{ s: a, d: null }]; for (const c of cuts) if (c.s - bounds[bounds.length - 1].s > BOSS_SEG_GAP * 2 && b - c.s > BOSS_SEG_GAP * 2) bounds.push(c); bounds.push({ s: b, d: null }); // (a cut within two gaps of the last: dropped)
-  // THE PIECES: each between two cuts, its ends ALONG THE RAYS (owner, 2026-10-27: "the aligned spoke is more important, don't need square
-  // ends") - a side is cut exactly where it crosses the ray's line shifted BOSS_SEG_GAP / 2 toward the piece, whatever the slant; a ray
-  // within BOSS_CUT_MIN of running along the lane cuts square instead. The 100% and 0% ends, and the HP boundary, stay square (by s)
-  const pieces = [], MARGIN = 90, g2 = BOSS_SEG_GAP / 2;
-  const sideCut = (pts, i, C, ex, ey, back) => { // from pts[i] (inside) toward the piece's start (back) or end: the first point past the line (P - C) . e = g2, interpolated; null if none in reach
+  // the slant of a cut: how far along the lane a side h off the lane meets the ray's line, per unit of h (cot of ray against lane);
+  // 0 = square (a ray flatter than BOSS_CUT_MIN against the lane cuts square - its line would run along the lane)
+  const cot = c => { if (!c.d) return 0; const C = at(c.s), tx = C.ny, ty = -C.nx, sn = Math.abs(tx * c.d.y - ty * c.d.x); return sn < BOSS_CUT_MIN ? 0 : Math.abs(tx * c.d.x + ty * c.d.y) / sn; };
+  // the corridor at s: the lane one turn in and one turn out (the same angle round the core, +-2 pi) less a gap - a piece this wide
+  // keeps a gap to the next turn (the inner turns sit closer than BOSS_CORRIDOR)
+  const corrAt = s => { const m = at(s), rm = Math.hypot(m.x - CX, m.y - CY) || 1, rs = [];
+    for (const dth of [-TAU, TAU]) { let best = null; for (const p of L) if (Math.abs(p.th - (m.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } if (best !== null) rs.push(Math.abs(best - rm) - BOSS_SEG_GAP); }
+    return Math.max(4, Math.min(BOSS_CORRIDOR, ...rs)); };
+  const wAt = s => Math.min(corrAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT)); // the widest a piece can be at s
+  // THE PIECES' BOUNDS: a cut is kept only if the piece before it has room for both slanted ends and a gap - else the cut is skipped
+  // (the piece runs on to the next); so no piece's ends ever cross (a bow-tie that read as overlap)
+  const bounds = [{ s: a, d: null }];
+  for (const c of [...cuts, { s: b, d: null }]) { const last = bounds[bounds.length - 1], need = BOSS_SEG_GAP + (wAt(last.s) / 2) * cot(last) + (wAt(c.s) / 2) * cot(c) + 2; if (c.s - last.s > need || !c.d) { if (!c.d && c.s - last.s <= need && bounds.length > 1) bounds.pop(); bounds.push(c); } }
+  // THE PIECES: each between two bounds, its ends ALONG THE RAYS (owner, 2026-10-27: "the aligned spoke is more important, don't need square
+  // ends") - a side is cut exactly where it crosses the ray's line shifted BOSS_SEG_GAP / 2 toward the piece, whatever the slant. The 100%
+  // and 0% ends, and the HP boundary, stay square (by s)
+  const pieces = [], g2 = BOSS_SEG_GAP / 2;
+  const sideCut = (pts, i, C, ex, ey, back) => { // from pts[i] (inside) toward the piece's start (back) or end: the first point past the line (P - C) . e = g2, interpolated; null if none
     const val = q => (q.x - C.x) * ex + (q.y - C.y) * ey - g2; if (val(pts[i]) < 0) return null;
     for (let j = i; back ? j > 0 : j < pts.length - 1; j += back ? -1 : 1) { const q = pts[j], r = pts[j + (back ? -1 : 1)], vq = val(q), vr = val(r); if (vr < 0) { const f = vq / (vq - vr || 1e-9); return { x: q.x + (r.x - q.x) * f, y: q.y + (r.y - q.y) * f, s: q.s + (r.s - q.s) * f, j }; } }
     return null;
   };
   for (let i = 0; i + 1 < bounds.length; i++) {
-    const c0 = bounds[i], c1 = bounds[i + 1], mid = at((c0.s + c1.s) / 2), rm = Math.hypot(mid.x - CX, mid.y - CY) || 1;
-    // the corridor HERE: the lane one turn in and one turn out (the same angle round the core, +-2 pi) - a piece and its slide stay
-    // inside the nearer of the two (the inner turns sit closer than BOSS_CORRIDOR)
-    const turnR = dth => { let best = null; for (const p of L) if (Math.abs(p.th - (mid.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } return best; };
-    const rIn = turnR(-TAU), rOut = turnR(TAU), corr = Math.min(BOSS_CORRIDOR, ...[rIn, rOut].filter(r => r !== null).map(r => Math.abs(r - rm) * 0.9));
-    const f = (b - (c0.s + c1.s) / 2) / (b - a), w = Math.min(corr, (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))), lim = (corr - w) / 2; // f: 1 at the 100% end, 0 at the core
-    // THE SLIDE (owner: "slide along line formed by average angle of the two cut lines, at the arc's centre of mass"): the whole piece moved
-    // rigidly by BOSS_SHOVE of its width along the mean of its two rays (a square end lends the lane's normal there), inside the corridor
-    const dir0 = c0.d || { x: at(c0.s).nx, y: at(c0.s).ny }, dir1 = c1.d || { x: at(c1.s).nx, y: at(c1.s).ny }; let ux = dir0.x + dir1.x, uy = dir0.y + dir1.y, ul = Math.hypot(ux, uy); if (ul < 1e-6) { ux = mid.nx; uy = mid.ny; ul = 1; } ux /= ul; uy /= ul;
-    const shove = Math.max(-lim, Math.min(lim, BOSS_SHOVE * w * (2 * bossHash(e, i, 3) - 1))), dx = ux * shove, dy = uy * shove;
-    const rad = w * BOSS_PIECE_ROUND, h = w / 2 - rad, base = L.filter(p => p.s >= c0.s - MARGIN && p.s <= c1.s + MARGIN); if (base.length < 2) continue;
-    const side = sg => base.map(p => ({ s: p.s, x: p.x + p.nx * sg * h + dx, y: p.y + p.ny * sg * h + dy })), mi = base.findIndex(p => p.s >= (c0.s + c1.s) / 2), m = mi < 0 ? base.length >> 1 : mi;
+    const c0 = bounds[i], c1 = bounds[i + 1], f = (b - (c0.s + c1.s) / 2) / (b - a); // f: 1 at the 100% end, 0 at the core
+    const w = Math.min(corrAt((c0.s + c1.s) / 2), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)));
+    const rad = w * BOSS_PIECE_ROUND, h = w / 2 - rad, reach = w * 4 + BOSS_SEG_GAP, base = L.filter(p => p.s >= c0.s - reach && p.s <= c1.s + reach); if (base.length < 2) continue;
+    const side = sg => base.map(p => ({ s: p.s, x: p.x + p.nx * sg * h, y: p.y + p.ny * sg * h })), mi = base.findIndex(p => p.s >= (c0.s + c1.s) / 2), m = mi < 0 ? base.length >> 1 : mi;
     // each cut's line: through the lane point C at the cut, along the ray d; e: across it, toward the piece
-    const cutLine = (c, toward) => { if (!c.d) return null; const C = at(c.s), tx = C.ny, ty = -C.nx, sl = Math.abs(tx * c.d.y - ty * c.d.x); if (sl < BOSS_CUT_MIN) return null; let ex = -c.d.y, ey = c.d.x; if ((ex * tx + ey * ty) * toward < 0) { ex = -ex; ey = -ey; } return { C, ex, ey }; };
-    const l0 = cutLine(c0, 1), l1 = cutLine(c1, -1), s0 = l0 ? c0.s : (c0.d ? c0.s + g2 : c0.s), s1 = l1 ? c1.s : (c1.d ? c1.s - g2 : c1.s);
+    const cutLine = (c, toward) => { if (!c.d) return null; const C = at(c.s), tx = C.ny, ty = -C.nx; if (Math.abs(tx * c.d.y - ty * c.d.x) < BOSS_CUT_MIN) return null; let ex = -c.d.y, ey = c.d.x; if ((ex * tx + ey * ty) * toward < 0) { ex = -ex; ey = -ey; } return { C, ex, ey }; }; // (null: a square end - no ray, or one too flat against the lane)
+    const l0 = cutLine(c0, 1), l1 = cutLine(c1, -1), s0 = c0.d ? c0.s + g2 : c0.s, s1 = c1.d ? c1.s - g2 : c1.s; // (s0 / s1: the square fallback)
     const sides = [1, -1].map(sg => { let P = side(sg); // the side cut at its two ends: along the ray where there is one, square (by s) otherwise
       const e0 = l0 ? sideCut(P, m, l0.C, l0.ex, l0.ey, true) : null, e1 = l1 ? sideCut(P, m, l1.C, l1.ex, l1.ey, false) : null;
-      if ((l0 && !e0) || (l1 && !e1)) return null;
       const from = e0 ? e0.j : P.findIndex(p => p.s >= s0), to = e1 ? e1.j : (P.length - 1 - [...P].reverse().findIndex(p => p.s <= s1));
       if (from < 0 || to < from) return null;
       P = P.slice(from, to + 1); if (e0) P.unshift({ x: e0.x, y: e0.y, s: e0.s }); if (e1) P.push({ x: e1.x, y: e1.y, s: e1.s });
-      return P; });
-    if (!sides[0] || !sides[1] || sides[0].length < 2 || sides[1].length < 2) continue;
+      return P.length >= 2 ? P : null; });
+    if (!sides[0] || !sides[1]) continue;
     pieces.push({ s0, s1, w, Lp: sides[0], Rp: sides[1] });
   }
   return e.bar = { key, a, b, pieces };
