@@ -46,6 +46,8 @@ are this repo's gitignored `data/aspira-sfx/`.
   points through `scripts/aspira-sim/stops.mjs`. ARCHITECTURE.md §4.2, §4.2b.
 - **Tests:** from exec-fn, `.venv/bin/pytest apps/spire/tests` (the shared
   fixtures live in exec-fn's root `conftest.py`).
+- **Dev scenes:** `/spire?dev=boss` rebuilds the boss scene on EVERY load (`web/aspira-dev.js`): a FRZ placed, the Star sent, its HP at 55%
+  (`&hp=0.3`), paused - so a refresh is the same state on the latest code; the autosave's checkpoint is parked. Nothing without `?dev=`.
 - **Diagrams:** mermaid source in `docs/arch/*.mmd`; staging one makes exec-fn's
   pre-commit render the `.svg` beside it (`scripts/render-mermaid.py`) and stage it.
   ARCHITECTURE.md embeds the SVGs (the app's markdown viewer shows a fence as code).
