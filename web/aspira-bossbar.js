@@ -38,8 +38,13 @@ const bossSpan = (e, f = Math.max(0, e.hp) / e.max) => { const g = barGeo(e); re
 function barLeads() {
   const m = new Map();
   for (const e of G.enemies) { if (!e.arcana || e.dead) continue; const k = e.pi + ":" + (e.ang || 0).toFixed(3), g = m.get(k); if (!g) m.set(k, { e, hp: Math.max(0, e.hp), max: e.max }); else { g.hp += Math.max(0, e.hp); g.max += e.max; if (e.id < g.e.id) g.e = e; } }
-  return [...m.values()].map(g => ({ e: g.e, f: g.hp / (g.max || 1) }));
+  if (!m.size) barLaneNo.clear(); for (const k of [...m.keys()].sort((a, b) => +a.split(":")[1] - +b.split(":")[1])) if (!barLaneNo.has(k)) barLaneNo.set(k, barLaneNo.size);
+  return [...m.entries()].map(([k, g]) => ({ e: g.e, f: g.hp / (g.max || 1), n: barLaneNo.get(k) }));
 } // a: the 100% end, b: the 0% end, hp: where the HP left begins
+// EACH LANE ITS OWN NUMBERS (owner, 2026-10-27: "visually only, add 1 to the hp% number each additional boss lane / so that each lane has
+// different numbers"): lane n's labels read the mark + n (85, 86, 87 ..); the marks themselves stay - only the printed number moves. n is
+// fixed per lane the first time it shows (by angle), so a lane emptying never renumbers the rest
+const barLaneNo = new Map();
 // THE BAR IN PIECES (owner, 2026-10-26: "the width should increase as we approach the edge / chop up the hp lane into segments and
 // jitter the size of each segment, jitter segments spatially on axis perpendicular to lane, but never more than 100% of the segment's
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
@@ -288,11 +293,11 @@ function labelSprite(str, col) { // the number drawn once, cropped to its glyphs
   const sp = { cv: m, w, h: m.height }; if (labelSprites.size > 32) labelSprites.clear(); labelSprites.set(key, sp); return sp;
 }
 function drawBossLabels() {
-  for (const { e, f } of barLeadSet) {
+  for (const { e, f, n } of barLeadSet) {
     if (!e.bar) continue; const hp = f, ang = e.ang || 0, wind = e.bar.sgn, la = barLabelA(); if (la <= 0) continue; // (the numbers fade in once the last ring is home)
     e.bar.pieces.forEach(p => {
       if (!(p.mi >= 0)) return;
-      const f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100)), hp >= f ? barWhite(mp) : own); // (over the HP gone: the lane's own colour, turned over with the box's outline)
+      const f = BOSS_BAR_MARKS[p.mi], mp = p.Lp[p.Lp.length >> 1], own = COL[ENEMIES.bonus.color], sp = labelSprite(String(Math.round(f * 100) + (n || 0)), hp >= f ? barWhite(mp) : own); // (over the HP gone: the lane's own colour, turned over with the box's outline)
       // a cut of the piece: the lane point there, its angle round the core and radius, the way into the piece round the core (dir: +1
       // with the lane's winding past the start cut, against it before the end cut)
       const edge = (cs, gap, sg) => { const Q = pathAt(e.pi, cs, ang), rx = Q.x - CX, ry = Q.y - CY; return { cs, sg, th: Math.atan2(ry, rx), r: Math.hypot(rx, ry) || 1, gap, dir: sg * wind }; };
