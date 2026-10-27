@@ -23,14 +23,14 @@ const bossSpan = e => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - 
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
 // end, BOSS_BAR_WIDEN x that at the 100% end, each piece's width jittered the same and the piece set across the lane by up to its own
 // width. A fixed hash a piece (the boss's id, the piece's index): the layout holds still from frame to frame
-const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 1 /* (owner, 2026-10-27: "5x thickness jitter"; was 0.2) */, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 0, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's slide along its mean ray, of its width - 0: none (owner, 2026-10-27: "try it without the segment position jitter"; a full width was "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
+const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 1 /* (owner, 2026-10-27: "5x thickness jitter"; was 0.2) */, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 1, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's slide ALONG ITS SPOKE (every point moved out or in along its own ray from the core, so the cut ends stay rays through it), as a share of the free room between it and the turns either side - 1: the whole room, 0: none (owner, 2026-10-27: "add placement jitter now, but along the spokes and still [no overlap]"; an earlier slide along the mean ray was "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
 // THE CUTS (owner, 2026-10-27: "choose 24 points on the edge of the screen equally radially distant around the core, then add some radial
 // jitter, these are the lines that chop up the hp bar into segments. Each of these lines should cut the hp bar exactly once, at which
 // intersection is randomly decided"): BOSS_RAYS rays from the core, evenly spaced round it, each turned by up to BOSS_RAY_JIT of the
 // spacing; a ray crosses the spiral lane once a turn - EVERY crossing inside the span is a cut (owner, 2026-10-27: "without placement
 // jitter"; one a ray, picked by hash, left long uncut runs), and the piece ends there lie ALONG THE RAY (owner, 2026-10-27: "the aligned
 // spoke is more important") - so the cuts on every turn line up as spokes
-const BOSS_RAYS = 24, BOSS_RAY_JIT = 0.4, BOSS_CUT_MIN = 0.25, BOSS_PIECE_ROUND = 0.05, BOSS_PIECE_MIN = 0.5, BOSS_PIECE_FLOOR = 10; // BOSS_PIECE_MIN: a piece at least this much of its width long, else the cut is skipped; BOSS_PIECE_FLOOR: no piece thinner, u (owner, 2026-10-27: "floor 10u"; was 4); BOSS_CUT_MIN: a ray flatter than this against the lane (its sine) cuts square; BOSS_PIECE_ROUND: a piece's corner radius, of its width
+const BOSS_RAYS = 24, BOSS_RAY_JIT = 0.4, BOSS_CUT_MIN = 0.25, BOSS_PIECE_ROUND = 0.05, BOSS_PIECE_MIN = 0.5, BOSS_PIECE_FLOOR = 30; // BOSS_PIECE_MIN: a piece at least this much of its width long, else the cut is skipped; BOSS_PIECE_FLOOR: no piece thinner, u, unless the turns either side sit closer (owner, 2026-10-27: "floor 10u", then "floor 30u"; was 4); BOSS_CUT_MIN: a ray flatter than this against the lane (its sine) cuts square; BOSS_PIECE_ROUND: a piece's corner radius, of its width
 const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0; h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }; // 0..1
 // COMPUTED ONCE A BOSS (owner, 2026-10-26: "can we precompute these if slow?"): the span, the lane's points over it, the cuts and every
 // piece, kept on the boss (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each
@@ -62,7 +62,13 @@ function barGeo(e) {
     for (const dth of [-TAU, TAU]) { let best = null; for (const p of L) if (Math.abs(p.th - (m.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } if (best !== null) rs.push(Math.abs(best - rm) - BOSS_SEG_GAP); }
     return Math.max(4, Math.min(BOSS_CORRIDOR, ...rs)); };
   // piece i's width at s: the taper (BOSS_PIECE_W at the core end .. the 100% end) jittered by its hash, inside the corridor, never under BOSS_PIECE_FLOOR
-  const wOf = (i, s) => Math.max(BOSS_PIECE_FLOOR, Math.min(corrAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))));
+  const wOf = (i, s) => Math.min(corrAt(s), Math.max(BOSS_PIECE_FLOOR, (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))); // (the corridor last: the floor never pushes a piece into the next turn)
+  // the piece's slide along its spoke: at most the room left between its width and the corridor (half each way, so two turns' pieces slid
+  // toward each other still keep the gap), and where the lane itself runs toward the core (cs, the tangent's share along the ray - the
+  // entry stretch) no more than a quarter gap along it, so neighbours on that stretch never meet
+  const slideOf = (i, s, w) => { const m = at(s), rx = m.x - CX, ry = m.y - CY, rl = Math.hypot(rx, ry) || 1, cs = Math.abs((m.ny * rx - m.nx * ry) / rl);
+    return BOSS_SHOVE * Math.min(Math.max(0, (corrAt(s) - w) / 2), (BOSS_SEG_GAP / 4) / Math.max(cs, 0.05)) * (2 * bossHash(e, i, 3) - 1); };
+  const slid = (P, d) => P.map(p => { const dx = p.x - CX, dy = p.y - CY, r = Math.hypot(dx, dy) || 1, k = (r + d) / r; return { s: p.s, x: CX + dx * k, y: CY + dy * k }; });
   // THE PIECES' BOUNDS: the 100% end, the cuts, the 0% end - EVERY one a ray through the core (owner, 2026-10-27: "the cuts don't all seem
   // to use the core as a vanishing point"); a cut is kept only if the piece before it has room for both slanted ends and a gap, else it
   // is skipped and the piece runs on to the next - so no piece's ends ever cross (a bow-tie that read as overlap)
@@ -72,11 +78,16 @@ function barGeo(e) {
   // a cut's LINE: the ray from the core through the lane point there, turned by half its gap (as an angle at that radius) toward the piece;
   // val(P) > 0 inside the piece. toward: +1 the piece lies at greater s than the cut, -1 at less
   const rayLine = (c, toward) => { const C = at(c.s), r = Math.hypot(C.x - CX, C.y - CY) || 1, al = Math.atan2(C.y - CY, C.x - CX) + toward * sgn * (c.gap / 2) / r, ca = Math.cos(al), sa = Math.sin(al), k = toward * sgn; return P => k * (ca * (P.y - CY) - sa * (P.x - CX)); };
-  // a side cut at a line: from pts[i] (inside) toward the piece's start (back) or end, the first point past the line, interpolated; null if none
+  // a side cut at a line: the side's crossing of it nearest pts[i] (the piece's middle), toward the piece's start (back) or end, interpolated;
+  // j the last point inside. Near the core a side sits several u along the lane from its base (the normal is far from radial), so a short
+  // piece's middle may already be PAST its end line: then the search backs up to the last point inside instead of giving up (a square end
+  // there sat 2 u from its neighbour and overlapped once slid, 2026-10-27). null: no crossing within the side's reach
   const sideCut = (pts, i, val, back) => {
-    if (val(pts[i]) < 0) return null;
-    for (let j = i; back ? j > 0 : j < pts.length - 1; j += back ? -1 : 1) { const q = pts[j], r = pts[j + (back ? -1 : 1)], vq = val(q), vr = val(r); if (vr < 0) { const f = vq / (vq - vr || 1e-9); return { x: q.x + (r.x - q.x) * f, y: q.y + (r.y - q.y) * f, s: q.s + (r.s - q.s) * f, j }; } }
-    return null;
+    const d = back ? -1 : 1; let j = i;
+    if (val(pts[i]) >= 0) { while (j + d >= 0 && j + d < pts.length && val(pts[j + d]) >= 0) j += d; if (j + d < 0 || j + d >= pts.length) return null; }
+    else { while (j >= 0 && j < pts.length && val(pts[j]) < 0) j -= d; if (j < 0 || j >= pts.length) return null; }
+    const q = pts[j], r = pts[j + d], vq = val(q), vr = val(r), f = vq / (vq - vr || 1e-9);
+    return { x: q.x + (r.x - q.x) * f, y: q.y + (r.y - q.y) * f, s: q.s + (r.s - q.s) * f, j };
   };
   const pieces = [];
   for (let i = 0; i + 1 < bounds.length; i++) {
@@ -87,11 +98,12 @@ function barGeo(e) {
     const sides = [1, -1].map(sg => { let P = side(sg); // the side cut at its two ends along the rays, square (by s) where a ray never crosses it
       const e0 = sideCut(P, m, v0, true), e1 = sideCut(P, m, v1, false);
       const from = e0 ? e0.j : P.findIndex(p => p.s >= s0), to = e1 ? e1.j : (P.length - 1 - [...P].reverse().findIndex(p => p.s <= s1));
-      if (from < 0 || to < from) return null;
+      if (from < 0 || to < from - 1) return null; // (to = from - 1: no sample between the two crossings, the side is just the two of them)
       P = P.slice(from, to + 1); if (e0) P.unshift({ x: e0.x, y: e0.y, s: e0.s }); if (e1) P.push({ x: e1.x, y: e1.y, s: e1.s });
       return P.length >= 2 ? P : null; });
     if (!sides[0] || !sides[1]) continue;
-    pieces.push({ s0, s1, w, Lp: sides[0], Rp: sides[1] });
+    const d = slideOf(i, (c0.s + c1.s) / 2, w);
+    pieces.push({ s0, s1, w, d, Lp: slid(sides[0], d), Rp: slid(sides[1], d) });
   }
   return e.bar = { key, a, b, pieces, L, sgn };
 }
