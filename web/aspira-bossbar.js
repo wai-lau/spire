@@ -163,19 +163,26 @@ function bossClip() {
   ctx.clip();
 }
 // THE FLY-IN (owner, 2026-10-27: "after the triangle fully expands, have the segments fly in from off-screen into place; jitter their
-// speeds and launch time, but the arrival time should be ordered"): once the boss sky is FULL (bossInv.t0 + BOSS_INV_T), piece i lands
-// at BAR_FLY_LEAD + BAR_FLY_SPAN x (1 - i / (n - 1)) s after it - the core end first, the 100% end last (owner: "reverse arrival
-// order") - having flown in along its own spoke from past the screen's farthest corner (barFlyFrom) over BAR_FLY_DUR s, +-BAR_FLY_JIT
-// by its hash, so launches scatter while landings keep their order; eased IN (owner: "start motionless off screen and accelerate"). Before the sky is full every piece waits off-screen. The boss's lane and glow light only
-// after the last piece lands (bossBarInT - litLanes, aspira-lanes.js: "draw lane and lane glow after hp slides in")
-const BAR_FLY_LEAD = 0.2, BAR_FLY_SPAN = 2, BAR_FLY_DUR = 2.4, BAR_FLY_JIT = 0.6; // (owner, 2026-10-27: "greatly slow down segment slide speed" - a flight was 0.6 s over a 1.2 s spread)
+// speeds and launch time, but the arrival time should be ordered" / "reverse arrival order" / "I want to see all the segments overlapping
+// and slowly approaching like an armada of ships, then, look they are slamming into place"): once the boss sky is FULL (bossInv.t0 +
+// BOSS_INV_T) every piece stands on ONE ring, BAR_RING_PAD past the bar's outermost piece - pieces from every turn stacked
+// there, overlapping - and drifts in along its own spoke at BAR_DRIFT u/s (+-BAR_DRIFT_JIT by its hash: the armada loosens), until
+// its own moment: piece i lands at BAR_FLY_LEAD + BAR_FLY_SPAN x (1 - i / (n - 1)) s after the sky is full - the core end first, the
+// 100% end last - slamming the rest of the way in over BAR_SLAM s (+-BAR_SLAM_JIT), eased IN (motionless, then faster and faster).
+// Before the sky is full every piece waits off-screen. The boss's lane and glow light only after the last piece lands (bossBarInT -
+// litLanes, aspira-lanes.js: "draw lane and lane glow after hp slides in")
+const BAR_FLY_LEAD = 0.6, BAR_FLY_SPAN = 2.5, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_RING_PAD = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5; // BAR_RING_PAD: the armada's ring sits this far past the bar's outermost piece - on screen wherever the outer turn is (the screen's corner was off-screen for most of the ring in portrait)
 const bossBarInT = () => BAR_FLY_LEAD + BAR_FLY_SPAN; // s after the sky is full until the bar is in
-const barFlyFrom = () => { const cs = [[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY)); return Math.max(...cs) * 1.1 + 100; }; // u out along a spoke: past the farthest corner
+const barFar = () => Math.max(...[[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY))); // u from the core to the screen's farthest corner
+const barFlyFrom = () => barFar() * 1.1 + 100; // u out along a spoke: past that corner
 function barFlyOff(e, i, n) { // piece i of n: how far out along its spoke it still is, u (0: in place)
   if (typeof bossInv === "undefined" || bossInv.phase !== "in") return 0;
-  const now = performance.now() / 1000, full = bossInv.t0 + BOSS_INV_T; if (now < full) return barFlyFrom();
-  const land = full + BAR_FLY_LEAD + BAR_FLY_SPAN * (n > 1 ? 1 - i / (n - 1) : 0), dur = BAR_FLY_DUR * (1 + BAR_FLY_JIT * (2 * bossHash(e, i, 6) - 1)), u = Math.max(0, Math.min(1, (now - (land - dur)) / dur));
-  return u >= 1 ? 0 : (1 - Math.pow(u, 3)) * barFlyFrom(); // (ease IN: motionless off-screen, then faster and faster into place)
+  const t = performance.now() / 1000 - (bossInv.t0 + BOSS_INV_T); if (t < 0) return barFlyFrom();
+  const g = e.bar && e.bar.pieces[i]; if (!g) return 0; const rOf = q => { const m = q.Lp[q.Lp.length >> 1]; return Math.hypot(m.x - CX, m.y - CY); }, r = rOf(g), ring = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(rOf))) + BAR_RING_PAD; // its own radius, and the armada's
+  const land = BAR_FLY_LEAD + BAR_FLY_SPAN * (n > 1 ? 1 - i / (n - 1) : 0), slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * bossHash(e, i, 6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * bossHash(e, i, 7) - 1)), t0 = land - slam;
+  const drift = tt => Math.max(0, ring - v * tt - r); // out of place while the armada drifts in (never past its place)
+  if (t >= land) return 0; if (t < t0) return drift(t);
+  const u = (t - t0) / slam; return (1 - u * u * u) * drift(t0);
 }
 // ON THE ENTITY LAYER AT THE FLOOR'S LEVEL (owner, 2026-10-27: "tower ranges and effects should appear above hp"): the bar is drawn in
 // warpEntities' part A, between the floor and the dice - so the dice, the beams, the shield lines and the towers' layer cover it, and
