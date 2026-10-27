@@ -203,14 +203,16 @@ function drawBossLabels() {
         const Q = pathAt(e.pi, cs, ang), Q2 = pathAt(e.pi, cs + 1, ang), tl = Math.hypot(Q2.x - Q.x, Q2.y - Q.y) || 1, tx = (Q2.x - Q.x) / tl * sg, ty = (Q2.y - Q.y) / tl * sg, rx = Q.x - CX, ry = Q.y - CY, rl = Math.hypot(rx, ry) || 1, ux = rx / rl, uy = ry / rl;
         const dot = -uy * tx + ux * ty, nx = dot >= 0 ? -uy : uy, ny = dot >= 0 ? ux : -ux, sn = Math.abs(tx * uy - ty * ux), inset = gap / 2 + BOSS_LABEL_PAD; // (nx, ny): into the piece, square to the spoke; sn: the lane's slant off the spoke
         const W = { x: Q.x + ux * p.d + nx * inset, y: Q.y + uy * p.d + ny * inset }, S = warpProject(W.x, W.y), B2 = warpProject(W.x + ux * 10, W.y + uy * 10), U2 = warpProject(W.x + nx * 10, W.y + ny * 10); // the baseline's middle, on the piece's own radius
-        let bx = B2.x - S.x, by = B2.y - S.y; const bl = Math.hypot(bx, by) || 1; bx /= bl; by /= bl; let upx = by, upy = -bx; if (upx * (U2.x - S.x) + upy * (U2.y - S.y) < 0) { upx = -upx; upy = -upy; } // the spoke on screen, and its perpendicular the way in
-        return { S, upx, upy, inset, sn, k: cam.k * (S.s || 1) };
+        let bx = B2.x - S.x, by = B2.y - S.y; const bl = Math.hypot(bx, by) || 1; bx /= bl; by /= bl; let upx = by, upy = -bx; if (upx * (U2.x - S.x) + upy * (U2.y - S.y) < 0) { upx = -upx; upy = -upy; } // the spoke on screen, and its perpendicular the way in (only to pick the edge)
+        return { W, nx, ny, upy, inset, sn };
       };
-      const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), E = e0.upy <= e1.upy ? e0 : e1, th = Math.atan2(E.upx, -E.upy); // the cut whose way in is more UP on the screen: never upside down
+      const e0 = edge(p.cs0, p.g0, 1), e1 = edge(p.cs1, p.g1, -1), E = e0.upy <= e1.upy ? e0 : e1; // the cut whose way in is more UP on the screen: never upside down
       ctx.font = "100px " + CANVAS_FONT; const w100 = ctx.measureText(str).width || 60; // the string's width at 100 px: the fit along the spoke
       const px = Math.min(BOSS_LABEL_PX[0] + (BOSS_LABEL_PX[1] - BOSS_LABEL_PX[0]) * f, (p.w - 2 * BOSS_LABEL_PAD) * 100 / w100, ((p.s1 - p.s0) * E.sn - E.inset - BOSS_LABEL_PAD) / BOSS_LABEL_CAP); // (the piece's length across the spoke: its length along the lane, slanted)
       if (px < 3) continue;
-      ctx.setTransform(E.k * Math.cos(th), E.k * Math.sin(th), -E.k * Math.sin(th), E.k * Math.cos(th), E.S.x, E.S.y); ctx.globalAlpha = 1;
+      // ON THE FLOOR, warped as the lane is (owner, 2026-10-27: "apply the same 3d distortion as the lane to those numbers"): the floor's own
+      // affine at the baseline's middle (warpFrame, as a prism's top is placed), the text turned in the WORLD so its bottom runs along the spoke
+      const [fa, fb, fc, fd, fe, ff] = warpFrame(E.W.x, E.W.y, 0), ph = Math.atan2(E.nx, -E.ny); ctx.setTransform(fa, fb, fc, fd, fe, ff); ctx.transform(Math.cos(ph), Math.sin(ph), -Math.sin(ph), Math.cos(ph), E.W.x, E.W.y); ctx.globalAlpha = 1;
       text(str, 0, -px * 0.45, px, hp >= f ? "white" : ENEMIES.bonus.color, false); // (text centres on y: the bottom sits on the line)
     }
   }
