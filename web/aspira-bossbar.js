@@ -23,14 +23,14 @@ const bossSpan = e => { const g = barGeo(e); return { a: g.a, b: g.b, hp: g.b - 
 // width"): along the span, pieces BOSS_SEG_U long (each +-BOSS_SEG_JIT of it), BOSS_SEG_GAP apart; the bar BOSS_BAR_W wide at the core
 // end, BOSS_BAR_WIDEN x that at the 100% end, each piece's width jittered the same and the piece set across the lane by up to its own
 // width. A fixed hash a piece (the boss's id, the piece's index): the layout holds still from frame to frame
-const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 1 /* (owner, 2026-10-27: "5x thickness jitter"; was 0.2) */, BOSS_PIECE_W = [12, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 1, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's slide ALONG ITS SPOKE (every point moved out or in along its own ray from the core, so the cut ends stay rays through it), as a share of the free room between it and the turns either side - 1: the whole room, 0: none (owner, 2026-10-27: "add placement jitter now, but along the spokes and still [no overlap]"; an earlier slide along the mean ray was "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
+const BOSS_SEG_GAP = 10, BOSS_SEG_JIT = 1 /* (owner, 2026-10-27: "5x thickness jitter"; was 0.2) */, BOSS_PIECE_W = [5, 44], BOSS_CORRIDOR = 80, BOSS_SHOVE = 1, BOSS_PIECE_OUT = 1.5, BOSS_PIECE_STEP = 2; // BOSS_SHOVE: a piece's slide ALONG ITS SPOKE (every point moved out or in along its own ray from the core, so the cut ends stay rays through it), as a share of the free room between it and the turns either side - 1: the whole room, 0: none (owner, 2026-10-27: "add placement jitter now, but along the spokes and still [no overlap]"; an earlier slide along the mean ray was "weirdly offset from the lane"); BOSS_CORRIDOR: the most a piece may take across the lane - less where the spiral's turns are closer (the pitch there) // BOSS_SEG_GAP: between two pieces, across their cut; BOSS_SEG_JIT: a piece's width jitter; BOSS_PIECE_W: a piece's width at the core end .. the 100% end, u (owner, 2026-10-27: "widen the boxes as much as possible", "way thicker"); BOSS_CORRIDOR: a piece stays inside this much across the lane - no overlap with the next turn; BOSS_PIECE_OUT: its outline, u; BOSS_PIECE_STEP: u between a piece's points
 // THE CUTS (owner, 2026-10-27: "choose 24 points on the edge of the screen equally radially distant around the core, then add some radial
 // jitter, these are the lines that chop up the hp bar into segments. Each of these lines should cut the hp bar exactly once, at which
 // intersection is randomly decided"): BOSS_RAYS rays from the core, evenly spaced round it, each turned by up to BOSS_RAY_JIT of the
 // spacing; a ray crosses the spiral lane once a turn - EVERY crossing inside the span is a cut (owner, 2026-10-27: "without placement
 // jitter"; one a ray, picked by hash, left long uncut runs), and the piece ends there lie ALONG THE RAY (owner, 2026-10-27: "the aligned
 // spoke is more important") - so the cuts on every turn line up as spokes
-const BOSS_RAYS = 24, BOSS_RAY_JIT = 0.4, BOSS_CUT_MIN = 0.25, BOSS_PIECE_ROUND = 0.05, BOSS_PIECE_MIN = 0.5, BOSS_PIECE_FLOOR = 20, BOSS_SLIDE_MAX = 30, BOSS_GAP_CORE = 0.5; // BOSS_PIECE_MIN: a piece at least this much of its width long, else the cut is skipped; BOSS_PIECE_FLOOR: no piece thinner, u, unless the turns either side sit closer (owner, 2026-10-27: "floor 10u", "floor 30u", then "min width should be like 20u"; was 4); BOSS_SLIDE_MAX: a piece's slide along its spoke, u, at most; BOSS_GAP_CORE: the gap between pieces at the core, of BOSS_SEG_GAP (5 u: the two outlines take 3); BOSS_CUT_MIN: a ray flatter than this against the lane (its sine) cuts square; BOSS_PIECE_ROUND: a piece's corner radius, of its width
+const BOSS_RAYS = 24, BOSS_RAY_JIT = 0.4, BOSS_CUT_MIN = 0.25, BOSS_PIECE_ROUND = 0.05, BOSS_PIECE_MIN = 0.5, BOSS_PIECE_FLOOR = 20, BOSS_SLIDE_MAX = 30, BOSS_GAP_CORE = 0.3, BOSS_OUT_CORE = 0.3, BOSS_FLOOR_CORE = 0.15, BOSS_CUT_MARGIN = 2; // BOSS_PIECE_MIN: a piece at least this much of its width long, else the cut is skipped; BOSS_PIECE_FLOOR: no piece thinner, u, unless the turns either side sit closer (owner, 2026-10-27: "floor 10u", "floor 30u", then "min width should be like 20u"; was 4); BOSS_SLIDE_MAX: a piece's slide along its spoke, u, at most; BOSS_GAP_CORE / BOSS_OUT_CORE / BOSS_FLOOR_CORE: the gap, the outline and the width floor at the core, of their full values at the 100% end (owner, 2026-10-27: "outer gaps 10u / inner gaps 3u"; the outline 0.45 u, the floor 3 u); BOSS_CUT_MARGIN: u of slack a cut needs past the slant room, scaled the same; BOSS_CUT_MIN: a ray flatter than this against the lane (its sine) cuts square; BOSS_PIECE_ROUND: a piece's corner radius, of its width
 const bossHash = (e, i, k) => { let h = (e.id * 7919 + i * 104729 + k * 31) | 0; h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; }; // 0..1
 // COMPUTED ONCE A BOSS (owner, 2026-10-26: "can we precompute these if slow?"): the span, the lane's points over it, the cuts and every
 // piece, kept on the boss (e.bar) and rebuilt only when the towers' reach changes (the 100% end moves with it) - a frame only picks each
@@ -57,33 +57,37 @@ function barGeo(e) {
   // where s sits between the core's rim (0) and the 100% end (1), by radius: the corners' roundness, and the gap between pieces - a full
   // BOSS_SEG_GAP out at the 100% end, BOSS_GAP_CORE of it at the core, where a 10 u gap was most of a spoke's spacing and few cuts fit
   // (owner, 2026-10-27: "increase likelihood of chop near core")
-  const rCore = bossBarOut(), A0 = at(a), rA = Math.hypot(A0.x - CX, A0.y - CY), share = s => { const m = at(s); return Math.max(0, Math.min(1, (Math.hypot(m.x - CX, m.y - CY) - rCore) / (rA - rCore || 1))); };
-  const gapAt = s => BOSS_SEG_GAP * Math.max(BOSS_GAP_CORE, share(s));
+  // (share: along the span - the lane's last stretch swings in and out of the core's radius; the width taper uses the same)
+  const share = s => Math.max(0, Math.min(1, (b - s) / (b - a || 1)));
+  // EVERYTHING TAPERS TO THE CORE (owner, 2026-10-27: "segments should get progressively thinner as lane approaches core, but keep
+  // jittering" / "gap width should also get progressively smaller towards core" / "keep having segments all the way to the core"): the
+  // width's floor, the gap, the outline and the cut's margin each shrink with share, to a share of themselves at the core
+  const gapAt = s => BOSS_SEG_GAP * Math.max(BOSS_GAP_CORE, share(s)), outAt = s => BOSS_PIECE_OUT * Math.max(BOSS_OUT_CORE, share(s)), floorAt = s => BOSS_PIECE_FLOOR * Math.max(BOSS_FLOOR_CORE, share(s));
   // the slant of a cut: how far along the lane a side h off the lane meets the cut's ray, per unit of h (cot of ray against lane)
-  const cot = c => { const C = at(c.s), tx = C.ny, ty = -C.nx, rx = C.x - CX, ry = C.y - CY, rl = Math.hypot(rx, ry) || 1, sn = Math.abs(tx * ry - ty * rx) / rl; return sn < BOSS_CUT_MIN ? 1 / BOSS_CUT_MIN : Math.abs(tx * rx + ty * ry) / rl / sn; };
+  const cot = c => { const C = at(c.s), tx = C.ny, ty = -C.nx, rx = C.x - CX, ry = C.y - CY, rl = Math.hypot(rx, ry) || 1, sn = Math.abs(tx * ry - ty * rx) / rl; return sn < BOSS_CUT_MIN ? 0 : Math.abs(tx * rx + ty * ry) / rl / sn; }; // (0: a flat ray cuts SQUARE - rayLine - and a square end needs no slant room; it once counted 1 / BOSS_CUT_MIN and no cut fit on the lane's last stretch into the core)
   // the corridor at s: the lane one turn in and one turn out (the same angle round the core, +-2 pi) less a gap - a piece this wide
   // keeps a gap to the next turn (the inner turns sit closer than BOSS_CORRIDOR)
   const corrAt = (s, cap = BOSS_CORRIDOR) => { const m = at(s), rm = Math.hypot(m.x - CX, m.y - CY) || 1, rs = [];
     for (const dth of [-TAU, TAU]) { let best = null; for (const p of L) if (Math.abs(p.th - (m.th + dth)) < 0.05) { const r = Math.hypot(p.x - CX, p.y - CY); if (best === null || Math.abs(r - rm) < Math.abs(best - rm)) best = r; } if (best !== null) rs.push(Math.abs(best - rm) - BOSS_SEG_GAP); }
     return Math.max(4, Math.min(cap, ...rs)); };
   // piece i's width at s: the taper (BOSS_PIECE_W at the core end .. the 100% end) jittered by its hash, inside the corridor, never under BOSS_PIECE_FLOOR
-  const wOf = (i, s) => Math.min(corrAt(s), Math.max(BOSS_PIECE_FLOOR, (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))); // (the corridor last: the floor never pushes a piece into the next turn)
+  const wOf = (i, s) => Math.min(corrAt(s), Math.max(floorAt(s), (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * (b - s) / (b - a)) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1)))); // (the corridor last: the floor never pushes a piece into the next turn)
   // the piece's slide along its spoke: at most BOSS_SLIDE_MAX (owner, 2026-10-27: "cap spoke jitter to +/-30u so that they cover lane"), and
   // at most the room left between its width and the turns either side (half each way, so two turns' pieces slid toward each other still
-  // keep the gap - the real pitch, not BOSS_CORRIDOR), and where the lane itself runs toward the core (cs, the tangent's share along the
-  // ray - the entry stretch) no more than a quarter gap along it, so neighbours on that stretch never meet
-  const slideOf = (i, s, w) => { const m = at(s), rx = m.x - CX, ry = m.y - CY, rl = Math.hypot(rx, ry) || 1, cs = Math.abs((m.ny * rx - m.nx * ry) / rl);
-    return BOSS_SHOVE * Math.min(BOSS_SLIDE_MAX, Math.max(0, (corrAt(s, Infinity) - w) / 2), Math.max(0, gapAt(s) - 2 * BOSS_PIECE_OUT) / 4 / Math.max(cs, 0.05)) * (2 * bossHash(e, i, 3) - 1); }; // (the gap there less both outlines: what two neighbours may close between them)
+  // keep the gap - the real pitch, not BOSS_CORRIDOR). Along the lane a slide changes nothing: the piece is cut after it slides
+  const slideOf = (i, s, w) => BOSS_SHOVE * Math.min(BOSS_SLIDE_MAX, Math.max(0, (corrAt(s, Infinity) - w) / 2)) * (2 * bossHash(e, i, 3) - 1);
   const slid = (P, d) => P.map(p => { const dx = p.x - CX, dy = p.y - CY, r = Math.hypot(dx, dy) || 1, k = (r + d) / r; return { s: p.s, x: CX + dx * k, y: CY + dy * k }; });
   // THE PIECES' BOUNDS: the 100% end, the cuts, the 0% end - EVERY one a ray through the core (owner, 2026-10-27: "the cuts don't all seem
   // to use the core as a vanishing point"); a cut is kept only if the piece before it has room for both slanted ends and a gap, else it
   // is skipped and the piece runs on to the next - so no piece's ends ever cross (a bow-tie that read as overlap)
   const bounds = [{ s: a, gap: 0 }];
   // ...and no piece shorter than BOSS_PIECE_MIN of its width (owner, 2026-10-27: "min piece length sure" - two jittered spokes 3 degrees apart made a sliver)
-  for (const c of [...cuts.map(c => ({ s: c.s, gap: gapAt(c.s) })), { s: b, gap: 0 }]) { const last = bounds[bounds.length - 1], w = wOf(bounds.length - 1, (last.s + c.s) / 2) /* (the piece this cut would close: its own width) */, gap = (last.gap + c.gap) / 2, need = Math.max(gap + (w / 2) * (cot(last) + cot(c)) + 2, gap + BOSS_PIECE_MIN * w); if (c.s - last.s > need) bounds.push(c); else if (!c.gap) { if (bounds.length > 1) bounds.pop(); bounds.push(c); } }
+  for (const c of [...cuts.map(c => ({ s: c.s, gap: gapAt(c.s) })), { s: b, gap: 0 }]) { const last = bounds[bounds.length - 1], w = wOf(bounds.length - 1, (last.s + c.s) / 2) /* (the piece this cut would close: its own width) */, gap = (last.gap + c.gap) / 2, need = Math.max(gap + (w / 2) * (cot(last) + cot(c)) + BOSS_CUT_MARGIN * Math.max(BOSS_GAP_CORE, share(c.s)), gap + BOSS_PIECE_MIN * w); if (c.s - last.s > need) bounds.push(c); else if (!c.gap) { if (bounds.length > 1) bounds.pop(); bounds.push(c); } }
   // a cut's LINE: the ray from the core through the lane point there, turned by half its gap (as an angle at that radius) toward the piece;
   // val(P) > 0 inside the piece. toward: +1 the piece lies at greater s than the cut, -1 at less
-  const rayLine = (c, toward) => { const C = at(c.s), r = Math.hypot(C.x - CX, C.y - CY) || 1, al = Math.atan2(C.y - CY, C.x - CX) + toward * sgn * (c.gap / 2) / r, ca = Math.cos(al), sa = Math.sin(al), k = toward * sgn; return P => k * (ca * (P.y - CY) - sa * (P.x - CX)); };
+  const rayLine = (c, toward) => { const C = at(c.s), tx = C.ny, ty = -C.nx, rx = C.x - CX, ry = C.y - CY, r = Math.hypot(rx, ry) || 1;
+    if (Math.abs(tx * ry - ty * rx) / r < BOSS_CUT_MIN) return P => toward * (tx * (P.x - C.x) + ty * (P.y - C.y)) - c.gap / 2; // SQUARE where the ray runs along the lane (the last stretch into the core): across the lane at the cut, half a gap toward the piece
+    const al = Math.atan2(ry, rx), ca = Math.cos(al), sa = Math.sin(al), k = toward * sgn; return P => k * (ca * (P.y - CY) - sa * (P.x - CX)) - c.gap / 2; }; // PARALLEL to the ray, half a gap over (owner, 2026-10-27: "why are gaps inconsistent?" - two rays a gap-angle apart made a wedge, wider at a wide piece's outer edge than its inner): a gap is the same width at any radius
   // a side cut at a line: the side's crossing of it nearest pts[i] (the piece's middle), toward the piece's start (back) or end, interpolated;
   // j the last point inside. Near the core a side sits several u along the lane from its base (the normal is far from radial), so a short
   // piece's middle may already be PAST its end line: then the search backs up to the last point inside instead of giving up (a square end
@@ -98,19 +102,20 @@ function barGeo(e) {
   const pieces = [];
   for (let i = 0; i + 1 < bounds.length; i++) {
     const c0 = bounds[i], c1 = bounds[i + 1], w = wOf(i, (c0.s + c1.s) / 2);
-    const mid = at((c0.s + c1.s) / 2), rr = Math.hypot(mid.x - CX, mid.y - CY), rad = w * BOSS_PIECE_ROUND * Math.max(0, Math.min(1, (rr - rCore) / (rA - rCore || 1))); // the corners rounder the farther from the core, square at it (owner, 2026-10-27: "reduce the corner roundedness correlated to distance from core, no roundness at core")
+    const mid = (c0.s + c1.s) / 2, rad = w * BOSS_PIECE_ROUND * share(mid), out = outAt(mid); // the corners rounder the farther from the core, square at it (owner, 2026-10-27: "reduce the corner roundedness correlated to distance from core, no roundness at core")
     const h = w / 2 - rad, reach = w * 4 + BOSS_SEG_GAP, base = L.filter(p => p.s >= c0.s - reach && p.s <= c1.s + reach); if (base.length < 2) continue;
     const side = sg => base.map(p => ({ s: p.s, x: p.x + p.nx * sg * h, y: p.y + p.ny * sg * h })), mi = base.findIndex(p => p.s >= (c0.s + c1.s) / 2), m = mi < 0 ? base.length >> 1 : mi;
     const v0 = rayLine(c0, 1), v1 = rayLine(c1, -1), s0 = c0.s + c0.gap / 2, s1 = c1.s - c1.gap / 2; // (s0 / s1: the square fallback, and the piece's reach along the lane)
-    const sides = [1, -1].map(sg => { let P = side(sg); // the side cut at its two ends along the rays, square (by s) where a ray never crosses it
+    // SLID FIRST, THEN CUT (owner, 2026-10-27: "when we jitter along spoke, can we shift along lane so that gaps stay consistent?"): the cut
+    // lines stand still, so whatever a piece's slide - or its neighbour's - each keeps its own side of the line and the gap is exact
+    const d = slideOf(i, mid, w), sides = [1, -1].map(sg => { let P = slid(side(sg), d); // the side cut at its two ends along the rays, square (by s) where a ray never crosses it
       const e0 = sideCut(P, m, v0, true), e1 = sideCut(P, m, v1, false);
       const from = e0 ? e0.j : P.findIndex(p => p.s >= s0), to = e1 ? e1.j : (P.length - 1 - [...P].reverse().findIndex(p => p.s <= s1));
       if (from < 0 || to < from - 1) return null; // (to = from - 1: no sample between the two crossings, the side is just the two of them)
       P = P.slice(from, to + 1); if (e0) P.unshift({ x: e0.x, y: e0.y, s: e0.s }); if (e1) P.push({ x: e1.x, y: e1.y, s: e1.s });
       return P.length >= 2 ? P : null; });
     if (!sides[0] || !sides[1]) continue;
-    const d = slideOf(i, (c0.s + c1.s) / 2, w);
-    pieces.push({ s0, s1, w, d, rad, Lp: slid(sides[0], d), Rp: slid(sides[1], d) });
+    pieces.push({ s0, s1, w, d, rad, out, Lp: sides[0], Rp: sides[1] });
   }
   return e.bar = { key, a, b, pieces, L, sgn };
 }
@@ -138,7 +143,7 @@ function barPiece(g, bar, hp, keepCore, fill, line) { // the piece's part on kee
   Lp.forEach((p, i) => { const P = warpProjectScratch(p.x, p.y); if (i) ctx.lineTo(P.x, P.y); else ctx.moveTo(P.x, P.y); });
   for (let i = Rp.length - 1; i >= 0; i--) { const P = warpProjectScratch(Rp[i].x, Rp[i].y); ctx.lineTo(P.x, P.y); }
   ctx.closePath(); ctx.lineJoin = "round";
-  ctx.strokeStyle = line; ctx.lineWidth = 2 * (rad + BOSS_PIECE_OUT * k); ctx.stroke();
+  ctx.strokeStyle = line; ctx.lineWidth = 2 * (rad + g.out * k); ctx.stroke();
   ctx.fillStyle = fill; ctx.fill(); if (rad > 0.01) { ctx.strokeStyle = fill; ctx.lineWidth = 2 * rad; ctx.stroke(); } // (a square piece at the core: no rounding stroke - a 0 lineWidth would keep the last)
 }
 
