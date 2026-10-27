@@ -56,8 +56,10 @@ function bossGeo(e) {
   const bounds = [{ s: a, d: null }]; for (const c of cuts) if (c.s - bounds[bounds.length - 1].s > BOSS_SEG_GAP * 2 && b - c.s > BOSS_SEG_GAP * 2) bounds.push(c); bounds.push({ s: b, d: null }); // (a cut within two gaps of the last: dropped)
   const pieces = [];
   for (let i = 0; i + 1 < bounds.length; i++) {
-    // EACH PIECE SLID ACROSS THE LANE (owner, 2026-10-27: "slide perpendicular to the lane so no overlap"): its points moved BOSS_SHOVE of
-    // its width along the lane's normal, inside the corridor; the square cuts stay parallel gap apart, so slid neighbours never meet
+    // EACH PIECE SLID AS ONE (owner, 2026-10-27: "slide perpendicular to the lane so no overlap" / "or like slide along line formed by average
+    // angle of the two cut lines, at the arc's centre of mass"): the whole piece moved rigidly by BOSS_SHOVE of its width along the mean
+    // of its two cut normals, inside the corridor; the end that would drift along the lane with that move is pulled in by as much, so
+    // the square cuts stay at least gap apart and slid neighbours never meet
     const c0 = bounds[i], c1 = bounds[i + 1], mid = at((c0.s + c1.s) / 2), rm = Math.hypot(mid.x - CX, mid.y - CY) || 1;
     // the corridor HERE: the lane one turn in and one turn out (the same angle round the core, +-2 pi) - a piece and its shove stay
     // inside the nearer of the two (owner, 2026-10-27: "they ... overlap" - the inner turns sit closer than BOSS_CORRIDOR)
@@ -65,9 +67,11 @@ function bossGeo(e) {
     const rIn = turnR(-TAU), rOut = turnR(TAU), corr = Math.min(BOSS_CORRIDOR, ...[rIn, rOut].filter(r => r !== null).map(r => Math.abs(r - rm) * 0.9));
     const f = (b - (c0.s + c1.s) / 2) / (b - a), w0 = Math.min(corr, (BOSS_PIECE_W[0] + (BOSS_PIECE_W[1] - BOSS_PIECE_W[0]) * f) * (1 + BOSS_SEG_JIT * (2 * bossHash(e, i, 2) - 1))), lim = (corr - w0) / 2; // f: 1 at the 100% end, 0 at the core
     const shove = Math.max(-lim, Math.min(lim, BOSS_SHOVE * w0 * (2 * bossHash(e, i, 3) - 1))), w = w0; // shove: BOSS_SHOVE of its width, inside the corridor
-    const s0 = c0.d ? c0.s + BOSS_SEG_GAP / 2 : c0.s, s1 = c1.d ? c1.s - BOSS_SEG_GAP / 2 : c1.s; // the gap along the lane, square cuts
+    const n0 = at(c0.s), n1 = at(c1.s); let ax = n0.nx + n1.nx, ay = n0.ny + n1.ny, al = Math.hypot(ax, ay); if (al < 1e-6) { ax = mid.nx; ay = mid.ny; al = 1; } ax /= al; ay /= al; // the slide's line: the mean of the two cut normals
+    const dx = ax * shove, dy = ay * shove, drift0 = Math.abs(dx * n0.ny - dy * n0.nx), drift1 = Math.abs(dx * n1.ny - dy * n1.nx); // drift: the move's part along the lane at each cut
+    const s0 = c0.d ? c0.s + BOSS_SEG_GAP / 2 + drift0 : c0.s, s1 = c1.d ? c1.s - BOSS_SEG_GAP / 2 - drift1 : c1.s; // the gap along the lane, square cuts, the drift pulled in
     if (s1 - s0 < 2) continue;
-    const pts = L.filter(p => p.s >= s0 - 4 && p.s <= s1 + 4).map(p => ({ s: p.s, x: p.x + p.nx * shove, y: p.y + p.ny * shove, nx: p.nx, ny: p.ny }));
+    const pts = L.filter(p => p.s >= s0 - 4 && p.s <= s1 + 4).map(p => ({ s: p.s, x: p.x + dx, y: p.y + dy, nx: p.nx, ny: p.ny }));
     pieces.push({ s0, s1, w, pts });
   }
   return e.bar = { key, a, b, pieces };
