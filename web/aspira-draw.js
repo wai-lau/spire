@@ -213,6 +213,18 @@ function cellPath(c, k = 1) {
   ctx.closePath();
 }
 
+// THE BUY AND UPGRADE BUTTONS OVER THE BOSS'S HP LANE (owner, 2026-10-27: "render tower buy buttons and upgrade buttons over the hp"):
+// each open free slot's top (its outline and price - drawCells, caught by warpEntities as cellTop) on its prism's top, and each tower's
+// upgrade chevron on its tile, drawn flat at their spots on the TOP layer right after the bar, inside its clip - so a tower's prism or
+// a die in front still covers them (bossClip). up: warpEntities' placer (x, y, fn, height); skyAt: under a SPREADING boss sky at that spot
+// (the floor there is turned over, so a slot takes the inverted palette like its prism does). Called in part B's palette - the whole
+// frame's inverted one under a FULL sky - so the slot's "white" comes out as the prism's did; the chevron keeps its TOWER'S colour on a
+// boss sky (owner, 2026-10-16), as the towers do (skyOwn): own colours
+function drawButtonsOver(up, cellTop, skyAt) {
+  const hh = WARP.prism.slot / 2;
+  CELLS.forEach((c, ci) => { const fn = cellOpen(ci) && !G.towers.some(t => t.cell === ci) && cellTop(c); if (!fn) return; const draw = () => up(c.x, c.y, fn, hh); if (skyAt(c)) withPalette(draw); else draw(); });
+  ownColours(() => drawUpPlus((c, fn) => up(c.x, c.y, fn, 0)));
+}
 // Shown while placing: every OPEN slot at full strength (owner: "fully show"),
 // free cells in the colour of the tower being placed (owner), occupied ones grey.
 const SLOT_POOR_A = 0.3; // a free slot's outline and price when the bank cannot cover a tower
@@ -430,7 +442,7 @@ function drawSceneTop() {
   drawCoreFx(); if (G.core) drawTimeStop(G.core); /* (3D's Relay hexagons: drawRelayHex3d, on the overlay before the towers) */ // the core's struts and beams, under the towers (aspira-core.js); 3D: Temporal Drive's field ON the floor
   // in 3D the towers, the core and the enemies are drawn FLAT over the bell instead (warpEntities, aspira-warp.js)
   skyKeep(drawLeash); // the movement indicator keeps its TOWER'S colour on a boss sky (owner, 2026-10-19: "should not be inverted in color"; it turned over with the sky, owner 2026-10-11)
-  drawSlotFlash(); drawDrips(); drawCoins(); skyKeep(drawUpPlus); /* (aspira-towers.js) - the upgrade chevron and its hex keep the TOWER'S colour on a boss sky (owner, 2026-10-16: "Tower upgrade indicators should retain color on inversion") */ if (typeof drawThreat === "function") skyKeep(drawThreat); // (drawThreat: the nearest danger's ring and spoke, aspira-ui.js) a corner slot that just opened (aspira-waves.js); the credits flying home (aspira-floats.js)
+  drawSlotFlash(); drawDrips(); drawCoins(); /* the upgrade chevrons: the TOP layer now (drawButtonsOver), over the boss's HP lane */ /* (aspira-towers.js) - the upgrade chevron and its hex keep the TOWER'S colour on a boss sky (owner, 2026-10-16: "Tower upgrade indicators should retain color on inversion") */ if (typeof drawThreat === "function") skyKeep(drawThreat); // (drawThreat: the nearest danger's ring and spoke, aspira-ui.js) a corner slot that just opened (aspira-waves.js); the credits flying home (aspira-floats.js)
 }
 // the whole palette inverted while fn draws (invertColor keeps alpha); the
 // inverted set is built once, COL being fixed after resolveColors

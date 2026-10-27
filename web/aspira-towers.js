@@ -427,14 +427,14 @@ function upArrow(x, y, h, col) {
   ctx.lineCap = "round"; ctx.lineJoin = "round";
   ctx.strokeStyle = COL.bg; ctx.lineWidth = h * 0.3; ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = h * 0.18; ctx.stroke();
 }
-function drawUpPlus() { // over the towers (render, aspira-draw.js), so a tower on its own slot does not hide it
+function drawUpPlus(at = (c, fn) => fn()) { // at: 3D draws each one flat at its tower's spot on the TOP layer, over the boss's HP lane (drawButtonsOver, aspira-draw.js)
   const now = performance.now() / 1000;
   for (const t of G.towers) {
     if (!upReady(t)) continue;
     const c = CELLS[t.cell], col = COL[TOWERS[t.kind].color];
-    ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = 0.2 + 0.7 * upPulse(now); // the hex FLASHES with the chevron, in more outlines the higher the tower (moved here from drawLeash, which turns over with the boss sky)
-    for (let i = 0; i < upRings(t); i++) { towerHex(c, TOWER_K * (1 + UP_RING_K * i)); ctx.stroke(); } // the floor TILE, the size of a slot's (not the drawn tower's)
-    ctx.globalAlpha = 1; upArrow(c.x, c.y, UP_PLUS_PX, col); // ON THE TILE and STILL (owner, 2026-10-21: "Keep them on the tiles, also, don't animate them"; was pulsing with the rings)
+    at(c, () => { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = 0.2 + 0.7 * upPulse(now); // the hex FLASHES with the chevron, in more outlines the higher the tower (moved here from drawLeash, which turns over with the boss sky)
+      for (let i = 0; i < upRings(t); i++) { towerHex(c, TOWER_K * (1 + UP_RING_K * i)); ctx.stroke(); } // the floor TILE, the size of a slot's (not the drawn tower's)
+      ctx.globalAlpha = 1; upArrow(c.x, c.y, UP_PLUS_PX, col); }); // ON THE TILE and STILL (owner, 2026-10-21: "Keep them on the tiles, also, don't animate them"; was pulsing with the rings)
   }
   ctx.globalAlpha = 1;
 }

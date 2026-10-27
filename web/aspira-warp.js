@@ -322,7 +322,7 @@ function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid 
       const hh = WARP.prism.slot / 2;
       solids.push({ x: c.x, y: c.y, h: WARP.prism.slot, col: ui.build && canPlace(ci) ? COL[TOWERS[ui.build].color] : COL.white, dash: true,
         pts: c.pts.map(p => ({ x: c.x + (p.x - c.x) * TOWER_K, y: c.y + (p.y - c.y) * TOWER_K })),
-        top: () => { up(c.x, c.y, cellDraw.get(c), hh); if (!G.towers.length && !ui.build) drawSlotArrow((cc, fn) => (cc === c ? up(c.x, c.y, fn, hh) : null)); } });
+        top: () => { /* (its outline and price: the TOP layer, over the boss's HP lane - drawButtonsOver) */ if (!G.towers.length && !ui.build) drawSlotArrow((cc, fn) => (cc === c ? up(c.x, c.y, fn, hh) : null)); } });
     });
     const coreH = coreH3d();
     warp.lightZ = coreH / 2; // the dice are lit from the core's top (aspira-solids.js)
@@ -355,12 +355,12 @@ function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid 
     const drawTop = (tops, own) => { for (const o of solids) if (!!(o.own || o.towLayer) !== own) continue; else if (spreading && inSky(o) && !o.own) withPalette(() => drawSolid(o, tops)); else if (spreading) drawSolid(o, tops); else if (o.own && inSky(o)) skyOwn(o, () => drawSolid(o, tops)); else drawSolid(o, tops); };
     return () => { /* part B: the towers, the core and every pop-up text - drawn after the phone frame, the leash rings and the sky's difference, as the top layer was composited over them */
     warpBands(above => drawTop(above, false)); { const e = ctx; ctx = warpTowCtx(); try { warpBands(above => drawTop(above, true)); } finally { ctx = e; } } // the TOWERS on their own layer, above the wave list and the boxes (warpTowCtx, aspira-fog.js)
-    warp.hulls = solids.filter(o => o.own && o.geo).map(o => [...o.geo.B, ...o.geo.T]); // the towers' outlines on screen: next frame's bell clears the beams under them (hullUniforms, aspira-fog.js)
+    warp.hulls = solids.filter(o => (o.own || o.towLayer) && o.geo).map(o => [...o.geo.B, ...o.geo.T]); /* (the core too: it covers the boss's HP lane and the buttons like a tower does - bossClip) */ // the towers' outlines on screen: next frame's bell clears the beams under them (hullUniforms, aspira-fog.js)
     const pop = (x, y, fn, far) => { const P = warpProject(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); ctx.save(); fn(); ctx.restore(); };
     /* the numbers (hundreds a frame) go through popRun: no save / restore each (the whole pass has one) and no point object each - every text sets its own font, fill and alpha (perf) */
     const popRun = (x, y, fn, far) => { const P = warpProjectScratch(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); fn(); };
     const pass = f => { ctx.save(); try { f(popRun); } finally { ctx.restore(); } };
-    pass(pp => drawGrvCores((x, y, fn) => pp(x, y, fn, true))); pass(pp => ownColours(() => drawFx("dmg", (x, y, fn) => pp(x, y, fn, true)))); /* (never inverted by a boss sky - owner, 2026-10-17) */ pass(pp => drawFx("text", pp)); pass(pp => ownColours(() => { ctx.save(); bossClip(); drawBossBar(); drawBossTrack(); ctx.restore(); drawBossMarks(pp); drawBossLabels(pp); })) /* the boss's HP lane, crisp on the top layer (aspira-bosses.js) */; /* the boss lane's %HP labels, flat (owner, 2026-10-26) */ // the damage numbers OVER GRV's centres (owner, 2026-10-16: "damage numbers should render above aura and bh core"; the aura is in the fx layer, under all of this)
+    pass(pp => drawGrvCores((x, y, fn) => pp(x, y, fn, true))); pass(pp => ownColours(() => drawFx("dmg", (x, y, fn) => pp(x, y, fn, true)))); /* (never inverted by a boss sky - owner, 2026-10-17) */ pass(pp => drawFx("text", pp)); pass(pp => { ctx.save(); bossClip(); ownColours(() => { drawBossBar(); drawBossTrack(); }); drawButtonsOver(up, c => cellDraw.get(c), o => spreading && inSky(o)); /* the buy and upgrade buttons OVER the bar, in part B's palette (aspira-draw.js) */ ctx.restore(); ownColours(() => { drawBossMarks(pp); drawBossLabels(pp); }); }) /* the boss's HP lane, crisp on the top layer (aspira-bosses.js) */; /* the boss lane's %HP labels, flat (owner, 2026-10-26) */ // the damage numbers OVER GRV's centres (owner, 2026-10-16: "damage numbers should render above aura and bh core"; the aura is in the fx layer, under all of this)
     if (bannerT > 0) pop(CX, 70, () => { ctx.globalAlpha = Math.min(1, bannerT); text(bannerText, CX, 70, 30, bannerCol, true); ctx.globalAlpha = 1; });
     pop(CX, CY, () => drawCredits("pop")); // (the interest pop-up too)
     };
