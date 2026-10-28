@@ -296,8 +296,8 @@ function skillHopTo(c, node, nxt, depth) {
 // Breach stacks per hit (owner: "each beam permanently weakens the target's armor" - Breach is what strips it; the base SOL strips nothing)
 // (SOL_BEAMS - Focus's beam count, 2 3 10 17, capstone 25 - GONE: SOL is ALWAYS ONE BEAM, owner 2026-10-25)
 const SOL_SPLIT = [0, 1, 2, 3, 3, 4]; /* TIER 0 SPLITS NOTHING (owner, 2026-10-28: "I wanted tier 0 to be a minimal version of the tower with few effects" - one beam, its first enemy alone struck (it flies on past it), the spec's row; was 1 since 2026-10-26, "SOL should start with bouncing") */ /* II refracts TWICE (owner, 2026-10-26: "SOL diffraction 2 should say, refracts twice"; was 1 2 2 3 3 4) */ /* SPLITS A HIT by Diffraction tier 0..V (owner, 2026-10-26: "SOL should start with bouncing ... bounces have no limit" - solSpread, aspira-sol.js; Claude's numbers. Was SOL_REFRACTION, a chain's length 0 2 3 6 9 9) */
-// BREACH IS SOL'S OWN, from the start (owner, 2026-10-08): every hit strips SOL_BREACH_ARMOR armor for good
-// (below zero too: a flat bonus on every later hit from every tower); the Breach axis massively
+// BREACH IS SOL'S OWN, from the start (owner, 2026-10-08): every hit strips armor for good - SOL_BREACH_ARMOR over the
+// wave's armor reference, as a share of what is left (shredArmor, 2026-10-28 armor rework; it was flat, below zero too); the Breach axis massively
 // increases the strip
 // BREACH STRIPS A FLAT AMOUNT, big from the start (owner, 2026-10-12: "SOL with any upgrades should be good vs armor", then
 // "dont scale breach with enemy armor" - it was x the wave's armor for an hour): a bare SOL strips 80 a hit (was 3)

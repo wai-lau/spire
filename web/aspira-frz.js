@@ -15,8 +15,8 @@ const FRZ_TEMP_SLOW = [0.45, 0.5, 0.55, 0.6, 0.65, 0.7] /* EVEN LADDERS, 0..V wr
 // from tier I (owner, 2026-10-11: slows are SHAPED now - aspira-game.js slowShape - so FRZ's payoff moves from how
 // slow to what the slowed suffer; was 1 1 1 1.15 1.2 1.25, from III)
 const FRZ_BRITTLE = [1, 1, 1.2, 1.35, 1.75, 2]; /* IV 1.5 -> 1.75, V 1.75 -> 2 (2026-10-28, FRZ's FAST lever - Temp is its fast axis: Temp V cut fast 81 -> 18% at 111-119; IV at 2 took fast 81 -> 39% but every type with it) */ /* even, far lower at the top (owner, 2026-10-26 "Go"; was 1 1 1.15 1.45 3.56 9.02) */ // x damage from every tower while slowed (an armor-taking Brittle was tried 2026-10-12 and reverted the same day - ARCHAEOLOGY.md); was 1.06 .. 1.3 - the no-ARC team 0/9 -> 5/9 with the ARC nerf and fast HP x0.75
-// FROST TAKES ARMOR (owner, 2026-10-12: "let rime reduce armor"): an enemy at FULL frost has this x the wave's armor
-// reference off its armor (less frost, that share of it), past zero - damage(). Rime is FRZ's armor answer, Temp the
+// FROST TAKES ARMOR (owner, 2026-10-12: "let rime reduce armor"): an enemy at FULL frost loses this share of its armor
+// (less frost, that share of it; at most all of it, never below 0 since the 2026-10-28 armor rework) - damage(). Rime is FRZ's armor answer, Temp the
 // fast (slow + tick + brittle); a pulse no longer breaks shield charges (it did until 2026-10-12)
 /* RIME'S BITE (owner, 2026-10-18: Rime is the weakest FRZ axis): each ring that reaches an enemy hits it for this x a tick (quiet, armor still bites) */
 let FRZ_RIME_BITE0 = 4; // x2 with the rate halved (owner, 2026-10-26: "halve rime ring pulse rate, but double effect") // a ring's bite, x a tier 0 tick - ONE number since the tier redesign (2026-10-24; was 0 4 45 200, V 300 - its tier I value)

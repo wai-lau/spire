@@ -152,9 +152,9 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   const raw = amt;
   // (SOL ignored armor until 2026-10-07; owner: "SOL should no longer ignore armor" - its damage rose x1.3 to match, solarmor.mjs)
   // (FROST CRACKED ARMOR here while slowed until 2026-10-11, then Moons did until 2026-10-12; both gone - the frost below is Rime's)
-  // FRZ's FROST (Permafrost) takes a FLAT share of the wave's armor reference (armorRefOf, aspira-acid.js), as much as the
-  // frost it holds - STACKING with Corrosion, below zero like it (owner, 2026-10-12: "let rime reduce armor"; Brittle did it
-  // for an hour, "brittle should stack with corrosion (both should allow negative)")
+  // FRZ's FROST (Permafrost) takes a share of the enemy's armor, as much as the frost it holds, STACKING with Corrosion's strips
+  // (owner, 2026-10-12: "let rime reduce armor"; Brittle did it for an hour, "brittle should stack with corrosion (both should
+  // allow negative)" - armor no longer goes negative since the 2026-10-28 armor rework: every cut multiplies it down)
   const frost = e.frostArmor ? (e.armor || 0) * Math.min(1, frostShare(e) * e.frostArmor) : 0; // (2026-10-28: a SHARE of its armor - shredding multiplies)
   amt = armorTake(amt, (e.armor || 0) - frost); // EVERY hit, quiet ones too - FRZ ticks, splash, damage over time, Nova (owner, 2026-10-12)
   const blunted = amt < raw;
@@ -184,8 +184,8 @@ function onHit(e, t, st, amt) {
   if (st.dot) solScorch(e, t, st); // SOL's burn stacks (aspira-sol.js)
   if (st.stun && Math.random() < st.stun.p) e.stunT = Math.max(e.stunT, st.stun.t);
   if (st.hitSlow) applySlow(e, st.hitSlow.f, st.hitSlow.t, t ? t.id : "x");
-  // Melt (ARC): every hit strips armor for good, past zero (owner: every armor
-  // reduction is permanent and may go negative), so later hits land harder
+  // Melt (ARC): every hit strips armor for good (owner: every armor reduction is permanent), so later hits land
+  // harder - multiplied down toward 0, never below it (2026-10-28 armor rework; it went negative before)
   if (st.armorShred) shredArmor(e, t, st.armorShred * escale(e)); // (multiplied off - aspira-acid.js)
   if (st.splash) {
     // a FILLED blast that lingers 0.3s, so the splash actually reads (owner)

@@ -257,7 +257,7 @@ function stepSol(t, dt) {
 // SOL's shot (owner, 2026-10-03). One crit roll per target, its chance the
 // tower's own plus the target's BLEED, times st.critScale (Pinpoint). Forms:
 //   st.bleedArmor / st.bleedCrit  each hit bleeds the enemy (Impale): armor
-//                 down for good (past zero), crit chance up for every tower
+//                 down for good (multiplied toward 0), crit chance up for every tower
 //   st.ricochet   the shot chains at full damage to this many more enemies
 //   st.beams      converging beams, each a FULL hit (Focus 2 / 3 / 4) - so each pops
 //                 its own shield charge
