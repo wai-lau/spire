@@ -62,6 +62,16 @@ function solRodStep(t, st, dt) {
   }
   t.rods = t.rods.filter(r => r.s < SOL_CONE_EDGE);
 }
+// A BEAM THAT FLIES ON IS DRAWN TO THE SCREEN'S EDGE (owner, 2026-10-28: "SOL pierce should go all the way to the end of the screen, it is
+// stopping early"): what it STRIKES still ends at the play box (solOutLen - the same on every device, and the simulator's); only the
+// drawn line runs on, SOL_SHOW_DU u at a time, until it leaves the canvas (never behind the 3D camera: 6.15.9's flip). Page only
+const SOL_SHOW_DU = 24, SOL_SHOW_MAX = 4000;
+function solShowLen(x, y, ux, uy, k) {
+  if (typeof warp === "undefined" || !warp || !warp.gl || !warp.p || !warp.cv || typeof warpProjectScratch !== "function") return k;
+  const W = warp.cv.width, H = warp.cv.height, on = d => { const P = warpProjectScratch(x + ux * d, y + uy * d); return P.s > 0 && P.x >= 0 && P.x <= W && P.y >= 0 && P.y <= H; }; // (warp.cv's pixels: the space warpProject maps into)
+  let d = k; while (d < SOL_SHOW_MAX && on(d)) d += SOL_SHOW_DU;
+  const P = warpProjectScratch(x + ux * d, y + uy * d); return P.s > 0 ? d : Math.max(k, d - SOL_SHOW_DU); // (one step past the edge, so the line meets it; never a point behind the camera)
+}
 // BREACH'S PARALLEL BEAMS (owner, 2026-10-28: "allow breach to add more _parallel_ beams that pierce, these beams don't reflect / Space
 // them out, but never more than the width of the tower"): SOL_PAR_N[breach] more beams beside the first, alternately either side of it,
 // SOL_PAR_GAP u apart or closer - the whole spread inside the tower's width (solParHalfW) - each straight on along the shot's aim from
@@ -76,7 +86,7 @@ function solParallel(t, st, a) {
   const d = st.dmg * SOL_PAR_K, col = TOWERS[t.kind].color;
   for (let i = 0; i < n; i++) {
     const o = (i % 2 ? -1 : 1) * g * (1 + (i >> 1)), x0 = t.x + nx * o, y0 = t.y + ny * o, L = solOutLen(x0, y0, ux, uy);
-    beam({ x: x0, y: y0 }, { x: x0 + ux * L, y: y0 + uy * L }, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: SOL_PAR_K * SOL_PAR_SHOW, thin: SOL_THIN });
+    const Ls = solShowLen(x0, y0, ux, uy, L); beam({ x: x0, y: y0 }, { x: x0 + ux * Ls, y: y0 + uy * Ls }, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: SOL_PAR_K * SOL_PAR_SHOW, thin: SOL_THIN });
     let hits = 0;
     for (const e of G.enemies) {
       if (e.dead || !e.seen) continue;
@@ -93,7 +103,7 @@ function solSpread(t, st, from, e, full, share = 1) {
   const seg = (a, b, d, al) => { beam(a, b, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); };
   // A PLAIN SOL (no Diffraction - st.pierce 0; owner, 2026-10-28: "go straight even if there is nobody to hit"): no band to split or mirror in -
   // the beam FLIES ON straight past its enemy to the play box's edge, striking no one, at st.hop like any carried line
-  if (!(st.pierce > 0)) { const ux = (e.x - from.x) / L0, uy = (e.y - from.y) / L0, k = solOutLen(e.x, e.y, ux, uy); seg(e, { x: e.x + ux * k, y: e.y + uy * k }, full * (st.hop || 1), share * (st.hop || 1)); return; }
+  if (!(st.pierce > 0)) { const ux = (e.x - from.x) / L0, uy = (e.y - from.y) / L0, k = solShowLen(e.x, e.y, ux, uy, solOutLen(e.x, e.y, ux, uy)); seg(e, { x: e.x + ux * k, y: e.y + uy * k }, full * (st.hop || 1), share * (st.hop || 1)); return; }
   const strike = (o, at, d) => { hit.add(o); fromHit(at, () => damage(o, d, t, false, false, st)); onHit(o, t, st, d); bleed(o, st, t); };
   const out = last => x => hit.has(x) || (solAim != null && !solInBand(t, st, x, solAim, last)); // inside the shot's cone, farther from SOL
   let n = 0;
@@ -113,7 +123,7 @@ function solSpread(t, st, from, e, full, share = 1) {
     if (!b.wall && split(b, b.p, carry, al)) continue; // a hit: it splits (a mirrored line struck no one: it only flies)
     // FLY ON straight past it, through everyone, to the cone's wall
     const via = solAim != null ? solBandEdge(t, st, { x: b.p.x - b.ux, y: b.p.y - b.uy }, b.p) : null;
-    if (!via) { const k = solOutLen(b.p.x, b.p.y, b.ux, b.uy); seg(b.p, { x: b.p.x + b.ux * k, y: b.p.y + b.uy * k }, carry, al); continue; } // out the open end, to the play box's edge (solOutLen)
+    if (!via) { const k = solShowLen(b.p.x, b.p.y, b.ux, b.uy, solOutLen(b.p.x, b.p.y, b.ux, b.uy)); seg(b.p, { x: b.p.x + b.ux * k, y: b.p.y + b.uy * k }, carry, al); continue; } // out the open end, to the play box's edge (solOutLen)
     // THE WALL IS A BOUNCE (owner, 2026-10-26: "count that as a bounce, except there's no pierce"): a carry step, then split from it - or
     // with no one there A MIRROR ("just reflect off the cone (mirror angle across perpendicular line to cone edge)"), flying on from it
     seg(b.p, via, carry, al); const c2 = carry * (st.hop || 1), a2 = al * (st.hop || 1);
