@@ -50,7 +50,15 @@ def dist(k, r):
 
 
 
-cand = {k: sorted(ROWS, key=lambda r: dist(k, r)) for k in KINDS}
+# BY DESIGN (owner rules the measured raw marks cannot know): CRR is NOT meant to beat armor (owner, 2026-10-27: "CRR isn't supposed
+# to be good vs armor anyway") - its armor mark stays below 0
+# - and every MAIN counter of the counter matrix (COUNTERS, aspira-defs.js; ARCHITECTURE.md 4.6, pillar 6) checks its type: +1 or more
+DEFS = (pathlib.Path(__file__).resolve().parents[2] / "web" / "aspira-defs.js").read_text()
+MAIN = {t: re.findall(r'"(\w+)"', m) for t, m in re.findall(r'(\w+): \{ main: \[([^\]]*)\]', re.search(r"const COUNTERS = (\{.*?\}) \};", DEFS).group(1) + " }")}
+NEED = {k: [TYPES.index(t) for t, ks in MAIN.items() if k in ks] for k in KINDS}
+DESIGN = {k: (lambda need, k: lambda r: all(r[i] >= 1 for i in need) and not (k == "car" and r[TYPES.index("armor")] >= 0))(NEED[k], k) for k in KINDS}
+print("main counters (must check):", {t: ks for t, ks in MAIN.items()})
+cand = {k: sorted((r for r in ROWS if DESIGN.get(k, lambda r: True)(r)), key=lambda r: dist(k, r)) for k in KINDS}
 best_rest = [sum(dist(k, cand[k][0]) for k in KINDS[i:]) for i in range(len(KINDS))] + [0]
 
 N = int(sys.argv[2]) if len(sys.argv) > 2 else 5
