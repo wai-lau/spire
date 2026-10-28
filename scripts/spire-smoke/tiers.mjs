@@ -81,6 +81,15 @@ check("ARC: tier 0 strikes one enemy and chains once (owner, 2026-10-28); Conduc
   if (JSON.stringify(r) !== "[2,3,4,2]") return "enemies hit (tier 0, Cond I, Volt I, Cap I): " + r + " (expected 2, 3, 4, 2)";
 });
 
+check("ARC: no enemy is struck twice by the bolts of one attack (owner, 2026-10-28: \"reduce the number of arc hits\" - one hit set an attack); Capacitance's bursts may re-hit", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("arc", { conductivity: 3 }, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20], [80, -10], [50, 15]]);
+    const n = new Map(), _d = damage; damage = (e, ...a) => { n.set(e.id, (n.get(e.id) || 0) + 1); return _d(e, ...a); };
+    try { fire(t, st); for (let i = 0; i < 30; i++) stepChains(0.05); } finally { damage = _d; } return { bolts: st.targets, most: Math.max(0, ...n.values()), hit: n.size }; })()`);
+  if (!(r.bolts > 1)) return "Conductivity 3 fires " + r.bolts + " bolt(s) (expected several, to test)";
+  if (r.hit < 2) return "the attack hit " + r.hit + " enemies (expected several - is damage() still the hit path?)";
+  if (r.most !== 1) return "an enemy took " + r.most + " hits from one attack of " + r.bolts + " bolts (expected 1: the bolts share one hit set)";
+});
+
 // ---------- SOL ----------
 towerTierChecks("sol", ["diffract", "scorch", "break", "prism", "refract", "intensity"]);
 check("SOL (owner, 2026-10-28: tier 0 \"a minimal version of the tower with few effects\"): tier 0 one beam that strikes its first enemy and flies on straight past it, striking no one - no split, no band, no rod; Diffraction I splits at every hit within the band (owner, 2026-10-26: an expanding rectangle) at 80% carry; Scorch I burns and stacks, its rod sweeping; Breach I strips armor, no burn", () => {

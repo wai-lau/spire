@@ -191,8 +191,9 @@ purchase; an affordable buy flashes an up-chevron; labels are three letters.
 ### 4.4 What each axis buys
 
 **ARC** - a strike hits, then forks; a jump never goes back up its own branch; damage falls
-by `arcFall` a jump. **Armor grounds the arc** (`ARC_GROUND`): a strike on armor > 0 stops
-there; armor stripped to <= 0 lets arcs through again.
+by `arcFall` a jump. **One hit set an attack** (owner 2026-10-28, "reduce the number of arc hits"): no
+enemy is struck twice by the bolts of one attack, nor by one bolt (`fire` shares `seen`; `skillHop`);
+the echo strike never re-hits what the first took; Capacitance's bursts do re-hit. No grounding (reverted).
 
 | axis | buys |
 |---|---|

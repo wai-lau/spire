@@ -320,7 +320,9 @@ function fire(t, st) {
   // one chain per target: st.targets > 1 (Ion's Fork) starts several lines on
   // DIFFERENT enemies (pickTargets never repeats one)
   // (a chart ARC's two strikes are two SEPARATE attacks - owner: each its own tree)
-  if (t.kind === "arc") { for (const e of targets) fireChain(t, st, e); return true; }
+  // ONE HIT SET AN ATTACK (owner, 2026-10-28: "reduce the number of arc hits" / "no-rehit same enemy"): the bolts share it, so no enemy is
+  // struck by two bolts of one attack (each bolt struck a unit once already; Capacitance's bursts still re-hit - "capacitance should re-hit")
+  if (t.kind === "arc") { const seen = new Set(); for (const e of targets) fireChain(t, st, e, t, false, seen); return true; }
   if (t.kind === "sol") { fireRay(t, st, targets[0]); return true; }
   if (t.kind === "grv") return novaAt(t, st, targets[0]); // a nova on it, no projectile (aspira-grv.js)
   const col = TOWERS[t.kind].color;
