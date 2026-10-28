@@ -59,7 +59,7 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
     if (why) { replay(why); real.fill(...a); }
   };
   g.stroke = (...a) => {
-    const st = real.strokeStyle, dash = g.dash ? real.getLineDash() : null, glow = real.shadowBlur > 0 && real.shadowColor === st; // a glow in its own colour: soft rings under it (glcGlow)
+    const st = real.strokeStyle, dash = g.dash ? real.getLineDash() : null, glow = real.shadowBlur > 0 && plain(real.shadowColor) && real.shadowColor; // a glow: soft rings under it in the SHADOW's colour (glcGlow) - any colour since 2026-10-28 (perf: GRV's nova ring glows violet under a whitening stroke, and that one difference sent the whole moving layer up ~35 times a second, the iPhone logs' stroke:shadow)
     const why = odd ? "stroke:" + odd : a.length ? "stroke:path" : dash && dash.length !== 2 ? "stroke:dash" + dash.length : real.globalCompositeOperation !== "source-over" ? "stroke:" + real.globalCompositeOperation :
       real.shadowBlur > 0 && !glow ? "stroke:shadow" : (real.filter || "none") !== "none" ? "stroke:filter" : !plain(st) ? "stroke:style" :
       real.lineJoin !== "round" && parts.some(p => !p.circle && p.pts.length + (p.closed ? 1 : 0) > 2 && !glcRegular(p, g.w2)) ? "stroke:join-" + real.lineJoin : null; // (a mitred corner: the canvas - but a regular polygon's is the batch's shape 5)
@@ -145,7 +145,7 @@ function glcStroke(g, parts, st, dash, scale, glow) {
   for (const p of parts) {
     if (p.circle) {
       const [x, y] = g.w2(p.circle[0], p.circle[1]), r = p.circle[2] / g.w2.k;
-      if (glow) { const b = real.shadowBlur / g.w2.k; fxGlPush(x, y, x, y, r, lw + b, st, 0, st, A * 0.18); fxGlPush(x, y, x, y, r, lw + b * 0.45, st, 0, st, A * 0.3); } // a canvas glow, as two soft rings
+      if (glow) { const b = real.shadowBlur / g.w2.k; fxGlPush(x, y, x, y, r, lw + b, glow, 0, glow, A * 0.18); fxGlPush(x, y, x, y, r, lw + b * 0.45, glow, 0, glow, A * 0.3); } // a canvas glow, as two soft rings
       fxGlPush(x, y, x, y, r, lw, st, 0, st, A, 0, 0, 0, 0, 0, dOn, dOff, dAt0);
       continue;
     }
@@ -163,7 +163,7 @@ function glcStroke(g, parts, st, dash, scale, glow) {
       const seg = trimToTowers(P[i][0], P[i][1], P[i + 1][0], P[i + 1][1]); // nothing of a line inside a tower's hexagon (aspira-fxgl.js)
       if (seg) {
         const cutA = seg[0] !== P[i][0] || seg[1] !== P[i][1], cutB = seg[2] !== P[i + 1][0] || seg[3] !== P[i + 1][1], j0x = cutA ? 0 : b0x, j0y = cutA ? 0 : b0y, j1x = cutB ? 0 : b1x, j1y = cutB ? 0 : b1y; // (a cut end is a plain end)
-        if (glow) { const b = real.shadowBlur / g.w2.k; for (const [wk, ak] of [[b, 0.18], [b * 0.45, 0.3]]) fxGlPush(seg[0], seg[1], seg[2], seg[3], (lw + wk) / 2, 0, st, A * ak, st, 0, 0, j0x, j0y, j1x, j1y); } // a glow: two soft wider strokes under it (the Relay's beam)
+        if (glow) { const b = real.shadowBlur / g.w2.k; for (const [wk, ak] of [[b, 0.18], [b * 0.45, 0.3]]) fxGlPush(seg[0], seg[1], seg[2], seg[3], (lw + wk) / 2, 0, glow, A * ak, glow, 0, 0, j0x, j0y, j1x, j1y); } // a glow: two soft wider strokes under it (the Relay's beam)
         fxGlPush(seg[0], seg[1], seg[2], seg[3], lw / 2, 0, st, A, st, 0, butt && !prev && !next ? 2 : 0, j0x, j0y, j1x, j1y, dOn, dOff, dAt0 + along + (cutA ? Math.hypot(seg[0] - P[i][0], seg[1] - P[i][1]) : 0));
       }
       along += Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]);
