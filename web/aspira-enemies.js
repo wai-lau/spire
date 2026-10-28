@@ -141,12 +141,10 @@ function drawStatus(e, d, size, solid) {
     ctx.strokeStyle = COL.cyan; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2.5; ctx.stroke();
   }
   // BLEED (SOL's Impale): a pink outline, for good (owner)
-  // BREACH: acid's dotted circle in SOL's pink, a step further out than acid's (owner, 2026-10-26: "breach uses the dotted circle as
-  // acd / scorch uses z axis line" - the upright spike, warpSolid)
-  if (e.breachN > 0) {
-    ctx.beginPath(); ctx.arc(e.x, e.y, size + (e.corrodeT > 0 ? 7 : 3), 0, 6.283);
-    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
-  }
+  // SCORCH: acid's dotted circle in SOL's pink, a step further out than acid's (Breach's 2026-10-26 .. 27 - owner, 2026-10-27: "swap
+  // breach and scorch visual effect ... scorch becomes dotted line ... make the dots in the dotted line flicker independently"; Breach is
+  // the upright spike again, warpSolid): acid's [2, 4] dots one by one, each its own flicker (scorchFlick)
+  if (e.dots && e.dots.length) drawScorchRing(e, size + (e.corrodeT > 0 ? 7 : 3), vis);
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
     ctx.setLineDash([2, 4]); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
@@ -155,6 +153,22 @@ function drawStatus(e, d, size, solid) {
 }
 
 
+
+// a SCORCHED enemy's ring: dots SCORCH_DOT u long, SCORCH_GAP apart, each flickering at its own speed and phase (from the enemy's id
+// and its place on the ring), binned into SCORCH_BINS strengths - one stroke a bin, not a dot
+const SCORCH_DOT = 2, SCORCH_GAP = 4, SCORCH_BINS = 4, SCORCH_HZ = [4, 14]; // the flicker's speed range, rad/s
+const scorchHash = (id, i) => { const v = Math.sin((id || 0) * 12.9898 + i * 78.233) * 43758.5453; return v - Math.floor(v); };
+function drawScorchRing(e, r, vis) {
+  const n = Math.max(6, Math.round(2 * Math.PI * r / (SCORCH_DOT + SCORCH_GAP))), da = 2 * Math.PI / n, dw = SCORCH_DOT / r, now = performance.now() / 1000;
+  const bin = new Array(n);
+  for (let i = 0; i < n; i++) { const h = scorchHash(e.id, i), hz = SCORCH_HZ[0] + (SCORCH_HZ[1] - SCORCH_HZ[0]) * scorchHash(e.id, i + n); bin[i] = Math.min(SCORCH_BINS - 1, Math.floor((0.5 + 0.5 * Math.sin(now * hz + h * 6.283)) * SCORCH_BINS)); }
+  ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.lineWidth = 2;
+  for (let b = 0; b < SCORCH_BINS; b++) {
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) if (bin[i] === b) { const a = i * da; ctx.moveTo(e.x + r * Math.cos(a), e.y + r * Math.sin(a)); ctx.arc(e.x, e.y, r, a, a + dw); }
+    ctx.globalAlpha = 0.9 * vis * (0.15 + 0.85 * (b + 0.5) / SCORCH_BINS); ctx.stroke();
+  }
+}
 
 // ---------- SEGMENTED shields (owner, 2026-10-04) ----------
 // A shield - an enemy's charges, the core's lives - is SEGMENTS: one per

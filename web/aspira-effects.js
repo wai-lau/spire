@@ -23,22 +23,11 @@ function drawAims() {
       else { const d = ((aim - pr.a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI, w = SOL_PRISM_SWING * dt; pr.a += Math.max(-w, Math.min(w, d)); pr.half = real; pr.alpha = Math.min(1, pr.alpha + dt / SOL_PRISM_IN_S); pr.t = now; }
     } else if (pr) { pr.alpha -= dt / SOL_PRISM_OUT_S; pr.t = now; if (pr.alpha <= 0) t.prism = null; }
     if (t.prism && t.prism.alpha > 0) drawBand({ x: t.x, y: t.y, a: t.prism.a, half: t.prism.half, len: SOL_CONE_EDGE, color: col }, Math.cbrt(t.prism.alpha)); // (cbrt: drawBand cubes it - linear in alpha)
-    // THE SCORCH RODS (solRodStep): a line across the band at each rod's distance, as thick as the shot's first beam, clear at the tower
-    // and full by SOL_ROD_FADE_U out (owner, 2026-10-26)
+    // THE SCORCH RODS (solRodStep): an IFR flare spoke across the band at each rod's distance, clear at the tower and full by
+    // SOL_ROD_FADE_U out (owner, 2026-10-26)
     if (t.rods && t.rods.length) {
-      const w = beamWidth(st.dmg) * SOL_THIN * SOL_BEAM_W; ctx.lineCap = "butt";
-      for (const r of t.rods) {
-        const c = Math.cos(r.a), sn = Math.sin(r.a), x = r.x + c * r.s, y = r.y + sn * r.s, al = Math.min(1, r.s / SOL_ROD_FADE_U);
-        const tl = Math.min(r.s, SOL_ROD_TRACER_U), tx = x - c * tl, ty = y - sn * tl; // the TRACER, under the rod (SOL_ROD_TRACER_U, aspira-sol.js)
-        if (tl > 1 && [x, y, tx, ty].every(Number.isFinite)) { // (a NaN end: the gradient THROWS)
-          const g = ctx.createLinearGradient(x, y, tx, ty); g.addColorStop(0, COL[col]); g.addColorStop(1, "transparent");
-          ctx.beginPath(); ctx.moveTo(x + sn * r.half, y - c * r.half); ctx.lineTo(x - sn * r.half, y + c * r.half); ctx.lineTo(tx - sn * r.half, ty + c * r.half); ctx.lineTo(tx + sn * r.half, ty - c * r.half); ctx.closePath(); /* NO TAPER (owner, 2026-10-27): the rod's full width all the way back */
-          ctx.fillStyle = g; ctx.globalAlpha = al * SOL_ROD_TRACER_A; ctx.fill();
-        }
-        ctx.beginPath(); ctx.moveTo(x + sn * r.half, y - c * r.half); ctx.lineTo(x - sn * r.half, y + c * r.half);
-        ctx.strokeStyle = COL[col]; ctx.globalAlpha = al * SOL_GLOW_A * BEAM_BRIGHT; ctx.lineWidth = w * 2; ctx.stroke();
-        ctx.strokeStyle = COL.white; ctx.globalAlpha = al; ctx.lineWidth = w; ctx.stroke();
-      }
+      const low = typeof lowQ === "function" && lowQ(); ctx.lineCap = "butt";
+      for (const r of t.rods) { const c = Math.cos(r.a), sn = Math.sin(r.a); drawSolRod(r.x + c * r.s, r.y + sn * r.s, c, sn, r.half, Math.min(1, r.s / SOL_ROD_FADE_U), col, low); }
       ctx.lineCap = "round";
     }
     if (!lock || !t.period) continue;
@@ -56,6 +45,28 @@ function drawAims() {
     }
   }
   ctx.globalAlpha = 1;
+}
+// THE SCORCH ROD's look (owner, 2026-10-27: "re-use the flare from IFR, except color it SOL / I only want one spoke"): one spoke of an
+// IFR meteor's flare (drawIfrFlares, aspira-ifrit-draw.js) through the rod's centre across the band - its glow layers, its falloff to
+// the tips, its brightness - in SOL's colour round a white core; as wide for its length as IFR's untaken flare
+const solRodCol = (key, col) => COL[key === "yellow" ? "white" : col];
+function drawSolRod(x, y, c, sn, half, al, col, low) {
+  if (!(half > 0) || ![x, y].every(Number.isFinite)) return;
+  const W = half * IFR_BEAM_W[0] / IFR_BEAM_L[0], I = al * IFR_GLOW_A * IFR_FLARE_MAIN_K * IFR_FLARE_I0;
+  const ends = [[x, y, x + sn * half, y - c * half], [x, y, x - sn * half, y + c * half]]; // the spoke: out both ways from its centre
+  if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { // 3D: IFR's GPU glow lines
+    for (const [x0, y0, x1, y1] of ends) for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { const q = IFR_GLOW_GL[g]; fxGlGlowLine(x0, y0, x1, y1, W * q[0], solRodCol(q[2], col), Math.min(1, q[1] * I)); }
+    return;
+  }
+  for (let g = low ? IFR_GLOW.length - 2 : 0; g < IFR_GLOW.length; g++) { // 2D: IFR's banded strokes
+    ctx.strokeStyle = solRodCol(IFR_GLOW[g][2], col); ctx.lineWidth = Math.max(1, W * IFR_GLOW[g][0]);
+    for (let k = 0; k < IFR_GLOW_BANDS; k++) {
+      const a0 = k / IFR_GLOW_BANDS, a1 = (k + 1) / IFR_GLOW_BANDS;
+      ctx.globalAlpha = Math.min(1, IFR_GLOW[g][1] * I * (1 - a0) ** 3); ctx.beginPath();
+      for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0 + (x1 - x0) * a0, y0 + (y1 - y0) * a0); ctx.lineTo(x0 + (x1 - x0) * a1, y0 + (y1 - y0) * a1); }
+      ctx.stroke();
+    }
+  }
 }
 const SOL_PRISM_SWING = 4, SOL_PRISM_IN_S = 0.3, SOL_PRISM_OUT_S = 1.5; // rad/s a re-used prism swings; s back to full; s to fade out
 
