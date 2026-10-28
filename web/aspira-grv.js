@@ -207,7 +207,7 @@ function stepSphere(sp, t, st, dt) {
       if (e.dead || !e.seen || sp.hit.has(e.id) || d2 > st.novaR * st.novaR || d2 < r * r) continue;
       sp.hit.add(e.id);
       const amt = st.dmg * GRV_NOVA_K, a0 = e.armor;
-      if (st.strip && e.armor > 0) e.armor -= Math.min(e.armor, escale(e) * amt * st.strip); // Nova: the implosion strips armor (owner, 2026-10-25; was the aura's)
+      if (st.strip) shredArmor(e, t, escale(e) * amt * st.strip); // Nova: the implosion strips armor (owner, 2026-10-25; was the aura's)
       const dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
       if (dealt > 0) grvFloat(sp, e, grvLastHit); // the nova's number: the WHOLE hit, overkill too (grvLastHit)
     }

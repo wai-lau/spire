@@ -17,8 +17,8 @@ let CURVE_DMG_X = 11; // (tribal 2026-10-26 at 12: 2 of 35 trios won both seeds 
 const STAT_CURVE = {
   arc: { dmg: [5.5125], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
   frz: { dmg: [0.9086], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
-  sol: { dmg: [1.9135], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
-  acd: { dmg: [1.7345], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
+  sol: { dmg: [22.962 /* x12 (armor rework, owner 2026-10-28: "do some plain scaling of the td curve" - negative armor's flat bonus on every scorch tick was most of its damage; was 1.9135) */], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
+  acd: { dmg: [6.0708 /* x3.5 (armor rework 2026-10-28, as SOL: its ticks lost the negative-armor bonus; was 1.7345) */], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
   grv: { dmg: [0.256], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
   car: { dmg: [4.7542], rate: [2, 2], range: [1, 1], slide: [1, 1] },
   ifr: { dmg: [0.1047], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },

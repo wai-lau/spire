@@ -224,7 +224,7 @@ one to split to FLIES ON straight past it, striking no one, to the band's wall, 
 every hit burns `SOL_SCORCH_N` ticks of `SOL_SCORCH_TOTAL` / n x the shot, each stack on its own clock (`solScorchTick`, one pop a
 tick), and the SCORCH ROD - one IFR-style flare spoke across the band (`drawSolRod`, SOL's own copy of IFR's layers, x10 wide and
 x1.3 long), `SOL_ROD_V` u/s out from the tower, full there and clear by the play box's edge (owner, 2026-10-28) - puts one stack on
-everything it sweeps. Breach: a flat `SOL_BREACH_ARMOR` armor a hit (`bleed`). DRAWN: every beam `SOL_THIN` x its damage width, a
+everything it sweeps. Breach: `SOL_BREACH_ARMOR` a hit, multiplied off the armor (`bleed` -> `shredArmor`). DRAWN: every beam `SOL_THIN` x its damage width, a
 section's OPACITY the SQUARE of the share of the first beam's damage it carries (`f.share`); the band is the PRISM (`drawBand`),
 persisting and swinging between targets, drawn only once the tower has a band to show (Diffraction or Scorch). History: ARCHAEOLOGY §4.
 
@@ -240,7 +240,7 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 
 | axis | buys |
 |---|---|
-| Corrosion | a tick strips a share of its damage from armor, **below zero without limit** (jets only); eaten armor drips as **goo** that homes on the next enemy, strips twice its value and burns |
+| Corrosion | a tick multiplies a share off the armor (`shredArmor`, never below 0; jets only); eaten armor drips as **goo** that homes on the next enemy, strips twice its value and burns |
 | Flow (id `spray`) | more jets; a jet keeps its ramp when its enemy dies **or escapes** (the fast answer); its POOLS turn slimy and slow (`ACD_FLOW_SLOW`, on the pools since 2026-10-22, was on the jets); range |
 | Contagion | bigger, longer, hotter, more frequent pools; from the first buy ANYTHING ACD kills leaves a full pool (2026-10-22; without it, kills leave none - the jets' drips only); slide |
 
@@ -251,7 +251,7 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 | no tier lowers a stat | pillar 4; `SOL_FOCUS_DMG`, `ACD_SPRAY_MUL` floored at 1 |
 | a tier's words | change only when behaviour changes (§7.3) |
 | debuff credit | damage a debuff adds goes to the tower that caused it (`damageCredit`) |
-| negative armor | a flat bonus on every later hit from every tower (Breach, Corrosion, goo, Rime frost) |
+| armor shred | multiplies armor DOWN, never below 0 (`shredArmor`: the old flat amount / the wave's armor reference, at most `SHRED_MAX` a strip; owner 2026-10-28 - negative armor and its flat bonus are gone, and no "shredded takes extra" either) |
 | 10 s at most | no effect on the board outlives `EFFECT_MAX_S` 10 s - GRV holes, the Orbital Relay; ACD pools `POOL_MAX_S` 5 s, goo `GOO_MAX_S` 30 s (owner, 2026-10-18). Debuffs ON an enemy (Breach, Corrosion's strip) are outside the rule |
 | tier names | one a tier (Transfer .. Hyperstorm, Chill .. Zero Point, ...), used on the end screen, never on the card; ARCHAEOLOGY §12 |
 
@@ -261,7 +261,7 @@ pools from the start. **Weakness: fast and shields** (a bare ACD is a tank kille
 |---|---|---|---|---|---|---|---|
 | **swarm** | MAIN | help | weak (one lock) | help | MAIN | weak (one target a volley) | branching hits; bursts; a hole that feeds on a crowd |
 | **fast** | help | MAIN | help | weak (cold jets) | weak (no time to feed) | MAIN | the chill bite doubles on fast; interceptors outrun them |
-| **armor** | weak (grounds the arc) | help | MAIN | help | MAIN | weak (small bolts) | strip below zero = a flat bonus; armor scales with HP |
+| **armor** | weak (grounds the arc) | help | MAIN | help | MAIN | weak (small bolts) | strip multiplies armor down (never below 0); armor scales with HP |
 | **shield** | help | weak (no slow) | help | MAIN | weak (the slow skips them) | MAIN | pops a hit: ACD one a tick, SOL by Focus, CRR one a bolt |
 
 The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds (swarm `[arc, grv]`,
@@ -423,7 +423,7 @@ strength (`CORE_GRANTS`); the pick flow is dormant. Buttons above the title
 |---|---|---|---|---|
 | swarm | d6 | fast-ish | 2 | many small bodies; wanders; HP, size and speed jittered per body |
 | shield | d8 | slow | 1 | charges that each eat one hit whatever its size; **holds off every slow** |
-| armor | d10 | slowest | 1 | a flat bite off every hit (floor 10% of the hit), scaling with HP; negative armor adds |
+| armor | d10 | slowest | 1 | the most armor (every type has some - `ARMOR_ALL`), scaling with HP |
 | fast | d4 | fastest | 1 | a long tracer; takes every slow double |
 | boss | d20 | base | 10 = game over | §5.4 |
 
@@ -536,7 +536,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | 3 | bleed crit | wired (a non-SOL tower may crit a bleeding enemy for x `BLEED_CRIT_MUL`), but `SOL_BREACH_CRIT` is 0 at every tier, so nothing bleeds crit-ably and the step is inert |
 | 4 | marks | damage-taken x `shredMul` |
 | 5 | **Brittle** | x while slowed |
-| 6 | **armor** | minus `trunc(armor - frost)`, never below 10% of the hit; **negative armor adds**; EVERY hit, quiet ones too; EVERY enemy's armor floors at minus its wave's reference (`armorRefOf`; owner 2026-10-22, "boss armor floor to everything" - was bosses only) |
+| 6 | **armor** | THE CURVE (owner 2026-10-28, "armor ... applied non-linearly"): a hit loses `R / (R + ARMOR_K x hit)`, at most `ARMOR_CAP` 90% (`armorTake`) - a hit as big as the armor loses half, smaller more, bigger less; armor never counts below 0; every type carries `ARMOR_ALL` of an armor unit's armor; frost removes a SHARE of it; EVERY hit, quiet ones too (the old flat bite, 10% floor, negative-armor bonus and minus-reference floor: ARCHAEOLOGY.md) |
 | 7 | `bossHitCap` | Justice |
 | 8 | floor | a **whole number, at least 1 if it landed** |
 
@@ -546,7 +546,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | slows | PER SOURCE with a shape: `refresh` (times out) · `once` (permanent) · `stack` (every hit adds); sources combine **multiplicatively**, then the total is **shaped**: linear to `SLOW_KNEE`, easing toward `SLOW_CAP` without reaching it; a tower slow alone caps at `TOWER_SLOW_MAX` |
 | fast | takes every slow double, shaped toward `fastSlowCap()` so a fully slowed fast enemy is no slower than any other |
 | full stop | only Temporal Drive; shields block all slows; Strength shrugs all of them |
-| armor loss | permanent, may go negative |
+| armor loss | permanent, multiplied down, never below 0 |
 | quiet hits | ticks, pools, splash: no flash; pool hits past `POOL_LOD` show one summed number an enemy |
 | numbers | crits marigold; sized by the hit before armor, greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or an ATC bolt's interceptor); a GRV number flies INTO its hole (`grvFloat`) (`DMG_FLY`) |
 
@@ -800,7 +800,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | UI | iOS: `#asp` needs `user-select: none` AND the prefixed `-webkit-user-select` plus `-webkit-touch-callout: none`; the canvas preventDefaults `touchstart` (non-passive), `contextmenu`, `selectstart`; a power's hold survives `HOLD_SLOP`; the no-funds red uses a timer, not `animationend` |
 | UI | nothing on the page may shift the board; wave-list rows are all one size; the list rebuilds 4x a second, the HUD 10x |
 | rules | a shield holds off every slow; Strength shrugs all of them; Temporal Drive is the only full stop and is never shaped |
-| rules | armor reductions are permanent and may go negative: a flat bonus for every tower |
+| rules | armor reductions are permanent and multiply armor down (never below 0), helping every tower's later hits |
 | rules | `ARMOR_ONE_BLOCK` stays false (one block on one lane made armor free) |
 | rules | the Relay stays on the tower it was given |
 | rules | a boss wave never rides the timer; the fleet queue counts as the boss being up; a time stop holds the clock and spawns |

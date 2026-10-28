@@ -436,6 +436,16 @@ instead of contagion"); kills leave pools only with Contagion, and then every AC
 
 ## 6. Damage model history
 
+**Armor, until 2026-10-28:** a flat bite off every hit (`trunc(armor - frost)`), never below 10% of the hit; strips subtracted, past
+zero, and NEGATIVE armor was a flat bonus on every later hit from every tower, floored at minus the wave's armor reference
+(`armorRefOf`; 10-22 "boss armor floor to everything"). The owner found it an on/off ("I didn't like how it was an on/off") and it
+hid most of SOL's and ACD's late damage: every scorch / burn tick took up to the wave's armor (~640 at wave 111) as a bonus - ~77k a
+Focus-IV scorch stack on a ~650 hit. The armor rework (2026-10-28) made armor a curve (`armorTake`), strips multiply
+(`shredArmor`), every type armored (`ARMOR_ALL` swarm/fast 0.1, shield 0.15), and SOL's / ACD's td curve x12 / x3.5 to replace
+the bonus (late rows at 13 points, 111-119, swarm/fast/shield/armor % leaked: SOL 20/55/11/70 -> 99/100/100/100 bare -> 34/100/71/80;
+ACD 0/1/6/0 -> 95/100/94/95 -> 46/44/31/19); fast HP x0.8 in section 4 (fast beat 4 towers). A "shredded takes extra" mechanic
+was proposed and refused.
+
 Slows: ONE at a time (strongest wins) -> logarithmic stack across towers (`1 + 0.5 ln n`) -> per-source
 multiplicative with debuff SHAPES (10-05) -> shaped (`SLOW_KNEE` / `SLOW_CAP`, 10-11, "waves don't take as
 long to kill"). Fast's slow cap 0.9 -> 0.99 -> 0.96 -> 0.88 -> derived from its speed (0.84 at 1.91x; 10-12, after

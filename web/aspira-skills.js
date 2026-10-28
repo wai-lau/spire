@@ -387,7 +387,7 @@ function drawCone(f0, k) {
 // A BURN IS 1x ITS HIT AT MOST (owner, 2026-10-26: "scorch burn should never be higher than 1x the hit"): SOL_SCORCH_N ticks of
 // SOL_SCORCH_TOTAL / n of the hit, one every SOL_SCORCH_Q s (the max tick rate) - a higher Scorch tier burns LONGER, popping more shields
 // (each stack its own, solScorchTick), never harder (was 0.21 a tick: Scorch V a 33x burn)
-const SOL_SCORCH_TOTAL = 1, SOL_SCORCH_Q = 0.1, SOL_SCORCH_N = [0, 60, 78, 96, 120, 156];
+let SOL_SCORCH_TOTAL = 1; const SOL_SCORCH_Q = 0.1, SOL_SCORCH_N = [0, 60, 78, 96, 120, 156];
 // THE CONE SCORCHES (owner, 2026-10-26: "make the cone apply 1 stack of scorch to all enemies within it (can increase with levels)"):
 // (SOL_CONE_STACKS - burns a shot put on every enemy in its cone - GONE 2026-10-26: the scorch ROD puts one, solRodStep); Claude's ladder
 const SOL_DOT_ST = { noFx: true }; /* its ticks SUM into a number every half second like any tick (dmgTick; noNum gone - owner, 2026-10-26: "SOL scorch damage not popping up, all ticks should show a cumulative damage every 0.5 seconds") */ // ONE a tick (owner, 2026-10-23: "No stop making thing pop more per tick"; was 5 for a day - three SOLs leaked 62% of shields at 61-69 with 1, 36% with 5)

@@ -113,10 +113,27 @@ const acdArmorRef = new Map(), armorRefOf = n => acdArmorRef.get(n) ?? acdArmorR
 // the debuffing tower"): of a hit's tally (`got`), what BRITTLE added goes to the FRZ that made it brittle (e.brittleBy),
 // what LOWER ARMOR added (stripped by Breach / Corrosion - e.strip, by tower id - and frost, e.frostBy) to those towers
 // by their shares, and the rest to the hitter. hit(a, A): the hit `a` through armor A, as damage() takes it
+// ARMOR IS A CURVE (owner, 2026-10-28: "armor is a percentage / applied non-linearly"; was a flat bite, never below 10% of the hit, and
+// negative armor a flat bonus - an on/off: a hit well over the armor walked through, one under it fell to the floor): a hit loses
+// R / (R + ARMOR_K x hit) of itself, at most ARMOR_CAP - a hit as big as the armor loses half, smaller ones more, bigger ones less.
+// Armor never counts below 0 (shredding multiplies it down - aspira-acid.js)
+const ARMOR_CAP = 0.9, ARMOR_K = 1;
+const armorTake = (a, R) => (R > 0 && a > 0 ? a * (1 - Math.min(ARMOR_CAP, R / (R + ARMOR_K * a))) : a);
+// EVERY ENEMY IS ARMORED (owner, 2026-10-28: "give all units armor, but armor way more"): ARMOR_ALL of an armor unit's armor at that wave,
+// the armor type its own (spawnEnemy, aspira-game.js); shredding then works on everything
+const ARMOR_ALL = { swarm: 0.1, fast: 0.1, shield: 0.15 };
+// SHREDDING MULTIPLIES (owner, 2026-10-28: "armor reduction applies a multiplier to the armor ... no need for it to go negative" /
+// "I expect most shedding to be something like 0.9x, especially if many hits are expected"): a strip of `amt` (the old flat amount, in
+// armor) cuts amt / the wave's armor reference of the armor, x SHRED_K, at most SHRED_MAX a strip - never below 0. Returns what it cut
+const SHRED_K = 1, SHRED_MAX = 0.5;
+function shredArmor(e, t, amt) {
+  const a = e.armor || 0; if (a <= 0 || !(amt > 0)) return 0;
+  const cut = a * Math.min(SHRED_MAX, SHRED_K * amt / armorRefOf(e.wave || 1)); e.armor = a - cut; stripBy(e, t, cut); return cut;
+}
 function stripBy(e, t, amt) { if (t && amt > 0) (e.strip ||= {})[t.id] = (e.strip[t.id] || 0) + amt; }
 function damageCredit(e, t, pre, amt, frost, got) {
-  const A0 = e.armor0 || 0, hit = (a, A) => { A = Math.trunc(A); return A > 0 ? Math.max(a * 0.1, a - A) : A < 0 ? a - A : a; };
-  const base = hit(pre, A0), brit = Math.max(0, hit(amt, A0) - base), full = hit(amt, Math.max((e.armor || 0) - frost, -armorRefOf(e.wave || 1))), arm = Math.max(0, full - base - brit);
+  const A0 = e.armor0 || 0, hit = armorTake; // (aspira-game.js: the armor curve)
+  const base = hit(pre, A0), brit = Math.max(0, hit(amt, A0) - base), full = hit(amt, (e.armor || 0) - frost), arm = Math.max(0, full - base - brit);
   const k = full > 0 ? got / full : 0, give = (id, v) => { const o = id != null && G.towers.find(x => x.id === id); if (o && v > 0) { o.dealt = (o.dealt || 0) + v; return v; } return 0; };
   let mine = got;
   if (brit) mine -= give(e.brittleBy, brit * k);
@@ -130,10 +147,9 @@ function damageCredit(e, t, pre, amt, frost, got) {
 }
 function corrodeHit(e, amt, t) {
   amt *= escale(e); // the LATE SCALE: a raw strip (a share of the RAW tick), x the enemy's
-  const a = e.armor || 0, pos = Math.max(0, Math.min(amt, a)); // the part eaten off REAL armor, above zero
-  e.armor = a - amt; stripBy(e, t, amt);
+  const cut = shredArmor(e, t, amt); // (multiplied off, never below 0 - shredArmor)
   e.corrodeT = 0.4;
-  dripAcc(e, DRIP_REAL * pos + (amt - pos), t); // any eaten armor drips, below zero too - real armor DRIP_REAL x (owner, 2026-10-13)
+  dripAcc(e, DRIP_REAL * cut, t); // any eaten armor drips, below zero too - real armor DRIP_REAL x (owner, 2026-10-13)
 }
 // THE DRIP (owner, 2026-10-13: "when armor is removed, it should drip down (green coin like dots without shimmer), this is
 // collected by nearby enemies, and they lose X% of the collected drip"): the armor Corrosion eats off ANY enemy, below zero too,
@@ -189,7 +205,7 @@ function stepDrips(dt) {
       const dd = (o.x - d.x) ** 2 + (o.y - d.y) ** 2, rr = DRIP_R + ENEMIES[o.type].size * (o.sizeMul || 1);
       if (dd <= rr * rr) { // picked up
         const take = DRIP_TAKE * d.v, by = G.towers.includes(d.by) ? d.by : null;
-        o.armor = (o.armor || 0) - take; stripBy(o, by, take); o.corrodeT = 0.4;
+        shredArmor(o, by, take); o.corrodeT = 0.4;
         fromHit(d, () => damage(o, take, by)); // and it BURNS as much as it strips (owner, 2026-10-13: "goo should also deal damage equal to the amount of armor it strips")
         d.done = true; near = null; break;
       }

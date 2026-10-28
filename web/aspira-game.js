@@ -75,7 +75,7 @@ function spawnEnemy(type, n, pi, ang = 0) {
   // shields still start at exactly their base (8) on their first wave (3).
   const armorOf = t => Math.floor(ENEMIES[t].armor * ENEMY_HP_MUL * armorGrow(n) * scaleOf(n)); /* x the LATE SCALE (aspira-waves.js) */ // (armorGrow: aspira-defs.js) // x ENEMY_HP_MUL like the HP (2026-10-11: left out of the HP cut, armor ate 4.4x more of each hit)
   const shield = type === "swarm" ? Math.round(tune("swarm", "shield", n) * shieldsOf("shield", n).shield) : Math.round(type === "shield" ? monoUp("sh|" + "shield", n, m => shieldsOf("shield", m).shield * tune("shield", "shield", m)) : shieldsOf(type, n).shield * tune(type, "shield", n)); // NO DROPS on the charges too (a late lever under the one before holds the level till the curve passes it) // the shield levers (TYPE_TUNE, aspira-waves.js): a late swarm carries a share of a shield unit's charges
-  const armor = d.armor ? Math.floor(armorOf(type) * tune(type, "armor", n)) : type === "fast" ? Math.floor(tune("fast", "armor", n) * armorOf("armor")) : 0; // the armor levers: a late fast carries a share of an armor unit's armor
+  const armor = Math.max(Math.floor((ARMOR_ALL[type] || 0) * armorOf("armor")), d.armor ? Math.floor(armorOf(type) * tune(type, "armor", n)) : type === "fast" ? Math.floor(tune("fast", "armor", n) * armorOf("armor")) : 0); // the armor levers: a late fast carries a share of an armor unit's armor
   G.enemies.push({
     armor, armor0: armor, shield, shieldMax: shield, wave: n, aug: type === "swarm" && shield > 0 ? "shield" : type === "fast" && armor > 0 ? "armor" : null, /* aug: its late HYBRID trait - its outline wears that type's colour (owner, 2026-10-13) */ // armor0: as spawned (damageCredit) // the wave it CAME from (the end screen's leaks)
     // swarm members wander widely off the lane, each at its own speed (+-50%, its own roll - never tied to its size)
@@ -148,20 +148,15 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   const pre = amt; // before Brittle - damageCredit splits what the debuffs added
   if (e.slowT > 0 && e.brittle) amt *= e.brittle;
   // (SOL Refraction x the FAST here until 2026-10-12 - owner: no extra damage by enemy type)
-  // armor takes a flat bite out of every hit (never below 10% of it)
+  // armor takes its share of every hit (armorTake, above)
   const raw = amt;
   // (SOL ignored armor until 2026-10-07; owner: "SOL should no longer ignore armor" - its damage rose x1.3 to match, solarmor.mjs)
   // (FROST CRACKED ARMOR here while slowed until 2026-10-11, then Moons did until 2026-10-12; both gone - the frost below is Rime's)
   // FRZ's FROST (Permafrost) takes a FLAT share of the wave's armor reference (armorRefOf, aspira-acid.js), as much as the
   // frost it holds - STACKING with Corrosion, below zero like it (owner, 2026-10-12: "let rime reduce armor"; Brittle did it
   // for an hour, "brittle should stack with corrosion (both should allow negative)")
-  const frost = e.frostArmor ? frostShare(e) * e.frostArmor * armorRefOf(e.wave || 1) : 0;
-  const arm = Math.trunc(Math.max((e.armor || 0) - frost, -armorRefOf(e.wave || 1))); // whole armor, rounded toward zero (Breach/Corrosion strip it in fractions); EVERY enemy no lower than minus its wave's armor - the boss floor for all (owner, 2026-10-22: "boss armor floor to everything"; bosses only since 2026-10-13)
-  if (arm > 0) // EVERY hit, quiet ones too - FRZ ticks, splash, damage over time, Nova (owner, 2026-10-12; quiet hits skipped armor until then)
-    amt = Math.max(amt * 0.1, amt - arm);
-  // NEGATIVE armor (ACD's Corrosion, owner) is a flat bonus on every hit - quiet ones too (owner, 2026-10-12: "allow
-  // negative armor to apply to everything also"; FRZ ticks, splash, damage over time and Nova skipped it until then)
-  else if (arm < 0) amt -= arm;
+  const frost = e.frostArmor ? (e.armor || 0) * Math.min(1, frostShare(e) * e.frostArmor) : 0; // (2026-10-28: a SHARE of its armor - shredding multiplies)
+  amt = armorTake(amt, (e.armor || 0) - frost); // EVERY hit, quiet ones too - FRZ ticks, splash, damage over time, Nova (owner, 2026-10-12)
   const blunted = amt < raw;
   // per-tower tally: damage counts only up to the HP the enemy had left
   if (t) damageCredit(e, t, pre, amt, frost, Math.min(amt, Math.max(0, e.hp))); // the debuffers' shares to THEM (aspira-acid.js)
@@ -191,7 +186,7 @@ function onHit(e, t, st, amt) {
   if (st.hitSlow) applySlow(e, st.hitSlow.f, st.hitSlow.t, t ? t.id : "x");
   // Melt (ARC): every hit strips armor for good, past zero (owner: every armor
   // reduction is permanent and may go negative), so later hits land harder
-  if (st.armorShred) e.armor = (e.armor || 0) - st.armorShred * escale(e);
+  if (st.armorShred) shredArmor(e, t, st.armorShred * escale(e)); // (multiplied off - aspira-acid.js)
   if (st.splash) {
     // a FILLED blast that lingers 0.3s, so the splash actually reads (owner)
     fx.push({ k: "blast", x: e.x, y: e.y, r: st.splash.r, color: TOWERS[t.kind].color, t: 0, life: 0.3 });

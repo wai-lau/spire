@@ -107,7 +107,7 @@ const TUNE_SECTIONS = [24, 60, 96], TUNE_LATE = 2; // the sections' last waves; 
 // tuned (never weaker - the after-60 shares at 0 till then)
 let TYPE_TUNE = {
   swarm: { count: [1.5, 1.5, 1.5, 1.5], speed: [1.509, 2.307, 2.307, 2.307], shield: [0, 0, 0, 0] },
-  fast: { hp: [1.27, 1.27, 1.27, 1.27], speed: [1.747, 1.747, 1.747, 1.747], armor: [0, 0, 0, 0] },
+  fast: { hp: [1.27, 1.27, 1.27, 1.016 /* x0.8 (armor rework 2026-10-28, owner rule: a type beating >= 4 towers is nerfed - fast beat FRZ SOL GRV IFR at 111-119) */], speed: [1.747, 1.747, 1.747, 1.747], armor: [0, 0, 0, 0] },
   armor: { armor: [1, 4.321, 4.321, 4.321], count: [1.418, 1.5, 1.5, 1.5], speed: [1, 1, 1, 1] },
   shield: { shield: [1, 1.377, 0.6, 0.4], count: [1, 1.5, 0.75, 0.75], speed: [1, 1, 1, 1] }, // 61+ eased (owner, 2026-10-23: "reduce the shield counts later on"): counts floor at 12 (NO DROPS), charges x0.6 / x0.4 held till the curve passes - REWIND=0 typecal 13 -> 55/70 won (swarm 48, armor 53, fast 58)
 };
