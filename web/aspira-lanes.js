@@ -371,21 +371,22 @@ function drawScaleBar() {
 // PERF (2026-10-09): the stars are filled in STAR_LEVELS batches of the same alpha (one path each) rather than one
 // fill per star - each star's twinkle rounded to the nearest of STAR_LEVELS steps
 const STAR_LEVELS = 24;
+const STAR_LV = Array.from({ length: STAR_LEVELS + 1 }, () => []), STAR_N = new Int32Array(STAR_LEVELS + 1); // the batches and how much of each is this frame's, kept from frame to frame - never truncated, which frees the store (perf, 2026-10-28: 25 fresh arrays grown to ~3300 numbers a frame were 100 KB of garbage)
 function drawStars(at) {
   const now = performance.now() / 1000, red = starRed(); // reddening before a boss (aspira-bosses.js)
-  const lv = Array.from({ length: STAR_LEVELS + 1 }, () => []), W = ctx.canvas.width, Hh = ctx.canvas.height;
+  const lv = STAR_LV, ln = STAR_N, W = ctx.canvas.width, Hh = ctx.canvas.height; ln.fill(0);
   STARS.forEach((st, i) => {
     const P = at ? at(st.x, st.y, i) : { x: st.x, y: st.y, k: 1 }; /* the spot first: a star off the view needs no twinkle (perf: most of them are, in 3D) */
     if (!(P.k > 0) || (at && (P.x < -4 || P.y < -4 || P.x > W + 4 || P.y > Hh + 4))) return; // (3D: off the view, skipped)
     const rate = 0.6 + ((i * 0.618) % 1) * 1.8, ph = (i * 2.399) % 6.283;
     const tw = 0.5 + 0.5 * Math.sin(now * rate + ph), a = Math.min(1, 0.25 + st.m * 0.3) * (0.35 + 0.65 * tw);
-    lv[Math.round(a * STAR_LEVELS)].push(P.x, P.y, st.m * (0.85 + 0.15 * tw) * P.k);
+    const b = Math.round(a * STAR_LEVELS), L = lv[b], j = ln[b]; L[j] = P.x; L[j + 1] = P.y; L[j + 2] = st.m * (0.85 + 0.15 * tw) * P.k; ln[b] = j + 3;
   });
   // white fading into Ember (the palette's red) as `red` goes 0 -> 1
   lv.forEach((L, k) => {
-    if (!L.length) return;
+    if (!ln[k]) return;
     ctx.beginPath();
-    for (let i = 0; i < L.length; i += 3) { ctx.moveTo(L[i] + L[i + 2], L[i + 1]); ctx.arc(L[i], L[i + 1], L[i + 2], 0, 6.283); }
+    for (let i = 0; i < ln[k]; i += 3) { ctx.moveTo(L[i] + L[i + 2], L[i + 1]); ctx.arc(L[i], L[i + 1], L[i + 2], 0, 6.283); }
     const a = k / STAR_LEVELS;
     if (red < 1) { ctx.fillStyle = COL.white; ctx.globalAlpha = a * (1 - red); ctx.fill(); }
     if (red > 0) { ctx.fillStyle = COL.glow; ctx.globalAlpha = a * red; ctx.fill(); }
