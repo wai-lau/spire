@@ -245,7 +245,8 @@ perfect play and interest; `eco.mjs` found ARC+FRZ+ACD owning 109-287% of a max 
 
 - 2026-10-28, SOL's tier 0 plain again: 2026-10-26's "SOL should start with bouncing" had put the band, a split (`SOL_SPLIT[0]` 1) and
   the mirrors on a fresh SOL - owner: "SOL does all effects at the beginning again? I wanted tier 0 to be a minimal version of the tower
-  with few effects", "for all towers". Now one beam that stops at its first enemy (`st.pierce` 0, the spec's row); the band, splits and
+  with few effects", "for all towers". Now one beam, its first enemy alone struck (`st.pierce` 0, the spec's row) - and from 6.15.16 the same day it flies on straight past it to the
+  play box's edge, striking no one (owner: "go straight even if there is nobody to hit"; 6.15.15 had stopped it at the enemy); the band, splits and
   prism are Diffraction's, the rod Scorch's. GRV's tiny void + pellets (2026-10-25) and IFR's burst of 6 (2026-10-26) at tier 0 were the
   owner's own later calls and stayed, flagged. The same day the scorch rod's flare went x10 wide and x1.3 long, and its fade reversed:
   full at the tower, clear by the play box's edge (it had faded IN over 50 u, `SOL_ROD_FADE_U`).

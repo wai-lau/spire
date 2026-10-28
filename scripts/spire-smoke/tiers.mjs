@@ -84,14 +84,17 @@ check("ARC: tier 0 strikes one enemy; Conductivity I chains once; Voltage I fork
 
 // ---------- SOL ----------
 towerTierChecks("sol", ["diffract", "scorch", "break", "prism", "refract", "intensity"]);
-check("SOL (owner, 2026-10-28: tier 0 \"a minimal version of the tower with few effects\"): tier 0 one beam that stops at its first enemy - no split, no band, no rod; Diffraction I splits at every hit within the band (owner, 2026-10-26: an expanding rectangle) at 80% carry; Scorch I burns and stacks, its rod sweeping; Breach I strips armor, no burn", () => {
+check("SOL (owner, 2026-10-28: tier 0 \"a minimal version of the tower with few effects\"): tier 0 one beam that strikes its first enemy and flies on straight past it, striking no one - no split, no band, no rod; Diffraction I splits at every hit within the band (owner, 2026-10-26: an expanding rectangle) at 80% carry; Scorch I burns and stacks, its rod sweeping; Breach I strips armor, no burn", () => {
   const shot = (sk, n = 1) => run(`(() => { const { t, es, st } = tierRig("sol", ${JSON.stringify(sk)}, [[40, 0], [70, 0], [100, 0], [230, 30], [40, 80]]);
     es[0].armor = es[0].armor0 = 50; for (const e of es) e.hp = e.max = 1e7;
-    for (let i = 0; i < ${n}; i++) fireRay(t, st, es[0]); const stacks = (es[0].dots || []).length; for (let i = 0; i < 30; i++) step(1 / 60);
-    return { hit: es.map(e => e.hp < e.max), burn: stacks, armor: es[0].armor, split: st.split, hop: st.hop, pierce: st.pierce, rods: (t.rods || []).length }; })()`);
+    fx.length = 0; for (let i = 0; i < ${n}; i++) fireRay(t, st, es[0]); const stacks = (es[0].dots || []).length;
+    const a0 = Math.atan2(es[0].y - t.y, es[0].x - t.x), far = fx.some(f => f.k === "beam" && f.share != null && f.share < 1 && Math.abs(f.x1 - es[0].x) < 1e-6 && Math.abs(Math.atan2(f.y2 - f.y1, f.x2 - f.x1) - a0) < 1e-6 && Math.abs(Math.hypot(f.x2 - f.x1, f.y2 - f.y1) - solOutLen(f.x1, f.y1, Math.cos(a0), Math.sin(a0))) < 1); /* a straight line on from the first enemy to the play box's edge */
+    for (let i = 0; i < 30; i++) step(1 / 60);
+    return { hit: es.map(e => e.hp < e.max), burn: stacks, armor: es[0].armor, split: st.split, hop: st.hop, pierce: st.pierce, rods: (t.rods || []).length, far }; })()`);
   const z = shot({}), f = shot({ focus: 1 }, 2), r = shot({ refraction: 1 }), b = shot({ breach: 1 });
   if (JSON.stringify(z.hit) !== "[true,false,false,false,false]") return "tier 0 hit " + JSON.stringify(z.hit) + " (expected the first enemy alone: no split, no fly-on - owner, 2026-10-28)";
   if (z.burn || z.armor !== 50 || z.split !== 0 || z.pierce || z.rods) return "tier 0: " + JSON.stringify(z) + " (expected no burn, no strip, no split, no band, no rod)";
+  if (!z.far) return "tier 0: no straight line on past its enemy to the play box's edge (owner, 2026-10-28: \"go straight even if there is nobody to hit\")";
   if (f.burn < 2 || !f.rods) return "Scorch I: " + JSON.stringify(f) + " (expected two stacking burns and the rod, band mechanic or not)";
   if (JSON.stringify(r.hit) !== "[true,true,true,true,false]") return "Diffraction I hit " + JSON.stringify(r.hit) + " (expected the line, the one off it inside the band, not the one 80 u across - outside the 75 u band)";
   if (r.split !== 1 || r.hop !== 0.8 || !r.pierce) return "Diffraction I: splits " + r.split + ", carry " + r.hop + " (expected 1 split at 80% carry - owner, 2026-10-27; 70% from 2026-10-26, over tier 0's 50%)";

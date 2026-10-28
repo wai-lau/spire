@@ -63,9 +63,12 @@ function solRodStep(t, st, dt) {
   t.rods = t.rods.filter(r => r.s < SOL_CONE_EDGE);
 }
 function solSpread(t, st, from, e, full, share = 1) {
-  if (!(st.pierce > 0) || full <= 0) return; // (st.pierce: Diffraction I+ - a plain SOL's beam stops at its first enemy, owner 2026-10-28)
+  if (full <= 0) return;
   const col = TOWERS[t.kind].color, hit = new Set([e]), L0 = Math.hypot(e.x - from.x, e.y - from.y) || 1;
   const seg = (a, b, d, al) => { beam(a, b, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); };
+  // A PLAIN SOL (no Diffraction - st.pierce 0; owner, 2026-10-28: "go straight even if there is nobody to hit"): no band to split or mirror in -
+  // the beam FLIES ON straight past its enemy to the play box's edge, striking no one, at st.hop like any carried line
+  if (!(st.pierce > 0)) { const ux = (e.x - from.x) / L0, uy = (e.y - from.y) / L0, k = solOutLen(e.x, e.y, ux, uy); seg(e, { x: e.x + ux * k, y: e.y + uy * k }, full * (st.hop || 1), share * (st.hop || 1)); return; }
   const strike = (o, at, d) => { hit.add(o); fromHit(at, () => damage(o, d, t, false, false, st)); onHit(o, t, st, d); bleed(o, st, t); };
   const out = last => x => hit.has(x) || (solAim != null && !solInBand(t, st, x, solAim, last)); // inside the shot's cone, farther from SOL
   let n = 0;

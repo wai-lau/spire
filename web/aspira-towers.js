@@ -275,14 +275,14 @@ function rayHit(t, st, e, base, from) {
   const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1);
   const m = crit ? st.critMul : 1, d = shotDamage(t, st, e, base) * m;
   const n = st.beams || 1, part = d; // every beam is a FULL hit (owner, 2026-10-06; was a fitted share of the shot)
-  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, 3 * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d / m, true, false); /* a CRIT draws no wider: the beam's width reads the plain hit, 3 wide (owner, 2026-10-26: "don't thicken beams on crit"; was 5 wide and the crit's hit) */ // a SOL beam is FIXED where it struck at EVERY tier (owner, 2026-10-26: "neither visual should track the enemy"; it followed with st.pierce off, which no tier had until the plain tier 0 of 2026-10-28) // a chart SOL's beams THIN (owner, 2026-10-22)
+  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, d / m, true, false); /* a CRIT draws no wider: the beam's width reads the plain hit, 3 wide (owner, 2026-10-26: "don't thicken beams on crit"; was 5 wide and the crit's hit) */ // a SOL beam is FIXED where it struck at EVERY tier (owner, 2026-10-26: "neither visual should track the enemy"; it followed with st.pierce off, which no tier had until the plain tier 0 of 2026-10-28) // a chart SOL's beams THIN (owner, 2026-10-22)
   if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
   // OPACITY = THE SHARE (owner, 2026-10-23: "the section of beam should reflect the % of damage it carries compared to the initial beam" /
   // "Opacity"): a SOL reflection's beam at base / st.dmg (its st.hop^k), the pass-through on from it x st.hop an enemy (solSpread) - drawn at
   // share^2, past BEAM_BRIGHT's cap (owner: "These 3 lines basically look the same / Exaggerate diff / Make beams way thinner each")
-  const share = st.pierce ? base / (st.dmg || 1) : 1; if (st.pierce) Object.assign(fx[fx.length - 1], { share, thin: SOL_THIN });
+  const share = base / (st.dmg || 1); Object.assign(fx[fx.length - 1], { share, thin: SOL_THIN }); // every tier (a plain SOL drew 3 wide, unshared, for a morning - 2026-10-28)
   dmgBatch(() => { for (let i = 0; i < n && !e.dead; i++) { fromHit(from, () => damage(e, part, t, false, crit, st)); onHit(e, t, st, part); bleed(e, st, t); } }); // ONE number for the volley (dmgBatch, aspira-floats.js); a crit PINK (owner); st: its shieldPop
-  if (st.pierce) solSpread(t, st, from, e, base, share); // (always - kill or not) - the RAW hit x the carry, as a reflection carries it (owner, 2026-10-26: "both carry amounts based on carryover"; was the hit after armor and crit)
+  solSpread(t, st, from, e, base, share); // (every tier, kill or not: a plain SOL only flies on, Diffraction splits - aspira-sol.js) - the RAW hit x the carry, as a reflection carries it (owner, 2026-10-26: "both carry amounts based on carryover"; was the hit after armor and crit)
   if (e.dead && st.smash && !e.smashed) {
     // Nova / Supernova: the kill bursts (a filled blast that lingers, owner)
     e.smashed = true;

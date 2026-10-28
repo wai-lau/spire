@@ -155,7 +155,7 @@ debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
 |---|---|---|---|---|
 | ARC | one beam, no chain | Conductivity: one jump | Voltage: one fork (`VOLT_FORK`) | Capacitance: one charge |
-| SOL | one beam, stops at its first enemy: no band, split, bounce or prism (`st.pierce` 0, `SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn and the scorch rod across the band | Diffraction (id `refraction`): the band, one split, the mirrors | Breach: armor stripped a hit |
+| SOL | one beam that strikes its first enemy and flies on past it, striking no one: no band, split, bounce or prism (`st.pierce` 0, `SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn and the scorch rod across the band | Diffraction (id `refraction`): the band, one split, the mirrors | Breach: armor stripped a hit |
 | CRR | one interceptor, one bolt a volley | Hangar: two, one held | Tether: one tethered drone (`CRR_TETHER_N`; the first interceptor out, `carTethered`) | Armament: two bolts (`CRR_BOLTS_BY`) |
 | FRZ | a slowing circle, no tick | Sublimation: the tick, more the slower | Permafrost: a cracking pulse | Moons: one moon |
 | ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Contagion: ray pools that slow (`ACD_POOL_SLOW`); kill pools gone |
@@ -215,8 +215,8 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 a target dying mid-charge restarts the charge; a lost lock hands its charge only to a new
 target inside the shot's band (`inSolCone`). Armor cuts SOL like any other. **Weakness: swarms** (a THIN beam: only what is on its line).
 THE SHOT (`web/aspira-sol.js`; owner 2026-10-26, the band / split / mirror design): ONE beam, FIXED where it struck (no visual
-tracks the enemy), and an enemy is struck once a shot - there is no pierce. A plain SOL's beam STOPS at its first enemy (tier 0:
-`st.pierce` 0; owner 2026-10-28, "a minimal version of the tower with few effects"). Diffraction gives the shot a BAND (`SOL_BAND_W`:
+tracks the enemy), and an enemy is struck once a shot - there is no pierce. A plain SOL's beam strikes its first enemy and FLIES ON straight past it to the play box's edge, striking no one (tier 0:
+`st.pierce` 0; owner 2026-10-28, "a minimal version of the tower with few effects" / "go straight even if there is nobody to hit"). Diffraction gives the shot a BAND (`SOL_BAND_W`:
 parallel walls either side of the line tower -> first enemy, ahead of the tower, to the screen's edge) and every hit SPLITS to
 `SOL_SPLIT` more enemies inside it - each the next nearest to SOL, farther than the last, at `SOL_HOP` x the hit before; a hit with no
 one to split to FLIES ON straight past it, striking no one, to the band's wall, where it MIRRORS (angle in = angle out, at most
