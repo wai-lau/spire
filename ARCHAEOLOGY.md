@@ -249,7 +249,10 @@ perfect play and interest; `eco.mjs` found ARC+FRZ+ACD owning 109-287% of a max 
   play box's edge, striking no one (owner: "go straight even if there is nobody to hit"; 6.15.15 had stopped it at the enemy); the band, splits and
   prism are Diffraction's, the rod Scorch's. GRV's tiny void + pellets (2026-10-25) and IFR's burst of 6 (2026-10-26) at tier 0 were the
   owner's own later calls and stay - confirmed the same day ("keep GRV pellets and burst of 6"): they are those towers' base attacks, not stray effects. The same day the scorch rod's flare went x10 wide and x1.3 long, and its fade reversed:
-  full at the tower, clear by the play box's edge (it had faded IN over 50 u, `SOL_ROD_FADE_U`).
+  full at the tower, clear by the play box's edge (it had faded IN over 50 u, `SOL_ROD_FADE_U`). Later that day: ARC's tier 0 chains once ("ARC to chain once" - the spec's
+  chainless bolt is gone, Conductivity I chains twice), CRR starts a sortie with 6 volleys (was 9; tier I 8) and shows a number a bolt
+  (was one per three since 2026-10-16), and the boss sky's triangle is capped at 3:2 (a wide screen had made it a sliver several
+  screens wide), its spokes measured on the canvas they are drawn on (measured on `cv` they stopped short in 3D).
 
 ### 4.5 Upgrading: UI history
 Two clicks (select, then confirm) -> the chooser (cards, one per option) -> chart axes DRAGGED on the

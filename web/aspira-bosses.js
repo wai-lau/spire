@@ -300,14 +300,17 @@ const BOSS_INV_T = 3;
 // rays to its corners, out to the screen's edge; then the triangle spreads over BOSS_INV_T as before, the spokes fading with it.
 // The whole sky takes BOSS_SKY_T; the bar's fly-in and the boss lane's fade-in wait on that
 const BOSS_SPOKE_T = 0.8, BOSS_SKY_T = BOSS_SPOKE_T + BOSS_INV_T, BOSS_SPOKE_W = 3;
+// THE TRIANGLE'S SHAPE IS CAPPED (owner, 2026-10-28: "cap the height and width ratio to be no more than 1.5:1 and 1:1.5, allow triangle
+// edge collision timing to suffer a touch"): height : top-side width, either way - a wide screen had made it a sliver several screens wide
+const BOSS_SKY_RATIO = 1.5;
 function drawSkySpokes() { // on the top layer (warpEntities' part B), crisp; bossInv.spoke: their growth 0..1 (bossSkyStep)
   if (bossInv.phase !== "in" || bossInv.full || !bossInv.triS || !bossInv.coreS) return;
-  const c = bossInv.coreS, g = bossInv.spoke || 0, ease = g * (2 - g), W = cv.width, H = cv.height, a = 1 - (bossInv.k || 0); // (ease out of the core; gone as the triangle fills)
+  const c = bossInv.coreS, g = bossInv.spoke || 0, ease = g * (2 - g), W = ctx.canvas.width, H = ctx.canvas.height, a = 1 - (bossInv.k || 0); // (ease out of the core; gone as the triangle fills) // W, H: THE CANVAS DRAWN ON - in 3D the entity layer, sized like the view, not cv (the 2D board canvas): measured on cv the spokes stopped short of the edge (owner, 2026-10-28: "Ensure spokes reach the edge of the screen")
   if (!(ease > 0) || !(a > 0)) return;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.strokeStyle = COL.white; ctx.lineWidth = BOSS_SPOKE_W; ctx.lineCap = "round"; ctx.globalAlpha = a; ctx.beginPath();
   for (const T of bossInv.triS) { const dx = T.x - c.x, dy = T.y - c.y, l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l; // the ray to this corner...
     let exit = Infinity; for (const [e, u, o] of [[0, -ux, c.x], [W, ux, W - c.x], [0, -uy, c.y], [H, uy, H - c.y]]) if (u > 1e-9) exit = Math.min(exit, o / u); // ...and where it leaves the screen
-    if (!isFinite(exit)) continue; ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + ux * exit * ease, c.y + uy * exit * ease); }
+    if (!isFinite(exit)) continue; exit += BOSS_SPOKE_W; /* past the edge by its width: the round cap never shows a gap there */ ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + ux * exit * ease, c.y + uy * exit * ease); }
   ctx.stroke(); ctx.globalAlpha = 1;
 }
 const bossInv = { phase: "off", t0: 0, x: 0, y: 0, full: false, r: 0 };
@@ -330,7 +333,22 @@ function skyLayout() {
   // height h puts the centroid (a third of the way down) on the core; the apex xa and base ends x1, x2 then follow from the sides passing
   // through the bottom corners and the centroid's x on the core (a core in the top third of the screen gets a triangle just past the bottom)
   const h = Math.max(H * 1.02, 3 * c.y), f = H / h, xa = Math.abs(1 - 3 * f) < 0.05 ? c.x : (3 * c.x * (1 - f) - W) / (1 - 3 * f), x1 = -xa * f / (1 - f), x2 = (W - xa * f) / (1 - f);
-  bossInv.triS = [{ x: xa, y: h }, { x: x2, y: 0 }, { x: x1, y: 0 }]; bossInv.coreS = { x: c.x, y: c.y };
+  let tri = [{ x: xa, y: h }, { x: x2, y: 0 }, { x: x1, y: 0 }];
+  // past BOSS_SKY_RATIO either way (a flat sliver on a wide screen, a needle on a tall one) the triangle becomes an ISOSCELES at that
+  // ratio, apex under the core, centroid still on the core, the SMALLEST that holds all four screen corners - so the screen is covered
+  // when it is full; its sides and top then meet the edges a moment apart (owner, 2026-10-28). Within the ratio: the layout above, exact
+  const ratio = h / (x2 - x1);
+  if (!(ratio <= BOSS_SKY_RATIO && ratio >= 1 / BOSS_SKY_RATIO)) {
+    const r = Math.min(BOSS_SKY_RATIO, Math.max(1 / BOSS_SKY_RATIO, ratio)); // height : top-side width
+    const U = [{ x: 0, y: 2 * r / 3 }, { x: 0.5, y: -r / 3 }, { x: -0.5, y: -r / 3 }]; // the unit triangle about its centroid: top side 1, height r, apex down (y down)
+    let s = 0; // the scale holding every screen corner: the largest edge gauge (n . P / d, n an edge's outward normal, d its offset from the centroid) over the corners
+    for (const [px, py] of [[0, 0], [W, 0], [0, H], [W, H]]) for (let i = 0; i < 3; i++) {
+      const a = U[i], b = U[(i + 1) % 3], nx = a.y - b.y, ny = b.x - a.x, d = nx * a.x + ny * a.y;
+      s = Math.max(s, (nx * (px - c.x) + ny * (py - c.y)) / d);
+    }
+    tri = U.map(p => ({ x: c.x + p.x * s * 1.02, y: c.y + p.y * s * 1.02 }));
+  }
+  bossInv.triS = tri; bossInv.coreS = { x: c.x, y: c.y };
   bossInv.triW = bossInv.triS.map(p => { const w = typeof floorAt === "function" ? floorAt(p.x, p.y) : null; if (w) return w; const dx = p.x - c.x, dy = p.y - c.y, l = Math.hypot(dx, dy) || 1; return { x: CX + dx / l * 1e5, y: CY + dy / l * 1e5 }; });
 }
 function inSkyPt(px, py) {

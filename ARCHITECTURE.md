@@ -154,9 +154,9 @@ debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the
 
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
 |---|---|---|---|---|
-| ARC | one beam, no chain | Conductivity: one jump | Voltage: one fork (`VOLT_FORK`) | Capacitance: one charge |
+| ARC | one bolt that chains once | Conductivity: chains twice | Voltage: one fork (`VOLT_FORK`) | Capacitance: one charge |
 | SOL | one beam that strikes its first enemy and flies on past it, striking no one: no band, split, bounce or prism (`st.pierce` 0, `SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn and the scorch rod across the band | Diffraction (id `refraction`): the band, one split, the mirrors | Breach: armor stripped a hit |
-| CRR | one interceptor, one bolt a volley | Hangar: two, one held | Tether: one tethered drone (`CRR_TETHER_N`; the first interceptor out, `carTethered`) | Armament: two bolts (`CRR_BOLTS_BY`) |
+| CRR | one interceptor, one bolt a volley, six volleys a sortie (`CRR_AMMO`) | Hangar: two, one held | Tether: one tethered drone (`CRR_TETHER_N`; the first interceptor out, `carTethered`) | Armament: two bolts (`CRR_BOLTS_BY`) |
 | FRZ | a slowing circle, no tick | Sublimation: the tick, more the slower | Permafrost: a cracking pulse | Moons: one moon |
 | ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Contagion: ray pools that slow (`ACD_POOL_SLOW`); kill pools gone |
 | GRV | a nova alone (no sphere after it) | Void: the hole + armor strip | Nova (id `supernova`): the slowing aura | Radiation: pellets, brighter |
@@ -506,6 +506,11 @@ becomes the boss's name, its HP a long line along the horizon (`drawBossBar`; on
 wave waits for the sky to close. It costs nothing per pixel: 2D draws the frame in the
 inverted palette (`withPalette`), 3D blends one triangle in GL (`warpFlip`); only the
 spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**
+Before the spread, three white SPOKES grow from the core along the rays to the triangle's corners, out to the screen's edge
+(`drawSkySpokes`, measured on the canvas they are drawn on). The triangle's shape is capped at `BOSS_SKY_RATIO` (3:2, height to top
+side, either way): a flatter or taller screen gets an isosceles at that ratio, centroid on the core, the smallest that holds all four
+screen corners (`skyLayout`), so its sides and top meet the edges a moment apart; within the ratio the sides pass through the bottom
+corners and the top side runs along the top edge, meeting them together.
 
 ### 5.6 The four sections (difficulty design, owner 2026-10-22)
 
