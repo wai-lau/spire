@@ -53,6 +53,7 @@ const solidSize = e => { const d = ENEMIES[e.type], f = Math.max(0, e.hp / e.max
 // one enemy as its die: P its projected floor spot, k / c / s the local scale and the camera's lean
 // its GEOMETRY is built once a frame (solidGeom, cached on the enemy by warp.frame) and only DRAWN per floor slice -
 // it was rebuilt in each of warpBands' nine passes, half the 3D frame with 130 enemies (profiled 2026-10-09)
+const SOLID_DRAWN = []; // warpSolidWhole's which-faces-drew scratch, reused (perf, 2026-10-28)
 function solidGeom(e) {
   const d = ENEMIES[e.type], f = Math.max(0, e.hp / e.max), size = solidSize(e);
   if (!(size > 0.5) || !Number.isFinite(e.x) || !Number.isFinite(e.y)) return null; // (a NaN spot would make a gradient throw)
@@ -67,14 +68,16 @@ function solidGeom(e) {
   const q = pathAt(e.pi, Math.max(0, e.s - 2), e.ang || 0), h = pathAt(e.pi, e.s || 0, e.ang || 0), hx = Math.atan2(h.y - q.y, h.x - q.x) || 0;
   const th = (e.s || 0) / (d.size * SOLID_ROLL) + (e.rot || 0), ct = Math.cos(th), st = Math.sin(th), ch = Math.cos(hx), sh = Math.sin(hx);
   // roll about the nose (+x), then turn the nose to the heading (no arrays or closures per corner: a late wave builds ~100 of these a frame)
-  const S = SOLIDS[e.type], V = S.V, nv = V.length, R = new Array(nv);
-  for (let i = 0; i < nv; i++) { const v = V[i], x = v[0], y1 = v[1] * ct - v[2] * st; R[i] = [x * ch - y1 * sh, x * sh + y1 * ch, v[1] * st + v[2] * ct]; }
+  // (perf, 2026-10-28: the corners, faces and edges live in buffers kept on the enemy and refilled every frame - they were ~120 KB of a late
+  // frame's garbage; a geom is read only in the frame it was built, so refilling in place is safe)
+  const S = SOLIDS[e.type], V = S.V, nv = V.length, B = e.geomBuf && e.geomBuf.type === e.type ? e.geomBuf : (e.geomBuf = { type: e.type, R: [], Q: [], faces: [], edges: [], slot: [], fPool: [], ePool: [] }), R = B.R;
+  for (let i = 0; i < nv; i++) { const v = V[i], x = v[0], y1 = v[1] * ct - v[2] * st, r = R[i] || (R[i] = [0, 0, 0]); r[0] = x * ch - y1 * sh; r[1] = x * sh + y1 * ch; r[2] = v[1] * st + v[2] * ct; }
   // LIT FROM THE CORE (owner: "the light source should come from the core"): toward the core's top from this die
   const lx = CX - e.x, ly = CY - e.y, lz = warp.lightZ || 1, ll = Math.hypot(lx, ly, lz), L0 = lx / ll, L1 = ly / ll, L2 = lz / ll;
   // world offset (x, y on the floor, z up) to the screen, the die's CENTRE on the floor (owner: "their center is on the plane")
-  const faces = [], slot = new Array(S.F.length).fill(-1); // slot: a face of S.F -> its index in faces (visible), or -1
-  const Q = new Array(nv); // every corner projected once
-  for (let i = 0; i < nv; i++) { const v = R[i]; Q[i] = { x: P.x + k * v[0] * size, y: P.y + k * (p.c * v[1] * size - p.s * v[2] * size), z: v[2] * size }; }
+  const faces = B.faces, slot = B.slot; let nf = 0; slot.length = S.F.length; slot.fill(-1); // slot: a face of S.F -> its index in faces (visible), or -1
+  const Q = B.Q; // every corner projected once
+  for (let i = 0; i < nv; i++) { const v = R[i], q = Q[i] || (Q[i] = { x: 0, y: 0, z: 0 }); q.x = P.x + k * v[0] * size; q.y = P.y + k * (p.c * v[1] * size - p.s * v[2] * size); q.z = v[2] * size; }
   for (let fi = 0; fi < S.F.length; fi++) {
     const face = S.F[fi], fl = face.length;
     let n0 = 0, n1 = 0, n2 = 0;
@@ -82,11 +85,12 @@ function solidGeom(e) {
     n0 /= fl; n1 /= fl; n2 /= fl;
     if (n1 * p.s + n2 * p.c <= 0) continue; // turned away from the camera
     const nl = Math.hypot(n0, n1, n2), lit = Math.max(0, (n0 * L0 + n1 * L1 + n2 * L2) / nl);
-    const poly3 = new Array(fl); let lo = Infinity, hi = -Infinity;
+    const F = B.fPool[nf] || (B.fPool[nf] = { poly3: [], lo: 0, hi: 0, fA: 0 }), poly3 = F.poly3; faces[nf] = F; poly3.length = fl; let lo = Infinity, hi = -Infinity;
     for (let i = 0; i < fl; i++) { const q = Q[face[i]]; poly3[i] = q; if (q.z < lo) lo = q.z; if (q.z > hi) hi = q.z; }
-    slot[fi] = faces.length;
-    faces.push({ poly3, lo, hi, fA: (0.2 + 0.7 * lit) * (0.5 + 0.5 * f) });
+    slot[fi] = nf++;
+    F.lo = lo; F.hi = hi; F.fA = (0.2 + 0.7 * lit) * (0.5 + 0.5 * f);
   }
+  faces.length = nf;
   // BREACH in 3D (owner, 2026-10-09: "breach effect should look like vertical spoke going through the enemy center of mass, increasing
   // in size the more breach"; Scorch's 2026-10-26 .. 27, back - owner, 2026-10-27: "swap breach and scorch visual effect (breach goes back
   // to stick, scorch becomes dotted line)"): one upright spike through the die's centre, longer and thicker per stack (to BREACH_SPOKES),
@@ -101,12 +105,15 @@ function solidGeom(e) {
   // 50% opaque, not 100" - it was all cyan)
   // its EDGES once: each with how many visible faces share it (1: the outline, 2: an inner edge)
   // (the die's edge TOPOLOGY is fixed per kind - solidEdges - so only which faces show changes)
-  const edges = [];
+  const edges = B.edges; let ne = 0;
   const se = solidEdges(e.type);
   for (let i = 0; i < se.length; i++) {
     const E = se[i], sa = slot[E[2]], sb = slot[E[3]];
-    if (sa >= 0 || sb >= 0) edges.push({ v: Q[E[0]], w: Q[E[1]], n: (sa >= 0) + (sb >= 0), f: sa < 0 ? [sb] : sb < 0 ? [sa] : [sa, sb] });
+    if (sa < 0 && sb < 0) continue;
+    const D = B.ePool[ne] || (B.ePool[ne] = { v: null, w: null, n: 0, f: [] }); edges[ne++] = D;
+    D.v = Q[E[0]]; D.w = Q[E[1]]; D.n = (sa >= 0) + (sb >= 0); D.f.length = 0; if (sa < 0) D.f.push(sb); else if (sb < 0) D.f.push(sa); else D.f.push(sa, sb);
   }
+  edges.length = ne;
   return { faces, edges, spike, size, fa, col: COL[d.color], ocol: COL[ENEMIES[e.aug || e.type].color], /* ocol: the OUTLINE's - an augmented enemy's in its augment's colour */ frz: SOLID_FROZEN_A * frostK(e), rime: rimeK(e), lw: (e.armor ? 2.2 : 1.2) * cam.k };
 }
 // the opacity the floor's slices give depth z (aspira-fog.js warpBands): 1 at the floor, down to the deepest slice's
@@ -205,7 +212,7 @@ function warpSolidWhole(e) {
   // is associative, so it is the same colour), and the edges stroked once for the whole die: the outline (an edge of
   // one face) once, the inner edges (shared by two faces) as their two strokes blended
   ctx.lineWidth = g.lw; ctx.globalAlpha = 1;
-  const drawn = new Array(g.faces.length); let anyDrawn = false;
+  const drawn = SOLID_DRAWN; drawn.length = g.faces.length; let anyDrawn = false;
   for (let i = 0; i < drawn.length; i++) {
     const F = g.faces[i];
     if ((band && (F.hi < band.lo || F.lo > band.hi)) || !warpPath(F.poly3)) { drawn[i] = false; continue; } // clipped to the slice being drawn (aspira-fog.js)
