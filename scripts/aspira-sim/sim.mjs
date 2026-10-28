@@ -13,7 +13,7 @@ import { patchProbe } from "./simver.mjs";
 // re-reads them, so a balance commit landing mid-run would otherwise mix two
 // versions (2026-10-07)
 const WEB = (process.env.ASPIRA_WEB || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "web")) + "/";
-const FILES = ["aspira-defs.js", "aspira-drawsize.js", "aspira-upgrades.js", "aspira-game.js", "aspira-formations.js", "aspira-floats.js", "aspira-waves.js", "aspira-bosses.js", "aspira-towers.js", "aspira-sol.js", "aspira-acid.js", "aspira-skills.js", "aspira-frz.js", "aspira-grv.js", "aspira-car.js", "aspira-ifrit.js", "aspira-desc.js", "aspira-capstone.js", "aspira-curve.js", "aspira-tier01.js","aspira-positioning.js", "aspira-core.js"];
+const FILES = ["aspira-defs.js", "aspira-towerstats.js", "aspira-drawsize.js", "aspira-upgrades.js", "aspira-game.js", "aspira-formations.js", "aspira-floats.js", "aspira-waves.js", "aspira-bosses.js", "aspira-towers.js", "aspira-sol.js", "aspira-acid.js", "aspira-skills.js", "aspira-frz.js", "aspira-grv.js", "aspira-car.js", "aspira-ifrit.js", "aspira-desc.js", "aspira-capstone.js", "aspira-curve.js", "aspira-tier01.js","aspira-positioning.js", "aspira-core.js"];
 
 // LOAD ONCE A PROCESS (2026-10-24: a new game cost ~2 s, mostly the lanes' spiral solve and recompiling 20 files): each file is
 // compiled once (vm.Script), each lane built once (SIM_LANES, aspira-defs.js) and handed to every game as its own copy
