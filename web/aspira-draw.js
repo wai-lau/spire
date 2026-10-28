@@ -332,7 +332,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
     if (f.k === "beam") {
       ctx.globalAlpha = Math.min(1, ctx.globalAlpha * (f.alpha ?? 1) * BEAM_BRIGHT) * (f.share ?? 1) ** 2; // share: a SOL beam's part of the first beam's hit, squared past the cap (aspira-towers.js rayHit) // ARC: an arc as opaque as its damage share; x BEAM_BRIGHT (owner)
       // glow underlay + core, both widening with the damage behind the shot
-      ctx.strokeStyle = COL[f.color]; ctx.lineCap = "round";
+      ctx.strokeStyle = pass === "beams" && !f.slim ? skyOwnCss(f.color) : COL[f.color]; ctx.lineCap = "round"; // (the entity layer's beams: own colour on the full sky where it reads - skyOwnCss, aspira-fxgl.js)
       // a following beam reads its endpoints live from the tower/enemy it joins
       const x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2;
       const pt = (x, y) => (map ? map(x, y) : { x, y, s: 1 }), B = pt(x2, y2), ws = map ? cam.k * (pt(x1, y1).s + B.s) / 2 : 1;
@@ -455,11 +455,11 @@ function drawSceneTop() {
   if (typeof warp === "undefined") { if (skyOn()) ranges("white")(); else skyKeep(ranges()); } // (2D only - the game is 3D)
   // BEAMS turn over with the boss sky (owner, 2026-10-11: "inversion should invert tower movement indicators and tower
   // beams"; they kept their colours since earlier that day) - only the towers and their ranges keep theirs
-  drawTethers(); drawAcd(); drawGrv(); drawCar(); drawIfr(); skyKeep(() => drawIfr(true)); skyKeep(() => drawCar(true)); drawAims(); drawFx("shots"); // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
+  fxGlSkyOwn(() => { drawTethers(); drawAcd(); drawGrv(); drawCar(); drawIfr(); }); skyKeep(() => drawIfr(true)); skyKeep(() => drawCar(true)); fxGlSkyOwn(() => { drawAims(); drawFx("shots"); }); // (fxGlSkyOwn: the tower effects keep their colours on the full sky where they read - aspira-fxgl.js) // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
   drawCoreFx(); if (G.core) drawTimeStop(G.core); /* (3D's Relay hexagons: drawRelayHex3d, on the overlay before the towers) */ // the core's struts and beams, under the towers (aspira-core.js); 3D: Temporal Drive's field ON the floor
   // in 3D the towers, the core and the enemies are drawn FLAT over the bell instead (warpEntities, aspira-warp.js)
   skyKeep(drawLeash); // the movement indicator keeps its TOWER'S colour on a boss sky (owner, 2026-10-19: "should not be inverted in color"; it turned over with the sky, owner 2026-10-11)
-  drawSlotFlash(); drawDrips(); drawCoins(); /* the upgrade chevrons: the TOP layer now (drawButtonsOver), over the boss's HP lane */ /* (aspira-towers.js) - the upgrade chevron and its hex keep the TOWER'S colour on a boss sky (owner, 2026-10-16: "Tower upgrade indicators should retain color on inversion") */ if (typeof drawThreat === "function") skyKeep(drawThreat); // (drawThreat: the nearest danger's ring and spoke, aspira-ui.js) a corner slot that just opened (aspira-waves.js); the credits flying home (aspira-floats.js)
+  drawSlotFlash(); fxGlSkyOwn(drawDrips); drawCoins(); /* the upgrade chevrons: the TOP layer now (drawButtonsOver), over the boss's HP lane */ /* (aspira-towers.js) - the upgrade chevron and its hex keep the TOWER'S colour on a boss sky (owner, 2026-10-16: "Tower upgrade indicators should retain color on inversion") */ if (typeof drawThreat === "function") skyKeep(drawThreat); // (drawThreat: the nearest danger's ring and spoke, aspira-ui.js) a corner slot that just opened (aspira-waves.js); the credits flying home (aspira-floats.js)
 }
 // the whole palette inverted while fn draws (invertColor keeps alpha); the
 // inverted set is built once, COL being fixed after resolveColors

@@ -436,7 +436,8 @@ function drawSphere(sp, st, auraOwn = true) {
       // they approach the center"): fainter far out, whiter and glowing as it collapses
       ctx.globalAlpha = Math.min(1, GRV_NOVA_A * (0.45 + 0.65 * p)); ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, GRV_NOVA_WHITE + 0.6 * p ** 2); ctx.lineWidth = Math.max(1, w); // (a solid stroke: the 3D board takes no gradient stroke)
       ctx.shadowColor = COL.violet; ctx.shadowBlur = 14 * cam.k * p;
-      ctx.beginPath(); ctx.arc(sp.nova ? sp.nova.x : sp.x, sp.nova ? sp.nova.y : sp.y, r - w / 2, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0;
+      const ring = () => { ctx.beginPath(); ctx.arc(sp.nova ? sp.nova.x : sp.x, sp.nova ? sp.nova.y : sp.y, r - w / 2, 0, 6.283); ctx.stroke(); };
+      if (typeof fxGlSkyOff === "function") fxGlSkyOff(ring); else ring(); ctx.shadowBlur = 0; // (always inverted on the boss sky: it whitens as it closes - aspira-fxgl.js)
     }
   }
 

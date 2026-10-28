@@ -5,7 +5,7 @@
 // batch of quads into a texture of the board picture's own size (sharper than the moving layer they used to ride, which is
 // WARP_DYN_K of it); each still blends on its own, so stacked hits brighten exactly as they did. The bell's shader lays
 // this texture over the moving layer (WARP_FS `fxt`). 2D draws them as before. Loaded after aspira-warplayers.js.
-const fxGl = { on: false, n: 0, inst: new Float32Array(22 * 4096), rgb: new Map() };
+const fxGl = { on: false, n: 0, inst: new Float32Array(22 * 4096), rgb: new Map(), skyRgb: new Map(), skyOwn: false };
 const FXGL_IN = 26; // per shape (one GPU instance): p0, p1 (world), radius, line width, shape, fill rgba, stroke rgba, the two joint planes, a dash
 // this frame's shots pass gathers for the GPU: 3D, with WebGL up (warpRender draws the moving layer just before warpDraw)
 function fxGlTake() { fxGl.on = !fxGl.broken && typeof q3d === "function" && q3d() && !!(typeof warp !== "undefined" && warp.gl); if (!fxGl.on) fxGl.n = 0; return fxGl.on; } // (broken: the 2D way)
@@ -20,6 +20,20 @@ function fxGlRgb(css) {
   c = [d[0] / 255, d[1] / 255, d[2] / 255, d[3] / 255]; fxGl.rgb.set(css, c); // (a colour with its own alpha keeps it)
   return c;
 }
+// THE BOSS SKY: A TOWER'S EFFECT KEEPS ITS OWN COLOUR WHEN IT READS (owner, 2026-10-28 - "I generally want everything tower related to not get
+// inverted. However, some effects are mostly white, which means they will be almost invisible. For those, invert the effect (e.g. SOL
+// beams)", then option B: own colour only at SKY_OWN_MIN contrast or better against the pale sky, inverted like white below it). The full sky
+// flips the whole GL picture (warpFlip), so an effect that keeps its colour is PUSHED inverted (fxGlPush, fxGl.skyOwn - set round the tower
+// effects by fxGlSkyOwn) and the flip turns it back; a 2D entity-layer beam takes colOwn instead (skyOwnCss). Contrast against white, at
+// 6.15.50 - check a new tower colour here:
+//   ARC tarc 1.4  FRZ tfrz 1.4  ACD tacd 1.7  -> inverted;  SOL solar 2.2  IFR tifr 2.2  CRR blue 2.4  GRV violet 2.6  -> own;  white 1.0
+// Always inverted, whatever the colour: SOL's beam (white core in its glow) and GRV's nova ring (whitening as it closes) - and anything white
+let SKY_OWN_MIN = 2; // (let: Infinity = every effect inverted, as before 6.15.51 - for comparing; clear fxGl.skyRgb after a change)
+const skyContrast = c => { const f = v => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 1.05 / (0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]) + 0.05); };
+const fxGlSkyRgb = c => { let o = fxGl.skyRgb.get(c); if (!o) fxGl.skyRgb.set(c, (o = skyContrast(c) >= SKY_OWN_MIN ? [1 - c[0], 1 - c[1], 1 - c[2], c[3]] : c)); return o; }; // (pushed inverted: the flip makes it its own)
+function fxGlSkyOwn(fn) { const was = fxGl.skyOwn; fxGl.skyOwn = typeof skyPal === "function" && skyPal(); try { fn(); } finally { fxGl.skyOwn = was; } }
+const fxGlSkyOff = fn => { const was = fxGl.skyOwn; fxGl.skyOwn = false; try { fn(); } finally { fxGl.skyOwn = was; } }; // (the always-inverted ones)
+const skyOwnCss = key => (typeof skyPal === "function" && skyPal() && typeof colOwn !== "undefined" && colOwn && colOwn[key] && skyContrast(fxGlRgb(colOwn[key])) >= SKY_OWN_MIN ? colOwn[key] : COL[key]); // the entity layer (drawn in the inverted palette, not flipped)
 // a many-stop radial gradient's row in the LUT (256 colours across its radius, interpolated by the canvas itself): -1 when the table is full
 function fxGlLutRow(stops) {
   const key = stops.map(q => q[0] + ":" + q[1]).join("|");
@@ -44,7 +58,8 @@ function fxGlLutRow(stops) {
 function fxGlPush(x0, y0, x1, y1, r, lw, fillCss, fillA, strokeCss, strokeA, shape, b0x = 0, b0y = 0, b1x = 0, b1y = 0, dOn = 0, dOff = 0, dAt = 0) {
   if (fxGl.n >= 1e6) return; // (a runaway: never in play)
   if ((fxGl.n + 1) * FXGL_IN > fxGl.inst.length) { const g = new Float32Array(fxGl.inst.length * 2); g.set(fxGl.inst); fxGl.inst = g; }
-  const D = fxGl.inst, f = fxGlRgb(fillCss), c = strokeCss === fillCss ? f : fxGlRgb(strokeCss);
+  const D = fxGl.inst; let f = fxGlRgb(fillCss), c = strokeCss === fillCss ? f : fxGlRgb(strokeCss);
+  if (fxGl.skyOwn) { f = fxGlSkyRgb(f); c = fxGlSkyRgb(c); } // (a tower's effect on the full sky: its own colour where it reads - fxGlSkyOwn)
   let o = fxGl.n++ * FXGL_IN; const base = o;
   D[o++] = x0; D[o++] = y0; D[o++] = x1; D[o++] = y1; D[o++] = r; D[o++] = lw; D[o++] = shape === true ? 1 : shape || 0;
   D[o++] = f[0]; D[o++] = f[1]; D[o++] = f[2]; D[o++] = fillA * f[3]; D[o++] = c[0]; D[o++] = c[1]; D[o++] = c[2]; D[o++] = strokeA * c[3]; D[o++] = b0x; D[o++] = b0y; D[o++] = b1x; D[o++] = b1y; D[o++] = dOn; D[o++] = dOff; D[o++] = dAt; const k = fxGl.clipC; if (k) { D[o++] = k[0]; D[o++] = k[1]; D[o++] = k[2]; D[o] = k[3]; } else { D[o++] = 0; D[o++] = 0; D[o++] = 0; D[o] = 0; } /* the sky's circle clip (aspira-glctx.js g.clip): centre and radius in world units, mode 1 inside / 2 outside, 0 none */
@@ -176,6 +191,7 @@ function fxGlFx(f, k, a) {
 }
 // a BEAM: each stroke of drawFx's, widest glow first, as round-ended segments (one per beam of a multi-beam shot)
 function fxGlBeam(f, a) {
+  if (f.slim && fxGl.skyOwn) { fxGlSkyOff(() => fxGlBeam(f, a)); return; } // SOL's beam: always inverted on the sky (owner's example)
   const x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, segs = [];
   if (f.beams > 1) {
     const len = Math.hypot(x2 - x1, y2 - y1) || 1, px = -(y2 - y1) / len, py = (x2 - x1) / len;
