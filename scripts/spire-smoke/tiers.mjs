@@ -151,12 +151,12 @@ check("SOL's burns tick IN THE GAME LOOP (a stack once sat untouched: dotT lost,
 
 // ---------- CRR ----------
 towerTierChecks("car", ["tether", "circling", "wingmate"]);
-check("CRR: tier 0 one interceptor, no tether, one bolt a volley, six volleys a sortie (owner, 2026-10-28); Hangar I two, one held; Tether I one tether at most; Armament I two bolts, same volley (tier redesign 2026-10-24)", () => {
+check("CRR: tier 0 three interceptors (owner, 2026-10-28), no tether, one bolt a volley, six volleys a sortie (owner, 2026-10-28); Hangar I five, one held; Tether I one tether at most; Armament I two bolts, same volley (tier redesign 2026-10-24)", () => {
   const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "car", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "car", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts, ammo: s.ammo }; })()`);
   const z = st({}), h = st({ hangar: 1 }), a = st({ armament: 1 });
-  if (z.wing !== 1 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== 0) return "tier 0 " + JSON.stringify(z);
+  if (z.wing !== 3 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== 0) return "tier 0 " + JSON.stringify(z);
   if (z.ammo !== 6 || a.ammo !== 8) return "volleys a sortie: tier 0 " + z.ammo + ", Armament I " + a.ammo + " (expected 6 and 8 - owner, 2026-10-28: \"interceptor should start with 6 ammo\")";
-  if (h.wing !== 2 || h.hold !== 1) return "Hangar I " + JSON.stringify(h);
+  if (h.wing !== 5 || h.hold !== 1) return "Hangar I " + JSON.stringify(h);
   if (a.bolts !== 2) return "Armament I " + JSON.stringify(a);
   const n = run(`(() => { const { t } = tierLane("car", { hangar: 3, launch: 1 }, [90, 120, 150, 170]); /* held ON the lane (a stepped game re-reads a spot from it) */
     G.started = true; G.nextIn = 1e9; G.spawns = []; /* the rig's enemies alone - no real wave */ let most = 0, ever = 0;

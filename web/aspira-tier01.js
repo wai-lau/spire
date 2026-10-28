@@ -13,9 +13,10 @@
 // Diffraction I the band and one split, Scorch I the burn and the rod, Breach I the strip
 // (SOL's tables are written 0..V in aspira-skills.js since 2026-10-25)
 
-// CRR: one interceptor, no tether, one bolt a volley (CRR_BOLTS_BY); Hangar I two interceptors, one held circling (CRR_HOLD_FRAC's tier I);
+// CRR: THREE interceptors (owner, 2026-10-28: "let carrier start with 3 interceptors instead of 1"), no tether, one bolt a volley
+// (CRR_BOLTS_BY); Hangar I five (was 2 over a tier 0 of 1 - kept above tier 0, primes), some held circling (CRR_HOLD_FRAC's tier I);
 // Tether I one tethered drone (CRR_TETHER_N) at today's base slow, its pulse from II
-CRR_HANGAR[0] = 1; CRR_HANGAR[1] = 2; CRR_TETHER_SLOW[0] = 0; CRR_TETHER_SLOW[1] = 0.35;
+CRR_HANGAR[0] = 3; CRR_HANGAR[1] = 5; CRR_TETHER_SLOW[0] = 0; CRR_TETHER_SLOW[1] = 0.35;
 
 // FRZ: Sublimation I is the hurt alone - no Brittle until II, today's I (owner, 2026-10-25: "zero" - tierMid gave it +7%)
 // (FRZ_BRITTLE written 0..V since 2026-10-26: I = 1)
