@@ -168,7 +168,7 @@ function stepFloats(dt) {
 // the KILL's CREDITS (owner, 2026-10-09: "instead of showing a popup, show a small yellow dot that flies towards the core,
 // and when it hits the core, that's when the credits are added and the popup shows"): a gold dot from the kill, gathering
 // speed toward the core (COIN_V0 + COIN_ACC x its age, units/s); on reaching it the credits are banked and "+Nc" pops
-// there. Game time (step, aspira-game.js), so the simulator banks them too, a beat later than it used to.
+// there. Game time (step, aspira-step.js), so the simulator banks them too, a beat later than it used to.
 const COIN_V0 = 0, COIN_ACC = 25, COIN_HOLD = 3, COIN_R = 2.5; // owner, 2026-10-09: "gold should start with no velocity, and then very slowly accelerate towards core" (was 200 / 900), then "reduce gold acceleration" (150 -> 60), then "slow down gold acceleration even more, make gold stationary for 2s" (HOLD s still, then 25), then "make gold stationary for 3s"
 let coins = [];
 // COINS (owner, 2026-10-12): a kill's credits break into coins - 20, 10, 5, then 1s (the old dot) - each dropped with some

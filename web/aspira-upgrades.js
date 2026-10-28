@@ -1,7 +1,7 @@
 // /aspira — the upgrade tree. Every tower has four levels: the upgrade to L2
 // picks one of three PATHS, the one to L3 one of that path's two FINAL FORMS
 // (3 paths x 2 forms = 6 finals per tower), and L4 is the SUPER form. Levels in between
-// grow the base stats (towerStats in aspira-defs.js).
+// grow the base stats (towerStats in aspira-towerstats.js).
 //
 // mods are applied by applyMods(): dmg/rate/range/arcRange multiply,
 // crit/arcs/targets/slow add, everything else is a behaviour flag read by

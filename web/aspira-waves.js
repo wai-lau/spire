@@ -14,7 +14,7 @@ const WAVE_TIMER = 6.4; // 20% shorter (owner, 2026-10-12: "make wave timers 20%
 const bossUp = () => G.enemies.some(e => !e.dead && (ENEMIES[e.type].star || e.bossKin)) || G.fleetQ.length > 0 ||
   G.spawns.some(w => w.list.slice(w.idx).some(t => ENEMIES[t].star));
 const waveClear = () => !G.enemies.some(e => !e.dead) && G.spawns.length === 0 && !G.fleetQ.length;
-// the NEXT wave is a boss's: it waits for a clear field, no timer (aspira-game.js step, the wave list)
+// the NEXT wave is a boss's: it waits for a clear field, no timer (aspira-step.js step, the wave list)
 const bossNext = () => (G.wave + 1) % STAR_EVERY === 0;
 // AFTER A BOSS the next wave WAITS for the player (owner, 2026-10-12: "after each boss, don't warp in next wave immediately -
 // where the warping in... 4s is now, a button that says challenge the X where X is the next boss name; on click starts next

@@ -61,7 +61,7 @@ function drawTimeStop(c) {
   if (!c.freeze) return;
   const f = c.freeze, shimmer = 0.85 + 0.15 * Math.sin(performance.now() / 40);
   ctx.strokeStyle = ctx.fillStyle = COL.white; ctx.lineJoin = "miter";
-  const r0 = q3d() ? f.ring0 : 0; // 3D: the rings start as the slammed core LANDS (coreH3d, aspira-warp.js; owner, 2026-10-14 "like wave on hit")
+  const r0 = q3d() ? f.ring0 : 0; // 3D: the rings start as the slammed core LANDS (coreH3d, aspira-warp-prism.js; owner, 2026-10-14 "like wave on hit")
   if (r0 == null) return;
   for (let t0 = r0; t0 < f.dur + r0 && t0 <= f.t; t0 += TEMPORAL_RING_EVERY) {
     const a = f.t - t0; // this pulse's age

@@ -215,7 +215,7 @@ function lockIn(t) {
   const leash = leashR(t);
   for (const ax of SKILL_TREES[t.kind]) { const to = skillOf(t, ax.id) + (add[ax.id] || 0); while (skillOf(t, ax.id) < to) { const k = skillOf(t, ax.id); upgradeTower(t, ax.id, true); if (skillOf(t, ax.id) === k) break; } } // stop by stop
   basket.add = {};
-  if (leashR(t) > leash + 0.5) hintLeash(t); // a longer leash shows itself (aspira-towers.js)
+  if (leashR(t) > leash + 0.5) hintLeash(t); // a longer leash shows itself (aspira-move.js)
   sfxFor("up", t.kind); ring(t.x, t.y, 64, TOWERS[t.kind].color); refreshPanels();
 }
 

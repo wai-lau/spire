@@ -82,7 +82,7 @@ const shownLvl = t => (!hasSkills(t) ? t.lvl : t.lvl >= maxLvl(t) ? MAX_LVL : Ma
 // REACH BY TIER (owner, 2026-10-06: ranges and movement were HALVED, and "no upgrade
 // causes any stat to go down - balance by playing around with ranges and movement
 // instead"; then: each tower through what is distinctive about IT, not generic
-// multipliers). A tier multiplies the tower's range / leash (SLIDE_MAX 3, aspira-towers.js) by [range, slide] (slide SPEED is gone - owner, 2026-10-12); each tower buys them differently:
+// multipliers). A tier multiplies the tower's range / leash (SLIDE_MAX 3, aspira-move.js) by [range, slide] (slide SPEED is gone - owner, 2026-10-12); each tower buys them differently:
 //   ARC  (a long-range ANCHOR, owner) Conductivity and Voltage = RANGE; Capacitance =
 //        SLIDE extent (owner: "static should increase movement range")
 //   FRZ  Temp = a wider aura (its range IS the aura); FRZ roams by kind (aspira-towers.js)
@@ -124,7 +124,7 @@ const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
 // effects nor reach"), so the jump keeps its old absolute size: 1.5 x the old 156
 // range, and Voltage still lengthens it by the old x1.15 / 1.3 / 1.45
 // TWO STRIKES (owner, 2026-10-24: "fire 2 strikes in quick succession from the get go at 1/2 damage"): every ARC attack goes off twice,
-// ARC_ECHO_S apart, each at ARC_ECHO_K of the hit (t.echo, the tower step in aspira-game.js) - twice the hits pop twice the shields
+// ARC_ECHO_S apart, each at ARC_ECHO_K of the hit (t.echo, the tower step in aspira-step.js) - twice the hits pop twice the shields
 // THE BURST (owner, 2026-10-26: "I want the attacks to be 0.15s apart, and I want the beam duration to reflect that / So zapzapzap wait
 // wait wait zapzapzap"), then "don't change hits per second": ARC_BURST_N strikes ARC_ECHO_S apart, the bursts at ARC_BURST_RATE x the curve's
 // 3 attacks/s - 2 a second, a 0.5 s cycle (0.3 s of zaps, 0.2 s rest) - so still 6 strikes a second, each ARC_ECHO_K (0.5) of an attack

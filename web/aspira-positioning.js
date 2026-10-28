@@ -167,7 +167,7 @@ function posOneTurn(t, dt) {
   if (!t.goal && G.posTurnT >= POS_EVERY) { G.posTurn = ts[(ts.indexOf(t) + 1) % ts.length].id; G.posTurnT = 0; }
   return true;
 }
-// the simulator's player, every step (aspira-game.js) - it TELEPORTS (owner, 2026-10-28: "when simulating, all moves should be
+// the simulator's player, every step (aspira-step.js) - it TELEPORTS (owner, 2026-10-28: "when simulating, all moves should be
 // teleports"; it glided like auto-move from 2026-10-13, "limit the tower movements to the current auto-move settings"). POS_GLIDE
 // true brings the glide back. let: the simulator sets it
 let POS_GLIDE = false;
@@ -189,7 +189,7 @@ function autoPosition(t, dt) {
 // BOX_HY), landscape the same box TURNED 90 degrees; setPlayBox(wide) picks one, and boxWanted() follows the window.
 // EVERY screen zooms so the box fits it ("the zoom should be adjusted so that either the top and bottom touch, or the
 // sides"), centred on the other axis (resize, aspira-draw.js); and it is the towers' MOVEMENT
-// CAP ("the cap should be that the movement is within this range"): legalSpot (aspira-towers.js)
+// CAP ("the cap should be that the movement is within this range"): legalSpot (aspira-move.js)
 // PHONES: [w, h] CSS px of the page in the browser (bars taken off), small Android to iPhone 15 Pro Max
 const PHONES = [[360, 640], [375, 667], [390, 664], [393, 659], [412, 732], [430, 740]];
 const BOX_SHORT = Math.min(...PHONES.map(([w]) => w / 2)) / PHONE_ZOOM;
@@ -374,7 +374,7 @@ function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once 
 
 // OUT OF REACH = OFF SCREEN (owner, 2026-10-19: "enemy speed should also be 3x when outside of mvmt+range of all towers"): an enemy no
 // tower could touch - beyond every tower's movement range + its range, measured from the slot it was built on - moves at
-// OFF_SCREEN_SPEED like an unseen one (stepEnemies, aspira-game.js). The circles are worked out once a step
+// OFF_SCREEN_SPEED like an unseen one (stepEnemies, aspira-step.js). The circles are worked out once a step
 const reachCircles = () => G.towers.map(t => { const c = CELLS[t.cell] || t, R = leashR(t) + towerStats(t).range; return [c.x, c.y, R * R]; });
 const inReach = (e, reach) => reach.some(([x, y, r2]) => (e.x - x) ** 2 + (e.y - y) ** 2 <= r2);
 // THE BOX SWITCHES BETWEEN WAVES ONLY: a resize/rotation just sets boxPending; boxSwitchIfIdle (before each step of the frame loop, aspira-ui.js: a clear field lasts one step, the next wave

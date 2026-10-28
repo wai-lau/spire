@@ -2,7 +2,7 @@
 // velocity and direction depending on last drag, slowly dampen to still"). UI only (the simulator never drags).
 // While a finger drags a tower (aspira-camera.js) its velocity is tracked - world units a REAL second, smoothed over
 // the last moves; on release the tower keeps it as t.fling and coasts, the speed falling by e every FLING_TAU s, held
-// to its leash and clear of the others by moveTower (aspira-towers.js) - a wall it meets it bounces off. A new grab stops it.
+// to its leash and clear of the others by moveTower (aspira-move.js) - a wall it meets it bounces off. A new grab stops it.
 const FLING_BOUNCE = 0.6; // the share of its speed a tower keeps off a wall
 const FLING_TAU = 0.35, FLING_SMOOTH = 0.35, FLING_MAX = 1400, FLING_STOP = 8, FLING_STALE_MS = 80;
 // a drag move: blend this move's velocity into the running estimate

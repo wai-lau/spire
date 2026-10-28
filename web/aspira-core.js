@@ -87,7 +87,7 @@ const relayed = t => t.relayUntil > (G.clock || 0);
 // a wave sent ticks every power's cooldown by one (sendWave, aspira-waves.js)
 function tickPowerCooldowns() { const c = G.core; if (c) for (const k in c.cd) c.cd[k] = Math.max(0, c.cd[k] - 1); }
 const relayMul = t => (relayed(t) ? RELAY_MUL : 1);
-// towerStats (aspira-defs.js) ends with this - what "three of it" means per kind:
+// towerStats (aspira-towerstats.js) ends with this - what "three of it" means per kind:
 //   ARC  the attack itself fires RELAY_MUL times (the tower loop, aspira-game.js)
 //   SOL  three times the locks, each charging its own ray
 //   ACD  three times the burn lines (and so three times the puddles)
@@ -111,11 +111,11 @@ function temporalFreeze() {
   c.frozenIds = c.freeze.hit; c.freezeUntil = c.clock + lv.dur; // for the look (aspira-core-fx.js)
   if (typeof sfx === "function") sfx("powertemporal");
   // (no screen shake - owner, 2026-10-14: "don't screenshake on activating temporal drive, just time the first AT wave with the
-  // dropping of the core": the core SLAMS into the floor (coreH3d, aspira-warp.js) and the first ring goes out as it lands)
+  // dropping of the core": the core SLAMS into the floor (coreH3d, aspira-warp-prism.js) and the first ring goes out as it lands)
   return true;
 }
 
-// a Temporal Drive freeze is running (its stop, not the rings' fade): the wave clock and the spawns hold (step, aspira-game.js)
+// a Temporal Drive freeze is running (its stop, not the rings' fade): the wave clock and the spawns hold (step, aspira-step.js)
 const timeStopped = () => !!(G.core && G.core.freeze && G.core.freeze.t < G.core.freeze.dur);
 // the core each step: cooldowns and the freeze ring
 function stepCore(dt) {

@@ -66,7 +66,7 @@ function frzSources(t, st) {
   }
   return out;
 }
-// every step (aspira-game.js): slow what is inside each aura, tick its damage,
+// every step (aspira-step.js): slow what is inside each aura, tick its damage,
 // and grow the Rime pulses
 // The per-type bite tables (FRZ_BITE, FRZ_BITE_BY, 2026-10-08..11) were replaced by frzBite below; ARCHAEOLOGY.md.
 // THE COLDER, THE HARDER (owner, 2026-10-12: "make frz deal damage relative to slow percentage"; replaced the bite by

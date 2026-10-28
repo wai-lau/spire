@@ -3,7 +3,7 @@
 // game runs in the browser, so nothing can be proven. TOP PLAYERS (owner, 2026-10-11): a win, or any game past wave
 // ASC_MIN_WAVE - 1, may post three letters, arcade style; the board ranks the Ascendants (wins, GOLD rows) first, then
 // everyone else by the wave reached (GREEN rows), tower names in their own colours. A game over before that shows the
-// board alone. UI only; winGame / gameOver (aspira-game.js) call in.
+// board alone. UI only; winGame / gameOver (aspira-step.js) call in.
 const ASC_URL = "/api/spire/ascendants", ASC_SHOW = 10, ASC_MIN_WAVE = 11;
 const ASC_TITLE = '<p class="asp-asc-title">Top players</p>';
 function ascBox() {

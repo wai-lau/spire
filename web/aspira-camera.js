@@ -15,7 +15,7 @@ let fitK = 0, dragged = false, downAt = null, pinch = null;
 //   drag from the CORE onto a tower -> the Orbital Relay: it acts as three
 // ui.drag = { kind: "core" | "tower", t, from, at } while one is held (drawn by drawCoreFx)
 // DRAGGING A TOWER (owner, 2026-10-10): a press on a tower and a drag MOVES it - it follows the
-// finger, firing all the while, held to its leash (moveTower, aspira-towers.js); ui.drag = { kind:
+// finger, firing all the while, held to its leash (moveTower, aspira-move.js); ui.drag = { kind:
 // "move", t, dx, dy } (the grab's offset, so the tower does not jump to the fingertip). A short
 // press is still a tap (its card). Not while placing or with the Relay armed - those taps pick.
 // a held finger always wobbles: the hold survives HOLD_SLOP css px of drift
@@ -231,7 +231,7 @@ function drawPhoneFrame3d() { // in warpEntities, under the texture camera, befo
   if (!a) return;
   g.save(); g.setTransform(1, 0, 0, 1, 0, 0); drawPhoneWalls(g, b, a, px, zoomed ? fitMap : null); g.restore();
 }
-// 3D: the LEASH RINGS (drawLeash, aspira-towers.js) on the screen layer - the floor circle's points projected, dashed in screen
+// 3D: the LEASH RINGS (drawLeash, aspira-move.js) on the screen layer - the floor circle's points projected, dashed in screen
 // px so every dash is the same on the sides as in front. In warpEntities, under the texture camera, beside drawPhoneFrame3d
 function drawLeashRings3d() {
   const rings = warp.leashRings;
