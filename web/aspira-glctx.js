@@ -93,6 +93,13 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
       const [cx, cy] = g.w2(c0[0], c0[1]); g.clipC = fxGl.clipC = [cx, cy, c0[2] / g.w2.k, evenodd ? 2 : 1];
       replay("clip", true); real.clip(...a); return; // (the real canvas is clipped too, for anything it must still draw)
     }
+    // ...and the sky is a TRIANGLE since (skyTriPath): its three corners (world units) ride in fxGl.clipT for the batch's uniforms, mode 3
+    // inside / 4 outside - a circle-only clip sent the whole moving layer up every frame of a spreading or collapsing sky (perf, 2026-10-28)
+    const t0 = parts.length === 1 && !parts[0].circle && parts[0].closed && parts[0].pts.length === 3 && parts[0].pts;
+    if (glcClipOn && t0 && !g.clipC && (evenodd ? odd === "rect" : !odd)) {
+      g.clipC = fxGl.clipC = [0, 0, 0, evenodd ? 4 : 3]; fxGl.clipT = t0.flatMap(q => g.w2(q[0], q[1]));
+      replay("clip", true); real.clip(...a); return;
+    }
     replay("clip"); real.clip(...a);
   };
   for (const name of ["measureText", "createLinearGradient", "createPattern", "isPointInPath", "getImageData", "createImageData", "createConicGradient"]) g[name] = (...a) => real[name](...a);

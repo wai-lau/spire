@@ -79,7 +79,7 @@ precision highp float; /* a phone's mediump is 16-bit: a 1000 px ring's edge or 
 #else
 precision mediump float;
 #endif
-varying vec2 loc; varying vec4 v, fc, sc, cb, sky; varying vec3 dsh; varying vec2 ppos; uniform sampler2D lut;
+varying vec2 loc; varying vec4 v, fc, sc, cb, sky; varying vec3 dsh; varying vec2 ppos; uniform sampler2D lut; uniform vec2 triA, triB, triC; /* the sky's triangle (clip modes 3 / 4), px */
 void main() {
   float sh = floor(v.z + 0.5);
   if (sh < 5.5 && ((dot(cb.xy, cb.xy) > 0.0 && dot(loc + vec2(v.w, 0.0), cb.xy) < 0.0) || (dot(cb.zw, cb.zw) > 0.0 && dot(loc - vec2(v.w, 0.0), cb.zw) > 0.0))) discard;
@@ -110,7 +110,13 @@ void main() {
     float m = min(ph, dsh.x - ph); sa *= smoothstep(-0.5, 0.5, m); fa *= smoothstep(-0.5, 0.5, m); }
   vec4 s = sc * sa, f = vec4(fc.rgb * g * g, fc.a * g) * fa;
   if (sh == 3.0 && sc.r > 0.5) { vec4 L = texture2D(lut, vec2((g * 255.0 + 0.5) / 256.0, (sc.r - 0.5) / 16.0)); f = L * fc.a * fa; } /* a many-stop radial gradient (the GRV aura): its colours read from a row of the LUT, sc.r the row + 1 */
-  if (sky.w > 0.5) { float ins = 1.0 - smoothstep(sky.z - 0.5, sky.z + 0.5, length(ppos - sky.xy)), kk = sky.w < 1.5 ? ins : 1.0 - ins; s *= kk; f *= kk; } /* the sky's circle clip: inside only (1) or outside only (2), a pixel soft */
+  if (sky.w > 0.5 && sky.w < 2.5) { float ins = 1.0 - smoothstep(sky.z - 0.5, sky.z + 0.5, length(ppos - sky.xy)), kk = sky.w < 1.5 ? ins : 1.0 - ins; s *= kk; f *= kk; } /* the sky's circle clip: inside only (1) or outside only (2), a pixel soft */
+  if (sky.w > 2.5) { /* the sky's TRIANGLE clip: inside only (3) or outside only (4), a pixel soft - shape 6's signed distance */
+    vec2 e0 = triB - triA, e1 = triC - triB, e2 = triA - triC, w0 = ppos - triA, w1 = ppos - triB, w2 = ppos - triC;
+    vec2 q0 = w0 - e0 * clamp(dot(w0, e0) / dot(e0, e0), 0.0, 1.0), q1 = w1 - e1 * clamp(dot(w1, e1) / dot(e1, e1), 0.0, 1.0), q2 = w2 - e2 * clamp(dot(w2, e2) / dot(e2, e2), 0.0, 1.0);
+    float k = sign(e0.x * e2.y - e0.y * e2.x);
+    vec2 m = min(min(vec2(dot(q0, q0), k * (w0.x * e0.y - w0.y * e0.x)), vec2(dot(q1, q1), k * (w1.x * e1.y - w1.y * e1.x))), vec2(dot(q2, q2), k * (w2.x * e2.y - w2.y * e2.x)));
+    float ins = 1.0 - smoothstep(-0.5, 0.5, -sqrt(m.x) * sign(m.y)), kk = sky.w < 3.5 ? ins : 1.0 - ins; s *= kk; f *= kk; }
   gl_FragColor = s + f * (1.0 - s.a);
 }`;
 function fxGlInit(gl) {
@@ -127,7 +133,7 @@ function fxGlInit(gl) {
   const lutTex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, lutTex);
   for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4)); fxGl.lutTex = lutTex; fxGl.lutRows = []; fxGl.lutDirty = false;
-  Object.assign(fxGl, { gl, pr, ext, tex, quad, fb: gl.createFramebuffer(), buf: gl.createBuffer(), loc, S: 1, u: { S: gl.getUniformLocation(pr, "S"), tcam: gl.getUniformLocation(pr, "tcam"), lut: gl.getUniformLocation(pr, "lut"), tight: gl.getUniformLocation(pr, "tight") } });
+  Object.assign(fxGl, { gl, pr, ext, tex, quad, fb: gl.createFramebuffer(), buf: gl.createBuffer(), loc, S: 1, u: { S: gl.getUniformLocation(pr, "S"), tcam: gl.getUniformLocation(pr, "tcam"), lut: gl.getUniformLocation(pr, "lut"), tight: gl.getUniformLocation(pr, "tight"), triA: gl.getUniformLocation(pr, "triA"), triB: gl.getUniformLocation(pr, "triB"), triC: gl.getUniformLocation(pr, "triC") } });
   return fxGl;
 }
 // the gathered effects into fxGl.tex (S px a side, the board picture's camera - warp.texCam), before the bell is drawn
@@ -143,6 +149,7 @@ function fxGlRender(gl) {
   if (n) {
     gl.useProgram(fxGl.pr);
     gl.uniform2f(fxGl.u.S, S, S); gl.uniform3f(fxGl.u.tcam, tc.ox, tc.oy, tc.k);
+    { const T = fxGl.clipT || [0, 0, 0, 0, 0, 0], px = i => [tc.ox + T[i] * tc.k, tc.oy + T[i + 1] * tc.k]; gl.uniform2f(fxGl.u.triA, ...px(0)); gl.uniform2f(fxGl.u.triB, ...px(2)); gl.uniform2f(fxGl.u.triC, ...px(4)); } // the sky's triangle, world -> px (clip modes 3 / 4)
     gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, fxGl.lutTex);
     if (fxGl.lutDirty) { gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fxGl.lutCv); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); fxGl.lutDirty = false; }
     gl.uniform1i(fxGl.u.lut, 3); gl.activeTexture(gl.TEXTURE0); gl.uniform1f(fxGl.u.tight, fxGl.noTight ? 0 : 1);
