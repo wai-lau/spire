@@ -167,7 +167,7 @@ export function cellScores(g, kind) {
 //                                 point (absent, or all full = the lowest open axis, so builds spread evenly)
 //   upPrio: [kinds]               which kind's towers to upgrade FIRST (then the cheapest); absent = cheapest
 //   relayKind: kind               fire the Orbital Relay on the hottest tower of THIS kind (corepower.mjs)
-//   randomAxis: true              a point goes to a RANDOM open axis (the random player of the difficulty band)
+//   randomAxis: true              a point goes to a RANDOM open axis, never the planner's right pick (the random player)
 //   econ: "smart"                 the interest-aware saver (players.mjs, 2026-10-07): hold what earns the
 //                                 capped interest (INTEREST_PER_WAVE x (wave+1) / rate) and spend only the
 //                                 surplus - unless THREATENED (an enemy within `threat` of the core, a life
@@ -257,8 +257,15 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     if (S.rot && ranked.length > 1) { ranked.sort((a, b) => b.sc - a.sc); return ranked[S.rot % ranked.length].id; }
     return best;
   };
-  // RANDOM AXIS (owner, 2026-10-17: the ceiling of the difficulty band is the random player): a point goes to a random open axis
-  const randomOpenAxis = t => { const open = g.run(`SKILL_TREES[${JSON.stringify(t.kind)}].map(a => a.id)`).filter(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)); return open.length ? open[Math.floor(rnd() * open.length)] : null; };
+  // RANDOM AXIS (owner, 2026-10-17: the ceiling of the difficulty band is the random player): a point goes to a random open axis.
+  // BAD BUILD (owner, 2026-10-28): never the RIGHT pick - the axis the adaptive planner would buy now (else the lowest open
+  // axis, the planner's fallback) is left out, unless it is the only open axis
+  const randomOpenAxis = t => {
+    const open = g.run(`SKILL_TREES[${JSON.stringify(t.kind)}].map(a => a.id)`).filter(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id));
+    if (open.length < 2) return open[0] || null;
+    const right = adaptAxis(t) || open[0], pool = open.filter(id => id !== right);
+    return pool[Math.floor(rnd() * pool.length)];
+  };
   // floor: what the player keeps in the bank (the reserve, or the smart saver's interest bank)
   const act = (floor = (strategy.reserve || 0) * g.G.wave) => {
     const G = g.G;

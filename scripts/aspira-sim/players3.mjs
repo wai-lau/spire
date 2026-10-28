@@ -3,7 +3,7 @@
 // the game with every winnable trio". One MODEL a run (a chunk), every trio, SEEDS seeds each, to the end of the game:
 //   perfect  smart saver WITH rewind (hindsight), the threat-adaptive axis picks, every tower repositioned every 0.5 s     target: wins
 //   good     smart saver, NO rewind, the same adaptive axis picks, human hands (POS_ONE: one tower moved every 0.5 s)     target: wins
-//   random   spends as it goes (econ "spend"), a RANDOM open axis each buy, NO rewind, human hands                          target: dies ~60
+//   random   spends as it goes (econ "spend"), a RANDOM open axis but never the right pick (bad build), NO rewind, human hands   target: dies ~60
 // usage: MODEL=perfect|good|random [SEEDS=1] [TRIOS=arc+frz+sol,...] [TO=120] node players3.mjs [out.jsonl]
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
