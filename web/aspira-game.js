@@ -38,7 +38,7 @@ let HP_GROWTH = 1.13; const ARMOR_EXP = 0.4, SHIELD_EXP = 0.29 /* FEWER shield c
 // HARDER AFTER WAVE 20 (owner, 2026-10-08: "make the difficulty ramp harder after wave 20"): x HP_LATE a wave
 // past HP_KNEE (HP_GROWTH before). Sim on the 2026-10-08 build: random players won 11% -> 5%, the curve's
 // scripted players 61 -> 48 of 80 (x1.12 cut them to 30 / 80)
-let HP_LATE = 1.13 /* 2026-10-11: the axis roles made the towers stronger - waverep x3 36/36, late lives 16.5 (1.115: 2.9; was 1.11) */; const HP_KNEE = 20; // let: the simulator sweeps it
+let HP_LATE = 1.14 /* 1.13 -> 1.14 (owner, 2026-10-28, the difficulty targets: random human died at 91, target ~60; players3 HP_LATE sweep, random 1.135 83 / 1.14 82 / 1.15 79 / 1.2 67) */ /* 2026-10-11: the axis roles made the towers stronger - waverep x3 36/36, late lives 16.5 (1.115: 2.9; was 1.11) */; const HP_KNEE = 20; // let: the simulator sweeps it
 // THE END GAME EASES (owner, 2026-10-11: "for waves that make lives go fix them"): towers are fully built by about
 // wave 80, so HP growing x HP_LATE on past it made waves 80-100 a wall (47 of 48 lives lost there); x HP_END past HP_END_KNEE
 let HP_END = 1.07 /* "make it harder" (owner, 2026-10-14; was 1.06) */, HP_END_KNEE = 80; // let: the simulator sweeps both. waverep x3: 1.115 won 9/36, 1.08 33, 1.06 35 (36 with FAST_LATE_MUL)
