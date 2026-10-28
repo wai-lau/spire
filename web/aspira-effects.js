@@ -47,22 +47,26 @@ function drawAims() {
   ctx.globalAlpha = 1;
 }
 // THE SCORCH ROD's look (owner, 2026-10-27: "re-use the flare from IFR, except color it SOL / I only want one spoke"): one spoke of an
-// IFR meteor's flare (drawIfrFlares, aspira-ifrit-draw.js) through the rod's centre across the band - its glow layers, its falloff to
-// the tips, its brightness - in SOL's colour round a white core; as wide for its length as IFR's untaken flare
-const solRodCol = (key, col) => COL[key === "yellow" ? "white" : col];
+// IFR meteor's flare through the rod's centre across the band, its glow layers, falloff and brightness COPIED from IFR's (owner,
+// 2026-10-28: "copy it" - IFR's retunes leave it alone): SOL's colour round a white core
+// SOL_ROD_GLOW: 2D layers [x the width, alpha, colour] (null: the tower's), cut into SOL_ROD_BANDS lengths falling off as (1 - k / bands)^3;
+// SOL_ROD_GLOW_GL: 3D glow lines [half-width x the width, alpha, colour]; SOL_ROD_I: every layer's alpha x this (IFR's 0.11375 x 3 x 3);
+// SOL_ROD_WL: its width x its half-length (IFR's untaken flare, 13.3 / 47.6)
+const SOL_ROD_GLOW = [[1, 0.12, null], [0.5, 0.28, null], [0.16, 0.85, null], [0.05, 0.9, "white"]], SOL_ROD_BANDS = 6;
+const SOL_ROD_GLOW_GL = [[0.5, 0.5, null], [0.125, 0.95, null], [0.0375, 0.95, "white"]], SOL_ROD_I = 1.02375, SOL_ROD_WL = 0.28;
 function drawSolRod(x, y, c, sn, half, al, col, low) {
   if (!(half > 0) || ![x, y].every(Number.isFinite)) return;
-  const W = half * IFR_BEAM_W[0] / IFR_BEAM_L[0], I = al * IFR_GLOW_A * IFR_FLARE_MAIN_K * IFR_FLARE_I0;
+  const W = half * SOL_ROD_WL, I = al * SOL_ROD_I;
   const ends = [[x, y, x + sn * half, y - c * half], [x, y, x - sn * half, y + c * half]]; // the spoke: out both ways from its centre
-  if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { // 3D: IFR's GPU glow lines
-    for (const [x0, y0, x1, y1] of ends) for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { const q = IFR_GLOW_GL[g]; fxGlGlowLine(x0, y0, x1, y1, W * q[0], solRodCol(q[2], col), Math.min(1, q[1] * I)); }
+  if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { // 3D: GPU glow lines (lowQ: the two inner)
+    for (const [x0, y0, x1, y1] of ends) for (let g = low ? SOL_ROD_GLOW_GL.length - 2 : 0; g < SOL_ROD_GLOW_GL.length; g++) { const q = SOL_ROD_GLOW_GL[g]; fxGlGlowLine(x0, y0, x1, y1, W * q[0], COL[q[2] || col], Math.min(1, q[1] * I)); }
     return;
   }
-  for (let g = low ? IFR_GLOW.length - 2 : 0; g < IFR_GLOW.length; g++) { // 2D: IFR's banded strokes
-    ctx.strokeStyle = solRodCol(IFR_GLOW[g][2], col); ctx.lineWidth = Math.max(1, W * IFR_GLOW[g][0]);
-    for (let k = 0; k < IFR_GLOW_BANDS; k++) {
-      const a0 = k / IFR_GLOW_BANDS, a1 = (k + 1) / IFR_GLOW_BANDS;
-      ctx.globalAlpha = Math.min(1, IFR_GLOW[g][1] * I * (1 - a0) ** 3); ctx.beginPath();
+  for (let g = low ? SOL_ROD_GLOW.length - 2 : 0; g < SOL_ROD_GLOW.length; g++) { // 2D: banded strokes
+    const q = SOL_ROD_GLOW[g]; ctx.strokeStyle = COL[q[2] || col]; ctx.lineWidth = Math.max(1, W * q[0]);
+    for (let k = 0; k < SOL_ROD_BANDS; k++) {
+      const a0 = k / SOL_ROD_BANDS, a1 = (k + 1) / SOL_ROD_BANDS;
+      ctx.globalAlpha = Math.min(1, q[1] * I * (1 - a0) ** 3); ctx.beginPath();
       for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0 + (x1 - x0) * a0, y0 + (y1 - y0) * a0); ctx.lineTo(x0 + (x1 - x0) * a1, y0 + (y1 - y0) * a1); }
       ctx.stroke();
     }
