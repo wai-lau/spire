@@ -8,6 +8,9 @@
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
+// BOSSES SKIPPED, ALWAYS (owner, 2026-10-28: "bosses must never cause a loss in the balance sims"): every boss-wave unit dies at once,
+// bounty, drop and unlocks paid (sim.mjs BOSS_SKIP). Set here, not by env, so no run forgets it; bosses balance in bossbal/bossvs.
+process.env.BOSS_SKIP = "1";
 const HUMAN_HANDS = "POS_ONE = true; POS_EVERY = 0.5;"; // owner, 2026-10-28: each tower checked by a human every 1.5 s with three
 const MODELS = {
   perfect: { econ: "smart", rewind: true, pos: "POS_EVERY = 0.5;" },
