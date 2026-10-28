@@ -4,7 +4,6 @@
 // are short walls standing on the floor, centred on it, and split at the object they guard - the walls BEHIND it
 // drawn before it, the ones IN FRONT after - so the core's prism and a die hide and are hidden as they should.
 // Loaded after aspira-warp.js and aspira-solids.js.
-const WALL_H = { core: 3, enemy: 2 }; // half heights, world units
 
 // the live segments of a shield (drawSegs's geometry): each { a: [x, y], b: [x, y], r: its ring }
 function segPieces(x, y, segs, sides, rot, base, gap, off = 0) {
@@ -39,20 +38,6 @@ function warpShieldLines(pieces, col, a0, at) {
     ctx.globalAlpha = a0 * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (r - 1)); ctx.lineWidth = (ps[0].thick ? SHIELD_LAST_W : 1) * 1.4 * cam.k; ctx.beginPath(); /* thick: an enemy's last layer */
     for (const p of ps) { const A = pt(p.a[0], p.a[1]), B = pt(p.b[0], p.b[1]); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); }
     ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-}
-// the pieces on one side of (cx, cy) - the camera looks from +y, so a larger y is IN FRONT - as walls (unused since)
-function warpWalls(pieces, cy, front, hh, col, a0) {
-  const H = hh * cam.k;
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineJoin = "round"; ctx.lineWidth = 1.2 * cam.k; ctx.strokeStyle = col; ctx.fillStyle = col;
-  for (const p of pieces) {
-    if (((p.a[1] + p.b[1]) / 2 > cy) !== front) continue;
-    const A0 = warpProject(p.a[0], p.a[1], -H), B0 = warpProject(p.b[0], p.b[1], -H), A1 = warpProject(p.a[0], p.a[1], H), B1 = warpProject(p.b[0], p.b[1], H);
-    const a = a0 * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (p.r - 1)) * warpFade;
-    const quad = [{ ...A0, z: -hh }, { ...B0, z: -hh }, { ...B1, z: hh }, { ...A1, z: hh }];
-    if (!warpPath(quad)) continue; // clipped to the slice being drawn (aspira-fog.js)
-    ctx.globalAlpha = a * 0.35; ctx.fill(); warpEdges(quad); ctx.globalAlpha = a; ctx.stroke();
   }
   ctx.globalAlpha = 1;
 }

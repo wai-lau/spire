@@ -15,7 +15,6 @@ let AUTO_POS = false; // the simulator sets it
 const POS_RINGS = [1 / 3, 2 / 3, 1], POS_ANGLES = 12;
 const POS_SOON = 1; // s: a hit this far ahead counts 1/e as much
 let POS_EVERY = 0.5, POS_HORIZON = 5, POS_DT = 0.5, POS_SWITCH = 1.1;
-const POS_HORIZON_SET = h => { POS_HORIZON = h; }; // (the simulator sweeps it)
 const POS_STALE = 0.2; // Fresh: what a debuffed enemy's hits are still worth
 let POS_URGENCY = 6, POS_MODE_MIX = 1; // FULL targeting (owner: 0.3 barely counted); urgency 6 keeps the lives - swept u 3/6/10/20 x mix 0.3/1. let: the simulator sweeps both
 let posPred = null, posPredAt = -1;

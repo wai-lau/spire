@@ -168,7 +168,6 @@ function contrastCursor() {
 }
 
 // the phone's screen box and the cap it sets live in aspira-positioning.js (the simulator loads that one); here its drawing
-const phonePath = (c, b) => { c.beginPath(); c.roundRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0, b.r); };
 // ONLY NEAR ITS EDGE (owner, 2026-10-13: "only show mobile outline when tower is near edge (like 20 units)"): shown while a tower
 // stands within PHONE_NEAR world units of the furthest it may go (legalSpot's edge), easing in and out over PHONE_FADE s (real)
 // ...and only an edge that HOLDS A TOWER BACK FOR NO REASON (owner, 2026-10-14: "don't show mobile phone outline when near edge

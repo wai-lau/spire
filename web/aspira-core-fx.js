@@ -9,7 +9,6 @@
 // drawCoreFx goes under the towers (beams), drawCoreHud over the enemies.
 // sized for a PHONE (the board shows at ~0.54 css px per unit there): text
 // 26 units reads as ~14px
-const READY_POP = 15;
 const DIAL = [ // the owned powers' buttons (aspira-powers.js) read this; colours are palette keys
   { id: "temporal", label: "TEMPORAL DRIVE", color: "white", /* white (owner, 2026-10-08; was cyan) */ mid: Math.PI, tab: () => TEMPORAL, active: c => c.freezeUntil - c.clock }, // the left half
   { id: "relay", label: "ORBITAL RELAY", color: "white", mid: 0, tab: () => RELAY, active: () => relayLeft() }, // the right half
