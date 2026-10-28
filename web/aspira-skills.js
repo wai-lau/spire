@@ -201,17 +201,8 @@ function voltCarry(c, e, left) {
     if (!o.dead) return; left -= Math.max(0, h); e = o;
   }
 }
-// GROUNDING (proposal, OFF - ARC_GROUND 0; the design's "armor grounds the arc", ARCHITECTURE.md 4.6): a hit that armor blocks ARC_GROUND
-// or more of (the armor curve, armorTake) GROUNDS on that enemy - its bolt chains no further from it, and a discharge there bursts on it
-// alone. Never fewer hits on the grounded enemy itself (owner: "just let bursts hit as many times as they hit", "capacitance should re-hit")
-let ARC_GROUND = 0;
-function arcGrounds(e, a) {
-  const R = e.armor || 0, h = a * escale(e);
-  return ARC_GROUND > 0 && R > 0 && h > 0 && Math.min(ARMOR_CAP, R / (R + ARMOR_K * h)) >= ARC_GROUND;
-}
 function skillHit(c, e, d) {
   const hp0 = e.hp;
-  if (arcGrounds(e, d)) (c.grounded ||= new Set()).add(e.id); // its bolt stops here (skillHop)
   damage(e, d, c.t, false, false, c.st); onHit(e, c.t, c.st, d); // (discharges e's own charges, if any)
   if (c.st.carry && e.dead && hp0 > 0 && d > hp0) voltCarry(c, e, d - hp0);
   const b = c.st.charge;
@@ -251,9 +242,8 @@ function dischargeOne(e) {
     // ONE thin, faint ring for the whole discharge, no glow (owner, 2026-10-08: "reduce intensity, no glow"; was a glowing ring per charge)
     ring(e.x, e.y, ARC_BURST_R, TOWERS.arc.color, 0.18, false); const rf = fx[fx.length - 1]; if (rf && rf.k === "ring") Object.assign(rf, { a: ARC_BURST_A, w: 1.2 }); // (the simulator stubs ring out)
     ch.list.forEach(dmg => {
-      const ground = arcGrounds(e, dmg); // GROUNDED: this charge bursts on its own enemy only (ARC_GROUND)
       for (const o of G.enemies) {
-        if (o.dead || !o.seen || (ground && o !== e) || Math.hypot(o.x - e.x, o.y - e.y) > ARC_BURST_R * CAP_BURST_K[skillOf(ch.t, "capacitance")]) continue;
+        if (o.dead || !o.seen || Math.hypot(o.x - e.x, o.y - e.y) > ARC_BURST_R * CAP_BURST_K[skillOf(ch.t, "capacitance")]) continue;
         fromHit(e, () => damage(o, dmg, ch.t, false, false, null)); // away from the discharging enemy
         if (ch.slow && !o.dead) applySlow(o, ch.slow, STAT_SLOW_T, ch.t.id + ":stat");
       }
@@ -286,7 +276,6 @@ function skillHop(c, node, depth) {
   // ONE BOLT STRIKES A UNIT ONCE (owner, 2026-10-26: "lightning from the same bolt can never strike the same unit more than once (so a
   // unit can be hit once for each bolt)"; Conductivity III+ let it re-strike, st.revisit, before)
   const max = 1;
-  if (c.grounded && c.grounded.has(node.e.id)) return null; // GROUNDED: this arc chains no further (ARC_GROUND)
   return chainPick(c.t, node.e, r * r, o => o.id === node.e.id || (c.hits.get(o.id) || 0) >= max);
 }
 function skillHopTo(c, node, nxt, depth) {
