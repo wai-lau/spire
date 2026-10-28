@@ -328,7 +328,7 @@ function solSkillStats(t, s, b) {
   curveBase(t, s, b); s.rate = b.rate; s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.crit = LVL_SOL_CRIT[0]; // the STAT CURVE (tier redesign 2026-10-24); SOL's rate never rises (owner, 2026-10-23)
   s.beams = 1; // ONE BEAM, always (owner, 2026-10-25)
   s.split = SOL_SPLIT[skillOf(t, "refraction")]; s.band = SOL_BAND_W[skillOf(t, "refraction")]; s.hop = SOL_HOP[skillOf(t, "refraction")]; /* the carry is DIFFRACTION's (owner, 2026-10-26: "move the carry increase from breach to diffraction") */
-  const bk = skillOf(t, "breach");
+  const bk = skillOf(t, "breach"); s.par = SOL_PAR_N[bk] || 0; // Breach's parallel beams (aspira-sol.js)
   s.breach = 1; s.pierce = skillOf(t, "refraction") > 0 ? 1 : 0; /* THE BAND IS DIFFRACTION'S (owner, 2026-10-28: tier 0 "a minimal version of the tower with few effects"): a plain SOL's beam strikes its first enemy and flies on straight past it, striking no one - no split, no mirror, no prism (fireRay, solSpread, drawAims); was 1 at every tier since 2026-10-26 ("SOL should start with bouncing") */ const sc = skillOf(t, "focus"); s.dot = sc ? { k: SOL_SCORCH_TOTAL / SOL_SCORCH_N[sc], n: SOL_SCORCH_N[sc], t: SOL_SCORCH_N[sc] * SOL_SCORCH_Q } : null; /* SCORCH (owner, 2026-10-25): a burn of frac x the hit that landed - reflections and pass-throughs burn at their own falloff - stacking without cap (solScorch) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
 }
 // THE SHOT (owner, 2026-10-22 rework .. 2026-10-26): one beam that goes on STRAIGHT through every hit and SPLITS at each one to st.split

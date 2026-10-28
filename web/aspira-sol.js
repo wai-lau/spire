@@ -62,6 +62,30 @@ function solRodStep(t, st, dt) {
   }
   t.rods = t.rods.filter(r => r.s < SOL_CONE_EDGE);
 }
+// BREACH'S PARALLEL BEAMS (owner, 2026-10-28: "allow breach to add more _parallel_ beams that pierce, these beams don't reflect / Space
+// them out, but never more than the width of the tower"): SOL_PAR_N[breach] more beams beside the first, alternately either side of it,
+// SOL_PAR_GAP u apart or closer - the whole spread inside the tower's width (solParHalfW) - each straight on along the shot's aim from
+// the tower to the play box's edge, through every enemy whose body it crosses, at SOL_PAR_K of the shot; each hit breaches (bleed)
+const SOL_PAR_N = [0, 1, 1, 2, 2, 4], SOL_PAR_GAP = 12;
+let SOL_PAR_K = 0.5; // (let: the sims sweep it)
+const solParHalfW = () => CELL_S * TOWER_K * TOWER_DRAW_K;
+function solParallel(t, st, a) {
+  const n = st.par || 0; if (!n) return;
+  const ux = Math.cos(a), uy = Math.sin(a), nx = -uy, ny = ux, side = Math.ceil(n / 2), g = Math.min(SOL_PAR_GAP, solParHalfW() / side);
+  const d = st.dmg * SOL_PAR_K, col = TOWERS[t.kind].color;
+  for (let i = 0; i < n; i++) {
+    const o = (i % 2 ? -1 : 1) * g * (1 + (i >> 1)), x0 = t.x + nx * o, y0 = t.y + ny * o, L = solOutLen(x0, y0, ux, uy);
+    beam({ x: x0, y: y0 }, { x: x0 + ux * L, y: y0 + uy * L }, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: SOL_PAR_K, thin: SOL_THIN });
+    let hits = 0;
+    for (const e of G.enemies) {
+      if (e.dead || !e.seen) continue;
+      const dx = e.x - x0, dy = e.y - y0, along = dx * ux + dy * uy, R = ENEMIES[e.type].size * (e.sizeMul || 1);
+      if (along < 0 || along > L || Math.abs(dx * nx + dy * ny) > R) continue;
+      fromHit({ x: x0, y: y0 }, () => damage(e, d, t, false, false, st)); onHit(e, t, st, d); bleed(e, st, t);
+      if (++hits >= SOL_SHOT_CAP) break;
+    }
+  }
+}
 function solSpread(t, st, from, e, full, share = 1) {
   if (full <= 0) return;
   const col = TOWERS[t.kind].color, hit = new Set([e]), L0 = Math.hypot(e.x - from.x, e.y - from.y) || 1;

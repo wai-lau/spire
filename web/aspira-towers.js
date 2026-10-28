@@ -294,6 +294,7 @@ function rayHit(t, st, e, base, from) {
 }
 function fireRay(t, st, e) {
   const a = Math.atan2(e.y - t.y, e.x - t.x); solAim = st.pierce ? a : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's band axis - Diffraction's; a plain SOL has none (aspira-sol.js)
+  if (t.kind === "sol" && st.par) solParallel(t, st, a); // Breach's parallel beams (aspira-sol.js)
   if (t.kind === "sol" && st.dot) solRodFire(t, st, a); // the scorch ROD slides out along the shot (aspira-sol.js) - Scorch's, band mechanic or not (2026-10-28; it rode solAim); the prism itself persists and fades on its own (drawAims)
   if (!st.ricochet) return;
   // Ricochet / Shredder: hop to the nearest enemy not yet hit, at full damage

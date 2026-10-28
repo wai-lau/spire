@@ -70,7 +70,7 @@ const SPEC = {
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
     ...(st.skill ? [["Carry", st.pierce ? "×" + st.hop + " / enemy" : "—"]] : []) /* one beam always (2026-10-25): the pass-through and reflection falloff */, ...(st.skill ? [["Splits", st.pierce ? st.split + " / hit" : "—"], ["Prism", st.pierce || st.dot ? Math.round(2 * st.band) + " wide" : "—"]] : []) /* a plain SOL has no band - Diffraction's, and the rod sweeps it (2026-10-28) */,
     // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)
-    [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + dmgW(st.bleedArmor) + " armor a hit" : "—"], ...(st.bleedCrit ? [["Bleed crit", "+" + Math.round(st.bleedCrit * 100) + "%"]] : []),
+    [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + dmgW(st.bleedArmor) + " armor a hit" : "—"], ...(st.skill ? [["Parallel", st.par ? st.par + " × " + Math.round(SOL_PAR_K * 100) + "%td" : "—"]] : []) /* Breach's parallel beams (aspira-sol.js) */, ...(st.bleedCrit ? [["Bleed crit", "+" + Math.round(st.bleedCrit * 100) + "%"]] : []),
     ...(st.skill && st.dot ? [["Scorch tick", +(st.dot.k * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n], ["Scorch lasts", +st.dot.t.toFixed(1) + "s"] /* stacking unsaid: the default (owner, 2026-10-26) */] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]],
 };
 
