@@ -706,7 +706,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 
 | Stage (in order) | Scripts |
 |---|---|
-| data and state | `defs` (geometry, tables), `towerstats` (`towerStats`, prices), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows) |
+| data and state | `defs` (geometry, tables), `towerstats` (`towerStats`, prices), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows), `step` (the tick, spawns, enemy movement, game end) |
 | waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
 | towers | `towers` (ARC, SOL, moons), `move` (leash, tower marks), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (CRR), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
