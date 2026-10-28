@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # THE BATTERY IN SMALL CHUNKS (owner, 2026-10-27: "decompose the battery into smaller parts" - machine sims and edits run in
 # parallel, an edit makes a long sim stale, so every chunk is minutes-sized, streams as it lands, and is acted on before the next).
-# Every chunk runs on a PINNED snapshot of web/ (snap) and writes to $OUT (default: the session scratch dir). One pool job at a time.
+# Every chunk runs on a PINNED snapshot of web/ (snap) and writes to $OUT (default: ~/sim-out, survives a reboot). One pool job at a time.
 #   battery.sh snap                      snapshot web/ -> $OUT/web-<commit>; later chunks use it (ASPIRA_WEB)
 #   battery.sh duo                       1. the duo rule, 2 seeds (~30 s) - the gate: a fail stops the battery
 #   battery.sh late [points]             2. chapter-4 standing: every tower's row at 101-109 / 111-119 (~2 min)
@@ -15,7 +15,8 @@
 # never in duo (its rule names the Star) nor in boss.
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(cd "$HERE/../.." && pwd)
-OUT=${OUT:-${CLAUDE_SCRATCH:-/tmp/claude-1000/-home-wai-src-exec-fn-apps-spire/ecf98a56-9b79-44d6-8608-245de482fafe/scratchpad}}
+OUT=${OUT:-$HOME/sim-out} # durable: /tmp is wiped on a WSL reboot (2026-10-27 lost a battery's outputs); was one session's /tmp scratchpad
+mkdir -p "$OUT"
 KINDS=arc,frz,sol,acd,grv,car,ifr
 LOSERS=arc+grv+ifr,frz+acd+car,sol+acd+car,sol+grv+car,sol+grv+ifr,sol+car+ifr,grv+car+ifr
 snap() { local c; c=$(git -C "$ROOT" rev-parse --short HEAD); rm -rf "$OUT/web-$c"; mkdir -p "$OUT/web-$c"; cp -r "$ROOT/web/." "$OUT/web-$c/"; echo "$OUT/web-$c" > "$OUT/web-current"; echo "snapshot $OUT/web-$c"; }
