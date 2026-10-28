@@ -139,7 +139,7 @@ const SFX = {
   powerrelay: () => notes([330, 494], 0.09, { type: "square", dur: 0.12, vol: 0.12 }),
 };
 // minimum seconds between two plays of the same sound
-const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08, thud: 0.015 }; // (thud: the bar's pieces land 30 ms apart - the default 0.03 ate every other)
+const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08, thud: 0.015, slam: 0.015 }; // (thud: the bar's pieces land 30 ms apart - the default 0.03 ate every other)
 
 // returns whatever the sound returns (a stop() handle for long sounds), or null
 // Optional SAMPLES (owner, 2026-10-02: Brood War sounds) replace a synth
@@ -189,7 +189,7 @@ function sampleNorm(buf, start, end) {
 // Each TOWER's sound plays at most 3 copies at once (owner, 2026-10-02),
 // sample or synth alike: playing[name] counts live copies and a 4th is
 // skipped. A sample copy is also quieter by how many are already sounding.
-const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, car: 3, carshot: 3, ifr: 3, ifrblast: 3 }, playing = {};
+const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, car: 3, carshot: 3, ifr: 3, ifrblast: 3, slam: 3 /* the boss bar's pieces slamming home (BLASTCAN, owner 2026-10-27: "use the rules for sound overlap cap") */ }, playing = {};
 let curSound = null; // the synth sound being built, so envelope() can count it
 // LOUDNESS (owner, 2026-10-02): the bosses' warnings and voices and every
 // upgrade/build sound stand well above the towers' shots - about 10 dB

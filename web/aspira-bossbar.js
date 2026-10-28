@@ -231,6 +231,7 @@ const BAR_THUD_HZ = [30, 45], BAR_THUD_VOL = [0.16, 0.36]; // (owner, 2026-10-27
 function barThud(e, g) { // a piece slamming home: a thud, lower and louder the bigger the piece (owner, 2026-10-27: "play a thud sound, pitched to area of segment") - by log area between the bar's own smallest and biggest
   if (typeof sfx !== "function") return; const B = e.bar; if (!B.lnA) { const ls = B.pieces.map(q => Math.log(q.area ||= barArea(q))); B.lnA = [Math.min(...ls), Math.max(...ls)]; }
   const k = (Math.log(g.area ||= barArea(g)) - B.lnA[0]) / Math.max(1e-6, B.lnA[1] - B.lnA[0]); // 0 the smallest .. 1 the biggest
+  sfx("slam"); // the BLASTCAN sample on every slam (owner, 2026-10-27), capped like a tower's sound: 3 at once, each quieter by the copies sounding
   sfx("thud", BAR_THUD_HZ[1] + (BAR_THUD_HZ[0] - BAR_THUD_HZ[1]) * k, BAR_THUD_VOL[0] + (BAR_THUD_VOL[1] - BAR_THUD_VOL[0]) * k);
 }
 // ALL THE LANES' PIECES IN ONE SET OF RINGS (owner, 2026-10-27: "when grouping segments for multiple lanes, group them all together, each lane
