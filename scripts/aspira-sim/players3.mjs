@@ -19,9 +19,9 @@ export default async function task({ trio, seed, model, to }) {
   const p = makePlayer({ up: 0.5, maxTowers: 3, opening: trio, mix: Object.fromEntries(trio.map(k => [k, 1])), econ: m.econ, randomAxis: !!m.randomAxis, threat: 220,
     core: ["temporal", "relay"], useCore: true, rewind: m.rewind }, seed, to, 0.02, m.pos);
   p.runTo(to + 1); const r = p.result();
-  // LEAK RECORD (2026-10-28, the wave-84 diagnosis): each origin wave from 70 on - its types, lives lost, closest approach (u)
+  // LEAK RECORD (2026-10-28, the wave-84 diagnosis): each origin wave from 40 on - its types, lives lost, closest approach (u)
   const late = {};
-  for (const [n, w] of Object.entries(r.waveStats || {})) if (+n >= 70) late[n] = { t: Object.keys(w.types).filter(x => x !== "bonus").join("+") || "boss", lost: w.lost, near: Number.isFinite(w.near) ? Math.round(w.near) : null };
+  for (const [n, w] of Object.entries(r.waveStats || {})) if (+n >= 40) late[n] = { t: Object.keys(w.types).filter(x => x !== "bonus").join("+") || "boss", lost: w.lost, near: Number.isFinite(w.near) ? Math.round(w.near) : null };
   return { trio: trio.join("+"), seed, model, wave: r.wave, won: r.won, lives: r.lives, late, kill: r.won ? null : (late[r.wave] || {}).t || null };
 }
 if (isMainThread && process.argv[1].endsWith("players3.mjs")) {
