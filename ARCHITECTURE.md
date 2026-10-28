@@ -711,7 +711,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | towers | `towers` (ARC, SOL, moons, leash), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (CRR), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
-| draw (3D) | `warp`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
+| draw (3D) | `warp`, `warp-prism`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
 | UI and tail | `chooser`, `wavelist`, `wavecard`, `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave` |
 
 
