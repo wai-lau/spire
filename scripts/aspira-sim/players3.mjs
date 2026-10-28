@@ -19,7 +19,10 @@ export default async function task({ trio, seed, model, to }) {
   const p = makePlayer({ up: 0.5, maxTowers: 3, opening: trio, mix: Object.fromEntries(trio.map(k => [k, 1])), econ: m.econ, randomAxis: !!m.randomAxis, threat: 220,
     core: ["temporal", "relay"], useCore: true, rewind: m.rewind }, seed, to, 0.02, m.pos);
   p.runTo(to + 1); const r = p.result();
-  return { trio: trio.join("+"), seed, model, wave: r.wave, won: r.won, lives: r.lives };
+  // LEAK RECORD (2026-10-28, the wave-84 diagnosis): each origin wave from 70 on - its types, lives lost, closest approach (u)
+  const late = {};
+  for (const [n, w] of Object.entries(r.waveStats || {})) if (+n >= 70) late[n] = { t: Object.keys(w.types).filter(x => x !== "bonus").join("+") || "boss", lost: w.lost, near: Number.isFinite(w.near) ? Math.round(w.near) : null };
+  return { trio: trio.join("+"), seed, model, wave: r.wave, won: r.won, lives: r.lives, late, kill: r.won ? null : (late[r.wave] || {}).t || null };
 }
 if (isMainThread && process.argv[1].endsWith("players3.mjs")) {
   const K = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"], all = [];
@@ -31,5 +34,5 @@ if (isMainThread && process.argv[1].endsWith("players3.mjs")) {
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true, out: process.argv[2] || null });
   const won = res.filter(r => r.won).length, waves = res.map(r => r.wave).sort((a, b) => a - b);
   console.log(`${model}: ${won}/${res.length} won; wave reached median ${waves[waves.length >> 1]}, min ${waves[0]}, max ${waves[waves.length - 1]}`);
-  for (const r of res) console.log(r.trio.padEnd(12), "s" + r.seed, r.won ? "WON " : "lost", "w" + r.wave, "lives", r.lives);
+  for (const r of res) console.log(r.trio.padEnd(12), "s" + r.seed, r.won ? "WON " : "lost", "w" + r.wave, "lives", r.lives, r.kill ? "killed by " + r.kill : "");
 }
