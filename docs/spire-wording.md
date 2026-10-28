@@ -31,8 +31,10 @@ A tier that only moves a number changes no words - the stat row shows it (2026-1
 8. **Counts in words** where the sentence counts: "Three bolts", "refracts twice", "three times", "two jets" (`NUM_WORD`, `TIMES`).
 9. **The extreme gets its own phrase**, not a number: SOL Diffraction V "refracts four times within a cone without losing intensity"
    (not "losing 0%"); FRZ Permafrost V "Rapid pulses".
-10. **Live numbers**: armor and HP-sized numbers are the CURRENT wave's ("just put the actual current armor number"), shown in k/M units,
-    never past 9999 (2026-10-22).
+10. **Live numbers**: HP-sized numbers are the CURRENT wave's ("just put the actual current armor number"), shown in k/M units,
+    never past 9999 (2026-10-22). An armor strip reads as the **share of armor** it takes at the current wave - "Every hit strips 40%
+    of armor" - since armor cuts multiply down and never pass zero (armor rework, 2026-10-28); no "below zero", "past zero" or
+    negative-armor wording.
 11. **Tier 0 names no axis mechanic** - it is the bare tower (smoke-checked).
 12. **The owner's wording is verbatim** where given; the generator is bent to produce it, not the other way round.
 

@@ -286,7 +286,7 @@ check("later: the card rows read no zero mechanic - ARC Jumps 1 at tier 0 (it ch
 check("later: ACD's sentence says the jet, not Jets, when it sprays one", () => {
   const d = run(`describeTower("acd", { corrosion: 1, contagion: 1, flow: 0 })`);
   if (/Jets/.test(d)) return d;
-  if (!/The jet dissolves armor/.test(d) || !/The jet leaves/.test(d)) return "no singular jet: " + d;
+  if (!/The jet dissolves up to \d+% of armor/.test(d) || !/The jet leaves/.test(d)) return "no singular jet: " + d;
 });
 check("later: towerLevel counts only the tower's own axes (a stray key in a save adds nothing)", () => {
   const n = run(`towerLevel({ kind: "arc", skills: { conductivity: 2, void: 3, junk: 9 } })`);
