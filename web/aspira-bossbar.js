@@ -207,8 +207,9 @@ function bossClip() {
 // and slowly approaching like an armada of ships, then, look they are slamming into place" / "they should start off screen, slide to
 // armada position, and then when everything is in armada pos, slam one at a time"): three acts once the boss sky is FULL (bossInv.t0 +
 // BOSS_SKY_T).
-//   1. THE APPROACH, the first BAR_APPROACH s: every piece slides in along its own spoke from past the screen's farthest corner
-//      (barFlyFrom) to ONE ring, BAR_RING_PAD past the bar's outermost piece - pieces from every turn stacked there, overlapping - each
+//   1. THE APPROACH, the first BAR_APPROACH s: every piece slides in along its own spoke from just past the screen's edge (barEdge;
+//      waiting at barFlyFrom before) to ONE ring, BAR_RING_PAD past the bar's outermost piece, or short of it where that ring would be
+//      off-screen (barEdge again) - pieces from every turn stacked there, overlapping - each
 //      on its own schedule by hash (arriving between 0.6 and 1 of the act, over 0.5 to 1 of the time before that), easing to a stop.
 //   2. THE ARMADA: there it drifts in slowly, BAR_DRIFT u/s (+-BAR_DRIFT_JIT), until its moment.
 //   3. THE SLAM, ring by ring (owner, 2026-10-27: "group the pieces into rings - a ring has no overlapping segments along the spoke -
@@ -249,12 +250,27 @@ function barRings() {
 }
 const barFar = () => Math.max(...[[0, 0], [cv.width, 0], [0, cv.height], [cv.width, cv.height]].map(([px, py]) => Math.hypot((px - cam.ox) / cam.k - CX, (py - cam.oy) / cam.k - CY))); // u from the core to the screen's farthest corner
 const barFlyFrom = () => barFar() * 1.1 + 100; // u out along a spoke: past that corner
+// THE SCREEN'S EDGE, PIECE BY PIECE (owner, 2026-10-28: "I want all the pieces to fly in from offscreen into armada position, right now
+// they just pop up"): from barFlyFrom (~1350 u out) a piece crossed the screen's edge in a frame or two, and in portrait the outer pieces'
+// armada ring was itself off-screen - they first showed on the slam. So each piece starts just PAST the edge on its own spoke (out: the
+// least offset with no corner on screen) and holds its armada spot ON it (in: the most with every corner on screen, BAR_EDGE_IN px inside).
+// Scanned BAR_EDGE_DU u at a time, once per screen and camera (key)
+const BAR_EDGE_DU = 20, BAR_EDGE_IN = 12, BAR_EDGE_OUT = 24;
+function barEdge(g) {
+  const key = cv.width + "x" + cv.height + ":" + Math.round(cam.ox) + "," + Math.round(cam.oy) + ":" + cam.k.toFixed(3);
+  if (g.edge && g.edge.key === key) return g.edge;
+  const Q = g.Lp.concat(g.Rp), far = barFlyFrom(), seen = (o, pad) => { let n = 0; for (const q of Q) { const dx = q.x - CX, dy = q.y - CY, r = Math.hypot(dx, dy) || 1, k = (r + o) / r, P = warpProjectScratch(CX + dx * k, CY + dy * k);
+    if (P.s > 0 && P.x >= -pad && P.x <= cv.width + pad && P.y >= -pad && P.y <= cv.height + pad) n++; } return n; }; // corners on screen (pad: px beyond it; negative = inside)
+  let inO = null, outO = far;
+  for (let o = 0; o <= far; o += BAR_EDGE_DU) { if (seen(o, -BAR_EDGE_IN) === Q.length) inO = o; if (!seen(o, BAR_EDGE_OUT)) { outO = o; break; } }
+  return (g.edge = { key, inO, outO });
+}
 let barFlyRk = 0; // the share of its tilt the last barFlyOff piece still has (1 until its slam, 0 home) - read right after it
 function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, u (0: in place)
   barFlyRk = 0; const t = barInT(); if (t === Infinity) return 0; const far = barFlyFrom(); barFlyRk = 1; if (t < 0) return far;
-  const g = e.bar && e.bar.pieces[i]; if (!g) return (barFlyRk = 0); const arm = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(barR))) + BAR_RING_PAD - barR(g); // out of place: at the armada's ring, and off-screen
+  const g = e.bar && e.bar.pieces[i]; if (!g) return (barFlyRk = 0); const E = barEdge(g), ring = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(barR))) + BAR_RING_PAD - barR(g), arm = E.inO == null ? ring : Math.min(ring, E.inO), from = Math.max(E.outO, arm); // out of place: at the armada's ring, held on screen (barEdge) - flown in from just past the screen's edge
   const h = k => bossHash(e, i, k), arrive = BAR_APPROACH * (0.6 + 0.4 * h(8)), dur = arrive * (0.5 + 0.5 * h(9)), launch = arrive - dur; // act 1, its own
-  if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return arm + (far - arm) * (1 - ease); }
+  if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return arm + (from - arm) * (1 - ease); }
   if (!e.bar.rings || e.bar.rings.key !== barLeadKey) barRings(); const R = e.bar.rings || { ring: [], seq: [], n: 1, N: 1 }, N = R.N, pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)), land = BAR_APPROACH + BAR_FLY_LEAD + R.seq[i] * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, N - 1) + R.ring[i] * pause, slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam; // act 3: at its ring's turn
   const drift = tt => Math.max(0, arm - v * (tt - arrive)); // act 2: from where it stopped, in slowly (never past its place)
   if (t >= land) { if (!g.home) { g.home = true; barThud(e, g); } return (barFlyRk = 0); } if (t < t0) return drift(t); // (home: its thud once, the frame it lands - bar and track both ask)
