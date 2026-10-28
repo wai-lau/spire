@@ -26,6 +26,11 @@ function waveStats(n, w) {
   if (e.aug) out.push(["late trait", "carries some " + e.aug]); // the HYBRID late swarm / fast (aspira-game.js)
   return out;
 }
+// THE MECHANIC, 1-2 lines at the top (owner, 2026-10-28: "add 1-2 lines at the top explaining the mechanic (not for bosses, the haiku
+// does that)"): what the type does, then the armor curve every type now carries (armorTake, aspira-acid.js)
+const WC_TYPE_NOTE = { swarm: "Many weak enemies at once.", fast: "Few enemies, very quick.", shield: "Each shield charge soaks one whole hit.", armor: "Heavy armor, slow." };
+const WC_ARMOR_NOTE = "Armor: a hit as big as the armor loses half; smaller hits lose more, bigger hits less.";
+const waveNote = w => (w.type === "bonus" || !WC_TYPE_NOTE[w.type] ? "" : "<p class=\"asp-wavecard-note\">" + WC_TYPE_NOTE[w.type] + " " + WC_ARMOR_NOTE + "</p>");
 function openWaveCard(n) {
   const w = WAVE_PLANS.get(n);
   if (!w) return;
@@ -33,7 +38,7 @@ function openWaveCard(n) {
   const card = document.createElement("div");
   card.id = "asp-wavecard"; card.className = "asp-deck asp-log asp-wavecard";
   const name = w.type === "bonus" ? arcanaOf(n).name : waveName(w.type, n);
-  card.innerHTML = "<h2>wave " + n + " · " + name + "</h2><table class=\"asp-wavecard-t\">" +
+  card.innerHTML = "<h2>wave " + n + " · " + name + "</h2>" + waveNote(w) + "<table class=\"asp-wavecard-t\">" +
     waveStats(n, w).map(([k, x]) => "<tr><td>" + k + "</td><td>" + x + "</td></tr>").join("") + "</table>";
   button(card, "asp-primary", "close", closeWaveCard);
   document.querySelector(".asp-board").appendChild(card);
