@@ -67,7 +67,7 @@ function solRodStep(t, st, dt) {
 // SOL_PAR_GAP u apart or closer - the whole spread inside the tower's width (solParHalfW) - each straight on along the shot's aim from
 // the tower to the play box's edge, through every enemy whose body it crosses, at SOL_PAR_K of the shot; each hit breaches (bleed)
 const SOL_PAR_N = [0, 1, 1, 2, 2, 4], SOL_PAR_GAP = 12;
-let SOL_PAR_K = 0.5; // (let: the sims sweep it)
+let SOL_PAR_K = 1; // (let: the sims sweep it) - full shot a parallel beam (2026-10-28 SOL sweep C; was 0.5)
 const solParHalfW = () => CELL_S * TOWER_K * TOWER_DRAW_K;
 function solParallel(t, st, a) {
   const n = st.par || 0; if (!n) return;
