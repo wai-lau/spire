@@ -125,7 +125,7 @@ const ARMOR_ALL = { swarm: 0.1, fast: 0.1, shield: 0.15 };
 // SHREDDING MULTIPLIES (owner, 2026-10-28: "armor reduction applies a multiplier to the armor ... no need for it to go negative" /
 // "I expect most shedding to be something like 0.9x, especially if many hits are expected"): a strip of `amt` (the old flat amount, in
 // armor) cuts amt / the wave's armor reference of the armor, x SHRED_K, at most SHRED_MAX a strip - never below 0. Returns what it cut
-const SHRED_K = 1, SHRED_MAX = 0.5;
+let SHRED_K = 1, SHRED_MAX = 0.9; // 0.5 -> 0.9 (owner, 2026-10-28: "Raise SHRED_MAX" / "armor shred should allow approach to 0" - a strip takes at most 90% of what is left, repeated strips multiply on toward 0; swept 0.5/0.75/0.9: the armor columns barely move, armor already near 0 after a few strips) (let: the sims sweep them)
 function shredArmor(e, t, amt) {
   const a = e.armor || 0; if (a <= 0 || !(amt > 0)) return 0;
   const cut = a * Math.min(SHRED_MAX, SHRED_K * amt / armorRefOf(e.wave || 1)); e.armor = a - cut; stripBy(e, t, cut); return cut;
