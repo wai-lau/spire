@@ -17,6 +17,19 @@ function boot(store = {}, view = { w: 390, h: 844 }) { // portrait by default: t
   return { ctx, dom, run: src => vm.runInContext(src, ctx) };
 }
 
+// the IFR checks' helpers (smoke.mjs and ifr.mjs each define them in their own page env, 2026-10-28)
+function ifrHelpers(run) {
+// an enemy held still on lane 0 at about `dist` u from tower t (its lane point nearest that distance); shield / hp settable after
+// the IFR checks below test the fire, the fan and the flares: since the tier redesign (2026-10-24) a tier 0 IFR has none of them, so
+// each buys tier I of every axis it left at 0 (ifrAll, after its own upgrades)
+  run(`function ifrAll(t, axes = ["meteor", "hellfire", "firaga"]) { for (const ax of axes) if (!skillOf(t, ax)) upgradeTower(t, ax, true); return t; }`);
+  run(`function ifrNear(type, t, dist) {
+  spawnEnemy(type, 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
+  for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
+  const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e6; e.armor = 0; e.shield = 0; return e;
+}`);
+}
+
 const results = [];
 function check(name, fn) {
   try { const why = fn(); results.push([name, why ? "FAIL: " + why : "ok"]); } catch (e) { results.push([name, "FAIL: " + (e.stack || e).toString().split("\n").slice(0, 3).join(" | ")]); }
@@ -46,4 +59,4 @@ function report() {
   console.log(bad.length ? `\nspire smoke: ${bad.length} of ${results.length} FAILED` : `\nspire smoke: all ${results.length} passed`);
   process.exit(bad.length ? 1 : 0);
 }
-export { ROOT, TEMPLATE, SCRIPTS, boot, results, check, drawn, calls, frames, report };
+export { ROOT, TEMPLATE, SCRIPTS, boot, results, check, drawn, calls, frames, report, ifrHelpers };
