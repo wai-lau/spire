@@ -1,8 +1,10 @@
 // THE THREE PLAYERS (owner, 2026-10-28, the difficulty targets): "all the winnable trios should be able to beat the game with rewinds /
 // random(spenders + bad build) human players should lose around 60 / good(smartsavers + good build) human players should be able to beat
-// the game with every winnable trio". One MODEL a run (a chunk), every trio, SEEDS seeds each, to the end of the game:
+// the game with every winnable trio". WINNABLE (owner, 2026-10-28): the trio's three towers together check every type in VS_MARKS.
+// One MODEL a run (a chunk), every trio, SEEDS seeds each, to the end of the game:
 //   perfect  smart saver WITH rewind (hindsight), the threat-adaptive axis picks, every tower repositioned every 0.5 s     target: wins
-//   good     smart saver, NO rewind, the same adaptive axis picks, human hands (POS_ONE: one tower moved every 0.5 s)     target: wins
+//   good     smart saver WITH rewind ("as if the human went to replay the game with the same game", owner 2026-10-28), the same
+//            adaptive axis picks, human hands (POS_ONE: one tower moved every 0.5 s) - differs from perfect in its hands only  target: wins
 //   random   spends as it goes (econ "spend"), a RANDOM open axis but never the right pick (bad build), NO rewind, human hands   target: dies ~60
 // usage: MODEL=perfect|good|random [SEEDS=1] [TRIOS=arc+frz+sol,...] [TO=120] node players3.mjs [out.jsonl]
 import { isMainThread } from "node:worker_threads";
@@ -14,7 +16,7 @@ process.env.BOSS_SKIP = "1";
 const HUMAN_HANDS = "POS_ONE = true; POS_EVERY = 0.5;"; // owner, 2026-10-28: each tower checked by a human every 1.5 s with three
 const MODELS = {
   perfect: { econ: "smart", rewind: true, pos: "POS_EVERY = 0.5;" },
-  good: { econ: "smart", rewind: false, pos: HUMAN_HANDS },
+  good: { econ: "smart", rewind: true, pos: HUMAN_HANDS },
   random: { econ: "spend", rewind: false, pos: HUMAN_HANDS, randomAxis: true },
 };
 export default async function task({ trio, seed, model, to }) {
