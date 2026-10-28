@@ -676,7 +676,10 @@ Every 3 min of unpaused play a session posts a frame-time and audio summary (buc
 worst frames, sim / draw / 3D / GL splits, GPU, quality, canvas pixels, text-stamp memory,
 version + build). POST is guest tier and rate-limited; GET is owner-only. Files in
 `data/spire-perflog/` (**survives deploys**, capped). Failures are swallowed: it must never
-be in the game's way.
+be in the game's way. Read a phone's cost from the GL split, not the frame average: `gpuSplit.why` names
+what fell off the GPU batch (each one re-uploads the moving layer), `sync` compares hitches after an upload
+frame with the rest, and `boardUp.byWhy` splits the board upload by reason (`bmpWait` is off the frame,
+the others block in it).
 
 ### 9.3 Saves
 

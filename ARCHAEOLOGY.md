@@ -881,12 +881,18 @@ fast -2, shield +1, armor -1; focus N=1 @8 pts, 81-89 / 101-109: Meteor VI 4/1/3
 
 | Visual | Value |
 |---|---|
-| tracers | star 320, fast 120, shield/armor 80, swarm none; taper along the lane's curve |
+| tracers | star 320, fast 120, shield/armor 80, swarm none; taper along the lane's curve; a point every 10 u (was 6, 2026-10-28) |
 | beams | last 2x their asked life at 2x brightness; width log of the hit (`BEAM_MIN` 0.4 + 1.6/decade, max 10) |
 | core hit | the screen shakes 14 px over 0.35 s (re-armed, not stacked) with a shutdown sound |
 | Temporal Drive rings | octagons on the floor, no `shadowBlur` |
 
 Audio: 24 voices; shots 0.6, bosses / upgrades / builds 2, kills 0.4; volume 0-2.
+
+iPhone slow logs (2026-10-28, 15 sessions of 6.15.0-6.15.4, the baseline before the 6.15.41-6.15.46 perf work): frames ~17 ms
+(vsync-bound), GL 4.5 ms median of which texture binding 3.1 (up to 9.2), entity drawing ~1.1 ms; 20-45 Mpx/s of canvas uploads,
+nearly all the moving layer; a frame after an upload went over 40 ms 1.30% of the time (764 / 58916), 0.49% without (379 / 77828) -
+2.6x. The fallbacks behind them: GRV's nova glow in another colour (`stroke:shadow`, ~35 a second with GRV out) and the boss sky's
+triangle clip, both on the batch since 6.15.45 / 6.15.46; GRV's overlapping-aura cap (`drawImage`, ~5 a second) is still the canvas's.
 
 ### 12.13 Meta
 
