@@ -11,10 +11,12 @@
 // EVERY enemy trails one now, fast the longest after the star (owner, 2026-10-09: "give every enemy tracers,
 // fast longer ones"; fast was 48, the rest had none); a swarm's is short - there are hundreds
 const TRAIL = { bonus: 320, fast: 120, shield: 80, armor: 80 }, // swarm: none (owner: "remove tracers on swarm"); all but fast doubled (owner, 2026-10-09: "double length of all tracers except fast"; were 160 / 40 / 40)
-  TRAIL_STEP = 6, TRAIL_ALPHA = 0.55;
+  TRAIL_STEP = 10, TRAIL_ALPHA = 0.55; // STEP 6 -> 10 (perf, 2026-10-28: 40% fewer path points and none of the look - a 10 u chord bows 0.06 u off a lane turning at r 200, 0.25 u at r 50; 10 divides every TRAIL, so each tail still ends at its full length)
+// (perf: the tail's points live in these, reused every enemy every frame - three new objects a point were the frame's biggest churn)
+const TRAIL_P = [], TRAIL_L = [], TRAIL_R = [], trailPt = (A, i) => A[i] || (A[i] = { x: 0, y: 0 });
 const BREACH_SPOKES = 24; // the most Breach spokes drawn on one enemy
 function drawStarTrail(e, size) {
-  const tail = TRAIL[e.type], pts = [];
+  const tail = TRAIL[e.type], pts = TRAIL_P; let np = 0;
   // CURVED: the lane behind it (owner, 2026-10-09: "they should be curved" - a straight tail along the heading was
   // tried and dropped), shifted by how far it wanders off the lane (a swarmer's jitter) so the tail meets the body
   const here = pathAt(e.pi, e.s, e.ang || 0), ox = e.x - here.x, oy = e.y - here.y;
@@ -25,22 +27,22 @@ function drawStarTrail(e, size) {
   // FOLLOWS THE BODY OFF ITS SPOT (owner, 2026-10-22: "tracers should follow enemies when moved by gravity"): a formation member's tail is laid
   // from its formation spot, so a GRV pull (or any shove) left it behind - the whole tail shifts by how far the body is off that spot
   let fx = 0, fy = 0;
-  if (e.form) { const q = { x: 0, y: 0 }; formOffset(e, q, e.s); fx = e.x - q.x; fy = e.y - q.y; if (!Number.isFinite(fx) || !Number.isFinite(fy)) fx = fy = 0; }
+  if (e.form) { const q = trailPt(pts, 0); formOffset(e, q, e.s); fx = e.x - q.x; fy = e.y - q.y; if (!Number.isFinite(fx) || !Number.isFinite(fy)) fx = fy = 0; }
   for (let d = 0; d <= tail; d += TRAIL_STEP) {
     const sd = Math.max(0, e.s - d);
     // a FORMATION's member (aspira-formations.js): each point laid across the lane AT that point, with the roll there -
     // a fixed shift taken at the head drifted off the body wherever the lane curves or the V rolls (owner, 2026-10-11)
-    if (e.form) { const q = { x: 0, y: 0 }; formOffset(e, q, sd); q.x += fx; q.y += fy; pts.push(q); continue; } // (formOffset sets q whole: no pathAt first - perf) // + fx, fy: off its formation spot
+    if (e.form) { const q = trailPt(pts, np++); formOffset(e, q, sd); q.x += fx; q.y += fy; continue; } // (formOffset sets q whole: no pathAt first - perf) // + fx, fy: off its formation spot
     while (j > 0 && lp[j].s > sd) j--;
     const a = lp[j], b = lp[Math.min(lp.length - 1, j + 1)], f = sd >= b.s ? 1 : Math.max(0, (sd - a.s) / (b.s - a.s || 1));
     const px = a.x + (b.x - a.x) * f - CX, py = a.y + (b.y - a.y) * f - CY;
-    pts.push({ x: CX + px * ca - py * sa + ox, y: CY + px * sa + py * ca + oy });
+    const q = trailPt(pts, np++); q.x = CX + px * ca - py * sa + ox; q.y = CY + px * sa + py * ca + oy;
   }
-  const n = pts.length - 1, L = [], R = [];
+  const n = np - 1, L = TRAIL_L, R = TRAIL_R;
   for (let i = 0; i <= n; i++) {
     const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n, i + 1)], len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
     const w = size * 0.55 * (1 - i / n), nx = -(b.y - a.y) / len * w, ny = (b.x - a.x) / len * w;
-    L.push({ x: pts[i].x + nx, y: pts[i].y + ny }); R.push({ x: pts[i].x - nx, y: pts[i].y - ny });
+    const l = trailPt(L, i), r = trailPt(R, i); l.x = pts[i].x + nx; l.y = pts[i].y + ny; r.x = pts[i].x - nx; r.y = pts[i].y - ny;
   }
   // every tail FADES toward its end (owner, 2026-10-09: "make all tracers lose opacity towards tail"): the star's
   // by a radial gradient from it, the rest by a straight one from the body to the tail's end (the fast ones were a
@@ -52,8 +54,8 @@ function drawStarTrail(e, size) {
   const g = star ? ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, tail) : ctx.createLinearGradient(...ends);
   g.addColorStop(0, col); g.addColorStop(1, "transparent");
   ctx.beginPath(); ctx.moveTo(L[0].x, L[0].y);
-  for (const p of L) ctx.lineTo(p.x, p.y);
-  for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i].x, R[i].y);
+  for (let i = 0; i <= n; i++) ctx.lineTo(L[i].x, L[i].y);
+  for (let i = n; i >= 0; i--) ctx.lineTo(R[i].x, R[i].y);
   ctx.closePath();
   ctx.fillStyle = g; ctx.globalAlpha = TRAIL_ALPHA * enemyVis(e);
   ctx.fill(); // (no shadowBlur on a boss's tail: a blur the size of the boss over its whole trail, six Devils at once, was
