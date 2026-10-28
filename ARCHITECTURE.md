@@ -82,7 +82,7 @@ lost core segment flashes the boss red.
 | bounty | `bountyBase(w) x type bounty x BOUNTY_MUL`, `w` the 10-cycle equivalent wave (§5.2): linear to eq 30, a gentler slope after, x1.1 early; fractional, shown floored; a kill's credits **fly home** as a gold dot and bank on landing |
 | prices | a tower `cost` 40, **x1.5 per tower standing** (40, 60, 90), shown in each free slot; upgrades are multiples of the build price (§4.2); **sell** returns 95%, on a second tap |
 | leaks | an enemy costs its `leak`: swarm 2, boss 10 (= game over, the boss named in the title), others 1 |
-| lives back | a boss drop: +6 lives OR +1% interest (half and half by `fixedRand`); **score** blocks of +6 at 50,000 then every 100,000, earned any time but **paid when the wave's last boss falls** (`G.lifeOwed`: "all rewards should come after boss levels") |
+| lives back | a boss drop: +3 lives OR +0.5% interest (half and half by `fixedRand`); **score** blocks of +6 at 50,000 then every 100,000, earned any time but **paid when the wave's last boss falls** (`G.lifeOwed`: "all rewards should come after boss levels") |
 | score | `round(bounty x 10)` a kill, +1000 a life left on a win; never shown (BEST = the furthest wave) |
 | speeds | 1 / 1.5 / 2 / 3x (keys 1-4), 10x for the owner (5); the sim steps 0.02 s; Temporal Drive always runs at 1x |
 
@@ -495,7 +495,7 @@ a little shield, armor 0, a size a step bigger than the last. HP = the wave's bo
 **Fleets**: ONE plain wave's worth (`FLEET_MUL`) of escorts at plain HP and bounty, in
 formation round the boss at its pace; **20% of every escort's HP moves onto its boss**
 (`FLEET_TO_BOSS`; not Temperance); the fleet enters one unit at a time (`G.fleetQ`) and the
-sky holds until all of it dies. **Rewards**: +6 lives or +1% interest, the pending score
+sky holds until all of it dies. **Rewards**: +3 lives or +0.5% interest, the pending score
 lives, the core's powers at 24 / 48.
 
 ### 5.5 The boss sky

@@ -306,11 +306,12 @@ function kill(e, t) {
 
 // LIVES come in multiples of LIFE_STEP 6 - a ring's first side count (owner, 2026-10-04)
 const LIFE_STEP = 6;
-// a boss drops +6 LIVES or +0.5% INTEREST, fixed per boss wave; ONCE a boss wave (2026-10-15: two-lane bosses paid twice)
+// a boss drops +BOSS_LIFE_DROP LIVES or +0.5% INTEREST, fixed per boss wave; ONCE a boss wave (2026-10-15: two-lane bosses paid twice)
+const BOSS_LIFE_DROP = 3; // owner, 2026-10-28: "cut lives dropped to 3" (was LIFE_STEP 6; the score blocks keep 6)
 function bonusDrop(e) {
   if ((G.bossPaid ||= {})[e.n]) return;
   G.bossPaid[e.n] = true;
-  if (fixedRand(e.n, 4) < 0.5) { G.lives += LIFE_STEP; float(e.x, e.y - 18, "+" + LIFE_STEP + " lives", "cyan"); } // +6 (owner, 2026-10-11: "reduce life rewards to 6"; was +12)
+  if (fixedRand(e.n, 4) < 0.5) { G.lives += BOSS_LIFE_DROP; float(e.x, e.y - 18, "+" + BOSS_LIFE_DROP + " lives", "cyan"); } // +3 (owner, 2026-10-28; +6 from 2026-10-11, +12 before)
   else { G.interest += 0.005; float(e.x, e.y - 18, "+0.5% interest", "cyan"); } // owner, 2026-10-26: "Reduce interest / To 0.5% drops" (players banked 2-4M by Death); was +1%, +5% before that
 }
 
