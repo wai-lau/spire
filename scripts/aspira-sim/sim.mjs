@@ -409,7 +409,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
 // life is played again from that snapshot with 1, 2, 3... upgrades bought before it starts - "allowed to go back to a snapshot and
 // spend money if the wave it held back on leaked". strategy.rewind false turns the replay off
 const DEEPER_BACK = [2, 4, 8, 16, 32], RELOCATE_TRIES = 6, ALT_AXES = 2; // cell shifts / alternative-axis rotations the smart saver tries after the purchase ladder fails // cell shifts the smart saver tries after the purchase ladder fails
-const SMART_INTEREST = 4, HOARD_X = 4; // HOARD_X: a hoarder's bank over the smart saver's // game seconds the replayed wave spends freely
+const SMART_INTEREST = Number(process.env.SMART_INTEREST) || 4, HOARD_X = 4; // (env SMART_INTEREST: the saver-hoarding check, 2026-10-28) // HOARD_X: a hoarder's bank over the smart saver's // game seconds the replayed wave spends freely
 // one wave of the smart saver: from a snapshot, played saving; on a lost life, again with 1, 2, 3... purchases made BEFORE it
 // (owner, 2026-10-12: "if leak, rewind and buy 1 upgrade before wave starts; if still leak, rewind and buy 2") - nothing
 // bought during it; the first try that keeps every life stands, or the one that could afford no more
