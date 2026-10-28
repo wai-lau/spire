@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { makeDom } from "./dom.mjs";
 
@@ -34,6 +35,15 @@ const results = [];
 function check(name, fn) {
   try { const why = fn(); results.push([name, why ? "FAIL: " + why : "ok"]); } catch (e) { results.push([name, "FAIL: " + (e.stack || e).toString().split("\n").slice(0, 3).join(" | ")]); }
 }
+// A PERF CHECK'S TIME on a busy box (2026-10-28: two false failures in a day under a balance pool, each passing alone): the fastest of n
+// runs of src on the HOST clock; still over the limit while the 1-min load is above the core count, it waits 2 s and measures once more.
+// note: the load, for the failure line
+function perfMin(run, src, limit, n = 30) {
+  const one = () => { let ms = Infinity; for (let i = 0; i < n; i++) { const t0 = performance.now(); run(src); ms = Math.min(ms, performance.now() - t0); } return ms; };
+  let ms = one(), again = false; const load = os.loadavg()[0], cores = os.cpus().length;
+  if (ms >= limit && load > cores) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000); ms = Math.min(ms, one()); again = true; }
+  return { ms, note: " (load " + load.toFixed(1) + " on " + cores + " cores" + (again ? ", measured again" : "") + ")" };
+}
 // draw calls on EVERY canvas during fn (3D: the board texture, the moving layer, #asp-ent)
 function drawn(env, fn) {
   for (const r of env.dom.recs) { r.n = 0; r.ops = {}; }
@@ -59,4 +69,4 @@ function report() {
   console.log(bad.length ? `\nspire smoke: ${bad.length} of ${results.length} FAILED` : `\nspire smoke: all ${results.length} passed`);
   process.exit(bad.length ? 1 : 0);
 }
-export { ROOT, TEMPLATE, SCRIPTS, boot, results, check, drawn, calls, frames, report, ifrHelpers };
+export { ROOT, TEMPLATE, SCRIPTS, boot, results, check, drawn, calls, frames, report, ifrHelpers, perfMin };

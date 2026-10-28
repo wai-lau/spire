@@ -1,7 +1,7 @@
 // /spire IFR CHECKS (split from smoke.mjs at 935 lines, 2026-10-28; no check changed): the meteor, its axes, Hellfire and the
 // flares, and their look. Registered into the smoke harness; smoke.mjs imports this file before it reports. Its own page env.
 import fs from "node:fs";
-import { boot, check, drawn, calls, frames, ifrHelpers } from "./harness.mjs";
+import { boot, check, drawn, calls, frames, ifrHelpers, perfMin } from "./harness.mjs";
 
 const env = boot();
 const { run } = env;
@@ -344,11 +344,10 @@ check("IFR: no cap on live flares (owner, 2026-10-20: \"actually no cap\"); a fr
     for (let i = 0; i < 700; i++) ifrFlare(t, st, CX - 200 + (i % 40) * 10, CY - 150 + Math.floor(i / 40) * 15, ifrHfS(), false, true);
     return t.ifrFlares.length; })()`);
   run("{ const t = G.towers[0], st = towerStats(t); }"); const n2 = run("{ const t = G.towers[0]; t.ifrFlares.length = 200; t.ifrFlares.length }");
-  let ms = Infinity;
-  for (let i = 0; i < 10; i++) { const t0 = performance.now(); run("{ const t = G.towers[0], st = towerStats(t); for (const f of t.ifrFlares) f.left = 1; stepIfrFlares(t, st, 1 / 60); }"); ms = Math.min(ms, performance.now() - t0); }
+  const { ms, note } = perfMin(run, "{ const t = G.towers[0], st = towerStats(t); for (const f of t.ifrFlares) f.left = 1; stepIfrFlares(t, st, 1 / 60); }", 12); // (the fastest of 30, again if the box is busy - harness.mjs)
   console.log("  200 fire flares, a frame: " + ms.toFixed(1) + " ms");
   if (n !== 700) return "a tower kept " + n + " live flares of 700 lit (expected all: no cap)";
-  return ms < 12 ? "" : "a frame of 200 fire flares over 200 enemies took " + ms.toFixed(1) + " ms";
+  return ms < 12 ? "" : "a frame of 200 fire flares over 200 enemies took " + ms.toFixed(1) + " ms" + note;
 });
 check("IFR: 200 enemies and 40 Flare IV flares tick under 16 ms", () => {
   run(`G = newGame(); G.money = 1e9; ui.build = "ifr";
@@ -357,9 +356,9 @@ check("IFR: 200 enemies and 40 Flare IV flares tick under 16 ms", () => {
       for (let i = 0; i < 200; i++) { spawnEnemy("swarm", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.s = entryS(0) + i * 3; const p = pathAt(0, e.s, 0); e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e6; } egridAt = NaN;
       for (let i = 0; i < 40; i++) t.ifrFlares.push({ x: CX - 300 + i * 15, y: CY - 200 + i * 10, L: 140, W: 24, life: 10, left: 10, tick: 0, edges: true }); }`);
   run("{ const t = G.towers[0], st = towerStats(t); for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); }"); /* warm the JIT first, as a running game is */
-  let ms = Infinity; /* the FASTEST of 10 single ticks, on the HOST clock (the vm's performance.now is dom.mjs's fake frame clock): a balance run saturating every core doubled the mean (2026-10-19), the minimum is what the code costs */
-  for (let i = 0; i < 10; i++) { const t0 = performance.now(); run("{ const t = G.towers[0], st = towerStats(t); stepIfrFlares(t, st, st.tickS); }"); ms = Math.min(ms, performance.now() - t0); }
+  /* the FASTEST of 30 single ticks, on the HOST clock (the vm's performance.now is dom.mjs's fake frame clock): a balance run saturating every core doubled the mean (2026-10-19), the minimum is what the code costs - and measured again after 2 s on a busy box (perfMin, harness.mjs) */
+  const { ms, note } = perfMin(run, "{ const t = G.towers[0], st = towerStats(t); for (const f of t.ifrFlares) f.left = 10; stepIfrFlares(t, st, st.tickS); }", 16); // (each tick a full one: the flares would burn out ~22 ticks in and the fastest read 0)
   console.log("  hellfire tick " + ms.toFixed(1) + " ms");
   if (!run("G.enemies.some(e => e.hp < 1e6)")) return "Hellfire ticks hit nothing";
-  return ms < 16 /* was 8 (owner, 2026-10-20): the droplet now measures 9-18 ms on code that passed - box drift, not a regression; 16 still catches a 2x */ ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms";
+  return ms < 16 /* was 8 (owner, 2026-10-20): the droplet now measures 9-18 ms on code that passed - box drift, not a regression; 16 still catches a 2x */ ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms" + note;
 });
