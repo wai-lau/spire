@@ -172,6 +172,7 @@ const barTilt = g => { if (g.tilt != null) return g.tilt; const a = g.Lp[g.Lp.le
   const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2, p = I[0], q = I[I.length - 1], d = Math.atan2(cy - CY, cx - CX) + Math.PI / 2 - Math.atan2(q.y - p.y, q.x - p.x);
   g.mid = { x: cx, y: cy }; return (g.tilt = Math.atan(Math.tan(d))); }; // (atan(tan): the turn folded into +-90 degrees - either way along the tangent)
 function barPiece(g, bar, hp, keepCore, fill, line, off = 0, rk = 0) { // the piece's part on keepCore's side of the HP boundary at hp (hp null: the whole piece); off: u out along its spoke (the fly-in); rk: the share of its tilt (barTilt)
+  if (off === Infinity) return; // (barFlyOff: not launched yet)
   let Lp = g.Lp, Rp = g.Rp; const ta = rk ? barTilt(g) * rk : 0, tc = Math.cos(ta), ts = Math.sin(ta), M = g.mid;
   const rot = ta ? q => ({ x: M.x + (q.x - M.x) * tc - (q.y - M.y) * ts, y: M.y + (q.x - M.x) * ts + (q.y - M.y) * tc }) : q => q;
   const sh = off || ta ? q0 => { const q = rot(q0), dx = q.x - CX, dy = q.y - CY, r = Math.hypot(dx, dy) || 1, k = (r + off) / r; return { x: CX + dx * k, y: CY + dy * k }; } : q => q;
@@ -266,10 +267,11 @@ function barEdge(g) {
   return (g.edge = { key, inO, outO });
 }
 let barFlyRk = 0; // the share of its tilt the last barFlyOff piece still has (1 until its slam, 0 home) - read right after it
-function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, u (0: in place)
-  barFlyRk = 0; const t = barInT(); if (t === Infinity) return 0; const far = barFlyFrom(); barFlyRk = 1; if (t < 0) return far;
+function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, u (0: in place; Infinity: not drawn yet)
+  barFlyRk = 0; const t = barInT(); if (t === Infinity) return 0; barFlyRk = 1; if (t < 0) return Infinity; // WAITING IS HIDDEN (owner's "start off screen", 2026-10-28: at barFlyFrom a piece on a spoke toward the horizon still showed, in portrait) - until its launch
   const g = e.bar && e.bar.pieces[i]; if (!g) return (barFlyRk = 0); const E = barEdge(g), ring = (e.bar.rMax ||= Math.max(...e.bar.pieces.map(barR))) + BAR_RING_PAD - barR(g), arm = E.inO == null ? ring : Math.min(ring, E.inO), from = Math.max(E.outO, arm); // out of place: at the armada's ring, held on screen (barEdge) - flown in from just past the screen's edge
   const h = k => bossHash(e, i, k), arrive = BAR_APPROACH * (0.6 + 0.4 * h(8)), dur = arrive * (0.5 + 0.5 * h(9)), launch = arrive - dur; // act 1, its own
+  if (t < launch) return Infinity;
   if (t < arrive) { const u = Math.max(0, Math.min(1, (t - launch) / dur)), ease = 1 - (1 - u) * (1 - u) * (1 - u); return arm + (from - arm) * (1 - ease); }
   if (!e.bar.rings || e.bar.rings.key !== barLeadKey) barRings(); const R = e.bar.rings || { ring: [], seq: [], n: 1, N: 1 }, N = R.N, pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)), land = BAR_APPROACH + BAR_FLY_LEAD + R.seq[i] * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, N - 1) + R.ring[i] * pause, slam = BAR_SLAM * (1 + BAR_SLAM_JIT * (2 * h(6) - 1)), v = BAR_DRIFT * (1 + BAR_DRIFT_JIT * (2 * h(7) - 1)), t0 = land - slam; // act 3: at its ring's turn
   const drift = tt => Math.max(0, arm - v * (tt - arrive)); // act 2: from where it stopped, in slowly (never past its place)
