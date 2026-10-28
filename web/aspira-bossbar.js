@@ -225,7 +225,18 @@ function bossClip() {
 const BAR_APPROACH = 1.6, BAR_FLY_LEAD = 0.4, BAR_FLY_SPAN = 2.5, BAR_RING_PAUSE = 0, BAR_SLAM = 0.35, BAR_SLAM_JIT = 0.4, BAR_RING_PAD = 40, BAR_DRIFT = 30, BAR_DRIFT_JIT = 0.5; // BAR_RING_PAD: the ring sits this far past the bar's outermost piece - on screen wherever the outer turn is
 const BAR_LABEL_FADE = 0.6; // s: the numbers' fade-in, from the last slam
 const bossBarInT = () => BAR_APPROACH + BAR_FLY_LEAD + BAR_FLY_SPAN; // s after the sky is full until the bar is in
-const barInT = () => (typeof bossInv === "undefined" || bossInv.phase !== "in") ? Infinity : performance.now() / 1000 - (bossInv.t0 + BOSS_SKY_T); // s since the boss sky filled (Infinity: no fly-in on - every piece home); BOSS_SKY_T: the spokes, then the triangle - aspira-bosses.js
+// THE FLY-IN CLOCK STARTS WITH THE BOSS (2026-10-28: the Lovers and the Devil spawn seconds after the sky fills - timed from the sky, their
+// bars were already home on the first frame and the boss never waited, barHold): s since the sky filled AND a boss body stood on the
+// board, the later of the two; a small negative while the sky still fills or no boss has spawned (every piece waiting, hidden)
+let barSkyT0 = null, barT0 = null;
+const barInT = () => {
+  if (typeof bossInv === "undefined" || bossInv.phase !== "in") return Infinity; // (no fly-in on - every piece home)
+  if (barSkyT0 !== bossInv.t0) { barSkyT0 = bossInv.t0; barT0 = null; } // a new boss sky: a new clock
+  const now = performance.now() / 1000, full = bossInv.t0 + BOSS_SKY_T; // BOSS_SKY_T: the spokes, then the triangle - aspira-bosses.js
+  if (now < full) return now - full;
+  if (barT0 == null) { if (!G.enemies.some(e => e.arcana && !e.dead)) return -1e-3; barT0 = now; }
+  return now - barT0;
+};
 const barLabelA = () => Math.max(0, Math.min(1, (barInT() - bossBarInT()) / BAR_LABEL_FADE)); // the numbers' alpha
 const barR = g => { const m = g.Lp[g.Lp.length >> 1]; return Math.hypot(m.x - CX, m.y - CY); }; // a piece's radius, u: its middle's
 const barArea = g => { let a = 0; const Q = g.Lp.concat(g.Rp.slice().reverse()); for (let i = 0; i < Q.length; i++) { const p = Q[i], q = Q[(i + 1) % Q.length]; a += p.x * q.y - q.x * p.y; } return Math.abs(a) / 2; }; // a piece's area, u^2 (shoelace round its outline)
@@ -278,6 +289,19 @@ function barFlyOff(e, i) { // piece i: how far out along its spoke it still is, 
   if (t >= land) { if (!g.home) { g.home = true; barThud(e, g); } return (barFlyRk = 0); } if (t < t0) return drift(t); // (home: its thud once, the frame it lands - bar and track both ask)
   const u = (t - t0) / slam; barFlyRk = 1 - u * u * u; return barFlyRk * drift(t0); // act 3 (the tilt unwinds on the slam's ease)
 }
+// THE BOSS WAITS FOR ITS BAR (owner, 2026-10-28: "send in the boss after the 2nd last group of hp segments have slammed"): every boss
+// body (and its fleet, its kin, as each comes out of the fleet queue) holds still where it spawned until the second-to-last ring's last piece is home - the last ring may
+// still be slamming as it comes in. barHoldT: that landing, s after the sky filled (one ring: the first slam); before the rings are
+// known, the whole fly-in. Page only (the simulator loads no bossbar, so step's typeof guard never holds there)
+const barLandT = (seq, ring, R) => { const pause = Math.min(BAR_RING_PAUSE, BAR_FLY_SPAN / 2 / Math.max(1, R.n - 1)); return BAR_APPROACH + BAR_FLY_LEAD + seq * (BAR_FLY_SPAN - (R.n - 1) * pause) / Math.max(1, R.N - 1) + ring * pause; }; // (barFlyOff's land, the slam's jitter aside)
+function barHoldT() {
+  let R = null, k = Infinity; for (const { e } of barLeadSet) { const Q = e.bar && e.bar.rings; if (!Q || Q.key !== barLeadKey) return bossBarInT(); R = Q; Q.ring.forEach((r, i) => { if (r === Q.n - 1) k = Math.min(k, Q.seq[i]); }); }
+  if (!R) return bossBarInT(); if (!Number.isFinite(k) || k === 0) return BAR_APPROACH + BAR_FLY_LEAD; // (one ring: the boss comes with the first slam)
+  return barLandT(k - 1, R.n - 2, R) + BAR_SLAM * BAR_SLAM_JIT; // the piece just before the last ring's first, home (+ the slam's longest jitter)
+}
+let BAR_HOLD = true; // (off: ?dev=boss fast-forwards its boss in - aspira-dev.js)
+const barHolding = () => BAR_HOLD && typeof bossInv !== "undefined" && bossInv.phase === "in" && barInT() < barHoldT(); // (barInT: Infinity with no fly-in on)
+const barHold = e => (e.arcana || e.bossKin || ENEMIES[e.type].star) && barHolding();
 // ON THE ENTITY LAYER AT THE FLOOR'S LEVEL (owner, 2026-10-27: "tower ranges and effects should appear above hp"): the bar is drawn in
 // warpEntities' part A, between the floor and the dice - so the dice, the beams, the shield lines and the towers' layer cover it, and
 // the ranges (drawRangesOver) go right over it. Part A is drawn BEFORE the sky's flip (the difference inside a spreading triangle,

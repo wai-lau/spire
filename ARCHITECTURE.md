@@ -502,7 +502,7 @@ lives, the core's powers at 24 / 48.
 
 A colour **inversion** spreads from the core over 3 s when a boss warps in and collapses
 back after the last boss-kin dies; the game **holds still while it turns**. The title
-becomes the boss's name, its HP a long line along the horizon (`drawBossBar`; once flown in it is drawn on the 3D BOARD layer, under every tower effect - `bossBarOnBoard`, aspira-warplayers.js); the next
+becomes the boss's name, its HP a long line along the horizon (`drawBossBar`; once flown in it is drawn on the 3D BOARD layer, under every tower effect - `bossBarOnBoard`, aspira-warplayers.js; the fly-in starts once the sky is full AND a boss stands on the board, and every boss body waits at its spawn until the second-to-last ring of HP pieces has slammed - `barHold`, page only); the next
 wave waits for the sky to close. It costs nothing per pixel: 2D draws the frame in the
 inverted palette (`withPalette`), 3D blends one triangle in GL (`warpFlip`); only the
 spreading circle is a fill (`skyFlip`). **Towers keep their own colours.**

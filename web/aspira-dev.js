@@ -7,6 +7,7 @@
 const DEV = typeof location !== "undefined" ? new URLSearchParams(location.search) : null, DEV_SCENE = DEV ? DEV.get("dev") || "" : "";
 const DEV_BOSS_HP = 0.55, DEV_BOSS_IN_U = 150;
 if (DEV_SCENE === "boss") {
+  if (typeof BAR_HOLD !== "undefined") BAR_HOLD = false; // (no waiting for the HP bar: the scene steps its boss straight in - aspira-bossbar.js)
   let built = false, tapped = false; const devLog = window.devLog = []; // (devLog: what each tick did - read it from the console when a scene misbehaves)
   document.addEventListener("pointerdown", () => { tapped = true; }, { once: true }); document.addEventListener("keydown", () => { tapped = true; }, { once: true }); // (the same gestures aspira-sfx.js unlocks the audio on)
   const tickDev = () => {

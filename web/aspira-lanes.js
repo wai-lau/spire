@@ -237,7 +237,7 @@ function litLanes() {
   const since = performance.now() / 1000 - bossInv.t0, clamp01 = v => Math.max(0, Math.min(1, v));
   if (stars.length) bossLanes = stars.map(u => ({ ...u }));
   let k = 0;
-  if (bossInv.phase === "in") k = clamp01((since - BOSS_SKY_T - (typeof bossBarInT === "function" ? bossBarInT() : 0)) / BOSS_LANE_FADE); // ...and for the boss's HP bar to fly in (owner, 2026-10-27: "draw lane and lane glow after hp slides in" - aspira-bossbar.js)
+  if (bossInv.phase === "in") k = typeof barInT === "function" ? clamp01((barInT() - bossBarInT()) / BOSS_LANE_FADE) : clamp01((since - BOSS_SKY_T) / BOSS_LANE_FADE); // ...and for the boss's HP bar to fly in (owner, 2026-10-27: "draw lane and lane glow after hp slides in" - aspira-bossbar.js)
   else if (bossInv.phase === "out") { k = 1 - clamp01(since / BOSS_LANE_FADE); if (!stars.length && k > 0) live.push(...bossLanes.map(u => ({ ...u }))); }
   else bossLanes = [];
   for (const u of live) { u.a0 = u.a; if (u.star) u.a *= k; }

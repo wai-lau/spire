@@ -31,7 +31,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       // a GHOST (owner): the dead keep drifting in at their plain pace,
       // untargetable and harmless, and are removed at the core with no life lost
       e.s += ENEMIES[e.type].speed * ENEMY_SPEED * (e.spd || 1) * PATHS[e.pi].pace * dt;
-    } else {
+    } else if (!(typeof barHold === "function" && barHold(e))) { // (a boss waiting for its HP bar to slam in - aspira-bossbar.js: page only)
       if (e.stunT > 0) e.stunT -= dt;
       if (e.slows) sumSlows(e, dt);
       if (e.markT > 0) e.markT -= dt; else e.markMul = 1;
