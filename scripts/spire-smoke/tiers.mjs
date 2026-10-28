@@ -7,10 +7,9 @@ import { ROOT, boot, check } from "./harness.mjs";
 const { run } = boot();
 const CURVE_DONE = ["arc", "sol", "car", "frz", "acd", "grv", "ifr"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
-check("curve: by total level alone, rising, slightly steepening, the SAME growth for every tower (owner, 2026-10-26: \"everything should grow similarly\"; tier 0 may sit above the old bare tower - the trio fit's call, owner 2026-10-26)", () => {
+check("curve: by total level alone, rising, slightly steepening - each tower its OWN growth (owner, 2026-10-28: \"towers each having their own curve is fine\"; one growth for all 2026-10-26 .. 28; tier 0 may sit above the old bare tower - the trio fit's call, owner 2026-10-26)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
   for (const [k, d] of Object.entries(r)) {
-    if (Math.abs(d[d.length - 1] / d[0] - r.arc[r.arc.length - 1] / r.arc[0]) > 1e-9) return k + " grows x" + d[d.length - 1] / d[0] + ", ARC x" + r.arc[r.arc.length - 1] / r.arc[0] + " (expected one growth for all)";
     for (let i = 1; i < d.length; i++) if (!(d[i] > d[i - 1])) return k + " not rising at L" + i;
     for (let i = 2; i < d.length; i++) if (d[i] - d[i - 1] < d[i - 1] - d[i - 2] - 1e-9) return k + " flattens at L" + i;
   }

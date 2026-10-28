@@ -13,15 +13,18 @@
 // duo rule's tier 0) to lo x CURVE_DMG_X at SKILL_POINTS - the same curve shape and the same x for all seven. Its strength against the others
 // is its base hit and its mechanics, never its growth (the old per-tower hi ran x1.26 for SOL to x375 for CRR - placeholders folded from
 // the old tables). (let: the sims sweep it)
+// EACH TOWER ITS OWN GROWTH (owner, 2026-10-28: "towers each having their own curve is fine / I just want them all to use a similar
+// number for td"): dmg[1], when set, scales that tower's top (lo x CURVE_DMG_X x dmg[1]) - its late strength; the td NUMBER stays a
+// similar size across towers (a tower whose td reads huge takes its td from a smaller unit, the damage unchanged)
 let CURVE_DMG_X = 11; // (tribal 2026-10-26 at 12: 2 of 35 trios won both seeds - too weak; at 18, round 4: 8 of 35; 18 -> 11 2026-10-27: planner b87 at 18 won with 20-27 buys, eight winners under the 30-of-39 target - level 10 is to hit as level 7 did)
 const STAT_CURVE = {
   arc: { dmg: [5.5125], rate: [1, 1], range: [1, 1.28], slide: [1, 3] },
-  frz: { dmg: [0.9086], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
-  sol: { dmg: [22.962 /* x12 (armor rework, owner 2026-10-28: "do some plain scaling of the td curve" - negative armor's flat bonus on every scorch tick was most of its damage; was 1.9135) */], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
-  acd: { dmg: [6.0708 /* x3.5 (armor rework 2026-10-28, as SOL: its ticks lost the negative-armor bonus; was 1.7345) */], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
-  grv: { dmg: [0.256], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
-  car: { dmg: [4.7542], rate: [2, 2], range: [1, 1], slide: [1, 1] },
-  ifr: { dmg: [0.1047], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
+  frz: { dmg: [0.9086, 0.65 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // (FRZ's rate is its TICK - Sublimation's ticks, aspira-frz.js)
+  sol: { dmg: [22.962 /* x12 (armor rework, owner 2026-10-28: "do some plain scaling of the td curve" - negative armor's flat bonus on every scorch tick was most of its damage; was 1.9135) */, 3.2 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
+  acd: { dmg: [6.0708 /* x3.5 (armor rework 2026-10-28, as SOL: its ticks lost the negative-armor bonus; was 1.7345) */, 1.15 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
+  grv: { dmg: [0.256, 1.8 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
+  car: { dmg: [4.7542, 1.5 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [2, 2], range: [1, 1], slide: [1, 1] },
+  ifr: { dmg: [0.1047, 3.8 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
 };
 // lo: the DUO RULE's (plan 3, 2026-10-25 - scripts/aspira-sim/duo0.mjs), then x each tribal round's factor (triscale.py; round 4
 // 2026-10-26: arc 1.09, sol 1.17, acd 1.04, grv 1.09, car 0.90, ifr 0.92; round 5: arc 1.04, frz 1.06, sol 1.17, acd 0.96, grv 1.10,
@@ -39,7 +42,7 @@ const towerLevel = t => (SKILL_TREES[t.kind] || []).reduce((a, ax) => a + (((t.s
 const curveStat = ([lo, hi], L) => lo + (hi - lo) * (Math.max(0, Math.min(SKILL_POINTS, L)) / SKILL_POINTS) ** CURVE_P;
 function curveAt(kind, L) {
   const c = STAT_CURVE[kind];
-  return { dmg: curveStat([c.dmg[0], c.dmg[0] * CURVE_DMG_X], L), rate: curveStat(c.rate, L), range: curveStat(c.range, L), slide: curveStat(c.slide, L) };
+  return { dmg: curveStat([c.dmg[0], c.dmg[0] * CURVE_DMG_X * (c.dmg[1] ?? 1)], L), rate: curveStat(c.rate, L), range: curveStat(c.range, L), slide: curveStat(c.slide, L) };
 }
 // a stats function's first line: the tower's base stats off the curve
 function curveBase(t, s, b) {
