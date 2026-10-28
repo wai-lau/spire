@@ -132,8 +132,11 @@ function autoGlide(t, dt) {
   // tower that cannot stay where it stands heads home to its slot first
   const caught = !legalSpot(t, t);
   if (!t.goal && caught) { t.goal = { x: CELLS[t.cell].x, y: CELLS[t.cell].y }; }
-  t.posT = (t.posT || 0) - dt;
-  if (t.posT <= 0) { t.posT = POS_EVERY; const s = bestSpot(t, towerStats(t).range); if (s) t.goal = s; }
+  if (POS_ONE && AUTO_POS) { if (!posOneTurn(t, dt) && !caught) return; }
+  else {
+    t.posT = (t.posT || 0) - dt;
+    if (t.posT <= 0) { t.posT = POS_EVERY; const s = bestSpot(t, towerStats(t).range); if (s) t.goal = s; }
+  }
   if (!t.goal || (typeof towerHeld === "function" && towerHeld(t)) || t.fling) return;
   // GAME time (owner, 2026-10-15: "auto-move at 10x should be 10x speed"): at a REAL-time pace a 10x game outran the towers
   // tenfold, and the simulator (no game speed) never saw it
@@ -149,11 +152,29 @@ function autoGlide(t, dt) {
   }
   t.goal = null; t.posT = POS_EVERY * GLIDE_GIVE_UP;
 }
-// the simulator's player, every step (aspira-game.js) - GLIDING like auto-move when POS_GLIDE (owner, 2026-10-13: "limit the
-// tower movements to the current auto-move settings"; it jumped). let: the simulator sets it
-let POS_GLIDE = true;
+// ONE AT A TIME (owner, 2026-10-28: "mimics human behaviour, only one tower checks/moves at a time round robin"): with
+// POS_ONE the simulator's player has one pair of hands. The tower holding the TURN plans (bestSpot) as the turn reaches it,
+// jumps there (or glides, POS_GLIDE), and passes the turn on (G.towers order) once it has arrived AND POS_EVERY has gone by.
+// The rest stand still (a gliding tower caught overlapping still escapes). The HUMAN model is POS_EVERY 0.5 (owner, 2026-10-28:
+// "it should check every 0.5s then / so each tower gets checked by a human every 1.5s" - three towers). Simulator only (AUTO_POS):
+// a real auto-move tower may be skipped (not ascended, frozen) and would stall the turn. let: the simulator sweeps it
+let POS_ONE = false;
+function posOneTurn(t, dt) {
+  const ts = G.towers;
+  if (!ts.some(x => x.id === G.posTurn)) { G.posTurn = ts[0].id; G.posTurnT = 0; } // first turn, or its tower sold
+  if (G.posTurn !== t.id) return false;
+  if (G.posTurnT === 0) { const s = bestSpot(t, towerStats(t).range); if (s) t.goal = s; }
+  G.posTurnT += dt;
+  if (!t.goal && G.posTurnT >= POS_EVERY) { G.posTurn = ts[(ts.indexOf(t) + 1) % ts.length].id; G.posTurnT = 0; }
+  return true;
+}
+// the simulator's player, every step (aspira-game.js) - it TELEPORTS (owner, 2026-10-28: "when simulating, all moves should be
+// teleports"; it glided like auto-move from 2026-10-13, "limit the tower movements to the current auto-move settings"). POS_GLIDE
+// true brings the glide back. let: the simulator sets it
+let POS_GLIDE = false;
 function autoPosition(t, dt) {
   if (POS_GLIDE) { autoGlide(t, dt); return; }
+  if (POS_ONE) { if (posOneTurn(t, dt) && t.goal) { moveTower(t, t.goal); t.goal = null; } return; } // its turn: plan, jump, hold the turn POS_EVERY
   t.posT = (t.posT || 0) - dt;
   if (t.posT > 0) return;
   t.posT = POS_EVERY;
