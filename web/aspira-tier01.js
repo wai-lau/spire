@@ -8,7 +8,9 @@
 ARC_CONDUCTIVITY[0] = { ...ARC_CONDUCTIVITY[0], j: 0 };
 ARC_CONDUCTIVITY[1] = { ...ARC_CONDUCTIVITY[0], j: 1 };
 
-// SOL: one beam going straight on and splitting to one more at every hit (SOL_SPLIT), no burn, no armor strip
+// SOL: one beam that stops at its first enemy - no band, split, bounce or prism (st.pierce 0, SOL_SPLIT[0] 0 - solSkillStats), no burn, no
+// armor strip (owner, 2026-10-28: tier 0 "a minimal version of the tower with few effects"; 2026-10-26 had it splitting and bouncing from
+// the start). Diffraction I the band and one split, Scorch I the burn and the rod, Breach I the strip
 // (SOL's tables are written 0..V in aspira-skills.js since 2026-10-25)
 
 // CRR: one interceptor, no tether, one bolt a volley (CRR_BOLTS_BY); Hangar I two interceptors, one held circling (CRR_HOLD_FRAC's tier I);

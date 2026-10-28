@@ -16,18 +16,20 @@ function drawAims() {
     // one widens from 0 as its first charge fills; a re-used one keeps its width and SWINGS to the new aim (SOL_PRISM_SWING rad/s), coming
     // back to full over SOL_PRISM_IN_S; with no lock it fades over SOL_PRISM_OUT_S and goes
     const lock = (t.locks || []).find(l => !l.e.dead), pr = t.prism, dt = pr ? Math.min(0.1, Math.max(0, now - pr.t)) : 0;
-    if (lock && t.period) {
+    // NO PRISM ON A PLAIN SOL (owner, 2026-10-28: tier 0 "a minimal version of the tower with few effects"): the band is Diffraction's
+    // (st.pierce) and the scorch rod sweeps it (st.dot) - until one is bought there is nothing for it to show
+    if ((st.pierce || st.dot) && lock && t.period) {
       const aim = Math.atan2(lock.e.y - t.y, lock.e.x - t.x), p = Math.min(1, Math.max(0, 1 - lock.cd / t.period));
       if (!pr || pr.alpha <= 0) t.prism = { a: aim, half: real * p, alpha: p, t: now, fresh: true };
       else if (pr.fresh) { pr.a = aim; pr.half = real * p; pr.alpha = p; pr.t = now; if (p >= 1) pr.fresh = false; }
       else { const d = ((aim - pr.a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI, w = SOL_PRISM_SWING * dt; pr.a += Math.max(-w, Math.min(w, d)); pr.half = real; pr.alpha = Math.min(1, pr.alpha + dt / SOL_PRISM_IN_S); pr.t = now; }
     } else if (pr) { pr.alpha -= dt / SOL_PRISM_OUT_S; pr.t = now; if (pr.alpha <= 0) t.prism = null; }
     if (t.prism && t.prism.alpha > 0) drawBand({ x: t.x, y: t.y, a: t.prism.a, half: t.prism.half, len: SOL_CONE_EDGE, color: col }, Math.cbrt(t.prism.alpha)); // (cbrt: drawBand cubes it - linear in alpha)
-    // THE SCORCH RODS (solRodStep): an IFR flare spoke across the band at each rod's distance, clear at the tower and full by
-    // SOL_ROD_FADE_U out (owner, 2026-10-26)
+    // THE SCORCH RODS (solRodStep): an IFR flare spoke across the band at each rod's distance, FULL at the tower and clear by the play
+    // box's edge along the shot (r.len; owner, 2026-10-28: "the fade should go from 100% opacity to 0" - it faded IN over 50 u until then)
     if (t.rods && t.rods.length) {
       const low = typeof lowQ === "function" && lowQ(); ctx.lineCap = "butt";
-      for (const r of t.rods) { const c = Math.cos(r.a), sn = Math.sin(r.a); drawSolRod(r.x + c * r.s, r.y + sn * r.s, c, sn, r.half, Math.min(1, r.s / SOL_ROD_FADE_U), col, low); }
+      for (const r of t.rods) { const c = Math.cos(r.a), sn = Math.sin(r.a); drawSolRod(r.x + c * r.s, r.y + sn * r.s, c, sn, r.half, Math.max(0, 1 - r.s / (r.len || SOL_CONE_EDGE)), col, low); }
       ctx.lineCap = "round";
     }
     if (!lock || !t.period) continue;
@@ -51,13 +53,14 @@ function drawAims() {
 // 2026-10-28: "copy it" - IFR's retunes leave it alone): SOL's colour round a white core
 // SOL_ROD_GLOW: 2D layers [x the width, alpha, colour] (null: the tower's), cut into SOL_ROD_BANDS lengths falling off as (1 - k / bands)^3;
 // SOL_ROD_GLOW_GL: 3D glow lines [half-width x the width, alpha, colour]; SOL_ROD_I: every layer's alpha x this (IFR's 0.11375 x 3 x 3);
-// SOL_ROD_WL: its width x its half-length (IFR's untaken flare, 13.3 / 47.6)
+// SOL_ROD_WL: its width x the band's half-width - x10 IFR's 0.28 (IFR's untaken flare, 13.3 / 47.6; owner, 2026-10-28: "make the flare
+// 10x thicker"); SOL_ROD_LEN_K: its reach each way x the band's half-width (owner, 2026-10-28: "1.3x longer")
 const SOL_ROD_GLOW = [[1, 0.12, null], [0.5, 0.28, null], [0.16, 0.85, null], [0.05, 0.9, "white"]], SOL_ROD_BANDS = 6;
-const SOL_ROD_GLOW_GL = [[0.5, 0.5, null], [0.125, 0.95, null], [0.0375, 0.95, "white"]], SOL_ROD_I = 1.02375, SOL_ROD_WL = 0.28;
+const SOL_ROD_GLOW_GL = [[0.5, 0.5, null], [0.125, 0.95, null], [0.0375, 0.95, "white"]], SOL_ROD_I = 1.02375, SOL_ROD_WL = 2.8, SOL_ROD_LEN_K = 1.3;
 function drawSolRod(x, y, c, sn, half, al, col, low) {
-  if (!(half > 0) || ![x, y].every(Number.isFinite)) return;
-  const W = half * SOL_ROD_WL, I = al * SOL_ROD_I;
-  const ends = [[x, y, x + sn * half, y - c * half], [x, y, x - sn * half, y + c * half]]; // the spoke: out both ways from its centre
+  if (!(half > 0) || !(al > 0) || ![x, y].every(Number.isFinite)) return;
+  const W = half * SOL_ROD_WL, I = al * SOL_ROD_I, L = half * SOL_ROD_LEN_K;
+  const ends = [[x, y, x + sn * L, y - c * L], [x, y, x - sn * L, y + c * L]]; // the spoke: out both ways from its centre
   if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { // 3D: GPU glow lines (lowQ: the two inner)
     for (const [x0, y0, x1, y1] of ends) for (let g = low ? SOL_ROD_GLOW_GL.length - 2 : 0; g < SOL_ROD_GLOW_GL.length; g++) { const q = SOL_ROD_GLOW_GL[g]; fxGlGlowLine(x0, y0, x1, y1, W * q[0], COL[q[2] || col], Math.min(1, q[1] * I)); }
     return;

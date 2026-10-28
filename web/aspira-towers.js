@@ -275,7 +275,7 @@ function rayHit(t, st, e, base, from) {
   const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1);
   const m = crit ? st.critMul : 1, d = shotDamage(t, st, e, base) * m;
   const n = st.beams || 1, part = d; // every beam is a FULL hit (owner, 2026-10-06; was a fitted share of the shot)
-  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, 3 * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d / m, true, !st.pierce); /* a CRIT draws no wider: the beam's width reads the plain hit, 3 wide (owner, 2026-10-26: "don't thicken beams on crit"; was 5 wide and the crit's hit) */ // a SOL beam is FIXED where it struck, like its pass-through (owner, 2026-10-26: "neither visual should track the enemy") // a chart SOL's beams THIN (owner, 2026-10-22)
+  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, 3 * (st.pierce ? SOL_BEAM_THIN / 3 : 1), d / m, true, false); /* a CRIT draws no wider: the beam's width reads the plain hit, 3 wide (owner, 2026-10-26: "don't thicken beams on crit"; was 5 wide and the crit's hit) */ // a SOL beam is FIXED where it struck at EVERY tier (owner, 2026-10-26: "neither visual should track the enemy"; it followed with st.pierce off, which no tier had until the plain tier 0 of 2026-10-28) // a chart SOL's beams THIN (owner, 2026-10-22)
   if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
   // OPACITY = THE SHARE (owner, 2026-10-23: "the section of beam should reflect the % of damage it carries compared to the initial beam" /
   // "Opacity"): a SOL reflection's beam at base / st.dmg (its st.hop^k), the pass-through on from it x st.hop an enemy (solSpread) - drawn at
@@ -293,8 +293,8 @@ function rayHit(t, st, e, base, from) {
   }
 }
 function fireRay(t, st, e) {
-  solAim = st.pierce ? Math.atan2(e.y - t.y, e.x - t.x) : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's cone axis (aspira-sol.js)
-  if (t.kind === "sol" && solAim != null) solRodFire(t, st, solAim); // the scorch ROD slides out along the shot (aspira-sol.js); the prism itself persists and fades on its own (drawAims)
+  const a = Math.atan2(e.y - t.y, e.x - t.x); solAim = st.pierce ? a : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's band axis - Diffraction's; a plain SOL has none (aspira-sol.js)
+  if (t.kind === "sol" && st.dot) solRodFire(t, st, a); // the scorch ROD slides out along the shot (aspira-sol.js) - Scorch's, band mechanic or not (2026-10-28; it rode solAim); the prism itself persists and fades on its own (drawAims)
   if (!st.ricochet) return;
   // Ricochet / Shredder: hop to the nearest enemy not yet hit, at full damage
   const hit = new Set([e]);

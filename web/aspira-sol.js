@@ -44,10 +44,12 @@ function solNext(t, skip) {
 // of the prism) same thickness as initial beam that quickly slides from the tower until off the screen (opacity should fade in at 50u
 // away from tower) / anything that this rod touches deals 1 stack of scorch"): a line across the band, SOL_ROD_V u/s out from where the
 // tower fired along the shot's aim, to SOL_CONE_EDGE; an enemy it sweeps over takes ONE scorch stack, once a rod. Scorch I+ only
-const SOL_ROD_V = 1400, SOL_ROD_FADE_U = 50;
+const SOL_ROD_V = 1400; // (SOL_ROD_FADE_U 50 - the rod faded IN over its first 50 u - gone 2026-10-28: it fades OUT from the tower, r.len below)
 // its LOOK (owner, 2026-10-27: "instead of using a horizontal line, re-use the flare from IFR, except color it SOL / I only want one
-// spoke" / "get rid of the scorch tracer as well"): ONE IFR flare spoke across the band, no tracer (drawSolRod, aspira-effects.js)
-function solRodFire(t, st, a) { if (!st.dot) return; (t.rods ||= []).push({ x: t.x, y: t.y, a, half: st.band || SOL_BAND0, s: 0, hit: new Set() }); }
+// spoke" / "get rid of the scorch tracer as well"): ONE IFR flare spoke across the band, no tracer (drawSolRod, aspira-effects.js) - x10 thick
+// and x1.3 long, FULL at the tower and clear by the play box's edge along the shot (r.len, solOutLen; owner, 2026-10-28: "make the flare 10x
+// thicker and 1.3x longer, the fade should go from 100% opacity to 0"). Scorch's alone: it fires with or without Diffraction's band
+function solRodFire(t, st, a) { if (!st.dot) return; (t.rods ||= []).push({ x: t.x, y: t.y, a, half: st.band || SOL_BAND0, s: 0, len: solOutLen(t.x, t.y, Math.cos(a), Math.sin(a)), hit: new Set() }); }
 function solRodStep(t, st, dt) {
   if (!t.rods || !t.rods.length) return;
   for (const r of t.rods) {
@@ -61,7 +63,7 @@ function solRodStep(t, st, dt) {
   t.rods = t.rods.filter(r => r.s < SOL_CONE_EDGE);
 }
 function solSpread(t, st, from, e, full, share = 1) {
-  if (!(st.pierce > 0) || full <= 0) return;
+  if (!(st.pierce > 0) || full <= 0) return; // (st.pierce: Diffraction I+ - a plain SOL's beam stops at its first enemy, owner 2026-10-28)
   const col = TOWERS[t.kind].color, hit = new Set([e]), L0 = Math.hypot(e.x - from.x, e.y - from.y) || 1;
   const seg = (a, b, d, al) => { beam(a, b, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: al, thin: SOL_THIN }); };
   const strike = (o, at, d) => { hit.add(o); fromHit(at, () => damage(o, d, t, false, false, st)); onHit(o, t, st, d); bleed(o, st, t); };
