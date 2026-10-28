@@ -68,6 +68,7 @@ function solRodStep(t, st, dt) {
 // the tower to the play box's edge, through every enemy whose body it crosses, at SOL_PAR_K of the shot; each hit breaches (bleed)
 const SOL_PAR_N = [0, 1, 1, 2, 2, 4], SOL_PAR_GAP = 12;
 let SOL_PAR_K = 1; // (let: the sims sweep it) - full shot a parallel beam (2026-10-28 SOL sweep C; was 0.5)
+const SOL_PAR_SHOW = 0.85; // LOOK ONLY: a parallel beam draws at this x its share, so the first beam reads as the shot (owner, 2026-10-28: "fainter, just a lil" - at a full share all three drew alike); opacity goes by share^2, so ~0.72
 const solParHalfW = () => CELL_S * TOWER_K * TOWER_DRAW_K;
 function solParallel(t, st, a) {
   const n = st.par || 0; if (!n) return;
@@ -75,7 +76,7 @@ function solParallel(t, st, a) {
   const d = st.dmg * SOL_PAR_K, col = TOWERS[t.kind].color;
   for (let i = 0; i < n; i++) {
     const o = (i % 2 ? -1 : 1) * g * (1 + (i >> 1)), x0 = t.x + nx * o, y0 = t.y + ny * o, L = solOutLen(x0, y0, ux, uy);
-    beam({ x: x0, y: y0 }, { x: x0 + ux * L, y: y0 + uy * L }, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: SOL_PAR_K, thin: SOL_THIN });
+    beam({ x: x0, y: y0 }, { x: x0 + ux * L, y: y0 + uy * L }, col, RAY_BEAM_LIFE, SOL_BEAM_THIN, d, true, false); Object.assign(fx[fx.length - 1], { share: SOL_PAR_K * SOL_PAR_SHOW, thin: SOL_THIN });
     let hits = 0;
     for (const e of G.enemies) {
       if (e.dead || !e.seen) continue;
