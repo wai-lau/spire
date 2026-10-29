@@ -18,6 +18,7 @@ const MODELS = {
   perfect: { econ: "smart", rewind: true, pos: "POS_EVERY = 0.5;" },
   good: { econ: "smart", rewind: true, pos: HUMAN_HANDS },
   random: { econ: "spend", rewind: false, pos: HUMAN_HANDS, randomAxis: true },
+  randomsave: { econ: "smart", rewind: false, pos: HUMAN_HANDS, randomAxis: true }, // diagnostic (2026-10-28): random's bad build on the smart saver's economy - how much of its wave is money
 };
 export default async function task({ trio, seed, model, to }) {
   const m = MODELS[model];
