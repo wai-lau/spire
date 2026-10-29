@@ -1008,3 +1008,53 @@ The rule (owner, 2026-10-28): "balance the boss to the towers, balance the tower
 
 Points the strongest and weakest winnable trios need to beat Death (`trioplan`, beam 3, seed 1): frz+grv+ifr 18 -> 35 (it held 26
 before the 6.16.0 battery); acd+grv+car 34 -> 34 (it wins at x1, x3 and x4). Death's HP at wave 120 at x1: 0.90M.
+
+### 12.w Difficulty by player, measured (2026-10-28; snapshot 909491b)
+
+All `players3`, bosses skipped (`BOSS_SKIP`), 35 trios x 1 seed unless noted. The three players: **random** (spends as it goes, a
+random open axis but never the right one, no rewind), **good** (smart saver, the planner's axes, human hands), **perfect** (smart
+saver with rewind, every tower re-placed every 0.5 s).
+
+| player | result |
+|---|---|
+| random | median death wave 93 (91 on 3 seeds earlier) |
+| good + rewind | 29 / 35 won |
+| perfect + rewind | 19 / 22 winnable won (1 seed; a 3-seed run pending) |
+
+**Curve or axis - where a tower's damage comes from.** Shape 1: damage x (S + (1 - S) x matched-axis tiers / 4), the axis -> type
+map of ARCHITECTURE 4.4, each tower's uncovered type its design weakness (CRR uncovered on swarm and armor). Random's median death:
+S 0.7 -> 87, 0.5 -> 83, 0.3 -> 82; at S 0.7 good 18 / 22 and perfect 15 / 22 winnable (within noise). Random died alike on
+winnable (87.5) and non-winnable (87) trios. Shape 2: damage x C x (1 + k x matched / 4), C so that one matched III equals today:
+k 1 -> 83, k 2 -> 82 (at k 2: no match x0.4, III x1.0, IV x1.2).
+
+**Economy x axis**, no rewind (median death; good with rewind 120 for scale):
+
+| | spends as it goes | smart saver |
+|---|---|---|
+| random axis | random 93 | randomsave 83 |
+| the planner's axis | rightspend 110 | good, no rewind 106 |
+
+The right axis is worth 13 - 23 waves; saving without rewind costs waves. Every no-rewind cell holds about 6 tier points a tower at
+wave 93; good (with rewind) holds 10.
+
+Tier points a tower, mean, at waves 36 / 48 / 60 / 72 / 93:
+
+| player | 36 | 48 | 60 | 72 | 93 |
+|---|---|---|---|---|---|
+| random | 3.2 | 3.8 | 4.4 | 5.0 | 5.8 |
+| good (rewind) | 1.0 | 2.2 | 2.5 | 4.1 | 9.5 |
+| good, no rewind | 3.0 | 3.7 | 4.3 | 5.0 | 5.8 |
+| rightspend | 3.1 | 3.8 | 4.3 | 5.0 | 5.9 |
+
+**Hits on the damage floor** (a hit that lands for 1: share of hits / share of damage), waves 60-69 | 70-79 | 80-89 | 90-93: ARC
+0 / 0 | 0.5 / 0.04 | 10.5 / 1.4 | 8.4 / 1.8; FRZ 32 / 2.1 | 40.5 / 5.8 | 55.2 / 16.0 | 54.1 / 21.7; SOL, ACD, GRV, CRR and IFR all
+under 4% / 0.4%, but IFR 12.5 / 0.34 at 70-79. Only FRZ leans on the floor.
+
+**Designed deaths** at the 6.16.0 marks: thirteen trios miss a counter, ten of them fast (only ARC and CRR check fast) - ARCHITECTURE
+4.6d.
+
+**The owner's reading** (2026-10-28): random dying around 90 is "fine" as the game is - the old target of 60 is dropped; "balance
+the boss to the towers, balance the towers to the waves, waves not incl bosses". Next: the whole game harder early so money is scarce
+"because you need to buy upgrades" (an economy pass), a cadence sweep, and every armor strip a % of the current armor, not a flat
+amount.
+
