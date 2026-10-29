@@ -4,6 +4,9 @@ so each tower hits those benchmarks"): from a countermx run (the same spread bui
   - each tower's row sums to 0 and each enemy type's column sums to 0 (owner, 2026-10-23: "Col and row need to sum to 0")
   - no two towers alike (owner, 2026-10-23: "no duplicates")
   - every tower above 0 on two or more types (owner, 2026-10-19: "beats or at least helps" two types or more)
+  - EVERY TYPE COLUMN HOLDS CHECKS, A DASH AND X'S (owner, 2026-10-29: "the type columns should sum to 0 / each column needs to have
+    1/2/3 checks, a -, and 1/2/3 Xs / this is important!"): >= 1 tower checking it, >= 1 at 0, >= 1 x'd. (The stricter reading - one
+    tower each at +3 +2 +1 0 -1 -2 -3 - holds only 12 checks in all, and the two-type rule needs 14: it cannot be met)
 ranked by distance to the raw marks (sum of |target - raw|), then by cells off the measured (rounded) marks. The nearest is the v7
 benchmark the towers are balanced to (plan 3 Task 5); its ties are printed with it.
 usage: python3 marktarget.py <countermx output> [options=5]"""
@@ -56,7 +59,13 @@ def dist(k, r):
 DEFS = (pathlib.Path(__file__).resolve().parents[2] / "web" / "aspira-defs.js").read_text()
 MAIN = {t: re.findall(r'"(\w+)"', m) for t, m in re.findall(r'(\w+): \{ main: \[([^\]]*)\]', re.search(r"const COUNTERS = (\{.*?\}) \};", DEFS).group(1) + " }")}
 NEED = {k: [TYPES.index(t) for t, ks in MAIN.items() if k in ks] for k in KINDS}
-DESIGN = {k: (lambda need, k: lambda r: all(r[i] >= 1 for i in need) and not (k == "car" and r[TYPES.index("armor")] >= 0))(NEED[k], k) for k in KINDS}
+# ARC's SHAPE (owner, 2026-10-28: ARC is +swarm +armor -fast -shield - its mechanic): checks swarm and armor, x's fast and shield
+def ARC_SHAPE(r):
+    return r[0] > 0 and r[3] > 0 and r[1] < 0 and r[2] < 0
+
+
+
+DESIGN = {k: (lambda need, k: lambda r: all(r[i] >= 1 for i in need) and not (k == "car" and r[TYPES.index("armor")] >= 0) and (k != "arc" or ARC_SHAPE(r)))(NEED[k], k) for k in KINDS}
 print("main counters (must check):", {t: ks for t, ks in MAIN.items()})
 cand = {k: sorted((r for r in ROWS if DESIGN.get(k, lambda r: True)(r)), key=lambda r: dist(k, r)) for k in KINDS}
 best_rest = [sum(dist(k, cand[k][0]) for k in KINDS[i:]) for i in range(len(KINDS))] + [0]
@@ -69,7 +78,7 @@ def dfs(i, rows, cost, sums):
     if len(top) == N and cost + best_rest[i] > -top[0][0] + 1e-9:
         return
     if i == len(KINDS):
-        if all(s == 0 for s in sums):
+        if all(s == 0 for s in sums) and all(any(r[c] > 0 for r in rows) and any(r[c] == 0 for r in rows) and any(r[c] < 0 for r in rows) for c in range(4)):
             heapq.heappush(top, (-cost, rows[:]))
             if len(top) > N:
                 heapq.heappop(top)
