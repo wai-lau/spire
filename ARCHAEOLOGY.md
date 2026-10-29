@@ -952,9 +952,19 @@ triangle clip, both on the batch since 6.15.45 / 6.15.46; GRV's overlapping-aura
 
 TOP PLAYERS: `ASC_MAX` 6 posts an IP an hour, `SHOW_MAX` 500, a win `1 <= lives <= 100000`, wave 11..1000, a team of 1-5 kinds, `OWNER_SHOWN_FROM` 2026-10-14 00:00 ET. Slow logs every 180 s, 30 posts an IP an hour, 16 KB, 400 files kept. Smoke: 22 checks.
 
-### 12.x The marks target (owner, 2026-10-23)
+### 12.x OLD marks targets (2026-10-23 and the 2026-10-29 morning) - superseded
 
-The build cards' marks balance is aiming for (swarm, fast, shield, armor; every row and column sums to 0, no two towers alike).
+**OLD.** The live target is `scripts/aspira-sim/mark-target.json`, the owner's table of 2026-10-29 15:45 (CLAUDE.md "THE MARK TARGET":
+ARC +2 +2 -2 -2, FRZ -2 +1 -1 +2, SOL +1 -3 +1 +1, ACD -1 -2 +1 +2, GRV +1 +1 -3 +1, CRR -3 +2 +2 -1, IFR +2 -1 +2 -3; every column
++2 +2 +1 +1 -1 -2 -3). Two targets came before it, both OLD:
+
+The 2026-10-29 MORNING target (commits 7bf7c66, 1c2a231, 760dca9, 2668da6): column shape ✓✓ ✓ ✓ ✓ – ✗✗ ✗✗✗ (+2 +1 +1 +1 0 -2 -3,
+"option A"), fitted by `marktarget.py` to the 6.18.0 countermx with an ARC "+swarm +armor -fast -shield" pin (recorded as the owner's,
+2026-10-28) - ARC +2 -2 -2 +2, FRZ -3 +2 0 +1, SOL +1 -3 +1 +1, ACD -2 +1 +1 0, GRV +1 +1 -3 +1, CRR 0 +1 +1 -2, IFR +1 0 +2 -3. Dropped
+the same afternoon: "ARC and IFR by design are bad vs armor", and the shape cannot hold three armor weaknesses; the owner enumerated the
+seven feasible zero-sum shapes and chose +2 +2 +1 +1 -1 -2 -3.
+
+The 2026-10-23 target, the first: the build cards' marks balance was aiming for (swarm, fast, shield, armor; every row and column sums to 0, no two towers alike).
 Measured marks (`marks.py`) are moved toward it by balance only, never by editing `VS_MARKS`.
 
 | tower | swarm | fast | shield | armor |

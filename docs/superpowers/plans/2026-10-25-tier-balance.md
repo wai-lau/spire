@@ -1,3 +1,5 @@
+> **OLD (2026-10-29):** any mark target or marks plan in this document is superseded by `scripts/aspira-sim/mark-target.json` (the owner's table of 2026-10-29 15:45; CLAUDE.md "THE MARK TARGET").
+
 # Spire Tier Redesign, Plan 3: Balance Battery — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (native, chosen by Wai). Steps use checkbox (`- [ ]`) syntax for tracking.

@@ -1,3 +1,5 @@
+> **OLD (2026-10-29):** any mark target or marks plan in this document is superseded by `scripts/aspira-sim/mark-target.json` (the owner's table of 2026-10-29 15:45; CLAUDE.md "THE MARK TARGET").
+
 # Tier Framework Implementation Plan (tier redesign, plan 1 of 3)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

@@ -1,3 +1,5 @@
+> **OLD (2026-10-29):** any mark target or marks plan in this document is superseded by `scripts/aspira-sim/mark-target.json` (the owner's table of 2026-10-29 15:45; CLAUDE.md "THE MARK TARGET").
+
 # Spire tier redesign
 
 Approved by Wai 2026-10-24. Living copy: the shared doc https://claude.ai/artifact/NY9mXnwaKvD3AztDkbdyjZ (rev 528); this file is its export.

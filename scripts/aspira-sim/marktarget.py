@@ -1,9 +1,9 @@
 """THE NEAREST MARKS TABLE (owner, 2026-10-25, v7: "this needs to include getting the nearest new zero sum table / Then balancing
 so each tower hits those benchmarks"): from a countermx run (the same spread build and window marks.py reads), the measured raw marks
 (marks.py's double-centred leak gaps / PER_MARK, unrounded), then every integer table of marks that keeps the marks rules:
-  - EVERY TYPE COLUMN IS ONE 2-CHECK, THREE 1-CHECKS, ONE DASH, ONE XX, ONE XXX (owner, 2026-10-29: "one 2check, 3 1check, one -, one
-    x, one xx", then "rows sum to the same number, cols sum to the same number" - that column summed to +2, 8 over 7 rows; option A, the
-    x's one deeper, sums to 0: "A"), so every row and every column sums to 0
+  - EVERY TYPE COLUMN IS +2 +2 +1 +1 -1 -2 -3 (owner, 2026-10-29 15:40: "let's go for this instead" - one of the seven zero-sum shapes
+    that allow two checks a tower; OLD, the morning's: one 2-check, three 1-checks, one dash, one xx, one xxx), so every row and every
+    column sums to 0
   - every tower checks two or more types (owner, 2026-10-29: "each row needs at least two checked types"; 2026-10-19: "beats or at
     least helps" two types or more)
   - no two towers alike (owner, 2026-10-23: "no duplicates")
@@ -48,7 +48,7 @@ def raws_of(leak):
 
 RAW = {w: raws_of(by_win[w]) for w in WINS}
 raw = {k: [sum(RAW[w][k][i] for w in WINS) / len(WINS) for i in range(4)] for k in KINDS}  # the chapters' mean, for the print
-COLUMN = {int(v): int(n) for v, n in (x.split(":") for x in (os.environ.get("MT_COLUMN") or "2:1,1:3,0:1,-2:1,-3:1").split(","))}  # one type column's marks (owner, 2026-10-29); env MT_COLUMN
+COLUMN = {int(v): int(n) for v, n in (x.split(":") for x in (os.environ.get("MT_COLUMN") or "2:2,1:2,-1:1,-2:1,-3:1").split(","))}  # one type column's marks (owner, 2026-10-29); env MT_COLUMN
 # EQUAL SUMS (owner, 2026-10-29: "rows sum to the same number, cols sum to the same number, whatever it is"): 4 columns x their sum = 7 rows x
 # theirs, so every row sums to 4 x the column's sum / 7 - a whole number only when the column's sum is a multiple of 7
 ROW_SUM = 4 * sum(v * n for v, n in COLUMN.items()) / 7
@@ -67,13 +67,13 @@ def dist(k, r):
 DEFS = (pathlib.Path(__file__).resolve().parents[2] / "web" / "aspira-defs.js").read_text()
 MAIN = {t: re.findall(r'"(\w+)"', m) for t, m in re.findall(r'(\w+): \{ main: \[([^\]]*)\]', re.search(r"const COUNTERS = (\{.*?\}) \};", DEFS).group(1) + " }")}
 NEED = {k: [TYPES.index(t) for t, ks in MAIN.items() if k in ks] for k in KINDS}
-# ARC's SHAPE (owner, 2026-10-28: ARC is +swarm +armor -fast -shield - its mechanic): checks swarm and armor, x's fast and shield
-def ARC_SHAPE(r):
-    return r[0] > 0 and r[3] > 0 and r[1] < 0 and r[2] < 0
+# ARMOR-WEAK BY DESIGN (owner, 2026-10-29: "ARC and IFR by design are bad vs armor", with CRR above): their armor mark stays below 0
+# (OLD, dropped 2026-10-29: ARC_SHAPE, an ARC +swarm +armor -fast -shield pin recorded 2026-10-28 - it put ARC at armor +2)
+ARMOR_WEAK = ("arc", "ifr", "crr")
 
 
 
-DESIGN = {k: (lambda need, k: lambda r: all(r[i] >= 1 for i in need) and not (k == "crr" and r[TYPES.index("armor")] >= 0) and (k != "arc" or ARC_SHAPE(r)))(NEED[k], k) for k in KINDS}
+DESIGN = {k: (lambda need, k: lambda r: all(r[i] >= 1 for i in need) and not (k in ARMOR_WEAK and r[TYPES.index("armor")] >= 0))(NEED[k], k) for k in KINDS}
 print("main counters (must check):", {t: ks for t, ks in MAIN.items()})
 cand = {k: sorted((r for r in ROWS if DESIGN.get(k, lambda r: True)(r)), key=lambda r: dist(k, r)) for k in KINDS}
 best_rest = [sum(dist(k, cand[k][0]) for k in KINDS[i:]) for i in range(len(KINDS))] + [0]
