@@ -50,7 +50,17 @@ const CORNER_SLOTS = [], CORNER_IN = 171, TILE_R = CORNER_IN;
 const PLAIN_HP_MUL = 1.5, PLAIN_HP_EASY = 12 /* the first boss cycle (owner, 2026-10-12; was 10) */, PLAIN_HP_MID = 1.2;
 // ...stepped in (owner, 2026-10-12: "just bring it down for the first 10 waves", then "1.2 at 11, then 1.5 after 20, because you
 // have powers"): x1 to wave 10, x1.2 until the first core power is granted (CORE_GRANTS, wave 24 since the 12-wave cycle), x1.5 after
-const plainHpMul = n => (n <= PLAIN_HP_EASY ? 1 : n <= (typeof CORE_GRANTS !== "undefined" ? CORE_GRANTS[0][0] : 24) ? PLAIN_HP_MID : PLAIN_HP_MUL);
+// THE WAVE BAND (owner, 2026-10-29: the early gates - "all 3 towers (or duo +1 upgrade) else leak something at 24, then require 3 towers
+// with >2 upgrades by wave 36 else leak" - and "nerf last 36 waves a little so that the good wins 22/22"): x the band's HP on every
+// NON-boss enemy, linear between its [wave, x] knots, x1 outside them (gates.mjs, players3.mjs). let: the sims sweep it
+let HP_BAND = [];
+const hpBand = n => {
+  const k = HP_BAND; if (!k.length || n < k[0][0] || n > k[k.length - 1][0]) return 1;
+  let i = 0; while (i < k.length - 1 && k[i + 1][0] < n) i++;
+  if (i === k.length - 1) return k[i][1];
+  const [a, x] = k[i], [b, y] = k[i + 1]; return x + (y - x) * (n - a) / (b - a);
+};
+const plainHpMul = n => hpBand(n) * (n <= PLAIN_HP_EASY ? 1 : n <= (typeof CORE_GRANTS !== "undefined" ? CORE_GRANTS[0][0] : 24) ? PLAIN_HP_MID : PLAIN_HP_MUL);
 // LATE TRAITS (owner, 2026-10-12: the battery's counter matrix went flat - late swarm, fast and armor leaked ~0% for any build -
 // "1.3x specific traits to the waves"): from LATE_FROM each type is MORE ITSELF - swarms bring LATE_TRAIT x the bodies, fast
 // runs LATE_TRAIT x faster, armor carries LATE_TRAIT x the armor. Shields untouched (they already sorted builds). let: the sims sweep it

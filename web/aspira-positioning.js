@@ -158,11 +158,19 @@ function autoGlide(t, dt) {
 // "it should check every 0.5s then / so each tower gets checked by a human every 1.5s" - three towers). Simulator only (AUTO_POS):
 // a real auto-move tower may be skipped (not ascended, frozen) and would stall the turn. let: the simulator sweeps it
 let POS_ONE = false;
+// HUMAN AIM (owner, 2026-10-29: "jitter the destination by 50u (for human sims)"): the human's spot lands anywhere within POS_JITTER
+// of the planned one (uniform over the disc, the seeded Math.random), nudged legal. 0 = exact (perfect). let: the simulator sets it
+let POS_JITTER = 0;
+const posJitter = s => {
+  if (!(POS_JITTER > 0)) return s;
+  const a = Math.random() * Math.PI * 2, r = POS_JITTER * Math.sqrt(Math.random());
+  return { x: s.x + Math.cos(a) * r, y: s.y + Math.sin(a) * r };
+};
 function posOneTurn(t, dt) {
   const ts = G.towers;
   if (!ts.some(x => x.id === G.posTurn)) { G.posTurn = ts[0].id; G.posTurnT = 0; } // first turn, or its tower sold
   if (G.posTurn !== t.id) return false;
-  if (G.posTurnT === 0) { const s = bestSpot(t, towerStats(t).range); if (s) t.goal = s; }
+  if (G.posTurnT === 0) { const s = bestSpot(t, towerStats(t).range); if (s) t.goal = legalSpot(t, posJitter(s)) || s; }
   G.posTurnT += dt;
   if (!t.goal && G.posTurnT >= POS_EVERY) { G.posTurn = ts[(ts.indexOf(t) + 1) % ts.length].id; G.posTurnT = 0; }
   return true;

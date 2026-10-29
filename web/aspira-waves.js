@@ -190,7 +190,10 @@ const INTEREST_PER_WAVE = 20; // the game no longer caps interest (2026-10-12); 
 // ("slightly slower growth after 60": wave 80 pays 27 not 30, wave 100 31 not 37;
 // money run 'phase 7' - a spender was only fully built at wave ~91 already)
 const BOUNTY_BASE = 2, BOUNTY_SLOPE = 0.35, BOUNTY_KNEE = 30 /* (owner, 2026-10-12: "reduce money gain ramping from wave 30 onwards"; was 60) */, BOUNTY_SLOPE_LATE = 0.1 /* was 0.2: wave 80 pays 17.5 not 27, wave 100 19.5 not 31 */, BOUNTY_EARLY = 1.1, BOUNTY_EARLY_TO = 30;
-const bountyBase = n => (BOUNTY_BASE + BOUNTY_SLOPE * Math.min(n, BOUNTY_KNEE) + BOUNTY_SLOPE_LATE * Math.max(0, n - BOUNTY_KNEE)) * (1 + (BOUNTY_EARLY - 1) * Math.min(1, Math.max(0, (BOUNTY_EARLY_TO - n) / 10))); // full to wave 20, easing off by 30 (no drop at 31)
+// SCARCE EARLY (owner, 2026-10-28: "make the whole game harder, especially at the beginning so that money is more scarce, because you
+// need to buy upgrades"; 2026-10-29 "let's try the mild econ"): x BOUNTY_SCARCE to eq wave 40, back to full by 50
+const BOUNTY_SCARCE = 0.8, econEarly = n => (n <= 40 ? BOUNTY_SCARCE : n >= 50 ? 1 : BOUNTY_SCARCE + (1 - BOUNTY_SCARCE) * (n - 40) / 10);
+const bountyBase = n => econEarly(n) * (BOUNTY_BASE + BOUNTY_SLOPE * Math.min(n, BOUNTY_KNEE) + BOUNTY_SLOPE_LATE * Math.max(0, n - BOUNTY_KNEE)) * (1 + (BOUNTY_EARLY - 1) * Math.min(1, Math.max(0, (BOUNTY_EARLY_TO - n) / 10))); // full to wave 20, easing off by 30 (no drop at 31)
 function sendWave() {
   if (G.over) return;
   if (G.nextIn > 0 && waveClear() && typeof carCutShort === "function") carCutShort(G.nextIn); // a cleared field cut the wait short: ATC still gets that time's interceptors (aspira-car.js)

@@ -40,8 +40,12 @@ const nudge = x => Math.min(NUDGE_MAX, Math.max(1, x));
 // the tower's OWN axes only: a stray key an old save carries (another kind's axis, a renamed id) buys no level
 const towerLevel = t => (SKILL_TREES[t.kind] || []).reduce((a, ax) => a + (((t.skills || {})[ax.id]) || 0), 0);
 const curveStat = ([lo, hi], L) => lo + (hi - lo) * (Math.max(0, Math.min(SKILL_POINTS, L)) / SKILL_POINTS) ** CURVE_P;
-function curveAt(kind, L) {
-  const c = STAT_CURVE[kind];
+// BIGGER STEPS (owner, 2026-10-29: "make it so that the upgrades are bigger steps then / we can merge upgrade #1 and #2 if that helps"):
+// the first point bought stands at CURVE_FIRST on the curve, the rest spread evenly up to SKILL_POINTS (the top unchanged). 1 = as bought
+let CURVE_FIRST = 1;
+const curveLevel = L => (L <= 0 ? 0 : CURVE_FIRST + (L - 1) * (SKILL_POINTS - CURVE_FIRST) / (SKILL_POINTS - 1));
+function curveAt(kind, L0) {
+  const c = STAT_CURVE[kind], L = curveLevel(L0);
   return { dmg: curveStat([c.dmg[0], c.dmg[0] * CURVE_DMG_X * (c.dmg[1] ?? 1)], L), rate: curveStat(c.rate, L), range: curveStat(c.range, L), slide: curveStat(c.slide, L) };
 }
 // a stats function's first line: the tower's base stats off the curve

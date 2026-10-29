@@ -10,10 +10,11 @@
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
+import { coveringTeams } from "./covering.mjs";
 // BOSSES SKIPPED, ALWAYS (owner, 2026-10-28: "bosses must never cause a loss in the balance sims"): every boss-wave unit dies at once,
 // bounty, drop and unlocks paid (sim.mjs BOSS_SKIP). Set here, not by env, so no run forgets it; bosses balance in bossbal/bossvs.
 process.env.BOSS_SKIP = "1";
-const HUMAN_HANDS = process.env.HANDS || "POS_ONE = true; POS_EVERY = 0.5;"; // env HANDS: the cadence sweep (2026-10-28) - // owner, 2026-10-28: each tower checked by a human every 1.5 s with three
+const HUMAN_HANDS = process.env.HANDS || "POS_ONE = true; POS_EVERY = 1; POS_GLIDE = true; POS_JITTER = 50;"; // owner, 2026-10-29: "humans glide, perfect does not, stick with 1s for humans, and also jitter the destination by 50u"; was "POS_ONE = true; POS_EVERY = 0.5;" // env HANDS: the cadence sweep (2026-10-28) - // owner, 2026-10-28: each tower checked by a human every 1.5 s with three
 const MODELS = {
   perfect: { econ: "smart", rewind: true, pos: "POS_EVERY = 0.5;" },
   good: { econ: "smart", rewind: true, pos: HUMAN_HANDS },
@@ -33,8 +34,7 @@ export default async function task({ trio, seed, model, to }) {
   return { trio: trio.join("+"), seed, model, wave: r.wave, won: r.won, lives: r.lives, late, kill: r.won ? null : (late[r.wave] || {}).t || null, buys: (r.buys || []).map(b => [b.w, b.k, b.id, b.a, b.to]) }; // buys: [wave, kind, tower id, axis, tier] (the build-convergence check, 2026-10-28)
 }
 if (isMainThread && process.argv[1].endsWith("players3.mjs")) {
-  const K = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"], all = [];
-  for (let a = 0; a < 7; a++) for (let b = a + 1; b < 7; b++) for (let c = b + 1; c < 7; c++) all.push([K[a], K[b], K[c]]);
+  const all = coveringTeams(3); // COVERING trios only, every model (owner, 2026-10-29: "Ignore teams that don't cover every enemy type")
   const model = process.env.MODEL || "good", to = Number(process.env.TO) || 120, SEEDS = Number(process.env.SEEDS) || 1;
   if (!MODELS[model]) throw new Error("MODEL: " + Object.keys(MODELS).join("|"));
   const trios = process.env.TRIOS ? process.env.TRIOS.split(",").map(t => t.split("+")) : all;
