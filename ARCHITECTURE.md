@@ -77,13 +77,12 @@ lost core segment flashes the boss red.
 
 | Lever | Design |
 |---|---|
-| start | `START_MONEY` 120, **18 lives** (two full rings, `LIFE_STEP` 6), interest 2% |
+| start | `START_MONEY` 120, **18 lives** (two full rings of 6), interest 2% |
 | interest | `floor(money x rate)` on the credits held when a wave is SENT, **uncapped**; a boss drop may add +0.5% (lives back, below); the owner keeps tuning it down ("97% of a run's money was interest") |
 | bounty | `bountyBase(w) x type bounty x BOUNTY_MUL`, `w` the 10-cycle equivalent wave (§5.2): linear to eq 30, a gentler slope after, x1.1 early; fractional, shown floored; a kill's credits **fly home** as a gold dot and bank on landing |
 | prices | a tower `cost` 40, **x1.5 per tower standing** (40, 60, 90), shown in each free slot; upgrades are multiples of the build price (§4.2); **sell** returns 95%, on a second tap |
 | leaks | an enemy costs its `leak`: swarm 2, boss 10 (= game over, the boss named in the title), others 1 |
-| lives back | a boss drop: +3 lives OR +0.5% interest (half and half by `fixedRand`); **score** blocks of +6 at 50,000 then every 100,000, earned any time but **paid when the wave's last boss falls** (`G.lifeOwed`: "all rewards should come after boss levels") |
-| score | `round(bounty x 10)` a kill, +1000 a life left on a win; never shown (BEST = the furthest wave) |
+| lives back | a boss drop ONLY: +3 lives OR +0.5% interest (half and half by `fixedRand`). **No score** (owner, 2026-10-29: "remove anything based around score"; its +6 lives per 100,000 went with it); BEST = the furthest wave |
 | speeds | 1 / 1.5 / 2 / 3x (keys 1-4), 10x for the owner (5); the sim steps 0.02 s; Temporal Drive always runs at 1x |
 
 **Wave gating** (`bossUp` includes `G.fleetQ`):
@@ -465,8 +464,7 @@ counting bosses). Death's window: the strongest trio needs at least 30 of its 39
 **Fleets**: ONE plain wave's worth (`FLEET_MUL`) of escorts at plain HP and bounty, in
 formation round the boss at its pace; **20% of every escort's HP moves onto its boss**
 (`FLEET_TO_BOSS`; not Temperance); the fleet enters one unit at a time (`G.fleetQ`) and the
-sky holds until all of it dies. **Rewards**: +3 lives or +0.5% interest, the pending score
-lives, the core's powers at 24 / 48.
+sky holds until all of it dies. **Rewards**: +3 lives or +0.5% interest, the core's powers at 24 / 48.
 
 ### 5.5 The boss sky
 
@@ -655,7 +653,7 @@ the others block in it).
 
 | Store | Holds |
 |---|---|
-| localStorage | `aspira.best` `{score, wave, ascended}`, `spire.autowait` / `automove`, `aspira.mute` / `vol` |
+| localStorage | `aspira.best` `{wave, ascended}` (older saves may still hold an unread `score`), `spire.autowait` / `automove`, `aspira.mute` / `vol` |
 | IndexedDB (`aspira-autosave.js`) | the whole `G` as each wave starts, cleared when a game ends; on load **resume wave N** or **new game**, the card read from a small `meta` record so it comes up before a tower can be built (the run itself is read on resume) - the save is the board AT REST, stamped `skillScale` (`runClean`: towers back on their build slots, every transient state and the field dropped; the Challenge button up) (a resumed run may still sign TOP PLAYERS); **everything in `G` must be structured-cloneable** |
 | server | nothing beyond §9.1-9.2; no accounts |
 
@@ -782,7 +780,6 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | rules | `ARMOR_ONE_BLOCK` stays false (one block on one lane made armor free) |
 | rules | the Relay stays on the tower it was given |
 | rules | a boss wave never rides the timer; the fleet queue counts as the boss being up; a time stop holds the clock and spawns |
-| rules | score lives are paid only when the wave's last boss falls |
 | rules | Auto-move is for Ascendants only and disqualifies the game; arming needs a second tap |
 | rules | `FLEET_TO_BOSS` is live; keep it at 0.2 (above it lost trios to the wave-120 boss) |
 | repo | never commit the sound samples (public repo) or `graphify-out/` (both gitignored here: `/data/`, `/graphify-out/`) |

@@ -1,7 +1,7 @@
 // /aspira — game state and simulation: waves, economy, targeting, combat, fx.
 
 let fx = [];
-let best = { score: 0, wave: 0 };
+let best = { wave: 0 };
 try { best = JSON.parse(localStorage.getItem("aspira.best")) || best; } catch (_e) {}
 
 // TESTING: the owner asked to start rich while designing; the real start is 100
@@ -12,10 +12,10 @@ function newGame() {
   // loads after this file, so the very first call finds no pushCells yet)
   if (typeof pushCells === "function") pushCells(0); if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 }); // (no boss sky carried over)
   return {
-    money: START_MONEY, drips: [], lives: 18, score: 0, wave: 0, interest: 0.02, // 18 = two full shield rings (owner); interest 2% (owner, 2026-10-14: "balance the money" - at 3% uncapped, 97% of a run's money was interest, ~350k banked by wave 91; was 0.03)
+    money: START_MONEY, drips: [], lives: 18, wave: 0, interest: 0.02, // 18 = two full shield rings (owner); interest 2% (owner, 2026-10-14: "balance the money" - at 3% uncapped, 97% of a run's money was interest, ~350k banked by wave 91; was 0.03)
     towers: [], enemies: [], spawns: [], fleetQ: [], chains: [], nextIn: 0, started: false, over: false,
-    power: { SCR: 0, RNG: 0, MNY: 0, DAM: 0 }, charge: 0,
-    nextLifeAt: 50000, id: 1,
+    power: { RNG: 0, MNY: 0, DAM: 0 }, charge: 0,
+    id: 1,
   };
 }
 
@@ -290,10 +290,9 @@ function kill(e, t) {
   e.dead = true; if (e.breached && typeof breachShrapnel === "function") breachShrapnel(e); if (e.drip > 0) dripFlush(e); // a breached enemy bursts (aspira-skills.js); its last goo falls (aspira-acid.js)
   if (t) t.kills = (t.kills || 0) + 1;
   const mul = (e.markT > 0 ? e.markMul : 1) * (G.power.MNY > 0 ? 2 : 1) * (e.slowT > 0 && e.siphon ? e.siphon : 1);
-  const b = e.wave >= WIN_WAVE ? 0 : e.bounty * mul; // DEATH's wave PAYS NOTHING - no credits, score or drop (owner, 2026-10-17: "death should not give any rewards")
+  const b = e.wave >= WIN_WAVE ? 0 : e.bounty * mul; // DEATH's wave PAYS NOTHING - no credits or drop (owner, 2026-10-17: "death should not give any rewards")
   sfxFor("kill", e.type); // each enemy type its own death sound where one is mapped ("kill.fast" ..., owner 2026-10-16), else the shared one
   creditDot(e.x, e.y, b); // the credits FLY to the core and land there (aspira-floats.js)
-  if (b > 0) addScore(Math.round(b * 10));
   G.charge = Math.min(POWER_FULL, G.charge + 1);
   burst(e.x, e.y, ENEMIES[e.type].color, 14);
   if (e.type === "bonus") { if (bossPays(e) && e.wave < WIN_WAVE) bonusDrop(e); bossKilled(e); } // the last Devil pays; a Lover's mate enrages (aspira-bosses.js)
@@ -304,25 +303,13 @@ function kill(e, t) {
   if (e.charge && !staticQuiet) dischargeStatic(e); else if (e.charge && e.charge.t && skillOf(e.charge.t, "capacitance") >= CAP_CHAIN_FROM) capQueue.push(e); // a discharge killed it: it goes off next (CAP_CHAIN_FROM, aspira-skills.js)
 }
 
-// LIVES come in multiples of LIFE_STEP 6 - a ring's first side count (owner, 2026-10-04)
-const LIFE_STEP = 6;
 // a boss drops +BOSS_LIFE_DROP LIVES or +0.5% INTEREST, fixed per boss wave; ONCE a boss wave (2026-10-15: two-lane bosses paid twice)
-const BOSS_LIFE_DROP = 3; // owner, 2026-10-28: "cut lives dropped to 3" (was LIFE_STEP 6; the score blocks keep 6)
+const BOSS_LIFE_DROP = 3; // owner, 2026-10-28: "cut lives dropped to 3" (was 6; NO SCORE since 2026-10-29: "remove anything based around score" - its +6 lives per 100k went with it)
 function bonusDrop(e) {
   if ((G.bossPaid ||= {})[e.n]) return;
   G.bossPaid[e.n] = true;
   if (fixedRand(e.n, 4) < 0.5) { G.lives += BOSS_LIFE_DROP; float(e.x, e.y - 18, "+" + BOSS_LIFE_DROP + " lives", "cyan"); } // +3 (owner, 2026-10-28; +6 from 2026-10-11, +12 before)
   else { G.interest += 0.005; float(e.x, e.y - 18, "+0.5% interest", "cyan"); } // owner, 2026-10-26: "Reduce interest / To 0.5% drops" (players banked 2-4M by Death); was +1%, +5% before that
-}
-
-function addScore(n) {
-  G.score += n * (G.power.SCR > 0 ? 2 : 1);
-  // ...EARNED here, PAID when the wave's last boss falls (owner, 2026-10-14: "all rewards should come after boss levels never
-  // on the 10" - the 100k marks paid mid-wave): G.lifeOwed, bossKilled (aspira-bosses.js)
-  while (G.score >= G.nextLifeAt) {
-    G.lifeOwed = (G.lifeOwed || 0) + LIFE_STEP;
-    G.nextLifeAt = G.nextLifeAt < 100000 ? 100000 : G.nextLifeAt + 100000;
-  }
 }
 
 // ---------- fx ----------

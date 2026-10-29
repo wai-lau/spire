@@ -125,8 +125,6 @@ const WIN_WAVE = 120; // the 10th boss (a boss every STAR_EVERY 12 since 2026-10
 function winGame() {
   G.over = true; G.won = true;
   best.ascended = true; // (the title read ASCENDANT from then on until 2026-10-23 - the boss name now, aspira-ui.js)
-  addScore(G.lives * 1000);
-  if (G.score > best.score) best.score = G.score;
   if (G.wave > best.wave) best.wave = G.wave;
   try { localStorage.setItem("aspira.best", JSON.stringify(best)); } catch (_e) {}
   if (typeof renderEndStats === "function") renderEndStats();
@@ -137,7 +135,6 @@ function winGame() {
 function gameOver() {
   G.over = true;
   sfx("over");
-  if (G.score > best.score) best.score = G.score;
   if (G.wave > best.wave) best.wave = G.wave;
   try { localStorage.setItem("aspira.best", JSON.stringify(best)); } catch (_e) {}
   if (typeof renderEndStats === "function") renderEndStats(); // the end screen's tower + leak stats (aspira-endstats.js)

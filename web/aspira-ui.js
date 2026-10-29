@@ -262,8 +262,7 @@ function updateHud() {
   setText($("asp-int"), (G.interest * 100).toFixed(1) + "%");
   setText($("asp-wave"), G.wave); // the HUD keeps Arabic numerals (owner); the upcoming-wave list is Roman
   updateAutoWait();
-  // BEST is the furthest WAVE reached (owner: no one cares about score; the score
-  // still counts underneath, it is what pays the extra lives - addScore)
+  // BEST is the furthest WAVE reached (owner: no one cares about score; there is none since 2026-10-29)
   setText($("asp-best"), Math.max(bestWave(), G.wave));
   flashBuild();
   for (const k of KINDS) {

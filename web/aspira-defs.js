@@ -401,7 +401,7 @@ const ENEMY_HP_MUL = 0.225, BOUNTY_MUL = 0.7; // 0.7 (owner, 2026-10-12: "feels 
 for (const k in ENEMIES) { ENEMIES[k].hp *= ENEMY_HP_MUL; ENEMIES[k].bounty *= BOUNTY_MUL; }
 
 const POWERS = [
-  ["SCR", "Score ×2"], ["RNG", "Range +30%"], ["MNY", "Bounty ×2"],
+  ["RNG", "Range +30%"], ["MNY", "Bounty ×2"],
   ["DAM", "Damage +60%"], ["FRZ", "Freeze all"], ["BOM", "Blast all"],
 ];
 const POWER_FULL = 30, POWER_TIME = 10 / 3;
