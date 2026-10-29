@@ -143,7 +143,7 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // ARC_VOLT_JUMPS jumps (tier 0: 2 - three enemies hit), each jump reaching ARC_VOLT_REACH u from the enemy it leaps from (not tied to
 // ARC's own small range); from Voltage ARC_FORK_FROM the strike FORKS ONCE into two chains, and nothing forks after (branchFrom). Each
 // jump keeps ARC_AMP_FALL x the hit before (Amperage, id conductivity). Resistance (id capacitance): every hit slows (ARC_RES_SLOW, for
-// STAT_SLOW_T s - never a shielded enemy, applySlow) and breaks armor (ARC_RES_STRIP x the wave's armor reference - shredArmor); no
+// STAT_SLOW_T s - never a shielded enemy, applySlow) and breaks ARC_RES_STRIP of the armor left (shredPct); no
 // charges, no bursts. A bolt never strikes a unit twice (skillHop). Numbers 0..V, let: the battery fits them
 let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 3, 4, 5, 6, 8], ARC_VOLT_REACH = [150, 170, 190, 215, 240, 270], ARC_FORK_FROM = 2;
 let ARC_RES_SLOW = [0, 0.15, 0.25, 0.35, 0.45, 0.55], ARC_RES_STRIP = [0, 0.05, 0.1, 0.15, 0.22, 0.3];
@@ -219,7 +219,7 @@ function skillHit(c, e, d) {
   damage(e, d, c.t, false, false, c.st); onHit(e, c.t, c.st, d); // (discharges e's own charges, if any)
   if (c.st.carry && e.dead && hp0 > 0 && d > hp0) voltCarry(c, e, d - hp0);
   if (c.st.resSlow && !e.dead) applySlow(e, c.st.resSlow, STAT_SLOW_T, c.t.id); // Resistance (the ARC redesign, 2026-10-29)
-  if (c.st.resStrip && !e.dead) shredArmor(e, c.t, c.st.resStrip * armorRefOf(e.wave || 1));
+  if (c.st.resStrip && !e.dead) shredPct(e, c.t, c.st.resStrip); // a SHARE of the armor left, as every strip since 6.18.0 (Wai 2026-10-28)
   const b = c.st.charge;
   if (!b || e.dead) return;
   const ch = e.charge || (e.charge = { list: [], t: c.t });
@@ -290,9 +290,14 @@ function skillHop(c, node, depth) {
   const r = arcJumpR(c.st);
   // ONE BOLT STRIKES A UNIT ONCE (owner, 2026-10-26: "lightning from the same bolt can never strike the same unit more than once (so a
   // unit can be hit once for each bolt)"; Conductivity III+ let it re-strike, st.revisit, before)
-  const max = 1;
-  return chainPick(c.t, node.e, r * r, o => o.id === node.e.id || (c.hits.get(o.id) || 0) >= max || c.seen.has(o.id)); // c.seen: the attack's other bolts' (fire, aspira-towers.js)
+  const max = 1, hit = c.st.dmg;
+  return chainPick(c.t, node.e, r * r, o => o.id === node.e.id || (c.hits.get(o.id) || 0) >= max || c.seen.has(o.id) || // c.seen: the attack's other bolts' (fire, aspira-towers.js)
+    (ARC_JUMP_TOUGH && (o.max || 0) < (node.e.max || 0)) || (ARC_JUMP_MIN > 0 && (o.max || 0) < ARC_JUMP_MIN * hit * escale(o))); // the swarm rules (prototype, OFF)
 }
+// BAD VS SWARM, A PROTOTYPE (owner, 2026-10-29: ARC "Now bad vs swarm" - a chain clears swarmers whatever its numbers, 1cc1c0c): OFF by
+// default (today's ARC). ARC_JUMP_TOUGH: a jump goes only to an enemy at least as tough (max HP) as the one it leaves; ARC_JUMP_MIN > 0:
+// a jump skips an enemy whose max HP is under ARC_JUMP_MIN x the hit (x the late scale, as damage() applies it). let: the sims try them
+let ARC_JUMP_TOUGH = false, ARC_JUMP_MIN = 0;
 function skillHopTo(c, node, nxt, depth) {
   const raw = c.st.dmg * c.st.arcFall ** depth, d = shotDamage(c.t, c.st, nxt, raw);
   node.kids.add(nxt.id); c.seen.add(nxt.id); c.hits.set(nxt.id, (c.hits.get(nxt.id) || 0) + 1);
