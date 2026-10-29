@@ -26,7 +26,7 @@ const MECH = {
   },
   frz: {
     temp: k => `aura slow ${pct(V("FRZ_TEMP_SLOW")[k])}, tick every ${V("FRZ_TEMP_TICK")[k]}s ${k ? `x(1 + ${V("FRZ_CHILL_K")} x slow)` : `a flat nip, x${V("FRZ_NIP")} a tick`}${V("FRZ_BRITTLE")[k] > 1 ? `, brittle: takes x${V("FRZ_BRITTLE")[k]} from every tower` : ""}`,
-    rime: k => (V("FRZ_RIME")[k] ? `a pulse every ${V("FRZ_RIME_PERIOD")[k]}s leaves +${x(V("FRZ_RIME")[k] * 100)}% slow, permanent and stacking (full at ${pct(V("FRZ_RIME_FULL"))}, then spreads); full frost takes ${pct(V("FRZ_RIME_CRACK")[k])} of an armored enemy's armor;` : "no pulses"),
+    rime: k => (V("FRZ_RIME")[k] ? `a pulse every ${V("FRZ_RIME_PERIOD")[k]}s leaves +${x(V("FRZ_RIME")[k] * 100)}% slow, permanent and stacking (full at ${pct(V("FRZ_RIME_FULL"))}, then spreads)${V("FRZ_RIME_CRACK")[k] ? `; full frost takes ${pct(V("FRZ_RIME_CRACK")[k])} of an armored enemy's armor` : ""}` : "no pulses"),
     moons: k => (V("FRZ_MOON_COUNT")[k] ? `${V("FRZ_MOON_COUNT")[k]} moon${V("FRZ_MOON_COUNT")[k] > 1 ? "s" : ""} at ${pct(V("FRZ_MOON_BY")[k])} of the tower${V("FRZ_SUBMOON_N")[k] ? `, each with ${V("FRZ_SUBMOON_N")[k]} small moon${V("FRZ_SUBMOON_N")[k] > 1 ? "s" : ""}` : ""}` : "no moons"),
   },
   sol: {
