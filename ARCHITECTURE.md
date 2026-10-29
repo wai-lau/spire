@@ -105,7 +105,7 @@ too. The lanes' CORE TWIST (§2.1) gives the same time to the core instead. The 
 
 | | ARC | FRZ | SOL | ACD | GRV | CRR | IFR |
 |---|---|---|---|---|---|---|---|
-| design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools | a nova that leaves a black hole (§4.6b) | a carrier launching interceptors (§4.6c) | fireballs lobbed slowly, bursting into rings, pellets and six-spoked flares (§4.6e) |
+| design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools | a void a shot, with novas and an aura (§4.6b) | a carrier launching interceptors (§4.6c) | fireballs lobbed slowly, bursting into rings, pellets and six-spoked flares (§4.6e) |
 | colour | yellow | cyan | pink | green | violet | blue | orange |
 | default targeting | Near | Fresh | Biggest | Biggest | Near | Near | Near |
 | main counter of (`GOOD_VS`) | swarm | fast | armor, bosses | shield, bosses | swarm, armor | fast, shields | swarm, shields |
@@ -156,11 +156,11 @@ debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the
 |---|---|---|---|---|
 | ARC | one bolt that chains once | Conductivity: chains twice | Voltage: one fork (`VOLT_FORK`) | Capacitance: one charge |
 | SOL | one beam that strikes its first enemy and flies on past it, striking no one: no band, split, bounce or prism (`st.pierce` 0, `SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn and the scorch rod across the band | Diffraction (id `refraction`): the band, one split, the mirrors | Breach: armor stripped a hit |
-| CRR | one interceptor, one bolt a volley, six volleys a sortie (`CRR_AMMO`) | Hangar: two, one held | Tether: one tethered drone (`CRR_TETHER_N`; the first interceptor out, `carTethered`) | Armament: two bolts (`CRR_BOLTS_BY`) |
-| FRZ | a slowing circle, no tick | Sublimation: the tick, more the slower | Permafrost: a cracking pulse | Moons: one moon |
+| CRR | three interceptors, one bolt a volley, six volleys a sortie (`CRR_HANGAR`, `CRR_AMMO`) | Hangar: five launched, one stored in orbit | Tether: the first interceptor out tethers its target (`CRR_TETHER_N`, `carTethered`) | Armament: two bolts a volley, more volleys (`CRR_BOLTS_BY`) |
+| FRZ | a slowing circle with a light flat nip | Sublimation: the real tick, more the slower | Permafrost: frost pulses (a stacking slow, a share of armor) | Moons: one moon |
 | ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Contagion: ray pools that slow (`ACD_POOL_SLOW`); kill pools gone |
-| GRV | a nova alone (no sphere after it) | Void: the hole + armor strip | Nova (id `supernova`): the slowing aura | Radiation: pellets, brighter |
-| IFR | a meteor that just hits | Meteor: a fan of two | Hellfire: a fire riding its enemy | Flare: one flare at the impact |
+| GRV | a void a shot that crushes as it grows, shedding pellets as it decays | Void: a heavier void | Nova (id `supernova`): three novas before each void, stripping armor | Acceleration (id `radiation`): the aura (pull, slow) and harder pellets |
+| IFR | a meteor that bursts into a fan of six (`IFR_FAN_N`) | Meteor: meteors stored in orbit | Hellfire: a wall of fire lighting flares | Flare: a bright flare at each impact |
 
 Tier I names: `TIER_I_NAMES` (`aspira-capstone.js`). Checks: `scripts/spire-smoke/tiers.mjs`.
 
@@ -515,7 +515,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | 3 | bleed crit | wired (a non-SOL tower may crit a bleeding enemy for x `BLEED_CRIT_MUL`), but `SOL_BREACH_CRIT` is 0 at every tier, so nothing bleeds crit-ably and the step is inert |
 | 4 | marks | damage-taken x `shredMul` |
 | 5 | **Brittle** | x while slowed |
-| 6 | **armor** | THE CURVE (owner 2026-10-28, "armor ... applied non-linearly"): a hit loses `R / (R + ARMOR_K x hit)`, at most `ARMOR_CAP` 90% (`armorTake`) - a hit as big as the armor loses half, smaller more, bigger less; armor never counts below 0; every type carries `ARMOR_ALL` of an armor unit's armor; frost removes a SHARE of it; EVERY hit, quiet ones too (the old flat bite, 10% floor, negative-armor bonus and minus-reference floor: ARCHAEOLOGY.md) |
+| 6 | **armor** | THE CURVE: a hit loses `R / (R + ARMOR_K x hit)`, at most `ARMOR_CAP` (`armorTake`) - a hit as big as the armor loses half, smaller more, bigger less; armor never counts below 0; every type carries `ARMOR_ALL` of an armor unit's armor; frost removes a SHARE of it; EVERY hit, quiet ones too (the old flat bite, 10% floor, negative-armor bonus and minus-reference floor: ARCHAEOLOGY.md) |
 | 7 | `bossHitCap` | Justice |
 | 8 | floor | a **whole number, at least 1 if it landed** |
 
@@ -527,7 +527,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | full stop | only Temporal Drive; shields block all slows; Strength shrugs all of them |
 | armor loss | permanent, multiplied down, never below 0 |
 | quiet hits | ticks, pools, splash: no flash; pool hits past `POOL_LOD` show one summed number an enemy |
-| numbers | crits marigold; sized by the hit before armor, greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or an ATC bolt's interceptor); a GRV number flies INTO its hole (`grvFloat`) (`DMG_FLY`) |
+| numbers | crits marigold; sized by the hit before armor, greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or a CRR bolt's interceptor); a GRV number flies INTO its void (`grvFloat`) (`DMG_FLY`) |
 
 ## 7. Interface
 
