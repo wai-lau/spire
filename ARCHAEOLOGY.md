@@ -348,6 +348,18 @@ Star; every pair clean on 1-12. Counter matrix 61-69 spread (3 ATC, 8 points, % 
 Launch 0/6/0/64, Armament 3/52/0/23; with three bolts, less ammo, x1.5 speed 29/30/0/30 (armor 982 a bolt at wave 90 against
 ~1750); at range 130 with the 100 u circle 24/6/0/9; later 25/0/0/15 at gap .15. Every bolt slows: fast 30% -> 6% leaked.
 
+### 4.6b-bis GRV as ARCHITECTURE described it before the 2026-10-25 rework (kept there until 6.17.5)
+
+The 2026-10-15..21 tower: every fire one nova at `GRV_NOVA_K` (3x) the hit (three novas 2026-10-18 .. 21), every `GRV_BH_EVERY`-th
+(3rd) leaving a hole with all three shots' mass (`grvBank`); the AURA opened from every hole, burned nothing, slowed in two rings and
+stripped positive armor graded by distance (`GRV_STRIP_IN` / `GRV_STRIP_OUT`; `GRV_AURA_K` - both now defined but unused); the late
+fire rate came from the deepest axis (`GRV_RATE_MUL`, owner 2026-10-18 "each axis still equally powerful"; countermx N=1 61-69 leaks
+Void 16 / Supernova 1 / Radiation 1 %); Radiation was the pellets (Hawking: a last burst when a hole runs dry), Void the aura (Event
+Horizon: 90% slow in a full hole's core), Supernova the nova (Hypernova: half the positive armor at once). The 2026-10-25 rework
+(owner): tier 0 a void a shot, pellets at tier 0, Nova the novas and the strip, Void the void, Acceleration (id `radiation`, kept for
+saves) the aura and the pellets' damage and range; "aura radius never exceeds 2x void radius". "GRV is support" (2026-10-21) gave the
+aura its slow ahead (`GRV_AHEAD_K`) and the glide to the lane's centre (`GRV_LAT_V`). Pellets roll 25-400% each (`GRV_PEL_J`).
+
 ### 4.6d Trio scale, the rounds (2026-10-15..16)
 
 Scores per round (`dmg`, was -> now; the factor squared each time):

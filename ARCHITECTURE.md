@@ -271,52 +271,26 @@ measures it.
 
 ### 4.6b GRV, the gravity tower (`web/aspira-grv.js`)
 
-The fifth tower (owner's design, 2026-10-15). In the six-tower square every tower is strong against a PAIR of enemy types and
-weak to the other two; GRV takes **swarm + armor** and is weak to **fast + shield**. Reach: mid, about ARC's. Palette: a violet
-aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*` tokens). The constants and the numbers it started from are in
-ARCHAEOLOGY §4.6b.
+Designed for **swarm + armor**, mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
+§4.6). Palette: a violet aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*`). There is no projectile: everything
+happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
-**The attack.** Every fire is **one nova** at `GRV_NOVA_K` (3x) the hit (owner 2026-10-21; three novas 2026-10-18 .. 21), and every **`GRV_BH_EVERY`-th** (3rd) leaves a hole holding all three shots' mass, area and nova damage (`grvBank`, grvMerge's sums; owner 2026-10-21); there is no
-projectile. Each nova lands on the enemy in range whose nova reach holds the most enemies, ties to the targeting mode (`grvNovaSpot`);
-its yellow front collapses inward, hitting each enemy it passes once. The HOLE is born where the target will be a moment on
-(`GRV_LEAD_S`, along its lane at its pace now, slows and stuns counted), so the enemy walks into it. After the last nova a
-**black centre** with a purple outline is left, and a **purple aura** opens from it - sized off ONE nova's damage (the three's / 3).
-
-**A hole is its mass.**
-
-| Part | Rule |
+| part | principle |
 |---|---|
-| size | the aura's area is the hole's mass: its radius is the root of (area-per-mass x mass), capped at `GRV_R_MAX` base auras (the mass itself may go on past it). Area-per-mass is fixed as the aura opens, from the nova: the base radius x the root of the damage the nova really dealt in tower hits (a kill counts the whole hit, a hit a shield swallowed nothing), clamped to `GRV_GROW_MIN`..`GRV_GROW_MAX`, so even an empty nova leaves the hole one bare hit would |
-| gain | mass grows with the damage the hole deals (nova and pellets; the aura deals none), up to a cap. A crowd feeds it fast; shields soak hits and feed it little; fast enemies pass before it feeds |
-| loss | gone by `EFFECT_MAX_S` (10 s) from its oldest part's birth whatever it eats - the last `GRV_FADE_S` it shrinks to nothing; before that it evaporates in proportion to its radius (`dm/dt = -E x radius / base radius`), not linearly: an unfed base hole lasts about 5 s (`GRV_LIFE`), a big or merged one burns out sooner, and it shrinks all its life |
-| pull and merge | open holes (any GRV's) accelerate toward each other by the OTHER's mass over distance squared (`grvPull`, speed capped); when their black centres touch the bigger takes the other in (`grvMerge`): masses, caps, aura areas and nova damage all add, and the radius eases out to the summed area |
+| void (tier 0) | every shot leaves a VOID where its target will be a moment on (`GRV_LEAD_S`, along its lane at its pace, slows counted), so the enemy walks into it; the void crushes what is inside, harder the heavier it is, as it grows |
+| mass | a void IS its mass: its size is the root of its mass; it gains mass from the damage it deals (a crowd feeds it, a shield soaks hits and feeds it little, fast enemies pass before it feeds), up to a cap |
+| decay | it evaporates by its circumference - a big or merged void burns out sooner - and it is gone by `EFFECT_MAX_S` from its oldest part's birth whatever it eats |
+| pellets (tier 0) | a void sheds pellets as it decays, paced by the mass it loses: each flies out at random and hits the first enemy it touches or nothing; each pops one shield charge; past `GRV_PEL_SOFT` in flight they bundle (perf) |
+| pull and merge | open voids (any GRV's) drift toward each other by the other's mass; touching, the bigger takes the other in (`grvMerge`) - masses, caps and areas add |
+| novas (Nova) | `GRV_NOVA_N` novas implode on the best spot before each void (`grvNovaSpot`: the reach holding the most enemies), each front hitting what it passes once and stripping armor; they set the void's size |
+| aura (Acceleration) | an aura round the void, never past twice its size: it slows (never the shielded), harder inside the void and on an enemy already past it, and every enemy in it glides across its lane toward the lane's centre line (`GRV_LAT_V`, easing back after); it deals no damage |
+| look | the void's black centre is logarithmic in its size (`grvCoreR`), touching disks join; the aura is a radial band clear at both ends; every GRV damage number flies into its void (`grvFloat`) |
 
-**The aura** deals NO damage. It slows (never the shielded; a fast enemy's slow is not doubled, GRV being weak to it) in two
-rings, the core far harder than the rim, and strips POSITIVE armor like Corrosion, graded by distance (strongest at the
-centre, weakest at the edge: `GRV_STRIP_IN` / `GRV_STRIP_OUT`). It is drawn as a radial band, clear at the centre and the edge.
-**GRV is support** (owner, 2026-10-21): the aura's slow is `GRV_AHEAD_K` x on an enemy already PAST the hole along its lane, and
-every enemy in the aura glides ACROSS its lane toward the lane's CENTRE line (`GRV_LAT_V` u/s, never past it - `e.pull`, a world
-offset added in stepEnemies), easing back `GRV_LAT_BACK` s after it leaves. Pellets each roll 25-400% (mean 1) for hit, streak and
-opacity together (`GRV_PEL_J`).
-
-**Radiation.** Every hole sprays **pellets**: projectiles that fly out in a random direction and hit the first enemy they
-touch, or nothing; each pops a shield charge like any hit, kept sparse so GRV stays weak to shields. The rate is the old
-pellet rate x mass, paced by how fast the hole evaporates (`GRV_RAD_LIFE`): a hole gives off what a linear one would over its
-life, as fast as it really loses mass. Past `GRV_PEL_SOFT` pellets in flight they **bundle** (one carries several pellets'
-hit, so the expected damage is unchanged; perf). Pellets find enemies through the shared `projGrid` / `enemiesNear` (not
-`enemyGrid`, which is `aspira-acid.js`'s: all `web/*.js` share one global scope).
-
-**Look.** The black centre's radius is logarithmic in the aura (`grvCoreR`), drawn in three passes so touching disks join; every
-GRV damage number flies into its hole (`grvFloat`); the aura opens only after the nova has fully collapsed.
-
-**Axes** (purchases I-IV, IV the capstone; one capstone a tower):
-
-| axis | buys | capstone (IV) |
+| axis | buys | capstone |
 |---|---|---|
-| (every axis) | the late FIRE RATE (`GRV_RATE_MUL`) comes from the deepest axis - shared, not Supernova's alone (owner 2026-10-18: "each axis still equally powerful"; countermx N=1 61-69 leaks now Void 16 / Supernova 1 / Radiation 1 %) | |
-| **Void** | a bigger aura, a stronger slow, a harder inner burn; the nova's REACH grows with it too (max of Void / Supernova) | **Event Horizon**: near-total slow (90%) in the core of a full-grown hole, unshielded only |
-| **Supernova** | a bigger, harder nova - the swarm answer | **Hypernova**: the nova takes half the positive armor at once, and a hole starts heavy |
-| **Radiation** | more pellets per mass, harder pellets | **Hawking**: a hole that runs out of mass ends in a last burst of pellets (not one a merge swallowed) |
+| **Void** | a bigger void, a harder crush, more pellets | **Singularity**: a void twice as heavy |
+| **Nova** (id `supernova`) | the novas before each void, faster by tier, their armor strip (`GRV_NOVA_STRIP`) | **Hypernova**: the most strip |
+| **Acceleration** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Event Horizon**: the whole aura slows as hard as its inside |
 
 ### 4.6c CRR (id `car`), the carrier (`web/aspira-car.js`)
 
