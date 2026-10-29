@@ -22,7 +22,7 @@ const MECH = {
   arc: {
     conductivity: k => `each jump keeps ${pct(V("ARC_AMP_FALL")[k])} of the hit before it`, // Amperage (the ARC redesign, 2026-10-29)
     voltage: k => `${V("ARC_VOLT_JUMPS")[k]} jumps${k >= V("ARC_FORK_FROM") ? "" : ` (${V("ARC_VOLT_JUMPS")[k] + 1} enemies hit)`}, each reaching ${V("ARC_VOLT_REACH")[k]} u from the enemy before${k >= V("ARC_FORK_FROM") ? "; the strike forks once into two chains, nothing after" : ""}; a bolt never hits a unit twice`,
-    capacitance: k => (V("ARC_RES_SLOW")[k] ? `every hit slows ${pct(V("ARC_RES_SLOW")[k])} for ${V("STAT_SLOW_T")}s (never a shielded enemy) and breaks ${pct(V("ARC_RES_STRIP")[k])} x the wave's armor reference` : "no slow, no armor break"), // Resistance
+    capacitance: k => (V("ARC_RES_SLOW")[k] ? `every hit slows ${pct(V("ARC_RES_SLOW")[k])} for ${V("STAT_SLOW_T")}s (never a shielded enemy) and strips ${pct(V("ARC_RES_STRIP")[k])} of the armor left` : "no slow, no armor break"), // Resistance
   },
   frz: {
     temp: k => `aura slow ${pct(V("FRZ_TEMP_SLOW")[k])}, tick every ${V("FRZ_TEMP_TICK")[k]}s ${k ? `x(1 + ${V("FRZ_CHILL_K")} x slow)` : `a flat nip, x${V("FRZ_NIP")} a tick`}${V("FRZ_BRITTLE")[k] > 1 ? `, brittle: takes x${V("FRZ_BRITTLE")[k]} from every tower` : ""}`,
