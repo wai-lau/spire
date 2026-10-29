@@ -65,7 +65,7 @@ const DESCRIBE = {
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY), the pools' slow (ACD_POOL_SLOW, Contagion's since the tier redesign),
-  // the pools (Contagion: the ray drips them; no kill pools since the tier redesign), Corrosion: the armor FLOOR it eats down to (minus the wave's armor, damage() in aspira-game.js) - read live
+  // the pools (Contagion: the ray drips them; no kill pools since the tier redesign), Corrosion: the share of armor a full-ramp tick strips at the current wave (shredPc) - read live
   acd(sk) {
     const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0, n = ACD_LINES[f], J = n > 1 ? "Jets" : "The jet", s = n > 1 ? "" : "s"; // tier 0: one ray, no pools (tier redesign 2026-10-24)
     const hits = TOWERS.acd.rate * curveAt("acd", 0).rate, pool = ACD_PUDDLE_CAP * ACD_POOL_HEAT, life = Math.min(POOL_MAX_S, (ACD_CONTAGION[c] || {}).life || 0); // 100% = a second of a jet, before its ramp

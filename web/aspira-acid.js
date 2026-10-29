@@ -101,11 +101,12 @@ function stepAcd(t, dt) {
 // heat (ACD_CORROSION_DMG x the dps, so the top heat rises with it - raising only
 // the cap did nothing, the ramp rarely reaches it); the ramp stays ACD_DOUBLE[0]
 // Corrosion EATS ARMOR again (owner, 2026-10-10: three towers, every trio must be winnable): the chart rework had
-// dropped st.corrode, so the axis no longer touched armor. Each tick strips ACD_CORRODE of its damage, past zero -
-// negative armor is a flat bonus on every hit from every tower, bosses too. The weakest of 1x / 3x / 10x tried
+// dropped st.corrode, so the axis no longer touched armor. Each tick strips ACD_CORRODE of its damage (past zero then - negative armor a
+// flat bonus on every hit from every tower, bosses too; since the 2026-10-28 armor rework a strip multiplies armor toward 0, shredArmor). The weakest of 1x / 3x / 10x tried
 // (scripts/aspira-sim/trios.mjs): ARC+FRZ+ACD 90 -> won (Judgement, Death), ARC+SOL+ACD 96 -> won (Capacitance first)
-// THE BOSS FLOOR FOR ALL (owner, 2026-10-22: "boss armor floor to everything", after "no floor" the same day): armor COUNTS no lower than
-// minus the wave's armor (armorRefOf) on any enemy - damage() and damageCredit. Corrosion eats from the jets only - not the pools (owner,
+// THE BOSS FLOOR FOR ALL (owner, 2026-10-22: "boss armor floor to everything", after "no floor" the same day): armor COUNTED no lower than
+// minus the wave's armor (armorRefOf) on any enemy - GONE with the 2026-10-28 armor rework (armor never goes below 0, so nothing to floor;
+// armorRefOf stays: the strips' and the frost's yardstick). Corrosion eats from the jets only - not the pools (owner,
 // 2026-10-13). (No floor 2026-10-13 .. 22: "just get rid of this floor".) (A floor of 0.25-1.25x the
 // wave's armor, x16 on bosses, held it 2026-10-12)
 const acdArmorRef = new Map(), armorRefOf = n => acdArmorRef.get(n) ?? acdArmorRef.set(n, ENEMIES.armor.armor * ENEMY_HP_MUL * armorGrow(n) * scaleOf(n)).get(n); // (x the LATE SCALE)
@@ -149,7 +150,7 @@ function corrodeHit(e, amt, t) {
   amt *= escale(e); // the LATE SCALE: a raw strip (a share of the RAW tick), x the enemy's
   const cut = shredArmor(e, t, amt); // (multiplied off, never below 0 - shredArmor)
   e.corrodeT = 0.4;
-  dripAcc(e, DRIP_REAL * cut, t); // any eaten armor drips, below zero too - real armor DRIP_REAL x (owner, 2026-10-13)
+  dripAcc(e, DRIP_REAL * cut, t); // eaten armor drips, DRIP_REAL x (owner, 2026-10-13; all of it is real armor since the 2026-10-28 rework - none below zero)
 }
 // THE DRIP (owner, 2026-10-13: "when armor is removed, it should drip down (green coin like dots without shimmer), this is
 // collected by nearby enemies, and they lose X% of the collected drip"): the armor Corrosion eats off ANY enemy, below zero too,
@@ -239,7 +240,7 @@ const ACD_FLOW_CARRY = [0, 0.3, 0.7, 0.9] /* V and VI no hotter (owner, 2026-10-
 // THE POOLS SLOW, CONTAGION'S (tier redesign, owner 2026-10-24: Contagion I \"Ray leaves slowing pool\"): by Contagion tier 0..V (was Flow's ACD_FLOW_SLOW 0 .05 .11 .17, V .2)
 const ACD_POOL_SLOW = [0, 0.05, 0.08, 0.11, 0.17, 0.2];
 // CORROSION'S DAMAGE MOVED TO THE BASE (owner, 2026-10-12): a bare ACD burns ACD_BASE_DMG_MUL harder; Corrosion is
-// now the armor STRIP alone - into negative armor, a flat bonus on every tower's hits, so it pays on the unarmored too
+// now the armor STRIP alone (into negative armor then, a flat bonus on every tower's hits; since the 2026-10-28 rework it multiplies armor toward 0)
 // (ACD_BASE_DMG_MUL, ACD_CORROSION_DMG and ACD_SPRAY_MUL - the raw acid - GONE with the tier redesign, 2026-10-24: the stat curve's)
 const ACD_DOUBLE = [0.25, 0.195, 0.06, 0.06] /* x0.5 with ACD_BASE_DMG_MUL x0.6: a steeper ramp - better vs armor, worse vs swarm (2026-10-24 marks target) */, ACD_LINES = [2, 3, 6, 8], /* early-game balance 2026-10-06: two lines from the start (was 1/2/3/5); Spray to be re-fitted */ ACD_SPRAY_MUL = [1, 1, 1, 6.744]; /* V x9, VI x36 (steeper late tiers) */  // every jet a full strike (owner, 2026-10-08: never below 1) - Spray's reach (SKILL_MOVE) is the lever
 // puddles by Seep tier (index 0 = the DEFAULT drip, owner): one every `every`
