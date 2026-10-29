@@ -193,18 +193,18 @@ check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Sublimation I hurts,
 
 // ---------- ACD ----------
 towerTierChecks("acd", ["pool", "puddle", "slow", "spread"]);
-check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry; Contagion I a ray-dripped slowing pool, no kill pools; Corrosion I eats armor (tier redesign 2026-10-24)", () => {
+check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry; Contagion I a ray-dripped pool that does NOT slow (owner, 2026-10-29: \"no slows\"), no kill pools; Corrosion I eats armor (tier redesign 2026-10-24)", () => {
   const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "acd", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "acd", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { lines: s.targets, carry: s.carry, pools: !!s.contagion, slow: s.burnSlow || 0, corrode: s.corrode || 0 }; })()`);
   const pools = (sk, kill) => run(`(() => { const { t, es } = tierLane("acd", ${JSON.stringify(sk)}, [30, 45]); G.started = true; ${kill ? "es[0].hp = es[0].max = 5;" : ""}
     let slowed = false; for (let k = 0; k < 240; k++) { step(1 / 60); if (es[1].slowT > 0) slowed = true; } return { n: (t.puddles || []).length, spread: (t.puddles || []).filter(p => p.spread).length, slowed }; })()`);
   const z = st({}), f = st({ spray: 1 }), c = st({ contagion: 1 }), k = st({ corrosion: 1 });
   if (z.lines !== 1 || z.pools || z.carry || z.slow) return "tier 0 " + JSON.stringify(z);
   if (f.lines !== 2 || !(f.carry > 0)) return "Flow I " + JSON.stringify(f);
-  if (!c.pools || !(c.slow > 0)) return "Contagion I " + JSON.stringify(c);
+  if (!c.pools || c.slow) return "Contagion I " + JSON.stringify(c) + " (expected pools, no slow)";
   if (!(k.corrode > 0)) return "Corrosion I " + JSON.stringify(k);
   const z0 = pools({}, true), c1 = pools({ contagion: 1 }, true);
   if (z0.n) return "tier 0 left " + z0.n + " pools";
-  if (!c1.n || c1.spread || !c1.slowed) return "Contagion I pools " + JSON.stringify(c1) + " (expected ray pools that slow, none from kills)";
+  if (!c1.n || c1.spread || c1.slowed) return "Contagion I pools " + JSON.stringify(c1) + " (expected ray pools that do not slow, none from kills)";
 });
 
 // ---------- GRV ----------

@@ -71,7 +71,7 @@ const CAPSTONE_NUM = [
   
   // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
   [ACD_CORRODE, 0.585 /* a share a tick (6.18.0; was 0.9 of the damage) */], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9],
-  [ACD_CONTAGION, { every: 0.9, life: 5, r: 165 }],
+  [ACD_CONTAGION, { every: 0.6, life: 5, r: 412.5 } /* r x2.5, every /1.5 with its table (2026-10-29; was 0.9, 165) */],
   // GRV (rework 2026-10-25): Void the biggest void (Singularity: twice the start mass, four times the cap); Nova the fastest novas, stripping the most (Hypernova);
   // Acceleration the widest, coldest aura (Event Horizon: the whole aura slows as hard as its inner tier)
   // CRR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
