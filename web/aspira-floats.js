@@ -95,7 +95,7 @@ function keepLive(list) { let j = 0; for (let i = 0; i < list.length; i++) if (l
 const DMG_GREY_STEPS = 32; // the grey in 1/32 steps (~4 levels of each channel): a colour - a text stamp - per step, not per number (perf, 2026-10-16)
 // a tower's DAMAGE NUMBER colour: its build card's text colour (owner, 2026-10-16: "use these font colors for damage numbers, with
 // a black outline") - the pale inks for GRV and ATC, each tower's own swatch for the rest
-const DMG_INK = { grv: "violetink", car: "blueink" };
+const DMG_INK = { grv: "violetink", crr: "blueink" };
 const dmgInk = kind => DMG_INK[kind] || (TOWERS[kind] ? TOWERS[kind].color : "white");
 function dmgColor(f) {
   if (!(f.grey > 0)) return f.color;

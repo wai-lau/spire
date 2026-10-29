@@ -76,7 +76,7 @@ check("3D: WebGL comes up and a frame draws (the board, the moving layer, the en
 });
 
 // a tower of each kind: build through placeTower (the real click path), then draw
-for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) {
+for (const kind of ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"]) {
   check("build " + kind.toUpperCase() + ": placed, its range + tower + movement arrows draw", () => {
     run(`G = newGame(); G.money = 1e6; refreshPanels(); ui.build = "${kind}";
          { const ci = CELLS.findIndex((c, i) => cellOpen(i) && !G.towers.some(t => t.cell === i)); placeTower(CELLS[ci]); }
@@ -127,7 +127,7 @@ check("capstone: one axis to V, a second stops at IV; every tier table covers V 
     for (let k = 0; k < 7; k++) upgradeTower(t, ids[0], true);
     for (let k = 0; k < 7; k++) upgradeTower(t, ids[1], true);
     const out = { a: skillOf(t, ids[0]), b: skillOf(t, ids[1]), opts: skillOptions(t).map(o => o.choice) };
-    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) {
+    for (const kind of ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"]) for (const ax of SKILL_TREES[kind]) {
       const s = towerStats({ id: 99, kind, x: CX, y: CY, lvl: 6, skills: { [ax.id]: 5 } });
       if (!ax.tiers[4] || Object.values(s).some(v => v === undefined || (typeof v === "number" && isNaN(v)))) out.bad = kind + " " + ax.id;
       if (/undefined/.test(describeTower(kind, { [ax.id]: 5 }))) out.bad = kind + " " + ax.id + " desc";
@@ -142,7 +142,7 @@ check("capstone: one axis to V, a second stops at IV; every tier table covers V 
 check("tiers are purchases (owner, 2026-10-23): five slots in every per-tier table, TIER_STEPS ladder steps a buy, an old save read once", () => {
   const r = run(`(() => {
     const out = { len: [], price: [] };
-    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) out.len.push(ax.tiers.length);
+    for (const kind of ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"]) for (const ax of SKILL_TREES[kind]) out.len.push(ax.tiers.length);
     for (const T of [ARC_CONDUCTIVITY, VOLT_FORK, ARC_CAPACITANCE, SOL_SPLIT, SOL_BREACH_ARMOR, SOL_SCORCH_N, ACD_LINES, ACD_CONTAGION, FRZ_MOON_COUNT, GRV_AURA_R, CRR_HANGAR, IFR_STORE, IFR_METEOR_RATE, IFR_BEAM_L, IFR_BEAM_W, VOLT_CARRY_N, CAP_BURST_K]) out.len.push(T.length);
     G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0]; G.money = 1e9;
     for (let k = 0; k < 5; k++) { const lvl = t.lvl, m = G.money; upgradeTower(t, "focus", true); out.price.push([skillOf(t, "focus"), t.lvl - lvl, Math.round(m - G.money) === skillPointsCost({ ...t, lvl }, t.lvl - lvl)]); }
@@ -177,7 +177,7 @@ check("the build card reads tiers I..V (tier redesign 2026-10-24)", () => {
     G = newGame(); G.money = 1e9; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0];
     for (let k = 0; k < 5; k++) upgradeTower(t, "focus", true);
     const out = { focus: skillOf(t, "focus"), offered: skillOptions(t).map(o => o.choice), txt: tierTxt(5), bad: [] };
-    for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) for (let k = 0; k <= 5; k++) {
+    for (const kind of ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"]) for (const ax of SKILL_TREES[kind]) for (let k = 0; k <= 5; k++) {
       const d = describeTower(kind, { [ax.id]: k }); if (/undefined|NaN/.test(d)) out.bad.push(kind + " " + ax.id + " " + k);
     }
     return out;
@@ -188,8 +188,8 @@ check("the build card reads tiers I..V (tier redesign 2026-10-24)", () => {
 });
 check("tier I is no more than today's I: whole counts on the card, from-tier switches at II (tier redesign 2026-10-24, review)", () => {
   const r = run(`(() => {
-    const frac = []; for (const kind of ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]) for (const ax of SKILL_TREES[kind]) { const d = describeTower(kind, { [ax.id]: 1 }); if (/\\d\\.5 at a time/.test(d)) frac.push(kind + " " + ax.id); }
-    const tch = k => towerStats({ id: 99, kind: "car", x: CX, y: CY, lvl: 1 + k, skills: { launch: k } }).tChain;
+    const frac = []; for (const kind of ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"]) for (const ax of SKILL_TREES[kind]) { const d = describeTower(kind, { [ax.id]: 1 }); if (/\\d\\.5 at a time/.test(d)) frac.push(kind + " " + ax.id); }
+    const tch = k => towerStats({ id: 99, kind: "crr", x: CX, y: CY, lvl: 1 + k, skills: { launch: k } }).tChain;
     return { frac, cap: CAP_CHAIN_FROM, chain: [tch(1), tch(2)] };
   })()`);
   if (r.frac.length) return "a half count on the card at tier I: " + r.frac.join(", ");
@@ -240,7 +240,7 @@ check("IFR's card shows no long decimals (owner, 2026-10-20)", () => {
 });
 check("towers but SOL attack in their first frame - no wind-up (owner, 2026-10-20)", () => {
   const r = run(`(() => { const out = {};
-    for (const kind of ["arc", "acd", "grv", "car", "ifr"]) {
+    for (const kind of ["arc", "acd", "grv", "crr", "ifr"]) {
       G = newGame(); G.money = 1e9; ui.build = kind; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0];
       for (const e of G.enemies) e.dead = true;
       const e = ifrNear("shield", t, 50); e.shield = 0; e.hp = e.max = 1e9; egridAt = NaN; const hp0 = e.hp;
@@ -252,7 +252,7 @@ check("towers but SOL attack in their first frame - no wind-up (owner, 2026-10-2
   if (!(r.arc.cd > 0 || r.arc.hit)) bad.push("ARC");
   if (!r.acd.hit) bad.push("ACD (no hit)");
   if (!(r.grv.cd > 0.06 || r.grv.spheres)) bad.push("GRV");
-  if (!r.car.out) bad.push("CRR (nothing launched)");
+  if (!r.crr.out) bad.push("CRR (nothing launched)");
   if (!r.ifr.balls) bad.push("IFR (no meteor)");
   return bad.length ? "no attack in the first frame: " + bad.join(", ") : "";
 });
@@ -340,7 +340,7 @@ check("the slow-log report builds and sends (perfSend - it runs from the frame l
   return "";
 });
 check("a resumed save is the board at rest: towers on their slots, no enemies, pools or interceptors (runClean)", () => {
-  run(`G = newGame(); G.money = 1e6; for (const k of ["acd", "grv", "car"]) { ui.build = k;
+  run(`G = newGame(); G.money = 1e6; for (const k of ["acd", "grv", "crr"]) { ui.build = k;
          const ci = CELLS.findIndex((c, i) => cellOpen(i) && !G.towers.some(t => t.cell === i)); placeTower(CELLS[ci]); }
        G.towers[0].x += 40; G.started = true; sendWave(); for (let i = 0; i < 300; i++) step(1 / 30);`);
   const r = run(`(() => { const saved = { G: runClean(structuredClone(G)), wave: G.wave, lives: G.lives }; runResume(saved);
@@ -349,6 +349,15 @@ check("a resumed save is the board at rest: towers on their slots, no enemies, p
   if (r.n !== 3) return "lost towers: " + r.n;
   if (r.off || r.enemies || r.junk) return JSON.stringify(r);
   frames(env, 3); // and the game runs on from it
+  return "";
+});
+check("a save from before 6.18.4 resumes: its CRR, still kind \"car\", comes back as crr and the game runs (runMigrate)", () => {
+  run(`G = newGame(); G.money = 1e6; ui.build = "crr"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); G.started = true;`);
+  const r = run(`(() => { const g = runClean(structuredClone(G)); g.towers[0].kind = "car"; const ok = runResume({ G: g, wave: 0, lives: G.lives });
+    return { ok, kinds: G.towers.map(t => t.kind).join() }; })()`);
+  if (!r.ok || r.kinds !== "crr") return JSON.stringify(r);
+  run("sendWave(); for (let i = 0; i < 120; i++) step(1 / 30);");
+  frames(env, 3);
   return "";
 });
 check("the resume card up: no tower can be built behind it (placeTower stands down)", () => {

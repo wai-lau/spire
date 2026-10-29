@@ -317,7 +317,7 @@ clears waves 1-11 and every pair is clean on 1-12 (`solo.mjs`; 20 / 0.5 lost 26 
 for one build (88% of shields leaked); fixed by letting them pop a charge, only the slow skips the shielded.
 Counter matrix 61-69 spread (% leaked swarm/fast/shield/armor): GRV 2/26/88/14 before that fix.
 
-**ATC (`car`) constants** (`aspira-car.js`; the capstone VI value in brackets where `aspira-capstone.js` adds one):
+**ATC (`crr`) constants** (`aspira-crr.js`; the capstone VI value in brackets where `aspira-capstone.js` adds one):
 
 | Constant | Value |
 |---|---|
@@ -964,7 +964,7 @@ Measured marks (`marks.py`) are moved toward it by balance only, never by editin
 | SOL | -1 | -2 | +1 | +2 |
 | ACD | -2 | -2 | +1 | +3 |
 | GRV | +1 | -1 | -2 | +2 |
-| CAR | -2 | +2 | +1 | -1 |
+| CRR | -2 | +2 | +1 | -1 |
 | IFR | +1 | +1 | 0 | -2 |
 
 The sim's smart saver (REWIND on) reads an easier wave as harder (2026-10-23): it spends only on a leak, so a mid-game with fewer leaks
@@ -1007,7 +1007,7 @@ The rule (owner, 2026-10-28): "balance the boss to the towers, balance the tower
 | Death HP | x3 (`BOSS_FAR.death` 2.8 -> 8.4); towers untouched |
 
 Points the strongest and weakest winnable trios need to beat Death (`trioplan`, beam 3, seed 1): frz+grv+ifr 18 -> 35 (it held 26
-before the 6.16.0 battery); acd+grv+car 34 -> 34 (it wins at x1, x3 and x4). Death's HP at wave 120 at x1: 0.90M.
+before the 6.16.0 battery); acd+grv+crr 34 -> 34 (it wins at x1, x3 and x4). Death's HP at wave 120 at x1: 0.90M.
 
 ### 12.w Difficulty by player, measured (2026-10-28; snapshot 909491b)
 

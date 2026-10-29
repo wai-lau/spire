@@ -23,13 +23,13 @@ const STAT_CURVE = {
   sol: { dmg: [7.654 /* x4 (2026-10-28 SOL sweep C: x12 pulled a third of the way back - owner: "yes-ish ... don't need to go all the way back down"; was x12 22.962 for the armor rework, x1 1.9135 before) */, 2.5 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [1, 1], range: [1, 1.5], slide: [1, 3] }, // never raise SOL's fire rate (owner, 2026-10-23)
   acd: { dmg: [6.0708 /* x3.5 (armor rework 2026-10-28, as SOL: its ticks lost the negative-armor bonus; was 1.7345) */, 2.3 /* x2, marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28): ACD flat 82/62/56/60 -> +shield +armor -swarm */ /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [1, 1], range: [1, 1.37], slide: [1, 2.1] },
   grv: { dmg: [0.256, 5.4 /* x3, marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28) (HP_LATE 1.14 left GRV leaking ~90% on every type) */ /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [1, 1], range: [1, 1.36], slide: [1, 2.2] },
-  car: { dmg: [4.7542, 1.5 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [2, 2], range: [1, 1], slide: [1, 1] },
+  crr: { dmg: [4.7542, 1.5 /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [2, 2], range: [1, 1], slide: [1, 1] },
   ifr: { dmg: [0.1047, 11.4 /* x3, marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28) (HP_LATE 1.14 left IFR leaking ~90% on every type) */ /* its top (owner 2026-10-28: each tower its own curve) - late rows at 13 pts, 101-119, toward ~30% mean leaked */], rate: [2.5, 2.5], range: [1, 1.27], slide: [1, 1.8] },
 };
 // lo: the DUO RULE's (plan 3, 2026-10-25 - scripts/aspira-sim/duo0.mjs), then x each tribal round's factor (triscale.py; round 4
-// 2026-10-26: arc 1.09, sol 1.17, acd 1.04, grv 1.09, car 0.90, ifr 0.92; round 5: arc 1.04, frz 1.06, sol 1.17, acd 0.96, grv 1.10,
-// car 0.98, ifr 0.90): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
-// round 7 (2026-10-27, CURVE_P 1.5, bosses skipped, 26 of 35 at a win score): arc 0.947, frz 1.041, sol 1.119, acd 1.002, grv 1.011, car 1.036, ifr 0.954 - applied;
+// 2026-10-26: arc 1.09, sol 1.17, acd 1.04, grv 1.09, crr 0.90, ifr 0.92; round 5: arc 1.04, frz 1.06, sol 1.17, acd 0.96, grv 1.10,
+// crr 0.98, ifr 0.90): ARC and SOL x0.95 (ARC+FRZ lost the Star at 0.8), IFR's
+// round 7 (2026-10-27, CURVE_P 1.5, bosses skipped, 26 of 35 at a win score): arc 0.947, frz 1.041, sol 1.119, acd 1.002, grv 1.011, crr 1.036, ifr 0.954 - applied;
 // and CRR's tier 0 RATE x2.5 / x2 (one meteor, one interceptor: a third and two thirds of the old bare tower's hits) - each still below
 // the old bare tower in all, with the waves 1-12 ease (aspira-waves.js) and FRZ's nip (aspira-frz.js)
 let CURVE_P = 1.5; // 2.5 -> 1.5 (owner, 2026-10-27: "if there is a buy that looks bad and then pays off too much later, then there's a problem with the scaling curve" - at 2.5 the first seven points bought a fifth of the growth and the last three half: banking beat buying, the planner hoarded 317k, a tower at 10 points died inside chapter 4 that was fine at 13; at 1.5 each point pays about the same) // the steepening: lo + (hi - lo) x (L / SKILL_POINTS) ** CURVE_P. Was GEOMETRIC (lo x (hi/lo) ** share, plan 2): with ARC's x171 and CRR's x25000 spans

@@ -5,11 +5,11 @@
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], car: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
-const ALL = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"];
+const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], crr: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
+const ALL = ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"];
 // FREE trios (not guaranteed winnable): the PAIRS of mains their towers cover miss an enemy type - the owner's square, IFR swarm+shield
-// (2026-10-19: 10 of 35 - the old 4 + ARC+FRZ+IFR, ARC+ACD+IFR, ARC+GRV+IFR, ARC+CAR+IFR, FRZ+CAR+IFR, ACD+GRV+IFR)
-const PAIR = { arc: ["swarm", "shield"], frz: ["fast", "swarm"], sol: ["armor", "fast"], acd: ["shield", "armor"], grv: ["swarm", "armor"], car: ["fast", "shield"], ifr: ["swarm", "shield"] };
+// (2026-10-19: 10 of 35 - the old 4 + ARC+FRZ+IFR, ARC+ACD+IFR, ARC+GRV+IFR, ARC+CRR+IFR, FRZ+CRR+IFR, ACD+GRV+IFR)
+const PAIR = { arc: ["swarm", "shield"], frz: ["fast", "swarm"], sol: ["armor", "fast"], acd: ["shield", "armor"], grv: ["swarm", "armor"], crr: ["fast", "shield"], ifr: ["swarm", "shield"] };
 const isFree = t => new Set(t.flatMap(k => PAIR[k])).size < 4;
 export default async function task({ trio, kind, axis, seed }) {
   const skills = axis ? { [kind]: [axis, ...AX[kind].filter(a => a !== axis)] } : {};

@@ -7,7 +7,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car,ifr").split(",");
+const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,crr,ifr").split(",");
 const TYPES = (process.env.TYPES || "swarm,fast,shield,armor").split(",");
 // every wave this type; a boss wave planned as an ordinary one (wavePlan is a function binding: reassignable; sendWave splits by the list)
 export const force = type => `for (let n = 1; n <= 130; n++) WAVE_TYPE_FORCE[n] = ${JSON.stringify(type)};

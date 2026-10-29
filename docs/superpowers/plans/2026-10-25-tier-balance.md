@@ -35,8 +35,8 @@
 
 **Files:** Modify `web/aspira-curve.js` (`STAT_CURVE[k].dmg[0]`), `web/aspira-defs.js` (an early-HP ease on waves 1..`PLAIN_HP_EASY`, in place).
 
-- [ ] **Step 1:** Baseline `solo.mjs 2` (done: only GRV pairs and ARC+GRV-like pairs clean; FRZ/SOL/IFR/CAR pairs lose 13-46 lives).
-- [ ] **Step 2:** Even the kinds: per kind, scale `dmg[0]` (staying < 1) so its pairs' lives lost come together; GRV/ACD down, SOL/IFR/CAR/ARC up. Patch-test with `ASPIRA_PATCH`.
+- [ ] **Step 1:** Baseline `solo.mjs 2` (done: only GRV pairs and ARC+GRV-like pairs clean; FRZ/SOL/IFR/CRR pairs lose 13-46 lives).
+- [ ] **Step 2:** Even the kinds: per kind, scale `dmg[0]` (staying < 1) so its pairs' lives lost come together; GRV/ACD down, SOL/IFR/CRR/ARC up. Patch-test with `ASPIRA_PATCH`.
 - [ ] **Step 3:** Ease waves 1-12 HP for all types alike until every different-kind pair clears 1-12 + the Star with 0 lives (best slot, both seeds).
 - [ ] **Step 4:** Commit: `Spire tiers: duo rule at tier 0 - ...`. Expected: `solo.mjs 2` duo table all `0/0  star W W` for different kinds; smoke all passed.
 
@@ -74,7 +74,7 @@
 
 - [ ] **Step 1:** One window a CHAPTER (owner, 2026-10-25: "make countermx consistent at the 4 different game chapters"; ARCHITECTURE.md 5.6): 13-19 (early, past the tier 0 ease), 41-49 (mid), 71-79 (late), 101-109 (end), each with the BUILD a perfect player holds per tower there - Task 3's trioplan buy logs: per kind its MAIN axis (the one bought deepest) and the other two, each at its mean tier in that chapter over every trio, rounded (countermx gets a `held` build beside `spread`).
   - **Owner, 2026-10-26: "make sure this task is on the next sim battery".** A 6-point stand-in (SPREAD_ONLY, WINDOWS=13-19,41-49,71-79,101-109) already ran: CHAPTERS DIFFER for all seven; 13-19 all zero (6 points clears everything early); SOL -1 -1 +1 +1 at 41-49 and 71-79 but armor -1 at 101-109 (spread leaks 100% of armor). Re-check SOL's late armor with the held builds before touching Breach.
-- [ ] **Step 2:** `HELD=<the Step 1 builds> WINDOWS=13-19,41-49,71-79,101-109 KINDS=arc,frz,sol,acd,grv,car,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out; python3 scripts/aspira-sim/marks.py cmx.out` - each chapter's marks, whether they agree, and the pooled marks.
+- [ ] **Step 2:** `HELD=<the Step 1 builds> WINDOWS=13-19,41-49,71-79,101-109 KINDS=arc,frz,sol,acd,grv,crr,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out; python3 scripts/aspira-sim/marks.py cmx.out` - each chapter's marks, whether they agree, and the pooled marks.
 - [ ] **Step 3:** `marktarget.py cmx.out`: ONE table for the whole game, its distance summed over the four chapters - every integer table (-3..3) with each row and each column summing to 0, no two rows alike, every tower above 0 on two or more types; ranked by distance to the measured raw scores (in marks, summed |target - raw / PER_MARK|), fewest cells changed first. Print the nearest and its ties; it replaces target C as the benchmark (memory `marks-target`).
 - [ ] **Step 4:** Balance each tower whose measured row misses its target row, with that tower's own mechanic levers (never marks edits, one pop per tick, no SOL rate, IFR flares locked); re-run countermx after each round until every row matches IN EVERY CHAPTER (marks.py prints CHAPTERS AGREE). A chapter that drifts is fixed THROUGH THE MAIN AXIS a player holds by then (owner, 2026-10-25): that axis's tier tables at the tier it has reached in that chapter.
 - [ ] **Step 5:** `marks.py --write`, commit `Spire tiers: marks - ...`. Expected: every chapter's measured marks equal the target table; no RULE FAIL. The standing marks command (CLAUDE.md, ARCHITECTURE.md 7.2) becomes the four-chapter one in Task 6. Re-run `tribal.mjs` + `axis.mjs` if levers moved power (Task 4 bounds).

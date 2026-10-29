@@ -60,10 +60,10 @@ def de2000(lab1,lab2):
     return math.sqrt((dLp/SL)**2+(dCp/SC)**2+(dHp/SH)**2+RT*(dCp/SC)*(dHp/SH))
 
 # the CURRENT tokens (HSL) each existing tower keeps its OKLCH L and C from; the inks shift by their tower's hue delta
-CUR={"sol":(353,100,78),"arc":(35,96,67),"acd":(94,55,64),"frz":(179,98,45),"car":(207,99,48),"grv":(285,99,38)}
-INK={"grv":(272,80,78),"car":(216,100,74)}
-NAME={"sol":"SOL","arc":"ARC","acd":"ACD","frz":"FRZ","car":"CRR","grv":"GRV","ifr":"IFR"}
-ORDER=["sol","ifr","arc","acd","frz","car","grv"]
+CUR={"sol":(353,100,78),"arc":(35,96,67),"acd":(94,55,64),"frz":(179,98,45),"crr":(207,99,48),"grv":(285,99,38)}
+INK={"grv":(272,80,78),"crr":(216,100,74)}
+NAME={"sol":"SOL","arc":"ARC","acd":"ACD","frz":"FRZ","crr":"CRR","grv":"GRV","ifr":"IFR"}
+ORDER=["sol","ifr","arc","acd","frz","crr","grv"]
 cur={k:to_lch(*hsl_to_rgb(*v)) for k,v in CUR.items()}
 def tok(rgb):
     h,s,l=rgb_to_hsl(*rgb); return "%d %d%% %d%%"%(round(h),round(s),round(l))

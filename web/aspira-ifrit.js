@@ -3,7 +3,7 @@
 // corpse if it dies. Its FIRST hit makes the FIRE (Hellfire: it grows to its max, burns what stands in it in many small ticks, lingers, and
 // once grown lights flares inside it, as many as its area) and a 360-degree FAN of meteors (Meteor's count) that home within 50 u and hit
 // for damage, each lighting a FLARE where it lands (Flare, id firaga: their size, damage and burn; its capstone three a landing). Meteor's
-// capstone bursts into IFR_FAN_CAP, no fissure (owner, 2026-10-26). Loaded after aspira-car.js (the simulator too); the look is aspira-ifrit-draw.js. Every list
+// capstone bursts into IFR_FAN_CAP, no fissure (owner, 2026-10-26). Loaded after aspira-crr.js (the simulator too); the look is aspira-ifrit-draw.js. Every list
 // on the tower holds plain objects (ids and coordinates, never enemy refs): autosave clones G.
 // Spec: docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md (much changed since by the owner's notes, 2026-10-20 - the code is the truth)
 

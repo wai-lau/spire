@@ -75,7 +75,7 @@ const DESCRIBE = {
   },
   // CRR (owner, 2026-10-15): Hangar more interceptors (primes); Tether a slowing, pulsing beam to what it fires at (Chain: on to one more enemy); Armament harder, faster,
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
-  car(sk) {
+  crr(sk) {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
     const nb = CRR_BOLTS_BY[a], tn = CRR_TETHER_N[l], vo = CRR_AMMO[a]; // tier 0: one interceptor, one bolt a volley, no tether; 100% = one bolt (st.dmg, 2026-10-26)
     // (owner, 2026-10-26): "fires Y volleys per sortie for a total of Y%td, X interceptors can be stored in orbit" / "fires Y volleys and

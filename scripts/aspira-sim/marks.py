@@ -94,7 +94,7 @@ for k, ts in lone.items():
 if "--write" in sys.argv[2:]:
     web = pathlib.Path(__file__).resolve().parents[2] / "web"
     chooser, ver = web / "aspira-chooser.js", (web / "aspira-version.txt").read_text().strip()
-    order = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"]
+    order = ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"]
     body = ", ".join(f"{k}: {{ " + ", ".join(f"{t}: {marks[k][t]}" for t in TYPES if marks[k][t]) + " }" for k in order if k in marks)
     line = f"const VS_MARKS = {{ {body} }}; /* regenerated {datetime.date.today()} v{ver} (marks.py --write, countermx " + ",".join(windows) + ", pooled) */"
     src = chooser.read_text()

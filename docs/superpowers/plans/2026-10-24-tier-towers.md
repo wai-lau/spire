@@ -144,7 +144,7 @@ Every tower task (2-8) has the same steps; each task lists only what is its own.
 
 ### Task 9: Tier I names, the Nova axis, docs
 
-**Files:** `web/aspira-skills.js`, `web/aspira-grv.js`, `web/aspira-car.js`, `web/aspira-ifrit.js`, `web/aspira-capstone.js` (drop the `"Spark"` unshift), `ARCHITECTURE.md` (§4 tower pages: tier 0 / tier I and the curve; §6 the ladder), the stale header comments in `aspira-skills.js` / `aspira-capstone.js`.
+**Files:** `web/aspira-skills.js`, `web/aspira-grv.js`, `web/aspira-crr.js`, `web/aspira-ifrit.js`, `web/aspira-capstone.js` (drop the `"Spark"` unshift), `ARCHITECTURE.md` (§4 tower pages: tier 0 / tier I and the curve; §6 the ladder), the stale header comments in `aspira-skills.js` / `aspira-capstone.js`.
 
 Tier I names (Claude's calls, the doc lists them for Wai):
 
@@ -161,7 +161,7 @@ Tier I names (Claude's calls, the doc lists them for Wai):
 - [ ] **Step 1: Failing check** — every `SKILL_TREES[kind][i].tiers[0].name` is in the table above, no tier named `"Spark"` remains as a placeholder (ARC Voltage II keeps its own "Spark"), and `SKILL_TREES.grv[1].name === "Nova"`.
 - [ ] **Step 2: Run** — FAIL on `"Spark"`.
 - [ ] **Step 3:** write the names as each tree's first tier; remove the capstone file's unshift; rename the GRV axis; update ARCHITECTURE.md and the stale comments (the 16-point / 0..IV wording).
-- [ ] **Step 4:** full smoke green, then pinned sims: `ASPIRA_WEB=<snapshot>/web node scripts/aspira-sim/solo.mjs 2` and `ASPIRA_WEB=<snapshot>/web SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,car,ifr node scripts/aspira-sim/countermx.mjs 1` — Expected: both finish with no thrown error (numbers are plan 3's).
+- [ ] **Step 4:** full smoke green, then pinned sims: `ASPIRA_WEB=<snapshot>/web node scripts/aspira-sim/solo.mjs 2` and `ASPIRA_WEB=<snapshot>/web SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69 KINDS=arc,frz,sol,acd,grv,crr,ifr node scripts/aspira-sim/countermx.mjs 1` — Expected: both finish with no thrown error (numbers are plan 3's).
 - [ ] **Step 5: Commit** `Spire tiers: tier I names, GRV's Nova axis, docs`.
 
 ## Later

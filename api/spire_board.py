@@ -45,7 +45,8 @@ FIXES = "spire_ascendants_fix.json"
 SHOW_MAX = 500  # the most the GET returns (display only - the store keeps every entry)
 MAX_LIVES = 100000
 MIN_WAVE, WIN_WAVE, MAX_WAVE = 11, 120, 1000  # (a win is wave 120 since the 12-wave boss cycle, 2026-10-12)
-TOWER_KINDS = ("arc", "frz", "sol", "acd", "grv", "car", "ifr")
+TOWER_KINDS = ("arc", "frz", "sol", "acd", "grv", "crr", "ifr")
+OLD_KINDS = {"car": "crr"}  # a kind id renamed (2026-10-29): old rows read as the new id; a POST takes the new one only
 _INITIALS = re.compile(r"[A-Z]{3}")
 _VERSION = re.compile(r"\d{1,3}\.\d{1,3}(\.\d{1,4})?")  # the game version a score was played on (owner, 2026-10-16: "add a col for the version the scores were achieved")
 _LOCK = threading.Lock()
@@ -190,6 +191,7 @@ def visible(data_dir: Path, rows: list, owner: bool) -> list:
     else without the owner's own games from before OWNER_SHOWN_FROM."""
     gone, fixes = _hidden(data_dir), _fixes(data_dir)
     rows = [{**r, **fixes.get((r.get("ts"), r.get("initials")), {})} for r in rows if (r.get("ts"), r.get("initials")) not in gone]
+    rows = [{**r, "team": [OLD_KINDS.get(k, k) for k in r["team"]]} if isinstance(r.get("team"), list) else r for r in rows]
     if owner:
         return rows
     marks = _owner_marks(data_dir)

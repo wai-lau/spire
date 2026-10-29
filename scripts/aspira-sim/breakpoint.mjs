@@ -10,7 +10,7 @@ process.env.REWIND = "0";
 export { default } from "./typecal.mjs";
 import { BANDS as BANDS_N } from "./typecal.mjs";
 if (isMainThread && process.argv[1].endsWith("breakpoint.mjs")) {
-  const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car,ifr").split(","), TYPES = (process.env.TYPES || "swarm,fast,shield,armor").split(",");
+  const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,crr,ifr").split(","), TYPES = (process.env.TYPES || "swarm,fast,shield,armor").split(",");
   const PROBE = process.env.PROBE || "speed", probe = (type, k) => PROBE === "hp" ? `${type}:${k}` : `${type}.${PROBE}:${k}`; // the STRESS the ladder raises (owner, 2026-10-22: break point leads; speed, not HP - early shields ignore HP)
   const KS = (process.env.KS || "1,1.3,1.6,2,2.5,3").split(",").map(Number), LOSE = Number(process.env.LOSE || 2), SEEDS = (process.env.SEEDS || "1,2").split(",").map(Number);
   const trios = []; for (let a = 0; a < ALL.length; a++) for (let b = a + 1; b < ALL.length; b++) for (let c = b + 1; c < ALL.length; c++) trios.push([ALL[a], ALL[b], ALL[c]]);

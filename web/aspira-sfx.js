@@ -106,7 +106,7 @@ const SFX = {
   frz:     () => tone({ f0: 900, f1: 480, dur: 0.18, vol: 0.1 }),
   // the GRV nova (2026-10-15): a deep thump that swells, a bright crack on top - a star going off
   // CRR (2026-10-15): an interceptor launching - a short rising whine
-  car:     () => { tone({ type: "triangle", f0: 500, f1: 1400, dur: 0.09, vol: 0.05 }); },
+  crr:     () => { tone({ type: "triangle", f0: 500, f1: 1400, dur: 0.09, vol: 0.05 }); },
   // an interceptor's SHOT (2026-10-16), once a shot's stream of bolts starts - a short falling zap
   carshot: () => tone({ type: "square", f0: 1800, f1: 900, dur: 0.04, vol: 0.03 }),
   // IFR (2026-10-19): a ball leaving - a low thump; the ring - a crackle
@@ -189,7 +189,7 @@ function sampleNorm(buf, start, end) {
 // Each TOWER's sound plays at most 3 copies at once (owner, 2026-10-02),
 // sample or synth alike: playing[name] counts live copies and a 4th is
 // skipped. A sample copy is also quieter by how many are already sounding.
-const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, car: 3, carshot: 3, ifr: 3, ifrblast: 3, slam: 3 /* the boss bar's pieces slamming home (BLASTCAN, owner 2026-10-27: "use the rules for sound overlap cap") */ }, playing = {};
+const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, crr: 3, carshot: 3, ifr: 3, ifrblast: 3, slam: 3 /* the boss bar's pieces slamming home (BLASTCAN, owner 2026-10-27: "use the rules for sound overlap cap") */ }, playing = {};
 let curSound = null; // the synth sound being built, so envelope() can count it
 // LOUDNESS (owner, 2026-10-02): the bosses' warnings and voices and every
 // upgrade/build sound stand well above the towers' shots - about 10 dB

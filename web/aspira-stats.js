@@ -52,9 +52,9 @@ const SPEC = {
     // always the same rows ("—" with no puddles), so a pull from Contagion 0 lines up now -> next
     ["Pool burn", st.contagion ? Math.round(st.contagionHeat * 100) + "% of jet" : "—"], ["Drips every", st.contagion ? st.contagion.every + "s" : "—"],
     ["Pool size", st.contagion ? st.contagion.r : "—"], ["Pool lasts", st.contagion ? st.contagion.life + "s" : "—"], ["Carry", st.carry ? Math.round(st.carry * 100) + "%" : "—"], ["Pool slow", st.burnSlow ? Math.round(st.burnSlow * 100) + "%" : "—"]],
-  // CRR (aspira-car.js): Damage + Rate are a SHOT's and an interceptor's
-  car: st => [["Interceptors", st.wing], ["Ammo", st.ammo + " shots"], ["Tether slow", st.tSlow ? Math.round(st.tSlow * 100) + "%" : "—"], ["Tether amp", st.tAmp ? "+" + Math.round(st.tAmp * 100) + "% taken / tether" : "—"], ["Chain", st.tChain ? "1 more" : "—"],
-    ["Pellets", st.autopilot ? CRR_BURST_N + " a burst" : "—"], ["Pellet hit", st.autopilot ? tdP("car", st, st.dmg * CRR_BURST_K) : "—"], ["Slow", Math.round(CRR_SLOW * 100) + "%"], ["Slow lasts", CRR_SLOW_S + "s"]] /* no Shields row: any damage pops one charge, unsaid (owner, 2026-10-26) */,
+  // CRR (aspira-crr.js): Damage + Rate are a SHOT's and an interceptor's
+  crr: st => [["Interceptors", st.wing], ["Ammo", st.ammo + " shots"], ["Tether slow", st.tSlow ? Math.round(st.tSlow * 100) + "%" : "—"], ["Tether amp", st.tAmp ? "+" + Math.round(st.tAmp * 100) + "% taken / tether" : "—"], ["Chain", st.tChain ? "1 more" : "—"],
+    ["Pellets", st.autopilot ? CRR_BURST_N + " a burst" : "—"], ["Pellet hit", st.autopilot ? tdP("crr", st, st.dmg * CRR_BURST_K) : "—"], ["Slow", Math.round(CRR_SLOW * 100) + "%"], ["Slow lasts", CRR_SLOW_S + "s"]] /* no Shields row: any damage pops one charge, unsaid (owner, 2026-10-26) */,
   // IFR (aspira-ifrit.js, axes redone 2026-10-20): Damage is the base every hit multiplies (each axis by its own K), Rate meteors a second
   ifr: st => [["Burst", st.fan + " meteors"], ["Stored", (st.store || 1) + " in orbit"] /* (fire, flares, fan "—" until bought - tier redesign 2026-10-24) */, ["Hit", tdP("ifr", st, st.dmg * st.routeK)], ["Charge", +st.chargeS.toFixed(2) + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
     ["Fire", st.fire ? "r" + Math.round(st.fireR) : "—"], ["Fire speed", st.fire ? st.fireV + "/s" : "—"], ["Fire flares", st.fire ? Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2) + " untaken flares" : "—"],

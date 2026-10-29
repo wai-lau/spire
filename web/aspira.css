@@ -309,7 +309,7 @@
 .asp-spend[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
 .asp-spend[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-spend[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
-.asp-spend[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-spend[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
 .asp-spend[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
 .asp-spend[data-kind="core"] { --green-hsl: var(--white-hsl); }
 
@@ -422,7 +422,7 @@
 .asp-pop[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
 .asp-pop[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-pop[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
-.asp-pop[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-pop[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
 .asp-pop[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
 .asp-pop[data-kind="core"] { --green-hsl: var(--white-hsl); } /* the core's card is white, like the core */
 .asp-pop[data-kind] { color: hsl(var(--green-hsl)); }
@@ -567,7 +567,7 @@
 .asp-chooser[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
 .asp-chooser[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-chooser[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
-.asp-chooser[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-chooser[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
 .asp-chooser[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
 
 /* the BUILD cards each wear their own tower's colour (aspira-chooser.js) - GRV and ATC in a PALE ink of it (owner, 2026-10-16: "use a
@@ -578,7 +578,7 @@
 .asp-card[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
 .asp-card[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
 .asp-card[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
-.asp-card[data-kind="car"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-card[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
 .asp-card[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
 
 /* ...unless the credits cannot cover it: faint Ember red, every kind alike (owner, 2026-10-07) */

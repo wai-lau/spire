@@ -7,7 +7,7 @@ import { makeGame } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
 import { simBanner } from "./simver.mjs";
 
-const K = (process.env.KINDS || "arc,frz,sol,acd,grv,car,ifr").split(","), LAST = 12;
+const K = (process.env.KINDS || "arc,frz,sol,acd,grv,crr,ifr").split(","), LAST = 12;
 function game(towers, seed, patch) {
   const g = makeGame(seed, patch);
   g.reset();

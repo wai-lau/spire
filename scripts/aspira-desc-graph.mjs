@@ -45,10 +45,10 @@ const MECH = {
     supernova: k => { const s = ST("grv", "supernova", k); return s.novaN ? `${s.novaN} novas before each void, rate x${x(s.rate / ST("grv", "supernova", 0).rate)}, each strips ${pct(s.strip)} of the armor left` : "no novas"; },
     radiation: k => { const s = ST("grv", "radiation", k); return (s.auraOn ? `aura x${s.accR} the void's radius, slow ${pct(s.slow)} (x2 inside${s.horizon ? ", all of it" : ""}), ` : "no aura, ") + `pellets ${x(s.pelletK)}x the hit, reach x${s.pelReach}, ${x(s.pellets)} a mass lost`; },
   },
-  car: {
-    hangar: k => { const s = ST("car", "hangar", k); return `${s.wing} interceptor${s.wing > 1 ? "s" : ""}, ${s.hold} held circling`; },
-    launch: k => { const s = ST("car", "launch", k); return s.tSlow ? `tether slow ${pct(s.tSlow)}, +${pct(s.tAmp)} damage taken, each tether its own${s.tChain ? ", chains to one more" : ""}` : "no tether"; },
-    armament: k => { const s = ST("car", "armament", k); return `${s.bolts} bolt${s.bolts > 1 ? "s" : ""} a volley, ${s.ammo} shots${s.autopilot ? ", autopilot" : ""}`; },
+  crr: {
+    hangar: k => { const s = ST("crr", "hangar", k); return `${s.wing} interceptor${s.wing > 1 ? "s" : ""}, ${s.hold} held circling`; },
+    launch: k => { const s = ST("crr", "launch", k); return s.tSlow ? `tether slow ${pct(s.tSlow)}, +${pct(s.tAmp)} damage taken, each tether its own${s.tChain ? ", chains to one more" : ""}` : "no tether"; },
+    armament: k => { const s = ST("crr", "armament", k); return `${s.bolts} bolt${s.bolts > 1 ? "s" : ""} a volley, ${s.ammo} shots${s.autopilot ? ", autopilot" : ""}`; },
   },
   ifr: {
     meteor: k => { const s = ST("ifr", "meteor", k); return `1 meteor + a burst of ${s.fan}, ${s.store} stored in orbit, charge ${+s.chargeS.toFixed(2)}s`; },

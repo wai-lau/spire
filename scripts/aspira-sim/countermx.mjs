@@ -61,7 +61,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("countermx.mjs")
   // TRIO=1 (owner, 2026-10-12): the game holds THREE towers - the kind plus two others, each trio that
   // holds it in turn (four towers at the expected points leaked nothing anywhere: not a test)
   const TRIO = TEAM && process.env.TRIO === "1", TRIOS = k => { const o = ["arc", "frz", "sol", "acd"].filter(x => x !== k); return [[o[0], o[1]], [o[0], o[2]], [o[1], o[2]]]; };
-  const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], car: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
+  const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], crr: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
   const jobs = [];
   for (const [from, to, points] of WINDOWS) for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) for (const type of TYPES) for (let seed = 1; seed <= SEEDS; seed++) for (const mates of TRIO ? TRIOS(kind) : [null]) jobs.push({ kind, build, type, from, to, seed, points, mates });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true });

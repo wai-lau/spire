@@ -112,7 +112,7 @@ too. The lanes' CORE TWIST (§2.1) gives the same time to the core instead. The 
 | weak to | armor (grounds the arc) | shields (cannot be slowed) | swarms (one lock) | fast and shields (cold jets) | fast and shields (the slow skips them; pellets pop few) | swarms and armor (one target a volley; small bolts) | fast (a slow ball aimed with no lead; it runs through the fire before it catches) |
 | leash (`MOVE_BASE`) | medium (200) | long (240) | short (74) | longest (280) | medium (200) | long (240) | medium (200) |
 
-Ids `arc frz sol acd grv car ifr` (`KINDS`; `car` is shown as CRR). The seven hues sit 360/7 OKLCH degrees apart (§10.1); range x `RANGE_BONUS`. The legacy path/form tree
+Ids `arc frz sol acd grv crr ifr` (`KINDS`; `crr` was `car` until 6.18.4, renamed 2026-10-29). The seven hues sit 360/7 OKLCH degrees apart (§10.1); range x `RANGE_BONUS`. The legacy path/form tree
 (`aspira-upgrades.js`) is dormant: every kind `hasSkills`.
 
 ### 4.2 The chart (pillar 4)
@@ -262,7 +262,7 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got her
 | **shield** | help | weak (no slow) | help | MAIN | weak (the slow skips them) | MAIN | pops a hit: ACD one a tick, SOL by Focus, CRR one a bolt |
 
 The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds (swarm `[arc, grv]`,
-fast `[frz, car]`, armor `[sol, grv]`, shield `[acd, car]`) and a `help` list of two (swarm `[frz, acd]`, fast `[arc, sol]`,
+fast `[frz, crr]`, armor `[sol, grv]`, shield `[acd, crr]`) and a `help` list of two (swarm `[frz, acd]`, fast `[arc, sol]`,
 armor `[acd, frz]`, shield `[arc, sol]`). The build card derives from it: `GOOD_VS` / `HELPS_VS` (SOL and ACD add bosses,
 `BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 since 6.16.0 - CLAUDE.md has the command), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
 measures it.
@@ -290,7 +290,7 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 | **Nova** (id `supernova`) | the novas before each void, faster by tier, their armor strip (`GRV_NOVA_STRIP`) | **Hypernova**: the most strip |
 | **Acceleration** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Event Horizon**: the whole aura slows as hard as its inside |
 
-### 4.6c CRR (id `car`), the carrier (`web/aspira-car.js`)
+### 4.6c CRR (id `crr`), the carrier (`web/aspira-crr.js`)
 
 The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), designed for **fast + shield**; its measured checks and weak
 spots are the build card's marks (`VS_MARKS`, §4.6). It never fires itself; its **interceptors** do. The constants (wing sizes,
@@ -542,7 +542,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 
 | Gesture | Result |
 |---|---|
-| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel; building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`) come from a `countermx` run (waves 61-69, 6 points spread - at 8 most leaks hit 0% and FRZ/SOL tied), so they follow the matrix (§4.6): each type's leak is taken against the SIX-TOWER mean for that type, then against the tower's own mean - a table whose every row AND column sums to 0 - scaled to one mark per 20 points and rounded so the sums stay 0 (owner, 2026-10-23: "Col and row need to sum to 0"; dashes fine, no fixed count); two towers with the same marks are flagged (`marks.py`). THE BALANCE TARGET is `scripts/aspira-sim/mark-target.json` (owner, 2026-10-29, "very important"): every type column ✓✓ ✓ ✓ ✓ – ✗✗ ✗✗✗, rows and columns sum to 0, every tower two checked types or more - ARC ✓✓ ✗✗ ✗✗ ✓✓, FRZ ✗✗✗ ✓✓ – ✓, SOL ✓ ✗✗✗ ✓ ✓, ACD ✗✗ ✓ ✓ –, GRV ✓ ✓ ✗✗✗ ✓, CAR – ✓ ✓ ✗✗, IFR ✓ – ✓✓ ✗✗✗ (swarm fast shield armor); `marktarget.py` finds the nearest such table to the measured marks, and balance moves the towers to it |
+| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel; building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`) come from a `countermx` run (waves 61-69, 6 points spread - at 8 most leaks hit 0% and FRZ/SOL tied), so they follow the matrix (§4.6): each type's leak is taken against the SIX-TOWER mean for that type, then against the tower's own mean - a table whose every row AND column sums to 0 - scaled to one mark per 20 points and rounded so the sums stay 0 (owner, 2026-10-23: "Col and row need to sum to 0"; dashes fine, no fixed count); two towers with the same marks are flagged (`marks.py`). THE BALANCE TARGET is `scripts/aspira-sim/mark-target.json` (owner, 2026-10-29, "very important"): every type column ✓✓ ✓ ✓ ✓ – ✗✗ ✗✗✗, rows and columns sum to 0, every tower two checked types or more - ARC ✓✓ ✗✗ ✗✗ ✓✓, FRZ ✗✗✗ ✓✓ – ✓, SOL ✓ ✗✗✗ ✓ ✓, ACD ✗✗ ✓ ✓ –, GRV ✓ ✓ ✗✗✗ ✓, CRR – ✓ ✓ ✗✗, IFR ✓ – ✓✓ ✗✗✗ (swarm fast shield armor); `marktarget.py` finds the nearest such table to the measured marks, and balance moves the towers to it |
 | tap a tower, its home slot, or the core | its card |
 | a press moving under `DRAG_PX` | a tap; more on a tower = a move (§4.3) |
 | unaffordable | tappable but dimmed (`.poor`): a tap shakes it and says "need Nc more" |
@@ -630,7 +630,7 @@ has a voice line.
 | Rule | Design |
 |---|---|
 | who posts | a **win**: three letters, lives left, the team, the wave; a **loss from wave 11 on**: lives 0 |
-| guards | `ASC_MAX` posts an IP an hour (in memory); auto-move, or a buy with free towers/upgrades on (their own two ASCENDANT boxes under the title, `aspira-ui.js`), bars the form client-side; honour otherwise. Entry validation (`clean_entry`): three-letter initials; `won` or a loss; lives 1..`MAX_LIVES` 100000 on a win (0..100000 on a loss); wave 11..1000 (`MIN_WAVE`, `MAX_WAVE`); a team of 1-5 ids, each one of the six kinds (`TOWER_KINDS`: arc frz sol acd grv car), stored in that order |
+| guards | `ASC_MAX` posts an IP an hour (in memory); auto-move, or a buy with free towers/upgrades on (their own two ASCENDANT boxes under the title, `aspira-ui.js`), bars the form client-side; honour otherwise. Entry validation (`clean_entry`): three-letter initials; `won` or a loss; lives 1..`MAX_LIVES` 100000 on a win (0..100000 on a loss); wave 11..1000 (`MIN_WAVE`, `MAX_WAVE`); a team of 1-5 ids, each one of the six kinds (`TOWER_KINDS`: arc frz sol acd grv crr), stored in that order |
 | ranking | the Ascendants (wins, gold) by lives left; then everyone else (green) by wave, then lives; ties to the earlier; 10 rows shown, `SHOW_MAX` returned; rows render with `textContent` |
 | **never lose an entry** | an append-only fsynced journal (`spire_ascendants.jsonl`) is written FIRST, then the board JSON rewritten atomically from journal + old board; a missing or corrupt board is REBUILT from the journal; a torn tail cannot swallow the next line; nothing is trimmed |
 | the owner's games | hidden from guests before `OWNER_SHOWN_FROM` (2026-10-14; the `owner` flag + `spire_ascendants_owner.json`), shown after; `python spire_board.py mark-owner <keep...>` names the rest as the owner's without touching the journal |
@@ -679,7 +679,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 |---|---|
 | data and state | `defs` (geometry, tables), `towerstats` (`towerStats`, prices), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows), `step` (the tick, spawns, enemy movement, game end) |
 | waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
-| towers | `towers` (ARC, SOL, moons), `move` (leash, tower marks), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `car` (CRR), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card) |
+| towers | `towers` (ARC, SOL, moons), `move` (leash, tower marks), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `crr` (CRR), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
 | draw (3D) | `warp`, `warp-prism`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
@@ -720,7 +720,7 @@ handler's guest prefixes, the router tier); `/spire` is in all three.
 
 ### 10.4 Simulator and balance tooling (`scripts/aspira-sim/`, README there)
 
-Runs the REAL game code (`sim.mjs` `FILES`: the logic scripts up to `core`, `grv` and `car` among them) in a Node vm
+Runs the REAL game code (`sim.mjs` `FILES`: the logic scripts up to `core`, `grv` and `crr` among them) in a Node vm
 with drawing, sound and input stubbed, every tick as fast as it can, with scripted players
 (opening, kind mix, upgrade appetite, interest reserve, axis per point, core use).
 `ASPIRA_WEB=<dir>` pins a run to a snapshot; a `patch` file changes numbers or redefines a

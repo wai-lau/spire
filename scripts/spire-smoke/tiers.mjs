@@ -5,7 +5,7 @@ import path from "node:path";
 import { ROOT, boot, check } from "./harness.mjs";
 
 const { run } = boot();
-const CURVE_DONE = ["arc", "sol", "car", "frz", "acd", "grv", "ifr"]; // the kinds whose stats run on the curve (each tower task adds its own)
+const CURVE_DONE = ["arc", "sol", "crr", "frz", "acd", "grv", "ifr"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
 check("curve: by total level alone, rising, slightly steepening - each tower its OWN growth (owner, 2026-10-28: \"towers each having their own curve is fine\"; one growth for all 2026-10-26 .. 28; tier 0 may sit above the old bare tower - the trio fit's call, owner 2026-10-26)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
@@ -28,7 +28,7 @@ check("curve: no axis moves range or movement (owner, 2026-10-26): every single-
   if (r.length) return r.slice(0, 3).join(" || ");
 });
 check("curve: a sim game boots and plays two waves with every web file it needs (sim.mjs FILES)", () => {
-  const r = spawnSync(process.execPath, [path.join(ROOT, "scripts/aspira-sim/sim.mjs"), '{"mix":{"arc":1,"car":1}}', "1", "2"], { encoding: "utf8", timeout: 120000 });
+  const r = spawnSync(process.execPath, [path.join(ROOT, "scripts/aspira-sim/sim.mjs"), '{"mix":{"arc":1,"crr":1}}', "1", "2"], { encoding: "utf8", timeout: 120000 });
   if (r.status !== 0) return "sim exited " + r.status + ": " + (r.stderr || "").split("\n").filter(Boolean).slice(-2).join(" | ");
   if (!/"wave":3/.test(r.stdout)) return "sim did not reach wave 3: " + r.stdout.slice(0, 120);
 });
@@ -159,15 +159,15 @@ check("SOL's burns tick IN THE GAME LOOP (a stack once sat untouched: dotT lost,
 });
 
 // ---------- CRR ----------
-towerTierChecks("car", ["tether", "circling", "wingmate"]);
+towerTierChecks("crr", ["tether", "circling", "wingmate"]);
 check("CRR: tier 0 three interceptors (owner, 2026-10-28), no tether, one bolt a volley, six volleys a sortie (owner, 2026-10-28); Hangar I five, one held; Tether I one tether at most; Armament I two bolts, same volley (tier redesign 2026-10-24)", () => {
-  const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "car", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "car", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts, ammo: s.ammo }; })()`);
+  const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "crr", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "crr", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts, ammo: s.ammo }; })()`);
   const z = st({}), h = st({ hangar: 1 }), a = st({ armament: 1 });
   if (z.wing !== 3 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== 0) return "tier 0 " + JSON.stringify(z);
   if (z.ammo !== 6 || a.ammo !== 8) return "volleys a sortie: tier 0 " + z.ammo + ", Armament I " + a.ammo + " (expected 6 and 8 - owner, 2026-10-28: \"interceptor should start with 6 ammo\")";
   if (h.wing !== 5 || h.hold !== 1) return "Hangar I " + JSON.stringify(h);
   if (a.bolts !== 2) return "Armament I " + JSON.stringify(a);
-  const n = run(`(() => { const { t } = tierLane("car", { hangar: 3, launch: 1 }, [90, 120, 150, 170]); /* held ON the lane (a stepped game re-reads a spot from it) */
+  const n = run(`(() => { const { t } = tierLane("crr", { hangar: 3, launch: 1 }, [90, 120, 150, 170]); /* held ON the lane (a stepped game re-reads a spot from it) */
     G.started = true; G.nextIn = 1e9; G.spawns = []; /* the rig's enemies alone - no real wave */ let most = 0, ever = 0;
     for (let k = 0; k < 600; k++) { step(1 / 60); const st = towerStats(t), c = t.icp.filter(i => carTethered(t, i, st)).length; most = Math.max(most, c); ever += c; } /* AT ONCE: tethered at a frame's end (a frame runs several steps, and which one rides it moves - 2026-10-26) */ return [most, ever]; })()`);
   if (n[0] !== 1) return "Tether I: " + n[0] + " interceptors tethered at once (expected 1 - " + n[1] + " tether steps in all)"; // at most ONE at a time; which one rides it moves (carTethered, 2026-10-25)
@@ -252,7 +252,7 @@ check("tier I names: every axis's first hint is named (no placeholder), GRV's se
 const rows = (kind, sk) => run(`(() => { const sk = ${JSON.stringify(sk)}, t = { id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, st = towerStats(t, true);
   return { st: { bolts: st.bolts }, rows: Object.fromEntries(SPEC.${kind}(st, t)) }; })()`);
 check("review: the card's rows show no mechanic the tower lacks - no Shields row (any damage pops one charge, unsaid: owner 2026-10-26), IFR's fire / flares / fan only once bought", () => {
-  for (const k of ["car", "sol"]) if ("Shields" in rows(k, {}).rows) return k + " still shows a Shields row";
+  for (const k of ["crr", "sol"]) if ("Shields" in rows(k, {}).rows) return k + " still shows a Shields row";
   const i0 = rows("ifr", {}).rows, ih = rows("ifr", { hellfire: 1 }).rows, ifl = rows("ifr", { firaga: 1 }).rows;
   for (const k of ["Fire", "Fire speed", "Fire flares", "Flare length", "Flare width", "Flare tick", "Flare ticks", "Flare lasts"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
   if (i0.Burst !== "6 meteors") return "IFR tier 0 Burst reads " + i0.Burst;
@@ -302,7 +302,7 @@ check("later: towerLevel counts only the tower's own axes (a stray key in a save
   if (n !== 2) return "towerLevel " + n + " (expected 2)";
 });
 check("later: CRR's tether rides the first interceptor OUT on a target, not interceptor 0, and only it draws a beam", () => {
-  const r = run(`(() => { G = newGame(); const t = { id: 99, kind: "car", x: CX, y: CY, lvl: 3, skills: { hangar: 1, launch: 1 } }, st = towerStats(t, true), e = { x: CX + 30, y: CY, hp: 1e9, dead: false };
+  const r = run(`(() => { G = newGame(); const t = { id: 99, kind: "crr", x: CX, y: CY, lvl: 3, skills: { hangar: 1, launch: 1 } }, st = towerStats(t, true), e = { x: CX + 30, y: CY, hp: 1e9, dead: false };
     t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
   if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });

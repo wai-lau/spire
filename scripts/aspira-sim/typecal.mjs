@@ -8,7 +8,7 @@ import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
 import { force } from "./typepower.mjs";
-const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car,ifr").split(",");
+const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,crr,ifr").split(",");
 const TYPES = (process.env.TYPES || "swarm,fast,shield,armor").split(",");
 export const BANDS = (process.env.BANDS || "1-24,25-60,61-96,97-120").split(",").map(x => x.split("-").map(Number)); // the four sections (ARCHITECTURE.md 5.6); BANDS=1-24 plays only that far
 // TYPE_HP="armor:1.4" = ENEMIES.armor.hp x1.4; "armor.speed:1.3" any other number of the type

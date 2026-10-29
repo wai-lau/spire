@@ -8,7 +8,7 @@ import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
 
 const TRIO = (process.env.TRIO || "arc,frz,acd").split(",");
-const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], car: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
+const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], crr: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
 const WIN = 120;
 // a build: kind -> its capstone axis (null = spread, the lowest axis first)
 const order = (k, cap) => (cap ? [cap, ...AX[k].filter(a => a !== cap)] : undefined);

@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 const WEB = process.env.ASPIRA_WEB || path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "web");
-export const KINDS = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"], TYPES = ["swarm", "fast", "shield", "armor"];
+export const KINDS = ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"], TYPES = ["swarm", "fast", "shield", "armor"];
 export function vsMarks() {
   const m = fs.readFileSync(path.join(WEB, "aspira-chooser.js"), "utf8").match(/const VS_MARKS = (\{.*?\}\s*\});/);
   if (!m) throw new Error("VS_MARKS not found in " + WEB);

@@ -137,7 +137,7 @@ function chooseUpgrade(i) {
 // have the same number of checks and x's; an enemy type can have multiple; use sim stats"): from the counter matrix (countermx.mjs,
 // three towers of a kind, spread build, waves 61-69, % leaked; 5.1.23): 3 checks and 3 x's a tower, the checks to the types it lets
 // through less than its own average, split by how far under it, the x's likewise over (scripts/aspira-sim/marks.py)
-const VS_MARKS = { arc: { fast: 1, shield: -2, armor: 1 }, frz: { swarm: 1, fast: -1, shield: -1, armor: 1 }, sol: { swarm: 1, fast: -1, shield: 1, armor: -1 }, acd: { swarm: -2, shield: 1, armor: 1 }, grv: { swarm: 1, shield: -2, armor: 1 }, car: { swarm: -2, fast: 1, shield: 2, armor: -1 }, ifr: { swarm: 1, shield: 1, armor: -2 } }; /* regenerated 2026-10-28 v6.15.52 (marks.py --write, countermx 101-109,111-119, pooled) - SETTING (owner, 2026-10-28, "3 yes"): SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119, 2 seeds, snapshot of the 6.16.0 battery; 13 points and 61-69 at 6 points left most rows under 20% leaked - no marks */
+const VS_MARKS = { arc: { fast: 1, shield: -2, armor: 1 }, frz: { swarm: 1, fast: -1, shield: -1, armor: 1 }, sol: { swarm: 1, fast: -1, shield: 1, armor: -1 }, acd: { swarm: -2, shield: 1, armor: 1 }, grv: { swarm: 1, shield: -2, armor: 1 }, crr: { swarm: -2, fast: 1, shield: 2, armor: -1 }, ifr: { swarm: 1, shield: 1, armor: -2 } }; /* regenerated 2026-10-28 v6.15.52 (marks.py --write, countermx 101-109,111-119, pooled) - SETTING (owner, 2026-10-28, "3 yes"): SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119, 2 seeds, snapshot of the 6.16.0 battery; 13 points and 61-69 at 6 points left most rows under 20% leaked - no marks */
 const VS_ORDER = ["swarm", "fast", "shield", "armor"];
 // THE GAPS (owner, 2026-10-19: "when building the third tower: for each tower card that has X where the two towers that you have do
 // not cover draw a red box around that"): with two towers built, the types neither has a check on; a card's x's on one are boxed red
@@ -164,6 +164,7 @@ function buildOrder() {
   if (buildOrderMemo) return buildOrderMemo;
   let o = null;
   try { o = JSON.parse(localStorage.getItem(BUILD_ORDER_KEY) || "null"); } catch (e) { o = null; }
+  if (Array.isArray(o)) o = o.map(k => (k === "car" ? "crr" : k)); // (CRR's id before 6.18.4: the stored order stays)
   if (!Array.isArray(o) || o.length !== KINDS.length || !KINDS.every(k => o.includes(k))) {
     o = KINDS.slice();
     for (let i = o.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [o[i], o[j]] = [o[j], o[i]]; }

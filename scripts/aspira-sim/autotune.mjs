@@ -20,7 +20,7 @@ const LATE = { // from 61 the new lever leads (what it was added for), the signa
 const MIX = [EARLY, EARLY, LATE, LATE], SHARE_K = 0.25; // SHARE_K: a share lever reaches 0.1 (the old late hybrids' share) at d^w = 1.4
 const SHARE = { swarm: "shield", fast: "armor" }; // a SHARE lever starts at 0, not 1
 const TYPES = ["swarm", "fast", "shield", "armor"];
-const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car,ifr").split(","), SEEDS = (process.env.SEEDS || "1").split(",").map(Number);
+const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,crr,ifr").split(","), SEEDS = (process.env.SEEDS || "1").split(",").map(Number);
 const ROUNDS = Number(process.env.ROUNDS || 3), TOL = Number(process.env.TOL || 0.04), LOSE = Number(process.env.LOSE || 2);
 const trios = []; for (let a = 0; a < ALL.length; a++) for (let b = a + 1; b < ALL.length; b++) for (let c = b + 1; c < ALL.length; c++) trios.push([ALL[a], ALL[b], ALL[c]]);
 const file = process.argv[2] || "autotune.json";

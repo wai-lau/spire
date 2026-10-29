@@ -11,7 +11,7 @@ export default async function task({ trio, seed, pos, rewind, to }) {
   return { wave: r.wave, lives: r.lives, leaks: Object.values(r.leaks).reduce((a, n) => a + n, 0) };
 }
 if (isMainThread && process.argv[1].endsWith("skill.mjs")) {
-  const TRIOS = [["arc", "frz", "sol"], ["acd", "grv", "car"], ["ifr", "arc", "grv"], ["sol", "car", "frz"]];
+  const TRIOS = [["arc", "frz", "sol"], ["acd", "grv", "crr"], ["ifr", "arc", "grv"], ["sol", "crr", "frz"]];
   const rewind = process.env.REWIND !== "0", to = Number(process.env.TO) || 108, SEEDS = Number(process.env.SEEDS) || 3; // SEEDS: games a variant (3: the gaps were one seed's)
   const jobs = []; for (const pos of Object.keys(POS)) for (const trio of TRIOS) for (let seed = 1; seed <= SEEDS; seed++) jobs.push({ trio, seed, pos, rewind, to });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true, out: process.argv[2] || null });

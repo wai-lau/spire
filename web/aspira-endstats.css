@@ -20,7 +20,7 @@
 .asp-end-towers tr[data-kind="sol"] { color: hsl(var(--asp-solar-hsl)); }
 .asp-end-towers tr[data-kind="acd"] { color: hsl(var(--asp-acd-hsl)); }
 .asp-end-towers tr[data-kind="grv"] { color: hsl(var(--asp-violet-hsl)); }
-.asp-end-towers tr[data-kind="car"] { color: hsl(var(--asp-blue-hsl)); }
+.asp-end-towers tr[data-kind="crr"] { color: hsl(var(--asp-blue-hsl)); }
 .asp-end-towers tr[data-kind="ifr"] { color: hsl(var(--asp-ifr-hsl)); }
 
 .asp-end-waves {

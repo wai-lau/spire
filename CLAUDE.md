@@ -36,7 +36,7 @@ are this repo's gitignored `data/aspira-sfx/`.
   result of a balance battery run should result in a new minor version"; a new day is NOT one: "stop doing the new day new
   minor thing"); anything else bumps PATCH (semver major.minor.patch; the third number is "patch", never "tiny"). ARCHITECTURE.md §9.4.
 - **Every balance patch refreshes the build card's checks and x's** (`VS_MARKS`, owner 2026-10-18): run
-  `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 KINDS=arc,frz,sol,acd,grv,car,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out` (9 points, the late windows - owner, 2026-10-28; was 6 at 61-69) on the patched code, then
+  `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 KINDS=arc,frz,sol,acd,grv,crr,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out` (9 points, the late windows - owner, 2026-10-28; was 6 at 61-69) on the patched code, then
   `python3 scripts/aspira-sim/marks.py cmx.out --write`, and ship the new marks with the patch. ARCHITECTURE.md §4.6.
 - **THE MARK TARGET** (owner, 2026-10-29: "Save this mark target! It's very important!"): `scripts/aspira-sim/mark-target.json` - every
   type column is ✓✓ ✓ ✓ ✓ – ✗✗ ✗✗✗, every row and column sums to 0, every tower checks two types or more. The towers are balanced TO it

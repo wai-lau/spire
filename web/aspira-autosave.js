@@ -68,9 +68,10 @@ function runOffer(saved) {
   document.querySelector(".asp-board").appendChild(card);
   ui.paused = true;
 }
+const runMigrate = g => { for (const t of g.towers || []) if (t.kind === "car") t.kind = "crr"; return g; }; // a save from before 6.18.4 names CRR by its old id (renamed 2026-10-29)
 function runResume(saved) {
   try {
-    G = runClean(skillScaleFix(saved.G)); runSavedAt = G.wave; autoMove = !!G.autoMove; freeMode = !!G.freeMode; // (auto-move is the game's own; runClean also drops leashHint - a page-clock stamp that kept the movement rings on for hours, owner 2026-10-16)
+    G = runClean(skillScaleFix(runMigrate(saved.G))); runSavedAt = G.wave; autoMove = !!G.autoMove; freeMode = !!G.freeMode; // (auto-move is the game's own; runClean also drops leashHint - a page-clock stamp that kept the movement rings on for hours, owner 2026-10-16)
     fx = []; dmgLive = []; coins = []; ui.sel = null; ui.build = null;
     if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 });
     refreshPanels();

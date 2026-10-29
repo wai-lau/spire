@@ -6,7 +6,7 @@
 // A child that loses a life or the game is DEAD and pruned (only if every child of every state dies does the best lossy smart
 // child go on, its lives lost counted). Children with the same build keep the richest; the beam keeps the BEAM richest.
 // Score: won, then lives, then credits left after Death (wave WIN_WAVE pays nothing).
-// usage: node trioplan.mjs [beam=3] [seed=1] [out.jsonl]   env KINDS (default all seven), TRIOS=arc+grv+car,..., ASPIRA_PATCH,
+// usage: node trioplan.mjs [beam=3] [seed=1] [out.jsonl]   env KINDS (default all seven), TRIOS=arc+grv+crr,..., ASPIRA_PATCH,
 // ASPIRA_WEB, POOL_WORKERS
 import fs from "node:fs";
 import { isMainThread } from "node:worker_threads";
@@ -66,7 +66,7 @@ export default async function task({ trio, seed, beam }) {
 }
 
 if (isMainThread && process.argv[1].endsWith("trioplan.mjs")) {
-  const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,car,ifr").split(",");
+  const ALL = (process.env.KINDS || "arc,frz,sol,acd,grv,crr,ifr").split(",");
   let trios = [];
   if (process.env.TRIOS) trios = process.env.TRIOS.split(",").map(s => s.split("+"));
   else for (let a = 0; a < ALL.length; a++) for (let b = a + 1; b < ALL.length; b++) for (let c = b + 1; c < ALL.length; c++) trios.push([ALL[a], ALL[b], ALL[c]]);

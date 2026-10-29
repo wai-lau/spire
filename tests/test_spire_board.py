@@ -151,7 +151,7 @@ def test_fix_corrects_a_game_when_shown_and_keeps_the_journal(tmp_path):
 
 
 def test_clean_entry_keeps_a_version_and_drops_junk():
-    base = {"initials": "ABC", "lives": 5, "team": ["arc", "car"], "won": True, "wave": 120}
+    base = {"initials": "ABC", "lives": 5, "team": ["arc", "crr"], "won": True, "wave": 120}
     assert spire_board.clean_entry({**base, "ver": "5.1.10"})["ver"] == "5.1.10"
     assert "ver" not in spire_board.clean_entry({**base, "ver": "<script>"})
     assert "ver" not in spire_board.clean_entry(base)
@@ -162,3 +162,13 @@ def test_team_accepts_ifrit(tmp_path, monkeypatch):
     base = {"initials": "IFR", "lives": 5, "team": ["ifr", "arc"], "won": True, "wave": 120}
     assert spire_board.clean_entry(dict(base))["team"] == ["arc", "ifr"]
     assert spire_board.clean_entry(dict(base, team=["ifr", "xyz"])) is None
+
+
+def test_old_car_rows_read_as_crr_and_a_post_takes_crr_only(tmp_path):
+    """CRR's id was `car` until 6.18.4: a stored row shows as crr, a new post must say crr."""
+    spire_board.add(tmp_path, {"initials": "OLD", "lives": 5, "team": ["arc", "car"], "ts": 100, "won": True, "wave": 120})
+    assert spire_board.visible(tmp_path, spire_board.load(tmp_path), True)[0]["team"] == ["arc", "crr"]
+    assert '"car"' in (tmp_path / spire_board.JOURNAL_NAME).read_text()  # the journal untouched
+    base = {"initials": "NEW", "lives": 5, "won": True, "wave": 120}
+    assert spire_board.clean_entry({**base, "team": ["crr", "arc"]})["team"] == ["arc", "crr"]
+    assert spire_board.clean_entry({**base, "team": ["car"]}) is None

@@ -138,7 +138,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
     if (e.shield < SHIELD_BREAK_N && (!(st && st.noFx) || e.shield <= 0)) shieldBreak(e); // its last charges BREAK, loudly (aspira-floats.js) - a crowd of pools (noFx) only the LAST one (owner, 2026-10-14: ACD too much late)
     if (!(st && st.noFx)) hitFlash(e, 18, 1, "cyan", 0.07);
     // all of it soaked: a "0" in SHIELD blue, as BIG as the hit it swallowed (owner)
-    dmgNumber(e, "0", amt, "cyan", (st && st.from) || hitFrom || t); // EVERY pop its own 0, even a quiet hit's - never summed (owner, 2026-10-21: "every shield pop should show a 0, that's the exception to the rule"); from: where it flies AWAY from (aspira-car.js)
+    dmgNumber(e, "0", amt, "cyan", (st && st.from) || hitFrom || t); // EVERY pop its own 0, even a quiet hit's - never summed (owner, 2026-10-21: "every shield pop should show a 0, that's the exception to the rule"); from: where it flies AWAY from (aspira-crr.js)
     return;
   }
   // BLEED (SOL's Impale): every OTHER tower may crit a bleeding enemy too, for

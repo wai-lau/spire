@@ -42,7 +42,7 @@ function towerStats(t, noAura = false) {
     case "frz": if (hasSkills(t)) { frzSkillStats(t, s, b); break; } s.slow = LVL_SLOW[i]; s.targets = 3; break; // owner: 3 rays by default (2026-10-04; was 1 since 2026-10-02)
     // ACD levels up MODESTLY like ARC (owner): the L2 path brings the big change
     case "grv": grvSkillStats(t, s, b); break; // the gravity tower (aspira-grv.js)
-    case "car": carSkillStats(t, s, b); break; // the carrier (aspira-car.js)
+    case "crr": carSkillStats(t, s, b); break; // the carrier (aspira-crr.js)
     case "ifr": ifrSkillStats(t, s, b); break; // Ifrit (aspira-ifrit.js)
     case "acd":
       if (hasSkills(t)) { acdSkillStats(t, s, b); break; } // ACD's chart (aspira-skills.js)
@@ -87,7 +87,7 @@ const upCost = t => freeBuild() ? 0 : Math.round(TOWERS[t.kind].cost * (hasSkill
 // starts its tree on whatever is nearest the core, FRZ slows what nothing has
 // touched yet (Fresh), SOL saves its big hit for the most HP, ACD holds its
 // ramping burn on the longest-lived (Biggest)
-const DEFAULT_MODE = { arc: "close", frz: "close", sol: "close", acd: "close", grv: "close", car: "close", ifr: "close" }; // every tower NEAR by default (owner, 2026-10-16: "by default, every tower should target near"; FRZ was Fresh, SOL + ACD Biggest)
+const DEFAULT_MODE = { arc: "close", frz: "close", sol: "close", acd: "close", grv: "close", crr: "close", ifr: "close" }; // every tower NEAR by default (owner, 2026-10-16: "by default, every tower should target near"; FRZ was Fresh, SOL + ACD Biggest)
 // each new tower costs 1.5x the last (owner, 2026-10-04; was 2x): 40, 60, 90, 135, 203, 304
 const towerCost = k => freeBuild() ? 0 : Math.round(TOWERS[k].cost * Math.pow(1.5, G.towers.length));
 const sellValue = t => Math.floor(t.spent * 0.95); // 95% back (owner, 2026-10-13; was 70%)

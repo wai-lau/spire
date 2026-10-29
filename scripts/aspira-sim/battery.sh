@@ -17,11 +17,11 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd); ROOT=$(cd "$HERE/../.." && pwd)
 OUT=${OUT:-$HOME/sim-out} # durable: /tmp is wiped on a WSL reboot (2026-10-27 lost a battery's outputs); was one session's /tmp scratchpad
 mkdir -p "$OUT"
-KINDS=arc,frz,sol,acd,grv,car,ifr
-LOSERS=arc+grv+ifr,frz+acd+car,sol+acd+car,sol+grv+car,sol+grv+ifr,sol+car+ifr,grv+car+ifr
+KINDS=arc,frz,sol,acd,grv,crr,ifr
+LOSERS=arc+grv+ifr,frz+acd+crr,sol+acd+crr,sol+grv+crr,sol+grv+ifr,sol+crr+ifr,grv+crr+ifr
 snap() { local c; c=$(git -C "$ROOT" rev-parse --short HEAD); rm -rf "$OUT/web-$c"; mkdir -p "$OUT/web-$c"; cp -r "$ROOT/web/." "$OUT/web-$c/"; echo "$OUT/web-$c" > "$OUT/web-current"; echo "snapshot $OUT/web-$c"; }
 web() { cat "$OUT/web-current" 2>/dev/null || { echo "no snapshot - run: battery.sh snap" >&2; exit 2; }; }
-trios_with() { node -e 'const K="arc,frz,sol,acd,grv,car,ifr".split(","),k=process.argv[1],o=[];for(let a=0;a<7;a++)for(let b=a+1;b<7;b++)for(let c=b+1;c<7;c++){const t=[K[a],K[b],K[c]];if(k==="all"||t.includes(k))o.push(t.join("+"))}console.log(o.join(","))' "$1"; }
+trios_with() { node -e 'const K="arc,frz,sol,acd,grv,crr,ifr".split(","),k=process.argv[1],o=[];for(let a=0;a<7;a++)for(let b=a+1;b<7;b++)for(let c=b+1;c<7;c++){const t=[K[a],K[b],K[c]];if(k==="all"||t.includes(k))o.push(t.join("+"))}console.log(o.join(","))' "$1"; }
 case "${1:-help}" in
   snap) snap ;;
   duo) W=$(web); ASPIRA_WEB=$W DUO_GRID='{"now":""}' node "$HERE/duo0.mjs" "${2:-2}" | tail -1 ;;

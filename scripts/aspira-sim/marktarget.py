@@ -73,7 +73,7 @@ def ARC_SHAPE(r):
 
 
 
-DESIGN = {k: (lambda need, k: lambda r: all(r[i] >= 1 for i in need) and not (k == "car" and r[TYPES.index("armor")] >= 0) and (k != "arc" or ARC_SHAPE(r)))(NEED[k], k) for k in KINDS}
+DESIGN = {k: (lambda need, k: lambda r: all(r[i] >= 1 for i in need) and not (k == "crr" and r[TYPES.index("armor")] >= 0) and (k != "arc" or ARC_SHAPE(r)))(NEED[k], k) for k in KINDS}
 print("main counters (must check):", {t: ks for t, ks in MAIN.items()})
 cand = {k: sorted((r for r in ROWS if DESIGN.get(k, lambda r: True)(r)), key=lambda r: dist(k, r)) for k in KINDS}
 best_rest = [sum(dist(k, cand[k][0]) for k in KINDS[i:]) for i in range(len(KINDS))] + [0]

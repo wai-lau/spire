@@ -9,7 +9,7 @@ tower is a new major", ARCHITECTURE.md 9.4: the next MINOR after 6.1.0). Id `ifr
 countermx 6.0.1 (three 6-point towers of one kind, waves 61-69, % leaked): armor is held by
 SOL alone (ARC 94, GRV 81), shield by ARC and CRR (ACD 48, SOL 57). The trio diagnostic on
 6.0.4 (committed sim, 3 seeds, lives lost over waves 60+): the ARC-less trios bleed to
-**swarm first, shield second** (SOL+ACD+GRV 36 swarm / 10 shield; ACD+GRV+CAR 48 / 3;
+**swarm first, shield second** (SOL+ACD+GRV 36 swarm / 10 shield; ACD+GRV+CRR 48 / 3;
 FRZ+SOL+ACD dies to Temperance's shield fleet x3). Every trio with ARC finishes at full lives.
 
 **Ifrit's slot (owner): main swarm + shield, neutral armor, weak to fast.** Not the
@@ -93,7 +93,7 @@ Ink tokens shift by their tower's delta: `--asp-violet-ink-hsl` 272 -> 264, `--a
 
 | Where | Change |
 |---|---|
-| `web/aspira-ifrit.js` (new, < 500 lines; split on a seam if not) | the tables, `ifrSkillStats`, `stepIfr` (charge, launch, flight, impact, pellets, flares, burns), `drawIfr`; loaded after `aspira-car.js` |
+| `web/aspira-ifrit.js` (new, < 500 lines; split on a seam if not) | the tables, `ifrSkillStats`, `stepIfr` (charge, launch, flight, impact, pellets, flares, burns), `drawIfr`; loaded after `aspira-crr.js` |
 | `aspira-defs.js` | `TOWERS.ifr`, `COUNTERS` swarm + shield mains, `BOSS_KILLERS` unchanged |
 | `aspira-game.js` | the tower loop dispatch `if (t.kind === "ifr") { stepIfr(t, dt); continue; }` |
 | `aspira-towers.js` | `MOVE_BASE.ifr` 200; the corner geometry helper (hex corners at `TOWER_K`) |

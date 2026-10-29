@@ -43,7 +43,7 @@ const ARCANA = [
 // BOSSES CLOSER (owner, 2026-10-13: "make bosses challenging (10-20% closer)"): every boss but the Star x BOSS_HP_K. let: the sims sweep it
 // ...and the ones that STILL stopped far out more (owner, 2026-10-13: "make the far away bosses stronger"): waverep x3.5 brought
 // the Empress 271 -> 213 and Strength 273 -> 231; Death 346 -> 296 at x2.4, 169 at x3.5 (2 of 36 games lost), so x2.8
-const BOSS_FAR = { empress: 3.5, strength: 3.5, death: 8.4 /* x3 (owner, 2026-10-28: "balance the boss to the towers" - after the 6.16.0 tower tops frz+grv+ifr beat Death on 18 tier points, rule >= 30 of 39; trioplan beam 3: x2 19, x3 35; acd+grv+car, the weakest winnable, still wins on 34 at x1, x3, x4) */ };
+const BOSS_FAR = { empress: 3.5, strength: 3.5, death: 8.4 /* x3 (owner, 2026-10-28: "balance the boss to the towers" - after the 6.16.0 tower tops frz+grv+ifr beat Death on 18 tier points, rule >= 30 of 39; trioplan beam 3: x2 19, x3 35; acd+grv+crr, the weakest winnable, still wins on 34 at x1, x3, x4) */ };
 // DEATH x0.6 of the shared boost (owner, 2026-10-16: "every winnable trio fully upgraded should beat death"): at x1 it ended
 // ARC+SOL+ACD and ARC+FRZ+ACD at wave 120; at x0.6 both won 4/4 (triodiag, with GRV_STRIP 2.5)
 const BOSS_DEATH_K = 0.6;
