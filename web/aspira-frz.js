@@ -20,7 +20,7 @@ const FRZ_BRITTLE = [1, 1, 2.2, 3, 3.4, 3.8]; /* II-V up, no tier lower than the
 // fast (slow + tick + brittle); a pulse no longer breaks shield charges (it did until 2026-10-12)
 /* RIME'S BITE (owner, 2026-10-18: Rime is the weakest FRZ axis): each ring that reaches an enemy hits it for this x a tick (quiet, armor still bites) */
 let FRZ_RIME_BITE0 = 4; // x2 with the rate halved (owner, 2026-10-26: "halve rime ring pulse rate, but double effect") // a ring's bite, x a tier 0 tick - ONE number since the tier redesign (2026-10-24; was 0 4 45 200, V 300 - its tier I value)
-const FRZ_RIME_CRACK = [0, 1, 2.86, 4.42]; /* x2 with the rate halved (owner, 2026-10-26) */ /* x2 (axis balance, owner 2026-10-25: Rime focus 45% leaked, Temp 9, Moons 6) */
+const FRZ_RIME_CRACK = [0, 0, 0, 0]; /* NO ARMOR REDUCTION (owner, 2026-10-29: FRZ "no armor reduction effects, more slow" - the mark target FRZ +2 +2 -2 -2; was 0 1 2.86 4.42) */ /* x2 with the rate halved (owner, 2026-10-26) */ /* x2 (axis balance, owner 2026-10-25: Rime focus 45% leaked, Temp 9, Moons 6) */
 // Moons only add aura sources; their armor crack (FRZ_MOON_CRACK) and the hard-types-skip-brittle table (FRZ_HARD)
 // were removed with the effects (2026-10-12; ARCHAEOLOGY.md) - brittle applies to every slowed enemy.
 // a tick is QUIET (no flash, no crit) yet ARMOR takes its flat bite like any hit (owner, 2026-10-12: "frz ticks should not
@@ -73,7 +73,7 @@ function frzSources(t, st) {
 // TYPE - "get rid of all enemy based damage multis"; the tables above are dead): a tick hurts x (1 + FRZ_CHILL_K x
 // the enemy's slow now, 0..1) - every slow on it counts, so the fast (slowed twice as hard) and anything held by other
 // slows take the most. let: the simulator sweeps it
-let FRZ_CHILL_K = 9; // x1.5: lifts Sublimation (owner, 2026-10-26 "Lift sublimation": Temp focus 33% leaked vs Rime 18, Moons 14 -> 25; was 6)
+let FRZ_CHILL_K = 27; /* x3 (2026-10-29, the mark target FRZ fast +2: countermx 9 pts 101-119 fast leaked 47% at 18, 22% at 27, 6% at 36 - 36 lifted shield and armor too); was 9 */ // x1.5: lifts Sublimation (owner, 2026-10-26 "Lift sublimation": Temp focus 33% leaked vs Rime 18, Moons 14 -> 25; was 6)
 const frzBite = e => 1 + FRZ_CHILL_K * (e.slowT > 0 ? e.slowF : 0);
 // MAX RIME (owner, 2026-10-11: "if something reaches max rime, it spreads to the nearest unit that is not yet max
 // rime"): an enemy its rime alone slows FRZ_RIME_FULL (before the slow's shaping) holds no more - a pulse that reaches it

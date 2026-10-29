@@ -175,7 +175,7 @@ check("CRR: tier 0 three interceptors (owner, 2026-10-28), no tether, one bolt a
 
 // ---------- FRZ ----------
 towerTierChecks("frz", ["hurts", "pulse", "moon", "more damage"]);
-check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Sublimation I hurts, more the slower; Permafrost I pulses crack armor; Moons I one moon (tier redesign 2026-10-24)", () => {
+check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Sublimation I hurts, more the slower; Permafrost I pulses frost and crack no armor (owner, 2026-10-29); Moons I one moon (tier redesign 2026-10-24)", () => {
   const go = (sk, extra = "") => run(`(() => { const { t, es } = tierLane("frz", ${JSON.stringify(sk)}, [30]); const e = es[0]; e.armor = e.armor0 = 40; G.started = true;
     let slowed = false; for (let k = 0; k < 180; k++) { ${extra} step(1 / 60); if (e.slowT > 0 && e.slowF > 0) slowed = true; }
     return { dealt: e.max - e.hp, slowed, frost: frostShare(e), crack: towerStats(t).rimeCrack || 0, moons: towerStats(t).moonN || 0 }; })()`);
@@ -187,7 +187,7 @@ check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Sublimation I hurts,
   if (!(s.dealt > 0)) return "Sublimation I dealt nothing";
   if (!(sx.dealt > s.dealt)) return "Sublimation I: " + sx.dealt + " slowed vs " + s.dealt + " (expected more on the slower)";
   if (z.frost > 0) return "tier 0 frosted " + z.frost;
-  if (!(p.frost > 0 && p.crack > 0)) return "Permafrost I: frost " + p.frost + ", crack " + p.crack + " (expected a pulse's frost that cracks armor - damage() reads it)";
+  if (!(p.frost > 0 && p.crack === 0)) return "Permafrost I: frost " + p.frost + ", crack " + p.crack + " (expected a pulse's frost that cracks NO armor - owner 2026-10-29: FRZ \"no armor reduction effects\")";
   if (m.moons !== 1) return "Moons I: " + m.moons + " moons";
 });
 
