@@ -360,6 +360,13 @@ Horizon: 90% slow in a full hole's core), Supernova the nova (Hypernova: half th
 saves) the aura and the pellets' damage and range; "aura radius never exceeds 2x void radius". "GRV is support" (2026-10-21) gave the
 aura its slow ahead (`GRV_AHEAD_K`) and the glide to the lane's centre (`GRV_LAT_V`). Pellets roll 25-400% each (`GRV_PEL_J`).
 
+### 4.4-bis ARC and FRZ lines ARCHITECTURE 4.4 carried until 6.17.9
+
+ARC's one hit set an attack is the owner's of 2026-10-28 ("reduce the number of arc hits", the 6.16.0 battery's cc67188); before
+it Conductivity let a bolt return to a struck enemy from III (3 hits a tree at tier 0, 40 at the capstone). "No grounding
+(reverted)". FRZ Permafrost's frost took armor PAST ZERO until the 2026-10-28 armor rework; Moons had "moonlets from the third buy"
+(satellites since: owner, "satellites instead of moonlets").
+
 ### 4.6c-bis CRR and IFR as ARCHITECTURE described them until 6.17.8
 
 CRR: "strong vs fast + shield, weak to swarm + armor"; the hold a quarter / half / three quarters / all of the wing by tier (now

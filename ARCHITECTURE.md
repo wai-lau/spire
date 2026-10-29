@@ -190,14 +190,13 @@ purchase; an affordable buy flashes an up-chevron; labels are three letters.
 
 ### 4.4 What each axis buys
 
-**ARC** - a strike hits, then forks; a jump never goes back up its own branch; damage falls
-by `arcFall` a jump. **One hit set an attack** (owner 2026-10-28, "reduce the number of arc hits"): no
-enemy is struck twice by the bolts of one attack, nor by one bolt (`fire` shares `seen`; `skillHop`);
-the echo strike never re-hits what the first took; Capacitance's bursts do re-hit. No grounding (reverted).
+**ARC** - a strike hits, then forks; a jump never goes back up its own branch; damage falls by `arcFall` a jump. **One hit set
+an attack**: no enemy is struck twice by the bolts of one attack, nor by one bolt (`fire` shares `seen`; `skillHop`); the echo
+strike never re-hits what the first took; Capacitance's bursts do re-hit. How it got here: ARCHAEOLOGY §4.
 
 | axis | buys |
 |---|---|
-| Conductivity | the branching: strikes x jump layers x forks, and jump reach; from III a bolt may return to a struck enemy (3 hits a tree at 0, 40 at the capstone); range |
+| Conductivity | the branching: strikes x jump layers x forks, and jump reach (never a re-hit - one hit set an attack); range |
 | Voltage | raw power: the hit, and what each jump keeps of the hit before it (above 1 from the third buy: jumps out-hit the strike); a kill passes its overkill on to the nearest enemy, `VOLT_CARRY_N` hops by tier (`voltCarry`); range |
 | Capacitance | charges left on the enemy; the next hit **from anything**, or its death, bursts them all (`ARC_BURST_R`) and slows; bursts never charge; from tier I a charged enemy a burst kills goes off next, once (`capQueue`, `CAP_CHAIN_FROM`), the burst reaching `CAP_BURST_K` x by tier; slide |
 
@@ -209,8 +208,8 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 | axis | buys |
 |---|---|
 | Sublimation (id `temp`) | a colder aura, a faster tick, **Brittle** (a slowed enemy takes more from EVERY tower, credited to the FRZ); range |
-| Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow and frost that takes armor past zero; at full frost the rime spreads to the nearest enemy; slide |
-| Moons | weaker copies of the aura orbiting the tower (separate slow sources, so they multiply), with moonlets from the third buy |
+| Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow and frost that takes a share of the armor (never below 0); at full frost the rime spreads to the nearest enemy; slide |
+| Moons | copies of the aura orbiting the tower (separate slow sources, so they multiply), with satellites at the top tiers |
 
 **SOL** - one beam a shot, fixed where it struck; an enemy is struck once a shot. Armor cuts it like any other tower.
 Its checks and weak spots are measured, not designed: the build card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-sol.js`; how it got here: ARCHAEOLOGY §4.
