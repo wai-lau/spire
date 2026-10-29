@@ -38,8 +38,8 @@ are this repo's gitignored `data/aspira-sfx/`.
 - **Every balance patch refreshes the build card's checks and x's** (`VS_MARKS`, owner 2026-10-18): run
   `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 KINDS=arc,frz,sol,acd,grv,crr,ifr node scripts/aspira-sim/countermx.mjs 2 > cmx.out` (9 points, the late windows - owner, 2026-10-28; was 6 at 61-69) on the patched code, then
   `python3 scripts/aspira-sim/marks.py cmx.out --write`, and ship the new marks with the patch. ARCHITECTURE.md §4.6.
-- **THE MARK TARGET** (owner, 2026-10-29 15:45: "save super important! priority #1"): `scripts/aspira-sim/mark-target.json`, the exact table
-  the owner chose - swarm / fast / shield / armor: ARC +2 +2 -2 -2 · FRZ -2 +1 -1 +2 · SOL +1 -3 +1 +1 · ACD -1 -2 +1 +2 · GRV +1 +1 -3 +1 ·
+- **THE MARK TARGET** (owner, 2026-10-29 15:45: "save super important! priority #1"; 16:05: "let's swap FRZ and GRV"): `scripts/aspira-sim/mark-target.json`, the exact table
+  the owner chose - swarm / fast / shield / armor: ARC +2 +2 -2 -2 · FRZ +1 +1 -3 +1 · SOL +1 -3 +1 +1 · ACD -1 -2 +1 +2 · GRV -2 +1 -1 +2 ·
   CRR -3 +2 +2 -1 · IFR +2 -1 +2 -3. Every type column is ✓✓ ✓✓ ✓ ✓ ✗ ✗✗ ✗✗✗ (+2 +2 +1 +1 -1 -2 -3; one of the seven zero-sum shapes that
   allow two checks a tower), every row and column sums to 0, every tower checks two types or more, ARC / IFR / CRR bad vs armor by design.
   The towers are balanced TO it; never edit `VS_MARKS` by hand; `marktarget.py` (the fitter) runs again only on the owner's word. Any other
