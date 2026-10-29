@@ -294,54 +294,54 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
 ### 4.6c CRR (id `car`), the carrier (`web/aspira-car.js`)
 
-The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`): **strong vs fast + shield, weak to swarm + armor**. It never
-fires itself; its **interceptors** do. The constants (wing sizes, speeds, volley counts, reloads) and every superseded number
-are in ARCHAEOLOGY §4.6c.
+The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), designed for **fast + shield**; its measured checks and weak
+spots are the build card's marks (`VS_MARKS`, §4.6). It never fires itself; its **interceptors** do. The constants (wing sizes,
+speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY §4.6c.
 
 | Part | Rule |
 |---|---|
 | launch | the tower's range only LAUNCHES: an enemy inside it sends the wing out, one interceptor at a time on `CRR_GAP` |
 | target | each interceptor then picks its own from everything within the interceptors' reach (`CRR_LEASH` x the range, about 960), in the tower's targeting order. `carTarget` sends enough: the first enemy whose HP (and shield) outweighs the damage already committed to it by interceptors on it. The carrier itself moves inside a leash of 240 |
-| hold | with any Hangar tier, reloaded interceptors with nothing to hit are STORED in orbit round the carrier (a quarter, half, three quarters, all of the wing by tier; `CRR_HOLD_FRAC`), at a jittered distance and size, carried with the carrier as if fixed to it. They still launch one by one |
+| hold | with any Hangar tier, reloaded interceptors with nothing to hit are STORED in orbit round the carrier (a growing share of the wing by tier, `CRR_HOLD_FRAC`), at a jittered distance and size, carried with the carrier as if fixed to it. They still launch one by one |
 | flight | a heading with a capped turn rate, steered onto an orbit circle round the target (`CRR_ORBIT`, each interceptor's radius breathing by `CRR_ORBIT_JIT`); it steers round the core and the towers (`carAvoid`) and leads nothing. On arrival it makes a strafing pass (the ram) |
 | volleys | `CRR_AMMO` volleys a sortie, each `CRR_BOLTS` bolts fired `CRR_BOLT_PAIR` at a time, side by side, as a steady stream, at `CRR_VOLLEY_K` x the hit between them. Armor cuts each small bolt (ATC's armor weakness). All the bolts of a volley go at the ONE enemy it began on, even if it dies; a bolt whose target is gone flies on only `CRR_BOLT_ON` s, hitting the first enemy it touches or nothing. Every bolt slows (one slow a tower), and what an interceptor circles is held back the whole time (the pin, `CRR_PIN`) |
-| tether | every interceptor tethers its target with a light slow (`CRR_TETHER_SLOW[0]`); the pulse, a real hit, only with Tether bought; Tether runs on to a second enemy from tier I (`CRR_CHAIN_FROM`) |
+| tether | with Tether, the first interceptors out (`CRR_TETHER_N`) tether their target: slowed, and taking more damage per tether (`CRR_TETHER_SLOW`, `CRR_TETHER_AMP`); at the capstone a tether runs on to one more enemy nearby |
 | after a kill | the interceptor hops to the nearest enemy within `CRR_HOP` that no wingmate is on (`carHop`), else the nearest within it, else it flies home. Out of volleys it goes home and reloads |
-| numbers | one damage number per `CRR_NUM_HITS` hits per interceptor, their sum (`carNum`) |
+| numbers | every bolt shows its own damage number (`carNum`, `CRR_NUM_HITS` 1) |
 | look | hairline trails (`carTrails`); darts sized by Armament; drawn in `skyKeep` so a boss sky does not invert them. No new 3D primitives: darts are filled triangles, firing lines and pellets single strokes (the board's path context takes no gradient stroke, §11) |
 
-| Axis | Buys | Capstone (IV) |
+| Axis | Buys | Capstone (V) |
 |---|---|---|
-| Hangar | WIDTH: more interceptors, more of them stored in orbit; **focus fire** (each other interceptor looping the same target adds a share to every shot on it); a share of the hit | Full Wing |
-| Launch | TEMPO: interceptor speed, a shorter reload, the strafing pass (`CRR_RAM`), the carrier's leash; a share of the hit | **Warp**: they teleport onto the target's circle and home |
-| Armament | DEPTH: a far harder hit, more volleys a sortie | **Autopilot**: out of volleys, an interceptor bursts into pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
+| Hangar | WIDTH: more interceptors launched at a time, and more of them stored in orbit | **Full Wing**: the whole wing |
+| Tether (id `launch`) | the tether: more interceptors tethering, a harder slow, more damage per tether | **Anchor**: tethers run on to one more enemy nearby |
+| Armament | DEPTH: a harder hit, more volleys a sortie, more bolts a volley | **Autopilot**: out of volleys, an interceptor bursts into pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
 
 The Orbital Relay triples the wing (`relayStats`).
 
 ### 4.6e IFR, Ifrit (`web/aspira-ifrit.js`, the look `aspira-ifrit-draw.js`)
 
-The fire aeon of FFX (owner's design, 2026-10-19; "Kilika's hellfire."), orange: **strong vs swarm + shield, neutral to armor,
-weak to fast**. Axes redone 2026-10-20 (owner: "axes don't feel unique nor impactful"): **each axis owns one part of the meteor's
-life and its own damage** - every hit is `TOWERS.ifr.dmg` x that axis's table, none multiplies another's. Design and reasons:
+The fire aeon of FFX (the owner's design), orange, designed for **swarm + shield**; its measured checks and weak spots are the
+build card's marks (`VS_MARKS`, §4.6). **Each axis owns one part of the meteor's life and its own damage** - every hit is
+`TOWERS.ifr.dmg` x that axis's table, none multiplies another's. Design and reasons:
 `docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md` (on the 2026-10-19 spec); the numbers: the code.
 
 ![The meteor's life](docs/arch/ifrit-ball.svg)
 
 | Part | Rule |
 |---|---|
-| charge | ONE charge at the tower's centre, drawn before the prism (the tower always covers it); fills over the charge time and waits |
+| charge | ONE charge at the tower's centre, drawn before the prism (the tower always covers it); fills over the charge time and waits; Meteor keeps more meteors stored in orbit (`IFR_STORE`) |
 | launch | full + an enemy in range: ONE meteor, LOCKED onto that enemy from any distance, steering at its LED spot (`ifrLead`) - never culled by the view while it hunts, and out of time it bursts where it is (it never goes silently); if the enemy dies it flies on to the CORPSE (its last spot) and bursts there as if it had hit - a fan meteor whose enemy dies just goes when it gets there |
-| first impact | the first enemy its body touches takes Meteor's hit; there a FLARE (as every meteor's landing), and - ONLY there - the FIRE, and a 360-degree FAN of `IFR_FAN` meteors (5 / 7 / 9 / 12), evenly spread, each released after a bell-curve delay (0.4 s, sd 0.3, in [0, 1] for the untaken 5 - all x the root of the fan's size over 5: a bigger fan spreads wider in time). No flare |
-| fan meteors | a FUSE each (a bell round 200 u, sd 50, kept in 150 .. 300 u): unspent by then, it bursts mid-flight (a flare); a QUARTER the size (`IFR_FAN_R`, reach too; a YELLOW core, not black) and a QUARTER the launch speed (`IFR_FAN_V`; a fissure's too), fading in over their first 100 u; fly STRAIGHT for their first `IFR_ARM_U` 50 u and hit nothing for their first `IFR_ARM_HIT_U` 100 u; from 50 u they home onto the nearest enemy whose body comes within `IFR_HOME_R` 50 u; their hit is damage only; where each LANDS (a hit, or its dead target's spot) a FLARE - three within 10 u at the Flare capstone. Meteor's capstone (Impact) FISSURES a fan meteor's hit into two at +-30 degrees (skipping that enemy, no further splits). Every meteor flies until it hits or leaves the camera's VIEW (`ifrOnView`; the simulator: 1400 u from the core), gone without a burst |
-| fire | its RING hits each enemy it reaches once, `IFR_RING_HIT_K` 3x a fire flare's hit, and the circle is drawn at 20% while it grows, 10% after, until its last flare is out (`IFR_FIRE_A`, owner 2026-10-21); no burn of its own: an area opening at the meteor's size and growing to its max - never under 16x the meteor (`IFR_FIRE_FLOOR`) - that lights FLARES inside it: the UNTAKEN Flare's size and hit (Flare levels raise that hit slightly, x1.1 .. x1.6 `IFR_HF_FK`, and so their glow), each 10-100% of its largest at random, burning only 0.3 s, `IFR_FIRE_FLARES` 12 x Hellfire's density (`IFR_FIRE_DENS` 1 .. 3) x its area over the untaken fire's, ALL within 2 s of the impact (a bell round 1 s, `IFR_FIRE_WINDOW_S`), nearer the centre more often; it goes with its last flare; at the Flare capstone a BIG flare lights dead centre then. Fires stack |
-| flare | a big + over a tiny x, a random size; every tick burns what touches a spoke (catching fire OFF, 2026-10-20: "don't require lit"); its glow brightens with its hit (`ifrFlareI`) - a meteor's twice as bright as the fire's (`IFR_FLARE_MAIN_K`) |
+| first impact | the first enemy its body touches takes the meteor's hit; there a FLARE (as every meteor's landing), the FIRE (Hellfire), and a 360-degree FAN of meteors (`IFR_FAN_N`; `IFR_FAN_CAP` at Meteor's capstone), evenly spread, each released after a bell-curve delay that spreads wider with a bigger fan |
+| fan meteors | smaller and slower than the meteor (`IFR_FAN_R`, `IFR_FAN_V`; a yellow core), each with a FUSE - unspent by then it bursts mid-flight; they fly straight at first, hit nothing at first, then home onto the nearest enemy close enough (`IFR_HOME_R`); their hit is damage only; where each lands, a FLARE (three at Flare's capstone); nothing splits again |
+| fire (Hellfire) | its RING hits each enemy it reaches once; no burn of its own: an area opening at the meteor's size and growing to its max (never under `IFR_FIRE_FLOOR` x the meteor) that lights short-lived FLARES inside it, more by Hellfire's density, all soon after the impact; its circle is drawn faint until its last flare is out |
+| flare | a big + over a tiny x, a random size; every tick burns what touches a spoke; its glow brightens with its hit (`ifrFlareI`), a meteor's brighter than the fire's (`IFR_FLARE_MAIN_K`) |
 | look | the meteor: a black disc, an inner glow from 30% at the outline to 0 at 30% of the radius in, the outline glow; in 3D the spokes are GPU glow lines (`fxGlGlowLine`); no gradients on the board context |
 
-| axis | buys | good against (owner) | capstone (IV) |
+| axis | buys | good against (owner) | capstone (V) |
 |---|---|---|---|
-| Meteor | charge time, speed, meteor size, its hit (gently), the fan's count | all-rounder | Impact: each fan hit fissures into two |
+| Meteor | charge time, speed, the meteor's hit; meteors stored in orbit | all-rounder | **Impact**: a bigger fan (`IFR_FAN_CAP`) |
 | Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across |
-| Flare (id `firaga`; was Blk Magic) | the flares: size, damage, burn time | shield and swarm | three flares a landing, within 10 u |
+| Flare (id `firaga`) | the flares: size, damage, burn time | shield and swarm | three flares a landing |
 
 ### 4.6d Trio scale (2026-10-16)
 

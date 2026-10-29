@@ -360,6 +360,22 @@ Horizon: 90% slow in a full hole's core), Supernova the nova (Hypernova: half th
 saves) the aura and the pellets' damage and range; "aura radius never exceeds 2x void radius". "GRV is support" (2026-10-21) gave the
 aura its slow ahead (`GRV_AHEAD_K`) and the glide to the lane's centre (`GRV_LAT_V`). Pellets roll 25-400% each (`GRV_PEL_J`).
 
+### 4.6c-bis CRR and IFR as ARCHITECTURE described them until 6.17.8
+
+CRR: "strong vs fast + shield, weak to swarm + armor"; the hold a quarter / half / three quarters / all of the wing by tier (now
+0 / 0.125 / 0.25 / 0.75 / 1); EVERY interceptor tethered with a light slow, the pulse a real hit with Tether, Tether on to a
+second enemy from tier I (`CRR_CHAIN_FROM`); one damage number per `CRR_NUM_HITS` (3) hits, summed - every bolt its own since
+2026-10-28 ("Show damage for each CRR pellet"); the middle axis LAUNCH (tempo: speed, reload, the strafing pass `CRR_RAM`, the
+leash; capstone Warp - teleport onto the target's circle), now Tether (id `launch` kept); capstones listed as IV.
+IFR (owner's design 2026-10-19, "Kilika's hellfire."; axes redone 2026-10-20 - "axes don't feel unique nor impactful"): "strong vs
+swarm + shield, neutral to armor, weak to fast"; the fan `IFR_FAN` 5 / 7 / 9 / 12 by Meteor tier, released after a 0.4 s bell
+(sd 0.3, in [0, 1], x the root of the fan's size over 5); fan meteors a quarter size and speed, a fuse round 200 u (sd 50, 150 ..
+300 u), straight for 50 u (`IFR_ARM_U`), hitting nothing for 100 u (`IFR_ARM_HIT_U`), homing within 50 u; Meteor's capstone Impact
+FISSURED a fan hit into two at +-30 degrees (gone 2026-10-26: every meteor bursts into `IFR_FAN_N` 6, the capstone into
+`IFR_FAN_CAP` 9, nothing splits again); the fire's ring `IFR_RING_HIT_K` 3x a fire flare's hit, its circle at 20% while it grows
+and 10% after (`IFR_FIRE_A`, 2026-10-21), at least 16x the meteor, `IFR_FIRE_FLARES` 12 x density 1 .. 3, flares 0.3 s, all within
+2 s; catching fire turned OFF 2026-10-20 ("don't require lit"); the Flare capstone's three flares within 10 u.
+
 ### 4.6d Trio scale, the rounds (2026-10-15..16)
 
 Scores per round (`dmg`, was -> now; the factor squared each time):
