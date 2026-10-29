@@ -18,7 +18,7 @@ const GRV_NOVA_R = [71, 85, 112, 185]; // Supernova: the nova's reach (x1.7 with
 // written here (not in CAPSTONE_NUM): PLACEHOLDERS the balance battery fits. The level curve gives no rate (owner, same day: "rate does
 // not grow with just tiers, only tower range, tower mvmt and damage") - GRV's rate is Nova's alone
 const GRV_NOVA_RATE = [1, 1.2, 1.5, 1.9, 2.4, 3.1]; // Nova: the implosions' rate, x the tower's (tier 0 slow - TOWERS.grv.rate)
-const GRV_NOVA_STRIP = [0, 2.5, 4, 6, 18, 30]; /* x5, marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28) (armor) */ /* IV x2, V x1.5 (2026-10-27, late rows at 13 points: armor leaked 82% in 111-119 -> 70; the aura slow is no lever there - IV already sits over SLOW_CAP) */ /* x2 (axsweep, 2026-10-25: armor leaked 33-49% at x1) */ // (V: just more - owner, 2026-10-25: "Nova V, just removes more armor, not half") // Nova: armor each nova strips from what it hits, x its hit; the stripped armor sizes the void with the damage
+const GRV_NOVA_STRIP = [0, 0.175, 0.265, 0.37, 0.75, 0.901]; /* a SHARE of the armor an implosion, 6.18.0 (owner, 2026-10-28: "for armor, all strip should be changed to a % not a flat number"): tier III = today's 37% at waves 101-119 (stripprobe), the rest stacked shares of the old ladder 0 2.5 4 6 18 30 (x the nova's damage) */ /* x5, marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28) (armor) */ /* IV x2, V x1.5 (2026-10-27, late rows at 13 points: armor leaked 82% in 111-119 -> 70; the aura slow is no lever there - IV already sits over SLOW_CAP) */ /* x2 (axsweep, 2026-10-25: armor leaked 33-49% at x1) */ // (V: just more - owner, 2026-10-25: "Nova V, just removes more armor, not half") // Nova: armor each nova strips from what it hits, x its hit; the stripped armor sizes the void with the damage
 const GRV_INNER_K = [2.4, 3.67, 4.6, 6, 8, 12]; // Void: the crush a second, x the tower's damage x mass (the void small again - its pellets carry the duo rule, owner 2026-10-25)
 const GRV_ACC_R = [1, 1.4, 1.55, 1.7, 1.85, 2]; // Acceleration: the aura's radius, x the VOID's (its black core, grvCoreR) - never past x2 (owner, 2026-10-25: "because voids are so big, auras should be smaller / aura radius never exceeds 2x void radius"; was x the void's field, 2.4 .. 6)
 const GRV_PELLET_K = [3, 14.52, 19.8, 27, 36, 50.4]; /* x6 with GRV_PEL_PER_MASS /5 (marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28)): fewer, bigger pellets - armor takes less off a big hit, so armor becomes a check and shield (a charge a pellet) its weak type */ // Acceleration: a pellet's hit, x the tower's damage - x3 from tier I (axsweep 2026-10-25, with GRV_ACC_PEL: Accel focus 42% leaked -> 12, Void 13, Nova 4)
@@ -205,7 +205,7 @@ function stepSphere(sp, t, st, dt) {
       if (e.dead || !e.seen || sp.hit.has(e.id) || d2 > st.novaR * st.novaR || d2 < r * r) continue;
       sp.hit.add(e.id);
       const amt = st.dmg * GRV_NOVA_K, a0 = e.armor;
-      if (st.strip) shredArmor(e, t, escale(e) * amt * st.strip); // Nova: the implosion strips armor (owner, 2026-10-25; was the aura's)
+      if (st.strip) shredPct(e, t, st.strip); // Nova: the implosion strips armor (owner, 2026-10-25; was the aura's)
       const dealt = grvHit(sp, t, st, e, amt, GRV_AURA_ST); // (no number of its own: it flies into the centre)
       if (dealt > 0) grvFloat(sp, e, grvLastHit); // the nova's number: the WHOLE hit, overkill too (grvLastHit)
     }

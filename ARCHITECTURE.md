@@ -222,7 +222,7 @@ Its checks and weak spots are measured, not designed: the build card's marks (`V
 | split (Diffraction) | every hit splits to more enemies inside the band, each the next nearest to SOL and farther than the last, weaker than the hit before (`SOL_SPLIT`, `SOL_HOP`); a line ends under `SOL_END_K` of the shot |
 | mirror (Diffraction) | a hit with no one to split to flies on to the band's wall and mirrors, angle in = angle out (at most `SOL_WALLS`), or leaves by the open end |
 | scorch (Scorch) | every hit burns a stack of ticks, each stack on its own clock, one pop a tick (`solScorchTick`); the scorch rod sweeps out from the tower across the band and puts one stack on everything it crosses (`drawSolRod`) |
-| breach (Breach) | every hit multiplies a share off the armor (`bleed` -> `shredArmor`); parallel beams beside the first pass through every enemy in their line, never bouncing, spread no wider than the tower (`solParallel`) |
+| breach (Breach) | every hit takes a fixed % of the armor left (`bleed` -> `shredPct`, `SOL_BREACH_ARMOR` per tier, Breach stacks multiply); parallel beams beside the first pass through every enemy in their line, never bouncing, spread no wider than the tower (`solParallel`) |
 | reach | a beam flying on is drawn to the screen's edge; what it strikes ends at the play box (`solShowLen` / `solOutLen`), the same on every device |
 | drawing | every beam thin; a section's opacity is the square of its share of the first beam's damage (`f.share`) |
 
@@ -238,7 +238,7 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got her
 
 | axis | buys |
 |---|---|
-| Corrosion | a tick multiplies a share of its damage off the armor (`shredArmor`, never below 0; the jets only); eaten armor drips as **goo** that homes on the next enemy, strips more armor and burns as much |
+| Corrosion | a tick takes a fixed % of the armor left (`shredPct`, `ACD_CORRODE` per tier; the jets only); eaten armor drips as **goo** that homes on the next enemy, strips more armor and burns as much |
 | Flow (id `spray`) | more jets (`ACD_LINES`); a jet keeps part of its ramp when its enemy dies **or escapes** (`ACD_FLOW_CARRY`, the fast answer); range |
 | Contagion | the jets drip slimy acid pools that slow (`ACD_POOL_SLOW`) and burn - bigger, longer and more often by tier; a kill leaves no pool; slide |
 
@@ -249,7 +249,7 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got her
 | no tier lowers a stat | pillar 4; `SOL_FOCUS_DMG`, `ACD_SPRAY_MUL` floored at 1 |
 | a tier's words | change only when behaviour changes (§7.3) |
 | debuff credit | damage a debuff adds goes to the tower that caused it (`damageCredit`) |
-| armor shred | multiplies armor DOWN, never below 0 (`shredArmor`: the old flat amount / the wave's armor reference, at most `SHRED_MAX` a strip; owner 2026-10-28 - negative armor and its flat bonus are gone, and no "shredded takes extra" either) |
+| armor shred | EVERY strip is a % of the CURRENT armor (owner 2026-10-28: "all strip should be changed to a % not a flat number"; `shredPct`, per-tier tables, the same at every wave), so strips multiply toward 0, never below; `SHRED_MAX` 0.9 stays as a safety. The goo keeps `shredArmor` (its drop is a fixed share of the wave's armor reference). No negative armor, no "shredded takes extra" |
 | 10 s at most | no effect on the board outlives `EFFECT_MAX_S` 10 s - GRV holes, the Orbital Relay; ACD pools `POOL_MAX_S` 5 s, goo `GOO_MAX_S` 30 s (owner, 2026-10-18). Debuffs ON an enemy (Breach, Corrosion's strip) are outside the rule |
 | tier names | one a tier (Transfer .. Hyperstorm, Chill .. Zero Point, ...), used on the end screen, never on the card; ARCHAEOLOGY §12 |
 

@@ -267,7 +267,7 @@ function bleed(e, st, t) {
   if (!st.bleedArmor || e.dead) return;
   const k = st.breach || 1; // the chart SOL: Breach stacks per hit (aspira-skills.js)
   const per = st.bleedArmor;
-  shredArmor(e, t, per * k * escale(e)); // permanent, multiplied off (aspira-acid.js); its share of the damage it adds is SOL's (damageCredit)
+  shredPct(e, t, 1 - (1 - per) ** k); // per: a share of the armor a hit (6.18.0), k stacks multiply (aspira-acid.js); its share of the damage it adds is SOL's (damageCredit)
   e.bleedCrit = Math.min(BLEED_CRIT_CAP, (e.bleedCrit || 0) + st.bleedCrit * k); e.breachN = (e.breachN || 0) + k; // stacks, for the spokes
   e.breached = (e.breached || 0) + per * k; e.breachBy = t; // (it fed the breach SHRAPNEL until the SOL rework, 2026-10-22 - SCORCH now; game.js's typeof guard skips the gone breachShrapnel)
 }

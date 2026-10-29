@@ -45,7 +45,7 @@ const SPEC = {
   acd: (st, t) => [["Jet tick", tdP("acd", st, st.dmg / st.rate)], ["Ticks", +st.rate.toFixed(1) + "/s"] /* per tick (owner, 2026-10-25) */, ["Doubles every", st.double + "s"],
     ["Peak tick", tdP("acd", st, st.dmg * st.cap / st.rate)], ["Jets", st.allInRange ? "all in range" : st.targets],
     ["Circle", st.plagueR ? Math.round(st.plagueR) + (st.bloom ? "→" + Math.round(st.plagueR * st.bloom) : "") : "—"],
-    ["Armor", st.corrode ? "−" + shredPc(st.dmg * st.cap / st.rate * st.corrode) + " a peak tick" : "—"] /* a tick strips ACD_CORRODE of its damage, as a share of the armor now (shredPc, aspira-desc.js) */, /* no "Shields −1 / hit" rows: one charge a hit is the default, unsaid (owner, 2026-10-20) */
+    ["Armor", st.corrode ? "−" + pc(st.corrode) + " a tick" : "—"] /* a tick strips ACD_CORRODE of its damage, as a share of the armor now (shredPc, aspira-desc.js) */, /* no "Shields −1 / hit" rows: one charge a hit is the default, unsaid (owner, 2026-10-20) */
     ["Goo", st.corrode ? "×" + Math.round(DRIP_TAKE * (1 + DRIP_TIER_K * TIER_LEVEL[skillOf(t, "corrosion")]) * 10) / 10 + " eaten armor" : "—"], ["Goo pull", st.corrode ? ACD_DRIP_PULL[skillOf(t, "corrosion")] : "—"] /* dripDrop / stepDrips: strips and burns that much */,
     // puddles one number a row (owner, 2026-10-07: "1 / 1.4s · 1.5s · r20" was unreadable), so each
     // reads now -> next on its own and its colour judges that one number
@@ -70,7 +70,7 @@ const SPEC = {
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
     ...(st.skill ? [["Carry", st.pierce ? "×" + st.hop + " / enemy" : "—"]] : []) /* one beam always (2026-10-25): the pass-through and reflection falloff */, ...(st.skill ? [["Splits", st.pierce ? st.split + " / hit" : "—"], ["Prism", st.pierce || st.dot ? Math.round(2 * st.band) + " wide" : "—"]] : []) /* a plain SOL has no band - Diffraction's, and the rod sweeps it (2026-10-28) */,
     // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)
-    [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + shredPc(st.bleedArmor * (st.breach || 1)) + " armor a hit" : "—"], ...(st.skill ? [["Parallel", st.par ? st.par + " × " + Math.round(SOL_PAR_K * 100) + "%td" : "—"]] : []) /* Breach's parallel beams (aspira-sol.js) */, ...(st.bleedCrit ? [["Bleed crit", "+" + Math.round(st.bleedCrit * 100) + "%"]] : []),
+    [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + pc(1 - (1 - st.bleedArmor) ** (st.breach || 1)) + " armor a hit" : "—"], ...(st.skill ? [["Parallel", st.par ? st.par + " × " + Math.round(SOL_PAR_K * 100) + "%td" : "—"]] : []) /* Breach's parallel beams (aspira-sol.js) */, ...(st.bleedCrit ? [["Bleed crit", "+" + Math.round(st.bleedCrit * 100) + "%"]] : []),
     ...(st.skill && st.dot ? [["Scorch tick", +(st.dot.k * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n], ["Scorch lasts", +st.dot.t.toFixed(1) + "s"] /* stacking unsaid: the default (owner, 2026-10-26) */] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]],
 };
 

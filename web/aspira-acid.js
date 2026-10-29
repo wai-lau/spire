@@ -70,7 +70,7 @@ function acdTick(t, st, l, every) {
     const dd = shotDamage(t, st, o, d);
     damage(o, dd, t, false, false, st); onHit(o, t, st, dd); o.burnT = 0.4; // burning: no longer Fresh (st: its noFx)
     // (the jets' own slow moved to the POOLS - owner, 2026-10-22: "move slow from jets to pools"; stepPuddles)
-    if (st.corrode && !o.dead) corrodeHit(o, dd * st.corrode, t); // Corrosion: st.corrode of the tick's damage, past zero on purpose; corrodeT: dotted ring
+    if (st.corrode && !o.dead) corrodeHit(o, st.corrode, t); // Corrosion: st.corrode of the armor a tick (shredPct); corrodeT: dotted ring
   };
   const R = st.plagueR ? plagueRadius(l, st) : 0, center = l.e;
   burn(center);
@@ -127,6 +127,13 @@ const ARMOR_ALL = { swarm: 0.1, fast: 0.1, shield: 0.15 };
 // "I expect most shedding to be something like 0.9x, especially if many hits are expected"): a strip of `amt` (the old flat amount, in
 // armor) cuts amt / the wave's armor reference of the armor, x SHRED_K, at most SHRED_MAX a strip - never below 0. Returns what it cut
 let SHRED_K = 1, SHRED_MAX = 0.9; // 0.5 -> 0.9 (owner, 2026-10-28: "Raise SHRED_MAX" / "armor shred should allow approach to 0" - a strip takes at most 90% of what is left, repeated strips multiply on toward 0; swept 0.5/0.75/0.9: the armor columns barely move, armor already near 0 after a few strips) (let: the sims sweep them)
+// EVERY STRIP A PERCENT (owner, 2026-10-28: "for armor, all strip should be changed to a % not a flat number"): shredPct takes `p` of the CURRENT armor - repeated strips multiply toward 0, never below; SHRED_MAX
+// stays as a safety only (no table reaches it but Nova V's 0.901). Breach, Corrosion and Nova use it; shredArmor (amount / the wave's
+// reference) is left for the goo, whose drop is already a fixed share of that reference
+function shredPct(e, t, p) {
+  const a = e.armor || 0; if (a <= 0 || !(p > 0)) return 0;
+  const cut = a * Math.min(SHRED_MAX, p); e.armor = a - cut; stripBy(e, t, cut); return cut;
+}
 function shredArmor(e, t, amt) {
   const a = e.armor || 0; if (a <= 0 || !(amt > 0)) return 0;
   const cut = a * Math.min(SHRED_MAX, SHRED_K * amt / armorRefOf(e.wave || 1)); e.armor = a - cut; stripBy(e, t, cut); return cut;
@@ -146,9 +153,8 @@ function damageCredit(e, t, pre, amt, frost, got) {
   }
   t.dealt = (t.dealt || 0) + mine;
 }
-function corrodeHit(e, amt, t) {
-  amt *= escale(e); // the LATE SCALE: a raw strip (a share of the RAW tick), x the enemy's
-  const cut = shredArmor(e, t, amt); // (multiplied off, never below 0 - shredArmor)
+function corrodeHit(e, p, t) {
+  const cut = shredPct(e, t, p); // a share of the armor a tick (6.18.0; was the tick's damage x ACD_CORRODE over the wave's reference)
   e.corrodeT = 0.4;
   dripAcc(e, DRIP_REAL * cut, t); // eaten armor drips, DRIP_REAL x (owner, 2026-10-13; all of it is real armor since the 2026-10-28 rework - none below zero)
 }
@@ -230,7 +236,7 @@ function drawDrips() {
   }
   ctx.globalAlpha = 1;
 }
-const ACD_CORRODE = [0, 0.1, 0.3, 0.6]; // x2 (2026-10-12: Corrosion is the strip alone now; was .06 .. .3) // x6 (2026-10-11, roles: Corrosion meant as ACD's ARMOR answer - still behind spread in TEAM countermx; was .01 .. .05)
+const ACD_CORRODE = [0, 0.093, 0.254, 0.443]; /* a SHARE of the armor a tick, 6.18.0 (owner, 2026-10-28: "for armor, all strip should be changed to a % not a flat number"): today's tier III at waves 101-119 (25.4%, stripprobe), the other tiers as stacked shares of the old ladder - 1 - (1 - 0.254)^(old / old III); was 0.1 0.3 0.6 of the tick's damage */ // x2 (2026-10-12: Corrosion is the strip alone now; was .06 .. .3) // x6 (2026-10-11, roles: Corrosion meant as ACD's ARMOR answer - still behind spread in TEAM countermx; was .01 .. .05)
 // ROLES REWORK (owner, 2026-10-12: "what is acd weak to now? seems op"): a bare ACD is a tank killer, weak to the FAST
 // (no carry: a jet starts cold on every new enemy) and to SHIELDS (acid and pools pop one charge a tick, like any hit).
 // Flow buys the fast back: ACD_FLOW_CARRY of a jet's ramp rides on when its enemy dies OR escapes, past 1 = it lands
