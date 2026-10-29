@@ -253,6 +253,14 @@ perfect play and interest; `eco.mjs` found ARC+FRZ+ACD owning 109-287% of a max 
   chainless bolt is gone, Conductivity I chains twice), CRR starts a sortie with 6 volleys (was 9; tier I 8) and shows a number a bolt
   (was one per three since 2026-10-16), and the boss sky's triangle is capped at 3:2 (a wide screen had made it a sliver several
   screens wide), its spokes measured on the canvas they are drawn on (measured on `cv` they stopped short in 3D).
+- SOL's shot as it stood in ARCHITECTURE §4.4 before it became a table (6.17.3): the band / split / mirror design is the owner's of
+  2026-10-26 (one beam fixed where it struck, no visual tracking the enemy, an enemy struck once a shot - "Get rid of piercing" the
+  same day); the rod's flare is SOL's own copy of IFR's layers (x10 wide, x1.3 long, `SOL_ROD_V` u/s, full at the tower and clear by
+  the play box's edge, 2026-10-28). Breach's parallel beams, 2026-10-28: "allow breach to add more _parallel_ beams that pierce, these
+  beams don't reflect / Space them out, but never more than the width of the tower" (`SOL_PAR_GAP` 12, at `SOL_PAR_K` of the shot;
+  `SOL_PAR_SHOW` 0.85 to the eye, "fainter, just a lil"). The flying-on beams were drawn only to the play box until 6.15.44 (owner:
+  "SOL pierce should go all the way to the end of the screen, it is stopping early"); 6.15.9 had clipped them there to stop a far end
+  behind the 3D camera flipping back past the tower.
 
 ### 4.5 Upgrading: UI history
 Two clicks (select, then confirm) -> the chooser (cards, one per option) -> chart axes DRAGGED on the

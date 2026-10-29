@@ -212,28 +212,26 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 | Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow and frost that takes armor past zero; at full frost the rime spreads to the nearest enemy; slide |
 | Moons | weaker copies of the aura orbiting the tower (separate slow sources, so they multiply), with moonlets from the third buy |
 
-**SOL** - locks a target (a lock holds out to `SOL_HOLD`), charges the whole reload, fires;
-a target dying mid-charge restarts the charge; a lost lock hands its charge only to a new
-target inside the shot's band (`inSolCone`). Armor cuts SOL like any other. **Weakness: swarms** (a THIN beam: only what is on its line).
-THE SHOT (`web/aspira-sol.js`; owner 2026-10-26, the band / split / mirror design): ONE beam, FIXED where it struck (no visual
-tracks the enemy), and an enemy is struck once a shot - there is no pierce. A plain SOL's beam strikes its first enemy and FLIES ON straight past it to the play box's edge, striking no one (tier 0:
-`st.pierce` 0; owner 2026-10-28, "a minimal version of the tower with few effects" / "go straight even if there is nobody to hit"). Diffraction gives the shot a BAND (`SOL_BAND_W`:
-parallel walls either side of the line tower -> first enemy, ahead of the tower, to the screen's edge) and every hit SPLITS to
-`SOL_SPLIT` more enemies inside it - each the next nearest to SOL, farther than the last, at `SOL_HOP` x the hit before; a hit with no
-one to split to FLIES ON straight past it, striking no one, to the band's wall, where it MIRRORS (angle in = angle out, at most
-`SOL_WALLS`) or out the open end to the play box's edge (`solOutLen`); a line ends under `SOL_END_K` of the shot. Scorch (id `focus`):
-every hit burns `SOL_SCORCH_N` ticks of `SOL_SCORCH_TOTAL` / n x the shot, each stack on its own clock (`solScorchTick`, one pop a
-tick), and the SCORCH ROD - one IFR-style flare spoke across the band (`drawSolRod`, SOL's own copy of IFR's layers, x10 wide and
-x1.3 long), `SOL_ROD_V` u/s out from the tower, full there and clear by the play box's edge (owner, 2026-10-28) - puts one stack on
-everything it sweeps. Breach: `SOL_BREACH_ARMOR` a hit, multiplied off the armor (`bleed` -> `shredArmor`). DRAWN: every beam `SOL_THIN` x its damage width, a
-section's OPACITY the SQUARE of the share of the first beam's damage it carries (`f.share`); the band is the PRISM (`drawBand`),
-persisting and swinging between targets, drawn only once the tower has a band to show (Diffraction or Scorch). History: ARCHAEOLOGY §4.
+**SOL** - one beam a shot, fixed where it struck; an enemy is struck once a shot. Armor cuts it like any other tower.
+**Weakness: swarms** (only what is on its line). The code: `web/aspira-sol.js`; how it got here: ARCHAEOLOGY §4.
+
+| part | principle |
+|---|---|
+| lock | locks a target (held out to `SOL_HOLD`), charges the whole reload, then fires; a target dying mid-charge restarts it; a lost lock hands its charge only to a new target inside the shot's band (`inSolCone`) |
+| plain beam (tier 0) | strikes its first enemy and flies on straight past it, striking no one - the minimal tower |
+| band (Diffraction) | parallel walls either side of the line tower -> first enemy, out to the screen's edge; drawn as the prism (`drawBand`), swinging between targets, shown once the tower has a band (Diffraction or Scorch) |
+| split (Diffraction) | every hit splits to more enemies inside the band, each the next nearest to SOL and farther than the last, weaker than the hit before (`SOL_SPLIT`, `SOL_HOP`); a line ends under `SOL_END_K` of the shot |
+| mirror (Diffraction) | a hit with no one to split to flies on to the band's wall and mirrors, angle in = angle out (at most `SOL_WALLS`), or leaves by the open end |
+| scorch (Scorch) | every hit burns a stack of ticks, each stack on its own clock, one pop a tick (`solScorchTick`); the scorch rod sweeps out from the tower across the band and puts one stack on everything it crosses (`drawSolRod`) |
+| breach (Breach) | every hit multiplies a share off the armor (`bleed` -> `shredArmor`); parallel beams beside the first pass through every enemy in their line, never bouncing, spread no wider than the tower (`solParallel`) |
+| reach | a beam flying on is drawn to the screen's edge; what it strikes ends at the play box (`solShowLen` / `solOutLen`), the same on every device |
+| drawing | every beam thin; a section's opacity is the square of its share of the first beam's damage (`f.share`) |
 
 | axis | buys |
 |---|---|
 | Scorch (id `focus`) | a LONGER burn (`SOL_SCORCH_N` ticks), never a hotter one; the rod from I |
 | Diffraction (id `refraction`) | the band (`SOL_BAND_W`), the splits a hit (`SOL_SPLIT`, none at tier 0) and the carry (`SOL_HOP`) |
-| Breach | the armor a hit strips (`SOL_BREACH_ARMOR`, none at tier 0) |
+| Breach | the armor a hit strips (`SOL_BREACH_ARMOR`, none at tier 0) and the parallel beams (`SOL_PAR_N`) |
 
 **ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; a jet
 resets when its enemy dies or leaves (no carry at the base), jets never share an enemy;
