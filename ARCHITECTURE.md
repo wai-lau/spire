@@ -342,28 +342,24 @@ build card's marks (`VS_MARKS`, §4.6). **Each axis owns one part of the meteor'
 | Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across |
 | Flare (id `firaga`) | the flares: size, damage, burn time | shield and swarm | three flares a landing |
 
-### 4.6d Trio scale (2026-10-16)
+### 4.6d Trio scale and the designed deaths
 
-Owner, 2026-10-15: "scale all trios up and down for each winning group they are in for a factor of how much better/worse they
-are". Every trio is played to wave 120 by the smart saver (perfect play, both powers, a few seeds: `tribal.mjs`); a trio's score
-= 120 + lives left on a win, else the wave reached. A **designed death** is a trio MISSING A COUNTER: no tower in it has a check
-(a build-card mark above 0, `VS_MARKS`) on some enemy type (owner, 2026-10-21: "trios designed to lose are the ones missing a
-counter"). `triscale.py` reads the list off the marks, so it moves with every marks refresh; at 6.11 (seven towers) it is nine:
+Every trio is played to wave 120 by the smart saver (perfect play, both powers, a few seeds: `tribal.mjs`); a trio's score = 120 +
+lives left on a win, else the wave reached. A **designed death** is a trio MISSING A COUNTER: no tower in it has a check (a
+build-card mark above 0, `VS_MARKS`) on some enemy type. `triscale.py` reads the list off the marks, so it moves with every marks
+refresh. One that DIES is neutral; one that wins counts like any other. A kind's factor = the geometric mean, over the trios it is
+in, of (mean score / trio score), applied to `TOWERS[k].dmg` and squared to converge faster. **Every other trio is winnable; the
+designed deaths are the exception** (pillar 2). `triodiag.mjs` shows why a trio loses (per enemy type: lives lost and closest
+approach). The rounds, their numbers and the dated lists: ARCHAEOLOGY §4.6d; the tooling, §10.4.
+
+At the 6.16.0 marks (derived from `VS_MARKS`; recompute after a marks refresh):
 
 | Missing | Trios |
 |---|---|
-| armor | ARC+FRZ+CRR, ARC+FRZ+IFR, ARC+CRR+IFR, FRZ+CRR+IFR |
-| swarm | SOL+ACD+CRR, SOL+ACD+IFR, SOL+CRR+IFR, ACD+CRR+IFR |
-| fast | SOL+ACD+GRV |
-
-One that DIES is neutral; one that wins counts like any other.
-A kind's factor = the geometric mean, over the trios it is in, of (mean score / trio score) (`triscale.py`), applied to
-`TOWERS[k].dmg` and squared to converge faster. **Every other trio is winnable; the designed deaths are the exception** (pillar 2).
-
-Round 3 shipped on 2026-10-16, after the ATC rework: `dmg` is now ACD 34.32, CRR 15, FRZ 16.68, SOL 61.54, GRV 24.38, ARC 24
-(`defs.js`). GRV was left alone in round 3 (x0.9 broke ARC+GRV and GRV+GRV on the Star) and so was ARC (its factor is about
-x0.99; 22.96 lost the Star with ARC+ARC). `triodiag.mjs` shows why a trio loses (per enemy type: lives lost and closest
-approach). The method scripts, the rounds and the numbers each moved from: ARCHAEOLOGY §4.6d; the tooling, §10.4.
+| fast | FRZ+SOL+ACD, FRZ+SOL+GRV, FRZ+SOL+IFR, FRZ+ACD+GRV, FRZ+ACD+IFR, FRZ+GRV+IFR, SOL+ACD+GRV, SOL+ACD+IFR, SOL+GRV+IFR, ACD+GRV+IFR |
+| shield | ARC+FRZ+GRV |
+| swarm | ARC+ACD+CRR |
+| armor | SOL+CRR+IFR |
 
 ### 4.7 The core and its two powers
 

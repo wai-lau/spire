@@ -385,6 +385,13 @@ and 10% after (`IFR_FIRE_A`, 2026-10-21), at least 16x the meteor, `IFR_FIRE_FLA
 
 ### 4.6d Trio scale, the rounds (2026-10-15..16)
 
+As ARCHITECTURE 4.6d stood until 6.17.11: the owner's ask (2026-10-15: "scale all trios up and down for each winning group they are in
+for a factor of how much better/worse they are"), the designed-death rule (2026-10-21: "trios designed to lose are the ones missing a
+counter"), the list at 6.11 - nine: armor ARC+FRZ+CRR, ARC+FRZ+IFR, ARC+CRR+IFR, FRZ+CRR+IFR; swarm SOL+ACD+CRR, SOL+ACD+IFR,
+SOL+CRR+IFR, ACD+CRR+IFR; fast SOL+ACD+GRV - and round 3 (shipped 2026-10-16 after the ATC rework): `dmg` ACD 34.32, CRR 15, FRZ 16.68,
+SOL 61.54, GRV 24.38, ARC 24; GRV left alone (x0.9 broke ARC+GRV and GRV+GRV on the Star), ARC too (its factor ~x0.99; 22.96 lost the
+Star with ARC+ARC). At the 6.16.0 marks the list is thirteen, ten of them missing fast (only ARC and CRR check fast).
+
 Scores per round (`dmg`, was -> now; the factor squared each time):
 
 | Round | Moves |
