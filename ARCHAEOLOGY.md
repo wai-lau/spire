@@ -916,3 +916,30 @@ Measured marks (`marks.py`) are moved toward it by balance only, never by editin
 The sim's smart saver (REWIND on) reads an easier wave as harder (2026-10-23): it spends only on a leak, so a mid-game with fewer leaks
 reaches wave 97 underbuilt - late shield counts x1.0 / x0.75 fell 31 -> 27 -> 22/70 with it, rose 13 -> 17 -> 28/70 with REWIND=0.
 Size type levers with REWIND=0.
+
+### 12.y The 6.16.0 battery (2026-10-28; a6bc1c9, cc67188, 4e3461c)
+
+Marks measured at 9 points, waves 101-109 and 111-119 (was 6 points at 61-69); every tower checks two types or more, no two alike.
+
+| lever | change |
+|---|---|
+| late HP | `HP_LATE` 1.13 -> 1.14 |
+| stat curve top | GRV x3, IFR x3, ACD x2 |
+| IFR Flare tick | x0.5 (`IFR_TICK_S` 0.25-0.22 s, over the 0.1 s floor) |
+| FRZ Temp | slow +0.1 a tier (0.55 .. 0.8); brittle 1 / 1 / 2.2 / 3 / 3.4 / 3.8 |
+| GRV Nova strip | x5 (0 / 2.5 / 4 / 6 / 18 / 30) |
+| GRV pellets | 30 -> 6 a mass, each x6 the hit (same damage, bigger hits) |
+| ARC | base rate 3 -> 2.1; the bolts of one attack share one hit set |
+
+| tower | marks |
+|---|---|
+| ARC | +fast +armor -2 shield |
+| FRZ | +swarm +armor -fast -shield |
+| SOL | +swarm +shield -fast -armor |
+| ACD | +shield +armor -2 swarm |
+| GRV | +swarm +armor -2 shield |
+| CRR | +fast +2 shield -2 swarm -armor |
+| IFR | +swarm +shield -2 armor |
+
+Measured (players3, bosses skipped, snapshot a6bc1c9): perfect + rewind 29/35 (19/22 winnable), good + rewind 86/105 (53/66
+winnable), random median death wave 91. Duo rule clean 21/21.
