@@ -233,7 +233,7 @@ const ACD_CORRODE = [0, 0.1, 0.3, 0.6]; // x2 (2026-10-12: Corrosion is the stri
 // ROLES REWORK (owner, 2026-10-12: "what is acd weak to now? seems op"): a bare ACD is a tank killer, weak to the FAST
 // (no carry: a jet starts cold on every new enemy) and to SHIELDS (acid and pools pop one charge a tick, like any hit).
 // Flow buys the fast back: ACD_FLOW_CARRY of a jet's ramp rides on when its enemy dies OR escapes, past 1 = it lands
-// hotter, and the jets slow (ACD_FLOW_SLOW, doubled on the fast like every slow - FAST_SLOW_MUL). Contagion buys the
+// hotter (the slow it once added - ACD_FLOW_SLOW - is the POOLS' since the tier redesign: Contagion's ACD_POOL_SLOW). Contagion buys the
 // shields back through COVERAGE: bigger, longer pools ticking on more enemies. Corrosion: the strongest acid, eats armor.
 const ACD_FLOW_CARRY = [0, 0.3, 0.7, 0.9] /* V and VI no hotter (owner, 2026-10-12: "flow V should not flow faster" - range instead, SKILL_MOVE; was 1.1, VI 1.5) */;
 // THE POOLS SLOW, CONTAGION'S (tier redesign, owner 2026-10-24: Contagion I \"Ray leaves slowing pool\"): by Contagion tier 0..V (was Flow's ACD_FLOW_SLOW 0 .05 .11 .17, V .2)

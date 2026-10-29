@@ -1,10 +1,10 @@
-// /spire - GRV, the GRAVITY tower (owner's design, 2026-10-15; spec ARCHITECTURE.md 4.6b): strong against swarm + armor,
-// weak to fast + shield, mid reach. A NOVA comes into being on its target (no projectile): a yellow front sweeps out and hits
-// what it reaches, and leaves a black SPHERE whose purple AURA is blown out at the same speed. The sphere's MASS drives it all
-// - its size, the aura's radius, slow and damage, its pellet rate (x GRV_MASS_MAX at most): it GAINS mass from the damage it
-// deals and LOSES a linear share of its starting mass a second. The aura burns, slows (never the shielded) and strips
-// POSITIVE armor like Corrosion; every sphere RADIATES pellets, more the bigger it is. Loaded after aspira-frz.js (the
-// simulator too); towerStats calls grvSkillStats, the tower loop stepGrv, fire() novaAt, drawScene drawGrv.
+// /spire - GRV, the GRAVITY tower (owner's design 2026-10-15, reworked 2026-10-25; ARCHITECTURE.md 4.6b): designed for swarm + armor,
+// mid reach, no projectile. Every shot leaves a VOID where its target is about to be; the void crushes what is inside and IS its mass -
+// it grows with the damage it deals (to GRV_MASS_MAX), evaporates by its circumference, sheds PELLETS as it loses mass, and drifts into
+// and merges with other voids. Nova: novas implode on the best spot before each void, striking and stripping armor. Acceleration: an
+// AURA round the void (never past twice its size) that slows (never the shielded) and draws enemies to the lane's centre; it deals
+// nothing. Loaded after aspira-frz.js (the simulator too); towerStats calls grvSkillStats, the tower loop stepGrv, fire() novaAt,
+// drawSceneTop drawGrv.
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
 const GRV_AURA_R = [45, 80, 161.2, 247]; /* x1.25 with the faster evaporation (owner, 2026-10-16: "raise bh fire rate and bh size to compensate"; was 68 .. 122) */ // Void: the aura's radius at starting mass (x1.7, owner 2026-10-15: "use bigger nova and aura" once pellets could miss; was 40 .. 72)
@@ -25,7 +25,6 @@ const GRV_PELLET_K = [3, 14.52, 19.8, 27, 36, 50.4]; /* x6 with GRV_PEL_PER_MASS
 const GRV_PEL_RANGE = [1, 1.4, 1.8, 2.3, 2.9, 3.6]; // Acceleration: a pellet's flight, x the void's field
 const GRV_ACC_PEL = [1, 1.1, 1.2, 1.3, 1.4, 1.5]; // Acceleration: x the pellets a void sheds (count first, to x1.5 - owner 2026-10-25: "Add pellets")
 let GRV_PEL_PER_MASS = 6; /* 30 -> 6 with GRV_PELLET_K x6 (marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28)) */ /* 20 -> 30 (owner, 2026-10-27, count first: GRV beat swarm alone - the two-type rule; each pellet pops a charge, so x1.5 pellets is its shield check) */ /* the duo rule (2026-10-25, the void small again and pellets at tier 0: 4 clean 17/21, 12 19/21, 20 21/21) (let: the simulator sweeps it) */ // pellets a unit of mass lost to decay (or past the cap in a merge) gives off
-let GRV_AURA_K = 0.48; /* x0.8 (2026-10-24 marks target: less vs armor) */ // the aura's armor STRIP a second (x GRV_STRIP, x mass), in tower damage - it deals no damage since 2026-10-15 (let: the simulator sweeps it)
 const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1) - x2 faster (owner, 2026-10-16: "some bh taking too long to evaporate if merged with too many / increase bh evaporation speed significantly"; was 5)
 // EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction
 // and evaporation rate based on circle curcumference"): a sphere's AREA is its mass (aura radius = root of mass x its area-per-mass,
@@ -35,7 +34,6 @@ const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's
 const GRV_R_MAX = 9; /* x3 (owner, 2026-10-16: "triple black hole visual max size"; was 3) */ //  // a hole's radius at most, in base auras (its MASS may go on: radiation, strip and slow scale by it)
 const GRV_EVAP = 2 / GRV_LIFE, GRV_RAD_LIFE = 1.6; /* x0.32 of the linear sphere's pace (countermx 61-69 spread: 5 0/0/0/0, 2 1/10/7/2, 1.25 2/19/8/20; 4.6.15 was 2/27/13/7) */ // RAD_LIFE: the pellets a unit of mass gives off stay the linear 5 s sphere's (radiation is not the life)
 const GRV_MASS_MAX = 3, GRV_GAIN = 0.12; // mass gained per one tower-hit of damage dealt (nova, aura, pellets)
-const GRV_STRIP = 2.5 /* (was 1.5) swap test 2026-10-16: ARC+FRZ+GRV bled 106 lives to armor, GRV its only armor answer */, GRV_STRIP_IN = 1.5, GRV_STRIP_OUT = 0.5; // (x3, 2026-10-15: GRV leaked 16% of armor, its own type) armor stripped, x the aura's damage dealt - POSITIVE armor only (it stops at zero)
 // the slow in TWO RINGS (owner, 2026-10-15: "two tiers, much bigger slow close to the center"): the CORE (inner GRV_CORE_FRAC of
 // the radius - the hot bands) slows GRV_CORE_MUL x the outer ring; each capped
 const GRV_SLOW_MAX = Infinity /* no cap of its own (owner, 2026-10-24 marks target: "remove that cap"; was 0.45) - SLOW_CAP still keeps 20% of the speed */, GRV_CORE_MUL = 2, GRV_CORE_MAX = Infinity; /* the aura in TWO TIERS always (owner, 2026-10-25: "1 outside void and 1 inside, inside should do 2x outer slow"; was x2.5 to 0.8, and Event Horizon a 90% hold) */ // Void VI (Event Horizon): a full-grown core
