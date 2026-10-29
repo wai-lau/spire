@@ -25,11 +25,13 @@ function rayForm(st) {
 // [label, value] rows, computed for a level so the next one can be previewed.
 const SPEC = {
   arc: st => {
-    const tree = [1]; for (let l = 1; l <= st.layers; l++) tree.push(st.branch ** l);
+    // THE ARC REDESIGN (owner, 2026-10-29): one strike, a chain of st.layers jumps, forking once at the strike from Voltage ARC_FORK_FROM
+    // (branchFrom: each of the two chains runs the whole chain), Resistance a slow and a strip on every hit; no charges, no bursts
+    const forks = st.fork ? 2 : st.branch, hits = 1 + forks * st.layers;
     // ONE NUMBER A ROW (owner, 2026-10-26: "for the stats only have 1 number per line"): every compound row split
-    return [["Bolts", st.targets * ARC_BURST_N], ["Hits", tree.reduce((a, b) => a + b, 0) + " a bolt"], ["Arc dmg", tdP("arc", st, st.dmg * st.arcFall)],
-      ["Charges", st.charge ? st.charge.n + " a hit" : "—"], ["Charge pop", st.charge ? Math.round(st.charge.frac * 100) + "% of hit" : "—"], ["Pop burst", st.charge ? "r" + ARC_BURST_R : "—"],
-      ["Burst slow", st.statSlow ? Math.round(st.statSlow * 100) + "%" : "—"], ["Burst lasts", st.statSlow ? STAT_SLOW_T + "s" : "—"], // the prose's "slowing all near" (ARC_STAT_SLOW)
+    return [["Hits", hits + " a bolt"], ["Forks", st.fork ? "once" : "—"], ["Arc dmg", tdP("arc", st, st.dmg * st.arcFall)],
+      ["Res slow", st.resSlow ? Math.round(st.resSlow * 100) + "%" : "—"], ["Res lasts", st.resSlow ? STAT_SLOW_T + "s" : "—"],
+      ["Armor strip", st.resStrip ? Math.round(st.resStrip * 100) + "% of armor" : "—"],
       ...(st.skill ? [["Jumps", st.layers ? st.layers : "—"], ["Jump reach", st.layers ? Math.round(arcJumpR(st)) : "—"]] /* "—" at tier 0: no chain (tier redesign) */
         : [["Arc hop", Math.round(st.arcRange)], ["Reach", Math.round(chainReach(st))]]),
       ["Delay", hopDelay(st).toFixed(2) + "s"]];

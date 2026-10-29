@@ -258,6 +258,14 @@ check("review: the card's rows show no mechanic the tower lacks - no Shields row
   if (i0.Burst !== "6 meteors") return "IFR tier 0 Burst reads " + i0.Burst;
   if (ih.Fire === "—" || ifl["Flare length"] === "—") return "IFR Hellfire I / Flare I rows blank";
 });
+check("ARC's card rows follow the redesign (2026-10-29): no charge or burst rows, Resistance's slow and strip read from its tables, the fork counted in Hits", () => {
+  const r0 = rows("arc", {}).rows, rv = rows("arc", { voltage: 2 }).rows, rz = rows("arc", { capacitance: 3 }).rows;
+  for (const k of ["Bolts", "Charges", "Charge pop", "Pop burst", "Burst slow", "Burst lasts"]) if (k in r0) return "still a " + k + " row";
+  const j0 = run("ARC_VOLT_JUMPS[0]"), j2 = run("ARC_VOLT_JUMPS[2]"), sl = run("Math.round(ARC_RES_SLOW[3] * 100)"), sp = run("Math.round(ARC_RES_STRIP[3] * 100)");
+  if (r0.Hits !== 1 + j0 + " a bolt" || r0.Forks !== "—" || r0["Res slow"] !== "—") return "tier 0: " + JSON.stringify(r0);
+  if (rv.Hits !== 1 + 2 * j2 + " a bolt" || rv.Forks !== "once") return "Voltage II: " + JSON.stringify(rv);
+  if (rz["Res slow"] !== sl + "%" || rz["Armor strip"] !== sp + "% of armor") return "Resistance III: " + JSON.stringify(rz);
+});
 check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
   const r = run(`(() => { const t = { id: 99, kind: "frz", x: CX, y: CY, lvl: 2, skills: { rime: 1 } }; G = newGame(); const a = towerStats(t, true).biteDmg; G.power.DAM = 1; const b = towerStats(t, true).biteDmg; G.power.DAM = 0;
     const s = { dmg: 1, biteDmg: 1, targets: 1 }; relayStats(s, "frz", 3); return [b / a, s.biteDmg]; })()`);
