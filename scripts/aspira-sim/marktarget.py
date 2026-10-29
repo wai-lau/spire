@@ -1,8 +1,9 @@
 """THE NEAREST MARKS TABLE (owner, 2026-10-25, v7: "this needs to include getting the nearest new zero sum table / Then balancing
 so each tower hits those benchmarks"): from a countermx run (the same spread build and window marks.py reads), the measured raw marks
 (marks.py's double-centred leak gaps / PER_MARK, unrounded), then every integer table of marks that keeps the marks rules:
-  - EVERY TYPE COLUMN IS ONE 2-CHECK, THREE 1-CHECKS, ONE DASH, ONE X, ONE XX (owner, 2026-10-29: "for each column / one 2check, 3 1check,
-    one -, one x, one xx"): the column sums to +2, so the old zero sums (owner, 2026-10-23: "Col and row need to sum to 0") are gone
+  - EVERY TYPE COLUMN IS ONE 2-CHECK, THREE 1-CHECKS, ONE DASH, ONE XX, ONE XXX (owner, 2026-10-29: "one 2check, 3 1check, one -, one
+    x, one xx", then "rows sum to the same number, cols sum to the same number" - that column summed to +2, 8 over 7 rows; option A, the
+    x's one deeper, sums to 0: "A"), so every row and every column sums to 0
   - every tower checks two or more types (owner, 2026-10-29: "each row needs at least two checked types"; 2026-10-19: "beats or at
     least helps" two types or more)
   - no two towers alike (owner, 2026-10-23: "no duplicates")
@@ -12,6 +13,7 @@ usage: python3 marktarget.py <countermx output> [options=5]"""
 import heapq
 import itertools
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -46,9 +48,14 @@ def raws_of(leak):
 
 RAW = {w: raws_of(by_win[w]) for w in WINS}
 raw = {k: [sum(RAW[w][k][i] for w in WINS) / len(WINS) for i in range(4)] for k in KINDS}  # the chapters' mean, for the print
-COLUMN = {2: 1, 1: 3, 0: 1, -1: 1, -2: 1}  # one type column's marks (owner, 2026-10-29)
+COLUMN = {int(v): int(n) for v, n in (x.split(":") for x in (os.environ.get("MT_COLUMN") or "2:1,1:3,0:1,-2:1,-3:1").split(","))}  # one type column's marks (owner, 2026-10-29); env MT_COLUMN
+# EQUAL SUMS (owner, 2026-10-29: "rows sum to the same number, cols sum to the same number, whatever it is"): 4 columns x their sum = 7 rows x
+# theirs, so every row sums to 4 x the column's sum / 7 - a whole number only when the column's sum is a multiple of 7
+ROW_SUM = 4 * sum(v * n for v, n in COLUMN.items()) / 7
 COL_MEAN = sum(v * n for v, n in COLUMN.items()) / sum(COLUMN.values())
-ROWS = [r for r in itertools.product(sorted(COLUMN), repeat=4) if sum(1 for x in r if x > 0) >= MIN_CHECKED]
+ROWS = [r for r in itertools.product(sorted(COLUMN), repeat=4) if sum(1 for x in r if x > 0) >= MIN_CHECKED and sum(r) == ROW_SUM]
+if ROW_SUM != int(ROW_SUM):
+    sys.exit(f"column sums to {sum(v * n for v, n in COLUMN.items())}: rows cannot all sum to the same whole number (4 x it / 7 = {ROW_SUM:.2f})")
 def dist(k, r):
     return sum(abs(a - b - COL_MEAN) for w in WINS for a, b in zip(r, RAW[w][k]))
 
