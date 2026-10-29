@@ -10,7 +10,7 @@ function stepSpawns(dt) {
       const m = formSpawn(w, type) || (spawnEnemy(type, w.n, w.lanes[type], w.ang || 0), 1);
       // spacing is a balance lever: swarms stream evenly and very densely
       // (5x the bodies in the same time as before), trains spread ~60+ apart; a formation waits its members' worth
-      w.timer += (1 / plainK(type)) * (w.gaps ? w.gaps[w.idx - 1] : type === "fast" ? FAST_PAIR / (ENEMIES.fast.speed * ENEMY_SPEED * (w.n === 1 ? FIRST_FAST_SPD : 1)) // fast pairs: the next one FAST_PAIR behind (aspira-formations.js)
+      w.timer += (1 / plainK(type)) * (w.gaps ? w.gaps[w.idx - 1] : type === "fast" ? FAST_PAIR / (ENEMIES.fast.speed * ENEMY_SPEED * (w.n === 1 ? FIRST_FAST_SPD : 1)) // fast Vs: the next one FAST_PAIR behind (aspira-formations.js; pairs until 2026-10-29)
         : m * (type === "swarm" ? 0.024 : type === "shield" ? SHIELD_POD_GAP : 0.8) / ENEMY_SPEED); // (x 1 / PLAIN_SPEED_K: the same gaps in distance at half speed)
       // a boss's FLEET rides around it: the next boss on the same lane (the Lovers' second) waits till both fleets clear
       const lb = type === "bonus" && G.lastBoss;

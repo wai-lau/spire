@@ -4,33 +4,43 @@
 // current heading (formOffset), the across part shrinking to nothing inside FORM_FADE_R of the core so it funnels in.
 // Swarms keep their wander (e.jit): no entry here.
 const FORM_FADE_R = 160;
-// SHIELDS: Vs of V_N - a leader, then pairs fanned back and out (owner, 2026-10-11: "fast in lines, Vs for shields";
-// fast flew the Vs for an afternoon and now come single file)
+// FAST: Vs of V_N - a leader, then pairs fanned back and out (owner, 2026-10-29: "swap their pod pattern with shield / so shield
+// becomes 2x2 lattice / fast becomes Vs ... so that it makes it really hard for SOL to hit multiple"; the shields flew these Vs from
+// 2026-10-11, fast the pairs below)
 const V_N = 5, V_LAT = 24, V_BACK = 28; // a third (owner, 2026-10-21: "shield units, 1/3 the distance between a pods wingmates"; was 72, 84 - tripled 2026-10-20 from these)
-// ...and Vs of V_SMALL (owner, 2026-10-12: "for shield, allow groups for 3, not just 5"): a lane's shields fly as Vs of
+// ...and Vs of V_SMALL (owner, 2026-10-12, for the shields then: "allow groups for 3, not just 5"): a lane's fast fly as Vs of
 // 5 where the rest still splits into 3s and 5s, else 3 - so any count vFits fills whole Vs
-// and LONE shields too (owner, 2026-10-12: "allow shield waves of 1 3 and 5"): any count fits now - 5s, then a 3, then 1s
+// and LONE ones too (owner, 2026-10-12: "allow shield waves of 1 3 and 5"): any count fits - 5s, then a 3, then 1s
 const V_SMALL = 3, vFits = () => true;
-// FAST: PAIRS side by side, FAST_PAIR apart, spinning about their midpoint (owner, 2026-10-11: "for fast, make them
-// come in pairs and spin also"); each pair FAST_PAIR behind the one before - a square ladder (owner: "side by side
-// distance equal to distance prev and next ... a little smaller"; was 30 across and ~114 between pairs)
+// (FAST PAIRS - side by side FAST_PAIR apart, spinning about their midpoint, 2026-10-11 .. 2026-10-29 - gave way to the Vs; FAST_PAIR
+// stays: the spawn timer's fallback gap, aspira-step.js)
 const FAST_PAIR = 78; // x3 (owner, 2026-10-20: "for fast waves, triple the distance between fast units"; was 26)
+// SHIELDS: a SQUARE LATTICE of four, SHIELD_W abreast, SHIELD_PITCH apart both ways (owner, 2026-10-29: "shield becomes 2x2 lattice"):
+// whole blocks of four on every lane copy (laneCount rounds up)
+const SHIELD_W = 2, SHIELD_N = 4, SHIELD_PITCH = 36; // the pitch armor's lattice has (ARMOR_PITCH)
+// THE WEAVE (owner, 2026-10-29: "increase the lane curviness ... so that it makes it really hard for SOL to hit multiple"): a formation
+// swings across its lane as it flies, FORM_WEAVE[type] = [amplitude u, wavelength u along the lane], one phase for the whole formation
+// (it keeps its shape), faded inside FORM_FADE_R like the rest. The lanes themselves stay the fixed spirals. let: the sims sweep it
+let FORM_WEAVE = { fast: [40, 360] };
 // ARMOR: one tight SQUARE lattice per lane copy, ARMOR_W abreast, rows ARMOR_PITCH apart - the same as the columns
 const ARMOR_W = 3, ARMOR_PITCH = 36, ARMOR_FLEET_PITCH = 36; // HALVED (owner, 2026-10-23: "Halve spacing between armor units"; was 72). x2 (owner, 2026-10-20: "double the distance between armor units"; was 36). 216 for an hour: a wave of 24 walked its outer columns 216 u off the lane, out of every tower's reach - every trio died by wave 53 (battery 2026-10-20); owner: "back to 72"; a boss's armor fleet keeps the old 36 (aspira-bosses.js)
-// SHIELDS: the gap after each pod (a V of 5, 3 or a lone 1), per member - halved (owner, 2026-10-20: "bring the distance between
-// shield units closer together (distance between pods of 1 3 5)"; was 0.8, the rest's)
+// the gap after each pod (a V of 5, 3 or a lone 1 - the fast now; a block of four shields), per member - halved (owner, 2026-10-20:
+// "bring the distance between shield units closer together (distance between pods of 1 3 5)"; was 0.8, the rest's)
 const SHIELD_POD_GAP = 0.4;
 // THE SPIN (owner, 2026-10-11: "rotate about the center unit's axis (spin around them)", then "don't make shields do
 // the spinning, make armor do the spinning"): a formation turns FLAT on the board about its CENTRE - the lattice's
 // middle, or the boss its escorts surround - one radian every FORM_SPIN[type] world units it travels; the members orbit
-// it. No entry = it never spins (the shield Vs)
-const FORM_SPIN = { fast: 160 }; // (armor spun for an hour: owner, "remove armor spin")
+// it. No entry = it never spins (the Vs, the lattices)
+const FORM_SPIN = {}; // (armor spun for an hour: owner, "remove armor spin"); the fast pairs spun (fast 160) until they became Vs, 2026-10-29 - the Vs never spun
 // the slots for a group of m: [lat, ahead] each
 const FORMS = {
-  fast: { group: () => 2, slots: m => (m === 2 ? [[-FAST_PAIR / 2, 0], [FAST_PAIR / 2, 0]] : [[0, 0]]) },
-  shield: { group: left => (left >= V_N ? V_N : left >= V_SMALL ? V_SMALL : 1), slots: m => Array.from({ length: m }, (_, i) => {
+  fast: { group: left => (left >= V_N ? V_N : left >= V_SMALL ? V_SMALL : 1), slots: m => Array.from({ length: m }, (_, i) => {
     const d = Math.ceil(i / 2), side = i % 2 ? 1 : -1; // 0 the leader; 1, 2 the first pair; 3, 4 the next
     return [side * d * V_LAT, (Math.ceil((m - 1) / 2) - d) * V_BACK];
+  }) },
+  shield: { group: () => SHIELD_N, slots: m => Array.from({ length: m }, (_, i) => { // a short block (never sent: laneCount rounds up) stays centred
+    const rows = Math.ceil(m / SHIELD_W), r = Math.floor(i / SHIELD_W), inRow = Math.min(SHIELD_W, m - r * SHIELD_W), c = i % SHIELD_W;
+    return [(c - (inRow - 1) / 2) * SHIELD_PITCH, (rows - 1 - r) * SHIELD_PITCH];
   }) },
   armor: { group: m => m, slots: m => {
     const rows = Math.ceil(m / ARMOR_W);
@@ -40,9 +50,9 @@ const FORMS = {
     });
   } },
 };
-// a wave's count is a whole number of these (waveCount): every V full (V_N, odd: 2n+1). Armor is NOT rounded (owner,
+// a wave's count is a whole number of these (waveCount): every shield block full (SHIELD_N); the fast Vs take any count. Armor is NOT rounded (owner,
 // 2026-10-11: "having centered 1 or 2 armored in the back looks nice") - a short last row sits centred at the back
-const FORM_UNIT = { fast: 2 }, FORM_GROUP = { shield: V_N, armor: ARMOR_W, fast: 2 };
+const FORM_UNIT = { shield: SHIELD_N }, FORM_GROUP = { shield: SHIELD_N, armor: ARMOR_W, fast: 1 }; // (fast was 2 a group, shield V_N: the swap, 2026-10-29)
 // how many lane copies a wave of `count` splits onto, at most `want`: shields only into whole Vs, armor into whole
 // lattice rows (the largest k <= want that divides its number of groups); everything else as asked
 // (2026-10-11: one armor block on one lane made armor free - all 36 sim games won, armor 0 lives - so armor splits
@@ -103,9 +113,11 @@ function formSplit(type, count, n) {
   const k = Math.min(want === NO_LANES ? NO_LANES - 1 : want, groups);
   return k === NO_LANES ? NO_LANES - 1 : k;
 }
-// shields ROUND UP (owner, 2026-10-12: "round up units to hit 3-5 lanes"): each lane a count of whole 3- and 5-Vs
+// shields ROUND UP (owner, 2026-10-12: "round up units to hit 3-5 lanes"): each lane whole blocks of four; the fast Vs round up too
+// (any count fills Vs - vFits; more bodies, never fewer: owner, 2026-10-29 "go for more bodies whenever that choice presents itself")
 const laneCount = (type, count, k) => {
-  if (type === "shield") { let per = Math.ceil(count / k); while (!vFits(per)) per++; return per * k; }
+  if (type === "shield") return Math.ceil(count / (k * SHIELD_N)) * k * SHIELD_N;
+  if (type === "fast") { let per = Math.ceil(count / k); while (!vFits(per)) per++; return per * k; }
   if (type === "armor") return Math.ceil(count / k) * k; // rounded UP to fill every lane (a short last row sits centred)
   if (type === "swarm") return Math.max(1, Math.round(count)); // the swarm is SHARED by weight over its lanes now (swarmParts), no lane-fulls (2026-10-26)
   const unit = FORM_GROUP[type] || 1; return Math.floor(count / (k * unit)) * k * unit || count;
@@ -158,8 +170,8 @@ const FORM_B = { x: 0, y: 0 }, FORM_Q = { x: 0, y: 0 }, ENEMY_AT = { x: 0, y: 0 
 function formOffset(e, p, s = e.s) {
   // (a boss's escorts never spin about it - bossKin)
   const spin = e.bossKin ? 0 : FORM_SPIN[e.type], c = s - (e.ahead || 0) + (e.aheadC || 0), phi = spin ? c / spin : 0; // c: the centre unit's place - one phase for all
-  const a0 = (e.ahead || 0) - (e.aheadC || 0), cs = Math.cos(phi), sn = Math.sin(phi);
-  const along = a0 * cs - e.lat * sn, across = a0 * sn + e.lat * cs;
+  const a0 = (e.ahead || 0) - (e.aheadC || 0), cs = Math.cos(phi), sn = Math.sin(phi), wv = !e.bossKin && FORM_WEAVE[e.type]; // the weave: one phase a formation (its centre's place, c)
+  const along = a0 * cs - e.lat * sn, across = a0 * sn + e.lat * cs + (wv ? wv[0] * Math.sin(2 * Math.PI * c / wv[1]) : 0);
   const b = pathAtInto(e.pi, c + along, e.ang, FORM_B), q = pathAtInto(e.pi, c + along + 3, e.ang, FORM_Q), tx = q.x - b.x, ty = q.y - b.y, L = Math.hypot(tx, ty) || 1;
   const k = across * Math.min(1, Math.hypot(b.x - CX, b.y - CY) / FORM_FADE_R) / L;
   p.x = b.x - ty * k; p.y = b.y + tx * k; if (s === e.s) e.faceA = Math.atan2(ty, tx); /* (not a trail point's - aspira-enemies.js) */ // ITS OWN SPOT'S LANE heading - a corner points along the lane (owner, 2026-10-26)

@@ -198,26 +198,27 @@ check("tier I is no more than today's I: whole counts on the card, from-tier swi
   return "";
 });
 ifrHelpers(run); // ifrAll / ifrNear (harness.mjs) - a check below and ifr.mjs use them
-check("spacing (owner, 2026-10-20): armor units 36 apart (halved 2026-10-23), fast units three times, shield pods half the gap, a shield V a third (2026-10-21); wave 1 fast at half speed (2026-10-21)", () => {
+check("spacing (owner, 2026-10-20): armor units 36 apart (halved 2026-10-23), fast pods 78 apart (three times), shield pods half the gap, a V a third (2026-10-21); the swap (2026-10-29): fast fly the Vs, shields a 2x2 lattice 36 apart; wave 1 fast at half speed (2026-10-21)", () => {
   const r = run(`(() => {
     G = newGame(); const out = {};
     const a = FORMS.armor.slots(6); out.armorPitch = Math.abs(a[1][0] - a[0][0]); out.armorRow = Math.abs(a[3][1] - a[0][1]);
-    const v = FORMS.shield.slots(5); out.vLat = Math.abs(v[1][0] - v[0][0]); out.vBack = Math.abs(v[1][1] - v[0][1]);
-    const f = FORMS.fast.slots(2); out.fastSide = Math.abs(f[1][0] - f[0][0]);
+    const v = FORMS.fast.slots(5); out.vLat = Math.abs(v[1][0] - v[0][0]); out.vBack = Math.abs(v[1][1] - v[0][1]);
+    const q = FORMS.shield.slots(4); out.shPitch = Math.abs(q[1][0] - q[0][0]); out.shRow = Math.abs(q[2][1] - q[0][1]); out.shGroup = FORMS.shield.group(9);
     const lanes = { shield: 0, fast: 0 };
     const w = { n: 1, list: ["shield", "shield", "shield", "shield", "shield", "shield", "shield", "shield"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w];
-    G.fleetQ = []; stepSpawns(1e-6); const lead = G.enemies.find(e => e.ahead > 0); out.shieldLag = 2 * V_BACK / Math.max(1, effSpeed(lead)) * ENEMY_SPEED; out.shieldGap = (w.timer * ENEMY_SPEED - out.shieldLag) * plainK("shield"); /* (in full-speed time: the gap stretched by 1 / PLAIN_SPEED_K, 2026-10-26) */ out.shieldIdx = w.idx; out.shieldQueued = G.fleetQ.length;
-    const w2 = { n: 1, list: ["fast", "fast", "fast", "fast"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w2];
+    G.fleetQ = []; stepSpawns(1e-6); const lead = G.enemies.find(e => e.ahead > 0); out.shieldLag = SHIELD_PITCH / Math.max(1, effSpeed(lead)) * ENEMY_SPEED; out.shieldGap = (w.timer * ENEMY_SPEED - out.shieldLag) * plainK("shield"); /* (in full-speed time: the gap stretched by 1 / PLAIN_SPEED_K, 2026-10-26) */ out.shieldIdx = w.idx; out.shieldQueued = G.fleetQ.length;
+    const w2 = { n: 1, list: ["fast"], lanes, ang: 0, idx: 0, timer: 0 }; G.spawns = [w2]; // a LONE fast (a V of 1, no depth): the gap to the next pod alone
     stepSpawns(1e-6); out.fastBehind = w2.timer * ENEMIES.fast.speed * ENEMY_SPEED * FIRST_FAST_SPD * PLAIN_SPEED_K; // wave 1 runs at FIRST_FAST_SPD, every plain enemy at PLAIN_SPEED_K (2026-10-26)
     G.enemies = []; spawnEnemy("fast", 1, 0, 0); spawnEnemy("fast", 2, 0, 0); out.firstSpd = G.enemies[0].spd / lateK(1, "fast"); out.laterSpd = G.enemies[1].spd / lateK(2, "fast");
     return out;
   })()`);
   if (Math.abs(r.armorPitch - 36) > 1e-6 || Math.abs(r.armorRow - 36) > 1e-6) return "armor lattice " + r.armorPitch + " across, " + r.armorRow + " between rows (expected 36 both: halved, owner 2026-10-23)";
-  if (Math.abs(r.vLat - 24) > 1e-6 || Math.abs(r.vBack - 28) > 1e-6) return "a shield V steps " + r.vLat + " across, " + r.vBack + " back (expected 24, 28: a third, owner 2026-10-21)";
-  if (Math.abs(r.fastSide - 78) > 1e-6 || Math.abs(r.fastBehind - 78) > 0.01) return "fast pairs " + r.fastSide + " across, " + r.fastBehind + " behind (expected 78 both, three times 26)";
+  if (Math.abs(r.vLat - 24) > 1e-6 || Math.abs(r.vBack - 28) > 1e-6) return "a fast V steps " + r.vLat + " across, " + r.vBack + " back (expected 24, 28: a third, owner 2026-10-21; fast fly the Vs since 2026-10-29)";
+  if (Math.abs(r.shPitch - 36) > 1e-6 || Math.abs(r.shRow - 36) > 1e-6 || r.shGroup !== 4) return "a shield lattice " + r.shPitch + " across, " + r.shRow + " between rows, groups of " + r.shGroup + " (expected 36, 36, 4: the 2x2 lattice, owner 2026-10-29)";
+  if (Math.abs(r.fastBehind - 78) > 0.01) return "fast pods " + r.fastBehind + " apart (expected 78, three times 26)";
   if (Math.abs(r.firstSpd / r.laterSpd - 0.5) > 1e-9) return "wave 1 fast at x" + r.firstSpd + ", wave 2 at x" + r.laterSpd + " (expected wave 1 HALF wave 2 - its speed lever, TYPE_TUNE, sets both: owner 2026-10-21 \"halve the speed of the first fast wave\")";
-  if (r.shieldIdx !== 5 || Math.abs(r.shieldGap - 5 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected 5 x 0.4 = 2, half the old 4)";
-  if (r.shieldQueued !== 4) return "a V of 5: " + r.shieldQueued + " wingmates wait off the board (expected 4 - only the leader spawns on it)";
+  if (r.shieldIdx !== 4 || Math.abs(r.shieldGap - 4 * 0.4) > 0.001) return "a pod of " + r.shieldIdx + " shields waits " + r.shieldGap + " (expected a block of 4 x 0.4 = 1.6)";
+  if (r.shieldQueued !== 2) return "a 2x2 block: " + r.shieldQueued + " wait off the board (expected 2 - the front row spawns on it)";
   return "";
 });
 check("IFR's range and movement range stay modest at every stop (owner, 2026-10-20: \"unnecessarily large\")", () => {
@@ -392,7 +393,7 @@ check("Temporal Drive stops Strength dead; a tower's slow still takes 40% on her
 check("a shield's corner points along the lane, in a formation too (owner, 2026-10-26: its heading read toward the lane's centre from an offset slot)", () => {
   const r = run(`(() => {
     G = newGame(); G.enemies = [];
-    const w = { n: 30, list: ["shield", "shield", "shield"], lanes: { shield: 0 }, ang: 0, idx: 1, timer: 0 }; G.fleetQ = []; formSpawn(w, "shield");
+    const w = { n: 30, list: ["shield", "shield", "shield", "shield"], lanes: { shield: 0 }, ang: 0, idx: 1, timer: 0 }; G.fleetQ = []; formSpawn(w, "shield");
     for (let i = 0; i < 180 && !G.enemies.some(e => e.form); i++) { stepFleetQ(1 / 60); stepEnemies(1 / 60); } for (let i = 0; i < 30; i++) { stepFleetQ(1 / 60); stepEnemies(1 / 60); }
     let worst = 0, n = 0;
     for (const e of G.enemies) { if (e.dead || !e.form) continue; // the lane at the unit's own spot: formOffset's along-lane place (its spin)
@@ -407,7 +408,7 @@ check("a shield's corner points along the lane, in a formation too (owner, 2026-
 check("formations reach their spacing in the 1x zone (owner, 2026-10-21: \"they get compressed as they slow down\")", () => {
   const r = run(`(() => {
     G = newGame(); G.enemies = [];
-    const w = { n: 30, list: ["shield", "shield", "shield"], lanes: { shield: 0 }, ang: 0, idx: 1, timer: 0 }; G.fleetQ = []; formSpawn(w, "shield");
+    const w = { n: 30, list: ["shield", "shield", "shield", "shield"], lanes: { shield: 0 }, ang: 0, idx: 1, timer: 0 }; G.fleetQ = []; formSpawn(w, "shield");
     const all = [...G.enemies, ...G.fleetQ], a = all.find(e => e.ahead > 0), b = all.find(e => !e.ahead), s0 = entryS(a.pi);
     const born = Math.max(...all.map(e => e.s)) - s0; // the front ON the entry: nothing spawns inside the board
     G.money = 1e6; ui.build = "arc"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null;
@@ -416,9 +417,9 @@ check("formations reach their spacing in the 1x zone (owner, 2026-10-21: \"they 
     const inA = inReach(a, reachCircles()), inB = inReach(b, reachCircles());
     return { born, now: a.s - b.s, inA, inB };
   })()`);
-  if (Math.abs(r.born) > 1e-6) return "a V's front spawned " + r.born + " past the entry (owner, 2026-10-21: no unit pops in)";
-  if (!(r.inA && r.inB)) return "the test V never reached the 1x zone";
-  if (Math.abs(r.now - 28) > 4 /* a step's drift as the wave drops to 1x: its queued units move that step at the wave's old clock (2026-10-26) */) return "in the 1x zone the V's rows are " + r.now.toFixed(1) + " apart (expected V_BACK 28)";
+  if (Math.abs(r.born) > 1e-6) return "a shield block's front spawned " + r.born + " past the entry (owner, 2026-10-21: no unit pops in)";
+  if (!(r.inA && r.inB)) return "the test block never reached the 1x zone";
+  if (Math.abs(r.now - 36) > 4 /* a step's drift as the wave drops to 1x: its queued units move that step at the wave's old clock (2026-10-26) */) return "in the 1x zone the shield block's rows are " + r.now.toFixed(1) + " apart (expected SHIELD_PITCH 36)";
   return "";
 });
 check("no unit pops in: every enemy of every wave type and every boss fleet first appears at the entry, within a step (owner, 2026-10-21)", () => {
