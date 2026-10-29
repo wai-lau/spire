@@ -78,7 +78,7 @@ lost core segment flashes the boss red.
 | Lever | Design |
 |---|---|
 | start | `START_MONEY` 120, **18 lives** (two full rings, `LIFE_STEP` 6), interest 2% |
-| interest | `floor(money x rate)` on the credits held when a wave is SENT, **uncapped**; a boss drop may add +1%; the owner keeps tuning it down ("97% of a run's money was interest") |
+| interest | `floor(money x rate)` on the credits held when a wave is SENT, **uncapped**; a boss drop may add +0.5% (lives back, below); the owner keeps tuning it down ("97% of a run's money was interest") |
 | bounty | `bountyBase(w) x type bounty x BOUNTY_MUL`, `w` the 10-cycle equivalent wave (§5.2): linear to eq 30, a gentler slope after, x1.1 early; fractional, shown floored; a kill's credits **fly home** as a gold dot and bank on landing |
 | prices | a tower `cost` 40, **x1.5 per tower standing** (40, 60, 90), shown in each free slot; upgrades are multiples of the build price (§4.2); **sell** returns 95%, on a second tap |
 | leaks | an enemy costs its `leak`: swarm 2, boss 10 (= game over, the boss named in the title), others 1 |
