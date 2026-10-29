@@ -74,7 +74,8 @@ function keepLit(node, left) {
 function branchFrom(c, node, depth) {
   if (depth > c.st.layers) return;
   keepLit(node, hopDelay(c.st) + 0.05); // stay lit until the children land
-  for (let i = 0; i < c.st.branch; i++) (G.chains ||= []).push({ c, node, depth, wait: hopDelay(c.st) });
+  const n = c.st.fork && !node.up ? 2 : c.st.branch; // ARC FORKS ONCE, at the strike, never after (owner, 2026-10-29: "1 fork per node, doesn't refork")
+  for (let i = 0; i < n; i++) (G.chains ||= []).push({ c, node, depth, wait: hopDelay(c.st) });
 }
 function stepChains(dt) {
   if (!G.chains || !G.chains.length) return;

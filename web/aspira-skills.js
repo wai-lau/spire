@@ -35,9 +35,11 @@ const SKILL_TREES = {
   // raw power, damage and range; Static = an EXPLOSION on every hit that marks
   // what it catches. Base: one jump forking two ways, three enemies.
   arc: [
-    { id: "conductivity", name: "Conductivity", tiers: [{ name: "Transfer" }, { name: "Superconductor" }, { name: "Storm" }] },
+    // THE ARC REDESIGN (owner, 2026-10-29): the ids stay (saves, sims, smoke); the axes are AMPERAGE (id conductivity), VOLTAGE and
+    // RESISTANCE (id capacitance) - arcSkillStats below
+    { id: "conductivity", name: "Amperage", tiers: [{ name: "Transfer" }, { name: "Superconductor" }, { name: "Storm" }] },
     { id: "voltage", name: "Voltage", tiers: [{ name: "Spark" }, { name: "Vaporize" }, { name: "Plasma" }] },
-    { id: "capacitance", name: "Capacitance", tiers: [{ name: "Static" }, { name: "Overload" }, { name: "Tempest" }] },
+    { id: "capacitance", name: "Resistance", tiers: [{ name: "Static" }, { name: "Overload" }, { name: "Tempest" }] },
   ],
 };
 // FRZ (owner, 2026-10-05): an AURA - everything inside is slowed (and loses it
@@ -129,17 +131,28 @@ const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
 // wait wait zapzapzap"), then "don't change hits per second": ARC_BURST_N strikes ARC_ECHO_S apart, the bursts at ARC_BURST_RATE x the curve's
 // 3 attacks/s - 2 a second, a 0.5 s cycle (0.3 s of zaps, 0.2 s rest) - so still 6 strikes a second, each ARC_ECHO_K (0.5) of an attack
 // (was 2 strikes 0.12 s apart at 0.5 - the same hits and damage a second)
-const ARC_BURST_N = 3, ARC_ECHO_S = 0.15, ARC_BURST_RATE = 2 / 3, ARC_ECHO_K = 1 / (ARC_BURST_N * ARC_BURST_RATE);
+// ONE STRIKE, HARD (owner, 2026-10-29: "Hits hard, big chain"): a burst of ONE now - every strike the whole attack (was 3 a burst at a third)
+const ARC_BURST_N = 1, ARC_ECHO_S = 0.15, ARC_BURST_RATE = 1, ARC_ECHO_K = 1 / (ARC_BURST_N * ARC_BURST_RATE);
 const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // VOLTAGE PIERCES ARMOR (owner, 2026-10-11: "make upgrade choices matter" - Voltage was ARC's dead axis, worst on every
 // type): its arcs ignore this share of armor - Voltage is ARC's armor answer, Conductivity the shields, Capacitance the fast
+// THE ARC REDESIGN (owner, 2026-10-29, verbatim: "Now bad vs swarm, can you believe it / Hits hard, big chain, forks are limited to 1 fork
+// per node, doesn't refork after 1 fork, cannot hit same target twice / ARC 0: one chain (hits 3) / Amperage: increased carry damage /
+// Resistance: slows and armor breaks, no AoE zap / Voltage: increases chains and chain range / to make ARC not feel like overlapping SOL,
+// keep range small, movement large, chain range up, so you get close zap and it conducts to a few units nearby"): ONE strike, a chain of
+// ARC_VOLT_JUMPS jumps (tier 0: 2 - three enemies hit), each jump reaching ARC_VOLT_REACH u from the enemy it leaps from (not tied to
+// ARC's own small range); from Voltage ARC_FORK_FROM the strike FORKS ONCE into two chains, and nothing forks after (branchFrom). Each
+// jump keeps ARC_AMP_FALL x the hit before (Amperage, id conductivity). Resistance (id capacitance): every hit slows (ARC_RES_SLOW, for
+// STAT_SLOW_T s - never a shielded enemy, applySlow) and breaks armor (ARC_RES_STRIP x the wave's armor reference - shredArmor); no
+// charges, no bursts. A bolt never strikes a unit twice (skillHop). Numbers 0..V, let: the battery fits them
+let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 3, 4, 5, 6, 8], ARC_VOLT_REACH = [150, 170, 190, 215, 240, 270], ARC_FORK_FROM = 2;
+let ARC_RES_SLOW = [0, 0.15, 0.25, 0.35, 0.45, 0.55], ARC_RES_STRIP = [0, 0.05, 0.1, 0.15, 0.22, 0.3];
 function arcSkillStats(t, s, b) {
   const c = skillOf(t, "conductivity"), v = skillOf(t, "voltage"), z = skillOf(t, "capacitance");
-  curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24; was ARC_VOLTAGE_DMG x ARC_SIDE_DMG x2 x Conductivity's d)
-  const sh = ARC_CONDUCTIVITY[c]; // Conductivity: strikes and jumps; Voltage the forks (VOLT_FORK)
-  s.rate *= nudge(sh.q || 1); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= ARC_BURST_RATE; s.dmg *= ARC_ECHO_K; // (dmgCurve / rateCurve: the curve plus nudges, before a mechanic splits it)
-  s.arcRange = ARC_JUMP_BASE * ARC_VOLTAGE_JUMP[v] * sh.r; s.targets = sh.s; s.branch = VOLT_FORK[v]; s.layers = Math.max(sh.j, s.branch > 1 ? 1 : 0); s.revisit = sh.v || 0; // a fork with no chain splits the strike once
-  s.carry = VOLT_CARRY_N[v]; s.arcFall = ARC_VOLTAGE_FALL[v]; s.arcShrink = ARC_SHRINK; s.charge = ARC_CAPACITANCE[z]; s.statSlow = ARC_STAT_SLOW[z]; s.skill = true;
+  curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24)
+  s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= ARC_BURST_RATE; s.dmg *= ARC_ECHO_K;
+  s.arcRange = ARC_VOLT_REACH[v]; s.targets = 1; s.branch = 1; s.fork = v >= ARC_FORK_FROM; s.layers = ARC_VOLT_JUMPS[v]; s.revisit = 0;
+  s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.charge = null; s.statSlow = 0; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.skill = true;
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
 function skillOptions(t) {
@@ -205,6 +218,8 @@ function skillHit(c, e, d) {
   const hp0 = e.hp;
   damage(e, d, c.t, false, false, c.st); onHit(e, c.t, c.st, d); // (discharges e's own charges, if any)
   if (c.st.carry && e.dead && hp0 > 0 && d > hp0) voltCarry(c, e, d - hp0);
+  if (c.st.resSlow && !e.dead) applySlow(e, c.st.resSlow, STAT_SLOW_T, c.t.id); // Resistance (the ARC redesign, 2026-10-29)
+  if (c.st.resStrip && !e.dead) shredArmor(e, c.t, c.st.resStrip * armorRefOf(e.wave || 1));
   const b = c.st.charge;
   if (!b || e.dead) return;
   const ch = e.charge || (e.charge = { list: [], t: c.t });
@@ -270,7 +285,7 @@ function chainPick(t, from, r2, skip) {
 // A JUMP REACHES HALF ARC'S RANGE FROM THE ENEMY IT LEAPS FROM, anywhere - not confined to ARC's own range (owner, 2026-10-26: "do not
 // restrict ARC jumps to within arc range" / "each chain should be able to jump to an enemy within 1/2 arc range of enemy"; was
 // st.arcRange x arcShrink a depth, inside the tower's range - "Confine all targets to within arc range", 2026-10-24)
-const ARC_JUMP_K = 1 /* the FULL range (owner, 2026-10-26: "*100% of arc range on chain"; half for an hour) */, arcJumpR = st => st.range * ARC_JUMP_K;
+const ARC_JUMP_K = 1 /* the FULL range (owner, 2026-10-26: "*100% of arc range on chain"; half for an hour) */, arcJumpR = st => (st.skill && st.arcRange) || st.range * ARC_JUMP_K; // the chart's ARC: Voltage's own reach (2026-10-29)
 function skillHop(c, node, depth) {
   const r = arcJumpR(c.st);
   // ONE BOLT STRIKES A UNIT ONCE (owner, 2026-10-26: "lightning from the same bolt can never strike the same unit more than once (so a

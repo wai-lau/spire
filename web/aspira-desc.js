@@ -25,21 +25,15 @@ const DESCRIBE = {
   // "Arcs fork on hit, each jump carrying half the hit." -> Conductivity: chain once and / into
   // three / twin; Voltage: most of .. all of (its harder hit is a stat row); Capacitance: the charge sentence (owner's words)
   arc(sk) {
-    // (owner, 2026-10-22, shorter): "Six bolts of lightning, each forking 4 ways four times, dealing 160% damage each fork. Lightning can
-    // strike the same place more than once. Hits leave six charges that slow and deal damage when popped." - every number read live
-    const c = sk.conductivity || 0, v = sk.voltage || 0, z = sk.capacitance || 0, sh = ARC_CONDUCTIVITY[c], n = z ? ARC_CAPACITANCE[z].n : 0;
-    const f = VOLT_FORK[v], layers = Math.max(sh.j, f > 1 ? 1 : 0), TIMES = ["", " once", " twice"]; // tier 0: one beam, no chain (tier redesign 2026-10-24)
-    // (owner, 2026-10-25): "Two bolts of lightning." / "Two bolts of lightning that fork for X% damage after striking." - the double strike
-    // is TWO bolts, so every strike counts twice; a fork wider than two names its ways, more than one layer its times
-    // (owner, 2026-10-25): Conductivity "chains" (was "jump on"); Voltage "forks for X% damage every chain"
-    // ...then (owner, 2026-10-25): "35% less damage every chain" - the fall as a change, like SOL's reflections; full / more past 100%
-    const fl = ARC_VOLTAGE_FALL[v], d = Math.round(Math.abs(fl - 1) * 100), times = TIMES[sh.j] || " " + NUM_WORD[sh.j] + " times";
+    // THE ARC REDESIGN (owner, 2026-10-29): one bolt, a chain (Voltage: its length), one fork at the strike from Voltage ARC_FORK_FROM,
+    // Amperage the carry, Resistance a slow and an armor break on every hit - every number read live (Visual polishes the prose)
+    const c = sk.conductivity || 0, v = sk.voltage || 0, z = sk.capacitance || 0, TIMES = ["", " once", " twice"];
+    const fl = ARC_AMP_FALL[c], d = Math.round(Math.abs(fl - 1) * 100), j = ARC_VOLT_JUMPS[v], times = TIMES[j] || " " + NUM_WORD[j] + " times";
     const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
-    const fork = " fork" + (f > 2 ? " " + NUM_WORD[f] + " ways" : "") + " for " + pc;
-    const tree = !layers ? "" : f > 1 ? (sh.j ? " that chain" + times + " and" + fork : " that" + fork) : " that chain" + times + " for " + pc;
-    return cap(NUM_WORD[ARC_BURST_N * sh.s] || String(ARC_BURST_N * sh.s)) + " bolts of lightning" /* (past twelve: digits) */ /* a burst of ARC_BURST_N a target (2026-10-26; was 2) */ + tree + "." + /* (no re-strikes: one bolt strikes a unit once - owner, 2026-10-26) */
-      (n ? " Hits leave " + (n > 1 ? NUM_WORD[n] + " charges that slow and deal" : "a charge that slows and deals") + " damage when popped." : "");
+    return "A bolt of lightning that " + (v >= ARC_FORK_FROM ? "forks once and " : "") + "chains" + times + " for " + pc + "." +
+      (z ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " + Math.round(ARC_RES_STRIP[z] * 100) + "% of armor." : "");
   },
+
   // FRZ (owner, 2026-10-22, shorter): "Emits an aura that slows enemies by 67% and hurts more the slower they are. Enemies in the aura take
   // 802% more damage." / Permafrost "Pulses of frost permanently slow by % and break n armor on [every] hit", VI "Rapid pulses" (n: since the 2026-10-28
   // armor rework the share of its armor a fully frosted enemy loses, FRZ_RIME_CRACK) / Moons: the moons and their satellites (owner: "satellites instead of moonlets") - every number read live

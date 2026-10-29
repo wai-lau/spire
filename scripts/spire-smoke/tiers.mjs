@@ -78,14 +78,14 @@ check("ARC: tier 0 strikes one enemy and chains once (owner, 2026-10-28); Conduc
   const n = sk => run(`(() => { const { t, es, st } = tierRig("arc", ${JSON.stringify(sk)}, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20]]);
     fireSkillChain(t, st, es[0]); for (let i = 0; i < 30; i++) stepChains(0.05); return ${hitCount("es")}; })()`);
   const r = [n({}), n({ conductivity: 1 }), n({ voltage: 1 }), n({ capacitance: 1 })];
-  if (JSON.stringify(r) !== "[2,3,4,2]") return "enemies hit (tier 0, Cond I, Volt I, Cap I): " + r + " (expected 2, 3, 4, 2)";
+  if (JSON.stringify(r) !== "[3,3,4,3]") return "enemies hit (tier 0, Amp I, Volt I, Res I): " + r + " (expected 3, 3, 4, 3: the ARC redesign, owner 2026-10-29 \"ARC 0: one chain (hits 3)\", Voltage the chains)";
 });
 
 check("ARC: no enemy is struck twice by the bolts of one attack (owner, 2026-10-28: \"reduce the number of arc hits\" - one hit set an attack); Capacitance's bursts may re-hit", () => {
-  const r = run(`(() => { const { t, es, st } = tierRig("arc", { conductivity: 3 }, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20], [80, -10], [50, 15]]);
+  const r = run(`(() => { const { t, es, st } = tierRig("arc", { voltage: 3 }, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20], [80, -10], [50, 15]]);
     const n = new Map(), _d = damage; damage = (e, ...a) => { n.set(e.id, (n.get(e.id) || 0) + 1); return _d(e, ...a); };
-    try { fire(t, st); for (let i = 0; i < 30; i++) stepChains(0.05); } finally { damage = _d; } return { bolts: st.targets, most: Math.max(0, ...n.values()), hit: n.size }; })()`);
-  if (!(r.bolts > 1)) return "Conductivity 3 fires " + r.bolts + " bolt(s) (expected several, to test)";
+    try { fire(t, st); for (let i = 0; i < 30; i++) stepChains(0.05); } finally { damage = _d; } return { bolts: st.fork ? 2 : 1, most: Math.max(0, ...n.values()), hit: n.size }; })()`);
+  if (!(r.bolts > 1)) return "Voltage III makes " + r.bolts + " chain(s) (expected the strike to fork, to test)";
   if (r.hit < 2) return "the attack hit " + r.hit + " enemies (expected several - is damage() still the hit path?)";
   if (r.most !== 1) return "an enemy took " + r.most + " hits from one attack of " + r.bolts + " bolts (expected 1: the bolts share one hit set)";
 });
@@ -285,10 +285,10 @@ check("later: a factor on the tower's OWN damage is one constant, on from its fi
   const same = (kind, ax, key, from) => { const v = [1, 2, 3, 4, 5].map(n => statsOf(kind, { [ax]: n })[key]); return v.every(x => x === v[0]) && statsOf(kind, {})[key] === from ? "" : kind + " " + ax + " " + key + " " + JSON.stringify(v) + " (tier 0 " + statsOf(kind, {})[key] + ")"; };
   return same("sol", "breach", "critMul", 3) /* (SOL scorch left this rule 2026-10-25: Breach "increases ... burn" again) */ || same("ifr", "hellfire", "fireHK", statsOf("ifr", { hellfire: 1 }).fireHK) || same("ifr", "firaga", "hfK", 1);
 });
-check("later: the card rows read no zero mechanic - ARC Jumps 1 at tier 0 (it chains once, owner 2026-10-28), FRZ Cold bite before Sublimation (the nip is flat)", () => {
-  const a0 = rows("arc", {}).rows, a1 = rows("arc", { conductivity: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;
-  if (String(a0.Jumps) !== "1") return "ARC tier 0 Jumps reads " + a0.Jumps + " (expected 1: it chains once, owner 2026-10-28)";
-  if (String(a1.Jumps) !== "2") return "ARC Conductivity I Jumps reads " + a1.Jumps + " (expected 2: one more than tier 0)";
+check("later: the card rows read no zero mechanic - ARC Jumps 2 at tier 0 (one chain hitting three, owner 2026-10-29), FRZ Cold bite before Sublimation (the nip is flat)", () => {
+  const a0 = rows("arc", {}).rows, a1 = rows("arc", { voltage: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;
+  if (String(a0.Jumps) !== "2") return "ARC tier 0 Jumps reads " + a0.Jumps + " (expected 2: one chain hitting three, owner 2026-10-29)";
+  if (String(a1.Jumps) !== "3") return "ARC Voltage I Jumps reads " + a1.Jumps + " (expected 3: Voltage increases chains)";
   if (f0["Cold bite"] !== "—") return "FRZ tier 0 Cold bite reads " + f0["Cold bite"];
   if (f1["Cold bite"] === "—") return "FRZ Sublimation I Cold bite blank";
 });
@@ -306,11 +306,12 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
     t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
   if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });
-check("ARC's sentence in the owner's words (2026-10-25): \"Two bolts of lightning.\" / Conductivity \"chains\" / Voltage \"forks for X% less damage every chain\"; FRZ tier 0 \"slows and deals X% damage\"", () => {
-  const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 1 }), Math.round(ARC_VOLTAGE_FALL[1] * 100), describeTower("arc", { conductivity: 1 }), describeTower("arc", { conductivity: 1, voltage: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP * 100)]`);
-  if (r[0] !== "Three bolts of lightning that chain once for 20% less damage every chain.") return "tier 0: " + r[0] + " (it chains once, owner 2026-10-28)";
-  if (r[1] !== "Three bolts of lightning that chain once and fork three ways for " + (100 - r[2]) + "% less damage every chain.") return "Voltage I: " + r[1];
-  if (!/that chain twice for \d+% less damage every chain\.$/.test(r[3])) return "Conductivity I: " + r[3];
-  if (!/that chain twice and fork three ways for \d+% less damage every chain\.$/.test(r[4])) return "Conductivity I + Voltage I: " + r[4];
-  if (!r[5].includes("slows enemies by") || !r[5].includes(" and deals " + r[6] + "%td over ")) return "FRZ tier 0: " + r[5];
+check("ARC's sentence (the ARC redesign, owner 2026-10-29): one bolt that chains (Voltage), forks once from Voltage II, Amperage the carry, Resistance a slow and an armor break; FRZ tier 0 \"slows and deals X% damage\"", () => {
+  const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 2 }), describeTower("arc", { conductivity: 2 }), describeTower("arc", { capacitance: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP * 100)]`);
+  if (r[0] !== "A bolt of lightning that chains twice for 20% less damage every chain.") return "tier 0: " + r[0];
+  if (!/^A bolt of lightning that forks once and chains four times for \d+% less damage every chain\.$/.test(r[1])) return "Voltage II: " + r[1];
+  if (!/that chains twice for full damage every chain\.$/.test(r[2])) return "Amperage II: " + r[2];
+  if (!/ Hits slow by \d+% and break \d+% of armor\.$/.test(r[3])) return "Resistance I: " + r[3];
+  if (!r[4].includes("slows enemies by") || !r[4].includes(" and deals " + r[5] + "%td over ")) return "FRZ tier 0: " + r[4];
 });
+
