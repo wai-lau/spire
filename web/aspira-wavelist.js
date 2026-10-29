@@ -72,6 +72,9 @@ function waveBandHtml(type, count, px, span, alive) {
   return lattice(WAVE_PACK_MAX).html();
 }
 
+// a wave's per-unit HP as the list shows it - a boss's through its spawn's own multipliers (bossHpMul, aspira-bosses.js) before the
+// 20% of its escorts' HP it takes on (bossFleet); smoke-pinned against a spawned boss (the list kept its own formula and read Death ~14x low)
+const waveHp = (w, n) => enemyHp(w.type, n) * (w.type === "bonus" ? bossHpMul(arcanaOf(n).id) * BOSS_LANE_HP * BOSS_HEFT : 1);
 // wave n -> how many of its enemies are still alive or yet to spawn (only waves with any)
 function liveWaves() {
   const m = new Map(), add = (n, v) => m.set(n, (m.get(n) || 0) + v);
@@ -100,7 +103,7 @@ function updateWaveList() {
   const rowOf = (n, w) => {
     WAVE_PLANS.set(n, w); // (the wave card reads it - aspira-wavecard.js)
     const boss = w.type === "bonus";
-    const hp = enemyHp(w.type, n) * (boss ? bossHpMul(arcanaOf(n).id) * BOSS_LANE_HP * BOSS_HEFT : 1); // (a boss: its spawn's own multipliers - bossHpMul, aspira-bosses.js; the 20% of its escorts' HP it takes on is not counted)
+    const hp = waveHp(w, n);
     return { n, w, boss, hp, alive: live.get(n), cur: n === G.wave || live.has(n) }; // highlighted: every wave still ALIVE, and the current one (owner)
   };
   // after a boss, until "challenge" is tapped, the beaten boss's row goes too (owner, 2026-10-12): only the button and what is coming

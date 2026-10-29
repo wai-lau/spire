@@ -551,6 +551,15 @@ check("swarm (owner, 2026-10-26): three MAIN lanes 120 degrees apart carry about
   if (Math.abs(r.d1 - 2 * Math.PI / 3) > 1e-6 || Math.abs(r.d2 - 2 * Math.PI / 3) > 1e-6) return "main lanes not 120 degrees apart: " + r.d1 + ", " + r.d2;
   if (!(r.m >= 6 && r.mid < r.edge)) return "no bell: " + r.m + " on a main lane, mid-stream gap " + r.mid + " vs the head's " + r.edge;
 });
+check("wave list: every boss's shown HP is the HP it spawns with (bossHpMul both sides, before its escorts' 20% - 6.17.1: the list read Death ~14x low)", () => {
+  const r = run(`(() => { const bf = bossFleet, out = []; bossFleet = function (e, n) { e.__pre = e.max; return bf(e, n); };
+    try { ARCANA.forEach((a, i) => { const n = STAR_EVERY * (i + 1); G = newGame(); G.wave = n - 1; spawnEnemy("bonus", n, 0, 0);
+      const e = G.enemies.concat(G.fleetQ).find(x => x.arcana === a.id); if (!e) { out.push(a.id + " did not spawn"); return; } // (a boss enters with its fleet, through G.fleetQ)
+      const shown = waveHp({ type: "bonus" }, n), k = bossHpMul(a.id) * BOSS_LANE_HP * BOSS_HEFT; // the spawn floors the base HP before multiplying: up to one base point x k apart
+      if (!(e.__pre <= shown + 1 && e.__pre >= shown - k - 1)) out.push(a.id + " list " + Math.round(shown) + " vs spawned " + e.__pre); }); }
+    finally { bossFleet = bf; } return out; })()`);
+  return r.length ? r.join("; ") : "";
+});
 check("lanes: every pick has the smallest copy spread (within slack)", () => {
   const e = boot({}, { w: 390, h: 844 });
   const bad = e.run(`(() => { const out = []; for (let pi = 1; pi < PATHS.length; pi += 2) for (const k of [2, 3, 6]) {
