@@ -27,7 +27,7 @@ export default async function task({ trio, seed, model, to }) {
   // LEAK RECORD (2026-10-28, the wave-84 diagnosis): each origin wave from 40 on - its types, lives lost, closest approach (u)
   const late = {};
   for (const [n, w] of Object.entries(r.waveStats || {})) if (+n >= 40) late[n] = { t: Object.keys(w.types).filter(x => x !== "bonus").join("+") || "boss", lost: w.lost, near: Number.isFinite(w.near) ? Math.round(w.near) : null };
-  return { trio: trio.join("+"), seed, model, wave: r.wave, won: r.won, lives: r.lives, late, kill: r.won ? null : (late[r.wave] || {}).t || null };
+  return { trio: trio.join("+"), seed, model, wave: r.wave, won: r.won, lives: r.lives, late, kill: r.won ? null : (late[r.wave] || {}).t || null, buys: (r.buys || []).map(b => [b.w, b.k, b.id, b.a, b.to]) }; // buys: [wave, kind, tower id, axis, tier] (the build-convergence check, 2026-10-28)
 }
 if (isMainThread && process.argv[1].endsWith("players3.mjs")) {
   const K = ["arc", "frz", "sol", "acd", "grv", "car", "ifr"], all = [];
