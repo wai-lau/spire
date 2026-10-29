@@ -100,7 +100,7 @@ function updateWaveList() {
   const rowOf = (n, w) => {
     WAVE_PLANS.set(n, w); // (the wave card reads it - aspira-wavecard.js)
     const boss = w.type === "bonus";
-    const hp = enemyHp(w.type, n) * (boss ? (BOSS_HP[arcanaOf(n).id] || 1) * BOSS_LANE_HP : 1);
+    const hp = enemyHp(w.type, n) * (boss ? bossHpMul(arcanaOf(n).id) * BOSS_LANE_HP * BOSS_HEFT : 1); // (a boss: its spawn's own multipliers - bossHpMul, aspira-bosses.js; the 20% of its escorts' HP it takes on is not counted)
     return { n, w, boss, hp, alive: live.get(n), cur: n === G.wave || live.has(n) }; // highlighted: every wave still ALIVE, and the current one (owner)
   };
   // after a boss, until "challenge" is tapped, the beaten boss's row goes too (owner, 2026-10-12): only the button and what is coming

@@ -47,6 +47,9 @@ const BOSS_FAR = { empress: 3.5, strength: 3.5, death: 8.4 /* x3 (owner, 2026-10
 // DEATH x0.6 of the shared boost (owner, 2026-10-16: "every winnable trio fully upgraded should beat death"): at x1 it ended
 // ARC+SOL+ACD and ARC+FRZ+ACD at wave 120; at x0.6 both won 4/4 (triodiag, with GRV_STRIP 2.5)
 const BOSS_DEATH_K = 0.6;
+// a boss's HP over its wave's bonus HP, before the lane and BOSS_HEFT - ONE formula for its spawn and the wave list's number (2026-10-28:
+// the list kept its own, without BOSS_HP_K, BOSS_DEATH_K, BOSS_FAR or BOSS_HEFT, and showed Death ~14x too low)
+const bossHpMul = id => (BOSS_HP[id] || 1) * (id === "star" ? 1 : BOSS_HP_K * (id === "death" ? BOSS_DEATH_K : 1)) * (BOSS_FAR[id] || 1);
 let BOSS_HP_K = 1.4; // waverep 2026-10-13: x1.4 brings bosses 24-108 in 16% (mean nearest 252 -> 211), x1.8 21%; still 36/36 won
 /* BOSSES CLOSER (owner, 2026-10-17: "10% closer than neighbouring waves"): Star x1.8, Empress x1.5, Strength x1.3, Chariot x3, Lovers x2, Temperance x2, Devil x1.5 - the highest every trio still beats (sim bosswave: Star 0.87, Empress 0.97 of the neighbours' closest approach; the rest stay far, a bigger HP loses the weakest trios) */ /* BOSSES CLOSER, 2nd pass (2026-10-18, SLOT_R 148, bosses x2 speed): vs the 2026-10-17 table Empress x0.9, Chariot x2, Lovers x2.5, Temperance x1.5, Devil x2, Justice x2, Judgement x1.6, Death x1.5 - 60/60 games won (bosswave sim); Strength is held by the FRZ trios */ const BOSS_HP = { star: 12 /* the duo rule over the WAY SHORTER boss lane (2026-10-27, duo0.mjs: 20 -> 19/21 clean, frz+ifr and grv+ifr leaked the Star; 15 -> 20/21; 12 -> 21/21) */ /* every PAIR of fresh towers beats it (owner, 2026-10-18: CRR+GRV lost to it at 46.08 - solo.mjs: 30 and 35 still beat ARC+ARC, ARC+CRR, CRR+CRR) */ /* was 46.08 * /* x0.8 (owner, 2026-10-15: "any pair of two towers doesn't leak on waves 1-12" - two ARCs broke through at 32) */ /* (owner, 2026-10-12: "require 2 towers or an upgrade to beat the star", SOL and ACD may solo it; solo.mjs; was 5.4) */, empress: 9.18, strength: 4.29, chariot: 20.4, lovers: 12, temperance: 3.66, devil: 2.28, justice: 12.8, judgement: 5.44, death: 4.8 }; // every one DOUBLED (owner, 2026-10-12: "double each bosses hp"; was 2.7 3.4 1.1 1.7 1.2 0.61 0.38 3.2 1.7 1.6)
 // each boss's ARMOR (x the armored enemy's growth curve at its wave, like ENEMIES.armor) and SPEED
@@ -95,7 +98,7 @@ function bossSpawn(e, n) {
   e.baseSpd = e.spd; e.broodAt = 0.8; e.sprintT = CHARIOT_EVERY;
   e.shield = e.shieldMax = (BOSS_SHIELD[e.arcana] || 0) + Math.round(BOSS_SHIELD_K * shieldsOf("shield", n).shield); e.shieldBuf = 0;
   // HP per boss: BOSS_HP (fitted, see there; the Devil's is each of six)
-  e.max *= (BOSS_HP[e.arcana] || 1) * (e.arcana === "star" ? 1 : BOSS_HP_K * (e.arcana === "death" ? BOSS_DEATH_K : 1)) * (BOSS_FAR[e.arcana] || 1); // (BOSS_HP_K: every boss but the Star; BOSS_FAR: the ones that stayed far)
+  e.max *= bossHpMul(e.arcana); // (BOSS_HP_K: every boss but the Star; BOSS_FAR: the ones that stayed far - bossHpMul, above)
   // ...and by the DISTANCE its lane makes it travel (owner): a long lane keeps
   // it under fire longer, so it gets proportionally more HP (x0.5 .. x1.6, the
   // average lane x1)

@@ -478,7 +478,9 @@ sideways offset and a head start laid across the lane at its heading, fading ins
 
 Waves 12, 24 .. 120 (`ARCANA`, each with a haiku above the title): the boss plus its fleet,
 a little shield, armor 0, a size a step bigger than the last. HP = the wave's bonus HP x
-`BOSS_HP` x `BOSS_HP_K` x `BOSS_FAR` (ARCHAEOLOGY §12).
+`bossHpMul` (`BOSS_HP` x `BOSS_HP_K` x `BOSS_FAR`, Death x `BOSS_DEATH_K`) x the lane x `BOSS_HEFT` (ARCHAEOLOGY §12); the wave list
+shows that same number. **Balance runs one way** (owner, 2026-10-28): the bosses to the towers, the towers to the waves (waves not
+counting bosses). Death's window: the strongest trio needs at least 30 of its 39 points to beat it (`trioplan`).
 
 | wave | boss | trick | escorts |
 |---|---|---|---|

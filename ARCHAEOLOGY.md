@@ -943,3 +943,14 @@ Marks measured at 9 points, waves 101-109 and 111-119 (was 6 points at 61-69); e
 
 Measured (players3, bosses skipped, snapshot a6bc1c9): perfect + rewind 29/35 (19/22 winnable), good + rewind 86/105 (53/66
 winnable), random median death wave 91. Duo rule clean 21/21.
+
+### 12.z The 6.17.0 boss pass (2026-10-28; 909491b)
+
+The rule (owner, 2026-10-28): "balance the boss to the towers, balance the towers to the waves, waves not incl bosses".
+
+| lever | change |
+|---|---|
+| Death HP | x3 (`BOSS_FAR.death` 2.8 -> 8.4); towers untouched |
+
+Points the strongest and weakest winnable trios need to beat Death (`trioplan`, beam 3, seed 1): frz+grv+ifr 18 -> 35 (it held 26
+before the 6.16.0 battery); acd+grv+car 34 -> 34 (it wins at x1, x3 and x4). Death's HP at wave 120 at x1: 0.90M.
