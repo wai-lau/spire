@@ -16,7 +16,8 @@ const V_SMALL = 3, vFits = () => true;
 // stays: the spawn timer's fallback gap, aspira-step.js)
 const FAST_PAIR = 78; // x3 (owner, 2026-10-20: "for fast waves, triple the distance between fast units"; was 26)
 // SHIELDS: a SQUARE LATTICE of four, SHIELD_W abreast, SHIELD_PITCH apart both ways (owner, 2026-10-29: "shield becomes 2x2 lattice"):
-// whole blocks of four on every lane copy (laneCount rounds up)
+// blocks of four, a lane's last block short and centred, as armor's last row (laneCount rounds a lane up by ONE unit, not a block:
+// whole blocks quadrupled the early shield waves - 6 -> 24 at wave 5, d152f97)
 const SHIELD_W = 2, SHIELD_N = 4, SHIELD_PITCH = 36; // the pitch armor's lattice has (ARMOR_PITCH)
 // THE WEAVE (owner, 2026-10-29: "increase the lane curviness ... so that it makes it really hard for SOL to hit multiple"): a formation
 // swings across its lane as it flies, FORM_WEAVE[type] = [amplitude u, wavelength u along the lane], one phase for the whole formation
@@ -50,9 +51,9 @@ const FORMS = {
     });
   } },
 };
-// a wave's count is a whole number of these (waveCount): every shield block full (SHIELD_N); the fast Vs take any count. Armor is NOT rounded (owner,
+// a wave's count is a whole number of these (waveCount): the shield blocks and the fast Vs take any count. Armor is NOT rounded (owner,
 // 2026-10-11: "having centered 1 or 2 armored in the back looks nice") - a short last row sits centred at the back
-const FORM_UNIT = { shield: SHIELD_N }, FORM_GROUP = { shield: SHIELD_N, armor: ARMOR_W, fast: 1 }; // (fast was 2 a group, shield V_N: the swap, 2026-10-29)
+const FORM_UNIT = { fast: 2 }, FORM_GROUP = { shield: SHIELD_N, armor: ARMOR_W, fast: 2 }; // fast COUNT the pairs' way still (the swap changed the shape, not the count: 2026-10-29); shield was V_N
 // how many lane copies a wave of `count` splits onto, at most `want`: shields only into whole Vs, armor into whole
 // lattice rows (the largest k <= want that divides its number of groups); everything else as asked
 // (2026-10-11: one armor block on one lane made armor free - all 36 sim games won, armor 0 lives - so armor splits
@@ -113,11 +114,10 @@ function formSplit(type, count, n) {
   const k = Math.min(want === NO_LANES ? NO_LANES - 1 : want, groups);
   return k === NO_LANES ? NO_LANES - 1 : k;
 }
-// shields ROUND UP (owner, 2026-10-12: "round up units to hit 3-5 lanes"): each lane whole blocks of four; the fast Vs round up too
-// (any count fills Vs - vFits; more bodies, never fewer: owner, 2026-10-29 "go for more bodies whenever that choice presents itself")
+// shields ROUND UP (owner, 2026-10-12: "round up units to hit 3-5 lanes"): every lane copy the same count, the last block short. The
+// fast keep the pairs' count (the generic rule below), flown as Vs - any count fills Vs (vFits); rounding up tripled the early fast waves
 const laneCount = (type, count, k) => {
-  if (type === "shield") return Math.ceil(count / (k * SHIELD_N)) * k * SHIELD_N;
-  if (type === "fast") { let per = Math.ceil(count / k); while (!vFits(per)) per++; return per * k; }
+  if (type === "shield") return Math.ceil(count / k) * k;
   if (type === "armor") return Math.ceil(count / k) * k; // rounded UP to fill every lane (a short last row sits centred)
   if (type === "swarm") return Math.max(1, Math.round(count)); // the swarm is SHARED by weight over its lanes now (swarmParts), no lane-fulls (2026-10-26)
   const unit = FORM_GROUP[type] || 1; return Math.floor(count / (k * unit)) * k * unit || count;
