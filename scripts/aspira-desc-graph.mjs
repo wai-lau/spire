@@ -32,7 +32,7 @@ const MECH = {
   sol: {
     focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${pct(V("SOL_SCORCH_TOTAL"))} of itself over ${V("SOL_SCORCH_N")[k]} ticks, the rod one burn on every enemy it sweeps, one every ${V("SOL_SCORCH_Q")}s, stacking without cap` : "no burn") + ``,
     refraction: k => `every hit splits to the ${V("SOL_SPLIT")[k]} nearest enemies further down a band ${V("SOL_BAND_W")[k]} u either side of the aim (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`,
-    breach: k => `every hit strips ${V("SOL_BREACH_ARMOR")[k]} armor (a share of what is left, x the wave's armor reference), crit x${V("SOL_CRIT_K")}`,
+    breach: k => (V("SOL_BREACH_ARMOR")[k] ? `every hit strips ${pct(V("SOL_BREACH_ARMOR")[k])} of the armor left` : "no armor strip") + `, crit x${V("SOL_CRIT_K")}`,
   },
   acd: {
     corrosion: k => (V("ACD_CORRODE")[k] ? `a tick strips ${pct(V("ACD_CORRODE")[k])} of its damage from armor (a share of what is left); eaten armor drops goo (pull ${V("ACD_DRIP_PULL")[k]})` : "no armor strip"),
@@ -42,7 +42,7 @@ const MECH = {
   // (GRV, CRR, IFR: read off the tower's stats at that tier - towerStats, one axis raised)
   grv: {
     void: k => { const s = ST("grv", "void", k); return `void starts at mass ${s.startM}, crush tick x${s.innerK} the hit${s.big ? ", heavier cap" : ""}`; },
-    supernova: k => { const s = ST("grv", "supernova", k); return s.novaN ? `${s.novaN} novas before each void, rate x${x(s.rate / ST("grv", "supernova", 0).rate)}, strip ${pct(s.strip)} of a nova's hit` : "no novas"; },
+    supernova: k => { const s = ST("grv", "supernova", k); return s.novaN ? `${s.novaN} novas before each void, rate x${x(s.rate / ST("grv", "supernova", 0).rate)}, each strips ${pct(s.strip)} of the armor left` : "no novas"; },
     radiation: k => { const s = ST("grv", "radiation", k); return (s.auraOn ? `aura x${s.accR} the void's radius, slow ${pct(s.slow)} (x2 inside${s.horizon ? ", all of it" : ""}), ` : "no aura, ") + `pellets ${x(s.pelletK)}x the hit, reach x${s.pelReach}, ${x(s.pellets)} a mass lost`; },
   },
   car: {
