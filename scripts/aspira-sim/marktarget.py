@@ -1,14 +1,13 @@
-"""THE NEAREST ZERO-SUM MARKS TABLE (owner, 2026-10-25, v7: "this needs to include getting the nearest new zero sum table / Then balancing
+"""THE NEAREST MARKS TABLE (owner, 2026-10-25, v7: "this needs to include getting the nearest new zero sum table / Then balancing
 so each tower hits those benchmarks"): from a countermx run (the same spread build and window marks.py reads), the measured raw marks
-(marks.py's double-centred leak gaps / PER_MARK, unrounded), then every integer table of marks -3..3 that keeps the marks rules:
-  - each tower's row sums to 0 and each enemy type's column sums to 0 (owner, 2026-10-23: "Col and row need to sum to 0")
+(marks.py's double-centred leak gaps / PER_MARK, unrounded), then every integer table of marks that keeps the marks rules:
+  - EVERY TYPE COLUMN IS ONE 2-CHECK, THREE 1-CHECKS, ONE DASH, ONE X, ONE XX (owner, 2026-10-29: "for each column / one 2check, 3 1check,
+    one -, one x, one xx"): the column sums to +2, so the old zero sums (owner, 2026-10-23: "Col and row need to sum to 0") are gone
+  - every tower checks two or more types (owner, 2026-10-29: "each row needs at least two checked types"; 2026-10-19: "beats or at
+    least helps" two types or more)
   - no two towers alike (owner, 2026-10-23: "no duplicates")
-  - every tower above 0 on two or more types (owner, 2026-10-19: "beats or at least helps" two types or more)
-  - EVERY TYPE COLUMN HOLDS CHECKS, A DASH AND X'S (owner, 2026-10-29: "the type columns should sum to 0 / each column needs to have
-    1/2/3 checks, a -, and 1/2/3 Xs / this is important!"): >= 1 tower checking it, >= 1 at 0, >= 1 x'd. (The stricter reading - one
-    tower each at +3 +2 +1 0 -1 -2 -3 - holds only 12 checks in all, and the two-type rule needs 14: it cannot be met)
-ranked by distance to the raw marks (sum of |target - raw|), then by cells off the measured (rounded) marks. The nearest is the v7
-benchmark the towers are balanced to (plan 3 Task 5); its ties are printed with it.
+ranked by distance to the raw marks (sum of |target - raw - COL_MEAN|: the raw marks are centred, a column's marks average +2/7),
+then by cells off the measured (rounded) marks. The nearest is the benchmark the towers are balanced to (mark-target.json).
 usage: python3 marktarget.py <countermx output> [options=5]"""
 import heapq
 import itertools
@@ -47,9 +46,11 @@ def raws_of(leak):
 
 RAW = {w: raws_of(by_win[w]) for w in WINS}
 raw = {k: [sum(RAW[w][k][i] for w in WINS) / len(WINS) for i in range(4)] for k in KINDS}  # the chapters' mean, for the print
-ROWS = [r for r in itertools.product(range(-3, 4), repeat=4) if sum(r) == 0 and sum(1 for x in r if x > 0) >= MIN_CHECKED]
+COLUMN = {2: 1, 1: 3, 0: 1, -1: 1, -2: 1}  # one type column's marks (owner, 2026-10-29)
+COL_MEAN = sum(v * n for v, n in COLUMN.items()) / sum(COLUMN.values())
+ROWS = [r for r in itertools.product(sorted(COLUMN), repeat=4) if sum(1 for x in r if x > 0) >= MIN_CHECKED]
 def dist(k, r):
-    return sum(abs(a - b) for w in WINS for a, b in zip(r, RAW[w][k]))
+    return sum(abs(a - b - COL_MEAN) for w in WINS for a, b in zip(r, RAW[w][k]))
 
 
 
@@ -78,27 +79,26 @@ def dfs(i, rows, cost, sums):
     if len(top) == N and cost + best_rest[i] > -top[0][0] + 1e-9:
         return
     if i == len(KINDS):
-        if all(s == 0 for s in sums) and all(any(r[c] > 0 for r in rows) and any(r[c] == 0 for r in rows) and any(r[c] < 0 for r in rows) for c in range(4)):
+        if all(s == COLUMN for s in sums):
             heapq.heappush(top, (-cost, rows[:]))
             if len(top) > N:
                 heapq.heappop(top)
         return
-    left = len(KINDS) - i - 1
     for r in cand[KINDS[i]]:
         c = cost + dist(KINDS[i], r)
         if len(top) == N and c + best_rest[i + 1] > -top[0][0] + 1e-9:
             break  # candidates are sorted: nothing after this row is cheaper
         if r in rows:
             continue
-        ns = [a + b for a, b in zip(sums, r)]
-        if any(abs(s) > 3 * left for s in ns):
-            continue  # the rows left cannot bring this column back to 0
+        ns = [{**c0, x: c0.get(x, 0) + 1} for c0, x in zip(sums, r)]
+        if any(c0[x] > COLUMN[x] for c0, x in zip(ns, r)):
+            continue  # that mark is used up in this column
         rows.append(r)
         dfs(i + 1, rows, c, ns)
         rows.pop()
 
 
-dfs(0, [], 0.0, [0, 0, 0, 0])
+dfs(0, [], 0.0, [{}, {}, {}, {}])
 # the MEASURED marks (marks.py's rounding, the ones on the build card now): what a balance job moves a tower off
 out = subprocess.run([sys.executable, str(pathlib.Path(__file__).with_name("marks.py")), sys.argv[1]], capture_output=True, text=True).stdout
 meas = json.loads([ln for ln in out.splitlines() if ln.startswith("{")][-1])
