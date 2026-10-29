@@ -29,9 +29,16 @@ function warpRender() {
     if (key !== warp.statKey || (sig !== warp.statSig && now - (warp.statAt || 0) >= WARP_STAT_MS)) {
       /* why this redraw (logged with the upload): the size or palette, the wave, the boss sky, the lit lanes, or only a lane fading in */
       { const p = (warp.statSig || "").split("|"), c = sig.split("|"); warp.statWhy = key !== warp.statKey ? "key" : p[0] !== c[0] ? "wave" : p[1] !== c[1] ? "sky" : p[2] !== c[2] ? "lanes" : "fade"; }
-      warp.statKey = key; warp.statSig = sig; warp.statAt = now; warp.statNew = true;
+      const bossOnly = key === warp.statKey && !!warp.statSig && warp.statSig.slice(0, warp.statSig.lastIndexOf("|")) === sig.slice(0, sig.lastIndexOf("|")); // (only the boss bar's HP moved: bossBoardSig is the last part)
+      const pending = warp.statNew; warp.statKey = key; warp.statSig = sig; warp.statAt = now; warp.statNew = true;
       ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); ctx.save(); drawSceneBase(); ctx.restore();
-      if (bossBarOnBoard()) warpBossBarBoard(); // the boss's HP bar, settled: on the board, under every tower FX (below)
+      const moved = bossBarOnBoard() ? warpBossBarBoard() : null; // the boss's HP bar, settled: on the board, under every tower FX (below)
+      // ...and when that is ALL that changed, only its strip goes up (warpLayersBind); a pending whole upload stays whole
+      if (bossOnly && moved && !(pending && !warp.statRect)) {
+        warp.statWhy = "boss";
+        const r = { x: Math.max(0, Math.floor(moved.x0 * cam.k + cam.ox)), y: Math.max(0, Math.floor(moved.y0 * cam.k + cam.oy)) }; r.w = Math.max(0, Math.min(S, Math.ceil(moved.x1 * cam.k + cam.ox)) - r.x); r.h = Math.max(0, Math.min(S, Math.ceil(moved.y1 * cam.k + cam.oy)) - r.y);
+        const R = pending && warp.statRect; warp.statRect = !R ? r : (x => ({ x, y: Math.min(R.y, r.y), w: Math.max(R.x + R.w, r.x + r.w) - x, h: Math.max(R.y + R.h, r.y + r.h) - Math.min(R.y, r.y) }))(Math.min(R.x, r.x));
+      } else warp.statRect = null;
     }
     warp.texCam = { ...cam };
     const D = Math.max(64, Math.round(S * WARP_DYN_K)), d = warp.dynCv ||= document.createElement("canvas");
@@ -76,6 +83,23 @@ function warpBossBarBoard() {
   const wp = warpProject, ws = warpProjectScratch, inv = inverted, flat = (x, y) => ({ x: x * cam.k + cam.ox, y: y * cam.k + cam.oy, s: 1 });
   warpProject = flat; warpProjectScratch = flat; warpBossBarFlat = true; if (skyPal()) inverted = true;
   ctx.save(); try { drawBossBarFloor(); } finally { ctx.restore(); warpProject = wp; warpProjectScratch = ws; warpBossBarFlat = false; inverted = inv; }
+  return bossBarMoved();
+}
+// THE STRIP THE HP CROSSED (perf, 2026-10-28: a settled bar draining re-sent the WHOLE board - 2048 px a side on a phone - on every
+// other frame of a boss fight): the world box round the pieces between where the board last drew each lane's HP and where it is now,
+// BOARD_DIRTY_PAD round it (outlines, labels); null when it cannot be told (a new boss, a first draw) - send it all
+const BOARD_DIRTY_PAD = 30;
+function bossBarMoved() {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, all = false;
+  for (const { e, f } of barLeadSet) {
+    const B = e.bar; if (!B || !B.pieces) { all = true; continue; }
+    const hp = bossSpan(e, f).hp, was = B.boardHp; B.boardHp = hp;
+    if (was == null) { all = true; continue; }
+    const lo = Math.min(was, hp), hi = Math.max(was, hp);
+    for (const g of B.pieces) if (g.s1 >= lo && g.s0 <= hi) for (const q of g.Lp.concat(g.Rp)) { if (q.x < x0) x0 = q.x; if (q.x > x1) x1 = q.x; if (q.y < y0) y0 = q.y; if (q.y > y1) y1 = q.y; }
+  }
+  if (all) return null;
+  return x0 > x1 ? { x0: 0, y0: 0, x1: 0, y1: 0 } : { x0: x0 - BOARD_DIRTY_PAD, y0: y0 - BOARD_DIRTY_PAD, x1: x1 + BOARD_DIRTY_PAD, y1: y1 + BOARD_DIRTY_PAD }; // (nothing crossed: an empty strip)
 }
 // both layers onto their texture units for the bell (warpDraw): the board sent up only when it was redrawn
 function warpLayersBind(gl, u) {
@@ -85,7 +109,7 @@ function warpLayersBind(gl, u) {
   }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, warp.tex);
   if (warp.bmp) { /* the snapshot resolved off the frame: only this upload is left, from decoded pixels */
-    const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.bmp); const ms = performance.now() - t0;
+    const t0 = performance.now(), R = warp.bmpRect; if (R) gl.texSubImage2D(gl.TEXTURE_2D, 0, R.x, R.y, gl.RGBA, gl.UNSIGNED_BYTE, warp.bmp); else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.bmp); warp.statSize = warp.bmp.width; } const ms = performance.now() - t0; // (R: the boss bar's strip alone)
     warp.bmp.close(); warp.bmp = null; warp.boardLanes = warp.bmpLanes; // (the lanes in that board are on the GPU now: laneSplit)
     if (typeof perfBoardUp === "function") perfBoardUp("bmp", ms);
   }
@@ -94,10 +118,15 @@ function warpLayersBind(gl, u) {
   if (bmpOk) {
     if (warp.statNew && !warp.bmpP) {
       warp.bmpP = performance.now(); warp.statNew = false; warp.bmpLanes = warp.statLanes;
-      createImageBitmap(cv).then(b => { if (typeof perfBoardUp === "function") perfBoardUp("bmpWait", performance.now() - warp.bmpP); warp.bmpP = 0; warp.bmp = b; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
+      const R = warp.statRect && warp.statSize === cv.width ? warp.statRect : null; warp.statRect = null; // (the strip alone - over a texture already the board's size)
+      if (R && !(R.w > 0 && R.h > 0)) { warp.bmpP = 0; } else
+      (R ? createImageBitmap(cv, R.x, R.y, R.w, R.h) : createImageBitmap(cv)).then(b => { if (typeof perfBoardUp === "function") perfBoardUp("bmpWait", performance.now() - warp.bmpP); warp.bmpP = 0; warp.bmp = b; warp.bmpRect = R; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
     }
   } else if (warp.statNew || warp.statUp !== warp.tex) {
-    const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); const ms = performance.now() - t0; warp.statNew = false; warp.statUp = warp.tex; warp.boardLanes = warp.statLanes;
+    const R = warp.statNew && warp.statUp === warp.tex && warp.statSize === cv.width ? warp.statRect : null, t0 = performance.now(); warp.statRect = null;
+    if (R) { if (R.w > 0 && R.h > 0) { const c = warp.stripCv ||= document.createElement("canvas"); if (c.width !== R.w || c.height !== R.h) { c.width = R.w; c.height = R.h; } const x = c.getContext("2d"); x.clearRect(0, 0, R.w, R.h); x.drawImage(cv, R.x, R.y, R.w, R.h, 0, 0, R.w, R.h); gl.texSubImage2D(gl.TEXTURE_2D, 0, R.x, R.y, gl.RGBA, gl.UNSIGNED_BYTE, c); } /* (a canvas the strip's size: no pixel readback) */ } // the boss bar's strip alone
+    else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); warp.statSize = cv.width; }
+    const ms = performance.now() - t0; warp.statNew = false; warp.statUp = warp.tex; warp.boardLanes = warp.statLanes;
     if (typeof perfBoardUp === "function") perfBoardUp(warp.statWhy || "first", ms);
     /* an Apple GPU blocks ~40 ms in this call (slow logs, iPhone: 98% of the frames after one were over 40 ms): such a device (3 uploads over 20 ms) redraws and resends the board a quarter as often */
     if (ms > 20 && ++warpUpSlow >= 3) WARP_STAT_MS = 600;
