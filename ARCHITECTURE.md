@@ -213,7 +213,7 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 | Moons | weaker copies of the aura orbiting the tower (separate slow sources, so they multiply), with moonlets from the third buy |
 
 **SOL** - one beam a shot, fixed where it struck; an enemy is struck once a shot. Armor cuts it like any other tower.
-**Weakness: swarms** (only what is on its line). The code: `web/aspira-sol.js`; how it got here: ARCHAEOLOGY §4.
+Its checks and weak spots are measured, not designed: the build card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-sol.js`; how it got here: ARCHAEOLOGY §4.
 
 | part | principle |
 |---|---|
@@ -233,15 +233,15 @@ slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pop
 | Diffraction (id `refraction`) | the band (`SOL_BAND_W`), the splits a hit (`SOL_SPLIT`, none at tier 0) and the carry (`SOL_HOP`) |
 | Breach | the armor a hit strips (`SOL_BREACH_ARMOR`, none at tier 0) and the parallel beams (`SOL_PAR_N`) |
 
-**ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; a jet
-resets when its enemy dies or leaves (no carry at the base), jets never share an enemy;
-pools from the start. **Weakness: fast and shields** (a bare ACD is a tank killer).
+**ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; jets never share an enemy; a jet resets
+when its enemy dies or leaves, unless Flow carries its ramp on. Tier 0 is one jet and no pools. Its checks and weak spots: the build
+card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got here: ARCHAEOLOGY §4.
 
 | axis | buys |
 |---|---|
-| Corrosion | a tick multiplies a share off the armor (`shredArmor`, never below 0; jets only); eaten armor drips as **goo** that homes on the next enemy, strips twice its value and burns |
-| Flow (id `spray`) | more jets; a jet keeps its ramp when its enemy dies **or escapes** (the fast answer); its POOLS turn slimy and slow (`ACD_FLOW_SLOW`, on the pools since 2026-10-22, was on the jets); range |
-| Contagion | bigger, longer, hotter, more frequent pools; from the first buy ANYTHING ACD kills leaves a full pool (2026-10-22; without it, kills leave none - the jets' drips only); slide |
+| Corrosion | a tick multiplies a share of its damage off the armor (`shredArmor`, never below 0; the jets only); eaten armor drips as **goo** that homes on the next enemy, strips more armor and burns as much |
+| Flow (id `spray`) | more jets (`ACD_LINES`); a jet keeps part of its ramp when its enemy dies **or escapes** (`ACD_FLOW_CARRY`, the fast answer); range |
+| Contagion | the jets drip slimy acid pools that slow (`ACD_POOL_SLOW`) and burn - bigger, longer and more often by tier; a kill leaves no pool; slide |
 
 ### 4.5 Rules every axis obeys
 

@@ -261,6 +261,10 @@ perfect play and interest; `eco.mjs` found ARC+FRZ+ACD owning 109-287% of a max 
   `SOL_PAR_SHOW` 0.85 to the eye, "fainter, just a lil"). The flying-on beams were drawn only to the play box until 6.15.44 (owner:
   "SOL pierce should go all the way to the end of the screen, it is stopping early"); 6.15.9 had clipped them there to stop a far end
   behind the 3D camera flipping back past the tower.
+- ACD as it stood in ARCHITECTURE §4.4 before 6.17.4: "pools from the start", Flow's pools slimy and slowing (`ACD_FLOW_SLOW`, moved
+  from the jets to the pools 2026-10-22: "move slow from jets to pools"), and from Contagion I anything ACD killed leaving a full pool
+  (2026-10-22). The tier redesign (2026-10-24) moved all of it: tier 0 one jet, no pools; the pools and their slow are Contagion's
+  (Contagion I "Ray leaves slowing pool"); kill pools gone ("get rid of kill pools"). The doc had kept the older version until 6.17.4.
 
 ### 4.5 Upgrading: UI history
 Two clicks (select, then confirm) -> the chooser (cards, one per option) -> chart axes DRAGGED on the
