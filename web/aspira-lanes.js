@@ -171,12 +171,39 @@ function strokeSoft(dst, list, key, prof, alphaOf, wk, cap) {
   const { c, x } = laneScratch, W = Math.ceil(cv.width / LANE_SOFT_DS), H = Math.ceil(cv.height / LANE_SOFT_DS);
   if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
   for (const us of groups.values()) for (const [lw, la] of prof) {
-    x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, W, H);
+    const b = laneBox(us, lw * wk(us[0]), W, H); if (!b) continue; // (no pixel of these lanes inside the mask on this canvas)
+    x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = "source-over"; x.clearRect(b.x, b.y, b.w, b.h);
+    x.save(); x.beginPath(); x.rect(b.x, b.y, b.w, b.h); x.clip();
     x.setTransform(cam.k / LANE_SOFT_DS, 0, 0, cam.k / LANE_SOFT_DS, cam.ox / LANE_SOFT_DS, cam.oy / LANE_SOFT_DS); x.lineJoin = "round";
     x.strokeStyle = COL[us[0].color]; x.lineWidth = lw * wk(us[0]); x.lineCap = cap;
     for (const u of us) { x.save(); x.translate(CX, CY); x.rotate(u.ang); x.translate(-CX, -CY); x.stroke(PATHS[u.pi][key]); x.restore(); }
-    dst.save(); dst.setTransform(1, 0, 0, 1, 0, 0); dst.globalAlpha = Math.min(1, alphaOf(us[0]) * la); dst.drawImage(c, 0, 0, W * LANE_SOFT_DS, H * LANE_SOFT_DS); dst.restore();
+    x.restore();
+    const D = LANE_SOFT_DS; dst.save(); dst.setTransform(1, 0, 0, 1, 0, 0); dst.globalAlpha = Math.min(1, alphaOf(us[0]) * la); dst.drawImage(c, b.x, b.y, b.w, b.h, b.x * D, b.y * D, b.w * D, b.h * D); dst.restore();
   }
+}
+// THE BOX A LEVEL TOUCHES (perf, 2026-10-30: the phone's 100-700 ms spikes were lane rebuilds - each level cleared and copied the WHOLE
+// 2048-px board, 9 levels a lane colour, twice a wave): the lanes' points (rotated, + the core every path ends on) padded by half the
+// stroke and 2 px of antialiasing, cut to the square round the R0 disk - both masks are nothing past R0 (laneMask), so nothing outside
+// it survives - and to the canvas; in scratch px, null when empty. The same picture: outside the box the old full copy laid only what
+// the mask then erased
+const laneBoxW = new Map(); // "pi:ang" -> the world box of that lane's points
+function laneBox(us, lw, W, H) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const u of us) {
+    const kk = u.pi + ":" + u.ang;
+    let B = laneBoxW.get(kk);
+    if (!B) {
+      const c = Math.cos(u.ang), s = Math.sin(u.ang); B = [CX, CY, CX, CY];
+      for (const p of PATHS[u.pi].pts) { const dx = p.x - CX, dy = p.y - CY, X = CX + dx * c - dy * s, Y = CY + dx * s + dy * c; if (X < B[0]) B[0] = X; if (Y < B[1]) B[1] = Y; if (X > B[2]) B[2] = X; if (Y > B[3]) B[3] = Y; }
+      laneBoxW.set(kk, B);
+    }
+    x0 = Math.min(x0, B[0]); y0 = Math.min(y0, B[1]); x1 = Math.max(x1, B[2]); y1 = Math.max(y1, B[3]);
+  }
+  const p = lw / 2;
+  x0 = Math.max(x0 - p, CX - R0); y0 = Math.max(y0 - p, CY - R0); x1 = Math.min(x1 + p, CX + R0); y1 = Math.min(y1 + p, CY + R0);
+  const k = cam.k / LANE_SOFT_DS, ox = cam.ox / LANE_SOFT_DS, oy = cam.oy / LANE_SOFT_DS;
+  const X0 = Math.max(0, Math.floor(x0 * k + ox) - 2), Y0 = Math.max(0, Math.floor(y0 * k + oy) - 2), X1 = Math.min(W, Math.ceil(x1 * k + ox) + 2), Y1 = Math.min(H, Math.ceil(y1 * k + oy) + 2);
+  return X1 > X0 && Y1 > Y0 ? { x: X0, y: Y0, w: X1 - X0, h: Y1 - Y0 } : null;
 }
 function strokeLit(lctx, gctx, list) { // each lane IN USE lit in its rider's colour, at u.a, onto the line and glow layers (unmasked)
   // a wide GLOW that grows in intensity toward the core (owner), on its own layer with a much steeper fade outward (owner: "stronger
