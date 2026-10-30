@@ -58,3 +58,38 @@ function drawBurnSparks(e, size, vis) {
   }
   ctx.strokeStyle = COL[TOWERS.arc.color]; ctx.globalAlpha = 0.9 * vis; ctx.lineWidth = BURN_W; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(p);
 }
+// THE CHARGE-UP (owner, 2026-10-30: ARC marks the spot its target stands on and strikes there a moment later, the enemy nearest it within
+// the strike's reach, else it misses): each G.arcStrikes entry ({ id, x, y, t s left, r }, aspira-skills.js) draws a small glow on its
+// spot that grows to the strike - a bright core and a soft halo - with a faint ring closing from its reach onto the spot; an entry that
+// goes with no strike from its tower (no fresh ARC beam from it) leaves a FIZZLE: a few sparks thrown off the spot, fading over
+// FIZZLE_S. Seen per frame (chargeSeen), so a strike born and gone between two frames shows nothing. Full circles and straight
+// strokes only: in 3D the moving layer's stand-in sends them to the GPU (glCtx, aspira-glctx.js)
+const CHARGE_CORE = [0.8, 2.4], CHARGE_HALO = [2, 7], CHARGE_RING_W = 0.8, FIZZLE_S = 0.35, FIZZLE_N = 6, FIZZLE_LEN = 10;
+const chargeSeen = new Map(), fizzles = [];
+function drawArcCharges() {
+  const q = typeof G !== "undefined" && G.arcStrikes || [], now = performance.now() / 1000, col = COL[TOWERS.arc.color], live = new Set(q);
+  for (const [s, { at }] of chargeSeen) if (!live.has(s)) { // gone since the last frame: struck, or a miss
+    chargeSeen.delete(s);
+    const tw = G.towers.find(t => t.id === s.id), hit = tw && fx.some(f => f.k === "beam" && f.soft && f.a === tw && f.t < 0.2);
+    if (!hit && tw && now - at < 5) fizzles.push({ x: s.x, y: s.y, at: now, id: s.id + s.x });
+  }
+  for (const s of q) {
+    if (!chargeSeen.has(s)) chargeSeen.set(s, { at: now, t0: typeof ARC_CHARGE_S === "number" ? ARC_CHARGE_S : s.t }); // (nothing written on the game's entry)
+    const t0 = chargeSeen.get(s).t0, p = Math.min(1, Math.max(0, 1 - s.t / (t0 || 1)));
+    ctx.fillStyle = col;
+    ctx.globalAlpha = 0.15 + 0.25 * p; ctx.beginPath(); ctx.arc(s.x, s.y, CHARGE_HALO[0] + (CHARGE_HALO[1] - CHARGE_HALO[0]) * p, 0, 6.283); ctx.fill();
+    ctx.globalAlpha = 0.5 + 0.5 * p; ctx.beginPath(); ctx.arc(s.x, s.y, CHARGE_CORE[0] + (CHARGE_CORE[1] - CHARGE_CORE[0]) * p, 0, 6.283); ctx.fill();
+    if (s.r > CHARGE_HALO[1]) { ctx.strokeStyle = col; ctx.lineWidth = CHARGE_RING_W; ctx.globalAlpha = 0.5 * p; ctx.beginPath(); ctx.arc(s.x, s.y, CHARGE_HALO[1] + (s.r - CHARGE_HALO[1]) * (1 - p), 0, 6.283); ctx.stroke(); }
+  }
+  for (let i = fizzles.length - 1; i >= 0; i--) {
+    const z = fizzles[i], k = (now - z.at) / FIZZLE_S; if (k >= 1 || k < 0) { fizzles.splice(i, 1); continue; }
+    ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.lineCap = "round"; ctx.globalAlpha = 0.9 * (1 - k); ctx.beginPath();
+    for (let j = 0; j < FIZZLE_N; j++) {
+      const a = scorchHash(z.id, j) * 6.283, r0 = 1 + FIZZLE_LEN * k, r1 = r0 + FIZZLE_LEN * 0.5 * (1 - k);
+      ctx.moveTo(z.x + Math.cos(a) * r0, z.y + Math.sin(a) * r0); ctx.lineTo(z.x + Math.cos(a) * r1, z.y + Math.sin(a) * r1);
+    }
+    ctx.stroke();
+    ctx.fillStyle = col; ctx.globalAlpha = 0.6 * (1 - k); ctx.beginPath(); ctx.arc(z.x, z.y, CHARGE_CORE[1] * (1 - k), 0, 6.283); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
