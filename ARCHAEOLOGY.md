@@ -1068,3 +1068,13 @@ the boss to the towers, balance the towers to the waves, waves not incl bosses".
 "because you need to buy upgrades" (an economy pass), a cadence sweep, and every armor strip a % of the current armor, not a flat
 amount.
 
+### 12.v Dated notes moved out of ARCHITECTURE.md (2026-10-30, 6.18.37)
+
+ARCHITECTURE.md keeps principles and tables; these dated notes left it, each under the section it came from:
+
+- §4.7 Orbital Relay: the multiplier read "3x" per kind, `RELAY_MUL` 5 since 2026-10-18 (and CRR under its old id ATC); the row now says x`RELAY_MUL` and names what each kind multiplies (`relayStats`, aspira-core.js, IFR included).
+- §5.2 counts: EARLY came in on 2026-10-15.
+- §5.3 spawning: shield pods spawned at half the others' gap from 2026-10-20 (`SHIELD_POD_GAP` 0.4 a member, was 0.8).
+- §5.3 formations before the 2026-10-29 swap: fast flew side-by-side pairs spinning flat about their midpoint (spread x3 on 2026-10-20, `FAST_PAIR` 78); shields flew Vs of 5, then 3, then singles (units 3x apart on 2026-10-20, a third again on 2026-10-21); armor's lattice was 72 u apart (x2 on 2026-10-20 - 216 for an hour put its outer columns out of every tower's reach - halved back to 36 on 2026-10-23). Since the swap the fast fly the Vs and the shields the 2x2 blocks.
+- §10.4 balance rules: the duo rule (2026-10-22) replaced "a lone L1 tower clears 1-11, losing at most 3" (2026-10-20).
+- §9.1 corrections: the first ones, JUU 84 -> 78 and SMD 49 -> 43 (2026-10-16) - before 4.4.14 the Lovers' pair paid wave 50's +6 lives once a body.

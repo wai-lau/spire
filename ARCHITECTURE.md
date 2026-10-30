@@ -371,7 +371,7 @@ strength (`CORE_GRANTS`); the pick flow is dormant. Buttons above the title
 | Power | Granted | Use | Effect | Rules |
 |---|---|---|---|---|
 | **Temporal Drive** | 2nd boss (wave 24) | hold the core, or the button | every enemy stops dead (a 100% slow, `core:time`) for 6 game s; cooldown 3 waves | holds the wave clock and spawns; needs a live board and ends when it empties; Strength ignores it; stacks with the Relay (either fires while the other runs) |
-| **Orbital Relay** | 4th boss (wave 48) | the button then a tower, or drag the core onto one | that tower acts as five (`RELAY_MUL`, `relayStats`: ARC 3x attacks, SOL 3x locks, ACD 3x jets, FRZ 3x moons and tick, GRV 3x the nova rate, ATC 3x the wing - x`RELAY_MUL` 5 since 2026-10-18) for 10 s (`EFFECT_MAX_S`); cooldown 4 waves | **stays on that tower**; arming pauses the game |
+| **Orbital Relay** | 4th boss (wave 48) | the button then a tower, or drag the core onto one | that tower acts as five (`RELAY_MUL`, `relayStats`: x`RELAY_MUL` each: ARC its attacks, SOL its targets, ACD its jets, FRZ its moons, targets and tick, GRV its rate, CRR its wing, IFR its charge and rate) for 10 s (`EFFECT_MAX_S`); cooldown 4 waves | **stays on that tower**; arming pauses the game |
 
 ### 4.8 Dormant code (kept on purpose; nothing reaches it)
 
@@ -425,21 +425,21 @@ cycle was 10 when they were tuned); `WAVE_COUNT_MUL` keys are real waves.
 | speed | an S-curve over waves 12..84 (`speedGrow`), a slow ramp after; every enemy +0.2% a wave past 49 (`speedRamp`) |
 | shields / armor | charges a steep curve to a small power (`SHIELD_EXP`), HP compensating; armor the HP curve to a power (`ARMOR_EXP`), then tracking HP growth past 49 |
 | late traits (49+) | swarms bring more bodies, fast run faster; **hybrids** from 97: swarms carry a little shield, fast a little armor (outline in that type's colour) |
-| counts | a base of `10 + eqWave/2`, swarm x6, all /2, x `WAVE_COUNT_MUL` (waves 1-11 hand-tuned so one L1 tower clears them) x `TYPE_COUNT_MUL`; swarms double from eq 11 and again over eq 11-60; a swarm WAVE never under `SWARM_WAVE_MIN` 12; rounded to whole formations. EARLY (2026-10-15): /`EARLY_X` 4 the bodies at x4 HP and x4 bounty through wave 24, easing to x1 by 36 (`earlyX`, `earlyHpX` - a wave the formations round back up gets that much less HP each); bosses untouched |
+| counts | a base of `10 + eqWave/2`, swarm x6, all /2, x `WAVE_COUNT_MUL` (waves 1-11 hand-tuned so one L1 tower clears them) x `TYPE_COUNT_MUL`; swarms double from eq 11 and again over eq 11-60; a swarm WAVE never under `SWARM_WAVE_MIN` 12; rounded to whole formations. EARLY: /`EARLY_X` 4 the bodies at x4 HP and x4 bounty through wave 24, easing to x1 by 36 (`earlyX`, `earlyHpX` - a wave the formations round back up gets that much less HP each); bosses untouched |
 | order | swarm, shield, armor, fast on waves 1-4; from 5 a type by hash, never the same as the wave before |
 
 ### 5.3 Spawning and formations
 
-Each lane copy spawns in order (swarm bodies close together, shield pods half the others' gap (2026-10-20), other types 0.8 s apart,
-formations at once); a boss arrives 2 s into its wave with its voice line. A formation is a
+Each lane copy spawns in order (swarm bodies close together, fast Vs `FAST_PAIR` apart, shield blocks `SHIELD_POD_GAP` a member,
+armor's lattice at once); a boss arrives 2 s into its wave with its voice line. A formation is a
 sideways offset and a head start laid across the lane at its heading, fading inside
 `FORM_FADE_R` of the core.
 
 | type | formation |
 |---|---|
-| fast | side-by-side pairs, **spinning flat about their midpoint**; pairs spread 3x (2026-10-20) |
-| shield | Vs of 5, then a V of 3, then singles; counts round up to fill lanes; a V's units 3x as far apart as before (2026-10-20) |
-| armor | one lattice 3 abreast, units 72 u apart both ways (x2 on 2026-10-20 - 216 put its outer columns out of every tower's reach; a boss's armor fleet keeps the old 36), a short last row centred; always whole rows over 2 lanes |
+| fast | **Vs** of 5 (`V_N`: a leader, then pairs fanned back and out), then a V of 3, then singles - any count fits; the V **weaves** across its lane as it flies (`FORM_WEAVE`) (owner, 2026-10-29, the swap with the shields: "so that it makes it really hard for SOL to hit multiple") |
+| shield | **2x2 square blocks** (`SHIELD_W` abreast, `SHIELD_N` a block, `SHIELD_PITCH` apart both ways); a lane's last block short and centred (owner, 2026-10-29: "shield becomes 2x2 lattice") |
+| armor | one square lattice `ARMOR_W` 3 abreast, `ARMOR_PITCH` apart both ways (a boss's armor fleet `ARMOR_FLEET_PITCH`), a short last row centred; always whole rows over the lane copies |
 | swarm | none: a wander (`e.jit`) that funnels in near the core |
 
 ### 5.4 Bosses
@@ -638,7 +638,7 @@ has a voice line.
 | the owner's games | hidden from guests before `OWNER_SHOWN_FROM` (2026-10-14; the `owner` flag + `spire_ascendants_owner.json`), shown after; `python spire_board.py mark-owner <keep...>` names the rest as the owner's without touching the journal |
 | hidden games | `spire_ascendants_hidden.json`, `[ts, initials]` pairs: games off the board for EVERYONE, the owner included; `python spire_board.py hide <initials...>` hides every game so far under those initials (later ones still show); the journal keeps them |
 | version | a post carries `ver` (the page's `.asp-ver`, kept when it is `N.N[.N]`); the board's faint last column. Rows from before 2026-10-16 got theirs through the corrections file: the version file at the post time, else that day's changelog version |
-| corrections | `spire_ascendants_fix.json`, `[ts, initials, {field: value}]` rows applied by `visible()`; `python spire_board.py fix <ts> <initials> lives=<n>` - e.g. JUU 84 -> 78 and SMD 49 -> 43 (2026-10-16): before 4.4.14 the Lovers' pair paid wave 50's +6 lives once a body |
+| corrections | `spire_ascendants_fix.json`, `[ts, initials, {field: value}]` rows applied by `visible()`; `python spire_board.py fix <ts> <initials> lives=<n>` |
 
 ### 9.2 Slow logs (`spire_perflog.py`, `aspira-perflog.js`)
 
@@ -744,7 +744,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 
 | Balance rule the owner set (keep when changing numbers) | Checked by |
 |---|---|
-| any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22; replaced "a lone L1 tower clears 1-11, losing at most 3", 2026-10-20) | `solo` (its duo table) |
+| any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22) | `solo` (its duo table) |
 | an ordinary type's count and HP never drop from one of its waves to the next (owner, 2026-10-22: "types should never get weaker along any axis") | `planCount`, `enemyHp` (aspira-waves.js) |
 | every trio of kinds is winnable except the designed deaths (§4.6d) (no kind required) | `trios`, `tribal` |
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |
