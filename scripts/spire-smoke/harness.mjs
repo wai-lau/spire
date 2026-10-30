@@ -1,5 +1,5 @@
 // /spire smoke HARNESS (split from smoke.mjs, tier redesign 2026-10-24): boot the page's scripts into a node vm, register
-// checks, report. smoke.mjs and tiers.mjs both register here; smoke.mjs reports once all are in.
+// checks, report. smoke.mjs, tiers.mjs, ifr.mjs and waves.mjs all register here; smoke.mjs reports once all are in.
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
