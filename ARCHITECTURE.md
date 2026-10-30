@@ -254,6 +254,8 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got her
 
 ### 4.6 The counter matrix (pillar 6)
 
+**OLD - the design matrix below is superseded** (owner, 2026-10-29: "ignore all designs except mark"; "delete all other mark plans, or mark them OLD"): the towers are balanced to the mark target, `scripts/aspira-sim/mark-target.json` (§7.2 has its rows), and the table is kept only for its levers.
+
 | enemy \ tower | ARC | FRZ | SOL | ACD | GRV | CRR | the lever |
 |---|---|---|---|---|---|---|---|
 | **swarm** | MAIN | help | weak (one lock) | help | MAIN | weak (one target a volley) | branching hits; bursts; a void that feeds on a crowd |
@@ -261,9 +263,8 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got her
 | **armor** | weak (grounds the arc) | help | MAIN | help | MAIN | weak (small bolts) | strip multiplies armor down (never below 0); armor scales with HP |
 | **shield** | help | weak (no slow) | help | MAIN | weak (the slow skips them) | MAIN | pops a hit: ACD one a tick, SOL by Focus, CRR one a bolt |
 
-The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds (swarm `[arc, grv]`,
-fast `[frz, crr]`, armor `[sol, grv]`, shield `[acd, crr]`) and a `help` list of two (swarm `[frz, acd]`, fast `[arc, sol]`,
-armor `[acd, frz]`, shield `[arc, sol]`). The build card derives from it: `GOOD_VS` / `HELPS_VS` (SOL and ACD add bosses,
+The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds and a `help` list of two, DERIVED FROM THE MARK TARGET (main = a +2, help = a +1;
+swarm `[frz, ifr]` / `[acd, grv]`, fast `[frz, crr]` / `[arc, grv]`, armor `[arc, sol]` / `[acd, grv]`, shield `[crr, ifr]` / `[sol, acd]`). The build card derives from it: `GOOD_VS` / `HELPS_VS` (SOL and ACD add bosses,
 `BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 since 6.16.0 - CLAUDE.md has the command), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
 measures it.
 
@@ -542,7 +543,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 
 | Gesture | Result |
 |---|---|
-| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel; building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`) come from a `countermx` run (waves 61-69, 6 points spread - at 8 most leaks hit 0% and FRZ/SOL tied), so they follow the matrix (§4.6): each type's leak is taken against the SIX-TOWER mean for that type, then against the tower's own mean - a table whose every row AND column sums to 0 - scaled to one mark per 20 points and rounded so the sums stay 0 (owner, 2026-10-23: "Col and row need to sum to 0"; dashes fine, no fixed count); two towers with the same marks are flagged (`marks.py`). THE BALANCE TARGET is `scripts/aspira-sim/mark-target.json` (owner, 2026-10-29, "very important"): every type column ✓✓ ✓ ✓ ✓ – ✗✗ ✗✗✗, rows and columns sum to 0, every tower two checked types or more - ARC ✓✓ ✗✗ ✗✗ ✓✓, FRZ ✗✗✗ ✓✓ – ✓, SOL ✓ ✗✗✗ ✓ ✓, ACD ✗✗ ✓ ✓ –, GRV ✓ ✓ ✗✗✗ ✓, CRR – ✓ ✓ ✗✗, IFR ✓ – ✓✓ ✗✗✗ (swarm fast shield armor); `marktarget.py` finds the nearest such table to the measured marks, and balance moves the towers to it |
+| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel; building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 - CLAUDE.md has the command), so they follow the matrix (§4.6): each type's leak is taken against the SEVEN-TOWER mean for that type, then against the tower's own mean - a table whose every row AND column sums to 0 - scaled to one mark per 20 points and rounded so the sums stay 0 (owner, 2026-10-23: "Col and row need to sum to 0"; dashes fine, no fixed count); two towers with the same marks are flagged (`marks.py`). THE BALANCE TARGET is `scripts/aspira-sim/mark-target.json` (owner, 2026-10-29: "save super important! priority #1"; the file is the truth, this copy follows it): every type column +2 +2 +1 +1 -1 -2 -3, rows and columns sum to 0, every tower two checked types or more - swarm fast shield armor: ARC -2 +1 -1 +2, FRZ +2 +2 -2 -2, SOL -1 -2 +1 +2, ACD +1 -3 +1 +1, GRV +1 +1 -3 +1, CRR -3 +2 +2 -1, IFR +2 -1 +2 -3 (every other mark table is OLD); `marktarget.py` finds the nearest such table to the measured marks, and balance moves the towers to it |
 | tap a tower, its home slot, or the core | its card |
 | a press moving under `DRAG_PX` | a tap; more on a tower = a move (§4.3) |
 | unaffordable | tappable but dimmed (`.poor`): a tap shakes it and says "need Nc more" |
