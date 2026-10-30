@@ -192,6 +192,7 @@ function fxGlFx(f, k, a) {
 // a BEAM: each stroke of drawFx's, widest glow first, as round-ended segments (one per beam of a multi-beam shot)
 function fxGlBeam(f, a) {
   if (f.slim && fxGl.skyOwn) { fxGlSkyOff(() => fxGlBeam(f, a)); return; } // SOL's beam: always inverted on the sky (owner's example)
+  if (f.soft && ARC_CHAINS) { fxGlChain(f, f.fadeA ?? a); return; } // ARC: a chain of links (aspira-chains.js)
   const x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, segs = [];
   if (f.beams > 1) {
     const len = Math.hypot(x2 - x1, y2 - y1) || 1, px = -(y2 - y1) / len, py = (x2 - x1) / len;

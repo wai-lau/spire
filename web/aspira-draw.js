@@ -337,6 +337,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
       const x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2;
       const pt = (x, y) => (map ? map(x, y) : { x, y, s: 1 }), B = pt(x2, y2), ws = map ? cam.k * (pt(x1, y1).s + B.s) / 2 : 1;
       if (map) ctx.setTransform(1, 0, 0, 1, 0, 0); // device px: the ends are already projected
+      if (f.soft && ARC_CHAINS) { ctx.globalAlpha = Math.min(1, k * 2); drawChain2D(x1, y1, x2, y2, pt, ws, COL[f.color], f.thin); } else { // ARC: a chain of links (aspira-chains.js)
       ctx.beginPath();
       if (f.beams > 1) {
         // Charge / Quad / Horizon: n beams, 2 x TWIN_GAP apart at the tower,
@@ -369,6 +370,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
       if (!f.soft) { ctx.lineWidth = f.slim ? core * SOL_BEAM_W : core; ctx.stroke(); } // (ARC: the glow alone)
       // Ion: a thin WHITE core down the middle of the arc - it pierces (owner)
       if (f.pierce && !f.soft) { ctx.strokeStyle = COL.white; ctx.lineWidth = Math.max(1, ctx.lineWidth * 0.35); ctx.stroke(); }
+      } // (the ARC chain's else)
     } else if (f.k === "hit") {
       const a = ctx.globalAlpha, rr = f.r * (0.5 + 0.5 * (1 - k));
       ctx.fillStyle = COL[f.color]; ctx.globalAlpha = a * 0.3;

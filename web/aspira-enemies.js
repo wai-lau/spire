@@ -147,6 +147,7 @@ function drawStatus(e, d, size, solid) {
   // breach and scorch visual effect ... scorch becomes dotted line ... make the dots in the dotted line flicker independently"; Breach is
   // the upright spike again, warpSolid): acid's [2, 4] dots one by one, each its own flicker (scorchFlick)
   if (e.dots && e.dots.length) drawScorchRing(e, size + (e.corrodeT > 0 ? 7 : 3), vis);
+  if (arcBurning(e)) drawBurnSparks(e, size, vis); // ARC's burn: sparks (aspira-chains.js)
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
     ctx.setLineDash([2, 4]); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
