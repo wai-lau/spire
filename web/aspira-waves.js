@@ -78,7 +78,11 @@ function earlyHpX(type, n0) { // enemyHp (aspira-game.js)
 // limit is bodies a second (scripts/aspira-sim/duo0.mjs: half the HP moved SOL+IFR from 56 lives lost to 51)
 // SHIELDS too, and first: a shield takes one charge a hit (one pop per tick), so a tier-0 single beam's limit on a shield wave is hits a
 // second, whatever its damage - x EASE_SH the charges (shieldsOf, aspira-game.js; duo0.mjs: every losing tier-0 duo lost on shield waves)
-let EASE_N = 4, EASE_SH = 0.1, EASE_TO = 12; // let: the battery's sims set them. x0.1: one charge, at most (duo0.mjs, 2026-10-25: every duo clean, 2 seeds x every slot pair)
+// MORE BODIES, NONE ONE-SHOT (owner, 2026-10-30: "no tower (other than SOL) 1-shots anything from wave 1-12" / the first levels "look way too
+// easy"; "excellent excellent" to the package): EASE_N 4 -> 0.7 (under 1: MORE bodies than the plain count, each at the early HP - waves
+// 1-12 go 45 -> 64 bodies; 0.5 let FRZ + IFR, two tier-0 towers, lose the Star, duo0.mjs) and EARLY_FLOOR, every non-boss body there
+// at least that HP (spawnEnemy, aspira-game.js; over the biggest non-SOL tier-0 hit, ACD 38). ARC and CRR's tier-0 hits went down with it (aspira-curve.js)
+let EASE_N = 0.7 /* was 4 */, EARLY_FLOOR = 45, EASE_SH = 0.1, EASE_TO = 12; // let: the battery's sims set them. x0.1: one charge, at most (duo0.mjs, 2026-10-25: every duo clean, 2 seeds x every slot pair)
 const earlyN = n => earlyX(n) * (n <= EASE_TO ? EASE_N : 1); // the count divisor (waveCount) and the pay multiplier (spawnEnemy)
 function earlyHpXBase(type, n0) {
   if (earlyX(n0) === 1 || ENEMIES[type].star) return 1;

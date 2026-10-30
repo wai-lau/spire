@@ -89,6 +89,8 @@ function spawnEnemy(type, n, pi, ang = 0) {
   });
   G.enemies[G.enemies.length - 1].sizeMul = (1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earlyHpX(type, n) / (enemyHp(type, 1) / earlyHpX(type, 1)))) * (type === "swarm" ? jit : 1); if (type === "swarm") G.enemies[G.enemies.length - 1].drawJit = swarmDrawJit(jit); // GROWS WITH LOG HP (owner, 2026-10-13: "initial unit size should scale logarithmically with unit hp"): x1 on wave 1, about x2 by 119; a swarmer x its HP share too, 50-300% (owner, 2026-10-12)
   if (type === "bonus") bossSpawn(G.enemies[G.enemies.length - 1], n); // which boss (aspira-bosses.js)
+  const ef = G.enemies[G.enemies.length - 1]; // THE EARLY FLOOR (EARLY_FLOOR, aspira-waves.js): no body in waves 1-12 under it - none a non-SOL tier-0 hit one-shots
+  if (n <= EASE_TO && !d.star && ef.max < EARLY_FLOOR) { const f = EARLY_FLOOR / ef.max; ef.max *= f; ef.hp *= f; }
 }
 
 // ---------- combat ----------
