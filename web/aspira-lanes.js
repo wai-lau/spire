@@ -96,6 +96,7 @@ let laneFails = 0;
 function laneFail(err) {
   if (!laneFails++) console.warn("spire lanes:", err);
   for (const k in laneSets) { const S = laneSets[k]; [S.laneCv, S.glowCv, S.baseCv, S.comboCv].forEach(freeCv); delete laneSets[k]; }
+  freeCv(laneFadeL.cv); freeCv(laneFadeL.lcv); laneFadeL.sig = ""; // (the fade layer's own pair too)
   dropMasks(); maskKey = "";
 }
 function blit(c) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(c, 0, 0); ctx.restore(); }
@@ -297,6 +298,10 @@ function laneSplit(live) {
   for (const u of board) if (u.rise && !have.has(laneKeyOf(u))) fade.push(u); // whole, but its board not up yet: both, till it is
   return { board, fade };
 }
+// the fade layer's OWN scratch (owner, 2026-10-30: "Yes" to the memory): its glow is built straight into L.cv and its line in L.lcv, so a
+// fade change no longer borrows the board's line and glow layers and wipes S.litKey - the board kept rebuilding every lane a second time
+// each wave (~200 ms in WebKit at 430x775@3). +1 full-size canvas (~16 MB at 2048x2048). false = the old borrow, if the phone runs out of canvas memory
+let LANE_FADE_OWN = true;
 const laneFadeL = { sig: "" };
 function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (nothing fading in)
   if (!laneFadeGl()) return null;
@@ -304,16 +309,26 @@ function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (
   if (!fade.length) return null;
   const a = Math.min(...fade.map(u => u.f)), sig = [cv.width, cv.height, cam.k, cam.ox, cam.oy, COL.bg].join() + "|" + fade.map(u => laneKeyOf(u) + ":" + (u.star ? 1 : 0) + ":" + litLevel(u.a0, u.star)).join(",");
   if (sig !== laneFadeL.sig) {
-    const S = laneSet(), { laneCv, lctx, glowCv, gctx } = S, L = laneFadeL; // (the board's own line and glow layers as scratch: the board rebuilds its own next time)
-    S.litKey = ""; L.sig = "";
-    laneLayer(laneCv, lctx, cv.width, cv.height); laneLayer(glowCv, gctx, cv.width, cv.height);
-    strokeLit(lctx, gctx, fade.map(u => ({ ...u, a: u.a0 })));
-    applyMask(gctx, GLOW_FALLOFF); applyMask(lctx, 1);
+    const L = laneFadeL; L.sig = "";
     L.cv ||= document.createElement("canvas");
     const x = L.cv.getContext("2d"); if (!x) throw new Error("lane fade: no 2d context");
-    if (L.cv.width !== cv.width || L.cv.height !== cv.height) { L.cv.width = cv.width; L.cv.height = cv.height; }
-    x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, L.cv.width, L.cv.height);
-    x.drawImage(glowCv, 0, 0); x.drawImage(laneCv, 0, 0);
+    if (LANE_FADE_OWN) { // glow into L.cv itself, the line over it from L.lcv: the same pixels as the borrow's clear + glow + line
+      L.lcv ||= document.createElement("canvas");
+      const lx = L.lcv.getContext("2d"); if (!lx) throw new Error("lane fade: no 2d context");
+      laneLayer(L.lcv, lx, cv.width, cv.height); laneLayer(L.cv, x, cv.width, cv.height);
+      strokeLit(lx, x, fade.map(u => ({ ...u, a: u.a0 })));
+      applyMask(x, GLOW_FALLOFF); applyMask(lx, 1);
+      x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.drawImage(L.lcv, 0, 0);
+    } else {
+      const S = laneSet(), { laneCv, lctx, glowCv, gctx } = S; // (the board's own line and glow layers as scratch: the board rebuilds its own next time)
+      S.litKey = "";
+      laneLayer(laneCv, lctx, cv.width, cv.height); laneLayer(glowCv, gctx, cv.width, cv.height);
+      strokeLit(lctx, gctx, fade.map(u => ({ ...u, a: u.a0 })));
+      applyMask(gctx, GLOW_FALLOFF); applyMask(lctx, 1);
+      if (L.cv.width !== cv.width || L.cv.height !== cv.height) { L.cv.width = cv.width; L.cv.height = cv.height; }
+      x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, L.cv.width, L.cv.height);
+      x.drawImage(glowCv, 0, 0); x.drawImage(laneCv, 0, 0);
+    }
     L.sig = sig;
   }
   return { cv: laneFadeL.cv, sig: laneFadeL.sig, a };
