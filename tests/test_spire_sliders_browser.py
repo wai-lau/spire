@@ -134,7 +134,7 @@ def _cards_fit(page):
         const boxes = cards.map(c => c.getBoundingClientRect()), btn = document.getElementById('asp-spend').getBoundingClientRect();
         const bottom = Math.max(...boxes.map(b => b.bottom));
         return { n: cards.length, cardsIn: boxes.every(b => b.top >= 0 && b.bottom <= vh && b.left >= 0 && b.right <= vw),
-          btnIn: btn.top >= bottom && btn.bottom <= vh, cols: new Set(boxes.map(b => Math.round(b.left))).size };
+          btnIn: btn.top >= bottom && btn.bottom <= vh, cols: new Set(cards.map(c => c.offsetLeft)).size };  // (offsetLeft: an odd last card is slid to the centre by a transform, aspira.css - still the left column)
     }""")
 
 
