@@ -1078,3 +1078,16 @@ ARCHITECTURE.md keeps principles and tables; these dated notes left it, each und
 - §5.3 formations before the 2026-10-29 swap: fast flew side-by-side pairs spinning flat about their midpoint (spread x3 on 2026-10-20, `FAST_PAIR` 78); shields flew Vs of 5, then 3, then singles (units 3x apart on 2026-10-20, a third again on 2026-10-21); armor's lattice was 72 u apart (x2 on 2026-10-20 - 216 for an hour put its outer columns out of every tower's reach - halved back to 36 on 2026-10-23). Since the swap the fast fly the Vs and the shields the 2x2 blocks.
 - §10.4 balance rules: the duo rule (2026-10-22) replaced "a lone L1 tower clears 1-11, losing at most 3" (2026-10-20).
 - §9.1 corrections: the first ones, JUU 84 -> 78 and SMD 49 -> 43 (2026-10-16) - before 4.4.14 the Lovers' pair paid wave 50's +6 lives once a body.
+
+### 12.u Waves 1-12 and the ARC/CRR tier-0 cut (2026-10-30, 6.18.43; d83b9aa)
+
+Owner, 2026-10-30: "no tower (other than SOL) 1-shots anything from wave 1-12"; the first levels "look way too easy"; "excellent excellent" to the package.
+
+| knob | before | after |
+|---|---|---|
+| `EASE_N` (waves 1-12 count divisor and pay) | 4 (a quarter of the bodies) | 0.7 (more bodies; 0.5 let FRZ + IFR at tier 0 lose the Star) |
+| `EARLY_FLOOR` (min HP a non-boss body, waves 1-12) | none | 45 (over ACD's 38, the biggest non-SOL tier-0 hit) |
+| `STAT_CURVE.arc.dmg` | [88.2] | [1.2493, 70.6] - tier-0 hit 2117 -> 30; level 1 about -80%, 3 -42%, 6 -16%, 9 -6%; level 13 unchanged |
+| `STAT_CURVE.crr.dmg` | [1.58473, 1.8] | [0.3445, 8.28] - tier-0 hit 139 -> 30; level 13 unchanged |
+
+Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alone: non-SOL one-shot kills 0% on every wave (ARC and CRR were 100%). All 21 tier-0 duos still clean (duo0.mjs, 2 seeds). Late marks (countermx, 9 pts, 101-119) unchanged for ARC and CRR.
