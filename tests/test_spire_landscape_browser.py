@@ -134,14 +134,14 @@ def test_resize_before_the_first_wave_switches_promptly(spire_page):
     page.wait_for_function("BOX_WIDE === false", timeout=3000)
 
 
-# --- the landscape tilt: the on-screen floor area equals portrait's (needs WebGL: chromium on swiftshader) ---
-GL_ARGS = ["--use-gl=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist", "--enable-unsafe-swiftshader"]
+# --- the landscape tilt: the on-screen floor area equals portrait's (needs WebGL: WebKit has it headless; Playwright's Chromium 148
+# headless shell gets no WebGL context with any swiftshader/angle flag, so these ran on chromium + swiftshader only until 2026-10-30) ---
 
 
 @pytest.fixture
 def gl_page(_pw):
     ctxs = []
-    b = _pw.chromium.launch(args=GL_ARGS)
+    b = _pw.webkit.launch()
 
     def make(w, h, **opts):
         ctx = b.new_context(viewport={"width": w, "height": h}, **opts)
@@ -245,7 +245,7 @@ def test_touch_phone_has_no_zoom(gl_page):
     page = gl_page(390, 844, has_touch=True, is_mobile=True)
     assert page.evaluate("matchMedia('(pointer: fine)').matches") is False
     assert page.evaluate("cam.k === cam.fit && viewZoom === 1") is True
-    page.mouse.move(195, 422)
-    page.mouse.wheel(0, -300)
+    page.evaluate("""document.elementFromPoint(195, 422).dispatchEvent(new WheelEvent("wheel",
+      { deltaY: -300, clientX: 195, clientY: 422, bubbles: true, cancelable: true }))""")  # (mobile WebKit refuses page.mouse.wheel)
     page.wait_for_timeout(100)
     assert page.evaluate("cam.k === cam.fit") is True
