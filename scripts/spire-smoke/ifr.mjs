@@ -337,7 +337,7 @@ check("IFR: a shielded enemy in a flare loses one charge a tick; Impact gives a 
   if (r.afterTicks !== 6) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 6: every tick burns), enemy " + r.dist + " u out";
   return "";
 });
-check("IFR: no cap on live flares (owner, 2026-10-20: \"actually no cap\"); a frame of 200 fire flares (0.05 s ticks, staggered) over 200 enemies stays under 12 ms", () => {
+check("IFR: no cap on live flares (owner, 2026-10-20: \"actually no cap\"); a frame of 200 fire flares (each struck once, as it appeared) over 200 enemies stays under 12 ms", () => {
   const n = run(`(() => { G = newGame(); G.money = 1e9; ui.build = "ifr"; { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); }
     const t = G.towers[0]; ifrInit(t); const st = towerStats(t);
     for (let i = 0; i < 200; i++) { spawnEnemy("swarm", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.s = entryS(0) + i * 3; const p = pathAt(0, e.s, 0); e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e9; }
