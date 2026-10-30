@@ -127,24 +127,6 @@ def test_challenge_button_stays_in_window_clear_of_speed_bar_and_wave_list(spire
     assert not any(hit(o) for o in r["list"]), "over the wave list"
 
 
-def _lit(page):
-    # (wave = a boss just beaten: the field is clear and the Challenge button holds the next wave back, yet the next ordinary wave's lanes preview)
-    page.evaluate("""G.started = true; G.wave = STAR_EVERY; G.over = false; bossInv.phase = "off"; G.enemies.length = 0; G.spawns.length = 0; G.fleetQ.length = 0;
-      G.nextIn = 2; window.__lit = laneSoon().length""")
-    return page.evaluate("window.__lit")
-
-
-def test_resize_waits_while_the_lane_preview_is_lit_then_switches(spire_page):
-    page = spire_page(1280, 800)
-    assert _lit(page) > 0, "setup: the preview should be lit"
-    page.evaluate("window.__hold = setInterval(() => { G.nextIn = 2; }, 20)")  # keep the countdown lit
-    page.set_viewport_size({"width": 390, "height": 844})
-    page.wait_for_timeout(700)
-    assert page.evaluate("BOX_WIDE") is True and page.evaluate("laneSoon().length") > 0
-    page.evaluate("clearInterval(window.__hold); G.nextIn = 30")  # preview over, field clear
-    page.wait_for_function("BOX_WIDE === false", timeout=3000)
-
-
 def test_resize_before_the_first_wave_switches_promptly(spire_page):
     page = spire_page(1280, 800)
     assert page.evaluate("G.started") is False

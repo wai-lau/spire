@@ -391,7 +391,7 @@ let boxPending = null;
 function boxSwitchIfIdle() {
   if (boxPending === null) return;
   if (boxPending === BOX_WIDE) { boxPending = null; return; }
-  if (typeof G === "object" && G && G.started && !(waveClear() && !laneSoon().length)) return;
+  if (typeof G === "object" && G && G.started && !(waveClear() && !laneSoon().length)) return; // (a lit preview over a clear field is unreachable since the 2026-10-24 laneSoon rule - a clear field sends at once; test_no_switch_mid_wave covers the rest)
   const w = boxPending; boxPending = null; setPlayBox(w);
 }
 if (typeof addEventListener === "function") {
