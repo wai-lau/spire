@@ -154,11 +154,11 @@ debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the
 
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
 |---|---|---|---|---|
-| ARC | one bolt that chains once | Conductivity: chains twice | Voltage: one fork (`VOLT_FORK`) | Capacitance: one charge |
+| ARC | one hard bolt whose chain jumps twice (three enemies hit) | Amperage (id `conductivity`): each jump keeps more of the hit (`ARC_AMP_FALL`) | Voltage: a longer chain and a farther jump (`ARC_VOLT_JUMPS`, `ARC_VOLT_REACH`); one fork from II | Resistance (id `capacitance`): every hit slows and strips armor |
 | SOL | one beam that strikes its first enemy and flies on past it, striking no one: no band, split, bounce or prism (`st.pierce` 0, `SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn and the scorch rod across the band | Diffraction (id `refraction`): the band, one split, the mirrors | Breach: armor stripped a hit |
 | CRR | three interceptors, one bolt a volley, six volleys a sortie (`CRR_HANGAR`, `CRR_AMMO`) | Hangar: five launched, one stored in orbit | Tether: the first interceptor out tethers its target (`CRR_TETHER_N`, `carTethered`) | Armament: two bolts a volley, more volleys (`CRR_BOLTS_BY`) |
-| FRZ | a slowing circle with a light flat nip | Sublimation: the real tick, more the slower | Permafrost: frost pulses (a stacking slow, a share of armor) | Moons: one moon |
-| ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Contagion: ray pools that slow (`ACD_POOL_SLOW`); kill pools gone |
+| FRZ | a slowing circle with a light flat nip | Sublimation: the real tick, more the slower | Permafrost: frost pulses (a stacking slow; no armor) | Moons: one moon |
+| ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Contagion: ray pools that burn, no slow; kill pools gone |
 | GRV | a void a shot that crushes as it grows, shedding pellets as it decays | Void: a heavier void | Nova (id `supernova`): three novas before each void, stripping armor | Acceleration (id `radiation`): the aura (pull, slow) and harder pellets |
 | IFR | a meteor that bursts into a fan of six (`IFR_FAN_N`) | Meteor: meteors stored in orbit | Hellfire: a wall of fire lighting flares | Flare: a bright flare at each impact |
 
@@ -176,7 +176,7 @@ Tier I names: `TIER_I_NAMES` (`aspira-capstone.js`). Checks: `scripts/spire-smok
 | tiers | slide tiers grow the leash, range tiers the range (`SKILL_MOVE`) |
 | **Auto-move** | a checkbox **only after a win** (`best.ascended`): `bestSpot` picks, the tower glides at `HUMAN_V` in GAME time; a second tap arms it; **any time on = "(DQ)" from TOP PLAYERS** |
 
-**Targeting** (a card slider; ties go to the furthest along the spiral; ARC's jumps, bursts
+**Targeting** (a card slider; ties go to the furthest along the spiral; ARC's jumps
 and SOL's hops use the tower's own mode, `chainPick`): **Fresh** = no debuff first, then
 nearest the core · **Biggest** = most HP left (a boss always) · **Near** = nearest the CORE,
 not the tower.
@@ -190,25 +190,29 @@ purchase; an affordable buy flashes an up-chevron; labels are three letters.
 
 ### 4.4 What each axis buys
 
-**ARC** - a strike hits, then forks; a jump never goes back up its own branch; damage falls by `arcFall` a jump. **One hit set
-an attack**: no enemy is struck twice by the bolts of one attack, nor by one bolt (`fire` shares `seen`; `skillHop`); the echo
-strike never re-hits what the first took; Capacitance's bursts do re-hit. How it got here: ARCHAEOLOGY §4.
+**ARC** - THE ARC REDESIGN (owner, 2026-10-29: "Hits hard, big chain, forks are limited to 1 fork per node, doesn't refork after 1
+fork, cannot hit same target twice"): ONE hard strike a shot, then a chain of jumps, each leaping from the enemy it hit to the next
+within its own reach (`arcRange`, not ARC's small range: close zap, conducts to a few units nearby). From Voltage II the strike forks
+ONCE into two chains, and nothing forks after. **One hit set an attack**: no enemy is struck twice by one attack (`fire` shares
+`seen`; `skillHop`). No charges, no bursts. The axis ids stay (saves, sims, smoke); only the names changed. How it got here:
+ARCHAEOLOGY §4.
 
 | axis | buys |
 |---|---|
-| Conductivity | the branching: strikes x jump layers x forks, and jump reach (never a re-hit - one hit set an attack); range |
-| Voltage | raw power: the hit, and what each jump keeps of the hit before it (above 1 from the third buy: jumps out-hit the strike); a kill passes its overkill on to the nearest enemy, `VOLT_CARRY_N` hops by tier (`voltCarry`); range |
-| Capacitance | charges left on the enemy; the next hit **from anything**, or its death, bursts them all (`ARC_BURST_R`) and slows; bursts never charge; from tier I a charged enemy a burst kills goes off next, once (`capQueue`, `CAP_CHAIN_FROM`), the burst reaching `CAP_BURST_K` x by tier; slide |
+| Amperage (id `conductivity`) | the carry: what each jump keeps of the hit before it (`ARC_AMP_FALL`, above 1 from tier III: jumps out-hit the strike) |
+| Voltage | the chain: more jumps (`ARC_VOLT_JUMPS`) and a farther reach a jump (`ARC_VOLT_REACH`); the one fork from `ARC_FORK_FROM` |
+| Resistance (id `capacitance`) | every hit slows (`ARC_RES_SLOW`, never a shielded enemy) and strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); no area zap |
 
 **FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the enemy's slow (`FRZ_CHILL_K`: "the colder, the
-harder", so fast enemies take most). **Weakness: shields** - a shielded enemy cannot be
-slowed (no chill, no Brittle, a Permafrost pulse does nothing); a tick on it pops one charge.
+harder", so fast enemies take most). **No armor reduction** (owner, 2026-10-29: "no armor reduction effects, more slow").
+**Weakness: shields and armor** - a shielded enemy cannot be slowed (no chill, no Brittle, a Permafrost pulse does nothing);
+a tick on it pops one charge.
 
 | axis | buys |
 |---|---|
 | Sublimation (id `temp`) | a colder aura, a faster tick, **Brittle** (a slowed enemy takes more from EVERY tower, credited to the FRZ); range |
-| Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow and frost that takes a share of the armor (never below 0); at full frost the rime spreads to the nearest enemy; slide |
+| Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow (its armor crack `FRZ_RIME_CRACK` is 0 at every tier); at full frost the rime spreads to the nearest enemy; slide |
 | Moons | copies of the aura orbiting the tower (separate slow sources, so they multiply), with satellites at the top tiers |
 
 **SOL** - one beam a shot, fixed where it struck; an enemy is struck once a shot. Armor cuts it like any other tower.
@@ -240,7 +244,7 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got her
 |---|---|
 | Corrosion | a tick takes a fixed % of the armor left (`shredPct`, `ACD_CORRODE` per tier; the jets only); eaten armor drips as **goo** that homes on the next enemy, strips more armor and burns as much |
 | Flow (id `spray`) | more jets (`ACD_LINES`); a jet keeps part of its ramp when its enemy dies **or escapes** (`ACD_FLOW_CARRY`, the fast answer); range |
-| Contagion | the jets drip slimy acid pools that slow (`ACD_POOL_SLOW`) and burn - bigger, longer and more often by tier; a kill leaves no pool; slide |
+| Contagion | the jets drip slimy acid pools that burn and do NOT slow (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught, no slows"; `ACD_POOL_SLOW` 0) - bigger and more often by tier; a kill leaves no pool; slide |
 
 ### 4.5 Rules every axis obeys
 
@@ -271,7 +275,7 @@ measures it.
 
 ### 4.6b GRV, the gravity tower (`web/aspira-grv.js`)
 
-Designed for **swarm + armor**, mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
+Its target (the mark target, §7.2): a help against swarm, fast and armor, weak to shields; mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
 §4.6). Palette: a violet aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*`). There is no projectile: everything
 happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
@@ -294,7 +298,7 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
 ### 4.6c CRR (id `crr`), the carrier (`web/aspira-crr.js`)
 
-The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), designed for **fast + shield**; its measured checks and weak
+The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), its target (the mark target, §7.2) checks on fast and shield; its measured checks and weak
 spots are the build card's marks (`VS_MARKS`, §4.6). It never fires itself; its **interceptors** do. The constants (wing sizes,
 speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY §4.6c.
 
@@ -304,7 +308,7 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 | target | each interceptor then picks its own from everything within the interceptors' reach (`CRR_LEASH` x the range, about 960), in the tower's targeting order. `carTarget` sends enough: the first enemy whose HP (and shield) outweighs the damage already committed to it by interceptors on it. The carrier itself moves inside a leash of 240 |
 | hold | with any Hangar tier, reloaded interceptors with nothing to hit are STORED in orbit round the carrier (a growing share of the wing by tier, `CRR_HOLD_FRAC`), at a jittered distance and size, carried with the carrier as if fixed to it. They still launch one by one |
 | flight | a heading with a capped turn rate, steered onto an orbit circle round the target (`CRR_ORBIT`, each interceptor's radius breathing by `CRR_ORBIT_JIT`); it steers round the core and the towers (`carAvoid`) and leads nothing. On arrival it makes a strafing pass (the ram) |
-| volleys | `CRR_AMMO` volleys a sortie, each `CRR_BOLTS` bolts fired `CRR_BOLT_PAIR` at a time, side by side, as a steady stream, at `CRR_VOLLEY_K` x the hit between them. Armor cuts each small bolt (ATC's armor weakness). All the bolts of a volley go at the ONE enemy it began on, even if it dies; a bolt whose target is gone flies on only `CRR_BOLT_ON` s, hitting the first enemy it touches or nothing. Every bolt slows (one slow a tower), and what an interceptor circles is held back the whole time (the pin, `CRR_PIN`) |
+| volleys | `CRR_AMMO` volleys a sortie, each `CRR_BOLTS` bolts fired `CRR_BOLT_PAIR` at a time, side by side, as a steady stream, at `CRR_VOLLEY_K` x the hit between them. Three times the bolts at a third the damage (owner, 2026-10-29: "just 3x? keep the way shields are counted"): a sortie does as much and pops three times the charges. Armor cuts each small bolt (CRR's armor weakness). All the bolts of a volley go at the ONE enemy it began on, even if it dies; a bolt whose target is gone flies on only `CRR_BOLT_ON` s, hitting the first enemy it touches or nothing. Every bolt slows (one slow a tower), and what an interceptor circles is held back the whole time (the pin, `CRR_PIN`) |
 | tether | with Tether, the first interceptors out (`CRR_TETHER_N`) tether their target: slowed, and taking more damage per tether (`CRR_TETHER_SLOW`, `CRR_TETHER_AMP`); at the capstone a tether runs on to one more enemy nearby |
 | after a kill | the interceptor hops to the nearest enemy within `CRR_HOP` that no wingmate is on (`carHop`), else the nearest within it, else it flies home. Out of volleys it goes home and reloads |
 | numbers | every bolt shows its own damage number (`carNum`, `CRR_NUM_HITS` 1) |
@@ -316,7 +320,7 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 | Tether (id `launch`) | the tether: more interceptors tethering, a harder slow, more damage per tether | **Anchor**: tethers run on to one more enemy nearby |
 | Armament | DEPTH: a harder hit, more volleys a sortie, more bolts a volley | **Autopilot**: out of volleys, an interceptor bursts into pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
 
-The Orbital Relay triples the wing (`relayStats`).
+The Orbital Relay multiplies the wing by `RELAY_MUL` (`relayStats`).
 
 ### 4.6e IFR, Ifrit (`web/aspira-ifrit.js`, the look `aspira-ifrit-draw.js`)
 
