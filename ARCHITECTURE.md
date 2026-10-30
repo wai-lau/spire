@@ -352,7 +352,7 @@ in, of (mean score / trio score), applied to `TOWERS[k].dmg` and squared to conv
 designed deaths are the exception** (pillar 2). `triodiag.mjs` shows why a trio loses (per enemy type: lives lost and closest
 approach). The rounds, their numbers and the dated lists: ARCHAEOLOGY §4.6d; the tooling, §10.4.
 
-At the 6.16.0 marks (derived from `VS_MARKS`; recompute after a marks refresh):
+**OLD - derived from the 6.16.0 marks; to be recomputed from `scripts/aspira-sim/mark-target.json` (`triscale.py`).** At the 6.16.0 marks (derived from `VS_MARKS`; recompute after a marks refresh):
 
 | Missing | Trios |
 |---|---|
