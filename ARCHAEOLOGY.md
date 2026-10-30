@@ -1089,7 +1089,12 @@ Owner, 2026-10-30: "no tower (other than SOL) 1-shots anything from wave 1-12"; 
 |---|---|---|
 | `EASE_N` (waves 1-12 count divisor and pay) | 4 (a quarter of the bodies) | 0.7 (more bodies; 0.5 let FRZ + IFR at tier 0 lose the Star) |
 | `EARLY_FLOOR` (min HP a non-boss body, waves 1-12) | none | 45 (over ACD's 38, the biggest non-SOL tier-0 hit) |
-| `STAT_CURVE.arc.dmg` | [88.2] | [1.2493, 70.6] - tier-0 hit 2117 -> 30; level 1 about -80%, 3 -42%, 6 -16%, 9 -6%; level 13 unchanged |
-| `STAT_CURVE.crr.dmg` | [1.58473, 1.8] | [0.3445, 8.28] - tier-0 hit 139 -> 30; level 13 unchanged |
+| `STAT_CURVE.arc.dmg` | [88.2] | [1.2493, 70.6] - tier-0 hit 2117 -> 30; level 1 about -80%, 3 -42%, 6 -16%, 9 -6%; level 13 unchanged (undone in 6.18.46, below) |
+| `STAT_CURVE.crr.dmg` | [1.58473, 1.8] | [0.3445, 8.28] - tier-0 hit 139 -> 30; level 13 unchanged (undone in 6.18.46, below) |
 
 Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alone: non-SOL one-shot kills 0% on every wave (ARC and CRR were 100%). All 21 tier-0 duos still clean (duo0.mjs, 2 seeds). Late marks (countermx, 9 pts, 101-119) unchanged for ARC and CRR.
+
+6.18.46 (e1338e4, the same day) fixed two side effects - the good model's wins had fallen 112 -> 52 of 200 (8 seeds):
+- Pay: a body paid x `earlyN`, so `EASE_N` 0.7 cut waves 1-12's pay 2134 -> 513 gold. Pay now has its own `EASE_PAY` 2.912 (`earlyPay`, = 0.7 x 4.16): 2101 gold.
+- The curve: lowering `lo` weakened every level, not only tier 0. The curve is back as before (`dmg` [88.2] ARC, [1.58473, 1.8] CRR) and a `dmg0` factor scales the tier-0 hit alone (ARC 1/70.6, CRR 1/4.6: both 30). Owner picked option 1: the hit jumps back to the curve at the first purchase.
+- Both together: 103 of 200, inside the +-10 noise of 112.
