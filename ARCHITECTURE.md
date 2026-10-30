@@ -1,7 +1,8 @@
 # THE SPIRE - game design
 
 Spiral tower defence at `wai-lau.net/spire`, phone first. The CURRENT design, verified
-against the code at 5.1.32 (2026-10-16). **The code holds the numbers.** The tuned values at
+against the code at 5.1.32 (2026-10-16); the header, the pillars, §2.1, §4.1, §4.2 and the named constants re-checked at 6.18.36
+(2026-10-30). **The code holds the numbers.** The tuned values at
 4.4.2 (its §12, with the later changes noted there), every superseded one, the measurements and the incidents behind the
 traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 `git show f00d730:ARCHITECTURE.md`.
@@ -21,9 +22,9 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | # | Pillar (an owner rule) | What it fixes | Where |
 |---|---|---|---|
 | 1 | **Phone first** | one fixed play box every standard phone shares; no pan, and no zoom but a desktop wheel's (the view only, §2.2); verify at 430x932 and 382x700 | §2.2, §7.1 |
-| 2 | **Three towers, six kinds** | `MAX_TOWERS` 3 on three open slots; every trio of kinds must be winnable except the designed deaths (§4.6d) ("for every combination of 3 towers, it is possible to win"), so no kind is required | §4, §10.4 |
+| 2 | **Three towers, seven kinds** | `MAX_TOWERS` 3 on three open slots; every trio of kinds must be winnable except the designed deaths (§4.6d) ("for every combination of 3 towers, it is possible to win"), so no kind is required | §4, §10.4 |
 | 3 | **Towers move by hand** | drag any tower any time inside its leash, firing all the while; nothing moves itself except Auto-move (a win unlocks it; it disqualifies the game) | §4.3 |
-| 4 | **Every upgrade is a choice** | three axes a tower, four buys an axis, ONE capstone a tower; no tier lowers a stat | §4.2 |
+| 4 | **Every upgrade is a choice** | three axes a tower, five buys an axis (tiers I-V), 13 buys a tower, ONE capstone (V) a tower; no tier lowers a stat | §4.2 |
 | 5 | **Only behaviour is told** | card words change only when behaviour changes; a number moving changes the stat row | §7.3 |
 | 6 | **Counters, not a best tower** | each enemy type has two main counters and two helpers | §4.6 |
 | 7 | **3D is a view, never a rule** | ranges, hits and timing are 2D; 3D only draws the same game | §8.1 |
@@ -40,7 +41,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | Rule | Design |
 |---|---|
 | one pair a type | `TYPE_PAIR` / `PAIR_TURNS`: armor the most direct, swarm almost straight, fast a curve, shield and boss ellipses (`ELLIPSE` 0.7); the type fixes the path, every enemy walks it at one base speed. The chart's dotted 250 u ring is where the pairs' "time under fire" was measured when they were solved (`FIRE_R` in `aspira-defs.js`: declared, read by nothing, kept as the record) |
-| winding | pitch-driven (`TANGENT_Q`, `LANE_SOFT_R`): no hook off the lead-in, a gentle coil at the core; plus the CORE TWIST (owner, 2026-10-22, in place of auto-wait): extra winding at rate `(1 - r/TWIST_R)^TWIST_P / r` inside `TWIST_R` 140, tightest at the core, each lane `TWIST_S` 3.5 s x its rider's speed longer (`PAIR_RIDER`, `PAIR_V`; solved by bisection), sampled `TWIST_SUB` x finer there; the per-section twist sets the difficulty curve (§5.6); the drawn lane runs on under the core, the walked path ends at `CORE_R` |
+| winding | pitch-driven (`TANGENT_Q`, `LANE_SOFT_R`): no hook off the lead-in, a gentle coil at the core; plus the CORE TWIST (owner, 2026-10-22, in place of auto-wait): extra winding at rate `(1 - r/TWIST_R)^TWIST_P / r` inside `TWIST_R` 420 (softened at the core by `TWIST_SOFT`), tightest at the core, each lane `TWIST_S` 3.5 s x its rider's speed longer (`PAIR_RIDER`, `PAIR_V`; solved by bisection), sampled `TWIST_SUB` x finer there; the per-section twist sets the difficulty curve (§5.6); the drawn lane runs on under the core, the walked path ends at `CORE_R` |
 | copies | a wave rides rotated copies of its lane: swarm 20/24, fast 3/5, shield 2/3, armor 2, boss 1 (Lovers 2 opposite, Devil 6), Judgement's escorts 12, **never exactly four** (`NO_LANES`); the set is turned by `laneBestTurn` (rule in §2.2: most even copies, then most total lane, then nearest the usual turn; turned 90 degrees in landscape) |
 | lit | a lane lights only with live enemies (`alive / sent`, `LANE_FADE_IN_MS`); a boss lane is wider, haloed, and waits for the sky (§5.5); Roman numerals on `LABEL_R` 430 never overlap (`placeLabels`); lit layers rebuild at most every `LIT_MIN_MS` |
 | footprint | a tower is a hex of `TOWER_K` cells, `towerGap()` from another, blocked by the core only where outlines touch (`coreKeep`); building on a lane is allowed (towers and enemies never collide); `CORNER_SLOTS` is empty (dormant, §4.8) |
@@ -104,13 +105,13 @@ too. The lanes' CORE TWIST (§2.1) gives the same time to the core instead. The 
 
 | | ARC | FRZ | SOL | ACD | GRV | CRR | IFR |
 |---|---|---|---|---|---|---|---|
-| design | hit-scan chain lightning | an aura, no shots | a focused ray with locks | continuous jets and pools | a void a shot, with novas and an aura (§4.6b) | a carrier launching interceptors (§4.6c) | fireballs lobbed slowly, bursting into rings, pellets and six-spoked flares (§4.6e) |
+| design | hit-scan chain lightning | an aura, no shots | a ray that splits from enemy to enemy | continuous jets and pools | a void a shot, with novas and an aura (§4.6b) | a carrier launching interceptors (§4.6c) | a homing meteor bursting into a fan, fires and eight-beamed flares (§4.6e) |
 | colour | yellow | cyan | pink | green | violet | blue | orange |
-| default targeting | Near | Fresh | Biggest | Biggest | Near | Near | Near |
-| main counter of (`GOOD_VS`) | swarm | fast | armor, bosses | shield, bosses | swarm, armor | fast, shields | swarm, shields |
-| helps against (`HELPS_VS`) | fast, shields | swarms, armor | fast, shields | swarms, armor | nothing | nothing | nothing (armor neutral) |
-| weak to | armor (grounds the arc) | shields (cannot be slowed) | swarms (one lock) | fast and shields (cold jets) | fast and shields (the slow skips them; pellets pop few) | swarms and armor (one target a volley; small bolts) | fast (a slow ball aimed with no lead; it runs through the fire before it catches) |
-| leash (`MOVE_BASE`) | medium (200) | long (240) | short (74) | longest (280) | medium (200) | long (240) | medium (200) |
+| default targeting | Near | Near | Near | Near | Near | Near | Near |
+| main counter of (`GOOD_VS`: a +2 in the mark target, §7.2) | armor | swarms, fast | armor, bosses | bosses | nothing | fast, shields | swarms, shields |
+| helps against (`HELPS_VS`: a +1) | fast | nothing | shields | swarms, shields, armor | swarms, fast, armor | nothing | nothing |
+| weak to (a -1 or worse) | swarms, shields | shields, armor | swarms, fast | fast | shields | swarms, armor | fast, armor |
+| leash (`MOVE_BASE`) | medium (200) | long (240) | medium (222) | longest (280) | medium (200) | long (240) | short (120) |
 
 Ids `arc frz sol acd grv crr ifr` (`KINDS`; `crr` was `car` until 6.18.4, renamed 2026-10-29). The seven hues sit 360/7 OKLCH degrees apart (§10.1); range x `RANGE_BONUS`. The legacy path/form tree
 (`aspira-upgrades.js`) is dormant: every kind `hasSkills`.
@@ -131,7 +132,7 @@ shown, and every per-tier table holds exactly those six values:
   inserts tier I (`tierMid`); `aspira-tier01.js` then writes each tower's real tier 0 and tier I.
 - An old save is read once one tier up (`SKILL_SCALE` 3; `skillScaleFix`, `OLD_TIER` for older).
 - **One capstone a tower** (`axisCap`, `capstoneHolder`; the card says "One capstone per
-  tower · X IV holds it"). A tower's shown level is its purchases (`shownLevel`).
+  tower · X V holds it"). A tower's shown level is its purchases (`shownLevel`).
 - **The basket**: a tap pulls an axis to its next (or last) tier, the card previews the
   result, one priced button locks it in. Below the locked tier is refused with a note; the
   bank never limits a pull (unaffordable = red cost, disabled button); a card closed
@@ -631,7 +632,7 @@ has a voice line.
 | Rule | Design |
 |---|---|
 | who posts | a **win**: three letters, lives left, the team, the wave; a **loss from wave 11 on**: lives 0 |
-| guards | `ASC_MAX` posts an IP an hour (in memory); auto-move, or a buy with free towers/upgrades on (their own two ASCENDANT boxes under the title, `aspira-ui.js`), bars the form client-side; honour otherwise. Entry validation (`clean_entry`): three-letter initials; `won` or a loss; lives 1..`MAX_LIVES` 100000 on a win (0..100000 on a loss); wave 11..1000 (`MIN_WAVE`, `MAX_WAVE`); a team of 1-5 ids, each one of the six kinds (`TOWER_KINDS`: arc frz sol acd grv crr), stored in that order |
+| guards | `ASC_MAX` posts an IP an hour (in memory); auto-move, or a buy with free towers/upgrades on (their own two ASCENDANT boxes under the title, `aspira-ui.js`), bars the form client-side; honour otherwise. Entry validation (`clean_entry`): three-letter initials; `won` or a loss; lives 1..`MAX_LIVES` 100000 on a win (0..100000 on a loss); wave 11..1000 (`MIN_WAVE`, `MAX_WAVE`); a team of 1-5 ids, each one of the seven kinds (`TOWER_KINDS`: arc frz sol acd grv crr ifr), stored in that order |
 | ranking | the Ascendants (wins, gold) by lives left; then everyone else (green) by wave, then lives; ties to the earlier; 10 rows shown, `SHOW_MAX` returned; rows render with `textContent` |
 | **never lose an entry** | an append-only fsynced journal (`spire_ascendants.jsonl`) is written FIRST, then the board JSON rewritten atomically from journal + old board; a missing or corrupt board is REBUILT from the journal; a torn tail cannot swallow the next line; nothing is trimmed |
 | the owner's games | hidden from guests before `OWNER_SHOWN_FROM` (2026-10-14; the `owner` flag + `spire_ascendants_owner.json`), shown after; `python spire_board.py mark-owner <keep...>` names the rest as the owner's without touching the journal |
@@ -731,7 +732,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 |---|---|
 | the curve; real trio games per type and boss | `waverep`, `curve`, `rand`, `late` |
 | every trio / combo / solo kind | `trios` (three scripted styles; walks only the first four kinds), `combos`, `solo`, `wave1`, `swap`, `eval`, `style` |
-| the trio scale (§4.6d): all 20 trios of the six kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
+| the trio scale (§4.6d): all 35 trios of the seven kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
 | the economy check behind the step price (§4.2) and the build card marks (§7.2) | `eco`, `marks.py` (from a `countermx` run) |
 | the counter matrix | `countermx` |
 | an axis tier's value; a buy's payoff | `isolation`, `chartvalue`, `payoff` (each buy alone: gain, price, gain a credit), `buildlog` (purchases by wave) |
