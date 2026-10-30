@@ -47,7 +47,7 @@ A tier that only moves a number changes no words - the stat row shows it (2026-1
 | aura, void (GRV, always) | field, hole, well | 2026-10-25 |
 | satellites (FRZ moons' moons) | moonlets | owner |
 | refracts within a light prism, diffracts into N rays, scorch (SOL) | bounce, pierce, cone | 2026-10-26 |
-| ignores N% of armor (SOL's armor pierce, every tier) | pierces, penetrates | 2026-10-29 |
+| strips N% of the armor left (any tower that breaks armor) | pierces, penetrates, ignores armor | 2026-10-30 owner: "Nothing should have pierce" |
 | particles radiate (GRV) | pellets, shed | 2026-10-26 |
 | a wall of fire expands, flares singe (IFR Hellfire); meteor impacts light a bright flare (Flare) | rides, spreads N towers wide | 2026-10-26 |
 | dissolve armor, corrosive goo (ACD Corrosion) | eats armor down to | 2026-10-26 |
