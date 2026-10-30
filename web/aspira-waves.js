@@ -83,7 +83,11 @@ function earlyHpX(type, n0) { // enemyHp (aspira-game.js)
 // 1-12 go 45 -> 64 bodies; 0.5 let FRZ + IFR, two tier-0 towers, lose the Star, duo0.mjs) and EARLY_FLOOR, every non-boss body there
 // at least that HP (spawnEnemy, aspira-game.js; over the biggest non-SOL tier-0 hit, ACD 38). ARC and CRR's tier-0 hits went down with it (aspira-curve.js)
 let EASE_N = 0.7 /* was 4 */, EARLY_FLOOR = 45, EASE_SH = 0.1, EASE_TO = 12; // let: the battery's sims set them. x0.1: one charge, at most (duo0.mjs, 2026-10-25: every duo clean, 2 seeds x every slot pair)
-const earlyN = n => earlyX(n) * (n <= EASE_TO ? EASE_N : 1); // the count divisor (waveCount) and the pay multiplier (spawnEnemy)
+const earlyN = n => earlyX(n) * (n <= EASE_TO ? EASE_N : 1); // the count divisor (waveCount)
+// THE EARLY PAY, apart from the count (2026-10-30): it was earlyN, so EASE_N 4 -> 0.7 cut waves 1-12's pay 2134 -> 513 gold and the good
+// model's wins 112 -> 52 of 200 (8 seeds; interest compounds it). EASE_PAY 2.912 = 0.7 x 4.16 pays waves 1-12 the old 2133 over the new bodies
+let EASE_PAY = 2.912;
+const earlyPay = n => earlyX(n) * (n <= EASE_TO ? EASE_PAY : 1); // the pay multiplier (spawnEnemy)
 function earlyHpXBase(type, n0) {
   if (earlyX(n0) === 1 || ENEMIES[type].star) return 1;
   const key = type + n0;

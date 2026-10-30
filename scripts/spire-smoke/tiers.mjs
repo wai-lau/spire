@@ -11,7 +11,10 @@ check("curve: by total level alone, rising, slightly steepening - each tower its
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
   for (const [k, d] of Object.entries(r)) {
     for (let i = 1; i < d.length; i++) if (!(d[i] > d[i - 1])) return k + " not rising at L" + i;
-    for (let i = 2; i < d.length; i++) if (d[i] - d[i - 1] < d[i - 1] - d[i - 2] - 1e-9) return k + " flattens at L" + i;
+    // a tower with a TIER-0 HIT (dmg0: ARC, CRR) jumps from it to the curve at the first purchase - owner, 2026-10-30, option 1: "accept the
+    // first-buy jump" - so its steepening is checked from L1 on
+    const from = run(`STAT_CURVE.${k}.dmg0`) == null ? 2 : 3;
+    for (let i = from; i < d.length; i++) if (d[i] - d[i - 1] < d[i - 1] - d[i - 2] - 1e-9) return k + " flattens at L" + i;
   }
   if (Object.keys(r).length !== 7) return "STAT_CURVE covers " + Object.keys(r).join(",");
   const same = run(`(() => { const lv = sk => towerLevel({ kind: "arc", skills: sk }); return [lv({ conductivity: 2, voltage: 1 }), lv({ capacitance: 3 }), lv({})]; })()`);
