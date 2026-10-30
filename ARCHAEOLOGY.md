@@ -597,6 +597,7 @@ focus loss.
 
 ## 9. Meta history
 
+- **7.0.0 released (10-30, 409accb; exec-fn fd0a082a).** "Can you also release what you have as 7.0 even if it's not completely ready?": the tier-redesign branch, 311 commits since 6.15.11 (tiers 0-V, the ARC rebuild drawn as chains, ACD pools, SOL band and Breach, FRZ without strip, CRR 3x bolts, the new formations, waves 1-12, the mark target), one 7.0 changelog entry, smoke 126/126, pytest 45 passed. Known open: ARC 0 +1 -3 +2 against its target +2 -2 -2 +2; the good model wins about 103/200 of the covering trios.
 - **Ascendants / TOP PLAYERS (10-11).** "When a player beats a game let them save their initials" -> "shared board, honor
   system" -> "make sure we never lose it" (the first winner) -> journal-backed -> "for any wave after 10, allow user to post
   on the leaderboard", gold winners / green others, titled TOP PLAYERS; ASC_MAX 3 -> 6 posts / IP / hour; 10-12 the owner's
