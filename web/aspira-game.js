@@ -156,7 +156,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   // (owner, 2026-10-12: "let rime reduce armor"; Brittle did it for an hour, "brittle should stack with corrosion (both should
   // allow negative)" - armor no longer goes negative since the 2026-10-28 armor rework: every cut multiplies it down)
   const frost = e.frostArmor ? (e.armor || 0) * Math.min(1, frostShare(e) * e.frostArmor) : 0; // (2026-10-28: a SHARE of its armor - shredding multiplies)
-  amt = armorTake(amt, ((e.armor || 0) - frost) * (t && t.kind === "sol" ? 1 - SOL_ARMOR_PIERCE : 1)); // EVERY hit, quiet ones too - FRZ ticks, splash, damage over time, Nova (owner, 2026-10-12); SOL's see less of it (SOL_ARMOR_PIERCE)
+  amt = armorTake(amt, (e.armor || 0) - frost); // EVERY hit, quiet ones too - FRZ ticks, splash, damage over time, Nova (owner, 2026-10-12); no tower sees less of it (owner, 2026-10-30: "Nothing should have pierce")
   const blunted = amt < raw;
   // per-tower tally: damage counts only up to the HP the enemy had left
   if (t) damageCredit(e, t, pre, amt, frost, Math.min(amt, Math.max(0, e.hp))); // the debuffers' shares to THEM (aspira-acid.js)

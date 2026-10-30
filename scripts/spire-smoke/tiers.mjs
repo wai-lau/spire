@@ -266,10 +266,6 @@ check("ARC's card rows follow the redesign (2026-10-29): no charge or burst rows
   if (rv.Hits !== 1 + 2 * j2 + " a bolt" || rv.Forks !== "once") return "Voltage II: " + JSON.stringify(rv);
   if (rz["Res slow"] !== sl + "%" || rz["Armor strip"] !== sp + "% of armor") return "Resistance III: " + JSON.stringify(rz);
 });
-check("SOL's card says its armor pierce, from SOL_ARMOR_PIERCE (6.18.14), at every tier", () => {
-  const want = "ignores " + run("Math.round(SOL_ARMOR_PIERCE * 100)") + "% of armor";
-  for (const sk of [{}, { refraction: 2 }, { breach: 5 }]) { const d = run(`describeTower("sol", ${JSON.stringify(sk)})`); if (!d.includes(want)) return JSON.stringify(sk) + ": " + d; }
-});
 check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
   const r = run(`(() => { const t = { id: 99, kind: "frz", x: CX, y: CY, lvl: 2, skills: { rime: 1 } }; G = newGame(); const a = towerStats(t, true).biteDmg; G.power.DAM = 1; const b = towerStats(t, true).biteDmg; G.power.DAM = 0;
     const s = { dmg: 1, biteDmg: 1, targets: 1 }; relayStats(s, "frz", 3); return [b / a, s.biteDmg]; })()`);

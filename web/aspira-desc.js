@@ -53,7 +53,6 @@ const DESCRIBE = {
     // (owner, 2026-10-26): "A solar ray refracts within a light prism..." / Diffraction "A solar ray diffracts into two rays on every hit..."
     return "A solar ray " + (!r ? "strikes the first enemy in its path." /* tier 0: the bare beam - no prism, no split (owner, 2026-10-28) */ : (k > 1 ? "diffracts into " + NUM_WORD[k] + " rays on every hit within a light prism" : "refracts within a light prism") +
       (p >= 100 ? " without losing intensity." : ", losing " + (100 - p) + "% intensity" + (k > 1 ? "." : " every hit."))) +
-      (SOL_ARMOR_PIERCE ? " It ignores " + pc(SOL_ARMOR_PIERCE) + " of armor." : "") + /* every hit, its scorch too (SOL_ARMOR_PIERCE, 6.18.14; "ignores", never "pierces" - spire-wording.md) */
       (br ? " Every hit strips " + pc(br) + " of armor." : "") +
       (SOL_PAR_N[b] ? " " + cap(NUM_WORD[SOL_PAR_N[b]]) + " parallel ray" + (SOL_PAR_N[b] > 1 ? "s pass" : " passes") + " through every enemy in line for " + pc(SOL_PAR_K) + "td." : "") + /* Breach's parallel beams (owner, 2026-10-28) */
       (sc ? " The light prism and hits scorch the enemy for " + ticking(SOL_SCORCH_TOTAL, sc, sc * SOL_SCORCH_Q) + "." : ""); /* stacking unsaid; the prism's stacks are the stat block's */
