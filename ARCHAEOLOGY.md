@@ -958,6 +958,8 @@ TOP PLAYERS: `ASC_MAX` 6 posts an IP an hour, `SHOW_MAX` 500, a win `1 <= lives 
 ARC -2 +1 -1 +2, FRZ +2 +2 -2 -2, SOL -1 -2 +1 +2, ACD +1 -3 +1 +1, GRV +1 +1 -3 +1, CRR -3 +2 +2 -1, IFR +2 -1 +2 -3, the FRZ and GRV rows swapped at 16:05, SOL and ACD at 16:30, then GRV/FRZ/ARC rotated at 17:35 (GRV took FRZ's row, FRZ ARC's, ARC GRV's); every column
 +2 +2 +1 +1 -1 -2 -3). Two targets came before it, both OLD:
 
+The 2026-10-29 evening target (after the 16:05 / 16:30 / 17:35 swaps), OLD since 2026-10-30 18:10: ARC -2 +1 -1 +2, FRZ +2 +2 -2 -2, SOL -1 -2 +1 +2, ACD +1 -3 +1 +1, GRV +1 +1 -3 +1, CRR -3 +2 +2 -1, IFR +2 -1 +2 -3. Replaced by the swarmers shuffle (owner: "i want ARC IFR GRV FRZ to be the swarmers"; option B, nearest the measured marks).
+
 The 2026-10-29 MORNING target (commits 7bf7c66, 1c2a231, 760dca9, 2668da6): column shape ✓✓ ✓ ✓ ✓ – ✗✗ ✗✗✗ (+2 +1 +1 +1 0 -2 -3,
 "option A"), fitted by `marktarget.py` to the 6.18.0 countermx with an ARC "+swarm +armor -fast -shield" pin (recorded as the owner's,
 2026-10-28) - ARC +2 -2 -2 +2, FRZ -3 +2 0 +1, SOL +1 -3 +1 +1, ACD -2 +1 +1 0, GRV +1 +1 -3 +1, CRR 0 +1 +1 -2, IFR +1 0 +2 -3. Dropped
