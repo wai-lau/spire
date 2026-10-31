@@ -25,19 +25,28 @@ let textMade = 0; /* canvases created, for the slow logs */
 // from its sub-rect. A stamp too big for a page, or with every page full, gets its own canvas as before
 const TEXT_PAGE = 1024, TEXT_PAGES = TEXT_BIG ? 18 : 6, TEXT_GUT = 2;
 const textPages = [], textSlotFree = new Map(); // pages: { c, x, shelves: [{ y, h, x }], top }; free slots by height: [{ p, x, y, w, h }]
+// a slot a stamp may take: no smaller, at most 2 buckets taller and 32 px wider (the stamp sits in its corner)
+const textSlotFits = (s, bw, bh) => s.h >= bh && s.h <= bh + 16 && s.w >= bw && s.w <= bw + 32;
 function textSlot(bw, bh) {
   if (bw + 2 * TEXT_GUT > TEXT_PAGE || bh + 2 * TEXT_GUT > TEXT_PAGE / 4) return null;
-  const fl = textSlotFree.get(bh);
-  if (fl) for (let i = 0; i < fl.length; i++) if (fl[i].w >= bw && fl[i].w <= bw + 32) return fl.splice(i, 1)[0];
+  for (let h = bh; h <= bh + 16; h += 8) { const fl = textSlotFree.get(h); if (fl) for (let i = 0; i < fl.length; i++) if (textSlotFits(fl[i], bw, bh)) return fl.splice(i, 1)[0]; }
   const W = bw + 2 * TEXT_GUT, H = bh + 2 * TEXT_GUT;
   for (const p of textPages) {
     for (const s of p.shelves) if (s.h === H && s.x + W <= TEXT_PAGE) { const sl = { p, x: s.x + TEXT_GUT, y: s.y + TEXT_GUT, w: bw, h: bh }; s.x += W; return sl; }
     if (p.top + H <= TEXT_PAGE) { p.shelves.push({ y: p.top, h: H, x: W }); const sl = { p, x: TEXT_GUT, y: p.top + TEXT_GUT, w: bw, h: bh }; p.top += H; return sl; }
   }
-  if (textPages.length >= TEXT_PAGES) return null;
+  if (textPages.length >= TEXT_PAGES) return textSlotTake(bw, bh);
   const c = document.createElement("canvas"); c.width = TEXT_PAGE; c.height = TEXT_PAGE; const x = c.getContext("2d"); if (!x) { c.width = 0; c.height = 0; return null; } // (iOS past its canvas budget: the old way)
   textMade++; textPages.push({ c, x, shelves: [], top: 0 });
   return textSlot(bw, bh);
+}
+// EVERY PAGE FULL (2026-10-31 - a 7.0.17 iPhone log, waves 15-31: shelves and gutters filled the 6 pages before the px budget evicted anything, and 722 stamps
+// went back to a canvas each): the least recently used stamp whose slot fits gives it up, rather than a new canvas; none fits - its own canvas, as before.
+// (The page cap stays: it holds the atlas's memory)
+let textTaken = 0; /* slots taken from a live stamp, for the slow logs */
+function textSlotTake(bw, bh) {
+  for (const [k, sp] of textSprites) if (sp.slot && textSlotFits(sp.slot, bw, bh)) { textSprites.delete(k); textPx -= sp.px; textTaken++; return sp.slot; }
+  return null;
 }
 function textFree(sp) { // a dropped stamp: its atlas slot back for reuse; its own canvas back to its bucket while the spare pool is small, else zeroed so iOS frees it now
   if (sp.slot) { const s = sp.slot, fl = textSlotFree.get(s.h); if (fl) fl.push(s); else textSlotFree.set(s.h, [s]); return; }
@@ -95,7 +104,7 @@ function textStamp(str, q, color, outline, bold, sc, blur) {
     delete x.shadowBlur; textEntBlur(x, main);
     ctx = x; textBuilding = true;
     try { x.setTransform(sc, 0, 0, sc, slot.x + ox, slot.y + oy); text(str, 0, 0, sz, color, outline, bold); } finally { ctx = main; textBuilding = false; x.restore(); }
-    return { c: slot.p.c, sx: slot.x, sy: slot.y, w, h, ox, oy, px: bw * bh, slot };
+    return { c: slot.p.c, sx: slot.x, sy: slot.y, w, h, ox, oy, px: slot.w * slot.h, slot };
   }
   const free = textPool.get(bw + "x" + bh);
   let c = free && free.pop();
