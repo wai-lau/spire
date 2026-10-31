@@ -28,7 +28,14 @@ perfWrap("warpRender", "picMs"); perfWrap("warpLayersBind", "bindMs");
 const perfFr = { stamp: 0, fade: 0 };
 const perfCause = (c, ms) => { const a = perf.causes[c]; a[0]++; a[1] += ms; if (ms > a[2]) a[2] = ms; };
 if (typeof textStamp === "function") { const f0 = textStamp; textStamp = function (...a) { const t0 = performance.now(); try { return f0.apply(this, a); } finally { const ms = performance.now() - t0; perfCause("stamp", ms); perfFr.stamp += ms; } }; }
-if (typeof laneFadeLayer === "function") { const f0 = laneFadeLayer; laneFadeLayer = function (...a) { const was = typeof laneFadeL !== "undefined" ? laneFadeL.sig : "", t0 = performance.now(); try { return f0.apply(this, a); } finally { if (typeof laneFadeL !== "undefined" && laneFadeL.sig && laneFadeL.sig !== was) { const ms = performance.now() - t0; perfCause("fadeBuild", ms); perfFr.fade += ms; } } }; }
+if (typeof laneFadeLayer === "function") { const f0 = laneFadeLayer; laneFadeLayer = function (...a) { const was = typeof laneFadeL !== "undefined" ? laneFadeL.sig : "", t0 = performance.now(); try { return f0.apply(this, a); } finally { if (typeof laneFadeL !== "undefined" && laneFadeL.sig && laneFadeL.sig !== was) { const ms = performance.now() - t0; perfCause("fadeBuild", ms); perfFr.fade += ms; perfLaneEv("fade"); } } }; }
+/* LANE EVENTS ON THE SLOW FRAMES (2026-10-31: a 7.0.17 iPhone log - 100 slow frames, most of their time outside our code, against 77 board redraws and 44 fade
+   layer builds in the same 174 s): the frame that redraws the board (warpRender, warp.statAt moved) is tagged board, the next two board+1 / board+2; a fade layer
+   build likewise fade / fade+1 / fade+2 - so a log says whether the stalls follow the lanes' work in the browser's GPU process */
+const perfLane = { board: 9, fade: 9 };
+const perfLaneEv = k => { perfMark(k); perfLane[k] = 0; };
+function perfLaneNext() { for (const k in perfLane) if (perfLane[k] < 2) { perfLane[k]++; perfMark(k + "+" + perfLane[k]); } }
+if (typeof warpRender === "function") { const f0 = warpRender; warpRender = function (...a) { const at = typeof warp !== "undefined" ? warp.statAt : 0; try { return f0.apply(this, a); } finally { if (typeof warp !== "undefined" && warp.statAt !== at) perfLaneEv("board"); } }; }
 const perfCausesOut = () => Object.fromEntries(Object.entries(perf.causes).map(([k, a]) => [k, [a[0], a[0] ? +(a[1] / a[0]).toFixed(1) : 0, Math.round(a[2])]]));
 if (typeof fxGlRender === "function") { const f0 = fxGlRender; fxGlRender = function (...a) { const n = typeof fxGl !== "undefined" ? fxGl.n : 0; perf.fxN += n; perf.fxMax = Math.max(perf.fxMax, n); const t0 = performance.now(); try { return f0.apply(this, a); } finally { perf.fxMs += performance.now() - t0; } }; }
 if (typeof warpLayersBind === "function") { const b0 = warpLayersBind; warpLayersBind = function (...a) { if (typeof warp !== "undefined") { if (warp.statNew) perf.upBoard++; if (warp.dynUp) perf.upDyn++; } return b0.apply(this, a); }; }
@@ -123,7 +130,7 @@ function perfTick(dt) {
   perf.secs += dt; perf.frames++; perf.sum += ms;
   perf.buckets[PERF_BUCKETS.findIndex(b => ms < b)]++;
   /* does a slow frame (over 40 ms) line up with a canvas -> texture upload in the frame before it (perf.up is counted as it happens)? */
-  perfSlow(ms);
+  perfSlow(ms); perfLaneNext(); // (after the slow frame's tags are counted: the marks ride the NEXT frame)
   { const had = perf.up > perf.lastUp; perf.lastUp = perf.up; if (had) { perf.fUp++; if (ms > 40) perf.sUp++; } else { perf.fNo++; if (ms > 40) perf.sNo++; } }
   if (perf.worst.length < 5 || ms > perf.worst[4]) { perf.worst.push(Math.round(ms)); perf.worst.sort((a, b) => b - a); perf.worst.length = Math.min(5, perf.worst.length); }
   perf.maxEnemies = Math.max(perf.maxEnemies, G.enemies.length); perf.speed += typeof speedX === "function" ? speedX() : 1;
