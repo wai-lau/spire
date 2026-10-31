@@ -102,7 +102,7 @@ function step(dt) {
   if (!stopped) { stepSpawns(dt); stepFleetQ(dt); } // a boss fleet still riding in (aspira-bosses.js)
   stepEnemies(dt);
   if (G.over) return;
-  stepChains(dt);
+  stepChains(dt); arcBurnStep(dt); // ARC's burns tick (aspira-skills.js)
   for (const t of G.towers) {
     t.spin = (t.spin || 0) + dt; // game-time clock for anything that orbits (FRZ's moons)
     if (AUTO_POS) autoPosition(t, dt); else if (autoMove && best.ascended && !towersFrozen()) autoGlide(t, dt); // the simulator's player jumps; a real tower moves when dragged, or AUTO-MOVE glides it (aspira-positioning.js)

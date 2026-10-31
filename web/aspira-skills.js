@@ -152,7 +152,7 @@ function arcSkillStats(t, s, b) {
   curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24)
   s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= ARC_BURST_RATE; s.dmg *= ARC_ECHO_K;
   s.arcRange = ARC_VOLT_REACH[v]; s.targets = 1; s.branch = 1; s.fork = v >= ARC_FORK_FROM; s.layers = ARC_VOLT_JUMPS[v]; s.revisit = 0;
-  s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.charge = null; s.statSlow = 0; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.skill = true;
+  s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.charge = null; s.statSlow = 0; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.burn = ARC_BURN; s.skill = true;
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
 function skillOptions(t) {
@@ -214,12 +214,24 @@ function voltCarry(c, e, left) {
     if (!o.dead) return; left -= Math.max(0, h); e = o;
   }
 }
+// THE BURN (owner, 2026-10-30, "Yes all 3": kept for its sparks): every ARC hit burns ARC_BURN of the hit over ARC_BURN_N ticks of
+// ARC_BURN_Q s, e.arcBurn { t (s left), k (a tick), id, acc }; a new hit restarts it. It moved no mark (shield leaked 94% with it and without)
+const ARC_BURN = 0.1, ARC_BURN_N = 2, ARC_BURN_Q = 0.1;
+function arcBurnStep(dt) {
+  for (const e of G.enemies) {
+    const u = e.arcBurn; if (!u || e.dead) continue;
+    u.acc += dt; u.t -= dt;
+    while (u.acc >= ARC_BURN_Q - 1e-9 && !e.dead) { u.acc -= ARC_BURN_Q; const t = G.towers.find(x => x.id === u.id); if (t) damage(e, u.k, t, true, false); }
+    if (u.t <= 1e-9 || e.dead) e.arcBurn = null;
+  }
+}
 function skillHit(c, e, d) {
   const hp0 = e.hp;
   damage(e, d, c.t, false, false, c.st); onHit(e, c.t, c.st, d); // (discharges e's own charges, if any)
   if (c.st.carry && e.dead && hp0 > 0 && d > hp0) voltCarry(c, e, d - hp0);
   if (c.st.resSlow && !e.dead) applySlow(e, c.st.resSlow, STAT_SLOW_T, c.t.id); // Resistance (the ARC redesign, 2026-10-29)
   if (c.st.resStrip && !e.dead) shredPct(e, c.t, c.st.resStrip); // a SHARE of the armor left, as every strip since 6.18.0 (Wai 2026-10-28)
+  if (c.st.burn && !e.dead) e.arcBurn = { t: ARC_BURN_N * ARC_BURN_Q, k: d * c.st.burn / ARC_BURN_N, id: c.t.id, acc: 0 }; // THE BURN (arcBurnStep)
   const b = c.st.charge;
   if (!b || e.dead) return;
   const ch = e.charge || (e.charge = { list: [], t: c.t });
