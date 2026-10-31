@@ -164,7 +164,7 @@ function laneFadeBind(gl, u) {
   /* THE FADE LAYER OFF THE FRAME (perf, 2026-10-31 - Wai: "seems a bit laggy"; a 7.0.7 iPhone log had 44 frames over 100 ms, 34 of its 36 canvas uploads on slow frames): a
      device whose board upload stalls (warpUpSlow) snapshots the fade layer with createImageBitmap like the board and sends it a frame or so later - the bell lays the
      old fade layer till then (a lane that just went whole shows a frame or two brighter, one that just lit starts its fade a frame or two late). diag fadesync: the old in-frame upload */
-  const litOk = warpUpSlow >= 3 && typeof createImageBitmap === "function" && !warp.litNoBmp && !DIAG.includes("fadesync"); // (litNoBmp: a snapshot failed - the in-frame way from then on)
+  const litOk = DIAG.includes("fadebmp") && warpUpSlow >= 3 && typeof createImageBitmap === "function" && !warp.litNoBmp; // OFF by default (7.0.18, Wai: "Lanes not appearing/leaving at the right times": the snapshot waits up to ~1 s on an iPhone, and litA follows the live layer meanwhile); diag fadebmp opts in // (litNoBmp: a snapshot failed - the in-frame way from then on)
   if (L && L.sig !== warp.litSig && litOk && !warp.litP) {
     const sig = L.sig, F = laneFadeL, size = L.cv.width + "x" + L.cv.height, D = F.dirty, R = D !== LANE_ALL && warp.litSize === size ? D : null; F.dirty = null; // (the changes since this snapshot: the next one's)
     if (R && !(R.w > 0 && R.h > 0)) warp.litSig = sig; else { // (nothing changed on the GPU copy's pixels: no upload)
