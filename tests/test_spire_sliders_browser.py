@@ -86,9 +86,9 @@ def test_sliders_preview_limits_and_lock_in(guest_page):
     # past the top: it stops at the top tier
     _tap(page, 0, 1, top + 2)
     assert _basket(page).get("conductivity") == top
-    # the tier is the PURCHASE count (I-IV, IV the capstone - aspira-capstone.js), the pull a tier at a time
+    # the tier is the PURCHASE count (I-V, V the capstone - aspira-capstone.js), the pull a tier at a time
     assert page.locator(".asp-axis-tier").nth(0).inner_text() == "0→" + page.evaluate("roman(SKILL_TIERS)")
-    _tap(page, 0, -1, 2)  # back down two tiers: IV -> III -> II
+    _tap(page, 0, -1, top - 2)  # back down to tier II, one tier a tap (V -> IV -> III -> II)
     assert _basket(page).get("conductivity") == 2
     assert "Arc II" in up.inner_text()
 
@@ -108,7 +108,7 @@ def test_sliders_preview_limits_and_lock_in(guest_page):
     cost = page.evaluate("basketCost(G.towers[0])")
     up.click()
     t = page.evaluate("() => ({ lvl: G.towers[0].lvl, skills: G.towers[0].skills, money: G.money })")
-    assert t["skills"] == {"conductivity": 2} and t["lvl"] == 4  # tier II: three ladder steps
+    assert t["skills"] == {"conductivity": 2} and t["lvl"] == 3  # tier II: two purchases, one ladder step each (TIER_STEPS)
     assert t["money"] == 100000 - cost
     assert _basket(page) == {}
     assert "II" in up.inner_text() and "(" not in up.inner_text()
