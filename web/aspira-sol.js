@@ -142,6 +142,8 @@ function solScorch(e, t, st) {
   // dotT: the game loop ticks while > 0
   (e.dots ||= []).push({ d: st.dmg * st.dot.k, left: st.dot.n, acc: 0, src: t }); e.dotT = Math.max(e.dotT || 0, st.dot.t);
 }
+// SCORCH SLOWS what it burns (2026-10-31, owner: "Make SOL scorch slow" + "Reduce fire rate and diffraction / Increase other things"): SOL_SCORCH_SLOW a live stack, for as long as the burn runs (shields still refuse it - applySlow)
+const SOL_SCORCH_SLOW = 0.06;
 function solScorchTick(e, dt) {
   const q = SOL_SCORCH_Q; e.dotT -= dt;
   for (const s of e.dots || []) {
@@ -150,4 +152,6 @@ function solScorchTick(e, dt) {
   }
   if (e.dots) e.dots = e.dots.filter(s => s.left > 0);
   if (e.dotT <= 0 || !e.dots || !e.dots.length) { e.dotT = 0; e.dots = null; }
+  if (e.slows) delete e.slows.scorch; // re-set each tick, so it shrinks as stacks run out
+  if (!e.dead && e.dots) applySlow(e, Math.min(TOWER_SLOW_MAX, SOL_SCORCH_SLOW * e.dots.length), 0.2, "scorch");
 }
