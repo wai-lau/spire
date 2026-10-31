@@ -14,7 +14,7 @@
 //   st.corrode    armor stripped from everything a tick burns, below zero
 //   st.allInRange no lines: every enemy in range burns on its own ramp
 // ACD_BASE_MAX 64 -> 32 (overnight phase 3, 2026-10-06): ACD dealt 52-99% of a late team's damage
-const ACD_BASE_DOUBLE = 1, ACD_BASE_MAX = 32; // (halved to 16 and restored, 2026-10-08: the boss gap was SOL's, not the cap's - bossvs.mjs)
+const ACD_BASE_DOUBLE = 1, ACD_BASE_MAX = 64 /* 32 -> 64 with the ramp 2x slower (7.0.6, 2026-10-31: ACD marks toward the target -1 -3 +2 +2; pooled 8 seeds 36/88/20/20 leaked) */; // (halved to 16 and restored, 2026-10-08: the boss gap was SOL's, not the cap's - bossvs.mjs)
 const acdMulOf = (held, st) => Math.min(st.cap, 2 ** (held / st.double));
 const acdFrac = (l, st) => Math.log2(acdMulOf(l.held, st)) / Math.log2(st.cap); // 0 fresh .. 1 full burn
 function plagueRadius(l, st) {
@@ -248,7 +248,7 @@ const ACD_POOL_SLOW = [0, 0, 0, 0, 0, 0]; // NO SLOW (owner, 2026-10-29: "Increa
 // CORROSION'S DAMAGE MOVED TO THE BASE (owner, 2026-10-12): a bare ACD burns ACD_BASE_DMG_MUL harder; Corrosion is
 // now the armor STRIP alone (into negative armor then, a flat bonus on every tower's hits; since the 2026-10-28 rework it multiplies armor toward 0)
 // (ACD_BASE_DMG_MUL, ACD_CORROSION_DMG and ACD_SPRAY_MUL - the raw acid - GONE with the tier redesign, 2026-10-24: the stat curve's)
-const ACD_DOUBLE = [0.25, 0.195, 0.06, 0.06] /* x0.5 with ACD_BASE_DMG_MUL x0.6: a steeper ramp - better vs armor, worse vs swarm (2026-10-24 marks target) */, ACD_LINES = [2, 3, 6, 8], /* early-game balance 2026-10-06: two lines from the start (was 1/2/3/5); Spray to be re-fitted */ ACD_SPRAY_MUL = [1, 1, 1, 6.744]; /* V x9, VI x36 (steeper late tiers) */  // every jet a full strike (owner, 2026-10-08: never below 1) - Spray's reach (SKILL_MOVE) is the lever
+const ACD_DOUBLE = [0.5, 0.39, 0.12, 0.12] /* x2 = a 2x SLOWER ramp (7.0.6, 2026-10-31; was 0.25 0.195 0.06 0.06) */ /* x0.5 with ACD_BASE_DMG_MUL x0.6: a steeper ramp - better vs armor, worse vs swarm (2026-10-24 marks target) */, ACD_LINES = [2, 3, 6, 8], /* early-game balance 2026-10-06: two lines from the start (was 1/2/3/5); Spray to be re-fitted */ ACD_SPRAY_MUL = [1, 1, 1, 6.744]; /* V x9, VI x36 (steeper late tiers) */  // every jet a full strike (owner, 2026-10-08: never below 1) - Spray's reach (SKILL_MOVE) is the lever
 // puddles by Seep tier (index 0 = the DEFAULT drip, owner): one every `every`
 // s per line, lasting `life` s, radius r; each burns at ACD_PUDDLE_HEAT of its
 // line's heat when it fell, by Seep tier
