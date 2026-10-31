@@ -34,5 +34,6 @@ function stepDetail(dt) {
 const farFx = e => q3d() && (e.x - CX) ** 2 + (e.y - CY) ** 2 > detailFarR * detailFarR;
 /* DIAGNOSTICS (2026-10-16: an empty board cost a Brave laptop ~38 ms a frame - is it the canvases or the page's own layers?): localStorage "spire.diag" holds a comma list read once at load:
    nocanvas = the board is not drawn at all (the frame loop still runs), nohud = the HUD panels are hidden (visibility), nodyn = the moving layer is never sent to the GPU (aspira-warplayers.js). The slow log reports it, so a run's avgMs can be read against it */
-const DIAG = (() => { try { return localStorage.getItem("spire.diag") || ""; } catch (e) { return ""; } })();
+/* ...or the page's ?diag= (2026-10-31: a phone has no console to set localStorage from), for that load only: nofade / fadeborrow / fadesync (the lane fade layer, aspira-lanes.js / aspira-warplayers.js) */
+const DIAG = (() => { let d = ""; try { d = localStorage.getItem("spire.diag") || ""; } catch (e) { /* no storage */ } try { const q = new URLSearchParams(location.search).get("diag"); if (q) d += (d ? "," : "") + q; } catch (e) { /* no URL */ } return d; })();
 if (DIAG.includes("nohud")) document.documentElement.classList.add("asp-diag-nohud");

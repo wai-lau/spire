@@ -156,7 +156,21 @@ function laneFadeBind(gl, u) {
   } else gl.bindTexture(gl.TEXTURE_2D, warp.litTex);
   let L = null;
   if (typeof laneFadeLayer === "function" && warp.texCam) { const c0 = { ...cam }; Object.assign(cam, warp.texCam); try { L = laneFadeLayer(); } catch (err) { L = null; laneFail(err); } finally { Object.assign(cam, c0); } }
-  if (L && L.sig !== warp.litSig) { gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, L.cv); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); warp.litSig = L.sig; }
+  if (warp.litBmp) { /* the snapshot resolved off the frame: only this upload is left (premultiplied when it was made - an ImageBitmap ignores the unpack flag) */
+    const t0 = performance.now(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.litBmp); warp.litBmp.close(); warp.litBmp = null; warp.litSig = warp.litBmpSig;
+    if (typeof perfBoardUp === "function") perfBoardUp("fadeBmp", performance.now() - t0);
+  }
+  /* THE FADE LAYER OFF THE FRAME (perf, 2026-10-31 - Wai: "seems a bit laggy"; a 7.0.7 iPhone log had 44 frames over 100 ms, 34 of its 36 canvas uploads on slow frames): a
+     device whose board upload stalls (warpUpSlow) snapshots the fade layer with createImageBitmap like the board and sends it a frame or so later - the bell lays the
+     old fade layer till then (a lane that just went whole shows a frame or two brighter, one that just lit starts its fade a frame or two late). diag fadesync: the old in-frame upload */
+  const litOk = warpUpSlow >= 3 && typeof createImageBitmap === "function" && !warp.litNoBmp && !DIAG.includes("fadesync"); // (litNoBmp: a snapshot failed - the in-frame way from then on)
+  if (L && L.sig !== warp.litSig && litOk && !warp.litP) {
+    const sig = L.sig; warp.litP = performance.now();
+    createImageBitmap(L.cv, { premultiplyAlpha: "premultiply" }).then(b => { if (typeof perfBoardUp === "function") perfBoardUp("fadeWait", performance.now() - warp.litP); warp.litP = 0; if (warp.litBmp) warp.litBmp.close(); warp.litBmp = b; warp.litBmpSig = sig; }, () => { warp.litP = 0; warp.litNoBmp = true; });
+  } else if (L && L.sig !== warp.litSig && !litOk && !warp.litP) {
+    const t0 = performance.now(); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, L.cv); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); warp.litSig = L.sig;
+    if (typeof perfBoardUp === "function") perfBoardUp("fade", performance.now() - t0);
+  }
   gl.uniform1i(u("lit"), 3); gl.uniform1f(u("litA"), L ? L.a : 0);
   warp.litOk = u("lit") !== null && u("litA") !== null;
 }

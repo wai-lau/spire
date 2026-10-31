@@ -289,7 +289,7 @@ function litLanes() {
 // own FADE LAYER - sent up once - and the bell's shader lays it over the board at the fade's brightness every frame (litA); once whole it goes
 // to the board, and leaves the fade layer only when that board is on the GPU (warp.boardLanes), so it never blinks out between the two.
 // One brightness for the layer: the lanes fading together light together (a wave's copies, a boss's lanes) - it is the least of theirs
-const laneFadeGl = () => typeof warp !== "undefined" && warp.litOk === true; // the bell's shader takes the fade layer (warpLayersBind)
+const laneFadeGl = () => typeof warp !== "undefined" && warp.litOk === true && !(typeof DIAG === "string" && DIAG.includes("nofade")); // the bell's shader takes the fade layer (warpLayersBind); diag nofade: no fade layer (the lanes light on the board - a stalling device at full brightness at once), to see what it costs
 const laneKeyOf = u => u.pi + ":" + u.ang.toFixed(3) + ":" + u.color;
 function laneSplit(live) {
   if (!laneFadeGl()) return { board: live, fade: [] };
@@ -301,7 +301,7 @@ function laneSplit(live) {
 // the fade layer's OWN scratch (owner, 2026-10-30: "Yes" to the memory): its glow is built straight into L.cv and its line in L.lcv, so a
 // fade change no longer borrows the board's line and glow layers and wipes S.litKey - the board kept rebuilding every lane a second time
 // each wave (~200 ms in WebKit at 430x775@3). +1 full-size canvas (~16 MB at 2048x2048). false = the old borrow, if the phone runs out of canvas memory
-let LANE_FADE_OWN = true;
+let LANE_FADE_OWN = !(typeof DIAG === "string" && DIAG.includes("fadeborrow")); // (diag fadeborrow: the old borrow, to compare)
 const laneFadeL = { sig: "" };
 function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (nothing fading in)
   if (!laneFadeGl()) return null;
