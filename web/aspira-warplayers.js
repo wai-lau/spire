@@ -117,10 +117,10 @@ function warpLayersBind(gl, u) {
   const bmpOk = warpUpSlow >= 3 && warp.statUp === warp.tex && typeof createImageBitmap === "function";
   if (bmpOk) {
     if (warp.statNew && !warp.bmpP) {
-      warp.bmpP = performance.now(); warp.statNew = false; warp.bmpLanes = warp.statLanes;
+      warp.bmpP = performance.now(); warp.bmpTok = typeof perfWaitTok === "function" ? perfWaitTok() : 0; warp.statNew = false; warp.bmpLanes = warp.statLanes;
       const R = warp.statRect && warp.statSize === cv.width ? warp.statRect : null; warp.statRect = null; // (the strip alone - over a texture already the board's size)
       if (R && !(R.w > 0 && R.h > 0)) { warp.bmpP = 0; } else
-      (R ? createImageBitmap(cv, R.x, R.y, R.w, R.h) : createImageBitmap(cv)).then(b => { if (typeof perfBoardUp === "function") perfBoardUp("bmpWait", performance.now() - warp.bmpP); warp.bmpP = 0; warp.bmp = b; warp.bmpRect = R; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
+      (R ? createImageBitmap(cv, R.x, R.y, R.w, R.h) : createImageBitmap(cv)).then(b => { if (typeof perfBoardWait === "function") perfBoardWait("bmpWait", warp.bmpP, warp.bmpTok); warp.bmpP = 0; warp.bmp = b; warp.bmpRect = R; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
     }
   } else if (warp.statNew || warp.statUp !== warp.tex) {
     const R = warp.statNew && warp.statUp === warp.tex && warp.statSize === cv.width ? warp.statRect : null, t0 = performance.now(); warp.statRect = null;
@@ -165,8 +165,8 @@ function laneFadeBind(gl, u) {
      old fade layer till then (a lane that just went whole shows a frame or two brighter, one that just lit starts its fade a frame or two late). diag fadesync: the old in-frame upload */
   const litOk = warpUpSlow >= 3 && typeof createImageBitmap === "function" && !warp.litNoBmp && !DIAG.includes("fadesync"); // (litNoBmp: a snapshot failed - the in-frame way from then on)
   if (L && L.sig !== warp.litSig && litOk && !warp.litP) {
-    const sig = L.sig; warp.litP = performance.now();
-    createImageBitmap(L.cv, { premultiplyAlpha: "premultiply" }).then(b => { if (typeof perfBoardUp === "function") perfBoardUp("fadeWait", performance.now() - warp.litP); warp.litP = 0; if (warp.litBmp) warp.litBmp.close(); warp.litBmp = b; warp.litBmpSig = sig; }, () => { warp.litP = 0; warp.litNoBmp = true; });
+    const sig = L.sig; warp.litP = performance.now(); warp.litTok = typeof perfWaitTok === "function" ? perfWaitTok() : 0;
+    createImageBitmap(L.cv, { premultiplyAlpha: "premultiply" }).then(b => { if (typeof perfBoardWait === "function") perfBoardWait("fadeWait", warp.litP, warp.litTok); warp.litP = 0; if (warp.litBmp) warp.litBmp.close(); warp.litBmp = b; warp.litBmpSig = sig; }, () => { warp.litP = 0; warp.litNoBmp = true; });
   } else if (L && L.sig !== warp.litSig && !litOk && !warp.litP) {
     const t0 = performance.now(); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, L.cv); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); warp.litSig = L.sig;
     if (typeof perfBoardUp === "function") perfBoardUp("fade", performance.now() - t0);
