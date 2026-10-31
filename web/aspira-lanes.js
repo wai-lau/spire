@@ -35,10 +35,10 @@ function laneSet() {
     return { laneCv, lctx, glowCv, gctx, baseCv, bctx, baseKey: "", litKey: "", litCam: "", litAt: 0 };
   })();
 }
-function laneLayer(c, x, w, h) {
+function laneLayer(c, x, w, h, box = null) { // box: clear only that rect (canvas px) - all the layer holds (the fade layer, laneFadeLayer)
   if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
   x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = "source-over";
-  x.clearRect(0, 0, w, h);
+  if (box) x.clearRect(box.x, box.y, box.w, box.h); else x.clearRect(0, 0, w, h);
   x.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy);
   x.lineJoin = "round"; x.lineCap = "round";
 }
@@ -67,7 +67,7 @@ function laneCoreFade(x) {
 // late-game frame time (profiled 2026-10-05)
 const maskCvs = {};
 let maskKey = "";
-function applyMask(x, n) {
+function applyMask(x, n, box = null) { // box: only that rect (canvas px) - nothing outside it to mask
   const key = [cv.width, cv.height, cam.k, cam.ox, cam.oy].join();
   if (key !== maskKey) { maskKey = key; dropMasks(); }
   let m = maskCvs[n];
@@ -83,7 +83,8 @@ function applyMask(x, n) {
     maskCvs[n] = m; // cached only once whole: a half-built mask erased or unmasked the lanes till the camera moved
   }
   x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = "destination-in"; x.globalAlpha = 1;
-  x.drawImage(m, 0, 0); x.restore();
+  if (box) x.drawImage(m, box.x, box.y, box.w, box.h, box.x, box.y, box.w, box.h); else x.drawImage(m, 0, 0);
+  x.restore();
 }
 // a dropped canvas is sized to 0 first: iOS holds a canvas's memory until then, and past its canvas budget
 // getContext returns null
@@ -96,7 +97,7 @@ let laneFails = 0;
 function laneFail(err) {
   if (!laneFails++) console.warn("spire lanes:", err);
   for (const k in laneSets) { const S = laneSets[k]; [S.laneCv, S.glowCv, S.baseCv, S.comboCv].forEach(freeCv); delete laneSets[k]; }
-  freeCv(laneFadeL.cv); freeCv(laneFadeL.lcv); laneFadeL.sig = ""; // (the fade layer's own pair too)
+  freeCv(laneFadeL.cv); freeCv(laneFadeL.lcv); laneFadeL.sig = ""; laneFadeL.box = null; laneFadeL.dirty = LANE_ALL; // (the fade layer's own pair too)
   dropMasks(); maskKey = "";
 }
 function blit(c) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(c, 0, 0); ctx.restore(); }
@@ -180,6 +181,7 @@ function strokeSoft(dst, list, key, prof, alphaOf, wk, cap) {
     for (const u of us) { x.save(); x.translate(CX, CY); x.rotate(u.ang); x.translate(-CX, -CY); x.stroke(PATHS[u.pi][key]); x.restore(); }
     x.restore();
     const D = LANE_SOFT_DS; dst.save(); dst.setTransform(1, 0, 0, 1, 0, 0); dst.globalAlpha = Math.min(1, alphaOf(us[0]) * la); dst.drawImage(c, b.x, b.y, b.w, b.h, b.x * D, b.y * D, b.w * D, b.h * D); dst.restore();
+    if (laneRec) laneRec.r = rectOr(laneRec.r, { x: b.x * D, y: b.y * D, w: b.w * D, h: b.h * D }); // (the rect it drew: laneFadeLayer's box)
   }
 }
 // THE BOX A LEVEL TOUCHES (perf, 2026-10-30: the phone's 100-700 ms spikes were lane rebuilds - each level cleared and copied the WHOLE
@@ -302,7 +304,13 @@ function laneSplit(live) {
 // fade change no longer borrows the board's line and glow layers and wipes S.litKey - the board kept rebuilding every lane a second time
 // each wave (~200 ms in WebKit at 430x775@3). +1 full-size canvas (~16 MB at 2048x2048). false = the old borrow, if the phone runs out of canvas memory
 let LANE_FADE_OWN = !(typeof DIAG === "string" && DIAG.includes("fadeborrow")); // (diag fadeborrow: the old borrow, to compare)
-const laneFadeL = { sig: "" };
+// THE FADE LAYER IN ITS BOX (perf, 2026-10-31 - a 7.0.14 iPhone: its in-frame upload 41 ms on average, 529 at worst, and its build ~5 full 2048-px passes): every
+// draw into it is strokeSoft's, so the rect those draws covered (laneRec) holds ALL of it - a rebuild clears the last one's box, masks and copies only its own, and
+// the GPU copy is sent only the union of the boxes changed since its last upload (dirty, LANE_ALL: the whole layer). The same pixels: outside the box it was clear
+const LANE_ALL = "all";
+let laneRec = null; // { r }: while set, strokeSoft records the canvas rect it drew
+const rectOr = (a, b) => { if (!a || !(a.w > 0 && a.h > 0)) return b && b.w > 0 && b.h > 0 ? b : a; if (!b || !(b.w > 0 && b.h > 0)) return a; const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y); return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y }; };
+const laneFadeL = { sig: "", box: null, dirty: LANE_ALL };
 function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (nothing fading in)
   if (!laneFadeGl()) return null;
   const { fade } = laneSplit(litLanes());
@@ -315,11 +323,16 @@ function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (
     if (LANE_FADE_OWN) { // glow into L.cv itself, the line over it from L.lcv: the same pixels as the borrow's clear + glow + line
       L.lcv ||= document.createElement("canvas");
       const lx = L.lcv.getContext("2d"); if (!lx) throw new Error("lane fade: no 2d context");
-      laneLayer(L.lcv, lx, cv.width, cv.height); laneLayer(L.cv, x, cv.width, cv.height);
-      strokeLit(lx, x, fade.map(u => ({ ...u, a: u.a0 })));
-      applyMask(x, GLOW_FALLOFF); applyMask(lx, 1);
-      x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.drawImage(L.lcv, 0, 0);
+      const whole = !L.box || L.cv.width !== cv.width || L.cv.height !== cv.height || L.lcv.width !== cv.width || L.lcv.height !== cv.height, old = whole ? null : L.box; // (whole: a first build or a new size - all cleared)
+      laneLayer(L.lcv, lx, cv.width, cv.height, old); laneLayer(L.cv, x, cv.width, cv.height, old);
+      let B = null; laneRec = { r: null }; try { strokeLit(lx, x, fade.map(u => ({ ...u, a: u.a0 }))); } finally { B = laneRec.r; laneRec = null; }
+      if (B) {
+        applyMask(x, GLOW_FALLOFF, B); applyMask(lx, 1, B);
+        x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.drawImage(L.lcv, B.x, B.y, B.w, B.h, B.x, B.y, B.w, B.h);
+      }
+      L.dirty = whole || L.dirty === LANE_ALL ? LANE_ALL : rectOr(rectOr(L.dirty, old), B); L.box = B || { x: 0, y: 0, w: 0, h: 0 };
     } else {
+      L.box = null; L.dirty = LANE_ALL;
       const S = laneSet(), { laneCv, lctx, glowCv, gctx } = S; // (the board's own line and glow layers as scratch: the board rebuilds its own next time)
       S.litKey = "";
       laneLayer(laneCv, lctx, cv.width, cv.height); laneLayer(glowCv, gctx, cv.width, cv.height);
