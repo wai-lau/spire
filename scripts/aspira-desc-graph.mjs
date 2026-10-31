@@ -30,8 +30,8 @@ const MECH = {
     moons: k => (V("FRZ_MOON_COUNT")[k] ? `${V("FRZ_MOON_COUNT")[k]} moon${V("FRZ_MOON_COUNT")[k] > 1 ? "s" : ""} at ${pct(V("FRZ_MOON_BY")[k])} of the tower${V("FRZ_SUBMOON_N")[k] ? `, each with ${V("FRZ_SUBMOON_N")[k]} small moon${V("FRZ_SUBMOON_N")[k] > 1 ? "s" : ""}` : ""}` : "no moons"),
   },
   sol: {
-    focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${pct(V("SOL_SCORCH_TOTAL"))} of itself over ${V("SOL_SCORCH_N")[k]} ticks, the rod one burn on every enemy it sweeps, one every ${V("SOL_SCORCH_Q")}s, stacking without cap` : "no burn") + ``,
-    refraction: k => `every hit splits to the ${V("SOL_SPLIT")[k]} nearest enemies further down a band ${V("SOL_BAND_W")[k]} u either side of the aim (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`,
+    focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${pct(V("SOL_SCORCH_TOTAL"))} of itself over ${V("SOL_SCORCH_N")[k]} ticks, the rod one burn on every enemy it sweeps, one every ${V("SOL_SCORCH_Q")}s, stacking without cap, each burn slowing ${pct(V("SOL_SCORCH_SLOW"))} while it runs (never a shielded enemy)` : "no burn") + ``,
+    refraction: k => (!V("SOL_SPLIT")[k] ? (k ? `no split: the beam strikes its first enemy and flies on to the wall of a band ${V("SOL_BAND_W")[k]} u either side of the aim, mirroring there, striking no one more` : "no split, no band: the beam strikes its first enemy and flies on straight past it, striking no one more") : `every hit splits to the ${V("SOL_SPLIT")[k]} nearest enemies further down a band ${V("SOL_BAND_W")[k]} u either side of the aim (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`),
     breach: k => (V("SOL_BREACH_ARMOR")[k] ? `every hit strips ${pct(V("SOL_BREACH_ARMOR")[k])} of the armor left` : "no armor strip") + `, crit x${V("SOL_CRIT_K")}`,
   },
   acd: {
