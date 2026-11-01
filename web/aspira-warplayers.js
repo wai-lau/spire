@@ -172,9 +172,18 @@ function laneFadeBind(gl, u) {
       (R ? createImageBitmap(L.cv, R.x, R.y, R.w, R.h, { premultiplyAlpha: "premultiply" }) : createImageBitmap(L.cv, { premultiplyAlpha: "premultiply" })).then(b => { if (typeof perfBoardWait === "function") perfBoardWait("fadeWait", warp.litP, warp.litTok); warp.litP = 0; if (warp.litBmp) warp.litBmp.close(); warp.litBmp = b; warp.litBmpSig = sig; warp.litBmpRect = R; warp.litBmpSize = size; }, () => { warp.litP = 0; warp.litNoBmp = true; F.dirty = LANE_ALL; });
     }
   } else if (L && L.sig !== warp.litSig && !litOk && !warp.litP) {
-    const t0 = performance.now(); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, L.cv); gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); warp.litSig = L.sig;
-    warp.litSize = L.cv.width + "x" + L.cv.height; laneFadeL.dirty = null; // (the whole layer sent: nothing left over)
-    if (typeof perfBoardUp === "function") perfBoardUp("fade", performance.now() - t0);
+    /* IN-FRAME, ONLY THE BOX (perf, 2026-10-31 - a 7.0.20 iPhone log: this whole-layer upload 231 ms on average, 582 at worst, on 36 of its 47 frames over 100 ms): over a
+       GPU copy already the layer's size, only the rect changed since the last upload (laneFadeL.dirty) is copied into a box-sized canvas and sent with texSubImage2D - in
+       the same frame, so lane timing is exact (the 7.0.14 snapshot's lag is what broke it); nothing changed, no upload. A new size or LANE_ALL: the whole layer as before */
+    const t0 = performance.now(), size = L.cv.width + "x" + L.cv.height, D = laneFadeL.dirty, R = D !== LANE_ALL && warp.litSize === size ? D : null;
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    if (R && !(R.w > 0 && R.h > 0)) { /* nothing changed on the GPU copy's pixels */ } else if (R) {
+      const b = warp.litBox ||= document.createElement("canvas"), bx = b.getContext("2d");
+      if (b.width !== R.w || b.height !== R.h) { b.width = R.w; b.height = R.h; } else bx.clearRect(0, 0, R.w, R.h);
+      bx.drawImage(L.cv, R.x, R.y, R.w, R.h, 0, 0, R.w, R.h); gl.texSubImage2D(gl.TEXTURE_2D, 0, R.x, R.y, gl.RGBA, gl.UNSIGNED_BYTE, b);
+    } else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, L.cv); warp.litSize = size; }
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false); warp.litSig = L.sig; laneFadeL.dirty = null; // (all sent: nothing left over)
+    if (typeof perfBoardUp === "function") perfBoardUp(R ? "fadeBox" : "fade", performance.now() - t0);
   }
   gl.uniform1i(u("lit"), 3); gl.uniform1f(u("litA"), L ? L.a : 0);
   warp.litOk = u("lit") !== null && u("litA") !== null;
