@@ -218,7 +218,7 @@ check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () 
   if (r.fires !== 40) return "40 impacts left " + r.fires + " live fires (owner, 2026-10-20: \"dont cap fire stacks\")";
   return "";
 });
-check("IFR flares: one where each meteor lands, the first too (three within 10 u at the Flare capstone); a fire lights its flares on a bell round its first second, inside it, near the centre more often, more of them in a wider fire", () => {
+check("IFR flares: one where each meteor lands, the first too (two within 10 u at the Flare capstone); a fire lights its flares on a bell round its first second, inside it, near the centre more often, more of them in a wider fire", () => {
   const r = run(`(() => {
     const fresh = (ax, k, need) => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let i = 0; i < k; i++) upgradeTower(t, ax, true); ifrAll(t, need); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
@@ -259,7 +259,7 @@ check("IFR flares: one where each meteor lands, the first too (three within 10 u
   if (r.firstFlares !== 1) return "the first hit lit " + r.firstFlares + " flares (expected one - owner 2026-10-20: every meteor, the first too)";
   if (r.land0.fires !== 1) return "a fan meteor's landing made " + r.land0.fires + " fires (expected its own Hellfire - owner 2026-10-20: every meteor)";
   if (r.land0.n !== 1 || !(r.land0.jit < 30)) return "a fan meteor's landing lit " + r.land0.n + " flares, " + r.land0.jit + " u off (expected 1 there)";
-  if (r.land6.n !== 3 || !(r.land6.jit <= r.jmax + 30)) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 3, within " + r.jmax + " u)";
+  if (r.land6.n !== 2 || !(r.land6.jit <= r.jmax + 30)) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 2, within " + r.jmax + " u - owner, 2026-10-31: \"B\" then \"Both\": Flare V 2 flares a landing; was 3)";
   for (const [k, f] of [["Hellfire 0", r.f0], ["Hellfire IV", r.f6]]) {
     if (!(f.n >= 1)) return k + ": a grown fire lit " + f.n + " flares (1 at the least)";
     if (Math.abs(f.share - f.shareWant) > 1e-9) return k + ": a fire's share " + f.share + " (expected 1 / sqrt(1 + the fan) = " + f.shareWant.toFixed(3) + ": a Hellfire a meteor, the same burn a strike)";

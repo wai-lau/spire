@@ -26,6 +26,10 @@ check("ACD goo in percentages: strip a share of the picker's CURRENT armor and d
     if (v.length !== 6 || v[0] !== 0 || v.some(x => x > 8) || v.some((x, k) => k > 1 && (x < v[k - 1] || x > 2 * v[k - 1]))) return n + " " + JSON.stringify(v);
   }
 });
+check("IFR Flare: a flare's ticks (its whole burn) never more than 2x the tier before, 0..V (owner, 2026-11-01: \"no level damage steps above 2x\"; live went 2 s -> 6 s at IV)", () => {
+  const n = run(`IFR_BURN_S.map((b, i) => Math.floor(Math.min(EFFECT_MAX_S, b) / IFR_TICK_S[i] + 1e-9))`);
+  if (n.length !== 6 || n.some((v, k) => k && (v < n[k - 1] || v > 2 * n[k - 1]))) return "ticks a flare by tier " + JSON.stringify(n);
+});
 check("curve: SOL's rate is flat (never raise SOL's fire rate)", () => {
   const r = run(`[curveAt("sol", 0).rate, curveAt("sol", SKILL_POINTS).rate]`);
   if (r[0] !== 1 || r[1] !== 1) return "SOL rate " + r;

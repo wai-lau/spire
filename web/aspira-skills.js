@@ -148,12 +148,15 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 3, 4, 5, 6, 8], ARC_VOLT_REACH = [150, 170, 190, 215, 240, 270], ARC_FORK_FROM = 2;
 let ARC_RES_SLOW = [0, 0.15, 0.25, 0.38, 0.47, 0.58] /* 0..V, with ARC's geometric curve (owner, 2026-11-01: "Release the arc change") */, ARC_RES_STRIP = [0, 0.05, 0.1, 0.19, 0.32, 0.48] /* 0..V, with it */;
 const ARC_RES_DMG = [1, 1, 1.05, 1.1, 1.15, 1.2]; // Shock's hit factor 0..V
+// SHOCKED (owner, 2026-11-01, picked "1": Shock makes shocked enemies take more damage from ARC): each Shock hit marks its target for
+// the slow's time (STAT_SLOW_T, refreshed on hit); a marked enemy takes x(1 + ARC_SHOCK_AMP) from ARC's hits (damage(), not the burn)
+let ARC_SHOCK_AMP = [0, 0.3, 0.7, 1.6, 1.8, 2]; // +% from ARC on a shocked enemy 0..V (front-loaded at III: band 2026-11-01)
 function arcSkillStats(t, s, b) {
   const c = skillOf(t, "conductivity"), v = skillOf(t, "voltage"), z = skillOf(t, "capacitance");
   curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24)
   s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= ARC_BURST_RATE; s.dmg *= ARC_ECHO_K;
   s.arcRange = ARC_VOLT_REACH[v]; s.targets = 1; s.branch = 1; s.fork = v >= ARC_FORK_FROM; s.layers = ARC_VOLT_JUMPS[v]; s.revisit = 0;
-  s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.charge = null; s.statSlow = 0; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.burn = ARC_BURN; s.skill = true;
+  s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.charge = null; s.statSlow = 0; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.shockAmp = ARC_SHOCK_AMP[z]; s.burn = ARC_BURN; s.skill = true;
   s.dmg *= ARC_RES_DMG[z]; // Shock (id capacitance) hits a little harder by tier, each tier at most 2x the last with the curve's x1.9 (owner, 2026-11-01: "no level damage steps above 2x")
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
@@ -221,6 +224,7 @@ function voltCarry(c, e, left) {
 const ARC_BURN = 0.1, ARC_BURN_N = 2, ARC_BURN_Q = 0.1;
 function arcBurnStep(dt) {
   for (const e of G.enemies) {
+    if (e.shockT > 0) e.shockT -= dt; // SHOCKED wears off
     const u = e.arcBurn; if (!u || e.dead) continue;
     u.acc += dt; u.t -= dt;
     while (u.acc >= ARC_BURN_Q - 1e-9 && !e.dead) { u.acc -= ARC_BURN_Q; const t = G.towers.find(x => x.id === u.id); if (t) damage(e, u.k, t, true, false); }
@@ -232,6 +236,7 @@ function skillHit(c, e, d) {
   damage(e, d, c.t, false, false, c.st); onHit(e, c.t, c.st, d); // (discharges e's own charges, if any)
   if (c.st.carry && e.dead && hp0 > 0 && d > hp0) voltCarry(c, e, d - hp0);
   if (c.st.resSlow && !e.dead) applySlow(e, c.st.resSlow, STAT_SLOW_T, c.t.id); // Shock (the ARC redesign, 2026-10-29)
+  if (c.st.shockAmp && !e.dead) { e.shockAmp = Math.max(e.shockT > 0 && e.shockAmp || 0, c.st.shockAmp); e.shockT = STAT_SLOW_T; } // SHOCKED for the slow's time, refreshed on hit
   if (c.st.resStrip && !e.dead) shredPct(e, c.t, c.st.resStrip); // a SHARE of the armor left, as every strip since 6.18.0 (Wai 2026-10-28)
   if (c.st.burn && !e.dead) e.arcBurn = { t: ARC_BURN_N * ARC_BURN_Q, k: d * c.st.burn / ARC_BURN_N, id: c.t.id, acc: 0 }; // THE BURN (arcBurnStep)
   const b = c.st.charge;

@@ -100,7 +100,7 @@ const DESCRIBE = {
       (r ? " An aura around it pulls enemies together and slows them" + (r >= CAPSTONE_TIER ? " twice as hard." : ", twice as hard inside the void.") : ""); /* V (owner, 2026-10-26): "An aura... pulls enemies together and slows them twice as hard." */ /* (no "flings its particles farther": owner, 2026-10-26) */
   },
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
-  // towers across); Flare the flares - bigger, hotter, longer (its capstone: three a landing)
+  // towers across); Flare the flares - bigger, hotter, longer (its capstone: two a landing, IFR_CAP_FLARES)
   ifr(sk) {
     const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0, n = m >= CAPSTONE_TIER ? IFR_FAN_CAP : IFR_FAN_N, st = IFR_STORE[m];
     // 100% = a meteor's hit (IFR_ROUTE_K0 x st.dmg); a fire flare's hit shrinks as the burst grows (hk), the fire's wall is IFR_RING_HIT_K of it

@@ -61,7 +61,7 @@ const SPEC = {
   ifr: st => [["Burst", st.fan + " meteors"], ["Stored", (st.store || 1) + " in orbit"] /* (fire, flares, fan "—" until bought - tier redesign 2026-10-24) */, ["Hit", tdP("ifr", st, st.dmg * st.routeK)], ["Charge", +st.chargeS.toFixed(2) + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
     ["Fire", st.fire ? "r" + Math.round(st.fireR) : "—"], ["Fire speed", st.fire ? st.fireV + "/s" : "—"], ["Fire flares", st.fire ? Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2) + " untaken flares" : "—"],
     ["Flare length", st.flares ? Math.round(st.beamL) : "—"], ["Flare width", st.flares ? Math.round(st.beamW) : "—"], ["Flare tick", st.flares ? tdP("ifr", st, st.dmg * st.flareK) : "—"], ["Flare ticks", st.flares ? +(1 / st.tickS).toFixed(1) + "/s" : "—"], ["Flare lasts", st.flares ? +st.burnS.toFixed(1) + "s" : "—"],
-    ["Flare capstone", st.triple ? "3 flares a landing" : "—"]],
+    ["Flare capstone", st.triple ? IFR_CAP_FLARES + " flares a landing" : "—"]],
   // GRV (aspira-grv.js; rework 2026-10-25): at STARTING mass - a void grows up to x GRV_MASS_MAX with the damage it deals
   grv: st => [["Novas", st.novaN ? st.novaN + " a shot" : "—"], ["Nova hit", st.novaN ? tdP("grv", st, st.dmg * GRV_NOVA_K) : "—"], ["Nova reach", st.novaN ? st.novaR : "—"], ["Armor strip", st.strip ? "−" + shredPc(st.dmg * GRV_NOVA_K * st.strip) + " / nova" : "—"],
     ["Void", "r" + Math.round(st.auraR * Math.sqrt(st.startM))], ["Grows", "×" + GRV_MASS_MAX + " by hitting"], ["Lasts", GRV_LIFE + "s unfed"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means"); THREE rows, so now -> next repeats no sentence (owner, 2026-10-26: "move sections so they fit on card") */,
