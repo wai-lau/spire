@@ -9,9 +9,8 @@ const CURVE_DONE = ["arc", "sol", "crr", "frz", "acd", "grv", "ifr"]; // the kin
 
 check("curve: by total level alone, rising, each level's hit BELOW 2x the level before - each tower its OWN growth (owner, 2026-11-01: \"get the early damage even lower and allow the curve to not be exactly 1.5x / just keep it below 2x for any level\" - replaces 2026-10-28's \"slightly steepening\"; \"towers each having their own curve is fine\", 2026-10-28)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
-  // still ABOVE 2x on 7.1.11 (GRV x2.25 at L1, CRR's tier-0 hit x6.45, IFR x3.65): their own curves are the curve patch's job - the
-  // list may only shrink
-  const PENDING = ["grv", "crr", "ifr"];
+  // still ABOVE 2x on 7.1.12 (CRR's tier-0 hit x6.45): its own curve is the CRR rework's job - the list may only shrink
+  const PENDING = ["crr"];
   for (const [k, d] of Object.entries(r)) {
     for (let i = 1; i < d.length; i++) if (!(d[i] > d[i - 1])) return k + " not rising at L" + i;
     if (!PENDING.includes(k)) for (let i = 1; i < d.length; i++) if (!(d[i] < 2 * d[i - 1])) return k + " x" + (d[i] / d[i - 1]).toFixed(2) + " at L" + i;
