@@ -31,7 +31,8 @@ const DESCRIBE = {
     const fl = ARC_AMP_FALL[c], d = Math.round(Math.abs(fl - 1) * 100), j = ARC_VOLT_JUMPS[v], times = TIMES[j] || " " + NUM_WORD[j] + " times";
     const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
     return "A bolt of lightning that " + (v >= ARC_FORK_FROM ? "forks once and " : "") + "chains" + times + " for " + pc + "." +
-      (z ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " + Math.round(ARC_RES_STRIP[z] * 100) + "% of armor." : "");
+      (z ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " + Math.round(ARC_RES_STRIP[z] * 100) + "% of armor." : "") +
+      (ARC_RES_DMG[z] > 1 ? " Its bolts hit ×" + +ARC_RES_DMG[z].toFixed(2) + " harder." : ""); /* Shock's hit factor (Wai approved, 2026-11-01) */
   },
 
   // FRZ (owner, 2026-10-22, shorter): "Emits an aura that slows enemies by 67% and hurts more the slower they are. Enemies in the aura take
