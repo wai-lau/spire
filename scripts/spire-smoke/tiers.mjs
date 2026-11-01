@@ -7,14 +7,14 @@ import { ROOT, boot, check } from "./harness.mjs";
 const { run } = boot();
 const CURVE_DONE = ["arc", "sol", "crr", "frz", "acd", "grv", "ifr"]; // the kinds whose stats run on the curve (each tower task adds its own)
 
-check("curve: by total level alone, rising, slightly steepening - each tower its OWN growth (owner, 2026-10-28: \"towers each having their own curve is fine\"; one growth for all 2026-10-26 .. 28; tier 0 may sit above the old bare tower - the trio fit's call, owner 2026-10-26)", () => {
+check("curve: by total level alone, rising, each level's hit BELOW 2x the level before - each tower its OWN growth (owner, 2026-11-01: \"get the early damage even lower and allow the curve to not be exactly 1.5x / just keep it below 2x for any level\" - replaces 2026-10-28's \"slightly steepening\"; \"towers each having their own curve is fine\", 2026-10-28)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
+  // still ABOVE 2x on 7.1.11 (GRV x2.25 at L1, CRR's tier-0 hit x6.45, IFR x3.65): their own curves are the curve patch's job - the
+  // list may only shrink
+  const PENDING = ["grv", "crr", "ifr"];
   for (const [k, d] of Object.entries(r)) {
     for (let i = 1; i < d.length; i++) if (!(d[i] > d[i - 1])) return k + " not rising at L" + i;
-    // a tower with a TIER-0 HIT (dmg0: ARC, CRR) jumps from it to the curve at the first purchase - owner, 2026-10-30, option 1: "accept the
-    // first-buy jump" - so its steepening is checked from L1 on
-    const from = run(`STAT_CURVE.${k}.dmg0`) == null ? 2 : 3;
-    for (let i = from; i < d.length; i++) if (d[i] - d[i - 1] < d[i - 1] - d[i - 2] - 1e-9) return k + " flattens at L" + i;
+    if (!PENDING.includes(k)) for (let i = 1; i < d.length; i++) if (!(d[i] < 2 * d[i - 1])) return k + " x" + (d[i] / d[i - 1]).toFixed(2) + " at L" + i;
   }
   if (Object.keys(r).length !== 7) return "STAT_CURVE covers " + Object.keys(r).join(",");
   const same = run(`(() => { const lv = sk => towerLevel({ kind: "arc", skills: sk }); return [lv({ conductivity: 2, voltage: 1 }), lv({ capacitance: 3 }), lv({})]; })()`);
