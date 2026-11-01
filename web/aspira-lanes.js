@@ -379,13 +379,12 @@ function bossLaneRise(live) {
 const LANE_ITEM_PAD = 10;
 let laneItems = null, laneItemsPrev = null;
 const laneItem = (k, x, y, hw, hh, look) => { if (laneItems) laneItems.set(k, { x0: x - hw, y0: y - hh, x1: x + hw, y1: y + hh, look }); };
-function laneDirty() { // the world box round every item drawn, gone or changed since the last board; null when it cannot be told
+function laneDirty() { // a world box for every item drawn, gone or changed since the last board (one an item: its old and new spot); [] when nothing changed, null when it cannot be told
   if (!laneItems || !laneItemsPrev) return null;
-  let b = null;
-  const add = r => { b = b ? { x0: Math.min(b.x0, r.x0), y0: Math.min(b.y0, r.y0), x1: Math.max(b.x1, r.x1), y1: Math.max(b.y1, r.y1) } : { ...r }; };
-  for (const [k, r] of laneItems) { const q = laneItemsPrev.get(k); if (!q || q.look !== r.look) { add(r); if (q) add(q); } }
-  for (const [k, q] of laneItemsPrev) if (!laneItems.has(k)) add(q);
-  return b || { x0: 0, y0: 0, x1: 0, y1: 0 }; // (nothing changed: an empty strip)
+  const out = [], or = (a, b) => ({ x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) });
+  for (const [k, r] of laneItems) { const q = laneItemsPrev.get(k); if (!q || q.look !== r.look) out.push(q ? or(r, q) : { ...r }); }
+  for (const [k, q] of laneItemsPrev) if (!laneItems.has(k)) out.push({ ...q });
+  return out;
 }
 function drawLanes() {
   laneItemsPrev = laneItems; laneItems = (typeof laneGlOn === "function" && laneGlOn()) ? new Map() : null;

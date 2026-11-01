@@ -37,13 +37,13 @@ function warpRender() {
       const pending = warp.statNew; warp.statKey = key; warp.statSig = sig; warp.statAt = now; warp.statNew = true;
       ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); ctx.save(); drawSceneBase(); ctx.restore();
       const moved = bossBarOnBoard() ? warpBossBarBoard() : null; // the boss's HP bar, settled: on the board, under every tower FX (below)
-      const lbl = laneMv && gpuL && typeof laneDirty === "function" ? laneDirty() : null, boxOr = (a, b) => !a ? b : !b ? a : { x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) };
-      const mv = part && (!bossMv || moved) && (!laneMv || lbl) ? boxOr(bossMv ? moved : null, laneMv ? lbl : null) : null;
-      // ...a pending whole upload stays whole
-      if (mv && !(pending && !warp.statRect)) {
-        const moved = mv; warp.statWhy = laneMv ? "labels" : "boss";
-        const r = { x: Math.max(0, Math.floor(moved.x0 * cam.k + cam.ox)), y: Math.max(0, Math.floor(moved.y0 * cam.k + cam.oy)) }; r.w = Math.max(0, Math.min(S, Math.ceil(moved.x1 * cam.k + cam.ox)) - r.x); r.h = Math.max(0, Math.min(S, Math.ceil(moved.y1 * cam.k + cam.oy)) - r.y);
-        const R = pending && warp.statRect; warp.statRect = !R ? r : (x => ({ x, y: Math.min(R.y, r.y), w: Math.max(R.x + R.w, r.x + r.w) - x, h: Math.max(R.y + R.h, r.y + r.h) - Math.min(R.y, r.y) }))(Math.min(R.x, r.x));
+      const lbl = laneMv && gpuL && typeof laneDirty === "function" ? laneDirty() : null; // (a list of world boxes, [] when nothing changed)
+      const boxes = part && (!bossMv || moved) && (!laneMv || lbl) ? [...(bossMv ? [moved] : []), ...(laneMv ? lbl : [])] : null;
+      // ...a pending whole upload stays whole; ONE STRIP A CHANGED BOX (2026-11-01): two labels across the board were one strip half its size
+      if (boxes && !(pending && !warp.statRect)) {
+        warp.statWhy = laneMv ? "labels" : "boss";
+        const px = boxes.map(m => { const r = { x: Math.max(0, Math.floor(m.x0 * cam.k + cam.ox)), y: Math.max(0, Math.floor(m.y0 * cam.k + cam.oy)) }; r.w = Math.max(0, Math.min(S, Math.ceil(m.x1 * cam.k + cam.ox)) - r.x); r.h = Math.max(0, Math.min(S, Math.ceil(m.y1 * cam.k + cam.oy)) - r.y); return r; }).filter(r => r.w > 0 && r.h > 0);
+        warp.statRect = stripsMerge(pending && warp.statRect ? warp.statRect.concat(px) : px);
       } else warp.statRect = null;
     }
     warp.texCam = { ...cam };
@@ -68,9 +68,10 @@ function warpRender() {
 function warpBoardSig(now) {
   const live = typeof litLanes === "function" ? litLanes() : [];
   let fading = false;
+  const gpuL = typeof laneGlOn === "function" && laneGlOn(); // the GPU lanes: the board holds no lit lane, so a lane fading in is not the board's (it changed the sig's length, and that sent the whole board, 2026-11-01)
   const lanes = laneHold(typeof laneSplit === "function" ? laneSplit(live).board : live).map(u => { // (a lane fading in on the fade layer is not the board's)
     const t0 = laneSeen.get(u.pi + ":" + u.ang);
-    if (!u.star && !laneFadeGl() && laneFadeMs() && (t0 === undefined || now - t0 < laneFadeMs())) fading = true;
+    if (!gpuL && !u.star && !laneFadeGl() && laneFadeMs() && (t0 === undefined || now - t0 < laneFadeMs())) fading = true;
     return u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + u.n + ":" + litLevel(u.a, u.star);
   }).join(",");
   return G.wave + "|" + bossInv.phase + "|" + lanes + (fading ? "|" + Math.floor(now / WARP_STAT_MS) : "") + "|" + bossBoardSig();
@@ -107,6 +108,22 @@ function bossBarMoved() {
   if (all) return null;
   return x0 > x1 ? { x0: 0, y0: 0, x1: 0, y1: 0 } : { x0: x0 - BOARD_DIRTY_PAD, y0: y0 - BOARD_DIRTY_PAD, x1: x1 + BOARD_DIRTY_PAD, y1: y1 + BOARD_DIRTY_PAD }; // (nothing crossed: an empty strip)
 }
+// the board's strips (px rects): boxes that overlap or come within STRIP_JOIN px are one; past STRIP_MAX strips, one box round them all
+const STRIP_JOIN = 8, STRIP_MAX = 8;
+function stripsMerge(rs) {
+  const out = rs.map(r => ({ ...r }));
+  for (let hit = true; hit;) {
+    hit = false;
+    for (let i = 0; i < out.length && !hit; i++) for (let j = i + 1; j < out.length; j++) {
+      const a = out[i], b = out[j];
+      if (a.x > b.x + b.w + STRIP_JOIN || b.x > a.x + a.w + STRIP_JOIN || a.y > b.y + b.h + STRIP_JOIN || b.y > a.y + a.h + STRIP_JOIN) continue;
+      const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y); out[i] = { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y }; out.splice(j, 1); hit = true; break;
+    }
+  }
+  if (out.length <= STRIP_MAX) return out;
+  const x = Math.min(...out.map(r => r.x)), y = Math.min(...out.map(r => r.y));
+  return [{ x, y, w: Math.max(...out.map(r => r.x + r.w)) - x, h: Math.max(...out.map(r => r.y + r.h)) - y }];
+}
 // both layers onto their texture units for the bell (warpDraw): the board sent up only when it was redrawn
 function warpLayersBind(gl, u) {
   if (!warp.dynTex) {
@@ -115,8 +132,9 @@ function warpLayersBind(gl, u) {
   }
   gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, warp.tex);
   if (warp.bmp) { /* the snapshot resolved off the frame: only this upload is left, from decoded pixels */
-    const t0 = performance.now(), R = warp.bmpRect; if (R) gl.texSubImage2D(gl.TEXTURE_2D, 0, R.x, R.y, gl.RGBA, gl.UNSIGNED_BYTE, warp.bmp); else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.bmp); warp.statSize = warp.bmp.width; } const ms = performance.now() - t0; // (R: the boss bar's strip alone)
-    warp.bmp.close(); warp.bmp = null; warp.boardLanes = warp.bmpLanes; // (the lanes in that board are on the GPU now: laneSplit)
+    const t0 = performance.now(), R = warp.bmpRect, bs = warp.bmp; // (R: the strips alone, one bitmap each)
+    if (R) R.forEach((r, i) => gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, bs[i])); else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bs[0]); warp.statSize = bs[0].width; } const ms = performance.now() - t0;
+    for (const b of bs) b.close(); warp.bmp = null; warp.boardLanes = warp.bmpLanes; // (the lanes in that board are on the GPU now: laneSplit)
     if (typeof perfBoardUp === "function") perfBoardUp("bmp", ms);
   }
   /* a stalling device (an Apple GPU blocks ~40-50 ms in texImage2D(canvas)) snapshots the board with createImageBitmap, which resolves off the frame, and uploads it a frame or so later; the bell shows the old board till then */
@@ -125,12 +143,12 @@ function warpLayersBind(gl, u) {
     if (warp.statNew && !warp.bmpP) {
       warp.bmpP = performance.now(); warp.bmpTok = typeof perfWaitTok === "function" ? perfWaitTok() : 0; warp.statNew = false; warp.bmpLanes = warp.statLanes;
       const R = warp.statRect && warp.statSize === cv.width ? warp.statRect : null; warp.statRect = null; // (the strip alone - over a texture already the board's size)
-      if (R && !(R.w > 0 && R.h > 0)) { warp.bmpP = 0; } else
-      (R ? createImageBitmap(cv, R.x, R.y, R.w, R.h) : createImageBitmap(cv)).then(b => { if (typeof perfBoardWait === "function") perfBoardWait("bmpWait", warp.bmpP, warp.bmpTok); warp.bmpP = 0; warp.bmp = b; warp.bmpRect = R; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
+      if (R && !R.length) { warp.bmpP = 0; } else
+      Promise.all(R ? R.map(r => createImageBitmap(cv, r.x, r.y, r.w, r.h)) : [createImageBitmap(cv)]).then(b => { if (typeof perfBoardWait === "function") perfBoardWait("bmpWait", warp.bmpP, warp.bmpTok); warp.bmpP = 0; warp.bmp = b; warp.bmpRect = R; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
     }
   } else if (warp.statNew || warp.statUp !== warp.tex) {
     const R = warp.statNew && warp.statUp === warp.tex && warp.statSize === cv.width ? warp.statRect : null, t0 = performance.now(); warp.statRect = null;
-    if (R) { if (R.w > 0 && R.h > 0) { const c = warp.stripCv ||= document.createElement("canvas"); if (c.width !== R.w || c.height !== R.h) { c.width = R.w; c.height = R.h; } const x = c.getContext("2d"); x.clearRect(0, 0, R.w, R.h); x.drawImage(cv, R.x, R.y, R.w, R.h, 0, 0, R.w, R.h); gl.texSubImage2D(gl.TEXTURE_2D, 0, R.x, R.y, gl.RGBA, gl.UNSIGNED_BYTE, c); } /* (a canvas the strip's size: no pixel readback) */ } // the boss bar's strip alone
+    if (R) { for (const r of R) { const c = warp.stripCv ||= document.createElement("canvas"); if (c.width !== r.w || c.height !== r.h) { c.width = r.w; c.height = r.h; } const x = c.getContext("2d"); x.clearRect(0, 0, r.w, r.h); x.drawImage(cv, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h); gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, c); } /* (a canvas the strip's size: no pixel readback) */ } // the strips alone
     else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); warp.statSize = cv.width; }
     const ms = performance.now() - t0; warp.statNew = false; warp.statUp = warp.tex; warp.boardLanes = warp.statLanes;
     if (typeof perfBoardUp === "function") perfBoardUp(warp.statWhy || "first", ms);
