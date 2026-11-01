@@ -324,11 +324,12 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
   if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });
 check("ARC's sentence (the ARC redesign, owner 2026-10-29): one bolt that chains (Voltage), forks once from Voltage II, Conductivity the carry, Shock a slow and an armor break; FRZ tier 0 \"slows and deals X% damage\"", () => {
-  const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 2 }), describeTower("arc", { conductivity: 2 }), describeTower("arc", { capacitance: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP * 100)]`);
+  const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 2 }), describeTower("arc", { conductivity: 2 }), describeTower("arc", { capacitance: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP / (typeof TD_UNIT !== "undefined" ? TD_UNIT.frz : 1) * 100)]`);
   if (r[0] !== "A bolt of lightning that chains twice for 20% less damage every chain.") return "tier 0: " + r[0];
   if (!/^A bolt of lightning that forks once and chains four times for \d+% less damage every chain\.$/.test(r[1])) return "Voltage II: " + r[1];
   if (!/that chains twice for full damage every chain\.$/.test(r[2])) return "Conductivity II: " + r[2];
   if (!/ Hits slow by \d+% and break \d+% of armor\.$/.test(r[3])) return "Shock I: " + r[3];
-  if (!r[4].includes("slows enemies by") || !r[4].includes(" and deals " + r[5] + "%td over ")) return "FRZ tier 0: " + r[4];
+  if (!r[4].includes("slows enemies by") || !r[4].includes(" and deals " + r[5] + "%td a second")) return "FRZ tier 0: " + r[4];
 });
+
 

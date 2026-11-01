@@ -10,6 +10,10 @@ const cap = s => s[0].toUpperCase() + s.slice(1);
 const pc = x => Math.round(x * 100) + "%";
 const secs = x => +x.toFixed(2) + "s";
 const ticking = (x, hits, z) => pc(x) + " damage over " + secs(z); // (hits: the stat block's, never the sentence's)
+// PER UNIT, NEVER A TOTAL (owner, 2026-10-31: "Nothing should ever be above like 800%"): a steady burn reads its share A SECOND, a CRR
+// sortie its share A BOLT; ACD, FRZ and GRV shares are of their td (TD_UNIT[kind] x the old unit, aspira-stats.js), so a table read here divides by it
+const perSec = x => pc(x) + " damage a second";
+const tdU = kind => (typeof TD_UNIT !== "undefined" && TD_UNIT[kind]) || 1;
 // ARMOR STRIPS READ AS A SHARE OF THE ARMOR (2026-10-28 armor rework: a strip multiplies armor down, never below 0 - shredArmor,
 // aspira-acid.js): a strip of `amt` armor (before the LATE SCALE) takes that share of what is left at the CURRENT wave (wording rule 10)
 const descWave = () => Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1);
@@ -41,9 +45,9 @@ const DESCRIBE = {
   frz(sk) {
     const tp = sk.temp || 0, rm = sk.rime || 0, mo = sk.moons || 0, pct = x => Math.round(x * 100) + "%", mn = FRZ_MOON_COUNT[mo], sub = FRZ_SUBMOON_N[mo];
     const hits = 1 / FRZ_TEMP_TICK[tp]; // ticks a second; 100% = a second of the full aura (Brittle's - tier 0 nips FRZ_NIP of it)
-    return "Emits aura that slows enemies by " /* owner's words, 2026-10-26 */ + pct(FRZ_TEMP_SLOW[tp]) + " and deals " + (tp ? ticking(1, hits, 1) + ", up to " + pc(1 + FRZ_CHILL_K * SLOW_CAP) + " the slower they are." : ticking(FRZ_NIP, hits, 1) + ".") + /* tier 0 slows and nips (owner, 2026-10-25) */
+    return "Emits aura that slows enemies by " /* owner's words, 2026-10-26 */ + pct(FRZ_TEMP_SLOW[tp]) + " and deals " + (tp ? perSec(1 / tdU("frz")) + ", up to " + pc((1 + FRZ_CHILL_K * SLOW_CAP) / tdU("frz")) + " the slower they are." : perSec(FRZ_NIP / tdU("frz")) + ".") + /* tier 0 slows and nips (owner, 2026-10-25) */
       (FRZ_BRITTLE[tp] > 1 ? " Enemies in the aura take " + pct(FRZ_BRITTLE[tp] - 1) + " more damage." : "") +
-      (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost bite for " + pc(FRZ_RIME_BITE0 * FRZ_TEMP_TICK[0]) + " damage" /* a bite: FRZ_RIME_BITE0 full ticks */ + ", permanently slow by " + pct(FRZ_RIME[rm]) + ((ac => ac !== "0%" ? " and strip up to " + ac + " of armor" : "")(pc(Math.min(1, FRZ_RIME_CRACK[rm])))) /* nothing it does not do yet (owner, 2026-10-26) */ + " every hit." : "") +
+      (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost bite for " + pc(FRZ_RIME_BITE0 * FRZ_TEMP_TICK[0] / tdU("frz")) + " damage" /* a bite: FRZ_RIME_BITE0 full ticks */ + ", permanently slow by " + pct(FRZ_RIME[rm]) + ((ac => ac !== "0%" ? " and strip up to " + ac + " of armor" : "")(pc(Math.min(1, FRZ_RIME_CRACK[rm])))) /* nothing it does not do yet (owner, 2026-10-26) */ + " every hit." : "") +
       (mn ? " " + (mn > 1 ? cap(NUM_WORD[mn]) + " moons copy" : "A moon copies") + " the aura at " + pc(FRZ_MOON_BY[mo]) + (sub ? ", each with " + NUM_WORD[sub] + " satellite" + (sub > 1 ? "s" : "") + " at " + pc(FRZ_MOON_BY[mo] * FRZ_SUBMOON.k) : "") + "." : "");
   },
   // SOL (owner, 2026-10-26): one beam, straight through every hit and splitting at each to SOL_SPLIT more (Diffraction), each hit SOL_HOP
@@ -56,7 +60,7 @@ const DESCRIBE = {
       (p >= 100 ? " without losing intensity." : ", losing " + (100 - p) + "% intensity" + (k > 1 ? "." : k ? " every hit." : " every bounce."))) + /* no split (Diffraction I, 2026-10-31): one enemy struck, the rest of the line only bounces */
       (br ? " Every hit strips " + pc(br) + " of armor." : "") +
       (SOL_PAR_N[b] ? " " + cap(NUM_WORD[SOL_PAR_N[b]]) + " parallel ray" + (SOL_PAR_N[b] > 1 ? "s pass" : " passes") + " through every enemy in line for " + pc(SOL_PAR_K) + "td." : "") + /* Breach's parallel beams (owner, 2026-10-28) */
-      (sc ? " The light prism and hits scorch the enemy for " + ticking(SOL_SCORCH_TOTAL, sc, sc * SOL_SCORCH_Q) + ", each burn slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : ""); /* the slow: SOL_SCORCH_SLOW a stack (2026-10-31) */ /* stacking unsaid; the prism's stacks are the stat block's */
+      (sc ? " The light prism and hits scorch the enemy for " + perSec((typeof SOL_SCORCH_BY !== "undefined" ? SOL_SCORCH_BY[f] : SOL_SCORCH_TOTAL) / (sc * SOL_SCORCH_Q)) + " for " + secs(sc * SOL_SCORCH_Q) + ", each burn slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : ""); /* the slow: SOL_SCORCH_SLOW a stack (2026-10-31) */ /* stacking unsaid; the prism's stacks are the stat block's */
   },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY), the pools' slow (ACD_POOL_SLOW, Spill's since the tier redesign),
@@ -64,9 +68,9 @@ const DESCRIBE = {
   acd(sk) {
     const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0, n = ACD_LINES[f], J = n > 1 ? "Jets" : "The jet", s = n > 1 ? "" : "s"; // tier 0: one ray, no pools (tier redesign 2026-10-24)
     const hits = TOWERS.acd.rate * curveAt("acd", 0).rate, pool = ACD_PUDDLE_CAP * ACD_POOL_HEAT, life = Math.min(POOL_MAX_S, (ACD_CONTAGION[c] || {}).life || 0); // 100% = a second of a jet, before its ramp
-    return (n > 1 ? cap(NUM_WORD[n]) + " jets of acid each deal " : "A jet of acid deals ") + ticking(1, hits, 1) + ", doubling every " + secs(ACD_DOUBLE[0]) + " " + (n > 1 ? "they stay" : "it stays") + " on target, up to " + pc(ACD_BASE_MAX) + "." /* owner's words, 2026-10-26 */ + (f ? " Jets retain " + Math.round(ACD_FLOW_CARRY[f] * 100) + "% flow between enemies." : "") +
+    return (n > 1 ? cap(NUM_WORD[n]) + " jets of acid each deal " : "A jet of acid deals ") + perSec(1 / tdU("acd")) + ", growing up to " + ACD_BASE_MAX + "× the longer " + (n > 1 ? "they stay" : "it stays") + " on target." /* a multiplier, not a share (Leader, 2026-11-01); the doubling time: the stat block's */ /* owner's words, 2026-10-26 */ + (f ? " Jets retain " + Math.round(ACD_FLOW_CARRY[f] * 100) + "% flow between enemies." : "") +
       (k ? " " + (n > 1 ? "The jets dissolve" : "The jet dissolves") + " up to " + (st => pc(st.corrode))(descStats("acd", sk)) + " of armor a tick and " + (n > 1 ? "drop" : "drops") + " corrosive goo that strips " + pc(ACD_GOO_STRIP[k]) + " of armor and deals " + pc(ACD_GOO_DMG[k]) + "td." /* a full-ramp tick (2026-10-28 armor rework); the goo in shares (7.1.4; Leader's wording, 2026-11-01) */ : "") /* owner's words, 2026-10-26 */ +
-      (c ? " " + J + " leave" + s + " slimy acidic pools that " + (ACD_POOL_SLOW[c] ? "slow by " + Math.round(ACD_POOL_SLOW[c] * 100) + "% and " : "") + "burn for up to " + ticking(pool * life, hits * life, life) + "." : ""); // (a pool burns at its tower's tick, x the jet's heat when it dropped - up to ACD_PUDDLE_CAP)
+      (c ? " " + J + " leave" + s + " slimy acidic pools that " + (ACD_POOL_SLOW[c] ? "slow by " + Math.round(ACD_POOL_SLOW[c] * 100) + "% and " : "") + "burn for up to " + perSec(pool / tdU("acd")) + " for " + secs(life) + "." : ""); // (a pool burns at its tower's tick, x the jet's heat when it dropped - up to ACD_PUDDLE_CAP)
   },
   // CRR (owner, 2026-10-15): Hangar more interceptors (primes); Tether a slowing, pulsing beam to what it fires at (Chain: on to one more enemy); Armament harder, faster,
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
@@ -77,9 +81,9 @@ const DESCRIBE = {
     // tethers the target ... Tethered targets are slowed by Y% take an additional X% damage per tether" / Armament V "does not need to state rebuilt"
     // (owner, 2026-10-26: "CRR 0: Launches an available interceptor that flies towards an enemy and fires..." / "Hangar I: Launches 2 available interceptors at a time")
     return "Launches " + (CRR_HANGAR[h] > 1 ? CRR_HANGAR[h] + " available interceptors at a time that fly towards an enemy and fire " : "an available interceptor that flies towards an enemy and fires ") +
-      vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " per sortie for a total of " + pc(vo * nb) + " damage" /* td = one bolt (2026-10-26) */ +
+      vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " per sortie" +
       (l ? (tn === 1 ? ", the first one tethering" : CRR_HANGAR[h] > 1 ? " and tether" : " and tethers") + " its target" : "") +
-      ", then " + (a >= CAPSTONE_TIER ? (CRR_HANGAR[h] > 1 ? "burst" : "bursts") + " into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : (CRR_HANGAR[h] > 1 ? "fly" : "flies") + " home to reload.") +
+      ", then " + (a >= CAPSTONE_TIER ? (CRR_HANGAR[h] > 1 ? "burst" : "bursts") + " into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : (CRR_HANGAR[h] > 1 ? "fly" : "flies") + " home to reload.") + " Each bolt deals " + pc(1) + " damage." /* td = one bolt (2026-10-26); per bolt, never the sortie's total (2026-11-01: "Nothing should ever be above like 800%") */ +
       (h ? ((n => " " + n + (n > 1 ? " interceptors" : " interceptor") + " can be stored in orbit.")(Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]))) : "") +
       (l ? " Tethered targets are slowed by " + pc(CRR_TETHER_SLOW[l]) + " and take " + pc(CRR_TETHER_AMP[l]) + " more damage per tether" + (l >= CAPSTONE_TIER ? "; tethers run on to one more enemy nearby." : ".") : "");
   },
@@ -87,11 +91,11 @@ const DESCRIBE = {
   // Void a bigger void, pellets shed as it decays (Singularity: heavier); Gravity Well the aura - pull, slow - and the pellets' damage and
   // range (Event Horizon: the whole aura slows as hard as its inside)
   grv(sk) {
-    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0, U = GRV_INNER_K[0] * GRV_START_MASS, lo = GRV_INNER_K[v] * GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1) / U; // 100% = a second of a tier 0 void's crush (owner, 2026-10-25: "yes" - it was a nova's hit, and tier 0 has none)
+    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0, U = GRV_INNER_K[0] * GRV_START_MASS * tdU("grv"), lo = GRV_INNER_K[v] * GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1) / U; // 100% = a second of a tier 0 void's crush (owner, 2026-10-25: "yes" - it was a nova's hit, and tier 0 has none)
     // (owner, 2026-10-25): "0: void only" / "the void crushes" / "always call it a void, and an aura" / "122% to X% depending on the size"
     // (owner, 2026-10-26): "A void crushes for 100% to 300%td over 1s as it grows. Particles radiate as it decays dealing X%td each." - the merge sentence dropped
     return (n ? cap(NUM_WORD[GRV_NOVA_N]) + " novas implode in quick succession, each dealing " + pc(GRV_NOVA_K / U) + " damage" + (a => a !== "0%" ? " and stripping " + a + " of armor" : "")((st => st.strip ? pc(st.strip) : "0%")(descStats("grv", sk))) + "; then a" : "A") +
-      " void" + (v >= CAPSTONE_TIER ? ", twice as heavy," : "") + " crushes for " + pc(lo) + " to " + ticking(lo * GRV_MASS_MAX, 1 / GRV_TICK, 1) + " as it grows." +
+      " void" + (v >= CAPSTONE_TIER ? ", twice as heavy," : "") + " crushes for " + pc(lo) + " to " + perSec(lo * GRV_MASS_MAX) + " as it grows." +
       " Particles radiate as it decays dealing " + pc(GRV_PELLET_K[r] / U) + " damage each." +
       (r ? " An aura around it pulls enemies together and slows them" + (r >= CAPSTONE_TIER ? " twice as hard." : ", twice as hard inside the void.") : ""); /* V (owner, 2026-10-26): "An aura... pulls enemies together and slows them twice as hard." */ /* (no "flings its particles farther": owner, 2026-10-26) */
   },
@@ -108,7 +112,7 @@ const DESCRIBE = {
     return "A meteor strikes the target for " + pc(1) + " damage and bursts into " + NUM_WORD[n] + " more." +
       (st > 1 ? " " + cap(NUM_WORD[st]) + " meteors can be stored in orbit." : "") +
       (h ? " A wall of fire expands from the enemy, dealing " + pc(hf * IFR_RING_HIT_K) + " damage and lights " + nf + " flares that singe for " + pc(hf * n0 / nf) + " damage each." : "") +
-      (f ? " Meteor impacts light " + (f >= CAPSTONE_TIER ? "three bright flares that burn" : "a bright flare that burns") + " for " + ticking(IFR_TICK_K0 / IFR_ROUTE_K0 * fl, fl, burn) + "." : "");
+      (f ? " Meteor impacts light " + (f >= CAPSTONE_TIER ? NUM_WORD[typeof IFR_CAP_FLARES !== "undefined" ? IFR_CAP_FLARES : 3] + " bright flares that burn" : "a bright flare that burns") + " for " + perSec(IFR_TICK_K0 / IFR_ROUTE_K0 * fl / burn) + " for " + secs(burn) + "." : "");
   },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows

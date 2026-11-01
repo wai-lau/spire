@@ -20,7 +20,9 @@ A tier that only moves a number changes no words - the stat row shows it (2026-1
    (`100%td`) (2026-10-26). A share is anything sized off the tower's hit: a bolt, a tick total, a pellet, a pool burn.
 2. **A change is not a share** and keeps its words: "20% less damage every chain", "losing 30% intensity every hit", "take 35% more
    damage" (2026-10-25).
-3. **A burn reads `X%td over Ys`** - never the number of hits; hit counts live in the stat block (2026-10-26).
+3. **A burn reads its share A SECOND: `X%td a second`**, and `for Ys` when it ends - never a total, never the number of hits; hit
+   counts live in the stat block (2026-10-26; per second since 2026-10-31: "Nothing should ever be above like 800%"). No sentence
+   number passes 800% (smoke).
 4. **Say nothing a tier does not do yet.** A zero, an empty table slot or a value that rounds to 0 drops its whole clause - no
    "break up to 0 armor" (2026-10-26).
 5. **Defaults go unsaid:**
@@ -54,7 +56,7 @@ A tier that only moves a number changes no words - the stat row shows it (2026-1
 | jets, pools, eat, burn (ACD) | heat, fire | acid terms (2026-10-07) |
 | plain sizes ("grows up to 4x by hitting") | engine units ("mass 2") | 2026-10-16 "no one knows what mass 2 means" |
 
-**Stored things** read "N interceptors / meteors can be stored in orbit"; a sortie's total reads "fires Y volleys per sortie for a total of Z%td";
+**Stored things** read "N interceptors / meteors can be stored in orbit"; a sortie reads "fires Y volleys of N bolts per sortie, each bolt dealing Z%td" (per bolt, never the total: 2026-10-31);
 a multiplier on damage taken reads "take X% more damage" (never "an additional X% damage": that reads as a share) (2026-10-26).
 **Drop** what the player cannot act on: how far a fire spreads, that voids merge and shed, that an interceptor is rebuilt at home (2026-10-26).
 
