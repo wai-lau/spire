@@ -97,6 +97,9 @@ function lglBuild(gl) {
   gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.BROWSER_DEFAULT_WEBGL);
   if (lgl.built >= N_PATHS) { lgl.ready = true; lgl.buf = null; }
 }
+// THE LANES UNDER THE INK (WARP_FS): the board is its flat bg fill plus ink, so a pixel's ink is how far it is from bg - x LANE_INK_K, so a
+// difference of 1/LANE_INK_K (labels, rim circles) covers the lanes in full and the faint grid lets them through
+const LANE_INK_K = 3;
 const laneGlOn = () => LANE_GL && lgl.ready && typeof warp !== "undefined" && warp.inFrame === true && !(typeof DIAG === "string" && DIAG.includes("nolanegl")); // in a 3D frame only (warp3d: the 2D view keeps the 2D lanes); diag nolanegl: the 2D lanes, to compare
 // texture unit 4 and the lit lanes' uniforms, every frame (warpDraw): groups in the order strokeSoft lays them (plain lanes' then boss lanes'), each group's lanes together
 const lglA = new Float32Array(4 * LGL_N), lglB = new Float32Array(4 * LGL_N), lglC = new Float32Array(4 * LGL_N);
