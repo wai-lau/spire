@@ -588,6 +588,29 @@ only the far-detail radius comes in (`bb8de72`). Safari has no canvas `filter` (
 moving layer took the canvas path (`5711f58`). Text stamps live on a 6M px (~24 MB) budget, least-recently-used out,
 evicted canvases zeroed so iOS frees them (`146707b`; an iPhone died at wave 62-70 again and again).
 
+### 8.3b The iPhone lag round, 10-31 (7.0.14-7.0.28)
+Owner: "Fix the lag!!", then "get this game in shape with minimal lag and no insane numbers over the next 12h". Every step
+below was render only (fp IDENTICAL `8efcb15956c0`, smoke 126/126) and read from normal-play iPhone slow logs (owner: "I dont
+want to do the diag things").
+
+| Version | Step | What the log showed / what came of it |
+|---|---|---|
+| 7.0.14 `8d3c012` | the lane FADE layer's upload moved off the frame on a stalling device (`createImageBitmap`, upload a frame or so later; `?diag=nofade/fadeborrow/fadesync`) | a 7.0.7 log: 44 frames over 100 ms in 160 s (0-3 in every 6.11-6.15.4 log), 34 of 36 canvas uploads on slow frames, all the fade layer's whole-canvas texImage2D. **Superseded in 7.0.18** |
+| 7.0.15 `9f82869` | slow logs: an `ent` phase, `slowWhy.ms` by phase + `rest`, `causes` for stamps and fade builds; waits skip non-play time | a 7.0.14 log read a 1085 ms `bmpWait` across a pause |
+| 7.0.16 `a719b09` | the fade layer builds, masks and uploads only its lanes' box (`laneRec`, `laneFadeL.dirty`) | its in-frame upload averaged 41 ms (529 worst); one smoke wave's box 516x549 of 1007x1007 (28%) |
+| 7.0.17 `069e400` | text stamps share 1024-px atlas pages | 1978 stamps in 173 s, every one a NEW canvas (the cache never filled, so its reuse pool never refilled), 37 of 71 slow frames made one; WebKit two waves: 134 canvases -> 1 |
+| 7.0.18 `8250e0f` | the fade layer back IN the frame (snapshot opt-in, `?diag=fadebmp`) | owner: "Lanes not appearing/leaving at the right times": the snapshot waited up to ~1 s while the lane alpha followed the live layer |
+| 7.0.19 `313da1c` | a full atlas takes the least recently used fitting slot | a 7.0.17 log: `textMade` 722 - shelves and gutters filled the 6 pages before the px budget evicted; allocator alone, 6000 stamps of 552 sizes: 26 own canvases |
+| 7.0.20 `7699253` | `board` / `fade` frame tags and the next two | 100 slow frames, most time outside our code, against 77 board redraws and 44 fade builds |
+| 7.0.21 `3afa435` | half-res 2D lane layers + 3-level glow on a stalling device | 7.0.20 log: fade texImage2D 231 ms avg on 36 of 47 slow frames |
+| 7.0.22 `216ce71` | the in-frame fade upload sends only its dirty box (`fadeBox`, texSubImage2D) | |
+| 7.0.23 `7d93acf` | `laneHold` drops a held lane once no live lane of its wave runs | bug "lanes stay onscreen after all enemies die": a lane held over by the next wave's lanes never went dark. The 7.0.23 log: 6 frames over 100 ms (was 47-54), but 72 over 50 ms; `fadeBox` 43.9 ms avg (n 49), `bmp` 26.5 ms (n 81) |
+| 7.0.24 `96167c7` -> 7.0.28 `0319ef2` | the lit lanes drawn by the bell shader from baked distance fields (`aspira-lanegl.js`); the board uploads label strips only | removes every fade upload and every lane-driven board upload in 3D. WebKit 430x775@2 vs the 2D lanes: 201 of 1.33 M px off by more than 16 levels, none by more than 48 (the half-res iPhone path 4758, none over 48). The first cut drew the line BEADED (plain distance field at 3 world units a texel) - hence the signed channel. Uploads in a desktop run: 12 label strips, 1 lane build, no `fadeBox` |
+
+Superseded paths, still in the code but off by default: the off-frame fade snapshot (`?diag=fadebmp`) and, in 3D, the whole 2D
+lane path (fade layer, hold, half-res layers) - it is what 2D and `?diag=nolanegl` draw. One look change stands with the GPU lanes,
+parked for the owner: lit lanes now draw OVER the lane labels and rim circles (they were under).
+
 ### 8.4 Audio history
 Synth-only; optional Brood War samples (10-02, gitignored, personal use, served to the guest tier); per-tower build /
 upgrade sounds (`sfxFor`), ACD "Hydralisk spit" per tick and `SAMPLE_MAX`; `SOUND_MAX` 3 per kind (generalised the same
@@ -680,6 +703,13 @@ loaded after draw code that called it (`729bcff`); `.asp-ov{display:flex}` beat 
 UA `[hidden]` rule so the overlay never left; the iOS long-press magnifier / text selection cancelled the core's hold (hence the
 prefixed `-webkit-user-select`); `Math.ceil` bounties made a cheap swarmer pay 1; the late-game
 LAG from hundreds of pools each checking every enemy (bucketed `POOL_CELL`).
+
+**An uncompiled shader shipped (10-31, 7.0.24 -> 7.0.26).** `96167c7` (GPU lanes groundwork, `LANE_GL` false) also changed
+`WARP_FS` to splice `LANE_GLSL`; smoke 126/126 and fp IDENTICAL passed, but the smoke's GL is a stand-in that never compiles GLSL,
+and the commit had not been through WebKit (it also swept another session's uncommitted powers-dock edit in `aspira.html` in -
+commit by path after `git diff` on a shared file). It shipped in 7.0.25 (`c6ba93b`). 7.0.26 (`f98c1ab`) pulled the hunk till
+WebKit had compiled it; it came back in 7.0.28 after a gated WebKit compile and picture check. Rule (ARCHITECTURE §11): a shader
+edit ships only after a WebKit compile.
 
 **Balance reversals worth remembering.** Wave-1 rule amended; ACD's ramp cap halved and RESTORED; "Lovers at 60% HP" reverted within
 the hour; Moons' orbit "dont change moon orbits" reverted (meant all at the farthest); 4/5 moons -> 3; swarm lanes doubled twice;

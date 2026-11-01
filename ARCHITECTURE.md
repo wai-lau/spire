@@ -43,7 +43,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | one pair a type | `TYPE_PAIR` / `PAIR_TURNS`: armor the most direct, swarm almost straight, fast a curve, shield and boss ellipses (`ELLIPSE` 0.7); the type fixes the path, every enemy walks it at one base speed. The chart's dotted 250 u ring is where the pairs' "time under fire" was measured when they were solved (`FIRE_R` in `aspira-defs.js`: declared, read by nothing, kept as the record) |
 | winding | pitch-driven (`TANGENT_Q`, `LANE_SOFT_R`): no hook off the lead-in, a gentle coil at the core; plus the CORE TWIST (owner, 2026-10-22, in place of auto-wait): extra winding at rate `(1 - r/TWIST_R)^TWIST_P / r` inside `TWIST_R` 420 (softened at the core by `TWIST_SOFT`), tightest at the core, each lane `TWIST_S` 3.5 s x its rider's speed longer (`PAIR_RIDER`, `PAIR_V`; solved by bisection), sampled `TWIST_SUB` x finer there; the per-section twist sets the difficulty curve (§5.6); the drawn lane runs on under the core, the walked path ends at `CORE_R` |
 | copies | a wave rides rotated copies of its lane: swarm 20/24, fast 3/5, shield 2/3, armor 2, boss 1 (Lovers 2 opposite, Devil 6), Judgement's escorts 12, **never exactly four** (`NO_LANES`); the set is turned by `laneBestTurn` (rule in §2.2: most even copies, then most total lane, then nearest the usual turn; turned 90 degrees in landscape) |
-| lit | a lane lights only with live enemies (`alive / sent`, `LANE_FADE_IN_MS`); a boss lane is wider, haloed, and waits for the sky (§5.5); Roman numerals on `LABEL_R` 430 never overlap (`placeLabels`); lit layers rebuild at most every `LIT_MIN_MS` |
+| lit | a lane lights only with live enemies (`alive / sent`, `LANE_FADE_IN_MS`); a boss lane is wider, haloed, and waits for the sky (§5.5); Roman numerals on `LABEL_R` 430 never overlap (`placeLabels`); lit layers rebuild at most every `LIT_MIN_MS`; in 3D the lit lanes are drawn by the bell shader (§8.2), the 2D layers only off it; a finished wave's lanes go dark the frame its last enemy dies, whatever wave is up next (`laneHold` keeps a lane only while a live lane of its wave `u.n` runs) |
 | footprint | a tower is a hex of `TOWER_K` cells, `towerGap()` from another, blocked by the core only where outlines touch (`coreKeep`); building on a lane is allowed (towers and enemies never collide); `CORNER_SLOTS` is empty (dormant, §4.8) |
 
 ### 2.2 The play box (pillar 1)
@@ -369,8 +369,9 @@ approach). The rounds, their numbers and the dated lists: ARCHAEOLOGY §4.6d; th
 ### 4.7 The core and its two powers
 
 The core is **free**: no price, no tiers. Bosses hand its powers out outright at full
-strength (`CORE_GRANTS`); the pick flow is dormant. Buttons above the title
-(`aspira-powers.js`) with a recharge bar; **cooldowns count waves sent**.
+strength (`CORE_GRANTS`); the pick flow is dormant. Buttons bottom-left above the speed bar, in their own
+`.asp-powerdock` (`aspira-powers.js`; owner, 2026-10-31: "Move ability buttons to bottom left"), each with a recharge bar; the dock
+inverts with the boss sky, lifts the tower card and passes a press on a tower through like the other overlays; **cooldowns count waves sent**.
 
 | Power | Granted | Use | Effect | Rules |
 |---|---|---|---|---|
@@ -573,7 +574,7 @@ with a chooser open 1-4 pick the first four of its cards instead (the build choo
 | wave list | top-left under the header stats (`--head-h`); the live waves plus the next 3 (`WAVE_NEXT`), one icon an enemy sized by log HP, long rows tessellating; live waves in one green box; "warped in" / "warping in..." with the countdown, hidden while a boss holds the timer |
 | wave card | a tap on a wave's icons or name (`data-n`) opens its stats (`aspira-wavecard.js`): units, lanes, HP each / in all, shields, armor, speed, time to core, credits, a late trait - read off ONE sample enemy made by `spawnEnemy` and taken back out (RNG held at 0.5), rows of 0 / N/A hidden; pauses like the changelog |
 | threat | a mark on the three closest enemies within 4 s of the core; a leak's ring bounces out from the core with the lives left |
-| end screen | one overlay for loss and win: TOP PLAYERS (§9.1) first, taking the spare height: the entry form on a win or a loss past wave 10; on a PORTRAIT screen "Play again" comes next, above the title (`order`, `aspira-endstats.css`); then the title (`ascendant`, the breaching boss's phrase, or `core breached`), the furthest wave, a line a tower ranked by damage and named by its two strongest axes' tier names (`aspira-endstats.js`), "Play again", then the waves that TOOK lives, most lives first, three rows tall (scrolls) |
+| end screen | one overlay for loss and win: TOP PLAYERS (§9.1) first, taking the spare height: the entry form on a win or a loss past wave 10; on a PORTRAIT screen "Play again" comes next, above the title (`order`, `aspira-endstats.css`); then the title (`ascendant`, the breaching boss's phrase, or `core breached`), the furthest wave, a line a tower ranked by damage and named by its two strongest axes' tier names (`aspira-endstats.js`), "Play again", then the waves that TOOK lives, most lives first, three rows tall (scrolls). The overlay pads by `--foot-h` so the list clears the speed bar; on the wide two-column layout the tower stats shrink and scroll first, and the leak list keeps its head and three whole rows (owner, 2026-10-31: "Ensure at least top 3 lives lost are fully visible") |
 
 ## 8. Rendering, audio, performance
 
@@ -598,6 +599,10 @@ Adaptation: the **far-detail radius** shrinks on slow frames and the resolution 
 | one density read | `canvasDpr()`, capped `RES_CAP` |
 | text stamped once | `aspira-textcache.js`, a pixel budget with least-recently-used eviction, evicted canvases zeroed so iOS frees them |
 | caps | damage numbers, sparks, pools a tower, goo drops (ARCHAEOLOGY §12) |
+| lit lanes on the GPU (3D) | `aspira-lanegl.js` (`LANE_GL`, 7.0.28): each lit path's distance field is baked once into a 4x3 atlas of 512-px tiles (2048x1536, ~12 MB; R = the line's SIGNED distance, G its plain distance, both to `LGL_LMAX`; B = the glow distance to `LGL_DMAX`), one path a frame by `lglBuild`. The bell shader (`WARP_FS`, `LANE_GLSL` after `HULL_GLSL`) reads them through a varying `lw` (world offset from the core) and lays glow and line over the board sample: per group of lanes sharing colour, star and alpha, the same level profiles as 2D (`LIT_GLOW_SOFT`, `LIT_LINE_SOFT` / `BOSS_LINE_SOFT`, boss widths x`BOSS_LANE_W`) and the same masks (`GLOW_FADE_R` falloff, the core fade). The line takes `max(abs(signed), plain - 0.75 texel)`: a plain field at 3 world units a texel does not interpolate at the line's V and drew it beaded. So in 3D there is no fade layer, no lane hold and no board redraw a lane; only `laneGlOn()` false (2D, `?diag=nolanegl`, atlas not ready, outside a 3D frame) draws the 2D layers |
+| board strips | in 3D with GPU lanes, a board redraw whose only change is the lane LABELS (Roman numerals, rim circles: `laneItem` records each one's box, `laneDirty()` the union of changed ones padded `LANE_ITEM_PAD`) and/or the boss bar uploads only that rect (`warp.statRect`, texSubImage2D; `boardUp.byWhy` `labels` / `boss`); a new key, wave or sky phase uploads the whole board |
+| 2D lane layers on a stalling device | when the GPU lanes are off and the board upload stalls (`warpUpSlow >= 3`, an iPhone), the lane layers draw at half resolution (`laneLD()` 2, blitted back up) with a 3-level glow (`LIT_GLOW_SOFT3`); the fade layer builds, masks and uploads only its lanes' box (`laneRec`, `laneFadeL.dirty`), in the frame (texSubImage2D from the `warp.litBox` canvas) - never off the frame (§11) |
+| text atlas | a text stamp is a slot on a 1024-px atlas page (`aspira-textcache.js`; at most 6 pages on a phone, 18 on a desktop), packed on shelves by bucket height with 2 px clear round each, drawn from the slot's corner and clipped to it; a dropped stamp's slot goes to the next of its height that fits; with every page full the least recently used stamp whose slot fits (no smaller, at most 2 buckets taller and 32 px wider) gives it up (`gpuSplit.textTaken`); only a stamp too big for a page, or of a size with no shelf, gets its own canvas |
 
 ### 8.3 Draw order and other visuals
 
@@ -653,7 +658,15 @@ version + build). POST is guest tier and rate-limited; GET is owner-only. Files 
 be in the game's way. Read a phone's cost from the GL split, not the frame average: `gpuSplit.why` names
 what fell off the GPU batch (each one re-uploads the moving layer), `sync` compares hitches after an upload
 frame with the rest, and `boardUp.byWhy` splits the board upload by reason (`bmpWait` is off the frame,
-the others block in it).
+the others block in it; `fadeBox` the 2D fade layer's box, `labels` / `boss` the 3D board strips).
+`slowWhy` reads the slow frames alone: `phase` the phase that took most of each (`ent` = `warpEntities`, timed inside
+`warpDraw`; `glDraw` is the rest of it), `ms` their time summed by phase plus `rest` (the frame minus all our timed work:
+browser, GPU process, GC) and, of it, the stamps made and fade layers built in them; `tags` counts the slow frames that
+carry a mark: `board` / `fade` on the frame that redrew the board or built the fade layer, `board+1`, `board+2`, `fade+1`,
+`fade+2` on the next two (so a stall in the GPU process after our work shows). `causes` is `[count, avg ms, max ms]`
+for each text stamp made (`stamp`) and each fade layer build (`fadeBuild`). A `bmpWait` / `fadeWait` logs only when no paused,
+idle, menu or over frame or tab hide fell inside the wait. Diagnose from normal-play logs (owner, 2026-10-31: "I dont want to
+do the diag things"); the `?diag=` switches are for the dev box.
 
 ### 9.3 Saves
 
@@ -690,7 +703,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | towers | `towers` (ARC, SOL, moons), `move` (leash, tower marks), `acid`, `skills` (the charts, ARC), `frz`, `grv` (GRV), `crr` (CRR), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
-| draw (3D) | `warp`, `warp-prism`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
+| draw (3D) | `lanegl` (the GPU lanes' atlas and GLSL, before `warp` because the shader source splices `LANE_GLSL`), `warp`, `warp-prism`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
 | UI and tail | `chooser`, `wavelist`, `wavecard`, `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave` |
 
 
@@ -773,6 +786,9 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | view | **3D is a view, never a rule**: no game logic reads a projected position; taps go back through `unwarp` / `pickAt` |
 | view | **never lower resolution or resize the big 3D canvases during play** (380-540 ms hitches, iPhone crashes); only the far-detail radius adapts; keep text stamps on budget, zero evicted canvases |
 | view | every density read through `canvasDpr()` |
+| view | **the smoke's GL is a stand-in: it never compiles a shader.** Smoke and fp passing say nothing about `WARP_FS` or any GLSL; a shader edit needs a WebKit compile and picture check (a gated browser slot) before it ships. 7.0.24 shipped an uncompiled `WARP_FS` hunk and 7.0.26 had to pull it (ARCHAEOLOGY §11) |
+| view | the lit lanes' timing is exact: a lane lights and goes dark on the frame its enemies arrive and die. Never move a lane layer's upload off the frame (`createImageBitmap` and a later upload): on an iPhone it waited up to ~1 s while the lane's alpha followed the live layer (7.0.14, pulled in 7.0.18: "Lanes not appearing/leaving at the right times") |
+| view | the GPU lanes' line reads the SIGNED channel (`max(abs(signed), plain - 0.75 texel)`); a plain distance field alone draws the line beaded at the atlas's 3 world units a texel |
 | view | Safari has no canvas `filter`; a NaN gradient aborts the overlay's frame: skip tracers with non-finite ends |
 | view | no `backdrop-filter` / blend layer over animated content (a full-canvas `difference` makes the GPU copy the canvas) |
 | view | the ACD pool and goo loops are bucketed (`POOL_CELL`) and capped; never all-enemies x all-pools |
