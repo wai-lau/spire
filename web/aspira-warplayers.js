@@ -29,13 +29,19 @@ function warpRender() {
     if (key !== warp.statKey || (sig !== warp.statSig && now - (warp.statAt || 0) >= WARP_STAT_MS)) {
       /* why this redraw (logged with the upload): the size or palette, the wave, the boss sky, the lit lanes, or only a lane fading in */
       { const p = (warp.statSig || "").split("|"), c = sig.split("|"); warp.statWhy = key !== warp.statKey ? "key" : p[0] !== c[0] ? "wave" : p[1] !== c[1] ? "sky" : p[2] !== c[2] ? "lanes" : "fade"; }
-      const bossOnly = key === warp.statKey && !!warp.statSig && warp.statSig.slice(0, warp.statSig.lastIndexOf("|")) === sig.slice(0, sig.lastIndexOf("|")); // (only the boss bar's HP moved: bossBoardSig is the last part)
+      // a STRIP, not the board: when only the boss bar's HP moved (bossBoardSig, the last part) and/or - with the GPU lanes - only the lanes' labels
+      // and rim circles (laneDirty, aspira-lanes.js), only the box round what changed goes up (warpLayersBind); the wave or the sky: the whole board
+      const ps = (warp.statSig || "").split("|"), cs = sig.split("|"), gpuL = typeof laneGlOn === "function" && laneGlOn();
+      const bossMv = ps[ps.length - 1] !== cs[ps.length - 1] || ps.length !== cs.length, laneMv = ps.slice(2, -1).join("|") !== cs.slice(2, -1).join("|");
+      const part = key === warp.statKey && !!warp.statSig && ps[0] === cs[0] && ps[1] === cs[1] && ps.length === cs.length && (!laneMv || gpuL);
       const pending = warp.statNew; warp.statKey = key; warp.statSig = sig; warp.statAt = now; warp.statNew = true;
       ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); ctx.save(); drawSceneBase(); ctx.restore();
       const moved = bossBarOnBoard() ? warpBossBarBoard() : null; // the boss's HP bar, settled: on the board, under every tower FX (below)
-      // ...and when that is ALL that changed, only its strip goes up (warpLayersBind); a pending whole upload stays whole
-      if (bossOnly && moved && !(pending && !warp.statRect)) {
-        warp.statWhy = "boss";
+      const lbl = laneMv && gpuL && typeof laneDirty === "function" ? laneDirty() : null, boxOr = (a, b) => !a ? b : !b ? a : { x0: Math.min(a.x0, b.x0), y0: Math.min(a.y0, b.y0), x1: Math.max(a.x1, b.x1), y1: Math.max(a.y1, b.y1) };
+      const mv = part && (!bossMv || moved) && (!laneMv || lbl) ? boxOr(bossMv ? moved : null, laneMv ? lbl : null) : null;
+      // ...a pending whole upload stays whole
+      if (mv && !(pending && !warp.statRect)) {
+        const moved = mv; warp.statWhy = laneMv ? "labels" : "boss";
         const r = { x: Math.max(0, Math.floor(moved.x0 * cam.k + cam.ox)), y: Math.max(0, Math.floor(moved.y0 * cam.k + cam.oy)) }; r.w = Math.max(0, Math.min(S, Math.ceil(moved.x1 * cam.k + cam.ox)) - r.x); r.h = Math.max(0, Math.min(S, Math.ceil(moved.y1 * cam.k + cam.oy)) - r.y);
         const R = pending && warp.statRect; warp.statRect = !R ? r : (x => ({ x, y: Math.min(R.y, r.y), w: Math.max(R.x + R.w, r.x + r.w) - x, h: Math.max(R.y + R.h, r.y + r.h) - Math.min(R.y, r.y) }))(Math.min(R.x, r.x));
       } else warp.statRect = null;

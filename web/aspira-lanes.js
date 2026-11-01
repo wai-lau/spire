@@ -30,7 +30,7 @@ const laneSets = {};
 // lane rebuilds in Safari's GPU process): every lane layer (line, glow, base, combo, the masks, the scratch, the fade layer and its GPU copy) is built at 1/LANE_LD of
 // the board's pixels and laid on scaled back up - a quarter of the pixels to stroke, mask, copy and hold (~144 -> ~36 MB at 2048 px). Softer lane edges there;
 // desktop is untouched (LANE_LD 1). laneLD() is the divisor, laneW/laneH the layers' size, laneCam their transform
-const laneLD = () => (typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 2 : 1);
+const laneLD = () => (!(typeof laneGlOn === "function" && laneGlOn()) && typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 2 : 1); // (the GPU lanes: only the faint base is drawn here, once a camera - full size)
 const laneW = () => Math.ceil(cv.width / laneLD()), laneH = () => Math.ceil(cv.height / laneLD());
 const laneCam = x => { const d = laneLD(); x.setTransform(cam.k / d, 0, 0, cam.k / d, cam.ox / d, cam.oy / d); };
 const laneKeyCam = () => [cv.width, cv.height, cam.k, cam.ox, cam.oy, laneLD()].join(); // (every cached layer's key: a change of divisor rebuilds them all)
@@ -111,7 +111,7 @@ function laneFail(err) {
 function blit(c) { const d = laneLD(); ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; if (d === 1) ctx.drawImage(c, 0, 0); else ctx.drawImage(c, 0, 0, c.width * d, c.height * d); ctx.restore(); } // (a half-res layer scaled back up: laneLD)
 const laneSeen = new Map(), LANE_FADE_IN_MS = 2000;
 /* a device whose board upload stalls (warpUpSlow, aspira-warplayers.js) gets its lanes at full brightness at once: the fade-in was most of its board resends (14 of 19 a wave) */
-const laneFadeMs = () => (!laneFadeGl() && typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 0 : LANE_FADE_IN_MS); // (the GPU fade layer costs such a device one upload, not a resend a step)
+const laneFadeMs = () => (!laneFadeGl() && !(typeof laneGlOn === "function" && laneGlOn()) && typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 0 : LANE_FADE_IN_MS); // (the GPU fade layer costs such a device one upload, not a resend a step)
 const LIT_MIN_MS = 200;
 const LIT_STEPS = 16;
 /* the lane brightness a board redraw is keyed on: 16 steps; on a device whose board upload stalls just lit or not (the lane then keeps the brightness it had when it lit - one redraw as a wave starts, one as it ends) */
@@ -119,6 +119,7 @@ const litLevel = (a, star) => (!star && typeof warpUpSlow !== "undefined" && war
 /* ...and such a device does not redraw the board when a lane goes DARK mid-wave (they end one by one - 31 of its 38 board uploads): the lit set it keys on only grows, until every lane is dark */
 const laneHeld = new Map();
 function laneHold(live) {
+  if ((typeof laneGlOn === "function" && laneGlOn())) return live; // (the GPU lanes: a lane going out costs its label's strip, not the board - aspira-lanegl.js)
   if (!(typeof warpUpSlow !== "undefined" && warpUpSlow >= 3)) return live;
   if (!live.length) { laneHeld.clear(); return live; }
   /* ...but only while ITS wave still runs (2026-10-31, Wai on an iPhone: "lanes stay onscreen after all enemies die"): with the next wave's lanes up (sent early, or
@@ -145,7 +146,7 @@ function drawLaneStrokes(all) {
     for (const path of PATHS) bctx.stroke(path.p2d);
     laneMask(bctx);
   }
-  if (!live.length) { S.litKey = ""; holds(new Set()); blit(baseCv); return; }
+  if (!live.length || (typeof laneGlOn === "function" && laneGlOn())) { S.litKey = ""; holds(new Set()); blit(baseCv); return; } // (the GPU lanes: the lit ones are the bell shader's - aspira-lanegl.js)
   const now = performance.now(); // (the swarm share and the fade-in are litLanes')
   // the lit layers are REBUILT only when what they show changes - which lanes,
   // their colours, their brightness to 1/LIT_STEPS, the camera; otherwise last
@@ -264,6 +265,7 @@ function placeLabels(items) {
     const hits = () => boxes.some(b => Math.abs(b.x - it.x) * 2 < b.w + w && Math.abs(b.y - y) * 2 < b.h + h);
     for (let n = 0; n < 12 && hits(); n++) y += dir * h;
     boxes.push({ x: it.x, y, w, h });
+    laneItem("t" + it.text + "@" + it.x.toFixed(1), it.x, y, w / 2 + LANE_ITEM_PAD, h / 2 + LANE_ITEM_PAD, y.toFixed(1) + ":" + it.alpha.toFixed(3) + ":" + it.color + ":" + it.size);
     ctx.globalAlpha = it.alpha;
     text(it.text, it.x, y, it.size, it.color);
   }
@@ -304,7 +306,7 @@ function litLanes() {
 // own FADE LAYER - sent up once - and the bell's shader lays it over the board at the fade's brightness every frame (litA); once whole it goes
 // to the board, and leaves the fade layer only when that board is on the GPU (warp.boardLanes), so it never blinks out between the two.
 // One brightness for the layer: the lanes fading together light together (a wave's copies, a boss's lanes) - it is the least of theirs
-const laneFadeGl = () => typeof warp !== "undefined" && warp.litOk === true && !(typeof DIAG === "string" && DIAG.includes("nofade")); // the bell's shader takes the fade layer (warpLayersBind); diag nofade: no fade layer (the lanes light on the board - a stalling device at full brightness at once), to see what it costs
+const laneFadeGl = () => typeof warp !== "undefined" && warp.litOk === true && !(typeof laneGlOn === "function" && laneGlOn()) && !(typeof DIAG === "string" && DIAG.includes("nofade")); // the bell's shader takes the fade layer (warpLayersBind); diag nofade: no fade layer (the lanes light on the board - a stalling device at full brightness at once), to see what it costs
 const laneKeyOf = u => u.pi + ":" + u.ang.toFixed(3) + ":" + u.color;
 function laneSplit(live) {
   if (!laneFadeGl()) return { board: live, fade: [] };
@@ -372,7 +374,21 @@ function bossLaneRise(live) {
   }
   for (const [key, p] of bossLaneA) if (!seen.has(key) && now - p.t > 1.5) bossLaneA.delete(key); // kept 1.5 s unseen: a gap of a frame or two no longer restarts its fade from dark (owner, 2026-10-18: "disappears randomly")
 }
+// WHAT THE BOARD'S LANE PART DREW (the GPU lanes, aspira-lanegl.js): each label and rim circle, its box (world) and its look, so a board
+// redrawn for its labels alone sends up only the box round those that changed (laneDirty, warpRender) - a lane going out is a strip, not the board
+const LANE_ITEM_PAD = 10;
+let laneItems = null, laneItemsPrev = null;
+const laneItem = (k, x, y, hw, hh, look) => { if (laneItems) laneItems.set(k, { x0: x - hw, y0: y - hh, x1: x + hw, y1: y + hh, look }); };
+function laneDirty() { // the world box round every item drawn, gone or changed since the last board; null when it cannot be told
+  if (!laneItems || !laneItemsPrev) return null;
+  let b = null;
+  const add = r => { b = b ? { x0: Math.min(b.x0, r.x0), y0: Math.min(b.y0, r.y0), x1: Math.max(b.x1, r.x1), y1: Math.max(b.y1, r.y1) } : { ...r }; };
+  for (const [k, r] of laneItems) { const q = laneItemsPrev.get(k); if (!q || q.look !== r.look) { add(r); if (q) add(q); } }
+  for (const [k, q] of laneItemsPrev) if (!laneItems.has(k)) add(q);
+  return b || { x0: 0, y0: 0, x1: 0, y1: 0 }; // (nothing changed: an empty strip)
+}
 function drawLanes() {
+  laneItemsPrev = laneItems; laneItems = (typeof laneGlOn === "function" && laneGlOn()) ? new Map() : null;
   const live = litLanes();
   try { drawLaneStrokes(live); } catch (err) { laneFail(err); }
   ctx.lineJoin = "round"; ctx.lineCap = "round";
@@ -388,7 +404,7 @@ function drawLanes() {
   for (const u of live) {
     const rim = rotAbout(PATHS[u.pi].rim, u.ang), na = slotAng(u.pi) + u.ang;
     ctx.strokeStyle = COL.white; ctx.globalAlpha = u.a; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(rim.x, rim.y, 4, 0, 6.283); ctx.stroke();
+    ctx.beginPath(); ctx.arc(rim.x, rim.y, 4, 0, 6.283); ctx.stroke(); laneItem("r" + rim.x.toFixed(1) + "," + rim.y.toFixed(1) + ":" + u.a.toFixed(3), rim.x, rim.y, 7, 7, "");
     items.push({ text: roman(u.n) + ":" + roman(u.pi + 1), x: CX + Math.cos(na) * LABEL_R, y: CY + Math.sin(na) * LABEL_R, size: LANE_LABEL_PX, alpha: u.a, color: u.color });
   }
   // idle: a small faint label + rim circle per lane
@@ -396,7 +412,7 @@ function drawLanes() {
     const idle = 1 - litAt(slotAng(i));
     if (idle <= 0.01) return;
     ctx.strokeStyle = COL.white; ctx.globalAlpha = 0.7 * idle; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(path.rim.x, path.rim.y, 4, 0, 6.283); ctx.stroke();
+    ctx.beginPath(); ctx.arc(path.rim.x, path.rim.y, 4, 0, 6.283); ctx.stroke(); laneItem("i" + i + ":" + idle.toFixed(3), path.rim.x, path.rim.y, 7, 7, "");
     const na = slotAng(i);
     items.push({ text: roman(Math.max(1, G.wave)) + ":" + roman(i + 1), x: CX + Math.cos(na) * LABEL_R, y: CY + Math.sin(na) * LABEL_R, size: LANE_IDLE_PX, alpha: 0.3 * idle, color: "cyan" });
   });
