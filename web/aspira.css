@@ -161,6 +161,14 @@
   pointer-events: none;
 }
 .asp-bottom > * { pointer-events: auto; }
+/* the powers BOTTOM-LEFT (owner, 2026-10-31: "Move ability buttons to bottom left"; they sat under the build buttons, bottom-right) */
+.asp-powerdock {
+  position: absolute;
+  left: calc(env(safe-area-inset-left, 0px) + var(--space-3));
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px) + var(--foot-h, 0px) + var(--space-3)); /* above the speed bar, level with the build buttons */
+  z-index: var(--z-raised);
+  pointer-events: none;
+}
 .asp-build { display: flex; gap: var(--space-2); }
 
 /* every row RIGHT-ALIGNED under the build buttons (owner, 2026-10-23; the title sat centred) */
@@ -168,8 +176,8 @@
 
 /* only its BUTTONS catch a touch (owner, 2026-10-14: "boss text and powers stop me from dragging my towers"): the boss text,
    the title and the gaps round the power buttons let a drag through to the board */
-#asp .asp-bottom > .asp-buildcol, #asp .asp-buildcol > *, #asp .asp-buildcol .asp-powers { pointer-events: none; }
-#asp .asp-buildcol button { pointer-events: auto; }
+#asp .asp-bottom > .asp-buildcol, #asp .asp-buildcol > *, #asp .asp-powers { pointer-events: none; }
+#asp .asp-buildcol button, #asp .asp-powers button { pointer-events: auto; }
 #asp .asp-build .asp-tw { min-width: 96px; padding-block: var(--space-3); background: hsl(var(--bg-hsl)); } /* bigger (owner, 2026-10-05; was 72px) */
 
 /* the tower being placed: its card (an .asp-pop, so it looks and colours like
@@ -216,6 +224,7 @@
 #asp.asp-boss .asp-volbox,
 #asp.asp-boss .asp-foot,
 #asp.asp-boss .asp-bottom,
+#asp.asp-boss .asp-powerdock,
 #asp.asp-boss .asp-pop,
 #asp.asp-boss .asp-chooser { filter: invert(1); } /* the upgrade cards flip with the boss sky too (owner) */
 
@@ -322,7 +331,7 @@
 .asp-bosshint:empty { display: none; } /* "cancel" and "close" the same width: the button never shifts */
 
 /* over the chooser's blurred overlay while something is on offer */
-#asp.asp-spending .asp-bottom { z-index: var(--z-overlay); }
+#asp.asp-spending .asp-bottom, #asp.asp-spending .asp-powerdock { z-index: var(--z-overlay); }
 .asp-row > button { flex: 1; }
 
 #asp button {
@@ -903,7 +912,7 @@
 
 /* the CORE POWERS' BUTTONS under the title (owner, 2026-10-11; above it since 2026-10-08; aspira-powers.js): name, seconds left, and a
    bar along the bottom that fills as the power recharges; flashing when ready, lit while it runs or is armed */
-.asp-powers { display: flex; flex-direction: column; align-items: flex-end; gap: var(--space-2); } /* stacked, TEMPORAL DRIVE over ORBITAL RELAY (owner, 2026-10-08) */
+.asp-powers { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); } /* stacked, TEMPORAL DRIVE over ORBITAL RELAY (owner, 2026-10-08) */
 #asp .asp-powers .asp-power { align-self: stretch; } /* one width: the wider label sets both */
 .asp-powers[hidden] { display: none; }
 #asp .asp-power { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: var(--space-0-5); min-width: calc(var(--space-10) * 3); padding: var(--space-1-5) var(--space-3); font-size: var(--fs-xs); line-height: var(--lh-none); text-transform: uppercase; }
@@ -916,4 +925,4 @@
 #asp .asp-power.run, #asp .asp-power.armed { border-color: currentcolor; background: hsl(var(--white-hsl) / 0.12); }
 
 /* diagnostics (aspira-quality.js DIAG): localStorage spire.diag = nohud hides the HUD panels, to see what the page's own layers cost */
-.asp-diag-nohud #asp .asp-head, .asp-diag-nohud #asp .asp-left, .asp-diag-nohud #asp .asp-bottom, .asp-diag-nohud #asp .asp-foot { visibility: hidden; }
+.asp-diag-nohud #asp .asp-head, .asp-diag-nohud #asp .asp-left, .asp-diag-nohud #asp .asp-bottom, .asp-diag-nohud #asp .asp-powerdock, .asp-diag-nohud #asp .asp-foot { visibility: hidden; }

@@ -56,7 +56,7 @@ const pickTower = ev => { const s = pickAt(ev); return s && s.t; };
 // TOWERS OVER THE OVERLAYS TAKE THE FINGER (owner, 2026-10-22: "the towers are on top, but i need them to be draggable and clickable"): a
 // press that lands on the wave list, the powers or the boxes ON a tower (drawn over them since 6.11.12, #asp-tow) goes to the board: the
 // canvas gets the same pointerdown (and so captures the pointer - the drag and the tap are the board's), the overlay none of it, nor its click
-const OVER_SEL = ".asp-left, .asp-bottom";
+const OVER_SEL = ".asp-left, .asp-bottom, .asp-powerdock";
 const overTower = ev => ev.target !== cv && ev.target && ev.target.closest && ev.target.closest(OVER_SEL) && pickTower(ev);
 let overTookAt = -1e9;
 (function overlayPass() {
