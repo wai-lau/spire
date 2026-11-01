@@ -37,9 +37,9 @@ const SKILL_TREES = {
   arc: [
     // THE ARC REDESIGN (owner, 2026-10-29): the ids stay (saves, sims, smoke); the axes are AMPERAGE (id conductivity), VOLTAGE and
     // RESISTANCE (id capacitance) - arcSkillStats below
-    { id: "conductivity", name: "Amperage", tiers: [{ name: "Transfer" }, { name: "Superconductor" }, { name: "Storm" }] },
+    { id: "conductivity", name: "Conductivity", tiers: [{ name: "Transfer" }, { name: "Superconductor" }, { name: "Storm" }] },
     { id: "voltage", name: "Voltage", tiers: [{ name: "Spark" }, { name: "Vaporize" }, { name: "Plasma" }] },
-    { id: "capacitance", name: "Resistance", tiers: [{ name: "Static" }, { name: "Overload" }, { name: "Tempest" }] },
+    { id: "capacitance", name: "Shock", tiers: [{ name: "Static" }, { name: "Overload" }, { name: "Tempest" }] },
   ],
 };
 // FRZ (owner, 2026-10-05): an AURA - everything inside is slowed (and loses it
@@ -48,7 +48,7 @@ const SKILL_TREES = {
 // PERMANENT slow on all it passes; Moons = 1 / 2 / 3 orbiting copies of the
 // tower at half of everything.
 SKILL_TREES.frz = [
-  { id: "temp", name: "Sublimation" /* (owner, 2026-10-12; was Temp) */, tiers: [{ name: "Chill" }, { name: "Absolute Zero" }, { name: "Heat Death" }] },
+  { id: "temp", name: "Brittle" /* (owner, 2026-11-01, was Sublimation; 2026-10-12, was Temp) */, tiers: [{ name: "Chill" }, { name: "Absolute Zero" }, { name: "Heat Death" }] },
   { id: "rime", name: "Permafrost" /* (owner, 2026-10-12; was Rime) */, tiers: [{ name: "Frost" }, { name: "Cryosphere" }, { name: "Glaciation" }] },
   { id: "moons", name: "Moons", tiers: [{ name: "Moon" }, { name: "Desolation" }, { name: "Eclipse" }] },
 ];
@@ -63,7 +63,7 @@ SKILL_TREES.frz = [
 SKILL_TREES.sol = [
   { id: "focus", name: "Scorch" /* (owner, 2026-10-25: SOL is always one beam - Focus became Scorch; the id stays - saves, sims) */, tiers: [{ name: "Sear" }, { name: "Blaze" }, { name: "Inferno" }] },
   { id: "refraction", name: "Diffraction" /* (owner, 2026-10-25: "Rename Reflection to Diffraction"; 2026-10-22 Reflection; the id stays - saves) */, tiers: [{ name: "Lens" }, { name: "Spectrum" }, { name: "Aurora" }] },
-  { id: "breach", name: "Breach", tiers: [{ name: "Pierce" }, { name: "Flare" }, { name: "Sunfire" }] },
+  { id: "breach", name: "Breach", tiers: [{ name: "Pierce" }, { name: "Glare" }, { name: "Sunfire" }] },
 ];
 // ACD (owner, 2026-10-05): its lines DRIP burning PUDDLES onto the lane by
 // default, each burning at a share of its line's current heat. Catalyst = the
@@ -72,7 +72,7 @@ SKILL_TREES.sol = [
 SKILL_TREES.acd = [
   { id: "corrosion", name: "Corrosion", tiers: [{ name: "Etch" }, { name: "Dissolve" }, { name: "Annihilate" }] },
   { id: "spray", name: "Flow", tiers: [{ name: "Mist" }, { name: "Torrent" }, { name: "Cascade" }] },
-  { id: "contagion", name: "Contagion", tiers: [{ name: "Blister" }, { name: "Pandemic" }, { name: "Blight" }] },
+  { id: "contagion", name: "Spill", tiers: [{ name: "Blister" }, { name: "Pandemic" }, { name: "Blight" }] },
 ];
 const hasSkills = t => !!SKILL_TREES[t.kind];
 const maxLvl = t => (hasSkills(t) ? 1 + SKILL_POINTS : MAX_LVL); // a ladder step a purchase, the capstone too (tier redesign 2026-10-24; was 2 + 16, the capstone two levels)
@@ -89,7 +89,7 @@ const shownLvl = t => (!hasSkills(t) ? t.lvl : t.lvl >= maxLvl(t) ? MAX_LVL : Ma
 //        SLIDE extent (owner: "static should increase movement range")
 //   FRZ  Temp = a wider aura (its range IS the aura); FRZ roams by kind (aspira-towers.js)
 //   SOL  (a long-range ANCHOR) Focus and Refraction = RANGE; Breach = SLIDE extent (owner)
-//   ACD  Spray = range (more lines need more targets in reach); Contagion = a roaming
+//   ACD  Spray = range (more lines need more targets in reach); Spill = a roaming
 //        plague (the puddles follow the lane): slide
 // (SKILL_MOVE / skillMove - each axis's range and slide factors - GONE: owner, 2026-10-26 "no axis should directly increase tower range,
 // tower movement, or tower damage"; both ride the curve by total level now, aspira-curve.js)
@@ -137,12 +137,12 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // VOLTAGE PIERCES ARMOR (owner, 2026-10-11: "make upgrade choices matter" - Voltage was ARC's dead axis, worst on every
 // type): its arcs ignore this share of armor - Voltage is ARC's armor answer, Conductivity the shields, Capacitance the fast
 // THE ARC REDESIGN (owner, 2026-10-29, verbatim: "Now bad vs swarm, can you believe it / Hits hard, big chain, forks are limited to 1 fork
-// per node, doesn't refork after 1 fork, cannot hit same target twice / ARC 0: one chain (hits 3) / Amperage: increased carry damage /
-// Resistance: slows and armor breaks, no AoE zap / Voltage: increases chains and chain range / to make ARC not feel like overlapping SOL,
+// per node, doesn't refork after 1 fork, cannot hit same target twice / ARC 0: one chain (hits 3) / Conductivity: increased carry damage /
+// Shock: slows and armor breaks, no AoE zap / Voltage: increases chains and chain range / to make ARC not feel like overlapping SOL,
 // keep range small, movement large, chain range up, so you get close zap and it conducts to a few units nearby"): ONE strike, a chain of
 // ARC_VOLT_JUMPS jumps (tier 0: 2 - three enemies hit), each jump reaching ARC_VOLT_REACH u from the enemy it leaps from (not tied to
 // ARC's own small range); from Voltage ARC_FORK_FROM the strike FORKS ONCE into two chains, and nothing forks after (branchFrom). Each
-// jump keeps ARC_AMP_FALL x the hit before (Amperage, id conductivity). Resistance (id capacitance): every hit slows (ARC_RES_SLOW, for
+// jump keeps ARC_AMP_FALL x the hit before (Conductivity, id conductivity). Shock (id capacitance): every hit slows (ARC_RES_SLOW, for
 // STAT_SLOW_T s - never a shielded enemy, applySlow) and breaks ARC_RES_STRIP of the armor left (shredPct); no
 // charges, no bursts. A bolt never strikes a unit twice (skillHop). Numbers 0..V, let: the battery fits them
 let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 3, 4, 5, 6, 8], ARC_VOLT_REACH = [150, 170, 190, 215, 240, 270], ARC_FORK_FROM = 2;
@@ -229,7 +229,7 @@ function skillHit(c, e, d) {
   const hp0 = e.hp;
   damage(e, d, c.t, false, false, c.st); onHit(e, c.t, c.st, d); // (discharges e's own charges, if any)
   if (c.st.carry && e.dead && hp0 > 0 && d > hp0) voltCarry(c, e, d - hp0);
-  if (c.st.resSlow && !e.dead) applySlow(e, c.st.resSlow, STAT_SLOW_T, c.t.id); // Resistance (the ARC redesign, 2026-10-29)
+  if (c.st.resSlow && !e.dead) applySlow(e, c.st.resSlow, STAT_SLOW_T, c.t.id); // Shock (the ARC redesign, 2026-10-29)
   if (c.st.resStrip && !e.dead) shredPct(e, c.t, c.st.resStrip); // a SHARE of the armor left, as every strip since 6.18.0 (Wai 2026-10-28)
   if (c.st.burn && !e.dead) e.arcBurn = { t: ARC_BURN_N * ARC_BURN_Q, k: d * c.st.burn / ARC_BURN_N, id: c.t.id, acc: 0 }; // THE BURN (arcBurnStep)
   const b = c.st.charge;

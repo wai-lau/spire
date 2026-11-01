@@ -26,7 +26,7 @@ function rayForm(st) {
 const SPEC = {
   arc: st => {
     // THE ARC REDESIGN (owner, 2026-10-29): one strike, a chain of st.layers jumps, forking once at the strike from Voltage ARC_FORK_FROM
-    // (branchFrom: each of the two chains runs the whole chain), Resistance a slow and a strip on every hit; no charges, no bursts
+    // (branchFrom: each of the two chains runs the whole chain), Shock a slow and a strip on every hit; no charges, no bursts
     const forks = st.fork ? 2 : st.branch, hits = 1 + forks * st.layers;
     // ONE NUMBER A ROW (owner, 2026-10-26: "for the stats only have 1 number per line"): every compound row split
     return [["Hits", hits + " a bolt"], ["Forks", st.fork ? "once" : "—"], ["Arc dmg", tdP("arc", st, st.dmg * st.arcFall)],
@@ -36,8 +36,8 @@ const SPEC = {
         : [["Arc hop", Math.round(st.arcRange)], ["Reach", Math.round(chainReach(st))]]),
       ["Delay", hopDelay(st).toFixed(2) + "s"]];
   },
-  frz: st => st.skill ? [["Aura slow", Math.round(st.aura * 100) + "%"], ["Aura tick", tdP("frz", st, st.dmg)], ["Ticks", +st.rate.toFixed(1) + "/s"] /* a TICK and how often (owner, 2026-10-25: "in stats show damage per tick and ticks per second") */, ["Brittle", st.brittle > 1 ? "+" + Math.round((st.brittle - 1) * 100) + "% taken" : "—"],
-    ["Pulse every", st.rime ? st.rimeEvery + "s" : "—"], ["Pulse slow", st.rime ? "+" + Math.round(st.rime * 1000) / 10 + "%" : "—"] /* names WHAT it adds (owner, 2026-10-14: "+22% ... but what +22%"); tenths, since halving made 3.5 and 8.5 */, ["Frost armor", st.rimeCrack ? "−" + pc(Math.min(1, st.rimeCrack)) : "—"] /* at FULL frost (less frost, that share): frostArmor, a share of the enemy's armor (damage(); 2026-10-28 armor rework) */, ["Full frost", st.rime ? Math.round(FRZ_RIME_FULL * 100) + "% slow, then spreads" : "—"], ["Cold bite", st.chill ? "+" + FRZ_CHILL_K + "% dmg per 1% slow" : "—"] /* tier 0 nips flat; the bite is Sublimation's (tier redesign) */ /* frzBite */ /* the prose's "seeps into their armor": frostArmor x an armored enemy's armor, by frost share (damage()) */, ["Moons", st.moonN ? st.moonN + " at " + Math.round(st.moonK * 100) + "%" + (st.subN ? " +" + st.subN + " small each" : "") : "—"]]
+  frz: st => st.skill ? [["Aura slow", Math.round(st.aura * 100) + "%"], ["Aura tick", tdP("frz", st, st.dmg)], ["Ticks", +st.rate.toFixed(1) + "/s"] /* a TICK and how often (owner, 2026-10-25: "in stats show damage per tick and ticks per second") */, ["Damage taken", st.brittle > 1 ? "+" + Math.round((st.brittle - 1) * 100) + "%" : "—"] /* (was "Brittle": the axis took the name, 2026-11-01) */,
+    ["Pulse every", st.rime ? st.rimeEvery + "s" : "—"], ["Pulse slow", st.rime ? "+" + Math.round(st.rime * 1000) / 10 + "%" : "—"] /* names WHAT it adds (owner, 2026-10-14: "+22% ... but what +22%"); tenths, since halving made 3.5 and 8.5 */, ["Frost armor", st.rimeCrack ? "−" + pc(Math.min(1, st.rimeCrack)) : "—"] /* at FULL frost (less frost, that share): frostArmor, a share of the enemy's armor (damage(); 2026-10-28 armor rework) */, ["Full frost", st.rime ? Math.round(FRZ_RIME_FULL * 100) + "% slow, then spreads" : "—"], ["Cold bite", st.chill ? "+" + FRZ_CHILL_K + "% dmg per 1% slow" : "—"] /* tier 0 nips flat; the bite is Brittle's (tier redesign) */ /* frzBite */ /* the prose's "seeps into their armor": frostArmor x an armored enemy's armor, by frost share (damage()) */, ["Moons", st.moonN ? st.moonN + " at " + Math.round(st.moonK * 100) + "%" + (st.subN ? " +" + st.subN + " small each" : "") : "—"]]
     : [["Slow", Math.round(st.slow * 100) + "%"], ["Lasts", st.permafrost ? "forever" : SLOW_TIME.toFixed(1) + "s"],
     ["Targets", st.all ? "all" : st.targets],
     ["Shatter", st.shatter ? dmgW(st.dmg * st.shatter.mul) + " r" + st.shatter.r : "—"],
@@ -51,7 +51,7 @@ const SPEC = {
     ["Goo", st.corrode ? "×" + Math.round(DRIP_TAKE * (1 + DRIP_TIER_K * TIER_LEVEL[skillOf(t, "corrosion")]) * 10) / 10 + " eaten armor" : "—"], ["Goo pull", st.corrode ? ACD_DRIP_PULL[skillOf(t, "corrosion")] : "—"] /* dripDrop / stepDrips: strips and burns that much */,
     // puddles one number a row (owner, 2026-10-07: "1 / 1.4s · 1.5s · r20" was unreadable), so each
     // reads now -> next on its own and its colour judges that one number
-    // always the same rows ("—" with no puddles), so a pull from Contagion 0 lines up now -> next
+    // always the same rows ("—" with no puddles), so a pull from Spill 0 lines up now -> next
     ["Pool burn", st.contagion ? Math.round(st.contagionHeat * 100) + "% of jet" : "—"], ["Drips every", st.contagion ? st.contagion.every + "s" : "—"],
     ["Pool size", st.contagion ? st.contagion.r : "—"], ["Pool lasts", st.contagion ? st.contagion.life + "s" : "—"], ["Carry", st.carry ? Math.round(st.carry * 100) + "%" : "—"], ["Pool slow", st.burnSlow ? Math.round(st.burnSlow * 100) + "%" : "—"]],
   // CRR (aspira-crr.js): Damage + Rate are a SHOT's and an interceptor's
@@ -67,7 +67,7 @@ const SPEC = {
     ["Void", "r" + Math.round(st.auraR * Math.sqrt(st.startM))], ["Grows", "×" + GRV_MASS_MAX + " by hitting"], ["Lasts", GRV_LIFE + "s unfed"] /* plain words (owner, 2026-10-16: "no one knows what mass 2 means"); THREE rows, so now -> next repeats no sentence (owner, 2026-10-26: "move sections so they fit on card") */,
     ["Crush tick", tdP("grv", st, st.dmg * st.innerK * GRV_TICK)], ["Crush ticks", +(1 / GRV_TICK).toFixed(1) + "/s"] /* the void's crush, at starting mass (owner, 2026-10-25) */,
     ["Particles", st.pellets ? st.pellets + " / mass" : "—"], ["Particle hit", st.pellets ? tdP("grv", st, st.dmg * st.pelletK) : "—"], ["Particle reach", st.pellets ? "×" + st.pelReach + " void" : "—"],
-    ["Aura size", st.auraOn ? "×" + st.accR + " void" : "—"] /* (the aura "—" until Acceleration buys it) */,
+    ["Aura size", st.auraOn ? "×" + st.accR + " void" : "—"] /* (the aura "—" until Gravity Well buys it) */,
     ["Aura slow", st.auraOn ? Math.round(Math.min(GRV_SLOW_MAX, st.slow) * 100) + "%" : "—"], ["Inner slow", st.auraOn ? Math.round(Math.min(GRV_CORE_MAX, Math.min(GRV_SLOW_MAX, st.slow) * GRV_CORE_MUL) * 100) + "%" + (st.horizon ? " all over" : "") : "—"]]  /* (no "Shields -1 / hit" row: every hit pops one - owner, 2026-10-16: "isn't this just default behaviour? maybe no need to list") */,
   sol: st => [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
     ...(st.skill ? [["Carry", st.pierce ? "×" + st.hop + " / enemy" : "—"]] : []) /* one beam always (2026-10-25): the pass-through and reflection falloff */, ...(st.skill ? [["Splits", st.pierce ? st.split + " / hit" : "—"], ["Prism", st.pierce || st.dot ? Math.round(2 * st.band) + " wide" : "—"]] : []) /* a plain SOL has no band - Diffraction's, and the rod sweeps it (2026-10-28) */,

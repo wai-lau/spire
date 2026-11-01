@@ -79,7 +79,7 @@ const SOL_PRISM_SWING = 4, SOL_PRISM_IN_S = 0.3, SOL_PRISM_OUT_S = 1.5; // rad/s
 
 // ACD: each line thin and faint at first, thicker and brighter as its burn
 // ramps (a Residue line, out of range, at half strength); Plague's circle
-// round each target; Contagion has no lines - its range glows instead.
+// round each target; Spill has no lines - its range glows instead.
 function drawAcd() {
   ctx.lineCap = "round"; ctx.strokeStyle = COL.tacd;
   for (const t of G.towers) {

@@ -154,12 +154,12 @@ debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the
 
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
 |---|---|---|---|---|
-| ARC | one hard bolt whose chain jumps twice (three enemies hit) | Amperage (id `conductivity`): each jump keeps more of the hit (`ARC_AMP_FALL`) | Voltage: a longer chain and a farther jump (`ARC_VOLT_JUMPS`, `ARC_VOLT_REACH`); one fork from II | Resistance (id `capacitance`): every hit slows and strips armor |
+| ARC | one hard bolt whose chain jumps twice (three enemies hit) | Conductivity (id `conductivity`): each jump keeps more of the hit (`ARC_AMP_FALL`) | Voltage: a longer chain and a farther jump (`ARC_VOLT_JUMPS`, `ARC_VOLT_REACH`); one fork from II | Shock (id `capacitance`): every hit slows and strips armor |
 | SOL | one beam that strikes its first enemy and flies on past it, striking no one: no band, split, bounce or prism (`st.pierce` 0, `SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn and the scorch rod across the band | Diffraction (id `refraction`): the band, one split, the mirrors | Breach: armor stripped a hit |
 | CRR | three interceptors, one bolt a volley, six volleys a sortie (`CRR_HANGAR`, `CRR_AMMO`) | Hangar: five launched, one stored in orbit | Tether: the first interceptor out tethers its target (`CRR_TETHER_N`, `carTethered`) | Armament: two bolts a volley, more volleys (`CRR_BOLTS_BY`) |
-| FRZ | a slowing circle with a light flat nip | Sublimation: the real tick, more the slower | Permafrost: frost pulses (a stacking slow; no armor) | Moons: one moon |
-| ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Contagion: ray pools that burn, no slow; kill pools gone |
-| GRV | a void a shot that crushes as it grows, shedding pellets as it decays | Void: a heavier void | Nova (id `supernova`): three novas before each void, stripping armor | Acceleration (id `radiation`): the aura (pull, slow) and harder pellets |
+| FRZ | a slowing circle with a light flat nip | Brittle: the real tick, more the slower | Permafrost: frost pulses (a stacking slow; no armor) | Moons: one moon |
+| ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Spill: ray pools that burn, no slow; kill pools gone |
+| GRV | a void a shot that crushes as it grows, shedding pellets as it decays | Void: a heavier void | Nova (id `supernova`): three novas before each void, stripping armor | Gravity Well (id `radiation`): the aura (pull, slow) and harder pellets |
 | IFR | a meteor that bursts into a fan of six (`IFR_FAN_N`) | Meteor: meteors stored in orbit | Hellfire: a wall of fire lighting flares | Flare: a bright flare at each impact |
 
 Tier I names: `TIER_I_NAMES` (`aspira-capstone.js`). Checks: `scripts/spire-smoke/tiers.mjs`.
@@ -199,9 +199,9 @@ ARCHAEOLOGY §4.
 
 | axis | buys |
 |---|---|
-| Amperage (id `conductivity`) | the carry: what each jump keeps of the hit before it (`ARC_AMP_FALL`, above 1 from tier III: jumps out-hit the strike) |
+| Conductivity (id `conductivity`) | the carry: what each jump keeps of the hit before it (`ARC_AMP_FALL`, above 1 from tier III: jumps out-hit the strike) |
 | Voltage | the chain: more jumps (`ARC_VOLT_JUMPS`) and a farther reach a jump (`ARC_VOLT_REACH`); the one fork from `ARC_FORK_FROM` |
-| Resistance (id `capacitance`) | every hit slows (`ARC_RES_SLOW`, never a shielded enemy) and strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); no area zap |
+| Shock (id `capacitance`) | every hit slows (`ARC_RES_SLOW`, never a shielded enemy) and strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); no area zap |
 
 **FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the enemy's slow (`FRZ_CHILL_K`: "the colder, the
@@ -211,7 +211,7 @@ a tick on it pops one charge.
 
 | axis | buys |
 |---|---|
-| Sublimation (id `temp`) | a colder aura, a faster tick, **Brittle** (a slowed enemy takes more from EVERY tower, credited to the FRZ); range |
+| Brittle (id `temp`) | a colder aura, a faster tick, more **damage taken** (a slowed enemy takes more from EVERY tower, credited to the FRZ; the card row "Damage taken"); range |
 | Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow (its armor crack `FRZ_RIME_CRACK` is 0 at every tier); at full frost the rime spreads to the nearest enemy; slide |
 | Moons | copies of the aura orbiting the tower (separate slow sources, so they multiply), with satellites at the top tiers |
 
@@ -244,7 +244,7 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got her
 |---|---|
 | Corrosion | a tick takes a fixed % of the armor left (`shredPct`, `ACD_CORRODE` per tier; the jets only); eaten armor drips as **goo** that homes on the next enemy, strips more armor and burns as much |
 | Flow (id `spray`) | more jets (`ACD_LINES`); a jet keeps part of its ramp when its enemy dies **or escapes** (`ACD_FLOW_CARRY`, the fast answer); range |
-| Contagion | the jets drip slimy acid pools that burn and do NOT slow (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught, no slows"; `ACD_POOL_SLOW` 0) - bigger and more often by tier; a kill leaves no pool; slide |
+| Spill | the jets drip slimy acid pools that burn and do NOT slow (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught, no slows"; `ACD_POOL_SLOW` 0) - bigger and more often by tier; a kill leaves no pool; slide |
 
 ### 4.5 Rules every axis obeys
 
@@ -287,14 +287,14 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 | pellets (tier 0) | a void sheds pellets as it decays, paced by the mass it loses: each flies out at random and hits the first enemy it touches or nothing; each pops one shield charge; past `GRV_PEL_SOFT` in flight they bundle (perf) |
 | pull and merge | open voids (any GRV's) drift toward each other by the other's mass; touching, the bigger takes the other in (`grvMerge`) - masses, caps and areas add |
 | novas (Nova) | `GRV_NOVA_N` novas implode on the best spot before each void (`grvNovaSpot`: the reach holding the most enemies), each front hitting what it passes once and stripping armor; they set the void's size |
-| aura (Acceleration) | an aura round the void, never past twice its size: it slows (never the shielded), harder inside the void and on an enemy already past it, and every enemy in it glides across its lane toward the lane's centre line (`GRV_LAT_V`, easing back after); it deals no damage |
+| aura (Gravity Well) | an aura round the void, never past twice its size: it slows (never the shielded), harder inside the void and on an enemy already past it, and every enemy in it glides across its lane toward the lane's centre line (`GRV_LAT_V`, easing back after); it deals no damage |
 | look | the void's black centre is logarithmic in its size (`grvCoreR`), touching disks join; the aura is a radial band clear at both ends; every GRV damage number flies into its void (`grvFloat`) |
 
 | axis | buys | capstone |
 |---|---|---|
 | **Void** | a bigger void, a harder crush, more pellets | **Singularity**: a void twice as heavy |
 | **Nova** (id `supernova`) | the novas before each void, faster by tier, their armor strip (`GRV_NOVA_STRIP`) | **Hypernova**: the most strip |
-| **Acceleration** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Event Horizon**: the whole aura slows as hard as its inside |
+| **Gravity Well** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Event Horizon**: the whole aura slows as hard as its inside |
 
 ### 4.6c CRR (id `crr`), the carrier (`web/aspira-crr.js`)
 

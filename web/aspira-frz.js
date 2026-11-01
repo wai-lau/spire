@@ -33,14 +33,14 @@ const FRZ_RIME_PERIOD = [1.333, 1.333, 1, 0.7, 0.5, 0.3] /* x2: half the pulse r
 // the same bite each tick, so more damage and more shield pops a second (capstone VI in aspira-capstone.js)
 const FRZ_TEMP_TICK = [0.21, 0.19, 0.17, 0.15, 0.125, 0.1] /* even, never under 0.1 (owner, 2026-10-26 "Go"; was 0.21 0.207 0.204 0.192 0.1 0.1) */ /* IV 0.0586 -> 0.1, capstone 0.0495 -> 0.1: no tick under 0.1s (owner, 2026-10-25: "Fastest tick rate should be 0.1/s, on anything") - the same damage a second, a tick's bite scales with it */ /* x0.6 with FRZ_TICK x0.6: more ticks, same damage - better vs shield (2026-10-24 marks target) */ /* BATTERY 6.7.0 (2026-10-20): untaken 0.5 -> 0.35 and I-III to match - a lone L1 FRZ lost 3-10 on waves 1-11 after the 6.5 spacing (armor 2x, fast 3x) */; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
 // THE NIP (owner, 2026-10-25, the tier redesign's duo rule: "FRZ chill nips"): tier 0's chill hurts a little - FRZ_NIP x a tier 0 tick,
-// enough to finish a 1-HP swarmer and pop an eased early shield; Sublimation I still makes it hurt in full (FRZ+SOL and FRZ+CRR lost
+// enough to finish a 1-HP swarmer and pop an eased early shield; Brittle I still makes it hurt in full (FRZ+SOL and FRZ+CRR lost
 // 5-8 / 2-4 lives on waves 1-12 with a chill that only slowed - scripts/aspira-sim/duo0.mjs). let: the battery's sims set it
 let FRZ_NIP = 0.15; // x1.5 (2026-10-26: FRZ+IFR let the wave-12 Star through with a third of its HP, every other pair clean; was 0.1)
 const FRZ_TICK = 0.3 /* x0.6 with FRZ_TEMP_TICK x0.6 (2026-10-24 marks target; was 0.5) - the bare L1 FRZ (b.dmg, b.rate) untouched */, FRZ_RIME_GROW = 2.4; // a Rime ring takes FRZ_RIME_GROW game s to reach the edge (owner: much slower; was 0.6)
 const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit of slow (owner: thicker the colder) // an aura slow outlasts one step only: it is gone the moment the enemy leaves
 function frzSkillStats(t, s, b) {
   const f = skillOf(t, "temp"), c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; // the STAT CURVE (tier redesign 2026-10-24)
-  // the aura's damage a SECOND is the curve's; Sublimation splits it over more ticks (more shield pops, not more damage); tier 0 slows and nips (FRZ_NIP)
+  // the aura's damage a SECOND is the curve's; Brittle splits it over more ticks (more shield pops, not more damage); tier 0 slows and nips (FRZ_NIP)
   const tick0 = b.dmg * c.dmg * b.rate * FRZ_TICK; s.biteDmg = tick0; // a tier 0 tick's worth: what the Rime ring's bite multiplies
   s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = tick0 * (f ? FRZ_TEMP_TICK[f] / FRZ_TEMP_TICK[0] : FRZ_NIP); s.chill = f > 0; s.rate = 1 / FRZ_TEMP_TICK[f]; // dmg / rate: a TICK
   s.rime = FRZ_RIME[skillOf(t, "rime")]; s.rimeCrack = FRZ_RIME_CRACK[skillOf(t, "rime")]; s.rimeBite = skillOf(t, "rime") ? FRZ_RIME_BITE0 : 0; s.rimeEvery = FRZ_RIME_PERIOD[skillOf(t, "rime")]; s.moonN = FRZ_MOON_COUNT[skillOf(t, "moons")]; s.moonK = FRZ_MOON_BY[skillOf(t, "moons")]; s.subN = FRZ_SUBMOON_N[skillOf(t, "moons")]; s.skill = true;
@@ -73,7 +73,7 @@ function frzSources(t, st) {
 // TYPE - "get rid of all enemy based damage multis"; the tables above are dead): a tick hurts x (1 + FRZ_CHILL_K x
 // the enemy's slow now, 0..1) - every slow on it counts, so the fast (slowed twice as hard) and anything held by other
 // slows take the most. let: the simulator sweeps it
-let FRZ_CHILL_K = 27; /* x3 (2026-10-29, the mark target FRZ fast +2: countermx 9 pts 101-119 fast leaked 47% at 18, 22% at 27, 6% at 36 - 36 lifted shield and armor too); was 9 */ // x1.5: lifts Sublimation (owner, 2026-10-26 "Lift sublimation": Temp focus 33% leaked vs Rime 18, Moons 14 -> 25; was 6)
+let FRZ_CHILL_K = 27; /* x3 (2026-10-29, the mark target FRZ fast +2: countermx 9 pts 101-119 fast leaked 47% at 18, 22% at 27, 6% at 36 - 36 lifted shield and armor too); was 9 */ // x1.5: lifts Brittle (owner, 2026-10-26 "Lift sublimation": Temp focus 33% leaked vs Rime 18, Moons 14 -> 25; was 6)
 const frzBite = e => 1 + FRZ_CHILL_K * (e.slowT > 0 ? e.slowF : 0);
 // MAX RIME (owner, 2026-10-11: "if something reaches max rime, it spreads to the nearest unit that is not yet max
 // rime"): an enemy its rime alone slows FRZ_RIME_FULL (before the slow's shaping) holds no more - a pulse that reaches it
@@ -105,14 +105,14 @@ function frzStep(t, dt) {
       // BRITTLE: x this from EVERY tower while slowed (damage()) - back to that (owner, 2026-10-12: "brittle should increase damage
       // like before, not reduce armor"; it took armor for an hour). A shield takes no slow, so it holds Brittle off
       if (st.brittle > 1 && st.brittle >= (e.brittle || 1)) { e.brittle = st.brittle; e.brittleBy = t.id; } // brittleBy: its added damage is this FRZ's (damageCredit)
-      if (!tick || !(st.dmg > 0)) continue; // (Sublimation 0: a plain slowing circle, no tick - tier redesign 2026-10-24)
+      if (!tick || !(st.dmg > 0)) continue; // (Brittle 0: a plain slowing circle, no tick - tier redesign 2026-10-24)
       ticked = true;
       // (Moons cracked armor for good here until 2026-10-12 - owner: "moons should not affect armor"; Rime's frost is the armor answer)
       // a tick POPS a shield (owner, 2026-10-06) and is never blunted by armor;
       // otherwise it is quiet (no flash) but shows its NUMBER, sized by what it took
       if (e.shield > 0) { damage(e, st.dmg * s.k * (s.hit || 1), t, false, false, FRZ_TICK_HIT); continue; } // a tick POPS a shield (owner, 2026-10-12: "shields should not absorb ticks")
       const hp = e.hp;
-      damage(e, st.dmg * s.k * (s.hit || 1) * (st.chill ? frzBite(e) : 1), t, true); // (the nip: flat - "more the slower" is Sublimation's) // quiet, but armor still bites it (damage())
+      damage(e, st.dmg * s.k * (s.hit || 1) * (st.chill ? frzBite(e) : 1), t, true); // (the nip: flat - "more the slower" is Brittle's) // quiet, but armor still bites it (damage())
       if (hp - e.hp > 0) dmgTick(e, hp - e.hp, hp - e.hp, dmgInk("frz"), t, 0, st.rate); // (slow motion splits it - aspira-floats.js)
     }
   }

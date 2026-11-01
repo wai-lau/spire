@@ -178,17 +178,17 @@ check("CRR: tier 0 three interceptors (owner, 2026-10-28), no tether, one bolt a
 
 // ---------- FRZ ----------
 towerTierChecks("frz", ["hurts", "pulse", "moon", "more damage"]);
-check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Sublimation I hurts, more the slower; Permafrost I pulses frost and crack no armor (owner, 2026-10-29); Moons I one moon (tier redesign 2026-10-24)", () => {
+check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Brittle I hurts, more the slower; Permafrost I pulses frost and crack no armor (owner, 2026-10-29); Moons I one moon (tier redesign 2026-10-24)", () => {
   const go = (sk, extra = "") => run(`(() => { const { t, es } = tierLane("frz", ${JSON.stringify(sk)}, [30]); const e = es[0]; e.armor = e.armor0 = 40; G.started = true;
     let slowed = false; for (let k = 0; k < 180; k++) { ${extra} step(1 / 60); if (e.slowT > 0 && e.slowF > 0) slowed = true; }
     return { dealt: e.max - e.hp, slowed, frost: frostShare(e), crack: towerStats(t).rimeCrack || 0, moons: towerStats(t).moonN || 0 }; })()`);
   const z = go({}), s = go({ temp: 1 }), sx = go({ temp: 1 }, `applySlow(e, 0.5, 0.2, "test");`), p = go({ rime: 1 }), m = go({ moons: 1 });
   if (!z.slowed || !(z.dealt > 0)) return "tier 0: " + JSON.stringify(z) + " (expected a slow and a nip)";
   const zx = go({}, `applySlow(e, 0.5, 0.2, "test");`);
-  if (zx.dealt > z.dealt * 1.01) return "tier 0 nip: " + zx.dealt + " slowed vs " + z.dealt + " (expected flat - more the slower is Sublimation's)";
-  if (!(s.dealt > z.dealt * 2)) return "Sublimation I: " + s.dealt + " vs the tier 0 nip " + z.dealt + " (expected the full hurt, well past a nip)";
-  if (!(s.dealt > 0)) return "Sublimation I dealt nothing";
-  if (!(sx.dealt > s.dealt)) return "Sublimation I: " + sx.dealt + " slowed vs " + s.dealt + " (expected more on the slower)";
+  if (zx.dealt > z.dealt * 1.01) return "tier 0 nip: " + zx.dealt + " slowed vs " + z.dealt + " (expected flat - more the slower is Brittle's)";
+  if (!(s.dealt > z.dealt * 2)) return "Brittle I: " + s.dealt + " vs the tier 0 nip " + z.dealt + " (expected the full hurt, well past a nip)";
+  if (!(s.dealt > 0)) return "Brittle I dealt nothing";
+  if (!(sx.dealt > s.dealt)) return "Brittle I: " + sx.dealt + " slowed vs " + s.dealt + " (expected more on the slower)";
   if (z.frost > 0) return "tier 0 frosted " + z.frost;
   if (!(p.frost > 0 && p.crack === 0)) return "Permafrost I: frost " + p.frost + ", crack " + p.crack + " (expected a pulse's frost that cracks NO armor - owner 2026-10-29: FRZ \"no armor reduction effects\")";
   if (m.moons !== 1) return "Moons I: " + m.moons + " moons";
@@ -196,23 +196,23 @@ check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Sublimation I hurts,
 
 // ---------- ACD ----------
 towerTierChecks("acd", ["pool", "puddle", "slow", "spread"]);
-check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry; Contagion I a ray-dripped pool that does NOT slow (owner, 2026-10-29: \"no slows\"), no kill pools; Corrosion I eats armor (tier redesign 2026-10-24)", () => {
+check("ACD: tier 0 one ray, no pools, kills leave none; Flow I two rays + carry; Spill I a ray-dripped pool that does NOT slow (owner, 2026-10-29: \"no slows\"), no kill pools; Corrosion I eats armor (tier redesign 2026-10-24)", () => {
   const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "acd", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "acd", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { lines: s.targets, carry: s.carry, pools: !!s.contagion, slow: s.burnSlow || 0, corrode: s.corrode || 0 }; })()`);
   const pools = (sk, kill) => run(`(() => { const { t, es } = tierLane("acd", ${JSON.stringify(sk)}, [30, 45]); G.started = true; ${kill ? "es[0].hp = es[0].max = 5;" : ""}
     let slowed = false; for (let k = 0; k < 240; k++) { step(1 / 60); if (es[1].slowT > 0) slowed = true; } return { n: (t.puddles || []).length, spread: (t.puddles || []).filter(p => p.spread).length, slowed }; })()`);
   const z = st({}), f = st({ spray: 1 }), c = st({ contagion: 1 }), k = st({ corrosion: 1 });
   if (z.lines !== 1 || z.pools || z.carry || z.slow) return "tier 0 " + JSON.stringify(z);
   if (f.lines !== 2 || !(f.carry > 0)) return "Flow I " + JSON.stringify(f);
-  if (!c.pools || c.slow) return "Contagion I " + JSON.stringify(c) + " (expected pools, no slow)";
+  if (!c.pools || c.slow) return "Spill I " + JSON.stringify(c) + " (expected pools, no slow)";
   if (!(k.corrode > 0)) return "Corrosion I " + JSON.stringify(k);
   const z0 = pools({}, true), c1 = pools({ contagion: 1 }, true);
   if (z0.n) return "tier 0 left " + z0.n + " pools";
-  if (!c1.n || c1.spread || c1.slowed) return "Contagion I pools " + JSON.stringify(c1) + " (expected ray pools that do not slow, none from kills)";
+  if (!c1.n || c1.spread || c1.slowed) return "Spill I pools " + JSON.stringify(c1) + " (expected ray pools that do not slow, none from kills)";
 });
 
 // ---------- GRV ----------
 towerTierChecks("grv", ["aura", "strip"]); // (its tiny void and the pellets it sheds ARE tier 0 - GRV rework 2026-10-25)
-check("GRV rework (owner, 2026-10-25): tier 0 a tiny void that sheds pellets - no nova, aura or strip; Nova I novas that strip armor; Void I a bigger void that sheds pellets; Acceleration I an aura that slows, pellets too", () => {
+check("GRV rework (owner, 2026-10-25): tier 0 a tiny void that sheds pellets - no nova, aura or strip; Nova I novas that strip armor; Void I a bigger void that sheds pellets; Gravity Well I an aura that slows, pellets too", () => {
   const go = sk => run(`(() => { const { t, es, st } = tierLane("grv", ${JSON.stringify(sk)}, [40, 60]); const e = es[0]; e.armor = e.armor0 = 500; G.started = true;
     novaAt(t, st, e); let slowed = false, pel = 0, sph = 0; /* the hole-leaving shot (GRV_BH_EVERY) */ for (let k = 0; k < 90; k++) { step(1 / 60); t.cd = 1e9; if (e.slowT > 0) slowed = true; pel = Math.max(pel, (t.pellets || []).length); if (k === 40) sph = (t.spheres || []).length; }
     const s = towerStats(t); return { dealt: e.max - e.hp, sph, slowed, armor: e.armor, pel, hole: !!s.hole, aura: !!s.auraOn, voidR: s.auraR, name: SKILL_TREES.grv[1].name, acc: SKILL_TREES.grv[2].name }; })()`);
@@ -220,8 +220,8 @@ check("GRV rework (owner, 2026-10-25): tier 0 a tiny void that sheds pellets - n
   if (!(z.dealt > 0) || !z.sph || z.slowed || z.armor !== 500 || !z.pel) return "tier 0: " + JSON.stringify(z) + " (expected a void that crushes and sheds pellets, no slow or strip)";
   if (!(v.voidR > z.voidR) || v.slowed || v.armor !== 500 || !v.pel) return "Void I: " + JSON.stringify(v);
   if (!(n.armor < 500) || n.slowed) return "Nova I: " + JSON.stringify(n);
-  if (!r.slowed || !r.aura || !r.pel) return "Acceleration I: " + JSON.stringify(r);
-  if (z.name !== "Nova" || z.acc !== "Acceleration") return "GRV's axes read " + z.name + " / " + z.acc;
+  if (!r.slowed || !r.aura || !r.pel) return "Gravity Well I: " + JSON.stringify(r);
+  if (z.name !== "Nova" || z.acc !== "Gravity Well") return "GRV's axes read " + z.name + " / " + z.acc;
 });
 
 // ---------- IFR ----------
@@ -261,13 +261,13 @@ check("review: the card's rows show no mechanic the tower lacks - no Shields row
   if (i0.Burst !== "6 meteors") return "IFR tier 0 Burst reads " + i0.Burst;
   if (ih.Fire === "—" || ifl["Flare length"] === "—") return "IFR Hellfire I / Flare I rows blank";
 });
-check("ARC's card rows follow the redesign (2026-10-29): no charge or burst rows, Resistance's slow and strip read from its tables, the fork counted in Hits", () => {
+check("ARC's card rows follow the redesign (2026-10-29): no charge or burst rows, Shock's slow and strip read from its tables, the fork counted in Hits", () => {
   const r0 = rows("arc", {}).rows, rv = rows("arc", { voltage: 2 }).rows, rz = rows("arc", { capacitance: 3 }).rows;
   for (const k of ["Bolts", "Charges", "Charge pop", "Pop burst", "Burst slow", "Burst lasts"]) if (k in r0) return "still a " + k + " row";
   const j0 = run("ARC_VOLT_JUMPS[0]"), j2 = run("ARC_VOLT_JUMPS[2]"), sl = run("Math.round(ARC_RES_SLOW[3] * 100)"), sp = run("Math.round(ARC_RES_STRIP[3] * 100)");
   if (r0.Hits !== 1 + j0 + " a bolt" || r0.Forks !== "—" || r0["Res slow"] !== "—") return "tier 0: " + JSON.stringify(r0);
   if (rv.Hits !== 1 + 2 * j2 + " a bolt" || rv.Forks !== "once") return "Voltage II: " + JSON.stringify(rv);
-  if (rz["Res slow"] !== sl + "%" || rz["Armor strip"] !== sp + "% of armor") return "Resistance III: " + JSON.stringify(rz);
+  if (rz["Res slow"] !== sl + "%" || rz["Armor strip"] !== sp + "% of armor") return "Shock III: " + JSON.stringify(rz);
 });
 check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
   const r = run(`(() => { const t = { id: 99, kind: "frz", x: CX, y: CY, lvl: 2, skills: { rime: 1 } }; G = newGame(); const a = towerStats(t, true).biteDmg; G.power.DAM = 1; const b = towerStats(t, true).biteDmg; G.power.DAM = 0;
@@ -287,21 +287,21 @@ check("GRV merge (owner, 2026-10-25): two voids' caps do not add - the mass past
 // ---------- the left-for-later list (owner, 2026-10-25: "zero" / "fix all the left for later things") ----------
 const statsOf = (kind, sk) => run(`(() => { G = newGame(); const sk = ${JSON.stringify(sk)}; const st = towerStats({ id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, true);
   return { critMul: st.critMul, scorch: st.dot ? st.dot.n : 0, brittle: st.brittle, fireHK: st.fireHK, hfK: st.hfK }; })()`);
-check("later: tier I adds no extra numbers the spec does not name - SOL Breach I crit as tier 0, FRZ Sublimation I no Brittle", () => {
+check("later: tier I adds no extra numbers the spec does not name - SOL Breach I crit as tier 0, FRZ Brittle I no damage-taken boost", () => {
   const s0 = statsOf("sol", {}), s1 = statsOf("sol", { breach: 1 }), f1 = statsOf("frz", { temp: 1 });
   if (s1.critMul !== s0.critMul) return "SOL Breach I crit x" + s1.critMul + " (tier 0 x" + s0.critMul + ")";
-  if (f1.brittle !== 1) return "FRZ Sublimation I Brittle x" + f1.brittle + " (expected 1)";
+  if (f1.brittle !== 1) return "FRZ Brittle I damage taken x" + f1.brittle + " (expected 1)";
 });
 check("later: a factor on the tower's OWN damage is one constant, on from its first tier (SOL crit, IFR fire hit + Flare's fire boost)", () => {
   const same = (kind, ax, key, from) => { const v = [1, 2, 3, 4, 5].map(n => statsOf(kind, { [ax]: n })[key]); return v.every(x => x === v[0]) && statsOf(kind, {})[key] === from ? "" : kind + " " + ax + " " + key + " " + JSON.stringify(v) + " (tier 0 " + statsOf(kind, {})[key] + ")"; };
   return same("sol", "breach", "critMul", 3) /* (SOL scorch left this rule 2026-10-25: Breach "increases ... burn" again) */ || same("ifr", "hellfire", "fireHK", statsOf("ifr", { hellfire: 1 }).fireHK) || same("ifr", "firaga", "hfK", 1);
 });
-check("later: the card rows read no zero mechanic - ARC Jumps 2 at tier 0 (one chain hitting three, owner 2026-10-29), FRZ Cold bite before Sublimation (the nip is flat)", () => {
+check("later: the card rows read no zero mechanic - ARC Jumps 2 at tier 0 (one chain hitting three, owner 2026-10-29), FRZ Cold bite before Brittle (the nip is flat)", () => {
   const a0 = rows("arc", {}).rows, a1 = rows("arc", { voltage: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;
   if (String(a0.Jumps) !== "2") return "ARC tier 0 Jumps reads " + a0.Jumps + " (expected 2: one chain hitting three, owner 2026-10-29)";
   if (String(a1.Jumps) !== "3") return "ARC Voltage I Jumps reads " + a1.Jumps + " (expected 3: Voltage increases chains)";
   if (f0["Cold bite"] !== "—") return "FRZ tier 0 Cold bite reads " + f0["Cold bite"];
-  if (f1["Cold bite"] === "—") return "FRZ Sublimation I Cold bite blank";
+  if (f1["Cold bite"] === "—") return "FRZ Brittle I Cold bite blank";
 });
 check("later: ACD's sentence says the jet, not Jets, when it sprays one", () => {
   const d = run(`describeTower("acd", { corrosion: 1, contagion: 1, flow: 0 })`);
@@ -317,12 +317,12 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
     t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
   if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });
-check("ARC's sentence (the ARC redesign, owner 2026-10-29): one bolt that chains (Voltage), forks once from Voltage II, Amperage the carry, Resistance a slow and an armor break; FRZ tier 0 \"slows and deals X% damage\"", () => {
+check("ARC's sentence (the ARC redesign, owner 2026-10-29): one bolt that chains (Voltage), forks once from Voltage II, Conductivity the carry, Shock a slow and an armor break; FRZ tier 0 \"slows and deals X% damage\"", () => {
   const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 2 }), describeTower("arc", { conductivity: 2 }), describeTower("arc", { capacitance: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP * 100)]`);
   if (r[0] !== "A bolt of lightning that chains twice for 20% less damage every chain.") return "tier 0: " + r[0];
   if (!/^A bolt of lightning that forks once and chains four times for \d+% less damage every chain\.$/.test(r[1])) return "Voltage II: " + r[1];
-  if (!/that chains twice for full damage every chain\.$/.test(r[2])) return "Amperage II: " + r[2];
-  if (!/ Hits slow by \d+% and break \d+% of armor\.$/.test(r[3])) return "Resistance I: " + r[3];
+  if (!/that chains twice for full damage every chain\.$/.test(r[2])) return "Conductivity II: " + r[2];
+  if (!/ Hits slow by \d+% and break \d+% of armor\.$/.test(r[3])) return "Shock I: " + r[3];
   if (!r[4].includes("slows enemies by") || !r[4].includes(" and deals " + r[5] + "%td over ")) return "FRZ tier 0: " + r[4];
 });
 

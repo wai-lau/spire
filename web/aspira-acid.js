@@ -93,7 +93,7 @@ function stepAcd(t, dt) {
 // ---------- ACD's chart (moved from aspira-skills.js at its 500-line cap, 2026-10-07): Catalyst ramp, Pour lines, Seep puddles ----------
 // FITTED 2026-10-06 to +25 / +50 / +100% (Spray to +30 / +60 / +120%, since
 // its lines can never share an enemy): Corrosion's ramp time, Spray's per-line
-// damage, Contagion's puddle heat (tier III's is below II's - its puddles are bigger)
+// damage, Spill's puddle heat (tier III's is below II's - its puddles are bigger)
 // REFIT 2026-10-06 (overnight phase 2: standard team, waves 20-40, HP scaled so it is pressed - the earlier thin-field fits ran 3-12x over target)
 // CORROSION REWORKED 2026-10-07 (owner): a dud axis (111% at 0, 96% at III) - the
 // ramp's SPEED never mattered, enemies die or leave before it tops out. Now tier I
@@ -240,10 +240,10 @@ const ACD_CORRODE = [0, 0.093, 0.254, 0.443]; /* a SHARE of the armor a tick, 6.
 // ROLES REWORK (owner, 2026-10-12: "what is acd weak to now? seems op"): a bare ACD is a tank killer, weak to the FAST
 // (no carry: a jet starts cold on every new enemy) and to SHIELDS (acid and pools pop one charge a tick, like any hit).
 // Flow buys the fast back: ACD_FLOW_CARRY of a jet's ramp rides on when its enemy dies OR escapes, past 1 = it lands
-// hotter (the slow it once added - ACD_FLOW_SLOW - is the POOLS' since the tier redesign: Contagion's ACD_POOL_SLOW). Contagion buys the
+// hotter (the slow it once added - ACD_FLOW_SLOW - is the POOLS' since the tier redesign: Spill's ACD_POOL_SLOW). Spill buys the
 // shields back through COVERAGE: bigger, longer pools ticking on more enemies. Corrosion: the strongest acid, eats armor.
 const ACD_FLOW_CARRY = [0, 0.3, 0.7, 0.9] /* V and VI no hotter (owner, 2026-10-12: "flow V should not flow faster" - range instead, SKILL_MOVE; was 1.1, VI 1.5) */;
-// THE POOLS SLOW, CONTAGION'S (tier redesign, owner 2026-10-24: Contagion I \"Ray leaves slowing pool\"): by Contagion tier 0..V (was Flow's ACD_FLOW_SLOW 0 .05 .11 .17, V .2)
+// THE POOLS SLOW, CONTAGION'S (tier redesign, owner 2026-10-24: Spill I \"Ray leaves slowing pool\"): by Spill tier 0..V (was Flow's ACD_FLOW_SLOW 0 .05 .11 .17, V .2)
 const ACD_POOL_SLOW = [0, 0, 0, 0, 0, 0]; // NO SLOW (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught, no slows (they are good vs fast)"; was 0 .05 .08 .11 .17 .2) - the mark target's ACD x fast
 // CORROSION'S DAMAGE MOVED TO THE BASE (owner, 2026-10-12): a bare ACD burns ACD_BASE_DMG_MUL harder; Corrosion is
 // now the armor STRIP alone (into negative armor then, a flat bonus on every tower's hits; since the 2026-10-28 rework it multiplies armor toward 0)
@@ -254,15 +254,15 @@ const ACD_DOUBLE = [0.5, 0.39, 0.12, 0.12] /* x2 = a 2x SLOWER ramp (7.0.6, 2026
 // line's heat when it fell, by Seep tier
 // index 0 = NO puddles (owner, 2026-10-07: "ACD shouldn't have puddles at level 0"; was a default drip { every: 1.4, life: 1.5, r: 20 })
 // pools from the START, large and long (owner, 2026-10-12: "ACD should have pools ... large and last longer from the start";
-// Contagion grows them, massive at VI); was null at 0, then life 4 .. 10, r 36 .. 85
+// Spill grows them, massive at VI); was null at 0, then life 4 .. 10, r 36 .. 85
 // life x~1.8 (owner, 2026-10-12: "just make the pools last even longer with contagion"; was 6 7 8 10 12 14)
-const ACD_CONTAGION = [{ every: 0.8, life: 5, r: 137.5 }, { every: 0.8, life: 5, r: 155 }, { every: 0.708, life: 5, r: 220 }, { every: 0.708, life: 5, r: 288.75 }]; /* r x2.5, dropped 1.5x as often (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught"; countermx 9 pts 101-119: ACD -2 0 +1 +1 -> 0 -2 +1 +1, target +1 -3 +1 +1; was every 1.2 1.2 1.062 1.062, r 55 62 88 115.5) */ // BIGGER (x1.3) and LONGER (x1.5) pools that burn LESS (owner, 2026-10-08; were life 2.4 3.1 4.2 5 6.5, r 28 33 42 50 65) // drip 1.24 / 1.18s (owner, 2026-10-08: Contagion under 200% - was 1.2 .. 0.7; V at 643%); size and life keep climbing; // pools bigger (x1.25) and longer (x1.3) at every tier (owner, 2026-10-08); V the top regular tier (VI, the capstone, in aspira-capstone.js)
+const ACD_CONTAGION = [{ every: 0.8, life: 5, r: 137.5 }, { every: 0.8, life: 5, r: 155 }, { every: 0.708, life: 5, r: 220 }, { every: 0.708, life: 5, r: 288.75 }]; /* r x2.5, dropped 1.5x as often (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught"; countermx 9 pts 101-119: ACD -2 0 +1 +1 -> 0 -2 +1 +1, target +1 -3 +1 +1; was every 1.2 1.2 1.062 1.062, r 55 62 88 115.5) */ // BIGGER (x1.3) and LONGER (x1.5) pools that burn LESS (owner, 2026-10-08; were life 2.4 3.1 4.2 5 6.5, r 28 33 42 50 65) // drip 1.24 / 1.18s (owner, 2026-10-08: Spill under 200% - was 1.2 .. 0.7; V at 643%); size and life keep climbing; // pools bigger (x1.25) and longer (x1.3) at every tier (owner, 2026-10-08); V the top regular tier (VI, the capstone, in aspira-capstone.js)
 // a puddle ramps to the OLD x32 ceiling (owner, 2026-10-08: "increase the puddle damage to compensate" for the jets' cap halved to x16)
 const ACD_PUDDLE_CAP = 8; // (2026-10-08: x8, was x32 - a pool held the jet's whole ramp)
-const ACD_POOL_HEAT = 0.21; /* x2 with the bigger pools (2026-10-29; was 0.105) */ // a pool's burn, x its jet's heat - ONE number since the tier redesign (2026-10-24; was 0.1 0.11 0.741 6.408, V 34.17 - its tier I value) /* V x9, VI x36 (steeper late tiers) */ // 2026-10-12: base pools burn low (they are free now) // 2026-10-11: x1.5 so ACD answers a swarm a little (owner: "FRZ ACD handle swarms a bit better") // 10% of the jet with the bigger, longer pools (owner, 2026-10-08; was 30%): isolation I..V 108 117 133 160 197%, the curve it had (108 123 128 146 197) // flat 30% of the jet (2026-10-08, Contagion under 200%; no tier lowers it) // restored (overnight 2026-10-08): the tier fit cut it to ~15%, and without ARC the pools are the only swarm answer - FRZ+SOL+ACD went 0/6 -> 4/6 with them back
+const ACD_POOL_HEAT = 0.21; /* x2 with the bigger pools (2026-10-29; was 0.105) */ // a pool's burn, x its jet's heat - ONE number since the tier redesign (2026-10-24; was 0.1 0.11 0.741 6.408, V 34.17 - its tier I value) /* V x9, VI x36 (steeper late tiers) */ // 2026-10-12: base pools burn low (they are free now) // 2026-10-11: x1.5 so ACD answers a swarm a little (owner: "FRZ ACD handle swarms a bit better") // 10% of the jet with the bigger, longer pools (owner, 2026-10-08; was 30%): isolation I..V 108 117 133 160 197%, the curve it had (108 123 128 146 197) // flat 30% of the jet (2026-10-08, Spill under 200%; no tier lowers it) // restored (overnight 2026-10-08): the tier fit cut it to ~15%, and without ARC the pools are the only swarm answer - FRZ+SOL+ACD went 0/6 -> 4/6 with them back
 // (the pools' slow moved to Flow's jets, owner 2026-10-12: "these rays could slow instead of contagion" - and BACK to the pools, as
 // Flow's slimy pools, owner 2026-10-22: "move slow from jets to pools")
-// CONTAGION SPREADS (owner, 2026-10-13: "make acd contagion better vs swarms"): from Contagion I an enemy a POOL kills leaves
+// CONTAGION SPREADS (owner, 2026-10-13: "make acd contagion better vs swarms"): from Spill I an enemy a POOL kills leaves
 // a pool of its own, as hot - a crowd dying in acid carries it down the lane (a full pool since 2026-10-22; was 0.8x wide, half as long).
 // At most ACD_SPREAD_MAX pools a tower (the late-game lag)
 // (KILL POOLS - a kill under a jet or in a pool leaving a pool, ACD_SPREAD_MAX - GONE with the tier redesign, owner 2026-10-24: "get rid of kill pools")
@@ -281,7 +281,7 @@ function stepPuddles(t, st, dt) {
   const sp = st.contagion;
   const drop = l => (t.puddles ||= []).push({ x: l.e.x, y: l.e.y, r: sp.r, life: Math.min(POOL_MAX_S, sp.life), age: 0, tick: 0, dps: st.dmg * Math.min(ACD_PUDDLE_CAP, 2 ** (l.held / st.double)) * st.contagionHeat });
   for (const l of t.lines) {
-    // a KILL under a jet drops a pool where it fell (owner, 2026-10-12) - with Contagion only (owner, 2026-10-22: "at level 0 make kills
+    // a KILL under a jet drops a pool where it fell (owner, 2026-10-12) - with Spill only (owner, 2026-10-22: "at level 0 make kills
     // not leave pools"); an escape drops none
     if (l.e.dead) continue;
     l.drip = (l.drip ?? sp.every) - dt;
@@ -315,7 +315,7 @@ function stepPuddles(t, st, dt) {
   for (const [e, d] of t.poolAcc) dmgSum(e, d, d, dmgInk("acd"), t);
   t.poolAcc.clear();
 }
-// LATE-GAME LAG (owner, 2026-10-12: "make late game acid pools less laggy"): a capstone Contagion keeps 300+ pools, each of
+// LATE-GAME LAG (owner, 2026-10-12: "make late game acid pools less laggy"): a capstone Spill keeps 300+ pools, each of
 // which checked EVERY enemy at every tick - now the live enemies are bucketed once a step into POOL_CELL squares and a
 // pool looks only in the squares it covers (the same hits, far fewer checks)
 const POOL_CELL = 128;
@@ -349,12 +349,12 @@ const puddleGlow = p => Math.max(0.6, Math.min(1.8, 0.6 + 0.3 * Math.log2(1 + (p
 const POOL_LOD = 24;
 function drawPools(t, now) {
   // (always the plain circle: the board is drawn into a texture and warped - the old wobbling 2D rim is gone, 2026-10-18) // 3D: always the plain circle - the board is drawn into a texture and warped, the rim's wobble barely shows and its fills cost (owner, 2026-10-12: pool perf in 3D)
-  // a PILE of pools reads as one (owner, 2026-10-14: "late game ACD has too much effects visually" - a Contagion's 100+
+  // a PILE of pools reads as one (owner, 2026-10-14: "late game ACD has too much effects visually" - a Spill's 100+
   // see-through pools stacked 20 deep into one bright green wash): each is drawn at 1 / the pools over its centre
   const pools = t.puddles || [], deep = poolDepth(pools);
   pools.forEach((p, i) => {
     const crowd = 1 / deep[i], fade = Math.min(1, (1 - p.age / p.life) * puddleGlow(p)) * crowd, seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
-    // a pool a KILL left (Contagion's spread) is a DASHED ring, no body; the jets' own drips filled: the two read apart (owner, 2026-10-14)
+    // a pool a KILL left (Spill's spread) is a DASHED ring, no body; the jets' own drips filled: the two read apart (owner, 2026-10-14)
     { ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.9 * (0.8 + 0.2 * (1 - p.age / p.life)), 0, 6.283); if (!p.spread) { ctx.globalAlpha = 0.14 * fade; ctx.fill(); } ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * fade / Math.sqrt(crowd); ctx.stroke(); return; } // (a crowd's rims fade only by the root of it: the rims tell one pool from the next)
   });
   ctx.setLineDash([]);

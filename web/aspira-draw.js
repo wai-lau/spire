@@ -299,7 +299,7 @@ function drawTowerRange(t, dim, colKey, proj) {
 }
 
 // an area effect's disc (owner): a radial gradient from nothing at the centre
-// to GRAD_EDGE (10%) at the outline - Plague/Bloom, Contagion, Whiteout, Shatter, Supernova
+// to GRAD_EDGE (10%) at the outline - Plague/Bloom, Spill, Whiteout, Shatter, Supernova
 const GRAD_EDGE = 0.1; // owner: 50% -> 10%
 function gradDisc(x, y, r, col, a = 1) {
   const g = ctx.createRadialGradient(x, y, 0, x, y, r);

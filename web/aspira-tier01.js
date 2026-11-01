@@ -18,10 +18,10 @@
 // Tether I one tethered drone (CRR_TETHER_N) at today's base slow, its pulse from II
 CRR_HANGAR[0] = 3; CRR_HANGAR[1] = 5; CRR_TETHER_SLOW[0] = 0; CRR_TETHER_SLOW[1] = 0.35;
 
-// FRZ: Sublimation I is the hurt alone - no Brittle until II, today's I (owner, 2026-10-25: "zero" - tierMid gave it +7%)
+// FRZ: Brittle I is the hurt alone - no damage-taken boost until II, today's I (owner, 2026-10-25: "zero" - tierMid gave it +7%)
 // (FRZ_BRITTLE written 0..V since 2026-10-26: I = 1)
 
-// ACD: one acid ray, no pools (ACD_CONTAGION null); Flow I two rays and the carry; Contagion I the ray drips a slowing pool (ACD_POOL_SLOW)
+// ACD: one acid ray, no pools (ACD_CONTAGION null); Flow I two rays and the carry; Spill I the ray drips a slowing pool (ACD_POOL_SLOW)
 ACD_LINES[0] = 1; ACD_LINES[1] = 2; ACD_CONTAGION[0] = null;
 
 // GRV: the nova and a TINY void every third nova, no aura (owner, 2026-10-25: "add void at 0 (every 3 novas) / But, tiny, no aura")

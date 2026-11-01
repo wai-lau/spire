@@ -1,5 +1,5 @@
 // FRZ+SOL+ACD with a CONTAGION-FIRST acid (2026-10-11): the no-ARC trio's swarm answer is ACD's puddles, so this
-// plays it the way a player would - Contagion bought first - over the three styles and seeds.
+// plays it the way a player would - Spill bought first - over the three styles and seeds.
 // usage: node fsa.mjs [seeds=3]   (ASPIRA_PATCH / ASPIRA_WEB as everywhere)
 import { isMainThread } from "node:worker_threads";
 import { play } from "./sim.mjs";

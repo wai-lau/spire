@@ -1,7 +1,7 @@
 // /spire - GRV, the GRAVITY tower (owner's design 2026-10-15, reworked 2026-10-25; ARCHITECTURE.md 4.6b): designed for swarm + armor,
 // mid reach, no projectile. Every shot leaves a VOID where its target is about to be; the void crushes what is inside and IS its mass -
 // it grows with the damage it deals (to GRV_MASS_MAX), evaporates by its circumference, sheds PELLETS as it loses mass, and drifts into
-// and merges with other voids. Nova: novas implode on the best spot before each void, striking and stripping armor. Acceleration: an
+// and merges with other voids. Nova: novas implode on the best spot before each void, striking and stripping armor. Gravity Well: an
 // AURA round the void (never past twice its size) that slows (never the shielded) and draws enemies to the lane's centre; it deals
 // nothing. Loaded after aspira-frz.js (the simulator too); towerStats calls grvSkillStats, the tower loop stepGrv, fire() novaAt,
 // drawSceneTop drawGrv.
@@ -14,16 +14,16 @@ const GRV_NOVA_R = [71, 85, 112, 185]; // Supernova: the nova's reach (x1.7 with
 // THE GRV REWORK (owner, 2026-10-25): tier 0 the nova and a TINY void every third nova ("add void at 0 (every 3 novas) / But, tiny, no
 // aura"); NOVA the implosion's rate, its armor strip, and so the void's size ("total damage + strip determines void size"); VOID the void's
 // size, its crush and its pellets ("Pellet rate depends on decay mass loss"); ACCELERATION (id radiation, kept for saves) the aura on the void
-// - pull and slow, its size and strength - and the pellets' damage and range ("Acceleration determines damage and range"). Full 0..V tables,
+// - pull and slow, its size and strength - and the pellets' damage and range ("Gravity Well determines damage and range"). Full 0..V tables,
 // written here (not in CAPSTONE_NUM): PLACEHOLDERS the balance battery fits. The level curve gives no rate (owner, same day: "rate does
 // not grow with just tiers, only tower range, tower mvmt and damage") - GRV's rate is Nova's alone
 const GRV_NOVA_RATE = [1, 1.2, 1.5, 1.9, 2.4, 3.1]; // Nova: the implosions' rate, x the tower's (tier 0 slow - TOWERS.grv.rate)
 const GRV_NOVA_STRIP = [0, 0.175, 0.265, 0.37, 0.75, 0.901]; /* a SHARE of the armor an implosion, 6.18.0 (owner, 2026-10-28: "for armor, all strip should be changed to a % not a flat number"): tier III = today's 37% at waves 101-119 (stripprobe), the rest stacked shares of the old ladder 0 2.5 4 6 18 30 (x the nova's damage) */ /* x5, marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28) (armor) */ /* IV x2, V x1.5 (2026-10-27, late rows at 13 points: armor leaked 82% in 111-119 -> 70; the aura slow is no lever there - IV already sits over SLOW_CAP) */ /* x2 (axsweep, 2026-10-25: armor leaked 33-49% at x1) */ // (V: just more - owner, 2026-10-25: "Nova V, just removes more armor, not half") // Nova: armor each nova strips from what it hits, x its hit; the stripped armor sizes the void with the damage
 const GRV_INNER_K = [2.4, 3.67, 4.6, 6, 8, 12]; // Void: the crush a second, x the tower's damage x mass (the void small again - its pellets carry the duo rule, owner 2026-10-25)
-const GRV_ACC_R = [1, 1.4, 1.55, 1.7, 1.85, 2]; // Acceleration: the aura's radius, x the VOID's (its black core, grvCoreR) - never past x2 (owner, 2026-10-25: "because voids are so big, auras should be smaller / aura radius never exceeds 2x void radius"; was x the void's field, 2.4 .. 6)
-const GRV_PELLET_K = [3, 14.52, 19.8, 27, 36, 50.4]; /* x6 with GRV_PEL_PER_MASS /5 (marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28)): fewer, bigger pellets - armor takes less off a big hit, so armor becomes a check and shield (a charge a pellet) its weak type */ // Acceleration: a pellet's hit, x the tower's damage - x3 from tier I (axsweep 2026-10-25, with GRV_ACC_PEL: Accel focus 42% leaked -> 12, Void 13, Nova 4)
-const GRV_PEL_RANGE = [1, 1.4, 1.8, 2.3, 2.9, 3.6]; // Acceleration: a pellet's flight, x the void's field
-const GRV_ACC_PEL = [1, 1.1, 1.2, 1.3, 1.4, 1.5]; // Acceleration: x the pellets a void sheds (count first, to x1.5 - owner 2026-10-25: "Add pellets")
+const GRV_ACC_R = [1, 1.4, 1.55, 1.7, 1.85, 2]; // Gravity Well: the aura's radius, x the VOID's (its black core, grvCoreR) - never past x2 (owner, 2026-10-25: "because voids are so big, auras should be smaller / aura radius never exceeds 2x void radius"; was x the void's field, 2.4 .. 6)
+const GRV_PELLET_K = [3, 14.52, 19.8, 27, 36, 50.4]; /* x6 with GRV_PEL_PER_MASS /5 (marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28)): fewer, bigger pellets - armor takes less off a big hit, so armor becomes a check and shield (a charge a pellet) its weak type */ // Gravity Well: a pellet's hit, x the tower's damage - x3 from tier I (axsweep 2026-10-25, with GRV_ACC_PEL: Accel focus 42% leaked -> 12, Void 13, Nova 4)
+const GRV_PEL_RANGE = [1, 1.4, 1.8, 2.3, 2.9, 3.6]; // Gravity Well: a pellet's flight, x the void's field
+const GRV_ACC_PEL = [1, 1.1, 1.2, 1.3, 1.4, 1.5]; // Gravity Well: x the pellets a void sheds (count first, to x1.5 - owner 2026-10-25: "Add pellets")
 let GRV_PEL_PER_MASS = 6; /* 30 -> 6 with GRV_PELLET_K x6 (marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28)) */ /* 20 -> 30 (owner, 2026-10-27, count first: GRV beat swarm alone - the two-type rule; each pellet pops a charge, so x1.5 pellets is its shield check) */ /* the duo rule (2026-10-25, the void small again and pellets at tier 0: 4 clean 17/21, 12 19/21, 20 21/21) (let: the simulator sweeps it) */ // pellets a unit of mass lost to decay (or past the cap in a merge) gives off
 const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's aura, starting mass 1) - x2 faster (owner, 2026-10-16: "some bh taking too long to evaporate if merged with too many / increase bh evaporation speed significantly"; was 5)
 // EVAPORATION by the CIRCUMFERENCE (owner, 2026-10-16: "bh should evaporate faster the bigger it is, so, update bh size reduction
@@ -57,7 +57,7 @@ const GRV_INNER_K0 = GRV_INNER_K[1]; /* (was ONE number, 3.67) */ /* the inner b
 SKILL_TREES.grv = [
   { id: "void", name: "Void", tiers: [{ name: "Well" }, { name: "Abyss" }, { name: "Void" }] },
   { id: "supernova" /* id kept (saves); shown as NOVA - tier redesign, owner 2026-10-24: "Nova: adds slowing aura" (was Supernova) */, name: "Nova", tiers: [{ name: "Flare" }, { name: "Nova" }, { name: "Supernova" }] },
-  { id: "radiation" /* id kept (saves); shown as ACCELERATION - owner 2026-10-25 */, name: "Acceleration", tiers: [{ name: "Glow" }, { name: "Spray" }, { name: "Radiance" }] },
+  { id: "radiation" /* id kept (saves); shown as GRAVITY WELL - owner 2026-11-01, was Acceleration (2026-10-25) */, name: "Gravity Well", tiers: [{ name: "Glow" }, { name: "Spray" }, { name: "Radiance" }] },
 ];
 
 function grvSkillStats(t, s, b) {
@@ -76,7 +76,7 @@ function grvSkillStats(t, s, b) {
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= GRV_NOVA_RATE[n]; s.hdmg = s.dmg; s.evapK = 1; s.targets = 1; // (rateCurve: the curve's, before Nova)
   s.hole = true; s.auraOn = r > 0; s.auraR = GRV_AURA_R[v]; s.accR = GRV_ACC_R[r]; s.slow = GRV_SLOW[r]; s.innerK = GRV_INNER_K[v]; s.horizon = r >= CAPSTONE_TIER;
   s.novaR = GRV_NOVA_R[Math.max(n, v)]; s.strip = GRV_NOVA_STRIP[n];
-  s.pellets = GRV_PEL_PER_MASS * GRV_ACC_PEL[r]; /* every void, tier 0 too (owner, 2026-10-25: "Add pellets instead" of a bigger void) */ s.novaN = n > 0 ? GRV_NOVA_N : 0; s.startM = GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1); s.pelletK = GRV_PELLET_K[r]; s.pelReach = GRV_PEL_RANGE[r]; s.big = v >= CAPSTONE_TIER; s.skill = true; // pellets from Void I or Acceleration I (owner, 2026-10-25: Accel alone too - "Yes"), novas from Nova I
+  s.pellets = GRV_PEL_PER_MASS * GRV_ACC_PEL[r]; /* every void, tier 0 too (owner, 2026-10-25: "Add pellets instead" of a bigger void) */ s.novaN = n > 0 ? GRV_NOVA_N : 0; s.startM = GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1); s.pelletK = GRV_PELLET_K[r]; s.pelReach = GRV_PEL_RANGE[r]; s.big = v >= CAPSTONE_TIER; s.skill = true; // pellets from Void I or Gravity Well I (owner, 2026-10-25: Accel alone too - "Yes"), novas from Nova I
 }
 
 // a sphere's scale from its mass: the aura's RADIUS grows as its square root (its area as the mass), the rest as the mass
@@ -217,8 +217,8 @@ function stepSphere(sp, t, st, dt) {
   sp.tick += dt;
   while (sp.tick >= GRV_TICK) {
     sp.tick -= GRV_TICK;
-    const ring = Math.min(GRV_SLOW_MAX, st.slow * k), core = Math.min(GRV_CORE_MAX, ring * GRV_CORE_MUL), outer = st.horizon ? core : ring; // Acceleration V: the WHOLE aura the inside's slow (owner, 2026-10-25)
-    const inner = grvCoreR(ar), reach = st.auraOn ? inner * st.accR : inner; // the aura reaches past the void by Acceleration; no aura, only the void itself crushes // the INNER AURA is the black core's own size (owner, 2026-10-16: "the inner aura should be the size of the core sphere"; was GRV_CORE_FRAC of the aura)
+    const ring = Math.min(GRV_SLOW_MAX, st.slow * k), core = Math.min(GRV_CORE_MAX, ring * GRV_CORE_MUL), outer = st.horizon ? core : ring; // Gravity Well V: the WHOLE aura the inside's slow (owner, 2026-10-25)
+    const inner = grvCoreR(ar), reach = st.auraOn ? inner * st.accR : inner; // the aura reaches past the void by Gravity Well; no aura, only the void itself crushes // the INNER AURA is the black core's own size (owner, 2026-10-16: "the inner aura should be the size of the core sphere"; was GRV_CORE_FRAC of the aura)
     for (const e of G.enemies) {
       const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
       if (e.dead || !e.seen || d2 > reach * reach) continue;
@@ -416,7 +416,7 @@ function drawGrv() {
   ctx.globalAlpha = 1;
 }
 function drawSphere(sp, st, auraOwn = true) {
-  const k = grvMassK(sp), ar = grvCoreR(grvAuraNow(sp, st)) * st.accR; // the AURA's reach (Acceleration): x the void's own radius, x2 at most
+  const k = grvMassK(sp), ar = grvCoreR(grvAuraNow(sp, st)) * st.accR; // the AURA's reach (Gravity Well): x the void's own radius, x2 at most
   if (ar > 1 && st.auraOn) { // the aura: clear at the sphere, its alpha (grvAuraAlpha) at mid-radius, clear at the edge (auraOwn false: drawn capped with its overlaps - drawGrv)
     if (auraOwn) grvAura(ctx, sp, ar, grvAuraAlpha(sp, ar), ar / st.accR);
     // its REACH, shown like Permafrost's rings (owner, 2026-10-16: "for bh aura, show range of aura using a range indicator similar to

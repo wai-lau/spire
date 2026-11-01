@@ -69,11 +69,11 @@ const CAPSTONE_NUM = [
 
   // SOL: Focus eight rays; Refraction a wider cone, harder hops; Breach armor stripped for good, far bigger crits
   
-  // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Contagion MASSIVE, long pools
+  // ACD: Corrosion the strongest acid; Flow eleven jets landing far hotter, slowing hard; Spill MASSIVE, long pools
   [ACD_CORRODE, 0.585 /* a share a tick (6.18.0; was 0.9 of the damage) */], [ACD_DRIP_PULL, 150], [ACD_LINES, 11], [ACD_FLOW_CARRY, 0.9],
   [ACD_CONTAGION, { every: 0.6, life: 5, r: 412.5 } /* r x2.5, every /1.5 with its table (2026-10-29; was 0.9, 165) */],
   // GRV (rework 2026-10-25): Void the biggest void (Singularity: twice the start mass, four times the cap); Nova the fastest novas, stripping the most (Hypernova);
-  // Acceleration the widest, coldest aura (Event Horizon: the whole aura slows as hard as its inner tier)
+  // Gravity Well the widest, coldest aura (Event Horizon: the whole aura slows as hard as its inner tier)
   // CRR: Hangar seventeen interceptors; Tether the strongest beam (Chain: it runs on to one more enemy); Armament the hardest, fastest, longest sorties (Autopilot)
   [CRR_HANGAR, 17], [CRR_TETHER_SLOW, 0.75], [CRR_AMMO, 72 /* x3 with the table (2026-10-29: a third the bolt; was 24) */ /* (36 with the backed-out x1.5, 2026-10-27) */ /* x1.5 with its table (2026-10-24 marks target); was 16, under IV - smoke "a capstone value never runs against its table" */],
   [GRV_AURA_R, 279.5], [GRV_SLOW, 1.2012 /* x1.3 x1.5 with its table (2026-10-24); was 0.616, under IV */], [GRV_NOVA_R, 230], /* (GRV_PELLETS gone with the GRV rework, 2026-10-25: its new tables are written 0..V in aspira-grv.js) */
