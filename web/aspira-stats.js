@@ -48,7 +48,7 @@ const SPEC = {
     ["Peak tick", tdP("acd", st, st.dmg * st.cap / st.rate)], ["Jets", st.allInRange ? "all in range" : st.targets],
     ["Circle", st.plagueR ? Math.round(st.plagueR) + (st.bloom ? "→" + Math.round(st.plagueR * st.bloom) : "") : "—"],
     ["Armor", st.corrode ? "−" + pc(st.corrode) + " a tick" : "—"] /* a tick strips ACD_CORRODE of its damage, as a share of the armor now (shredPc, aspira-desc.js) */, /* no "Shields −1 / hit" rows: one charge a hit is the default, unsaid (owner, 2026-10-20) */
-    ["Goo", st.corrode ? "×" + Math.round(DRIP_TAKE * (1 + DRIP_TIER_K * TIER_LEVEL[skillOf(t, "corrosion")]) * 10) / 10 + " eaten armor" : "—"], ["Goo pull", st.corrode ? ACD_DRIP_PULL[skillOf(t, "corrosion")] : "—"] /* dripDrop / stepDrips: strips and burns that much */,
+    ["Goo", st.corrode ? Math.round(ACD_GOO_STRIP[skillOf(t, "corrosion")] * 100) + "% armor, " + Math.round(ACD_GOO_DMG[skillOf(t, "corrosion")] * 100) + "%td" : "—"], ["Goo pull", st.corrode ? ACD_DRIP_PULL[skillOf(t, "corrosion")] : "—"] /* dripDrop / stepDrips: strips and burns that much */,
     // puddles one number a row (owner, 2026-10-07: "1 / 1.4s · 1.5s · r20" was unreadable), so each
     // reads now -> next on its own and its colour judges that one number
     // always the same rows ("—" with no puddles), so a pull from Spill 0 lines up now -> next

@@ -20,6 +20,12 @@ check("curve: by total level alone, rising, slightly steepening - each tower its
   const same = run(`(() => { const lv = sk => towerLevel({ kind: "arc", skills: sk }); return [lv({ conductivity: 2, voltage: 1 }), lv({ capacitance: 3 }), lv({})]; })()`);
   if (JSON.stringify(same) !== "[3,3,0]") return "towerLevel reads " + same + " (expected every point the same: 3, 3, 0)";
 });
+check("ACD goo in percentages: strip a share of the picker's CURRENT armor and deal a share of the ACD's td, each <= 8x, each step <= 2x, rising (owner, 2026-11-01, picked \"1\" for the goo; \"Nothing should ever be above like 800%\", \"no level damage steps above 2x\")", () => {
+  const [a, b] = run(`[ACD_GOO_STRIP.slice(), ACD_GOO_DMG.slice()]`);
+  for (const [n, v] of [["ACD_GOO_STRIP", a], ["ACD_GOO_DMG", b]]) {
+    if (v.length !== 6 || v[0] !== 0 || v.some(x => x > 8) || v.some((x, k) => k > 1 && (x < v[k - 1] || x > 2 * v[k - 1]))) return n + " " + JSON.stringify(v);
+  }
+});
 check("curve: SOL's rate is flat (never raise SOL's fire rate)", () => {
   const r = run(`[curveAt("sol", 0).rate, curveAt("sol", SKILL_POINTS).rate]`);
   if (r[0] !== 1 || r[1] !== 1) return "SOL rate " + r;

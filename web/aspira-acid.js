@@ -70,7 +70,7 @@ function acdTick(t, st, l, every) {
     const dd = shotDamage(t, st, o, d);
     damage(o, dd, t, false, false, st); onHit(o, t, st, dd); o.burnT = 0.4; // burning: no longer Fresh (st: its noFx)
     // (the jets' own slow moved to the POOLS - owner, 2026-10-22: "move slow from jets to pools"; stepPuddles)
-    if (st.corrode && !o.dead) corrodeHit(o, st.corrode, t); // Corrosion: st.corrode of the armor a tick (shredPct); corrodeT: dotted ring
+    if (st.corrode && !o.dead) corrodeHit(o, st.corrode, t, st.dmg); // Corrosion: st.corrode of the armor a tick (shredPct); corrodeT: dotted ring
   };
   const R = st.plagueR ? plagueRadius(l, st) : 0, center = l.e;
   burn(center);
@@ -153,10 +153,10 @@ function damageCredit(e, t, pre, amt, frost, got) {
   }
   t.dealt = (t.dealt || 0) + mine;
 }
-function corrodeHit(e, p, t) {
+function corrodeHit(e, p, t, td = 0) {
   const cut = shredPct(e, t, p); // a share of the armor a tick (6.18.0; was the tick's damage x ACD_CORRODE over the wave's reference)
   e.corrodeT = 0.4;
-  dripAcc(e, DRIP_REAL * cut, t); // eaten armor drips, DRIP_REAL x (owner, 2026-10-13; all of it is real armor since the 2026-10-28 rework - none below zero)
+  e.dripTd = td; dripAcc(e, DRIP_REAL * cut, t); // eaten armor drips, DRIP_REAL x (owner, 2026-10-13; all of it is real armor since the 2026-10-28 rework - none below zero)
 }
 // THE DRIP (owner, 2026-10-13: "when armor is removed, it should drip down (green coin like dots without shimmer), this is
 // collected by nearby enemies, and they lose X% of the collected drip"): the armor Corrosion eats off ANY enemy, below zero too,
@@ -164,7 +164,12 @@ function corrodeHit(e, p, t) {
 // negative; however, triple the amount when the armor is not negative armor") -
 // as drops of DRIP_UNIT x the wave's armor reference; a drop lies DRIP_LIFE s, and the first other enemy within DRIP_R of it
 // takes it - its armor loses DRIP_TAKE x the drop, credited to the ACD. let: the sims sweep them
-let DRIP_TAKE = 2 /* countermx 2026-10-13: 0.5 / 1 / 2 - 2 brought the late armor column down most (ACD 6-13%) */, DRIP_UNIT = 0.3 /* a third as many drops, each 3x - the same goo in all (owner, 2026-10-13: "reduce goo pellet count"; was 0.1) */, DRIP_REAL = 3, DRIP_TIER_K = 0.6; // DRIP_TIER_K: x (1 + it x the dropping ACD's Corrosion tier) - countermx 2026-10-13: 0.6 brings Corrosion builds to 1-6% late armor (0: 6-12%)
+let DRIP_TAKE = 2 /* countermx 2026-10-13: 0.5 / 1 / 2 - 2 brought the late armor column down most (ACD 6-13%) */, DRIP_UNIT = 0.3 /* a third as many drops, each 3x - the same goo in all (owner, 2026-10-13: "reduce goo pellet count"; was 0.1) */, DRIP_REAL = 3;
+// THE GOO IN PERCENTAGES (owner, 2026-11-01, picked "1"; replaces "goo should also deal damage equal to the amount of armor it strips",
+// 2026-10-13, and the flat DRIP_TAKE x (1 + 0.6 x TIER_LEVEL) - V was "9.2 times the armor lost"): a drop's picker loses ACD_GOO_STRIP of
+// its CURRENT armor (shredPct, as every strip) and takes ACD_GOO_DMG x the dropping ACD's td, by its Corrosion tier 0..V; each <= 8x,
+// each step <= 2x (owner: "Nothing should ever be above like 800%", "no level damage steps above 2x"). Drops still come from eaten armor
+let ACD_GOO_STRIP = [0, 0.15, 0.22, 0.33, 0.5, 0.75], ACD_GOO_DMG = [0, 2, 3, 4.4, 6.4, 8]; // (was DRIP_TIER_K 0.6: x (1 + it x the dropping ACD's Corrosion tier) - countermx 2026-10-13: 0.6 brings Corrosion builds to 1-6% late armor (0: 6-12%)
 const DRIP_LIFE = GOO_MAX_S /* x5 (owner, 2026-10-14: "make corrosion goo last 5x longer"; was 8) */, DRIP_R = 14, DRIP_MAX = 1000 /* (was 300 at the 8 s life) */, DRIP_JIT = 8;
 // a drop is FLUNG back up the lane (owner, 2026-10-13: "give them some initial velocity in the direction of the lane (outwards),
 // give them a bit of angle jitter"): along the lane behind the enemy, +-DRIP_SPREAD rad, slowing from the start (by DRIP_TAU s)
@@ -191,7 +196,7 @@ function dripDrop(e, v, t) {
   const a = Math.random() * 6.283, r = DRIP_JIT * Math.sqrt(Math.random()), on = pathAt(e.pi, e.s, e.ang);
   const tier = t && t.skills ? skillOf(t, "corrosion") : 1, pull = ACD_DRIP_PULL[tier] || ACD_DRIP_PULL[1];
   G.drips.push({ x: e.x, y: e.y, vx: 0, vy: 0, lane: { pi: e.pi, ang: e.ang, s: e.s, sv: DRIP_V * (1 - DRIP_V_JIT + 2 * DRIP_V_JIT * Math.random()), lat: 0, lv: DRIP_V * (Math.random() * 2 - 1) * DRIP_SPREAD,
-    ox: e.x - on.x + Math.cos(a) * r, oy: e.y - on.y + Math.sin(a) * r }, v: v * (1 + DRIP_TIER_K * TIER_LEVEL[tier]), src: e, by: t, t: 0, pull, sz: 0.5 + Math.random(), ring: Math.random() < DRIP_HOLLOW }); // sz: its drawn size, mixed; ring: drawn HOLLOW (owner, 2026-10-13) // ox, oy: off the lane's line, as its enemy was
+    ox: e.x - on.x + Math.cos(a) * r, oy: e.y - on.y + Math.sin(a) * r }, v, tier, td: e.dripTd || 0, src: e, by: t, t: 0, pull, sz: 0.5 + Math.random(), ring: Math.random() < DRIP_HOLLOW }); // sz: its drawn size, mixed; ring: drawn HOLLOW (owner, 2026-10-13) // ox, oy: off the lane's line, as its enemy was
 }
 // a drop riding its lane: back up it (s falling), its sideways drift along the lane's normal there, both slowing by keep
 function dripRide(d, dt, keep) {
@@ -211,9 +216,9 @@ function stepDrips(dt) {
       if (o.dead || o === d.src) continue; // never its own enemy's (owner, 2026-10-13)
       const dd = (o.x - d.x) ** 2 + (o.y - d.y) ** 2, rr = DRIP_R + ENEMIES[o.type].size * (o.sizeMul || 1);
       if (dd <= rr * rr) { // picked up
-        const take = DRIP_TAKE * d.v, by = G.towers.includes(d.by) ? d.by : null;
-        shredArmor(o, by, take); o.corrodeT = 0.4;
-        fromHit(d, () => damage(o, take, by)); // and it BURNS as much as it strips (owner, 2026-10-13: "goo should also deal damage equal to the amount of armor it strips")
+        const by = G.towers.includes(d.by) ? d.by : null;
+        shredPct(o, by, ACD_GOO_STRIP[d.tier] || 0); o.corrodeT = 0.4; // a SHARE of its armor (THE GOO IN PERCENTAGES)
+        fromHit(d, () => damage(o, (ACD_GOO_DMG[d.tier] || 0) * d.td, by)); // and ACD_GOO_DMG x the ACD's td
         d.done = true; near = null; break;
       }
       if (dd < nd) { nd = dd; near = o; }
