@@ -606,6 +606,8 @@ want to do the diag things").
 | 7.0.22 `216ce71` | the in-frame fade upload sends only its dirty box (`fadeBox`, texSubImage2D) | |
 | 7.0.23 `7d93acf` | `laneHold` drops a held lane once no live lane of its wave runs | bug "lanes stay onscreen after all enemies die": a lane held over by the next wave's lanes never went dark. The 7.0.23 log: 6 frames over 100 ms (was 47-54), but 72 over 50 ms; `fadeBox` 43.9 ms avg (n 49), `bmp` 26.5 ms (n 81) |
 | 7.0.24 `96167c7` -> 7.0.28 `0319ef2` | the lit lanes drawn by the bell shader from baked distance fields (`aspira-lanegl.js`); the board uploads label strips only | removes every fade upload and every lane-driven board upload in 3D. WebKit 430x775@2 vs the 2D lanes: 201 of 1.33 M px off by more than 16 levels, none by more than 48 (the half-res iPhone path 4758, none over 48). The first cut drew the line BEADED (plain distance field at 3 world units a texel) - hence the signed channel. Uploads in a desktop run: 12 label strips, 1 lane build, no `fadeBox` |
+| 7.1.1 `d90b85d` | GPU-lanes board: no 2D fade bucket in the signature; one strip a changed label | the 7.0.28 log (46 s): 32 bitmap uploads at 16.5 ms, slow frames tagged board 16 / board+1 12. Harness, waves 1-6: redraws 46 -> 29, whole uploads 18 -> 6 (one a wave), label strips up to 492x519 -> 9x9..98x49. WebKit: strips vs forced whole uploads, 0 px differ |
+| 7.1.3 `fccfdb1` | lit lanes under the board's ink | owner: "lit lanes should cover nothing" - on the 2D path and 7.0.28's GPU lanes they lay over the grid, labels and rim circles; 7.0.28's parked look item closes |
 
 Superseded paths, still in the code but off by default: the off-frame fade snapshot (`?diag=fadebmp`) and, in 3D, the whole 2D
 lane path (fade layer, hold, half-res layers) - it is what 2D and `?diag=nolanegl` draw. One look change stands with the GPU lanes,
@@ -1131,3 +1133,16 @@ Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alo
 - Pay: a body paid x `earlyN`, so `EASE_N` 0.7 cut waves 1-12's pay 2134 -> 513 gold. Pay now has its own `EASE_PAY` 2.912 (`earlyPay`, = 0.7 x 4.16): 2101 gold.
 - The curve: lowering `lo` weakened every level, not only tier 0. The curve is back as before (`dmg` [88.2] ARC, [1.58473, 1.8] CRR) and a `dmg0` factor scales the tier-0 hit alone (ARC 1/70.6, CRR 1/4.6: both 30). Owner picked option 1: the hit jumps back to the curve at the first purchase.
 - Both together: 103 of 200, inside the +-10 noise of 112.
+
+### 12.t The 7.1 pass (2026-11-01; 012f378 .. a501c86)
+Owner, 2026-10-31 / 11-01: "Nothing should ever be above like 800%", "no level damage steps above 2x", "Right now ARC is so insanely steep
+it doesnt make sense".
+- 7.1.0 (`012f378`): ARC's damage on its own geometric curve, `geo` [0.73912, 1.9]. Hit by level 0/1/2/3/9/13: 18/34/64/122/5724/74597
+  (before: 30/2568/3394/4463/14310/23285 - the old `dmg0` tier-0 hit then the power curve). Shock III-V slow .38/.47/.58, strip
+  .19/.32/.48; `ARC_RES_DMG` 1,1,1.05,1.1,1.15,1.2. VS_MARKS distance 22 (was 24).
+- 7.1.4 (`5fa59c5`): ACD goo in shares - strip 0/15/22/33/50/75% of the picker's armor, damage 0/2/3/4.4/6.4/8 x td. SUPERSEDED: the
+  2026-10-13 rule "goo should also deal damage equal to the amount of armor it strips" with `DRIP_TAKE` x (1 + `DRIP_TIER_K` 0.6 x
+  `TIER_LEVEL`) = 2.6/3.2/5.6/8/9.2 x the armor lost (the card's "920% of the armor lost"). ACD band, V corrosion mean leak 86 -> 62;
+  Corrosion vs armor at V 88% -> 5%.
+- Card text: 7.0.30 renames (Amperage -> Conductivity, Resistance -> Shock, Sublimation -> Brittle, Contagion -> Spill, Acceleration ->
+  Gravity Well, SOL's Flare tier -> Glare; FRZ's "Brittle" row -> "Damage taken"); 7.1.2 Shock's harder hit; 7.1.5 the goo line.
