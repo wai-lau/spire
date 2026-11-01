@@ -121,6 +121,10 @@ const laneHeld = new Map();
 function laneHold(live) {
   if (!(typeof warpUpSlow !== "undefined" && warpUpSlow >= 3)) return live;
   if (!live.length) { laneHeld.clear(); return live; }
+  /* ...but only while ITS wave still runs (2026-10-31, Wai on an iPhone: "lanes stay onscreen after all enemies die"): with the next wave's lanes up (sent early, or
+     the countdown's preview) live was never empty, so a finished wave's lanes stayed in the key - the board never redrew without them */
+  const running = new Set(live.map(u => u.n));
+  for (const [k, u] of laneHeld) if (!running.has(u.n)) laneHeld.delete(k);
   for (const u of live) if (!u.star) laneHeld.set(u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":0", u);
   return [...laneHeld.values(), ...live.filter(u => u.star)]; /* (a boss lane is never held: it fades with its sky) */
 }
