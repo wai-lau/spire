@@ -39,7 +39,7 @@
 /* the END SCREEN FITS THE SCREEN (owner, 2026-10-18: "the screen shouldn't be scrollable, leaks and top players should expand to take up
    remaining space with scroll within"): the overlay never scrolls; the leak list and the top-players board share the height the
    title, stats and Play again leave, each scrolling inside itself; since 2026-10-19 the leak list is three rows (.asp-end-waves) and the board takes the rest */
-#asp-ov { overflow: hidden; justify-content: flex-start; }
+#asp-ov { overflow: hidden; justify-content: flex-start; padding-bottom: calc(var(--space-8) + var(--foot-h, 0px)); } /* clear of the speed bar (owner, 2026-10-31: "Ensure at least top 3 lives lost are fully visible" - the list ran under it) */
 #asp-ov > * { flex-shrink: 0; }
 #asp-ov-right { display: contents; } /* (one block only on a wide screen - below; on a phone its items are the overlay's own) */
 #asp-ov-right > * { flex-shrink: 0; }
@@ -80,7 +80,7 @@
   #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-text { order: 2; }
   #asp #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-btn { order: 3; margin-top: 0; } /* Play again right under "Reached wave X" (owner, 2026-10-21) */
   #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-stats { order: 4; }
-  #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-leaks { order: 5; margin-top: 0; flex-shrink: 1; min-height: 0; }
-  #asp-ov:has(> #asp-asc:not([hidden])) .asp-end-waves { max-height: none; }
+  #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-stats { flex-shrink: 1; min-height: 0; overflow-y: auto; } /* the tower stats give way first */
+  #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-leaks { order: 5; margin-top: 0; } /* never shrinks: the head and the top THREE always show, the rest scroll (owner, 2026-10-31) */
 }
 
