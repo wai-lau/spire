@@ -8,7 +8,12 @@
 // TOWER DAMAGE, td (owner, 2026-10-26: "Damage (td) should always be under tower! / Anything that deals a percentage of td should use that
 // number instead like 100%td 130%td"): the hit the card's sentence counts as 100% (aspira-desc.js) - a bolt or beam (ARC, SOL, CRR), a meteor
 // (IFR), a second of the full aura (FRZ), a second of a jet (ACD), a second of a tier 0 void's crush (GRV); every damage row a share of it
-const tdOf = (kind, st) => kind === "ifr" ? st.dmg * IFR_ROUTE_K0 : kind === "frz" ? (st.biteDmg || st.dmg) / FRZ_TEMP_TICK[0] : kind === "grv" ? st.dmg * GRV_INNER_K[0] * GRV_START_MASS : st.dmg;
+// THE td UNIT (owner, 2026-10-31: "Nothing should ever be above like 800%" / "Maybe do like 1/8xtd to 8x or something"): a tower whose
+// ramp or crush runs past 8x its hit counts its td TD_UNIT x bigger - ACD's ramp then opens at 1/8 td and tops at 8 td (ACD_BASE_MAX 64 / 8),
+// FRZ's chill and GRV's crush land under 8 td too. The LABEL only: the damage dealt is unchanged
+const TD_UNIT = { acd: 8, frz: 3, grv: 4 };
+const tdOf = (kind, st) => (TD_UNIT[kind] || 1) * tdBase(kind, st);
+const tdBase = (kind, st) => kind === "ifr" ? st.dmg * IFR_ROUTE_K0 : kind === "frz" ? (st.biteDmg || st.dmg) / FRZ_TEMP_TICK[0] : kind === "grv" ? st.dmg * GRV_INNER_K[0] * GRV_START_MASS : st.dmg;
 const tdP = (kind, st, v) => { const T = tdOf(kind, st), r = T > 0 ? v / T : 0; return T > 0 ? +(100 * r).toFixed(r < 0.1 ? 1 : 0) + "%td" : "—"; };
 const dmgW = v => dmgUnits(v * (typeof scaleOf === "function" && typeof G !== "undefined" && G ? scaleOf(Math.max(1, G.wave || 1)) : 1));
 // SOL's form, in one short line for the popup (the same row at every level, so
