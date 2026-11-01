@@ -26,6 +26,14 @@ const GLOW_FALLOFF = 5; // harder (owner; was 3)
 // the boss sky draws the board in inverted colours too (render), and sharing
 // one set would rebuild them twice a frame while the sky spreads
 const laneSets = {};
+// HALF-RES LANE LAYERS on a device whose board upload stalls (perf, 2026-10-31 - Wai: "Fix the lag!!"; a 7.0.17 iPhone log: 53 frames over 100 ms in 3 min, mostly
+// lane rebuilds in Safari's GPU process): every lane layer (line, glow, base, combo, the masks, the scratch, the fade layer and its GPU copy) is built at 1/LANE_LD of
+// the board's pixels and laid on scaled back up - a quarter of the pixels to stroke, mask, copy and hold (~144 -> ~36 MB at 2048 px). Softer lane edges there;
+// desktop is untouched (LANE_LD 1). laneLD() is the divisor, laneW/laneH the layers' size, laneCam their transform
+const laneLD = () => (typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 2 : 1);
+const laneW = () => Math.ceil(cv.width / laneLD()), laneH = () => Math.ceil(cv.height / laneLD());
+const laneCam = x => { const d = laneLD(); x.setTransform(cam.k / d, 0, 0, cam.k / d, cam.ox / d, cam.oy / d); };
+const laneKeyCam = () => [cv.width, cv.height, cam.k, cam.ox, cam.oy, laneLD()].join(); // (every cached layer's key: a change of divisor rebuilds them all)
 // lane labels much SMALLER (owner, 2026-10-06; were 30 live / 20 idle)
 const LANE_LABEL_PX = 14, LANE_IDLE_PX = 11;
 function laneSet() {
@@ -39,7 +47,7 @@ function laneLayer(c, x, w, h, box = null) { // box: clear only that rect (canva
   if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
   x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = "source-over";
   if (box) x.clearRect(box.x, box.y, box.w, box.h); else x.clearRect(0, 0, w, h);
-  x.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy);
+  laneCam(x);
   x.lineJoin = "round"; x.lineCap = "round";
 }
 // mask: only alpha matters under destination-in, so transparent -> bg works
@@ -68,16 +76,16 @@ function laneCoreFade(x) {
 const maskCvs = {};
 let maskKey = "";
 function applyMask(x, n, box = null) { // box: only that rect (canvas px) - nothing outside it to mask
-  const key = [cv.width, cv.height, cam.k, cam.ox, cam.oy].join();
+  const key = laneKeyCam();
   if (key !== maskKey) { maskKey = key; dropMasks(); }
   let m = maskCvs[n];
   if (!m) {
     m = document.createElement("canvas");
     const mx = m.getContext("2d");
     if (!mx) throw new Error("lane mask: no 2d context");
-    laneLayer(m, mx, cv.width, cv.height);
+    laneLayer(m, mx, laneW(), laneH());
     mx.setTransform(1, 0, 0, 1, 0, 0); mx.fillStyle = COL.bg; mx.fillRect(0, 0, m.width, m.height);
-    mx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy);
+    laneCam(mx);
     for (let i = 0; i < n; i++) laneMask(mx, n > 1);
     if (n > 1) laneCoreFade(mx); // the GLOW only - the lane line runs on into the core (owner, 2026-10-16: "don't fade the lane line, only the highlight")
     maskCvs[n] = m; // cached only once whole: a half-built mask erased or unmasked the lanes till the camera moved
@@ -100,7 +108,7 @@ function laneFail(err) {
   freeCv(laneFadeL.cv); freeCv(laneFadeL.lcv); laneFadeL.sig = ""; laneFadeL.box = null; laneFadeL.dirty = LANE_ALL; // (the fade layer's own pair too)
   dropMasks(); maskKey = "";
 }
-function blit(c) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(c, 0, 0); ctx.restore(); }
+function blit(c) { const d = laneLD(); ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; if (d === 1) ctx.drawImage(c, 0, 0); else ctx.drawImage(c, 0, 0, c.width * d, c.height * d); ctx.restore(); } // (a half-res layer scaled back up: laneLD)
 const laneSeen = new Map(), LANE_FADE_IN_MS = 2000;
 /* a device whose board upload stalls (warpUpSlow, aspira-warplayers.js) gets its lanes at full brightness at once: the fade-in was most of its board resends (14 of 19 a wave) */
 const laneFadeMs = () => (!laneFadeGl() && typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 0 : LANE_FADE_IN_MS); // (the GPU fade layer costs such a device one upload, not a resend a step)
@@ -125,10 +133,10 @@ const BOSS_LANE_W = 3.5, BOSS_LANE_K = 1.5; // a boss lane: x its glow's widths,
 function drawLaneStrokes(all) {
   const S = laneSet(), { laneCv, lctx, glowCv, gctx, baseCv, bctx } = S, live = laneSplit(all).board; // (a lane still fading in is the fade layer's - laneFadeLayer)
   const holds = set => { if (typeof warp !== "undefined") warp.statLanes = set; }; // the lanes this board holds (on the GPU once it is sent up: warp.boardLanes)
-  const key = [cv.width, cv.height, cam.k, cam.ox, cam.oy].join();
+  const key = laneKeyCam();
   if (key !== S.baseKey) {
     S.baseKey = key;
-    laneLayer(baseCv, bctx, cv.width, cv.height);
+    laneLayer(baseCv, bctx, laneW(), laneH());
     bctx.strokeStyle = COL.cyan; bctx.globalAlpha = 0.05; bctx.lineWidth = 1.2;
     for (const path of PATHS) bctx.stroke(path.p2d);
     laneMask(bctx);
@@ -142,15 +150,15 @@ function drawLaneStrokes(all) {
   // ...and at most every LIT_MIN_MS: at 10x the lanes' brightness moves every
   // frame, and rebuilding each time was the late game's frame spikes (a camera
   // move still rebuilds at once, or the layers would sit misaligned)
-  const camSig = [cv.width, cv.height, cam.k, cam.ox, cam.oy].join();
+  const camSig = laneKeyCam();
   const sig = camSig + "|" +
     laneHold(live).map(u => u.pi + ":" + u.ang.toFixed(3) + ":" + u.color + ":" + (u.star ? 1 : 0) + ":" + litLevel(u.a, u.star)).join(",");
   if (sig === S.litKey || (camSig === S.litCam && now - S.litAt < LIT_MIN_MS)) { holds(S.litLanes || new Set()); blitLanes(S); return; } // (what the cached layers hold, not what was asked)
   S.litKey = ""; // until the layers are whole (laneFail)
   // each lane IN USE lit in its rider's colour - drawn rotated when a split
   // wave rides a rotated copy of it (u.ang)
-  laneLayer(laneCv, lctx, cv.width, cv.height);
-  laneLayer(glowCv, gctx, cv.width, cv.height);
+  laneLayer(laneCv, lctx, laneW(), laneH());
+  laneLayer(glowCv, gctx, laneW(), laneH());
   strokeLit(lctx, gctx, live);
   applyMask(gctx, GLOW_FALLOFF);
   applyMask(lctx, 1);
@@ -164,19 +172,20 @@ function drawLaneStrokes(all) {
 const LIT_LINE_SOFT = [[12, 0.08], [5, 0.22], [2.2, 0.55]]; // (was a 6-wide haze at 0.07 under a 2.4 line at 0.75)
 const BOSS_LINE_SOFT = [[22, 0.07], [9, 0.15], [3, 0.3]]; // x BOSS_LANE_K (was a 22 halo at 0.06, a 21 haze at 0.045, a 4.9 line at 0.45)
 const LIT_GLOW_SOFT = [[36, 0.2], [30, 0.2], [24, 0.2], [18, 0.2], [12, 0.2], [7, 0.2]]; // x LIT_GLOW_A, widths x w - six even steps so the glow fades to nothing at its sides (owner, 2026-10-26: "glow should fade to 0% opacity at the sides"; was 32 at 0.4 + 14 at 0.6, before that ONE 32-wide stroke)
+const LIT_GLOW_SOFT3 = [[36, 0.3], [24, 0.3], [12, 0.3]]; // a device whose board upload stalls (laneLD 2): three levels, not six - a third fewer strokes a rebuild; the same 36 width and near the same core (0.66 vs 0.74), a coarser step to the sides
 let laneScratch = null;
 const LANE_SOFT_DS = 1; // FULL resolution (owner, 2026-10-26: "can we render lanes at higher res?"; was 2, half and scaled up) - a rebuild only when the lit lanes change
 function strokeSoft(dst, list, key, prof, alphaOf, wk, cap) {
   const groups = new Map();
   for (const u of list) { const g = u.color + ":" + (u.star ? 1 : 0) + ":" + u.a.toFixed(3); groups.set(g, [...(groups.get(g) || []), u]); }
   laneScratch ||= (() => { const c = document.createElement("canvas"), x = c.getContext("2d"); if (!x) throw new Error("lane scratch: no 2d context"); return { c, x }; })();
-  const { c, x } = laneScratch, W = Math.ceil(cv.width / LANE_SOFT_DS), H = Math.ceil(cv.height / LANE_SOFT_DS);
+  const { c, x } = laneScratch, W = Math.ceil(laneW() / LANE_SOFT_DS), H = Math.ceil(laneH() / LANE_SOFT_DS), LK = LANE_SOFT_DS * laneLD();
   if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
   for (const us of groups.values()) for (const [lw, la] of prof) {
     const b = laneBox(us, lw * wk(us[0]), W, H); if (!b) continue; // (no pixel of these lanes inside the mask on this canvas)
     x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = "source-over"; x.clearRect(b.x, b.y, b.w, b.h);
     x.save(); x.beginPath(); x.rect(b.x, b.y, b.w, b.h); x.clip();
-    x.setTransform(cam.k / LANE_SOFT_DS, 0, 0, cam.k / LANE_SOFT_DS, cam.ox / LANE_SOFT_DS, cam.oy / LANE_SOFT_DS); x.lineJoin = "round";
+    x.setTransform(cam.k / LK, 0, 0, cam.k / LK, cam.ox / LK, cam.oy / LK); x.lineJoin = "round";
     x.strokeStyle = COL[us[0].color]; x.lineWidth = lw * wk(us[0]); x.lineCap = cap;
     for (const u of us) { x.save(); x.translate(CX, CY); x.rotate(u.ang); x.translate(-CX, -CY); x.stroke(PATHS[u.pi][key]); x.restore(); }
     x.restore();
@@ -204,7 +213,7 @@ function laneBox(us, lw, W, H) {
   }
   const p = lw / 2;
   x0 = Math.max(x0 - p, CX - R0); y0 = Math.max(y0 - p, CY - R0); x1 = Math.min(x1 + p, CX + R0); y1 = Math.min(y1 + p, CY + R0);
-  const k = cam.k / LANE_SOFT_DS, ox = cam.ox / LANE_SOFT_DS, oy = cam.oy / LANE_SOFT_DS;
+  const D = LANE_SOFT_DS * laneLD(), k = cam.k / D, ox = cam.ox / D, oy = cam.oy / D;
   const X0 = Math.max(0, Math.floor(x0 * k + ox) - 2), Y0 = Math.max(0, Math.floor(y0 * k + oy) - 2), X1 = Math.min(W, Math.ceil(x1 * k + ox) + 2), Y1 = Math.min(H, Math.ceil(y1 * k + oy) + 2);
   return X1 > X0 && Y1 > Y0 ? { x: X0, y: Y0, w: X1 - X0, h: Y1 - Y0 } : null;
 }
@@ -212,7 +221,7 @@ function strokeLit(lctx, gctx, list) { // each lane IN USE lit in its rider's co
   // a wide GLOW that grows in intensity toward the core (owner), on its own layer with a much steeper fade outward (owner: "stronger
   // gradient"); butt ends - a round end was a disc by the core. A BOSS lane is much THICKER (w) with much more GLOW (owner)
   const w = u => (u.star ? BOSS_LANE_W : 1);
-  strokeSoft(gctx, list, "glow2d", LIT_GLOW_SOFT, u => Math.min(1, (u.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * u.a), w, "butt");
+  strokeSoft(gctx, list, "glow2d", laneLD() > 1 ? LIT_GLOW_SOFT3 : LIT_GLOW_SOFT, u => Math.min(1, (u.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * u.a), w, "butt");
   // the line: the bonus STAR's lane burns brighter than the rest (owner); its halo is the profile's wide faint levels - one stroke
   // each, never a shadowBlur along the whole (doubled) lane (with the Devil's six lanes the blur was ~60% of an 82 ms rebuild, 2026-10-11)
   const plain = list.filter(u => !u.star), boss = list.filter(u => u.star);
@@ -228,7 +237,7 @@ function blitLanes(S) {
     S.comboCv ||= document.createElement("canvas");
     const c = S.comboCv, x = c.getContext("2d");
     if (!x) { S.comboKey = ""; throw new Error("lane combo: no 2d context"); }
-    if (c.width !== cv.width || c.height !== cv.height) { c.width = cv.width; c.height = cv.height; }
+    if (c.width !== laneW() || c.height !== laneH()) { c.width = laneW(); c.height = laneH(); }
     x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, c.width, c.height);
     x.drawImage(S.baseCv, 0, 0); x.drawImage(S.glowCv, 0, 0); x.drawImage(S.laneCv, 0, 0);
   }
@@ -315,7 +324,7 @@ function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (
   if (!laneFadeGl()) return null;
   const { fade } = laneSplit(litLanes());
   if (!fade.length) return null;
-  const a = Math.min(...fade.map(u => u.f)), sig = [cv.width, cv.height, cam.k, cam.ox, cam.oy, COL.bg].join() + "|" + fade.map(u => laneKeyOf(u) + ":" + (u.star ? 1 : 0) + ":" + litLevel(u.a0, u.star)).join(",");
+  const a = Math.min(...fade.map(u => u.f)), sig = laneKeyCam() + "," + COL.bg + "|" + fade.map(u => laneKeyOf(u) + ":" + (u.star ? 1 : 0) + ":" + litLevel(u.a0, u.star)).join(",");
   if (sig !== laneFadeL.sig) {
     const L = laneFadeL; L.sig = "";
     L.cv ||= document.createElement("canvas");
@@ -323,8 +332,8 @@ function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (
     if (LANE_FADE_OWN) { // glow into L.cv itself, the line over it from L.lcv: the same pixels as the borrow's clear + glow + line
       L.lcv ||= document.createElement("canvas");
       const lx = L.lcv.getContext("2d"); if (!lx) throw new Error("lane fade: no 2d context");
-      const whole = !L.box || L.cv.width !== cv.width || L.cv.height !== cv.height || L.lcv.width !== cv.width || L.lcv.height !== cv.height, old = whole ? null : L.box; // (whole: a first build or a new size - all cleared)
-      laneLayer(L.lcv, lx, cv.width, cv.height, old); laneLayer(L.cv, x, cv.width, cv.height, old);
+      const W = laneW(), H = laneH(), whole = !L.box || L.cv.width !== W || L.cv.height !== H || L.lcv.width !== W || L.lcv.height !== H, old = whole ? null : L.box; // (whole: a first build or a new size - all cleared)
+      laneLayer(L.lcv, lx, W, H, old); laneLayer(L.cv, x, W, H, old);
       let B = null; laneRec = { r: null }; try { strokeLit(lx, x, fade.map(u => ({ ...u, a: u.a0 }))); } finally { B = laneRec.r; laneRec = null; }
       if (B) {
         applyMask(x, GLOW_FALLOFF, B); applyMask(lx, 1, B);
@@ -335,10 +344,10 @@ function laneFadeLayer() { // under the board's camera: { cv, sig, a } or null (
       L.box = null; L.dirty = LANE_ALL;
       const S = laneSet(), { laneCv, lctx, glowCv, gctx } = S; // (the board's own line and glow layers as scratch: the board rebuilds its own next time)
       S.litKey = "";
-      laneLayer(laneCv, lctx, cv.width, cv.height); laneLayer(glowCv, gctx, cv.width, cv.height);
+      laneLayer(laneCv, lctx, laneW(), laneH()); laneLayer(glowCv, gctx, laneW(), laneH());
       strokeLit(lctx, gctx, fade.map(u => ({ ...u, a: u.a0 })));
       applyMask(gctx, GLOW_FALLOFF); applyMask(lctx, 1);
-      if (L.cv.width !== cv.width || L.cv.height !== cv.height) { L.cv.width = cv.width; L.cv.height = cv.height; }
+      if (L.cv.width !== laneW() || L.cv.height !== laneH()) { L.cv.width = laneW(); L.cv.height = laneH(); }
       x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, L.cv.width, L.cv.height);
       x.drawImage(glowCv, 0, 0); x.drawImage(laneCv, 0, 0);
     }
