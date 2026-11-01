@@ -327,12 +327,15 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
     t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
   if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });
-check("ARC's sentence (the ARC redesign, owner 2026-10-29): one bolt that chains (Voltage), forks once from Voltage II, Conductivity the carry, Shock a slow and an armor break; FRZ tier 0 \"slows and deals X% damage\"", () => {
+check("no card sentence names a number over 800% (owner, 2026-10-31: \"Nothing should ever be above like 800%\"): every axis of every tower, tiers 0-V", () => {
+  const r = run(`(() => { const out = []; for (const kind of Object.keys(SKILL_TREES)) for (const ax of SKILL_TREES[kind]) for (let k = 0; k <= 5; k++) { const d = describeTower(kind, { [ax.id]: k }); for (const m of d.matchAll(/(\\d+)%/g)) if (+m[1] > 800) out.push(kind + " " + ax.id + " " + k + ": " + m[0]); } return out; })()`);
+  if (r.length) return r.length + " over 800%: " + r.slice(0, 6).join("; ");
+});check("ARC's sentence (the ARC redesign, owner 2026-10-29): one bolt that chains (Voltage), forks once from Voltage II, Conductivity the carry, Shock a slow and an armor break; FRZ tier 0 \"slows and deals X% damage\"", () => {
   const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 2 }), describeTower("arc", { conductivity: 2 }), describeTower("arc", { capacitance: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP / (typeof TD_UNIT !== "undefined" ? TD_UNIT.frz : 1) * 100)]`);
   if (r[0] !== "A bolt of lightning that chains twice for 20% less damage every chain.") return "tier 0: " + r[0];
   if (!/^A bolt of lightning that forks once and chains four times for \d+% less damage every chain\.$/.test(r[1])) return "Voltage II: " + r[1];
   if (!/that chains twice for full damage every chain\.$/.test(r[2])) return "Conductivity II: " + r[2];
-  if (!/ Hits slow by \d+% and break \d+% of armor\.$/.test(r[3])) return "Shock I: " + r[3];
+  if (!/ Hits slow by \d+% and break \d+% of armor\.( Shocked enemies take \d+% more damage from ARC\.)?$/.test(r[3])) return "Shock I: " + r[3];
   if (!r[4].includes("slows enemies by") || !r[4].includes(" and deals " + r[5] + "%td a second")) return "FRZ tier 0: " + r[4];
 });
 
