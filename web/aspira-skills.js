@@ -146,13 +146,15 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // STAT_SLOW_T s - never a shielded enemy, applySlow) and breaks ARC_RES_STRIP of the armor left (shredPct); no
 // charges, no bursts. A bolt never strikes a unit twice (skillHop). Numbers 0..V, let: the battery fits them
 let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 3, 4, 5, 6, 8], ARC_VOLT_REACH = [150, 170, 190, 215, 240, 270], ARC_FORK_FROM = 2;
-let ARC_RES_SLOW = [0, 0.15, 0.25, 0.35, 0.45, 0.55], ARC_RES_STRIP = [0, 0.05, 0.1, 0.15, 0.22, 0.3];
+let ARC_RES_SLOW = [0, 0.15, 0.25, 0.38, 0.47, 0.58] /* 0..V, with ARC's geometric curve (owner, 2026-11-01: "Release the arc change") */, ARC_RES_STRIP = [0, 0.05, 0.1, 0.19, 0.32, 0.48] /* 0..V, with it */;
+const ARC_RES_DMG = [1, 1, 1.05, 1.1, 1.15, 1.2]; // Shock's hit factor 0..V
 function arcSkillStats(t, s, b) {
   const c = skillOf(t, "conductivity"), v = skillOf(t, "voltage"), z = skillOf(t, "capacitance");
   curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24)
   s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= ARC_BURST_RATE; s.dmg *= ARC_ECHO_K;
   s.arcRange = ARC_VOLT_REACH[v]; s.targets = 1; s.branch = 1; s.fork = v >= ARC_FORK_FROM; s.layers = ARC_VOLT_JUMPS[v]; s.revisit = 0;
   s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.charge = null; s.statSlow = 0; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.burn = ARC_BURN; s.skill = true;
+  s.dmg *= ARC_RES_DMG[z]; // Shock (id capacitance) hits a little harder by tier, each tier at most 2x the last with the curve's x1.9 (owner, 2026-11-01: "no level damage steps above 2x")
 }
 // what the upgrade cards offer: the next tier of each axis not yet full
 function skillOptions(t) {
