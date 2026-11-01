@@ -31,7 +31,7 @@ const warp = { gl: null, cv: null, prog: null, buf: null, tex: null, n: 0, p: nu
 const WARP_VS = `
 attribute vec2 a;
 uniform vec2 core, size, texSize; uniform vec3 texCam; uniform float D, L, P, T, c, s, f, k, z, oy, hc, e; // texCam: the picture's own core (px) and scale
-varying vec2 uv; varying float sh, rr, th; varying vec2 lw; // lw: world units from the core, unturned (the GPU lanes, aspira-lanegl.js)
+varying vec2 uv; varying float sh, rr, th;
 void main() {
   float r = a.x * k; vec2 dir = vec2(cos(a.y), sin(a.y)), wp = r * dir;
   float v = r < T ? hc * r : r < L ? hc * T + (r - T) * (L - hc * T) / (L - T) : r; // warpView's twin
@@ -40,7 +40,7 @@ void main() {
   float g = 1.0 - pow(1.0 - clamp(sm, 0.0, 1.0), P), h = -D * g;
   float qy = -c * p.y + s * h, qz = s * p.y + c * h, w = f - qz;
   vec2 sc = core + vec2(0.0, oy) + z * vec2(f * p.x, -f * qy) / w;
-  uv = (texCam.xy + a.x * texCam.z * dir) / texSize; rr = a.x; th = a.y; lw = a.x * dir; sh = 1.0 - 0.45 * g;
+  uv = (texCam.xy + a.x * texCam.z * dir) / texSize; rr = a.x; th = a.y; sh = 1.0 - 0.45 * g;
   gl_Position = vec4((sc.x / size.x * 2.0 - 1.0) * w, (1.0 - sc.y / size.y * 2.0) * w, (w / (80.0 * size.y) * 2.0 - 1.0) * w, w);
 }`;
 const WARP_FS = `
@@ -50,7 +50,6 @@ uniform float towers, onBoard, op, neck, bgA, invR, fold, hskip; uniform vec3 bg
 varying vec2 uv; varying float sh, rr, th;
 float line(float d, float wd) { return 1.0 - smoothstep(wd * 0.5, wd * 1.5, d); }
 ${HULL_GLSL}
-${LANE_GLSL}
 void main() {
   vec2 inUv = step(vec2(0.0), uv) * step(uv, vec2(1.0));
   float board = inUv.x * inUv.y * (1.0 - smoothstep(edge.x, edge.y, rr));
@@ -69,7 +68,7 @@ void main() {
   gk = max(ring, spoke * smoothstep(20.0, 60.0, rr)) * grid.w * (0.5 + 0.5 * smoothstep(towers, towers + 30.0, rr)) * fade; }
   gk *= 1.0 - board * (1.0 - onBoard); // faint over the board itself: the lanes stay readable
   vec3 col = vec3(0.0); if (board > 0.0) { /* the three layers are read only where the board is (elsewhere col is 0 whatever they hold - perf) */
-  vec4 dv = texture2D(dyn, uv), fv = texture2D(fxt, uv); if (hskip < 0.5 || fv.a + fv.r + fv.g + fv.b > 0.0) fv *= 1.0 - hullCover(gl_FragCoord.xy); /* the towers' outline test only where the effects layer has something (a loop of 36 edges a pixel otherwise) */ vec4 lv = texture2D(lit, uv) * litA; lanes(); vec3 bd = (texture2D(tex, uv).rgb * (1.0 - laneG.a) + laneG.rgb) * (1.0 - laneL.a) + laneL.rgb; /* the lit lanes' glow then line over the board (aspira-lanegl.js) */ vec3 raw = ((bd * (1.0 - lv.a) + lv.rgb) * (1.0 - dv.a) + dv.rgb) * (1.0 - fv.a) + fv.rgb;
+  vec4 dv = texture2D(dyn, uv), fv = texture2D(fxt, uv); if (hskip < 0.5 || fv.a + fv.r + fv.g + fv.b > 0.0) fv *= 1.0 - hullCover(gl_FragCoord.xy); /* the towers' outline test only where the effects layer has something (a loop of 36 edges a pixel otherwise) */ vec4 lv = texture2D(lit, uv) * litA; vec3 raw = ((texture2D(tex, uv).rgb * (1.0 - lv.a) + lv.rgb) * (1.0 - dv.a) + dv.rgb) * (1.0 - fv.a) + fv.rgb;
   // a BOSS SKY inverts the board (white ground, dark ink): back to the plain palette here, or its white reads as ink and the bell turns into a grey
   // slab (owner, 2026-10-09) - only INSIDE the sky's circle round the core (invR, world units; the 2D view inverts exactly there): a guess by colour flipped every white beam and orange ring
   if (rr < invR) raw = 1.0 - raw;
@@ -211,7 +210,6 @@ function warpDraw() {
   /* the uniform spots looked up once a program, not ~32 times a frame (perf; a location is fixed for a linked program) */
   if (warp.ulocProg !== pr) { warp.ulocProg = pr; warp.uloc = new Map(); }
   const u = n => { let l = warp.uloc.get(n); if (l === undefined) { l = gl.getUniformLocation(pr, n); warp.uloc.set(n, l); } return l; };
-  if (typeof laneGlBind === "function") { laneGlBind(gl, u); gl.activeTexture(gl.TEXTURE0); } // the lit lanes' fields + uniforms (aspira-lanegl.js)
   warpLayersBind(gl, u); // the board and the moving layer, each sent up only when redrawn (aspira-warplayers.js)
   gl.uniform2f(u("core"), p.core[0], p.core[1]); gl.uniform2f(u("size"), sc.w, sc.h); gl.uniform2f(u("texSize"), cv.width, cv.height);
   const tc = warp.texCam || cam, [shx, shy] = warp.shake || [0, 0]; gl.uniform3f(u("texCam"), tc.ox + CX * tc.k + shx, tc.oy + CY * tc.k + shy, tc.k); // (shake: the whole picture, both layers)
