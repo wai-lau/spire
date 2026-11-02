@@ -82,7 +82,7 @@ function solShowWalk(x, y, ux, uy, k) {
 // them out, but never more than the width of the tower"): SOL_PAR_N[breach] more beams beside the first, alternately either side of it,
 // SOL_PAR_GAP u apart or closer - the whole spread inside the tower's width (solParHalfW) - each straight on along the shot's aim from
 // the tower to the play box's edge, through every enemy whose body it crosses, at SOL_PAR_K of the shot; each hit breaches (bleed)
-const SOL_PAR_N = [0, 1, 1, 2, 2, 4], SOL_PAR_GAP = 12;
+const SOL_PAR_N = [0, 1, 1, 1, 2, 3] /* one parallel ray less at III and V (2026-11-02: SOL gives the shield column back, so IFR keeps its shield check; was 0 1 1 2 2 4) */, SOL_PAR_GAP = 12;
 let SOL_PAR_K = 1; // (let: the sims sweep it) - full shot a parallel beam (2026-10-28 SOL sweep C; was 0.5)
 const SOL_PAR_SHOW = 0.85; // LOOK ONLY: a parallel beam draws at this x its share, so the first beam reads as the shot (owner, 2026-10-28: "fainter, just a lil" - at a full share all three drew alike); opacity goes by share^2, so ~0.72
 const solParHalfW = () => CELL_S * TOWER_K * TOWER_DRAW_K;
