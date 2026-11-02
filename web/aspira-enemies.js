@@ -49,9 +49,9 @@ function drawStarTrail(e, size) {
   // plain fill while a gradient each looked like a late-game frame cost, 2026-10-05)
   const col = COL[ENEMIES[e.type].color], star = e.type === "bonus";
   // (a point off the lane is NaN: a gradient on it THROWS and took the whole 3D overlay's frame down with it - no tracer then)
-  const ends = star ? [e.x, e.y, tail] : [pts[0].x, pts[0].y, pts[n].x, pts[n].y];
-  if (!ends.every(Number.isFinite)) return;
-  const g = star ? ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, tail) : ctx.createLinearGradient(...ends);
+  const x0 = star ? e.x : pts[0].x, y0 = star ? e.y : pts[0].y, x1 = star ? tail : pts[n].x, y1 = star ? 0 : pts[n].y; // (no array and spread a tracer a frame - perf, 2026-11-02)
+  if (!(Number.isFinite(x0) && Number.isFinite(y0) && Number.isFinite(x1) && Number.isFinite(y1))) return;
+  const g = star ? ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, tail) : ctx.createLinearGradient(x0, y0, x1, y1);
   g.addColorStop(0, col); g.addColorStop(1, "transparent");
   ctx.beginPath(); ctx.moveTo(L[0].x, L[0].y);
   for (let i = 0; i <= n; i++) ctx.lineTo(L[i].x, L[i].y);
@@ -77,6 +77,7 @@ const hpShrink = (e, f) => { const m = e.arcana ? SHRINK_MIN_BOSS : SHRINK_MIN; 
 // the screen"): ENEMY_OFF_A until e.seen latches (enemySeen), then up to full over ENEMY_FADE_S of real time (e.seenAt, stepEnemies - the same second at any game speed)
 const ENEMY_OFF_A = 0.05, ENEMY_FADE_S = 0.4; // OFF the board, an enemy and all it carries (shields, tracers, marks) at ENEMY_OFF_A, then a quick fade in over ENEMY_FADE_S s once seen (owner, 2026-10-26; were 0.2 / 1 s)
 const enemyVis = e => !e.seen ? ENEMY_OFF_A : e.seenAt == null ? 1 : Math.min(1, ENEMY_OFF_A + (1 - ENEMY_OFF_A) * (performance.now() - e.seenAt) / (1000 * ENEMY_FADE_S));
+const ACD_RING_DASH = [2, 4], NO_DASH = []; // (kept: no array a dotted ring a frame - perf, 2026-11-02)
 function drawEnemy(e, solid) {
   // damage shows as both size and opacity: full HP = full size, solid; near death small (hpShrink), faint
   // a ghost (dead enemy) is INVISIBLE: it only carries the beams that follow it
@@ -138,9 +139,9 @@ function drawStatus(e, d, size, solid) {
   }
   if (e.brittle > 1 && e.slowT > 0) {
     const s = size * 0.7, c = Math.cos(e.rot), n = Math.sin(e.rot);
-    const pt = (u, v) => [e.x + c * u - n * v, e.y + n * u + c * v];
-    ctx.beginPath(); ctx.moveTo(...pt(-s, -s * 0.2)); ctx.lineTo(...pt(-s * 0.3, s * 0.25));
-    ctx.lineTo(...pt(s * 0.2, -s * 0.25)); ctx.lineTo(...pt(s, s * 0.15));
+    const ptx = (u, v) => e.x + c * u - n * v, pty = (u, v) => e.y + n * u + c * v;
+    ctx.beginPath(); ctx.moveTo(ptx(-s, -s * 0.2), pty(-s, -s * 0.2)); ctx.lineTo(ptx(-s * 0.3, s * 0.25), pty(-s * 0.3, s * 0.25));
+    ctx.lineTo(ptx(s * 0.2, -s * 0.25), pty(s * 0.2, -s * 0.25)); ctx.lineTo(ptx(s, s * 0.15), pty(s, s * 0.15));
     ctx.strokeStyle = COL.white; ctx.globalAlpha = (0.85) * vis; ctx.lineWidth = 1.5; ctx.stroke();
   }
   if (e.slows && Object.keys(e.slows).some(k => k.endsWith(":chill"))) {
@@ -155,7 +156,7 @@ function drawStatus(e, d, size, solid) {
   if (arcBurning(e)) drawBurnSparks(e, size, vis); // ARC's burn: sparks (aspira-chains.js)
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
-    ctx.setLineDash([2, 4]); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]);
+    ctx.setLineDash(ACD_RING_DASH); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash(NO_DASH);
   }
   ctx.globalAlpha = 1;
 }

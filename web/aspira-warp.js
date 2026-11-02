@@ -274,6 +274,7 @@ function ctxDefaults(x) {
   x.shadowBlur = 0; x.shadowOffsetX = 0; x.shadowOffsetY = 0; x.shadowColor = "transparent"; x.setLineDash([]); x.lineDashOffset = 0;
   x.textAlign = "start"; x.textBaseline = "alphabetic"; x.font = "10px sans-serif"; x.fillStyle = COL.bg; x.strokeStyle = COL.bg; x.imageSmoothingEnabled = true;
 }
+const byY = (a, b) => a.y - b.y;
 function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid out on this frame's screen - aspira-bosses.js)
   if (!warp.ent) {
     const c = document.createElement("canvas");
@@ -309,7 +310,8 @@ function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid 
     const cellDraw = new Map(); drawCells((c, fn) => cellDraw.set(c, fn));
     if (ui.build && ui.hover) up(ui.hover.x, ui.hover.y, drawPlacement);
     // the bodies as real dice, the farthest first (aspira-solids.js), each inside its shield's walls (aspira-walls.js)
-    const dice = [...G.enemies].sort((a, b) => a.y - b.y).map(e => ({ e, w: enemyWallPieces(e), col: COL[ENEMIES[e.type].color] }));
+    const order = warp.diceOrd ||= [], pool = warp.dicePool ||= [], dice = warp.dice ||= []; order.length = 0; for (const e of G.enemies) order.push(e); order.sort(byY); /* (kept arrays and pooled {e, w, col}: no copy and no object a die a frame - perf, 2026-11-02) */
+    dice.length = order.length; for (let i = 0; i < order.length; i++) { const e = order[i], o = pool[i] ||= { e: null, w: null, col: "" }; o.e = e; o.w = enemyWallPieces(e); o.col = COL[ENEMIES[e.type].color]; dice[i] = o; }
     const drawDice = () => { for (const { e } of dice) warpSolid(e); };
     // the towers and the core STAND UP as hexagonal prisms (owner: "core taller than towers"), the farthest
     // first, each one's usual drawing on its raised top; over the enemies, which walk on the floor
