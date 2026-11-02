@@ -159,6 +159,18 @@ set-apart tier-0 hit (`curveAt` reads `geo` where a kind has it; ARC's `dmg0` is
 Smoke pins them where a table carries them (`tiers.mjs`, ACD's goo: each value <= 8x, each step <= 2x, rising); the curve's own
 steps (1.9 ARC) sit under 2x by construction.
 
+**Every curve rises and each level's hit is BELOW 2x the one before** (owner, 2026-11-01: "get the early damage even lower and allow
+the curve to not be exactly 1.5x / just keep it below 2x for any level" - the only curve rule; 2026-10-28's "slightly steepening" pin is
+gone). SOL, GRV and IFR keep the power curve but start GEOMETRIC: `geoCap` [base, step], hit = min(base x step^level, the power curve) -
+SOL [3.0616, 1.9] (a fifth of its old tier-0 hit; meets the curve at level 6), GRV [0.256, 1.9] (level 4), IFR [0.1047, 1.9] (level 6).
+Smoke (`tiers.mjs`) checks every kind but its `PENDING` list, now only CRR (its tier-0 hit, x6.45 to level 1, goes with the CRR rework);
+the list only shrinks.
+
+**The card's damage unit** (`td`): ACD, FRZ and GRV count theirs `TD_UNIT` {acd 8, frz 3, grv 4} x bigger (`tdOf`, aspira-stats.js; the
+card reads it through `tdU`, aspira-desc.js) - a LABEL only, the damage dealt is unchanged - so no share on a card passes 800% (FRZ's chill
+top 2260% -> 753%, GRV Void V 3000% -> 750%, ACD's ramp 1/8 to 8 td). Smoke: no card sentence names a number over 800%, every axis of
+every tower at tiers 0-V. Burns read their share A SECOND, a CRR sortie its share A BOLT (`docs/spire-wording.md` rule 3).
+
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
 |---|---|---|---|---|
 | ARC | one hard bolt whose chain jumps twice (three enemies hit) | Conductivity (id `conductivity`): each jump keeps more of the hit (`ARC_AMP_FALL`) | Voltage: a longer chain and a farther jump (`ARC_VOLT_JUMPS`, `ARC_VOLT_REACH`); one fork from II | Shock (id `capacitance`): every hit slows and strips armor |
@@ -208,7 +220,7 @@ ARCHAEOLOGY §4.
 |---|---|
 | Conductivity (id `conductivity`) | the carry: what each jump keeps of the hit before it (`ARC_AMP_FALL`, above 1 from tier III: jumps out-hit the strike) |
 | Voltage | the chain: more jumps (`ARC_VOLT_JUMPS`) and a farther reach a jump (`ARC_VOLT_REACH`); the one fork from `ARC_FORK_FROM` |
-| Shock (id `capacitance`) | every hit slows (`ARC_RES_SLOW`, never a shielded enemy) and strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); no area zap |
+| Shock (id `capacitance`) | every hit slows (`ARC_RES_SLOW`, never a shielded enemy) and strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); **Shocked** (owner, 2026-11-01, "1": "Shock makes shocked enemies take more damage from ARC"): each hit marks its target for the slow's time (`shockT`, refreshed on hit), and a marked enemy takes x(1 + `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2) from ARC's hits (not the burn); the mark shows as a thin triangle in ARC's colour round the die (aspira-enemies.js), the card says "Shocked enemies take X% more damage from ARC."; no area zap |
 
 **FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the enemy's slow (`FRZ_CHILL_K`: "the colder, the
@@ -319,6 +331,7 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 | tether | with Tether, the first interceptors out (`CRR_TETHER_N`) tether their target: slowed, and taking more damage per tether (`CRR_TETHER_SLOW`, `CRR_TETHER_AMP`); at the capstone a tether runs on to one more enemy nearby |
 | after a kill | the interceptor hops to the nearest enemy within `CRR_HOP` that no wingmate is on (`carHop`), else the nearest within it, else it flies home. Out of volleys it goes home and reloads |
 | numbers | every bolt shows its own damage number (`carNum`, `CRR_NUM_HITS` 1) |
+| draw | a carrier's darts are ONE path, one fill and one stroke (7.1.14); trails stay ROUND-joined - bevel + butt drew them ~3x slower in WebKit (2.5 -> 7.5 ms at 3 x 17); trails are the CRR's draw cost (~60 segments an interceptor) |
 | look | hairline trails (`carTrails`); darts sized by Armament; drawn in `skyKeep` so a boss sky does not invert them. No new 3D primitives: darts are filled triangles, firing lines and pellets single strokes (the board's path context takes no gradient stroke, §11) |
 
 | Axis | Buys | Capstone (V) |
@@ -352,7 +365,7 @@ build card's marks (`VS_MARKS`, §4.6). **Each axis owns one part of the meteor'
 |---|---|---|---|
 | Meteor | charge time, speed, the meteor's hit; meteors stored in orbit | all-rounder | **Impact**: a bigger fan (`IFR_FAN_CAP`) |
 | Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across |
-| Flare (id `firaga`) | the flares: size, damage, burn time | shield and swarm | three flares a landing |
+| Flare (id `firaga`) | the flares: size, damage, burn time (`IFR_BURN_S`, 7.1.8: x1.5 and smoothed at IV so a flare's ticks never step over 2x a tier; the meteor x0.75 to keep IFR's strength) | shield and swarm | two flares a landing (`IFR_CAP_FLARES`; owner, 2026-10-31) |
 
 ### 4.6d Trio scale and the designed deaths
 
@@ -535,7 +548,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | full stop | only Temporal Drive; shields block all slows; Strength shrugs all of them |
 | armor loss | permanent, multiplied down, never below 0 |
 | quiet hits | ticks, pools, splash: no flash; pool hits past `POOL_LOD` show one summed number an enemy |
-| numbers | crits marigold; sized by the hit before armor, greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or a CRR bolt's interceptor); a GRV number flies INTO its void (`grvFloat`) (`DMG_FLY`) |
+| numbers | crits marigold; sized by the hit before armor - 14-30 px by (hit / half the damage a second)^0.7 (`DMG_PX_MIN`, `DMG_PX_SPAN`; owner, 2026-11-01: "narrow size band", was 10-38), a shield "0" half a full one, credit pop-ups their own 10-19 px - greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or a CRR bolt's interceptor); a GRV number flies INTO its void (`grvFloat`) (`DMG_FLY`) |
 
 ## 7. Interface
 
@@ -793,6 +806,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | view | **3D is a view, never a rule**: no game logic reads a projected position; taps go back through `unwarp` / `pickAt` |
 | view | **never lower resolution or resize the big 3D canvases during play** (380-540 ms hitches, iPhone crashes); only the far-detail radius adapts; keep text stamps on budget, zero evicted canvases |
 | view | every density read through `canvasDpr()` |
+| view | **project outside a frame only under `viewCam`**: `warp.p` and `warp.cv` are the 3D texture's (camera x `WARP_RES`); code run in the game tick (a shot firing) sees the page's camera, so a raw `warpProject` lands 1/WARP_RES too far out. SOL's beams stopped short of the screen edge that way until 7.1.13 (`solShowLen`, `solOutLen`) |
 | view | **the smoke's GL is a stand-in: it never compiles a shader.** Smoke and fp passing say nothing about `WARP_FS` or any GLSL; a shader edit needs a WebKit compile and picture check (a gated browser slot) before it ships. 7.0.24 shipped an uncompiled `WARP_FS` hunk and 7.0.26 had to pull it (ARCHAEOLOGY §11) |
 | view | the lit lanes' timing is exact: a lane lights and goes dark on the frame its enemies arrive and die. Never move a lane layer's upload off the frame (`createImageBitmap` and a later upload): on an iPhone it waited up to ~1 s while the lane's alpha followed the live layer (7.0.14, pulled in 7.0.18: "Lanes not appearing/leaving at the right times") |
 | view | the board's background is ONE flat `COL.bg` fill (`drawSceneBase`): the GPU lanes find the board's ink by its distance from `bgCol` (7.1.3), so a gradient, texture or second colour under the board would read as ink and hide the lit lanes |

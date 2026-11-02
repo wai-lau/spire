@@ -1134,7 +1134,7 @@ Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alo
 - The curve: lowering `lo` weakened every level, not only tier 0. The curve is back as before (`dmg` [88.2] ARC, [1.58473, 1.8] CRR) and a `dmg0` factor scales the tier-0 hit alone (ARC 1/70.6, CRR 1/4.6: both 30). Owner picked option 1: the hit jumps back to the curve at the first purchase.
 - Both together: 103 of 200, inside the +-10 noise of 112.
 
-### 12.t The 7.1 pass (2026-11-01; 012f378 .. a501c86)
+### 12.t The 7.1 pass (2026-11-01; 012f378 .. b647fd5)
 Owner, 2026-10-31 / 11-01: "Nothing should ever be above like 800%", "no level damage steps above 2x", "Right now ARC is so insanely steep
 it doesnt make sense".
 - 7.1.0 (`012f378`): ARC's damage on its own geometric curve, `geo` [0.73912, 1.9]. Hit by level 0/1/2/3/9/13: 18/34/64/122/5724/74597
@@ -1146,3 +1146,17 @@ it doesnt make sense".
   Corrosion vs armor at V 88% -> 5%.
 - Card text: 7.0.30 renames (Amperage -> Conductivity, Resistance -> Shock, Sublimation -> Brittle, Contagion -> Spill, Acceleration ->
   Gravity Well, SOL's Flare tier -> Glare; FRZ's "Brittle" row -> "Damage taken"); 7.1.2 Shock's harder hit; 7.1.5 the goo line.
+- 7.1.7 (`d34d4de`): the card per unit, never a total - burns a second, a CRR sortie a bolt, ACD's ramp as a multiplier
+  (owner, 2026-10-31: "Nothing should ever be above like 800%").
+- 7.1.8 (`1f1ed4d`): Shocked (Wai "1") - `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2; ARC band in at III and V. IFR Flare burns x1.5
+  (`IFR_BURN_S` 1.8/2.1/3.2/5.5; ticks a flare 7/7/8/13/25/50), the meteor x0.75 (`IFR_ROUTE_K0` 1.5 -> 1.125), Flare V 2 flares (was 3).
+  Good model 47/100. VS_MARKS distance 22.
+- 7.1.9 (`59111d2`): `TD_UNIT` {acd 8, frz 3, grv 4}, the card's label only; fp IDENTICAL.
+- 7.1.10 (`3b707b8`): the Shocked triangle and card line; smoke "no card sentence over 800%".
+- 7.1.11 (`5a9d9af`): SOL `geoCap` [3.0616, 1.9] - hit by level 0..6 251/477/907/1723/3274/6220/11693 (was 1256/1966/3265/4946/
+  6937/9195/11693). The curve pin "slightly steepening" (2026-10-28) SUPERSEDED by "below 2x a level". Good model 54/100.
+- 7.1.12 (`b837549`): GRV `geoCap` [0.256, 1.9] (was x2.25 at level 1), IFR [0.1047, 1.9] (was x3.65); PENDING down to CRR.
+- 7.1.13 (`b647fd5`): SOL beams reach the screen edge - `solShowLen` / `solOutLen` projected under the page's camera in the game tick,
+  1/WARP_RES too far out; the up-screen beam drew 722 u (0.75) / 650 u (0.5) of 796, after the fix 818.
+- 7.1.14 (`392d007`): damage numbers 10-38 -> 14-30 px (owner: "narrow size band (less big max, more big min)"); CRR darts one path a
+  carrier. drawCar ms at 3 CRRs x 17 (desktop WebKit): 2.33-2.49 before, 2.27 batched; bevel trail joins TRIED and dropped (7.55).
