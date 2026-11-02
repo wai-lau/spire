@@ -32,8 +32,10 @@ function warpRender() {
       // a STRIP, not the board: when only the boss bar's HP moved (bossBoardSig, the last part) and/or - with the GPU lanes - only the lanes' labels
       // and rim circles (laneDirty, aspira-lanes.js), only the box round what changed goes up (warpLayersBind); the wave or the sky: the whole board
       const ps = (warp.statSig || "").split("|"), cs = sig.split("|"), gpuL = typeof laneGlOn === "function" && laneGlOn();
-      const bossMv = ps[ps.length - 1] !== cs[ps.length - 1] || ps.length !== cs.length, laneMv = ps.slice(2, -1).join("|") !== cs.slice(2, -1).join("|");
-      const part = key === warp.statKey && !!warp.statSig && ps[0] === cs[0] && ps[1] === cs[1] && ps.length === cs.length && (!laneMv || gpuL);
+      // A NEW WAVE IS ITS LABELS' STRIPS (perf, 2026-11-02 - a 7.1.19 iPhone log: 118 board uploads in 160 s, the ~20 whole ones ~40 ms): on the board the wave
+      // shows only in the twelve idle labels' WAVE:LANE text, which laneDirty boxes like any other label - so with the GPU lanes a wave is a label change, not the board
+      const waveMv = ps[0] !== cs[0], bossMv = ps[ps.length - 1] !== cs[ps.length - 1] || ps.length !== cs.length, laneMv = ps.slice(2, -1).join("|") !== cs.slice(2, -1).join("|") || (waveMv && gpuL);
+      const part = key === warp.statKey && !!warp.statSig && (!waveMv || gpuL) && ps[1] === cs[1] && ps.length === cs.length && (!laneMv || gpuL);
       const pending = warp.statNew; warp.statKey = key; warp.statSig = sig; warp.statAt = now; warp.statNew = true;
       ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); ctx.save(); drawSceneBase(); ctx.restore();
       const moved = bossBarOnBoard() ? warpBossBarBoard() : null; // the boss's HP bar, settled: on the board, under every tower FX (below)
@@ -109,7 +111,7 @@ function bossBarMoved() {
   return x0 > x1 ? { x0: 0, y0: 0, x1: 0, y1: 0 } : { x0: x0 - BOARD_DIRTY_PAD, y0: y0 - BOARD_DIRTY_PAD, x1: x1 + BOARD_DIRTY_PAD, y1: y1 + BOARD_DIRTY_PAD }; // (nothing crossed: an empty strip)
 }
 // the board's strips (px rects): boxes that overlap or come within STRIP_JOIN px are one; past STRIP_MAX strips, one box round them all
-const STRIP_JOIN = 8, STRIP_MAX = 8;
+const STRIP_JOIN = 8, STRIP_MAX = 16; /* 8 -> 16 (2026-11-02): a new wave changes all twelve idle labels round the ring - over 8 they were one box round the ring, the whole board */
 function stripsMerge(rs) {
   const out = rs.map(r => ({ ...r }));
   for (let hit = true; hit;) {
