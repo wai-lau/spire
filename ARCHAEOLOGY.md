@@ -1134,7 +1134,7 @@ Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alo
 - The curve: lowering `lo` weakened every level, not only tier 0. The curve is back as before (`dmg` [88.2] ARC, [1.58473, 1.8] CRR) and a `dmg0` factor scales the tier-0 hit alone (ARC 1/70.6, CRR 1/4.6: both 30). Owner picked option 1: the hit jumps back to the curve at the first purchase.
 - Both together: 103 of 200, inside the +-10 noise of 112.
 
-### 12.t The 7.1 pass (2026-11-01 .. 11-02; 012f378 .. 4988211)
+### 12.t The 7.1 pass (2026-11-01 .. 11-02; 012f378 .. 1d1d29b)
 Owner, 2026-10-31 / 11-01: "Nothing should ever be above like 800%", "no level damage steps above 2x", "Right now ARC is so insanely steep
 it doesnt make sense".
 - 7.1.0 (`012f378`): ARC's damage on its own geometric curve, `geo` [0.73912, 1.9]. Hit by level 0/1/2/3/9/13: 18/34/64/122/5724/74597
@@ -1169,3 +1169,15 @@ it doesnt make sense".
   strength to Flare (owner: "IFR looks like just a curve nerf") - `IFR_ROUTE_K0` 1.125 -> 0.675, `IFR_FIRE_HK` 1 -> 0.6, `IFR_TICK_K0`
   0.784 -> 0.98 (Flare's card share 251-348 -> 524-726%td a second); ACD `ACD_DOUBLE` x1.5 (a slower ramp).
 - 7.1.19 (`4988211`): 7.1.18 on the card; Flare V's sentence "three at the impact" (wrong since 7.1.8) -> 2.
+- 7.1.20 (`0042926`): docs for 7.1.16-7.1.19.
+- 7.1.21 (`3261a4f`): the CRR rework (owner, 2026-11-01/02: "I want interceptors to fly and orbit way slower / Add more interceptors to
+  compensate?", "Lets go with 500", volleys "should not go above 3") - `CRR_SPEED_V` 2500 -> 500 out and home, `CRR_ORBIT_V` 400 -> 200,
+  `CRR_HANGAR` 3/5/11/13 (V 17) -> 8/12/16/20/26 (V 34), `CRR_AMMO` 18/27/27/63 (V 72) -> 4/8/12/16/18/24, `CRR_BOLTS_BY` 1-6 -> 1/2/2/3/3/3 at
+  once, no leash, partial reload; the curve `dmg0` -> `geo` [0.8565, 1.4444] (PENDING empty). VS_MARKS crr -2 +1 +2 -1 -> -1 +1 +1 -1.
+- 7.1.22 (`1eb7c4a`): the V draw; the card's Flight / Volleys / Bolts rows. drawCar at 3 CRRs x 34 (desktop WebKit, load 11): 2.59 ms mean
+  without the V, 2.83 with it (p95 6); option C (trails `CRR_TRAIL_REF` 17 / `CRR_TRAIL_MIN` 20) 2.06 / p95 4, parked for the owner.
+- 7.1.23 (`651e48a`) / 7.1.24 (`0b1e01e`): the iPhone board uploads (a 7.1.19 log: 118 in 160 s, 11.6 ms avg, 42 max) - the off-frame log
+  names its reason; a new wave is its labels' strips. WebKit, 8 waves, the off-frame path: 34 uploads / 38.4 Mpx (7 whole wave boards) ->
+  152 / 6.9 Mpx, pixel diff 0. The in-frame path shows a 677 px texture mismatch on both (open).
+- 7.1.25 (`1d1d29b`): the entity layer pools its per-die records. E1 at 135 enemies (wave 60), a frame: 443 die fills + 263 strokes,
+  75 tracer gradients + fills, 42 shield-line strokes, ~6k path points.
