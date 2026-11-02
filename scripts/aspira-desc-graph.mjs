@@ -48,7 +48,7 @@ const MECH = {
   crr: {
     hangar: k => { const s = ST("crr", "hangar", k); return `${s.wing} interceptor${s.wing > 1 ? "s" : ""}, ${s.hold} held circling`; },
     launch: k => { const s = ST("crr", "launch", k); return s.tSlow ? `tether slow ${pct(s.tSlow)}, +${pct(s.tAmp)} damage taken, each tether its own${s.tChain ? ", chains to one more" : ""}` : "no tether"; },
-    armament: k => { const s = ST("crr", "armament", k); return `${s.bolts} bolt${s.bolts > 1 ? "s" : ""} a volley, ${s.ammo} shots${s.autopilot ? ", autopilot" : ""}`; },
+    armament: k => { const s = ST("crr", "armament", k); return `${s.bolts} bolt${s.bolts > 1 ? "s" : ""} at once, ${s.ammo} volleys a sortie${s.autopilot ? ", autopilot" : ""}`; },
   },
   ifr: {
     meteor: k => { const s = ST("ifr", "meteor", k); return `1 meteor + a burst of ${s.fan}, ${s.store} stored in orbit, charge ${+s.chargeS.toFixed(2)}s`; },

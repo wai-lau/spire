@@ -245,6 +245,16 @@ function carBolt(i, e, t, st, side = 0, vk = 0) { // side: u across its flight, 
   const a = Math.atan2(e.y - i.y, e.x - i.x);
   (t.carBolts ||= []).push({ x: i.x - Math.sin(a) * side, y: i.y + Math.cos(a) * side, e, vx: Math.cos(a) * CRR_BOLT_V, vy: Math.sin(a) * CRR_BOLT_V, left: CRR_BOLT_REACH / CRR_BOLT_V, dmg: st.dmg, icp: i, vk });
 }
+// A VOLLEY FLIES AS A V (owner, 2026-11-01: "can you make volleys visually fly in a V formation"), DRAWN: the lead (vk 0) at the point,
+// each wing (vk -1 / +1) CRR_V_W out and CRR_V_B back, opening over its first CRR_V_IN u and closing onto its true path inside CRR_V_SHUT u
+// of its target - the bolts' game spots and hits are the release's (side by side, CRR_BOLT_SIDE); this moves only where one is drawn
+const CRR_V_W = 7, CRR_V_B = 10, CRR_V_IN = 12, CRR_V_SHUT = 36, CRR_V0 = [0, 0], CRR_VD = [0, 0];
+function carBoltV(b) { // -> [dx, dy] from its game spot to where it is drawn
+  if (!b.vk || !b.e) return CRR_V0;
+  const flown = (CRR_BOLT_REACH / CRR_BOLT_V - b.left) * CRR_BOLT_V, f = Math.max(0, Math.min(1, flown / CRR_V_IN, Math.hypot(b.e.x - b.x, b.e.y - b.y) / CRR_V_SHUT));
+  const lat = b.vk * CRR_V_W * f, back = Math.abs(b.vk) * CRR_V_B * f, ux = b.vx / CRR_BOLT_V, uy = b.vy / CRR_BOLT_V;
+  CRR_VD[0] = -ux * back - uy * lat; CRR_VD[1] = -uy * back + ux * lat; return CRR_VD;
+}
 const CRR_ONE = [null];
 function stepCarBolts(t, st, dt) {
   if (!t.carBolts || !t.carBolts.length) return;
@@ -383,8 +393,8 @@ function drawCar(darts) {
     ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CRR_PELLET_PX; ctx.globalAlpha = 1;
     ctx.beginPath(); // bolts and pellets: ONE path, one stroke (perf)
     for (const b of t.carBolts || []) { // UNDER the darts: they leave from beneath. A DOT at the interceptor, stretching out as it flies (owner, 2026-10-16)
-      const k = Math.min(CRR_BOLT_TAIL, (CRR_BOLT_REACH / CRR_BOLT_V - b.left) * CRR_BOLT_GROW);
-      ctx.moveTo(b.x - b.vx * k, b.y - b.vy * k); ctx.lineTo(b.x, b.y);
+      const k = Math.min(CRR_BOLT_TAIL, (CRR_BOLT_REACH / CRR_BOLT_V - b.left) * CRR_BOLT_GROW), v = carBoltV(b), x = b.x + v[0], y = b.y + v[1]; // (in its V)
+      ctx.moveTo(x - b.vx * k, y - b.vy * k); ctx.lineTo(x, y);
     }
     for (const p of t.carPellets || []) { ctx.moveTo(p.x - p.vx * CRR_PELLET_TAIL, p.y - p.vy * CRR_PELLET_TAIL); ctx.lineTo(p.x, p.y); }
     ctx.stroke();

@@ -83,7 +83,7 @@ const DESCRIBE = {
     // (owner, 2026-10-26: "CRR 0: Launches an available interceptor that flies towards an enemy and fires..." / "Hangar I: Launches 2 available interceptors at a time")
     return "Launches " + (CRR_HANGAR[h] > 1 ? CRR_HANGAR[h] + " available interceptors at a time that fly towards an enemy and fire " : "an available interceptor that flies towards an enemy and fires ") +
       vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " per sortie" +
-      (l ? (tn === 1 ? ", the first one tethering" : CRR_HANGAR[h] > 1 ? " and tether" : " and tethers") + " its target" : "") +
+      (l ? (tn === 1 ? ", the first one tethering its target" : CRR_HANGAR[h] > 1 ? " and tether their targets" : " and tethers its target") : "") +
       ", then " + (a >= CAPSTONE_TIER ? (CRR_HANGAR[h] > 1 ? "burst" : "bursts") + " into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : (CRR_HANGAR[h] > 1 ? "fly" : "flies") + " home to reload.") + " Each bolt deals " + pc(1) + " damage." /* td = one bolt (2026-10-26); per bolt, never the sortie's total (2026-11-01: "Nothing should ever be above like 800%") */ +
       (h ? ((n => " " + n + (n > 1 ? " interceptors" : " interceptor") + " can be stored in orbit.")(Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]))) : "") +
       (l ? " Tethered targets are slowed by " + pc(CRR_TETHER_SLOW[l]) + " and take " + pc(CRR_TETHER_AMP[l]) + " more damage per tether" + (l >= CAPSTONE_TIER ? "; tethers run on to one more enemy nearby." : ".") : "");
