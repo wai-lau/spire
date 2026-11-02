@@ -153,11 +153,11 @@ debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the
 `rateCurve` (the curve plus nudges) before a mechanic splits the hit.
 
 **ARC's damage is geometric in the level** (7.1.0; owner, 2026-11-01: "Right now ARC is so insanely steep it doesnt make sense" /
-"no level damage steps above 2x"): `STAT_CURVE.arc.geo` [base, step] = [0.73912, 1.9], damage = base x 1.9^level from tier 0, no
-set-apart tier-0 hit (`curveAt` reads `geo` where a kind has it; ARC's `dmg0` is gone). **Two number rules** (owner, 2026-10-31 /
+"no level damage steps above 2x"): `STAT_CURVE.arc.geo` [base, step] = [1.10868, 1.9], damage = base x 1.9^level from tier 0 up to the `knee` (level 7),
+x `late` 1.35 a level past it; no set-apart tier-0 hit (`curveAt` reads `geo` where a kind has it; ARC's `dmg0` is gone). **Two number rules** (owner, 2026-10-31 /
 11-01): no level step multiplies damage by more than 2x, and nothing a card or table shows passes about 800% (8x the tower's damage).
 Smoke pins them where a table carries them (`tiers.mjs`, ACD's goo: each value <= 8x, each step <= 2x, rising); the curve's own
-steps (1.9 ARC) sit under 2x by construction.
+steps (1.9 ARC, 1.35 past its knee) sit under 2x by construction.
 
 **Every curve rises and each level's hit is BELOW 2x the one before** (owner, 2026-11-01: "get the early damage even lower and allow
 the curve to not be exactly 1.5x / just keep it below 2x for any level" - the only curve rule; 2026-10-28's "slightly steepening" pin is
@@ -173,7 +173,7 @@ every tower at tiers 0-V. Burns read their share A SECOND, a CRR sortie its shar
 
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
 |---|---|---|---|---|
-| ARC | one hard bolt whose chain jumps twice (three enemies hit) | Conductivity (id `conductivity`): each jump keeps more of the hit (`ARC_AMP_FALL`) | Voltage: a longer chain and a farther jump (`ARC_VOLT_JUMPS`, `ARC_VOLT_REACH`); one fork from II | Shock (id `capacitance`): every hit slows and strips armor |
+| ARC | one hard bolt whose chain jumps twice (three enemies hit) | Conductivity (id `conductivity`): each jump keeps more of the hit (`ARC_AMP_FALL`) | Voltage: a longer chain and a farther jump (`ARC_VOLT_JUMPS`, `ARC_VOLT_REACH`); one fork from I | Shock (id `capacitance`): every hit strips armor and marks its target Shocked |
 | SOL | one beam that strikes its first enemy and flies on past it, striking no one: no band, split, bounce or prism (`st.pierce` 0, `SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn and the scorch rod across the band | Diffraction (id `refraction`): the band, one split, the mirrors | Breach: armor stripped a hit |
 | CRR | three interceptors, one bolt a volley, six volleys a sortie (`CRR_HANGAR`, `CRR_AMMO`) | Hangar: five launched, one stored in orbit | Tether: the first interceptor out tethers its target (`CRR_TETHER_N`, `carTethered`) | Armament: two bolts a volley, more volleys (`CRR_BOLTS_BY`) |
 | FRZ | a slowing circle with a light flat nip | Brittle: the real tick, more the slower | Permafrost: frost pulses (a stacking slow; no armor) | Moons: one moon |
@@ -211,7 +211,7 @@ purchase; an affordable buy flashes an up-chevron; labels are three letters.
 
 **ARC** - THE ARC REDESIGN (owner, 2026-10-29: "Hits hard, big chain, forks are limited to 1 fork per node, doesn't refork after 1
 fork, cannot hit same target twice"): ONE hard strike a shot, then a chain of jumps, each leaping from the enemy it hit to the next
-within its own reach (`arcRange`, not ARC's small range: close zap, conducts to a few units nearby). From Voltage II the strike forks
+within its own reach (`arcRange`, not ARC's small range: close zap, conducts to a few units nearby). From Voltage I (`ARC_FORK_FROM`) the strike forks
 ONCE into two chains, and nothing forks after. **One hit set an attack**: no enemy is struck twice by one attack (`fire` shares
 `seen`; `skillHop`). No charges, no bursts. The axis ids stay (saves, sims, smoke); only the names changed. How it got here:
 ARCHAEOLOGY §4.
@@ -220,7 +220,7 @@ ARCHAEOLOGY §4.
 |---|---|
 | Conductivity (id `conductivity`) | the carry: what each jump keeps of the hit before it (`ARC_AMP_FALL`, above 1 from tier III: jumps out-hit the strike) |
 | Voltage | the chain: more jumps (`ARC_VOLT_JUMPS`) and a farther reach a jump (`ARC_VOLT_REACH`); the one fork from `ARC_FORK_FROM` |
-| Shock (id `capacitance`) | every hit slows (`ARC_RES_SLOW`, never a shielded enemy) and strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); **Shocked** (owner, 2026-11-01, "1": "Shock makes shocked enemies take more damage from ARC"): each hit marks its target for the slow's time (`shockT`, refreshed on hit), and a marked enemy takes x(1 + `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2) from ARC's hits (not the burn); the mark shows as a thin triangle in ARC's colour round the die (aspira-enemies.js), the card says "Shocked enemies take X% more damage from ARC."; no area zap |
+| Shock (id `capacitance`) | never slows (`ARC_RES_SLOW` all 0: the owner's ARC brief, ARCHAEOLOGY §12.t); every hit strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); **Shocked** (owner, 2026-11-01, "1": "Shock makes shocked enemies take more damage from ARC"): each hit marks its target for `STAT_SLOW_T` (0.6 s; `shockT`, refreshed on hit), and a marked enemy takes x(1 + `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2) from ARC's hits (not the burn); the mark shows as a thin triangle in ARC's colour round the die (aspira-enemies.js), the card says "Shocked enemies take X% more damage from ARC."; no area zap |
 
 **FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the enemy's slow (`FRZ_CHILL_K`: "the colder, the
@@ -365,7 +365,7 @@ build card's marks (`VS_MARKS`, §4.6). **Each axis owns one part of the meteor'
 |---|---|---|---|
 | Meteor | charge time, speed, the meteor's hit; meteors stored in orbit | all-rounder | **Impact**: a bigger fan (`IFR_FAN_CAP`) |
 | Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across |
-| Flare (id `firaga`) | the flares: size, damage, burn time (`IFR_BURN_S`, 7.1.8: x1.5 and smoothed at IV so a flare's ticks never step over 2x a tier; the meteor x0.75 to keep IFR's strength) | shield and swarm | two flares a landing (`IFR_CAP_FLARES`; owner, 2026-10-31) |
+| Flare (id `firaga`) | the flares: size, damage, burn time (`IFR_BURN_S`; a flare's ticks never step over 2x a tier); the flare tick (`IFR_TICK_K0`) carries most of IFR's damage, the meteor's hit (`IFR_ROUTE_K0`, IFR's td) the rest | shield and swarm | two flares a landing (`IFR_CAP_FLARES`; owner, 2026-10-31) |
 
 ### 4.6d Trio scale and the designed deaths
 

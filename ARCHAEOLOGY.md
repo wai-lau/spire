@@ -1134,7 +1134,7 @@ Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alo
 - The curve: lowering `lo` weakened every level, not only tier 0. The curve is back as before (`dmg` [88.2] ARC, [1.58473, 1.8] CRR) and a `dmg0` factor scales the tier-0 hit alone (ARC 1/70.6, CRR 1/4.6: both 30). Owner picked option 1: the hit jumps back to the curve at the first purchase.
 - Both together: 103 of 200, inside the +-10 noise of 112.
 
-### 12.t The 7.1 pass (2026-11-01; 012f378 .. b647fd5)
+### 12.t The 7.1 pass (2026-11-01 .. 11-02; 012f378 .. 4988211)
 Owner, 2026-10-31 / 11-01: "Nothing should ever be above like 800%", "no level damage steps above 2x", "Right now ARC is so insanely steep
 it doesnt make sense".
 - 7.1.0 (`012f378`): ARC's damage on its own geometric curve, `geo` [0.73912, 1.9]. Hit by level 0/1/2/3/9/13: 18/34/64/122/5724/74597
@@ -1160,3 +1160,12 @@ it doesnt make sense".
   1/WARP_RES too far out; the up-screen beam drew 722 u (0.75) / 650 u (0.5) of 796, after the fix 818.
 - 7.1.14 (`392d007`): damage numbers 10-38 -> 14-30 px (owner: "narrow size band (less big max, more big min)"); CRR darts one path a
   carrier. drawCar ms at 3 CRRs x 17 (desktop WebKit): 2.33-2.49 before, 2.27 batched; bevel trail joins TRIED and dropped (7.55).
+- 7.1.16 (`7ba3d42`): the ARC brief (owner, 2026-11-01: "ARC remove slow to make worse vs fast / Increase chaining/forking to make
+  good vs swarm / increase damage and reduce fire rate to make good vs armor") - `ARC_RES_SLOW` 0 everywhere (was 0/.15/.25/.38/.47/.58),
+  `ARC_VOLT_JUMPS` 2/5/8/12/16/20 (was 2/3/4/5/6/8), `ARC_FORK_FROM` 1 (was 2), `ARC_BURN` 0.2 x6 ticks (was 0.1 x2), the curve
+  `geo` [1.10868, 1.9] (x1.5, was 0.73912) with `knee` 7 / `late` 1.35, at two thirds the fire rate.
+- 7.1.17 (`b4299d6`): the brief on the card - the dead Res slow rows gone, a Shocked row; Voltage's sentence counts to twenty.
+- 7.1.18 (`905a4b4`): SOL `SOL_BAND_W` x0.85 (25.5 .. 85), `SOL_PAR_N` 0/1/1/1/2/3 (was 0/1/1/2/2/4), `SOL_DMG_K` 1.8 -> 2.07; IFR's
+  strength to Flare (owner: "IFR looks like just a curve nerf") - `IFR_ROUTE_K0` 1.125 -> 0.675, `IFR_FIRE_HK` 1 -> 0.6, `IFR_TICK_K0`
+  0.784 -> 0.98 (Flare's card share 251-348 -> 524-726%td a second); ACD `ACD_DOUBLE` x1.5 (a slower ramp).
+- 7.1.19 (`4988211`): 7.1.18 on the card; Flare V's sentence "three at the impact" (wrong since 7.1.8) -> 2.
