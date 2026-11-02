@@ -31,7 +31,7 @@ const MECH = {
   },
   sol: {
     focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${pct(V("SOL_SCORCH_TOTAL"))} of itself over ${V("SOL_SCORCH_N")[k]} ticks, the rod one burn on every enemy it sweeps, one every ${V("SOL_SCORCH_Q")}s, stacking without cap, each burn slowing ${pct(V("SOL_SCORCH_SLOW"))} while it runs (never a shielded enemy)` : "no burn") + ``,
-    refraction: k => (!V("SOL_SPLIT")[k] ? (k ? `no split: the beam strikes its first enemy and flies on to the wall of a band ${V("SOL_BAND_W")[k]} u either side of the aim, mirroring there, striking no one more` : "no split, no band: the beam strikes its first enemy and flies on straight past it, striking no one more") : `every hit splits to the ${V("SOL_SPLIT")[k] > 1 ? `${V("SOL_SPLIT")[k]} nearest enemies` : "nearest enemy"} further down a band ${V("SOL_BAND_W")[k]} u either side of the aim (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`),
+    refraction: k => (!V("SOL_SPLIT")[k] ? (k ? `no split: the beam strikes its first enemy and flies on to the wall of a band ${Math.round(V("SOL_BAND_W")[k])} u either side of the aim, mirroring there, striking no one more` : "no split, no band: the beam strikes its first enemy and flies on straight past it, striking no one more") : `every hit splits to the ${V("SOL_SPLIT")[k] > 1 ? `${V("SOL_SPLIT")[k]} nearest enemies` : "nearest enemy"} further down a band ${Math.round(V("SOL_BAND_W")[k])} u either side of the aim (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`),
     breach: k => (V("SOL_BREACH_ARMOR")[k] ? `every hit strips ${pct(V("SOL_BREACH_ARMOR")[k])} of the armor left` : "no armor strip") + `, crit x${V("SOL_CRIT_K")}`,
   },
   acd: {
@@ -53,7 +53,7 @@ const MECH = {
   ifr: {
     meteor: k => { const s = ST("ifr", "meteor", k); return `1 meteor + a burst of ${s.fan}, ${s.store} stored in orbit, charge ${+s.chargeS.toFixed(2)}s`; },
     hellfire: k => { const s = ST("ifr", "hellfire", k); return s.fire ? `a fire, radius ${x(s.fireR)}, growth ${x(s.fireV)}` : "no fire"; },
-    firaga: k => { const s = ST("ifr", "firaga", k); return s.flares ? `flares ${x(s.beamL)} long, ${x(s.beamW)} wide, burning ${x(s.burnS)}s at a tick every ${s.tickS}s${s.triple ? ", three at the impact" : ""}` : "no flares"; },
+    firaga: k => { const s = ST("ifr", "firaga", k); return s.flares ? `flares ${x(s.beamL)} long, ${x(s.beamW)} wide, burning ${x(s.burnS)}s at a tick every ${s.tickS}s${s.triple ? `, ${V("IFR_CAP_FLARES")} at the impact` : ""}` : "no flares"; },
   },
 };
 // the words that change from a to b, b's changed words marked *so* (the card's wordDiff, in text)
