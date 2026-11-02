@@ -318,12 +318,13 @@ const CRR_DART = 33, CRR_DART_W = 7.8, /* x3 (owner, 2026-10-16: "make the inter
 // its SIZE grows with Armament (owner, 2026-10-16: "halve interceptor size (grow this as armament increases)"): half the dart
 // above, untaken, + CRR_DART_GROW a tier - the full dart at VI
 const CRR_DART_K0 = 0.5, CRR_DART_GROW = 0.1;
-function carDart(i, z) {
+// (perf, 2026-11-01: ONE path a carrier, one fill and one stroke - was a fill and a stroke a dart, ~200 canvas calls a frame at 3 x 34;
+// where two darts overlap the fill now shows once, not twice)
+function carDart(i, z) { // adds the dart's triangle to the open path
   const a = i.ang, L = CRR_DART * z, W = CRR_DART_W * z; // nose along its heading
   const c = Math.cos(a), s = Math.sin(a), bx = i.x - c * L * 0.5, by = i.y - s * L * 0.5;
-  ctx.beginPath(); ctx.moveTo(i.x + c * L * 0.5, i.y + s * L * 0.5);
+  ctx.moveTo(i.x + c * L * 0.5, i.y + s * L * 0.5);
   ctx.lineTo(bx - s * W, by + c * W); ctx.lineTo(bx + s * W, by - c * W); ctx.closePath();
-  ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; ctx.stroke();
 }
 // darts: the INTERCEPTORS alone, drawn in skyKeep - their colour is not inverted by a boss sky (owner, 2026-10-16: "Interceptor color
 // should also not be inverted"); else the bolts and pellets, which turn over with it like every tower's shots
@@ -332,7 +333,7 @@ function carDart(i, z) {
 // hairline runs back along them, fading out in CRR_TRAIL_BANDS steps; gone once it is back inside the carrier
 const CRR_TRAIL_N = 60, CRR_TRAIL_STEP = 6, CRR_TRAIL_W = 0.8, CRR_TRAIL_A = 0.45, CRR_TRAIL_BANDS = 4;
 function carTrails(t) {
-  ctx.strokeStyle = COL.blue; ctx.lineWidth = CRR_TRAIL_W; ctx.lineJoin = "round"; ctx.lineCap = "round";
+  ctx.strokeStyle = COL.blue; ctx.lineWidth = CRR_TRAIL_W; ctx.lineJoin = "round"; ctx.lineCap = "round"; // (keep ROUND: bevel joins + butt caps drew the trails ~3x SLOWER in WebKit, 2.5 -> 7.5 ms a frame at 3 x 17 - measured 2026-11-01)
   // a DRAGGED carrier carries its held interceptors' trails with it (owner, 2026-10-16: "don't show atc interceptor streaks
   // caused by dragging"): the tower's move since the last draw shifts them whole, so only their own orbit draws
   const mx = t.x - (t.trX ?? t.x), my = t.y - (t.trY ?? t.y); t.trX = t.x; t.trY = t.y;
@@ -370,7 +371,8 @@ function drawCar(darts) {
       }
       ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
       const z = CRR_DART_K0 + CRR_DART_GROW * TIER_LEVEL[skillOf(t, "armament")];
-      for (const i of t.icp) if (i.state !== "home" || i.hold) carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); // its own size: smaller ones hold closer
+      ctx.beginPath(); for (const i of t.icp) if (i.state !== "home" || i.hold) carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); // its own size: smaller ones hold closer
+      ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; ctx.stroke();
       continue;
     }
     ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CRR_PELLET_PX; ctx.globalAlpha = 1;

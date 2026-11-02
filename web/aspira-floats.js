@@ -18,7 +18,9 @@ let dmgLive = []; // the live damage-number floats, each carrying its hit size `
 // was against the biggest hit yet): G.dps, every tower's numbered damage a game second, smoothed over DPS_TAU s (stepFx); a hit of
 // DMG_DPS_K x that is full size
 const DPS_TAU = 3, DMG_DPS_K = 0.5, DMG_POP_K = 0.5;
-const DMG_SIZE_EXP = 0.7, DMG_PX_MIN = 10, DMG_PX_SPAN = 28, DMG_FLY = 90; // DMG_FLY: units/s away from the hitter (owner: "make all damage numbers fly off more", was 30)
+// A NARROW BAND (owner, 2026-11-01: "damage number sizes of smaller damage should not be as small, narrow size band (less big max, more big
+// min)"): 14..30 px, was 10..38 - a small hit stays readable, a big one no longer balloons; still bigger hit, bigger number
+const DMG_SIZE_EXP = 0.7, DMG_PX_MIN = 14, DMG_PX_SPAN = 16, DMG_FLY = 90; // DMG_FLY: units/s away from the hitter (owner: "make all damage numbers fly off more", was 30)
 // src: the tower that dealt it - the number flies AWAY from it (owner, 2026-10-09: "instead of having them fly upwards,
 // have them fly in the direction away from the source of damage"); none: upward, as before
 // grey: the share of the hit armor took (0..1) - the number is drawn that far from white toward Silver (dmgColor)
@@ -200,7 +202,7 @@ function coinHome(c) {
   }
   return best;
 }
-const CRED_POP_MAX = (DMG_PX_MIN + DMG_PX_SPAN) / 2; // a credit pop-up's biggest: HALF a damage number's (owner, 2026-10-13: "reduce max size of credit popups to half")
+const CRED_POP_MIN = 10, CRED_POP_MAX = 19; // a credit pop-up's biggest: HALF a damage number's as it was then (10 + 28 px; kept when the band narrowed, 2026-11-01) (owner, 2026-10-13: "reduce max size of credit popups to half")
 function stepCoins(dt) {
   for (const c of coins) {
     c.t += dt;
@@ -216,7 +218,7 @@ function stepCoins(dt) {
       const gb = c.grp.b;
       G.maxGold = Math.max(G.maxGold || 1, gb);
       const rel = (gb / G.maxGold) ** DMG_SIZE_EXP;
-      float(h.x, h.y - h.r - 22 - lift, "+" + (gb < 10 ? +gb.toFixed(1) : Math.round(gb)) + "c", "orange", Math.round(DMG_PX_MIN + (CRED_POP_MAX - DMG_PX_MIN) * rel), 2.0); // credits read "Nc"
+      float(h.x, h.y - h.r - 22 - lift, "+" + (gb < 10 ? +gb.toFixed(1) : Math.round(gb)) + "c", "orange", Math.round(CRED_POP_MIN + (CRED_POP_MAX - CRED_POP_MIN) * rel), 2.0); // credits read "Nc"
       fx[fx.length - 1].shrink = true; // it holds, then shrinks + fades like a damage number (owner)
     } else { c.x += dx / d * step; c.y += dy / d * step; }
   }
