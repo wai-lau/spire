@@ -128,7 +128,7 @@ function refreshUpgradePreview(t) {
 // a row no section names lands in "Tower" (with Kills), shown first. "now -> next" where the pulled points change a value
 // (statRow paints a change for the worse red); rows the tower has not got yet ("—") are left out, and so is a section left empty
 const STAT_SECTIONS = {
-  arc: [["Arc", ["Rate", "Range", "Delay"]], ["Chain", ["Hits", "Forks", "Jumps", "Jump reach", "Arc dmg", "Arc hop", "Reach"]], ["Shock", ["Res slow", "Res lasts", "Armor strip"]]],
+  arc: [["Arc", ["Rate", "Range", "Delay"]], ["Chain", ["Hits", "Forks", "Jumps", "Jump reach", "Arc dmg", "Arc hop", "Reach"]], ["Shock", ["Res slow", "Res lasts", "Shocked", "Armor strip"]]],
   frz: [["Freeze Aura", ["Aura slow", "Aura tick", "Ticks", "Cold bite", "Damage taken", "Range", "Rate"]], ["Permafrost", ["Pulse every", "Pulse slow", "Full frost", "Frost armor"]], ["Moons", ["Moons", "Moonlets"]]],
   sol: [["Beam", ["Rate", "Range", "Crit", "Crit ×", "Locks"]], ["Scorch", ["Scorch tick", "Scorch ticks", "Scorch lasts"]], ["Diffraction", ["Splits", "Carry", "Prism"]], ["Breach", ["Breach", "Parallel", "Bleed", "Bleed crit"]]],
   crr: [["Hangar", ["Interceptors"]], ["Tether", ["Tether slow", "Tether amp", "Chain"]], ["Armament", ["Rate", "Ammo", "Pellets", "Pellet hit", "Slow", "Slow lasts"]]],

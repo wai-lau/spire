@@ -274,9 +274,10 @@ check("ARC's card rows follow the redesign (2026-10-29): no charge or burst rows
   const r0 = rows("arc", {}).rows, rv = rows("arc", { voltage: 2 }).rows, rz = rows("arc", { capacitance: 3 }).rows;
   for (const k of ["Bolts", "Charges", "Charge pop", "Pop burst", "Burst slow", "Burst lasts"]) if (k in r0) return "still a " + k + " row";
   const j0 = run("ARC_VOLT_JUMPS[0]"), j2 = run("ARC_VOLT_JUMPS[2]"), sl = run("Math.round(ARC_RES_SLOW[3] * 100)"), sp = run("Math.round(ARC_RES_STRIP[3] * 100)");
-  if (r0.Hits !== 1 + j0 + " a bolt" || r0.Forks !== "—" || r0["Res slow"] !== "—") return "tier 0: " + JSON.stringify(r0);
+  if (r0.Hits !== 1 + j0 + " a bolt" || r0.Forks !== "—" || (r0["Res slow"] ?? "—") !== "—" || r0.Shocked !== "—") return "tier 0: " + JSON.stringify(r0);
   if (rv.Hits !== 1 + 2 * j2 + " a bolt" || rv.Forks !== "once") return "Voltage II: " + JSON.stringify(rv);
-  if (rz["Res slow"] !== (sl ? sl + "%" : "—") || rz["Armor strip"] !== sp + "% of armor") return "Shock III: " + JSON.stringify(rz);
+  const am = run("Math.round(ARC_SHOCK_AMP[3] * 100)"); /* Res slow / Res lasts show only while Shock slows (none since the ARC brief, 7.1.16) */
+  if ((rz["Res slow"] ?? "—") !== (sl ? sl + "%" : "—") || rz["Armor strip"] !== sp + "% of armor" || rz.Shocked !== "+" + am + "% from ARC") return "Shock III: " + JSON.stringify(rz);
 });
 check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
   const r = run(`(() => { const t = { id: 99, kind: "frz", x: CX, y: CY, lvl: 2, skills: { rime: 1 } }; G = newGame(); const a = towerStats(t, true).biteDmg; G.power.DAM = 1; const b = towerStats(t, true).biteDmg; G.power.DAM = 0;
