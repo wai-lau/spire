@@ -73,7 +73,7 @@ const DESCRIBE = {
       (k ? " " + (n > 1 ? "The jets dissolve" : "The jet dissolves") + " up to " + (st => pc(st.corrode))(descStats("acd", sk)) + " of armor a tick and " + (n > 1 ? "drop" : "drops") + " corrosive goo that strips " + pc(ACD_GOO_STRIP[k]) + " of armor and deals " + pc(ACD_GOO_DMG[k]) + "td." /* a full-ramp tick (2026-10-28 armor rework); the goo in shares (7.1.4; Leader's wording, 2026-11-01) */ : "") /* owner's words, 2026-10-26 */ +
       (c ? " " + J + " leave" + s + " slimy acidic pools that " + (ACD_POOL_SLOW[c] ? "slow by " + Math.round(ACD_POOL_SLOW[c] * 100) + "% and " : "") + "burn for up to " + perSec(pool / tdU("acd")) + " for " + secs(life) + "." : ""); // (a pool burns at its tower's tick, x the jet's heat when it dropped - up to ACD_PUDDLE_CAP)
   },
-  // CRR (owner, 2026-10-15): Hangar more interceptors (primes); Tether a slowing, pulsing beam to what it fires at (Chain: on to one more enemy); Armament harder, faster,
+  // CRR (owner, 2026-10-15): Hangar more interceptors; Tether a slowing, pulsing beam to what it fires at (Chain: on to one more enemy); Armament harder, faster,
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
   crr(sk) {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
