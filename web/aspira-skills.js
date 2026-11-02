@@ -388,7 +388,10 @@ function solOutLen(x, y, ux, uy) {
   if (ux > 1e-9) k = Math.min(k, (bx.x1 - x) / ux); else if (ux < -1e-9) k = Math.min(k, (bx.x0 - x) / ux);
   if (uy > 1e-9) k = Math.min(k, (bx.y1 - y) / uy); else if (uy < -1e-9) k = Math.min(k, (bx.y0 - y) / uy);
   k = Math.max(0, k);
-  if (typeof warp !== "undefined" && warp && warp.gl && typeof warpProject === "function") for (let i = 0; i < 12 && k > 1 && !(warpProject(x + ux * k, y + uy * k, 0).s > 0); i++) k /= 2; /* 3D: never behind the camera */
+  if (typeof warp !== "undefined" && warp && warp.gl && warp.p && typeof warpProject === "function") { /* 3D: never behind the camera - */
+    const behind = () => { for (let i = 0; i < 12 && k > 1 && !(warpProject(x + ux * k, y + uy * k, 0).s > 0); i++) k /= 2; };
+    if (typeof viewCam === "function") viewCam(behind); else behind(); /* - under the TEXTURE camera (viewCam): a shot fires in the game tick, outside warp3d, where the page's camera put points 1/WARP_RES too far out and could halve a line the simulator keeps (2026-11-01) */
+  }
   return k;
 }
 // UI (drawFx): the Refract light cone, a faint wedge that fades FAST (owner):

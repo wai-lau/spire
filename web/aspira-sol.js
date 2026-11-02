@@ -68,6 +68,12 @@ function solRodStep(t, st, dt) {
 const SOL_SHOW_DU = 24, SOL_SHOW_MAX = 4000;
 function solShowLen(x, y, ux, uy, k) {
   if (typeof warp === "undefined" || !warp || !warp.gl || !warp.p || !warp.cv || typeof warpProjectScratch !== "function") return k;
+  // UNDER THE TEXTURE CAMERA (viewCam): a shot fires in the game tick, outside warp3d, where cam is the page's - its points landed
+  // 1/WARP_RES too far out against warp.cv's pixels, so the line stopped short of the edge (at the play box on a slow device, WARP_RES 0.5;
+  // owner, 2026-11-01: "SOL beams not always reaching edge of screen")
+  return typeof viewCam === "function" ? viewCam(() => solShowWalk(x, y, ux, uy, k)) : solShowWalk(x, y, ux, uy, k);
+}
+function solShowWalk(x, y, ux, uy, k) {
   const W = warp.cv.width, H = warp.cv.height, on = d => { const P = warpProjectScratch(x + ux * d, y + uy * d); return P.s > 0 && P.x >= 0 && P.x <= W && P.y >= 0 && P.y <= H; }; // (warp.cv's pixels: the space warpProject maps into)
   let d = k; while (d < SOL_SHOW_MAX && on(d)) d += SOL_SHOW_DU;
   const P = warpProjectScratch(x + ux * d, y + uy * d); return P.s > 0 ? d : Math.max(k, d - SOL_SHOW_DU); // (one step past the edge, so the line meets it; never a point behind the camera)
