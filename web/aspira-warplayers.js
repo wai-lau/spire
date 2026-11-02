@@ -135,13 +135,13 @@ function warpLayersBind(gl, u) {
     const t0 = performance.now(), R = warp.bmpRect, bs = warp.bmp; // (R: the strips alone, one bitmap each)
     if (R) R.forEach((r, i) => gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, bs[i])); else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bs[0]); warp.statSize = bs[0].width; } const ms = performance.now() - t0;
     for (const b of bs) b.close(); warp.bmp = null; warp.boardLanes = warp.bmpLanes; // (the lanes in that board are on the GPU now: laneSplit)
-    if (typeof perfBoardUp === "function") perfBoardUp("bmp", ms);
+    if (typeof perfBoardUp === "function") perfBoardUp("bmp:" + (warp.bmpWhy || "first") + (R ? ":strip" : ":whole"), ms); // (2026-11-02: plain "bmp" hid why - a wave, labels, a boss strip, a resize)
   }
   /* a stalling device (an Apple GPU blocks ~40-50 ms in texImage2D(canvas)) snapshots the board with createImageBitmap, which resolves off the frame, and uploads it a frame or so later; the bell shows the old board till then */
   const bmpOk = warpUpSlow >= 3 && warp.statUp === warp.tex && typeof createImageBitmap === "function";
   if (bmpOk) {
     if (warp.statNew && !warp.bmpP) {
-      warp.bmpP = performance.now(); warp.bmpTok = typeof perfWaitTok === "function" ? perfWaitTok() : 0; warp.statNew = false; warp.bmpLanes = warp.statLanes;
+      warp.bmpP = performance.now(); warp.bmpTok = typeof perfWaitTok === "function" ? perfWaitTok() : 0; warp.statNew = false; warp.bmpLanes = warp.statLanes; warp.bmpWhy = warp.statWhy;
       const R = warp.statRect && warp.statSize === cv.width ? warp.statRect : null; warp.statRect = null; // (the strip alone - over a texture already the board's size)
       if (R && !R.length) { warp.bmpP = 0; } else
       Promise.all(R ? R.map(r => createImageBitmap(cv, r.x, r.y, r.w, r.h)) : [createImageBitmap(cv)]).then(b => { if (typeof perfBoardWait === "function") perfBoardWait("bmpWait", warp.bmpP, warp.bmpTok); warp.bmpP = 0; warp.bmp = b; warp.bmpRect = R; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
