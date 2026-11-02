@@ -10,7 +10,7 @@ const CURVE_DONE = ["arc", "sol", "crr", "frz", "acd", "grv", "ifr"]; // the kin
 check("curve: by total level alone, rising, each level's hit BELOW 2x the level before - each tower its OWN growth (owner, 2026-11-01: \"get the early damage even lower and allow the curve to not be exactly 1.5x / just keep it below 2x for any level\" - replaces 2026-10-28's \"slightly steepening\"; \"towers each having their own curve is fine\", 2026-10-28)", () => {
   const r = run(`(() => { const out = {}; for (const k in STAT_CURVE) { const d = []; for (let L = 0; L <= SKILL_POINTS; L++) d.push(curveAt(k, L).dmg); out[k] = d; } return out; })()`);
   // still ABOVE 2x on 7.1.12 (CRR's tier-0 hit x6.45): its own curve is the CRR rework's job - the list may only shrink
-  const PENDING = ["crr"];
+  const PENDING = []; // CRR came under 2x with its geometric curve (2026-11-02)
   for (const [k, d] of Object.entries(r)) {
     for (let i = 1; i < d.length; i++) if (!(d[i] > d[i - 1])) return k + " not rising at L" + i;
     if (!PENDING.includes(k)) for (let i = 1; i < d.length; i++) if (!(d[i] < 2 * d[i - 1])) return k + " x" + (d[i] / d[i - 1]).toFixed(2) + " at L" + i;
@@ -28,6 +28,11 @@ check("ACD goo in percentages: strip a share of the picker's CURRENT armor and d
 check("IFR Flare: a flare's ticks (its whole burn) never more than 2x the tier before, 0..V (owner, 2026-11-01: \"no level damage steps above 2x\"; live went 2 s -> 6 s at IV)", () => {
   const n = run(`IFR_BURN_S.map((b, i) => Math.floor(Math.min(EFFECT_MAX_S, b) / IFR_TICK_S[i] + 1e-9))`);
   if (n.length !== 6 || n.some((v, k) => k && (v < n[k - 1] || v > 2 * n[k - 1]))) return "ticks a flare by tier " + JSON.stringify(n);
+});
+check("CRR: at most 30 volleys a sortie and at most 3 bolts a volley (fired at once) at every Armament tier, rising (owner, 2026-11-01: \"volleys per sortie should never go above 30\" / \"My intent with volleys was to describe the number of bolts fired at once ... It should not go above 3\")", () => {
+  const [a, b] = run(`[CRR_AMMO.slice(), CRR_BOLTS_BY.slice()]`);
+  if (a.length !== 6 || a.some(v => v > 30) || a.some((v, k) => k && v < a[k - 1])) return "CRR_AMMO " + JSON.stringify(a);
+  if (b.length !== 6 || b.some(v => v > 3) || b.some((v, k) => k && v < b[k - 1])) return "CRR_BOLTS_BY " + JSON.stringify(b);
 });
 check("curve: SOL's rate is flat (never raise SOL's fire rate)", () => {
   const r = run(`[curveAt("sol", 0).rate, curveAt("sol", SKILL_POINTS).rate]`);
@@ -172,12 +177,12 @@ check("SOL's burns tick IN THE GAME LOOP (a stack once sat untouched: dotT lost,
 
 // ---------- CRR ----------
 towerTierChecks("crr", ["tether", "circling", "wingmate"]);
-check("CRR: tier 0 three interceptors (owner, 2026-10-28), no tether, one bolt a volley, six volleys a sortie (owner, 2026-10-28); Hangar I five, one held; Tether I one tether at most; Armament I two bolts, same volley (tier redesign 2026-10-24)", () => {
+check("CRR: tier 0 eight interceptors (owner, 2026-11-01: \"Add more interceptors to compensate\" for the slower flight; was three, 2026-10-28), no tether, one bolt a volley, six volleys a sortie (owner, 2026-10-28); Hangar I twelve, some held; Tether I one tether at most; Armament I two bolts, same volley (tier redesign 2026-10-24)", () => {
   const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "crr", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "crr", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts, ammo: s.ammo }; })()`);
   const z = st({}), h = st({ hangar: 1 }), a = st({ armament: 1 });
-  if (z.wing !== 3 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== 0) return "tier 0 " + JSON.stringify(z);
-  if (z.ammo !== 18 || a.ammo !== 23) return "volleys a sortie: tier 0 " + z.ammo + ", Armament I " + a.ammo + " (expected 18 and 23 - owner, 2026-10-29: x3 the bolts at a third the damage; was 6 and 8, 2026-10-28: \"interceptor should start with 6 ammo\")";
-  if (h.wing !== 5 || h.hold !== 1) return "Hangar I " + JSON.stringify(h);
+  if (z.wing !== 8 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== 0) return "tier 0 " + JSON.stringify(z);
+  if (z.ammo !== 4 || a.ammo !== 8) return "volleys a sortie: tier 0 " + z.ammo + ", Armament I " + a.ammo + " (expected 4 and 8 - the owner's table with mid tiers 8/12/16 (owner, 2026-11-02: \"Yes\", after the 8-seed good: 58% won, CRR 44%); was 4 and 6, 2026-11-01; was 18 and 23 - owner, 2026-10-29: x3 the bolts at a third the damage; was 6 and 8, 2026-10-28: \"interceptor should start with 6 ammo\")";
+  if (h.wing !== 12 || h.hold < 1) return "Hangar I " + JSON.stringify(h);
   if (a.bolts !== 2) return "Armament I " + JSON.stringify(a);
   const n = run(`(() => { const { t } = tierLane("crr", { hangar: 3, launch: 1 }, [90, 120, 150, 170]); /* held ON the lane (a stepped game re-reads a spot from it) */
     G.started = true; G.nextIn = 1e9; G.spawns = []; /* the rig's enemies alone - no real wave */ let most = 0, ever = 0;
