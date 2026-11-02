@@ -90,7 +90,7 @@ check("ARC: tier 0 strikes one enemy and chains once (owner, 2026-10-28); Conduc
   const n = sk => run(`(() => { const { t, es, st } = tierRig("arc", ${JSON.stringify(sk)}, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20]]);
     fireSkillChain(t, st, es[0]); for (let i = 0; i < 30; i++) stepChains(0.05); return ${hitCount("es")}; })()`);
   const r = [n({}), n({ conductivity: 1 }), n({ voltage: 1 }), n({ capacitance: 1 })];
-  if (JSON.stringify(r) !== "[3,3,4,3]") return "enemies hit (tier 0, Amp I, Volt I, Res I): " + r + " (expected 3, 3, 4, 3: the ARC redesign, owner 2026-10-29 \"ARC 0: one chain (hits 3)\", Voltage the chains)";
+  if (r[0] !== 3 || r[1] !== 3 || r[3] !== 3 || !(r[2] > 3)) return "enemies hit (tier 0, Amp I, Volt I, Res I): " + r + " (expected 3, 3, more, 3: owner 2026-10-29 \"ARC 0: one chain (hits 3)\"; Voltage I forks and chains more - Wai, 2026-11-01, the ARC brief: \"ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm\")";
 });
 
 check("ARC: no enemy is struck twice by the bolts of one attack (owner, 2026-10-28: \"reduce the number of arc hits\" - one hit set an attack); Capacitance's bursts may re-hit", () => {
@@ -276,7 +276,7 @@ check("ARC's card rows follow the redesign (2026-10-29): no charge or burst rows
   const j0 = run("ARC_VOLT_JUMPS[0]"), j2 = run("ARC_VOLT_JUMPS[2]"), sl = run("Math.round(ARC_RES_SLOW[3] * 100)"), sp = run("Math.round(ARC_RES_STRIP[3] * 100)");
   if (r0.Hits !== 1 + j0 + " a bolt" || r0.Forks !== "—" || r0["Res slow"] !== "—") return "tier 0: " + JSON.stringify(r0);
   if (rv.Hits !== 1 + 2 * j2 + " a bolt" || rv.Forks !== "once") return "Voltage II: " + JSON.stringify(rv);
-  if (rz["Res slow"] !== sl + "%" || rz["Armor strip"] !== sp + "% of armor") return "Shock III: " + JSON.stringify(rz);
+  if (rz["Res slow"] !== (sl ? sl + "%" : "—") || rz["Armor strip"] !== sp + "% of armor") return "Shock III: " + JSON.stringify(rz);
 });
 check("review: FRZ Rime's bite takes the DAM core power and the Orbital Relay like the tick", () => {
   const r = run(`(() => { const t = { id: 99, kind: "frz", x: CX, y: CY, lvl: 2, skills: { rime: 1 } }; G = newGame(); const a = towerStats(t, true).biteDmg; G.power.DAM = 1; const b = towerStats(t, true).biteDmg; G.power.DAM = 0;
@@ -308,7 +308,7 @@ check("later: a factor on the tower's OWN damage is one constant, on from its fi
 check("later: the card rows read no zero mechanic - ARC Jumps 2 at tier 0 (one chain hitting three, owner 2026-10-29), FRZ Cold bite before Brittle (the nip is flat)", () => {
   const a0 = rows("arc", {}).rows, a1 = rows("arc", { voltage: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;
   if (String(a0.Jumps) !== "2") return "ARC tier 0 Jumps reads " + a0.Jumps + " (expected 2: one chain hitting three, owner 2026-10-29)";
-  if (String(a1.Jumps) !== "3") return "ARC Voltage I Jumps reads " + a1.Jumps + " (expected 3: Voltage increases chains)";
+  if (String(a1.Jumps) !== String(run("ARC_VOLT_JUMPS[1]")) || !(a1.Jumps > a0.Jumps)) return "ARC Voltage I Jumps reads " + a1.Jumps + " (expected ARC_VOLT_JUMPS[1], above tier 0: Voltage increases chains)";
   if (f0["Cold bite"] !== "—") return "FRZ tier 0 Cold bite reads " + f0["Cold bite"];
   if (f1["Cold bite"] === "—") return "FRZ Brittle I Cold bite blank";
 });
@@ -332,9 +332,9 @@ check("no card sentence names a number over 800% (owner, 2026-10-31: \"Nothing s
 });check("ARC's sentence (the ARC redesign, owner 2026-10-29): one bolt that chains (Voltage), forks once from Voltage II, Conductivity the carry, Shock a slow and an armor break; FRZ tier 0 \"slows and deals X% damage\"", () => {
   const r = run(`[describeTower("arc", {}), describeTower("arc", { voltage: 2 }), describeTower("arc", { conductivity: 2 }), describeTower("arc", { capacitance: 1 }), describeTower("frz", {}), Math.round(FRZ_NIP / (typeof TD_UNIT !== "undefined" ? TD_UNIT.frz : 1) * 100)]`);
   if (r[0] !== "A bolt of lightning that chains twice for 20% less damage every chain.") return "tier 0: " + r[0];
-  if (!/^A bolt of lightning that forks once and chains four times for \d+% less damage every chain\.$/.test(r[1])) return "Voltage II: " + r[1];
+  if (!/^A bolt of lightning that forks once and chains \w+ times for \d+% less damage every chain\.$/.test(r[1])) return "Voltage II: " + r[1];
   if (!/that chains twice for full damage every chain\.$/.test(r[2])) return "Conductivity II: " + r[2];
-  if (!/ Hits slow by \d+% and break \d+% of armor\.( Shocked enemies take \d+% more damage from ARC\.)?$/.test(r[3])) return "Shock I: " + r[3];
+  if (!/ Hits (slow by \d+% and )?break \d+% of armor\.( Shocked enemies take \d+% more damage from ARC\.)?$/.test(r[3])) return "Shock I: " + r[3]; // no slow since the ARC brief (Wai, 2026-11-01, the ARC brief: "ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm")
   if (!r[4].includes("slows enemies by") || !r[4].includes(" and deals " + r[5] + "%td a second")) return "FRZ tier 0: " + r[4];
 });
 

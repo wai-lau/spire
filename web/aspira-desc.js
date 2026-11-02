@@ -20,7 +20,7 @@ const descWave = () => Math.max(1, (typeof G !== "undefined" && G && G.wave) || 
 const shredPc = amt => { const w = descWave(); return pc(Math.min(SHRED_MAX, SHRED_K * amt * scaleOf(w) / armorRefOf(w))); };
 // a chart tower's stats at these skills (as scripts/aspira-desc-graph.mjs reads them) - for strips sized by its damage
 const descStats = (kind, sk) => towerStats({ id: -1, kind, x: CX, y: CY, lvl: 1 + towerLevel({ kind, skills: sk }), skills: sk });
-const NUM_WORD = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
+const NUM_WORD = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
 // thematic words where they fit (owner): chill, rime, brittle, moons; rays, refract, pierce; jets, etch.
 // ONLY BEHAVIOUR is told here (owner, 2026-10-07): a tier that just moves a number - harder
 // hits, a colder or wider aura, faster pulses, a stronger acid, more or bigger puddles -
@@ -35,7 +35,7 @@ const DESCRIBE = {
     const fl = ARC_AMP_FALL[c], d = Math.round(Math.abs(fl - 1) * 100), j = ARC_VOLT_JUMPS[v], times = TIMES[j] || " " + NUM_WORD[j] + " times";
     const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
     return "A bolt of lightning that " + (v >= ARC_FORK_FROM ? "forks once and " : "") + "chains" + times + " for " + pc + "." +
-      (z ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " + Math.round(ARC_RES_STRIP[z] * 100) + "% of armor." : "") +
+      (z ? (ARC_RES_SLOW[z] ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " : " Hits break ") + Math.round(ARC_RES_STRIP[z] * 100) + "% of armor." : "") + /* no slow since the ARC brief (2026-11-01) */
       (ARC_RES_DMG[z] > 1 ? " Its bolts hit ×" + +ARC_RES_DMG[z].toFixed(2) + " harder." : "") +
       (typeof ARC_SHOCK_AMP !== "undefined" && ARC_SHOCK_AMP[z] > 0 ? " Shocked enemies take " + Math.round(ARC_SHOCK_AMP[z] * 100) + "% more damage from ARC." : ""); /* Shock option 1 (Wai, 2026-11-01): its mark, e.shockT */ /* (and its hit factor, Wai approved 2026-11-01) */
   },

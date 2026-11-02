@@ -145,8 +145,8 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // jump keeps ARC_AMP_FALL x the hit before (Conductivity, id conductivity). Shock (id capacitance): every hit slows (ARC_RES_SLOW, for
 // STAT_SLOW_T s - never a shielded enemy, applySlow) and breaks ARC_RES_STRIP of the armor left (shredPct); no
 // charges, no bursts. A bolt never strikes a unit twice (skillHop). Numbers 0..V, let: the battery fits them
-let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 3, 4, 5, 6, 8], ARC_VOLT_REACH = [150, 170, 190, 215, 240, 270], ARC_FORK_FROM = 2;
-let ARC_RES_SLOW = [0, 0.15, 0.25, 0.38, 0.47, 0.58] /* 0..V, with ARC's geometric curve (owner, 2026-11-01: "Release the arc change") */, ARC_RES_STRIP = [0, 0.05, 0.1, 0.19, 0.32, 0.48] /* 0..V, with it */;
+let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 5, 8, 12, 16, 20] /* more chaining, the brief; tier 0 stays one chain hitting three (owner, 2026-10-29) (was 2 3 4 5 6 8) */, ARC_VOLT_REACH = [150, 170, 190, 215, 240, 270], ARC_FORK_FROM = 1; /* forks from Voltage I, the brief (was II) */
+let ARC_RES_SLOW = [0, 0, 0, 0, 0, 0] /* Shock no longer slows, the brief - worse vs fast (was 0 .15 .25 .38 .47 .58) */ /* 0..V, with ARC's geometric curve (owner, 2026-11-01: "Release the arc change") */, ARC_RES_STRIP = [0, 0.05, 0.1, 0.19, 0.32, 0.48] /* 0..V, with it */;
 const ARC_RES_DMG = [1, 1, 1.05, 1.1, 1.15, 1.2]; // Shock's hit factor 0..V
 // SHOCKED (owner, 2026-11-01, picked "1": Shock makes shocked enemies take more damage from ARC): each Shock hit marks its target for
 // the slow's time (STAT_SLOW_T, refreshed on hit); a marked enemy takes x(1 + ARC_SHOCK_AMP) from ARC's hits (damage(), not the burn)
@@ -221,7 +221,7 @@ function voltCarry(c, e, left) {
 }
 // THE BURN (owner, 2026-10-30, "Yes all 3": kept for its sparks): every ARC hit burns ARC_BURN of the hit over ARC_BURN_N ticks of
 // ARC_BURN_Q s, e.arcBurn { t (s left), k (a tick), id, acc }; a new hit restarts it. It moved no mark (shield leaked 94% with it and without)
-const ARC_BURN = 0.1, ARC_BURN_N = 2, ARC_BURN_Q = 0.1;
+const ARC_BURN = 0.2, ARC_BURN_N = 6, ARC_BURN_Q = 0.1; // 0.1 x2 ticks -> 0.2 x6: more, smaller ticks, each a shield pop (owner, 2026-11-01, the ARC brief: "ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm / increase damage and reduce fire rate to make good vs armor"; "yes and yes" to more, smaller burn ticks)
 function arcBurnStep(dt) {
   for (const e of G.enemies) {
     if (e.shockT > 0) e.shockT -= dt; // SHOCKED wears off
