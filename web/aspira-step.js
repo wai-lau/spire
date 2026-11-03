@@ -3,6 +3,9 @@
 
 function stepSpawns(dt) {
   for (const w of G.spawns) {
+    // a boss list's next body waits while the first is held for its HP bar (barHold, aspira-bossbar.js: page only), or the Devil's
+    // second on a lane spawned during the hold and stood on the first (Visual, 2026-11-03: six bodies in three exact pairs)
+    if (w.idx > 0 && ENEMIES[w.list[0]].star && typeof barHolding === "function" && barHolding()) continue;
     w.timer -= dt * waveClock(w.n); // a wave not yet reached runs OFF_SCREEN_SPEED x - its releases too, so its gaps in distance hold (waveClock, aspira-formations.js)
     while (w.timer <= 0 && w.idx < w.list.length) {
       const type = w.list[w.idx++];
