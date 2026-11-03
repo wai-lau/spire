@@ -15,6 +15,13 @@ const TRAIL = { bonus: 320, fast: 120, shield: 80, armor: 80 }, // swarm: none (
 // (perf: the tail's points live in these, reused every enemy every frame - three new objects a point were the frame's biggest churn)
 const TRAIL_P = [], TRAIL_L = [], TRAIL_R = [], trailPt = (A, i) => A[i] || (A[i] = { x: 0, y: 0 });
 const BREACH_SPOKES = 24; // the most Breach spokes drawn on one enemy
+// the tracers' one gradient a colour, per context (body colour -> clear along x, 0 to 1 - drawStarTrail turns the frame onto each tail)
+const trailGrads = new WeakMap();
+function trailGrad(col) {
+  let m = trailGrads.get(ctx); if (!m) trailGrads.set(ctx, (m = new Map()));
+  let g = m.get(col); if (!g) { g = ctx.createLinearGradient(0, 0, 1, 0); g.addColorStop(0, col); g.addColorStop(1, "transparent"); m.set(col, g); }
+  return g;
+}
 function drawStarTrail(e, size) {
   const tail = TRAIL[e.type], pts = TRAIL_P; let np = 0;
   // CURVED: the lane behind it (owner, 2026-10-09: "they should be curved" - a straight tail along the heading was
@@ -51,14 +58,19 @@ function drawStarTrail(e, size) {
   // (a point off the lane is NaN: a gradient on it THROWS and took the whole 3D overlay's frame down with it - no tracer then)
   const x0 = star ? e.x : pts[0].x, y0 = star ? e.y : pts[0].y, x1 = star ? tail : pts[n].x, y1 = star ? 0 : pts[n].y; // (no array and spread a tracer a frame - perf, 2026-11-02)
   if (!(Number.isFinite(x0) && Number.isFinite(y0) && Number.isFinite(x1) && Number.isFinite(y1))) return;
-  const g = star ? ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, tail) : ctx.createLinearGradient(x0, y0, x1, y1);
-  g.addColorStop(0, col); g.addColorStop(1, "transparent");
+  // ONE GRADIENT A COLOUR (perf, 2026-11-03: 75 new gradients a late frame): the path is laid in world units, then the frame turned so
+  // the unit gradient (0,0)->(1,0) runs body -> tail end before the fill - a linear gradient's colour is its point's share along that line,
+  // which the turn keeps, so the same pixels; the turn is undone by its exact inverse (no save/restore)
+  const dx = x1 - x0, dy = y1 - y0, d2 = dx * dx + dy * dy, unit = !star && d2 > 1e-9;
+  const g = star ? ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, tail) : unit ? trailGrad(col) : ctx.createLinearGradient(x0, y0, x1, y1);
+  if (star || !unit) { g.addColorStop(0, col); g.addColorStop(1, "transparent"); }
   ctx.beginPath(); ctx.moveTo(L[0].x, L[0].y);
   for (let i = 0; i <= n; i++) ctx.lineTo(L[i].x, L[i].y);
   for (let i = n; i >= 0; i--) ctx.lineTo(R[i].x, R[i].y);
   ctx.closePath();
   ctx.fillStyle = g; ctx.globalAlpha = TRAIL_ALPHA * enemyVis(e);
-  ctx.fill(); // (no shadowBlur on a boss's tail: a blur the size of the boss over its whole trail, six Devils at once, was
+  if (unit) { ctx.transform(dx, dy, -dy, dx, x0, y0); ctx.fill(); const a = dx / d2, b = -dy / d2, c = dy / d2; ctx.transform(a, b, c, a, -(a * x0 + c * y0), -(b * x0 + a * y0)); }
+  else ctx.fill(); // (no shadowBlur on a boss's tail: a blur the size of the boss over its whole trail, six Devils at once, was
   // most of a boss frame - owner, 2026-10-11: "greatly improve boss perf, specifically for the devil boss")
   ctx.globalAlpha = 1;
 }
