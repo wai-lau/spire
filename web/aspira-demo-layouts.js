@@ -90,6 +90,27 @@ function demoPlace(kind, st, cell, L) {
     const a = P[i], b = P[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-3;
     if (d >= g) continue; const k = (g - d) / 2 / d; a.x -= dx * k; a.y -= dy * k; b.x += dx * k; b.y += dy * k;
   }
+  demoFit(P, CELLS[cell], st.range || 120);
+  return P;
+}
+// ...and kept INSIDE THE BOX (Leader, 2026-11-03: every dummy and its number clear of the box's edge, at every tier): the box spans the range
+// ellipse x DEMO_FIT high and DEMO_BOX_AR x that wide, centred on the tower (demoView3d); in its terms a dummy needs its die below it, its die
+// and DEMO_NUM_ROOM (the biggest number) above it, DEMO_EDGE to spare. The group moves toward the tower as one (its spacing kept), and only if
+// it is wider or taller than the box does it shrink
+const DEMO_EDGE = 6, demoNumRoom = () => DMG_PX_MIN + DMG_PX_SPAN;
+// how far a held dummy's drawing reaches from its spot: its drawn size (DRAW_SIZE, DRAW_ALL), x1.75 for a die's corners, + a shield's ring
+const demoReach = type => ENEMIES[type].size * (DRAW_SIZE[type] || 1) * DRAW_ALL * 1.75 + (type === "shield" ? 14 : 0);
+function demoSpan(r) { const c = Math.cos(warpTilt()), hh = r * c * DEMO_FIT; return { c, hh, hw: hh * DEMO_BOX_AR }; }
+function demoFit(P, t, r) {
+  const { c, hh, hw } = demoSpan(r), sz = d => demoReach(d.type);
+  const lo = d => -hh + sz(d) * c + sz(d) + demoNumRoom() + DEMO_EDGE, hi = d => hh - sz(d) * c - DEMO_EDGE, xr = d => hw - sz(d) - DEMO_EDGE; // (screen-wise, from the tower)
+  for (let pass = 0; pass < 6; pass++) {
+    const X = P.map(d => d.x - t.x), Y = P.map(d => c * (d.y - t.y));
+    const x0 = Math.max(...P.map((d, i) => -xr(d) - X[i])), x1 = Math.min(...P.map((d, i) => xr(d) - X[i])); // the shift that keeps every one in
+    const y0 = Math.max(...P.map((d, i) => lo(d) - Y[i])), y1 = Math.min(...P.map((d, i) => hi(d) - Y[i]));
+    if (x0 <= x1 && y0 <= y1) { const sx = Math.min(Math.max(0, x0), x1), sy = Math.min(Math.max(0, y0), y1); for (const d of P) { d.x += sx; d.y += sy / c; } return P; }
+    for (const d of P) { d.x = t.x + (d.x - t.x) * 0.85; d.y = t.y + (d.y - t.y) * 0.85; } // (too big for the box: in by 15%, then shift)
+  }
   return P;
 }
 // what a scene showed, from its tallies: the `shows` names it passed

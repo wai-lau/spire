@@ -81,3 +81,14 @@ check("demo layouts: held dummies stand far enough apart that each one's damage 
       if (m < g * 0.9) bad.push(kind + "." + key + " " + Math.round(m) + " < " + Math.round(g)); }
     return bad.join("; "); })()`);
 });
+
+check("demo layouts: every held dummy, its die and its number inside the scene's box, every layout at every tier (Leader, 2026-11-03)", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell];
+    for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) { if (L.place === "walk") continue;
+      for (let tier = key === "base" ? 0 : 1; tier <= (key === "base" ? 0 : SKILL_TIERS); tier++) {
+        const t = { kind, cell, x: C.x, y: C.y, lvl: 1, skills: key === "base" ? {} : { [key]: tier } }; t.lvl = 1 + towerLevel(t);
+        const r = towerStats(t).range, { c, hh, hw } = demoSpan(r);
+        for (const d of demoPlace(kind, towerStats(t), cell, L)) { const sz = demoReach(d.type), X = d.x - C.x, Y = c * (d.y - C.y);
+          if (Math.abs(X) > hw - sz + 0.5 || Y + sz * c > hh + 0.5 || Y - sz - demoNumRoom() < -hh - 0.5) { bad.push(kind + "." + key + " " + tier + " " + d.type + " at " + Math.round(X) + "," + Math.round(Y) + " (box +-" + Math.round(hw) + ", +-" + Math.round(hh) + ")"); break; } } } }
+    return bad.slice(0, 6).join("; "); })()`);
+});
