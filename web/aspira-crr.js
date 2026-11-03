@@ -347,16 +347,21 @@ function carDart(i, z) { // adds the dart's triangle to the open path
 // the carrier keeps its last CRR_TRAIL_N points, one every CRR_TRAIL_STEP u flown (drawn only - the simulator never draws), and a
 // hairline runs back along them, fading out in CRR_TRAIL_BANDS steps; gone once it is back inside the carrier
 const CRR_TRAIL_N = 60, CRR_TRAIL_STEP = 6, CRR_TRAIL_W = 0.8, CRR_TRAIL_A = 0.45, CRR_TRAIL_BANDS = 4;
+// SHORTER AS THEY MULTIPLY (owner, 2026-11-02: "No to all except smaller CRR trails"; option C - WebKit drawCar at 3 x 34 2.83 -> 2.06 ms): a carrier with more than CRR_TRAIL_REF interceptors out keeps CRR_TRAIL_N x REF / out points a
+// trail (never under CRR_TRAIL_MIN), so its trail segments a frame stay about today's at 17
+const CRR_TRAIL_REF = 17, CRR_TRAIL_MIN = 20;
 function carTrails(t) {
   ctx.strokeStyle = COL.blue; ctx.lineWidth = CRR_TRAIL_W; ctx.lineJoin = "round"; ctx.lineCap = "round"; // (keep ROUND: bevel joins + butt caps drew the trails ~3x SLOWER in WebKit, 2.5 -> 7.5 ms a frame at 3 x 17 - measured 2026-11-01)
   // a DRAGGED carrier carries its held interceptors' trails with it (owner, 2026-10-16: "don't show atc interceptor streaks
   // caused by dragging"): the tower's move since the last draw shifts them whole, so only their own orbit draws
   const mx = t.x - (t.trX ?? t.x), my = t.y - (t.trY ?? t.y); t.trX = t.x; t.trY = t.y;
+  let out = 0; for (const i of t.icp) if (i.state !== "home" || i.hold) out++;
+  const nMax = Math.max(CRR_TRAIL_MIN, Math.round(CRR_TRAIL_N * Math.min(1, CRR_TRAIL_REF / Math.max(1, out))));
   for (const i of t.icp) {
     if (i.state === "home" && !i.hold) { i.trail = null; continue; }
     if ((mx || my) && i.state === "home" && i.trail) for (let k = 0; k < i.trail.length; k += 2) { i.trail[k] += mx; i.trail[k + 1] += my; }
     const tr = i.trail ||= [i.x, i.y], n = tr.length;
-    if ((tr[n - 2] - i.x) ** 2 + (tr[n - 1] - i.y) ** 2 >= CRR_TRAIL_STEP * CRR_TRAIL_STEP) { tr.push(i.x, i.y); if (tr.length > CRR_TRAIL_N * 2) tr.splice(0, 2); }
+    if ((tr[n - 2] - i.x) ** 2 + (tr[n - 1] - i.y) ** 2 >= CRR_TRAIL_STEP * CRR_TRAIL_STEP) { tr.push(i.x, i.y); } while (tr.length > nMax * 2) tr.splice(0, 2);
   }
   for (let b = 0; b < CRR_TRAIL_BANDS; b++) { // band b: the b-th quarter from the interceptor back, each fainter - one stroke a band for every trail
     ctx.globalAlpha = CRR_TRAIL_A * (1 - b / CRR_TRAIL_BANDS); ctx.beginPath();
