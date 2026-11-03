@@ -30,7 +30,7 @@ function warpRender() {
       /* why this redraw (logged with the upload): the size or palette, the wave, the boss sky, the lit lanes, or only a lane fading in */
       { const p = (warp.statSig || "").split("|"), c = sig.split("|"); warp.statWhy = key !== warp.statKey ? "key" : p[0] !== c[0] ? "wave" : p[1] !== c[1] ? "sky" : p[2] !== c[2] ? "lanes" : "fade"; }
       // a STRIP, not the board: when only the boss bar's HP moved (bossBoardSig, the last part) and/or - with the GPU lanes - only the lanes' labels
-      // and rim circles (laneDirty, aspira-lanes.js), only the box round what changed goes up (warpLayersBind); the wave or the sky: the whole board
+      // and rim circles (laneDirty, aspira-lanes.js), only the box round what changed goes up (warpLayersBind); the sky: the whole board, a new wave its labels' strips (below)
       const ps = (warp.statSig || "").split("|"), cs = sig.split("|"), gpuL = typeof laneGlOn === "function" && laneGlOn();
       // A NEW WAVE IS ITS LABELS' STRIPS (perf, 2026-11-02 - a 7.1.19 iPhone log: 118 board uploads in 160 s, the ~20 whole ones ~40 ms): on the board the wave
       // shows only in the twelve idle labels' WAVE:LANE text, which laneDirty boxes like any other label - so with the GPU lanes a wave is a label change, not the board

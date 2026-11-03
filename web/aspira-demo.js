@@ -1,11 +1,11 @@
-// /spire - THE CARD'S DEMO SCENE, its foundation (owner, 2026-11-03: "replace the description text box with a tower attacking a group of
+// /spire - THE CARD'S DEMO SCENE, the private game (the card: aspira-demo-card.js; the layouts: aspira-demo-layouts.js) (owner, 2026-11-03: "replace the description text box with a tower attacking a group of
 // immobile dummies"; "whether the scene switches to an upgrade while you're previewing it, yes"; "ensure that the demo shows off the
 // upgrade (include damage numbers)"). A PRIVATE GAME: one tower and its dummies in a G of their own, run by the game's REAL step and
 // drawn by the game's real draw code, so the scene can never show a mechanic the tower does not have.
 // THE SWAP: the game keeps its run state in a few globals (G, fx, the damage numbers, coins, GRV's and CRR's lists ...). Every scene
 // frame swaps the scene's own copies in, runs, and swaps the real ones back (demoIn / demoOut) - its sound quieter (or off) and the GPU
 // effect batch off - so the real game, paused under the card, is left exactly as it was (smoke: "demo scene leaves the real game alone").
-// A new global that step() writes must join DEMO_KEEP's swap, or it leaks between the two games.
+// A new global that step() writes must join demoIn / demoOut's swap, or it leaks between the two games (smoke: demo isolation).
 // THE DRAW IS PLUGGABLE (demoFrame's draw): the scene only lends it the canvas and a camera; the owner picked 3D (demoDraw3d, below).
 const DEMO_HP_K = 50, DEMO_REFILL = 0.15; // HP_K: a dummy's health x its wave-30 HP - rarely killed (a killing hit strips no armor), still finite for CRR; // a dummy back to full health under this share (a kill in the private game is revived the same frame); its own wave-30 HP, so a
 // tower that commits shots by HP (CRR's carTarget) spreads them as in a game
