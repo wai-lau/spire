@@ -4,7 +4,7 @@
 // (aspira-demo.js, the layout from aspira-demo-layouts.js). An "i" in the scene's bottom-right corner flips the box to the sentence (with
 // its preview changes marked, skillDesc) and back; the choice holds while the card stays open. The scene runs one step a frame only while
 // its canvas is on the page and the tab is visible, and drops when the card closes (demoTick).
-const DEMO_ASPECT = 180 / 372; // the box's height over its width
+const DEMO_ASPECT = 1 / DEMO_BOX_AR; // the box's height over its width (aspira-demo.js)
 const demoCard = { key: "", S: null, cv: null, c2: null, view: null, text: false, tid: null };
 function demoBox(t, pv) {
   return '<div class="asp-demo' + (demoCard.text ? " is-text" : "") + '"><canvas class="asp-demo-cv" role="img" aria-label="' + TOWERS[t.kind].name + ' attacking practice targets"></canvas>' +

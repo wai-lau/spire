@@ -14,6 +14,7 @@ const DEMO_DT = 1 / 60, DEMO_VOL = 0.35; // VOL: the scene's sounds x this
 let demoHeld = null;
 function demoIn(S) {
   if (demoHeld) throw new Error("demo scene: nested demoIn");
+  if (S.lanes) { S.pi0 = PATHS.length; PATHS.push(...S.lanes); } // (a walker scene's own two lanes: on PATHS only while it runs)
   demoHeld = { G, fx, dmgLive, dmgHold, hitFrom, coins, grvAll, carObs, sparkN, grvLastHit, bannerText, bannerT, bannerCol, shakeUntil, muted, sfxScale, fxBroken: fxGl.broken };
   G = S.G; fx = S.fx; dmgLive = S.dmgLive; dmgHold = S.dmgHold; hitFrom = S.hitFrom; coins = S.coins; grvAll = S.grvAll; carObs = S.carObs;
   sparkN = S.sparkN; grvLastHit = S.grvLastHit; bannerText = S.bannerText; bannerT = S.bannerT; bannerCol = S.bannerCol; shakeUntil = S.shakeUntil;
@@ -26,6 +27,7 @@ function demoOut(S) {
   G = H.G; fx = H.fx; dmgLive = H.dmgLive; dmgHold = H.dmgHold; hitFrom = H.hitFrom; coins = H.coins; grvAll = H.grvAll; carObs = H.carObs;
   sparkN = H.sparkN; grvLastHit = H.grvLastHit; bannerText = H.bannerText; bannerT = H.bannerT; bannerCol = H.bannerCol; shakeUntil = H.shakeUntil;
   muted = H.muted; sfxScale = H.sfxScale; fxGl.broken = H.fxBroken; demoHeld = null;
+  if (S.lanes) PATHS.length = S.pi0;
 }
 const demoRun = (S, fn) => { demoIn(S); try { return fn(); } finally { demoOut(S); } };
 // a scene: tower `kind` with `skills` on slot `cell`, and its enemies (the layouts: aspira-demo-layouts.js), each either
@@ -37,12 +39,14 @@ const demoRun = (S, fn) => { demoIn(S); try { return fn(); } finally { demoOut(S
 const DEMO_REARM = 4;
 function demoScene(kind, skills, cell, list) {
   const S = { G: freshG(), fx: [], dmgLive: [], dmgHold: null, hitFrom: null, coins: [], grvAll: [], carObs: [], sparkN: 0, grvLastHit: 0, bannerText: "", bannerT: 0, bannerCol: "orange", shakeUntil: 0, t: 0, rearm: DEMO_REARM };
+  if (list.lanes) S.lanes = list.lanes;
   demoRun(S, () => {
     G.started = true; G.wave = 1; G.nextIn = Infinity; G.money = 0; G.waveIn = { 30: 1 }; // (in reach: no off-screen x3)
     const c = CELLS[cell], t = { id: G.id++, kind, cell, x: c.x, y: c.y, lvl: 1, cd: 0, mode: DEFAULT_MODE[kind], spent: 0 };
     if (hasSkills(t)) { t.skills = { ...skills }; t.lvl = 1 + towerLevel(t); }
     G.towers.push(t);
-    for (const d of list) {
+    for (let d of list) {
+      if (d.lane != null) d = { ...d, pi: S.pi0 + d.lane, s0: 0, s1: S.lanes[d.lane].len };
       const walk = d.s1 != null, near = walk ? null : demoNearLane(d.x, d.y);
       const pi = walk ? d.pi : near.pi, s = walk ? d.s0 + (d.s1 - d.s0) * (d.at || 0) : near.s;
       spawnEnemy(d.type, 30, pi, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(pi, s, 0);
@@ -81,14 +85,16 @@ function demoFrame(S, c2d, view, draw) {
 // camera - the game's tilt, a FLAT floor (no funnel) and a long lens, so the box reads like the board, only further off. The real 3D draws
 // then work as they are: the tower's prism with its top (warpPrism, drawTower), the dice (warpSolid), the shields' floor lines, the pop-up
 // numbers; the floor's own effects (beams, tethers, pools, voids) go down under ONE frame at the scene's middle - the long lens keeps the
-// floor's perspective under a pixel across the box. A view for a w x h px canvas, fitting the tower and its dummies with `pad` world units round them
+// floor's perspective under a pixel across the box.
 const DEMO_LENS = 24; // the lens: focal length x the canvas's size (a long one: next to no perspective)
-function demoView3d(S, w, h, pad = 60) {
-  const pts = [...S.G.towers, ...S.G.enemies], x0 = Math.min(...pts.map(o => o.x)) - pad, x1 = Math.max(...pts.map(o => o.x)) + pad;
-  const y0 = Math.min(...pts.map(o => o.y)) - pad, y1 = Math.max(...pts.map(o => o.y)) + pad, tilt = warpTilt(), c = Math.cos(tilt), s = Math.sin(tilt);
-  const k = Math.min(w / (x1 - x0), h / ((y1 - y0) * c + 90 * s)), mx = (x0 + x1) / 2, my = (y0 + y1) / 2; // (90: room for the prism standing up)
-  const ox = w / 2 - mx * k, oy = h / 2 - CY * k - c * (my - CY) * k + 20 * s * k * 0.5, f = DEMO_LENS * Math.max(w, h);
-  S.mid = [mx, my];
+// CENTRED ON THE TOWER (owner, 2026-11-03: "the tower needs to be more centered, the area occluded by the top and bottom of the area should be
+// the same"): the tower's floor point at the box's middle, the scale fitting its range ellipse (2 r cos(tilt) tall) in the box's height with
+// DEMO_FIT to spare - so the ring sits with equal room above and below at every tier; the box's width (DEMO_BOX_AR) is the walkers' run
+const DEMO_FIT = 1.12, DEMO_BOX_AR = 372 / 180;
+function demoView3d(S, w, h) {
+  const t = S.G.towers[0], r = demoRun(S, () => towerStats(t).range) || 120, tilt = warpTilt(), c = Math.cos(tilt), s = Math.sin(tilt);
+  const k = h / (2 * r * c * DEMO_FIT), ox = w / 2 - t.x * k, oy = h / 2 - CY * k - c * (t.y - CY) * k, f = DEMO_LENS * Math.max(w, h);
+  S.mid = [t.x, t.y];
   return { k, ox, oy, p: { core: [ox + CX * k, oy + CY * k], D: 0, L: Infinity, T: Infinity, hc: 1, e: 1, P: 1, c, s, f, k, z: 1, oy: 0 } };
 }
 function demoDraw3d(S) {
