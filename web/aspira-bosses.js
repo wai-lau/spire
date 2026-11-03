@@ -1,7 +1,7 @@
 // /aspira — the TEN BOSSES (owner, 2026-10-02): every 10th wave is a boss from
 // the Major Arcana (the Fool and the Tower left out). Each keeps the boss
-// rules - it comes alone, holds the wave timer, ends the game if it gets
-// through - and adds its own trick:
+// rules - it comes alone, holds the wave timer, costs its HP% left in lives if it
+// gets through (bossLeakLives, below; ended the game until 2026-11-03) - and adds its own trick:
 //   10 Star        none: the plain boss that teaches the rules
 //   20 Empress     sheds EMPRESS_BROOD swarmers each time it loses a fifth of its HP (owner: 10x, then x0.75 -> 30; fitted -> 12)
 //   30 Strength    no slow or freeze touches it
@@ -9,7 +9,7 @@
 //   50 Lovers      a PAIR; when one dies the other heals to full and runs LOVERS_SPD x faster
 //   60 Temperance  regenerates TEMPERANCE_REGEN of its HP a second (owner: tripled to 6%, and x5 HP)
 //   70 Devil       comes as SIX (DEVIL_COPIES), each a full boss on its own copy of the
-//                  lane - any one that gets through ends the game (owner; replaced the Moon)
+//                  lane, two a lane - each one through costs a sixth of its HP% in lives (owner; replaced the Moon)
 //   80 Justice     no single hit takes more than JUSTICE_CAP of its HP
 //   90 Judgement   rises once at JUDGEMENT_REVIVE of its HP
 //  100 Death       a juiced-up Star (owner): no tricks, the most HP but the Chariot
@@ -34,7 +34,7 @@ const ARCANA = [
 // near the core as the four waves around it (owner: "just a little closer"),
 // on closest approach, against every open slot filled. Was star 4, strength 2,
 // lovers 2, temperance 5, justice 1.5, judgement 1.5, death 3. Death's fit
-// (1.8) sits on the edge of leaking - a boss leak ends the game - so 1.6.
+// (1.8) sits on the edge of leaking - a boss leak then ended the game - so 1.6.
 // REFIT 2026-10-07 (bossbal.mjs tune, 2 seeds, after the free core, the chart-axis
 // refit and the fast refit): Chariot 40 and Temperance 60 breached the reference
 // team, Lovers 50 got to 47 of the core (target 168). Was star 3.4, empress 2,
