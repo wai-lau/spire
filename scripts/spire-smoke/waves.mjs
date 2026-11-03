@@ -201,13 +201,14 @@ check("a boss in the threat zone shows its HP left, 0-100, over itself; one furt
   if (said.includes("30")) return "the far boss (30) shows a number";
 });
 
-check("a boss's ETA to the core matches when it gets there, in reach (1x) or not (OFF_SCREEN_SPEED) (2026-11-03: a Devil trailer read 3x too far off)", () => {
+check("a boss's ETA to the core matches when it gets there, in reach (1x), not (OFF_SCREEN_SPEED), or reached mid-way, with the core ease (2026-11-03)", () => {
   const out = run(`(() => { const bad = [], B0 = BAR_HOLD; BAR_HOLD = false;
-    try { for (const reach of [false, true]) {
-      G = newGame(); G.money = 0; G.lives = 999; G.started = true; G.nextIn = 1e9; G.wave = 84; if (reach) G.waveIn = { 84: 1 };
-      spawnEnemy("bonus", 84, 0, 0); const e = G.enemies[0]; e.seen = true; e.s = PATHS[0].len - effSpeed(e) * waveClock(e.n) * 6;
-      const eta = etaToCore(e); let t = 0; while (G.enemies.includes(e) && !e.gone && t < 30) { step(1 / 60); t += 1 / 60; }
-      if (!(Math.abs(t - eta) <= 0.3)) bad.push((reach ? "in reach" : "out of reach") + ": ETA " + eta.toFixed(2) + ", came " + t.toFixed(2));
+    try { for (const reach of [false, true, "flip"]) { // flip: out of reach, into reach after 1 s - the core ease starts there (7.2.2), its ETA read in the zone
+      G = newGame(); G.money = 0; G.lives = 999; G.started = true; G.nextIn = 1e9; G.wave = 84; if (reach === true) G.waveIn = { 84: 1 };
+      spawnEnemy("bonus", 84, 0, 0); const e = G.enemies[0]; e.seen = true; e.s = PATHS[0].len - effSpeed(e) * (reach === "flip" ? 10 : waveClock(e.n) * 6);
+      let eta = reach === "flip" ? null : etaToCore(e), at = 0, t = 0;
+      while (G.enemies.includes(e) && !e.gone && t < 30) { if (reach === "flip" && t >= 1) (G.waveIn ||= {})[84] = 1; if (eta === null && t >= 1 && etaToCore(e) <= THREAT_FROM) { eta = etaToCore(e); at = t; } step(1 / 60); t += 1 / 60; }
+      if (!(Math.abs(t - at - eta) <= 0.3)) bad.push((reach === "flip" ? "into reach mid-way" : reach ? "in reach" : "out of reach") + ": ETA " + (eta ?? NaN).toFixed(2) + ", came " + (t - at).toFixed(2));
     } } finally { BAR_HOLD = B0; }
     return bad.join("; "); })()`);
   return out;

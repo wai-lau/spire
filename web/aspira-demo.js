@@ -66,7 +66,7 @@ function demoFrame(S, c2d, view, draw) {
       e.dead = false; e.gone = false; if (!G.enemies.includes(e)) G.enemies.push(e); if (!(e.hp >= e.max * DEMO_REFILL)) e.hp = e.max;
       if (h.walk) {
         T.slow = Math.max(T.slow, e.stunT > 0 ? 1 : e.slowT > 0 ? e.slowF || 0 : 0); // (the share of its pace it lost: what effSpeed takes off)
-        if (e.s >= h.s1) { e.s = h.s0; const p = pathAt(e.pi, e.s, 0); e.x = p.x; e.y = p.y; }
+        if (e.s >= h.s1) { e.s = h.s0; e.ease0 = undefined; const p = pathAt(e.pi, e.s, 0); e.x = p.x; e.y = p.y; } // (each lap eases from its start again: coreEase, aspira-step.js)
       } else { e.s = h.s; e.x = h.x; e.y = h.y; }
     }
     if ((S.rearm -= DEMO_DT) <= 0) { S.rearm = DEMO_REARM; for (const e of G.enemies) if (e.demo) { e.armor = e.demo.armor; e.shield = e.demo.shield; } }
