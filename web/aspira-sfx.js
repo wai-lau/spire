@@ -150,9 +150,9 @@ const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08, thud: 0
 // folder, index or file: that sound stays synthesised.
 const SAMPLE_DIR = "/aspira-sfx/", SAMPLES = {}; // guest-tier route (routes_aspira.py)
 let sampleMap = null, sampleGain = 0.5;
-// a sample index.json written before the 2026-10-06 id rename names sounds by the OLD ids
+// a sample index.json written before an id rename (2026-10-06; car -> crr 2026-10-29) names sounds by the OLD ids
 // (chain / slower / reaper / acid, build.reaper, powerfortify ...): read them as the new ones
-const LEGACY_SFX = {"chain": "arc", "slower": "frz", "reaper": "sol", "acid": "acd", "powerfortify": "powerrelay", "powerempower": "powerrelay", "powerovercharge": "powerrelay", "powertime": "powertemporal"};
+const LEGACY_SFX = {"chain": "arc", "slower": "frz", "reaper": "sol", "acid": "acd", "powerfortify": "powerrelay", "powerempower": "powerrelay", "powerovercharge": "powerrelay", "powertime": "powertemporal", "car": "crr" /* the carrier's id since 2026-10-29: its launch, build and upgrade samples (car, build.car, up.car) played the synth or the generic sound till 2026-11-03 */};
 const sfxKey = k => k.split(".").map(p => LEGACY_SFX[p] || p).join(".");
 const migrateSfx = m => Object.fromEntries(Object.entries(m).map(([k, v]) => [sfxKey(k), v]));
 fetch(SAMPLE_DIR + "index.json").then(r => (r.ok ? r.json() : null)).then(m => {
