@@ -110,7 +110,7 @@ KINDS.forEach((k, i) => {
 // AUTO-WAIT (owner, 2026-10-11..19: a checkbox; the GAME dropped to an eighth of its speed near the core) is GONE, and the per-enemy wait
 // that briefly replaced it too (owner, 2026-10-22): the lanes' CORE TWIST (aspira-defs.js) gives the same time. Here: the threat ring's line
 const AUTO_WAIT3_S = 1; // the threat ring's line (aspira-threat.js)
-const etaToCore = e => { const v = effSpeed(e) * waveClock(e.n); return v > 0 ? (PATHS[e.pi].len - e.s) / v + (typeof barHold === "function" && barHold(e) ? Math.max(0, barHoldT() - barInT()) : 0) : Infinity; }; // + a boss's wait for its HP bar (barHold, aspira-bossbar.js) // x its wave's clock (OFF_SCREEN_SPEED till a tower reaches the wave - 2026-11-03: a Devil trailer out of reach read 3x too far off)
+const etaToCore = e => { const v = effSpeed(e); return v > 0 ? coreEaseTime(e, v) /* the core ease, aspira-step.js */ + (typeof barHold === "function" && barHold(e) ? Math.max(0, barHoldT() - barInT()) : 0) : Infinity; }; // + a boss's wait for its HP bar (barHold, aspira-bossbar.js) // x its wave's clock (OFF_SCREEN_SPEED till a tower reaches the wave - 2026-11-03: a Devil trailer out of reach read 3x too far off)
 (function ascRow() {
   ascBoxes(); // auto-move + free builds, under the title (aspira-ascend.js)
   updateQuality(); /* the board's 3D layers show (aspira-quality.js) */
