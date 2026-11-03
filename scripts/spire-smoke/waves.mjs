@@ -186,3 +186,17 @@ check("landscape: a tower on an open slot meets wave 1 (slots and lane picks agr
   if (!r.wide) return "did not boot landscape";
   if (!(r.dealt > 0 || r.near <= r.range)) return "no enemy came within range (nearest " + r.near + ", range " + r.range + ")";
 });
+
+check("a boss in the threat zone shows its HP left, 0-100, over itself; one further out shows nothing (owner, 2026-11-03)", () => {
+  const env = boot(), r = env.run;
+  r(`G = newGame(); G.money = 1e9; G.started = true; G.nextIn = 1e9; spawnEnemy("bonus", 12, 0, 0); spawnEnemy("bonus", 12, 1, 0);
+     { const [a, b] = G.enemies; a.arcana = b.arcana = "star"; a.hp = a.max * 0.546; b.hp = b.max * 0.3;
+       const v = effSpeed(a); a.s = PATHS[0].len - v * 2; const p = pathAt(0, a.s, 0); a.x = p.x; a.y = p.y; a.seen = true;
+       b.s = entryS(1) + 5; const q = pathAt(1, b.s, 0); b.x = q.x; b.y = q.y; b.seen = true;}
+     window.__said = []; { const t0 = text; text = (s, ...a) => { window.__said.push(String(s)); return t0(s, ...a); }; window.__t0 = t0; }`);
+  for (let i = 0; i < 3; i++) env.dom.tick(1000 / 60);
+  const said = r("const s = window.__said; text = window.__t0; s"), eta = r("[etaToCore(G.enemies[0]), etaToCore(G.enemies[1])]");
+  if (!(eta[0] <= 4 && eta[1] > 4)) return "rig: etas " + eta.map(x => x.toFixed(1));
+  if (!said.includes("55")) return "no 55 over the near boss (said: " + said.slice(0, 12).join(" ") + ")";
+  if (said.includes("30")) return "the far boss (30) shows a number";
+});

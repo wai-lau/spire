@@ -72,3 +72,16 @@ function drawThreat() {
   }
   ctx.restore();
 }
+// A BOSS'S HEALTH OVER IT IN THE THREAT ZONE (owner, 2026-11-03: "once a boss enters the threat zone, start showing the hp% without the % on top
+// of the boss ... numbers on the dice still show out of 100"): with a boss at the core costing its HP% left in lives (bossLeakLives,
+// aspira-bosses.js), every boss body within THREAT_FROM s of the core - each Lover and each Devil copy its own - shows ceil(HP% left), 0..100,
+// above it: white, outlined, an atlas stamp (text -> textSprite), facing the camera, the board's plain scale. No THREAT_N cap: a boss is
+// never one of many
+const BOSS_HP_PX = 26, BOSS_HP_UP = 12; // world units: its size; how far above the body's top
+function drawBossHp(pp) {
+  for (const e of G.enemies) {
+    if (e.dead || !ENEMIES[e.type].star || !(etaToCore(e) <= THREAT_FROM)) continue;
+    const n = Math.max(0, Math.ceil(Math.max(0, e.hp) / (e.max || 1) * 100 - 1e-9)), y = e.y - ENEMIES[e.type].size * (e.sizeMul || 1) - BOSS_HP_UP;
+    pp(e.x, y, () => text(String(n), e.x, y, BOSS_HP_PX, "white", true, true));
+  }
+}
