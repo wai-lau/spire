@@ -1134,7 +1134,7 @@ Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alo
 - The curve: lowering `lo` weakened every level, not only tier 0. The curve is back as before (`dmg` [88.2] ARC, [1.58473, 1.8] CRR) and a `dmg0` factor scales the tier-0 hit alone (ARC 1/70.6, CRR 1/4.6: both 30). Owner picked option 1: the hit jumps back to the curve at the first purchase.
 - Both together: 103 of 200, inside the +-10 noise of 112.
 
-### 12.t The 7.1 pass (2026-11-01 .. 11-02; 012f378 .. 1d1d29b)
+### 12.t The 7.1 pass (2026-11-01 .. 11-03; 012f378 .. a668088)
 Owner, 2026-10-31 / 11-01: "Nothing should ever be above like 800%", "no level damage steps above 2x", "Right now ARC is so insanely steep
 it doesnt make sense".
 - 7.1.0 (`012f378`): ARC's damage on its own geometric curve, `geo` [0.73912, 1.9]. Hit by level 0/1/2/3/9/13: 18/34/64/122/5724/74597
@@ -1181,3 +1181,21 @@ it doesnt make sense".
   152 / 6.9 Mpx, pixel diff 0. The in-frame path shows a 677 px texture mismatch on both (open).
 - 7.1.25 (`1d1d29b`): the entity layer pools its per-die records. E1 at 135 enemies (wave 60), a frame: 443 die fills + 263 strokes,
   75 tracer gradients + fills, 42 shield-line strokes, ~6k path points.
+- 7.1.26 (`34f6820`) / 7.1.27 (`0d8118d`): docs; CRR comment rot (no primes, one speed, a 2.36 s orbit loop).
+- 7.1.28 (`d7e585a`): CRR trails shorten past 17 interceptors out (`CRR_TRAIL_REF` 17, `CRR_TRAIL_MIN` 20; owner: "No to all except
+  smaller CRR trails" - stepped tracer fades and flat far dice REJECTED). drawCar at 3 x 34: 2.83 -> 2.06 ms, p95 6 -> 4.
+- 7.1.29 (`063f079`): CRR's samples - the crr rename (10-29) left index.json keyed car / build.car / up.car; `LEGACY_SFX` car -> crr.
+- 7.1.30 (`8d7f0bb`, Balance): a boss at the core costs its HP% left in lives (Lover /2, Devil copy /6, rounded up; `bossLeakLives`).
+- 7.1.31 (`9771962`): the demo scene's foundation - `freshG()` split from `newGame()`, the private game, the swap (`demoIn`/`demoOut`).
+- 7.1.32 (`82f729d`): a boss in the threat zone (`THREAT_FROM` 4 s) shows ceil(HP%) over each body (`drawBossHp`).
+- 7.1.33 / 7.1.34 (`041ed36` / `2f53959`, Balance): the Devil's two on a lane - `DEVIL_TRAIL` 540 u; the second waits out the first's
+  HP-bar hold (they spawned on one spot: three visible of six). In reach the pair arrives ~5.2 s apart (540 / 118.9 u/s + the hold);
+  the "~1.5 s" first quoted was the off-screen x3 clock (`OFF_SCREEN_SPEED`) of a no-tower check.
+- 7.1.35 (`1a03243`): the demo scene in 3D - its own camera (the game's tilt, a flat floor, `DEMO_LENS` 24).
+- 7.1.36 (`856292f`): `etaToCore` x `waveClock` + the HP-bar hold left (a boss out of reach read 3x too far off, a held one too near).
+- 7.1.37 (`b10195e`): the demo on the card - the layout registry (a layout per tower tier 0 and per axis), walkers for slows, the "i";
+  smoke gates: coverage, behaviour (112 scenes, every tier), isolation, the card. Dummies at `DEMO_HP_K` 50 x wave-30 HP (at 1e15
+  CRR's `carTarget` sent the whole wing at one; at 1x a killing hit stripped no armor). The fast walker loses more pace, but near the caps
+  little more: one tower's slow tops out at slowShape(TOWER_SLOW_MAX, fastSlowCap()) = 0.73 off a fast enemy (FRZ 0.73 vs 0.53, GRV 0.73
+  vs 0.70, CRR 0.74 vs 0.69); SOL Scorch the other way (0.12 vs 0.47: a fast walker crosses the beam in fewer ticks).
+- 7.1.38 (`a668088`): the held dummies `DEMO_NUM_GAP` 1.6 x the biggest damage number apart (~48 u; were 21-34 u).
