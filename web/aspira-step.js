@@ -66,11 +66,11 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       if (e.dead) continue; // a ghost just fades out at the core
       e.dead = true;
       const before = G.lives;
-      G.lives -= ENEMIES[e.type].leak || 1;
+      G.lives -= ENEMIES[e.type].star ? bossLeakLives(e) : ENEMIES[e.type].leak || 1; // a boss: its HP% left (bossLeakLives, aspira-bosses.js)
       sfx("leak"); shakeScreen(); livesLost(); if (typeof threatBounce === "function") threatBounce(e); // (threatBounce: its threat ring bounces out, aspira-ui.js) "X lives left" where the interest pop-up goes (aspira-waves.js)
       ring(e.x, e.y, 40, "pink", 0.17);
-      // a BOSS that gets through ends the game outright (owner, 2026-10-02)
-      if (ENEMIES[e.type].star) { G.lives = 0; G.breachBy = e.arcana; } // the end title names the boss (BOSS_BREACH)
+      // a boss that gets through ends the game only when its lives run out (owner, 2026-11-03; was outright, 2026-10-02)
+      if (ENEMIES[e.type].star && G.lives <= 0) G.breachBy = e.arcana; // the end title names the boss that ended it (BOSS_BREACH)
       const lw = e.wave || G.wave; // lives lost per wave it CAME from (owner), for the end screen
       (G.leaks ||= {})[lw] = (G.leaks[lw] || 0) + before - Math.max(0, G.lives);
       if (G.lives <= 0) { G.lives = 0; gameOver(); return; }

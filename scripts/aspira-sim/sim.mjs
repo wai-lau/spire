@@ -318,7 +318,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     }
     S.lastWave = g.G.wave; S.waveNear = Infinity;
   };
-  const CORE_XY = { x: g.run("CX"), y: g.run("CY") }, ENEMY_LEAK = Object.fromEntries(Object.entries(g.run("ENEMIES")).map(([k, v]) => [k, v.leak ?? 1]));
+  const CORE_XY = { x: g.run("CX"), y: g.run("CY") }, BOSS_DIV = g.run("BOSS_LEAK_DIV"), STAR_T = Object.fromEntries(Object.entries(g.run("ENEMIES")).map(([k, v]) => [k, !!v.star])), ENEMY_LEAK = Object.fromEntries(Object.entries(g.run("ENEMIES")).map(([k, v]) => [k, v.leak ?? 1]));
   // one record per wave an enemy came from: { types: {type: n}, lost, near } (S.waveStats, in the result)
   const waveStat = e => { const w = (S.waveStats ||= {})[e.wave] ||= { types: {}, lost: 0, near: Infinity, boss: false }; if (!e.__seen) { e.__seen = 1; w.types[e.type] = (w.types[e.type] || 0) + 1; if (e.type === "bonus" || e.bossKin) w.boss = true; } return w; };
   const tick = () => {
@@ -327,7 +327,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     g.step(dt); g.clearFx(); S.time += dt;
     for (const e of alive) if (e.dead && e.gone && e.hp > 0) {
       S.leaks[e.type] = (S.leaks[e.type] || 0) + 1; S.leakWave[g.G.wave] = (S.leakWave[g.G.wave] || 0) + 1;
-      waveStat(e).lost += ENEMY_LEAK[e.type] ?? 1; // the lives this wave's enemies cost (a boss 10)
+      waveStat(e).lost += STAR_T[e.type] ? Math.max(1, Math.ceil(Math.max(0, e.hp) / (e.max || 1) * 100 / (BOSS_DIV[e.arcana] || 1) - 1e-9)) : ENEMY_LEAK[e.type] ?? 1; // the lives this wave's enemies cost (a boss: its HP% left, bossLeakLives)
     }
     // per ORIGIN wave (each enemy knows its own, e.wave): its types and how close it came (waverep.mjs)
     if (Math.round(S.time / dt) % 10 === 0) for (const e of alive) if (!e.dead) { const w = waveStat(e); w.near = Math.min(w.near, Math.hypot(e.x - CORE_XY.x, e.y - CORE_XY.y)); }

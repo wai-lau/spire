@@ -345,3 +345,9 @@ check("no card sentence names a number over 800% (owner, 2026-10-31: \"Nothing s
 });
 
 
+check("a boss at the core costs its HP% left in lives, a Lover half, a Devil copy a sixth, rounded up, and the game goes on (owner, 2026-11-03: \"lets make bosses make you lose lives equal to the percentage of life left on the boss instead of rhe losing the game instantly\")", () => {
+  const r = run(`(() => { G = newGame(); G.lives = 30; const leak = (arcana, hp) => { const e = { type: "bonus", arcana, hp, max: 100, x: CX, y: CY, pi: 0, s: PATHS[0].len + 1, spd: 0, ang: 0 };
+    G.enemies.push(e); const before = G.lives; stepEnemies(0.001); return before - G.lives; };
+    const a = leak("star", 12), b = leak("lovers", 9), c = leak("devil", 0.5), over = G.over, by = G.breachBy, d = leak("death", 40); return [a, b, c, over, by || null, G.over, G.breachBy]; })()`);
+  if (JSON.stringify(r) !== JSON.stringify([12, 5, 1, false, null, true, "death"])) return "lives lost / over / breachBy, then a 40% Death on 12 lives " + JSON.stringify(r) + " (expected [12,5,1,false,null,true,\"death\"])";
+});

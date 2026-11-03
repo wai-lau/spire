@@ -72,6 +72,12 @@ const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, DEVIL_LANES = 3, JUSTICE_CAP = 
 // a boss's HP scaled with its lane's length while it rode a different lane each boss wave; it has ONE
 // spiral now (owner, 2026-10-08), so the old average factor (1.107 over the boss waves) stands as a constant
 const BOSS_LANE_HP = 1.107;
+// A BOSS AT THE CORE costs lives = the share of its HP still left, out of 100, rounded up; a Lover costs half that, a Devil copy a
+// sixth (owner, 2026-11-03: "lets make bosses make you lose lives equal to the percentage of life left on the boss instead of rhe
+// losing the game instantly. ... (Lovers gets /2, devil gets /6 lives lost rounded up, but numbers on the dice still show put of
+// 100)"). Was: a boss that got through ended the game outright (owner, 2026-10-02). Each body counts its own hp / max.
+const BOSS_LEAK_DIV = { lovers: 2, devil: 6 };
+const bossLeakLives = e => Math.max(1, Math.ceil(Math.max(0, e.hp) / (e.max || 1) * 100 / (BOSS_LEAK_DIV[e.arcana] || 1) - 1e-9));
 // the game-over title when a BOSS gets through (owner: "overwhelmed by strength")
 const BOSS_BREACH = {
   star: "eclipsed by the star", empress: "smothered by the empress", strength: "overwhelmed by strength",
