@@ -35,7 +35,7 @@ const DESCRIBE = {
     const fl = ARC_AMP_FALL[c], d = Math.round(Math.abs(fl - 1) * 100), j = ARC_VOLT_JUMPS[v], times = TIMES[j] || " " + NUM_WORD[j] + " times";
     const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
     return "A bolt of lightning that " + (v >= ARC_FORK_FROM ? "forks once and " : "") + "chains" + times + " for " + pc + "." +
-      (z ? (ARC_RES_SLOW[z] ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " : " Hits break ") + Math.round(ARC_RES_STRIP[z] * 100) + "% of armor." : "") + /* no slow since the ARC brief (2026-11-01) */
+      (z ? (ARC_RES_SLOW[z] ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " : " Hits break ") + Math.round(ARC_RES_STRIP[z] * 100) + "% of the armor left." : "") + /* no slow since the ARC brief (2026-11-01) */
       (ARC_RES_DMG[z] > 1 ? " Its bolts hit ×" + +ARC_RES_DMG[z].toFixed(2) + " harder." : "") +
       (typeof ARC_SHOCK_AMP !== "undefined" && ARC_SHOCK_AMP[z] > 0 ? " Shocked enemies take " + Math.round(ARC_SHOCK_AMP[z] * 100) + "% more damage from ARC." : ""); /* Shock option 1 (Wai, 2026-11-01): its mark, e.shockT */ /* (and its hit factor, Wai approved 2026-11-01) */
   },
@@ -59,7 +59,7 @@ const DESCRIBE = {
     // (owner, 2026-10-26): "A solar ray refracts within a light prism..." / Diffraction "A solar ray diffracts into two rays on every hit..."
     return "A solar ray " + (!r ? "strikes the first enemy in its path." /* tier 0: the bare beam - no prism, no split (owner, 2026-10-28) */ : (k > 1 ? "diffracts into " + NUM_WORD[k] + " rays on every hit within a light prism" : k ? "refracts within a light prism" : "strikes the first enemy in its path, then refracts within a light prism") +
       (p >= 100 ? " without losing intensity." : ", losing " + (100 - p) + "% intensity" + (k > 1 ? "." : k ? " every hit." : " every bounce."))) + /* no split (Diffraction I, 2026-10-31): one enemy struck, the rest of the line only bounces */
-      (br ? " Every hit strips " + pc(br) + " of armor." : "") +
+      (br ? " Every hit strips " + pc(br) + " of the armor left." : "") +
       (SOL_PAR_N[b] ? " " + cap(NUM_WORD[SOL_PAR_N[b]]) + " parallel ray" + (SOL_PAR_N[b] > 1 ? "s pass" : " passes") + " through every enemy in line for " + pc(SOL_PAR_K) + "td." : "") + /* Breach's parallel beams (owner, 2026-10-28) */
       (sc ? " The light prism and hits scorch the enemy for " + perSec((typeof SOL_SCORCH_BY !== "undefined" ? SOL_SCORCH_BY[f] : SOL_SCORCH_TOTAL) / (sc * SOL_SCORCH_Q)) + " for " + secs(sc * SOL_SCORCH_Q) + ", each burn slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : ""); /* the slow: SOL_SCORCH_SLOW a stack (2026-10-31) */ /* stacking unsaid; the prism's stacks are the stat block's */
   },
@@ -70,7 +70,7 @@ const DESCRIBE = {
     const c = sk.contagion || 0, f = sk.spray || 0, k = sk.corrosion || 0, n = ACD_LINES[f], J = n > 1 ? "Jets" : "The jet", s = n > 1 ? "" : "s"; // tier 0: one ray, no pools (tier redesign 2026-10-24)
     const hits = TOWERS.acd.rate * curveAt("acd", 0).rate, pool = ACD_PUDDLE_CAP * ACD_POOL_HEAT, life = Math.min(POOL_MAX_S, (ACD_CONTAGION[c] || {}).life || 0); // 100% = a second of a jet, before its ramp
     return (n > 1 ? cap(NUM_WORD[n]) + " jets of acid each deal " : "A jet of acid deals ") + perSec(1 / tdU("acd")) + ", growing up to " + ACD_BASE_MAX + "× the longer " + (n > 1 ? "they stay" : "it stays") + " on target." /* a multiplier, not a share (Leader, 2026-11-01); the doubling time: the stat block's */ /* owner's words, 2026-10-26 */ + (f ? " Jets retain " + Math.round(ACD_FLOW_CARRY[f] * 100) + "% flow between enemies." : "") +
-      (k ? " " + (n > 1 ? "The jets dissolve" : "The jet dissolves") + " up to " + (st => pc(st.corrode))(descStats("acd", sk)) + " of armor a tick and " + (n > 1 ? "drop" : "drops") + " corrosive goo that strips " + pc(ACD_GOO_STRIP[k]) + " of armor and deals " + pc(ACD_GOO_DMG[k]) + "td." /* a full-ramp tick (2026-10-28 armor rework); the goo in shares (7.1.4; Leader's wording, 2026-11-01) */ : "") /* owner's words, 2026-10-26 */ +
+      (k ? " " + (n > 1 ? "The jets dissolve" : "The jet dissolves") + " up to " + (st => pc(st.corrode))(descStats("acd", sk)) + " of the armor left a tick and " + (n > 1 ? "drop" : "drops") + " corrosive goo that strips " + pc(ACD_GOO_STRIP[k]) + " of the armor left and deals " + pc(ACD_GOO_DMG[k]) + "td." /* a full-ramp tick (2026-10-28 armor rework); the goo in shares (7.1.4; Leader's wording, 2026-11-01) */ : "") /* owner's words, 2026-10-26 */ +
       (c ? " " + J + " leave" + s + " slimy acidic pools that " + (ACD_POOL_SLOW[c] ? "slow by " + Math.round(ACD_POOL_SLOW[c] * 100) + "% and " : "") + "burn for up to " + perSec(pool / tdU("acd")) + " for " + secs(life) + "." : ""); // (a pool burns at its tower's tick, x the jet's heat when it dropped - up to ACD_PUDDLE_CAP)
   },
   // CRR (owner, 2026-10-15): Hangar more interceptors; Tether a slowing, pulsing beam to what it fires at (Chain: on to one more enemy); Armament harder, faster,
@@ -84,9 +84,10 @@ const DESCRIBE = {
     return "Launches " + (CRR_HANGAR[h] > 1 ? CRR_HANGAR[h] + " available interceptors at a time that fly towards an enemy and fire " : "an available interceptor that flies towards an enemy and fires ") +
       vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " per sortie" +
       (l ? (tn === 1 ? ", the first one tethering its target" : CRR_HANGAR[h] > 1 ? " and tether their targets" : " and tethers its target") : "") +
-      ", then " + (a >= CAPSTONE_TIER ? (CRR_HANGAR[h] > 1 ? "burst" : "bursts") + " into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : (CRR_HANGAR[h] > 1 ? "fly" : "flies") + " home to reload.") + " Each bolt deals " + pc(1) + " damage." /* td = one bolt (2026-10-26); per bolt, never the sortie's total (2026-11-01: "Nothing should ever be above like 800%") */ +
+      ", then " + (a >= CAPSTONE_TIER ? (CRR_HANGAR[h] > 1 ? "burst" : "bursts") + " into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : (CRR_HANGAR[h] > 1 ? "fly home to reload what they used." : "flies home to reload what it used.")) /* PARTIAL RELOAD (aspira-crr.js carHome) */ +
+      (CRR_HANGAR[h] > 1 ? " Each" : " It") + " stays on its target until it dies or the ammo runs out." /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage and slows by " + pc(CRR_SLOW) + "." /* td = one bolt (2026-10-26); per bolt, never the sortie's total (2026-11-01: "Nothing should ever be above like 800%") */ +
       (h ? ((n => " " + n + (n > 1 ? " interceptors" : " interceptor") + " can be stored in orbit.")(Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]))) : "") +
-      (l ? " Tethered targets are slowed by " + pc(CRR_TETHER_SLOW[l]) + " and take " + pc(CRR_TETHER_AMP[l]) + " more damage per tether" + (l >= CAPSTONE_TIER ? "; tethers run on to one more enemy nearby." : ".") : "");
+      (l ? " Tethered targets are slowed by " + pc(CRR_TETHER_SLOW[l]) + " and take " + pc(CRR_TETHER_AMP[l]) + " more damage per tether" + (l >= CAPSTONE_TIER ? "; tethers run on to one more enemy nearby" : "") + " (shields block the slow)." : "");
   },
   // GRV (rework, owner 2026-10-25): tier 0 a tiny void a shot; Nova three novas before it, faster, stripping armor (Hypernova: the most);
   // Void a bigger void, pellets shed as it decays (Singularity: heavier); Gravity Well the aura - pull, slow - and the pellets' damage and

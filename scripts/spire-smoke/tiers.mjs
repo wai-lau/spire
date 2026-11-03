@@ -321,7 +321,7 @@ check("later: the card rows read no zero mechanic - ARC Jumps 2 at tier 0 (one c
 check("later: ACD's sentence says the jet, not Jets, when it sprays one", () => {
   const d = run(`describeTower("acd", { corrosion: 1, contagion: 1, flow: 0 })`);
   if (/Jets/.test(d)) return d;
-  if (!/The jet dissolves up to \d+% of armor/.test(d) || !/The jet leaves/.test(d)) return "no singular jet: " + d;
+  if (!/The jet dissolves up to \d+% of the armor left/.test(d) || !/The jet leaves/.test(d)) return "no singular jet: " + d;
 });
 check("later: towerLevel counts only the tower's own axes (a stray key in a save adds nothing)", () => {
   const n = run(`towerLevel({ kind: "arc", skills: { conductivity: 2, void: 3, junk: 9 } })`);
@@ -340,7 +340,7 @@ check("no card sentence names a number over 800% (owner, 2026-10-31: \"Nothing s
   if (r[0] !== "A bolt of lightning that chains twice for 20% less damage every chain.") return "tier 0: " + r[0];
   if (!/^A bolt of lightning that forks once and chains \w+ times for \d+% less damage every chain\.$/.test(r[1])) return "Voltage II: " + r[1];
   if (!/that chains twice for full damage every chain\.$/.test(r[2])) return "Conductivity II: " + r[2];
-  if (!/ Hits (slow by \d+% and )?break \d+% of armor\.( Shocked enemies take \d+% more damage from ARC\.)?$/.test(r[3])) return "Shock I: " + r[3]; // no slow since the ARC brief (Wai, 2026-11-01, the ARC brief: "ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm")
+  if (!/ Hits (slow by \d+% and )?break \d+% of the armor left\.( Shocked enemies take \d+% more damage from ARC\.)?$/.test(r[3])) return "Shock I: " + r[3]; // no slow since the ARC brief (Wai, 2026-11-01, the ARC brief: "ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm")
   if (!r[4].includes("slows enemies by") || !r[4].includes(" and deals " + r[5] + "%td a second")) return "FRZ tier 0: " + r[4];
 });
 
