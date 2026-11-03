@@ -52,6 +52,9 @@ are this repo's gitignored `data/aspira-sfx/`.
   points through `scripts/aspira-sim/stops.mjs`. ARCHITECTURE.md §4.2, §4.2b.
 - **Tests:** from exec-fn, `.venv/bin/pytest apps/spire/tests` (the shared
   fixtures live in exec-fn's root `conftest.py`).
+- **A mechanic change must keep its demo passing** (owner, 2026-11-03: "Add a mechanism to ensure demo scenes are always up to date"): the tower card's
+  scene (`aspira-demo*.js`) has a layout per tower tier 0 and per axis; the smoke (`demo.mjs`) fails on a missing or stale layout and on any layout
+  that stops showing what it declares. A new tower or axis ships with its layout. ARCHITECTURE.md §11 "demo".
 - **Dev scenes:** `/spire?dev=boss` rebuilds the boss scene on EVERY load (`web/aspira-dev.js`): a FRZ placed, the Star sent, its HP at 55%
   (`&hp=0.3`), paused - so a refresh is the same state on the latest code; the autosave's checkpoint is parked. Nothing without `?dev=`.
 - **Diagrams:** mermaid source in `docs/arch/*.mmd`; staging one makes exec-fn's
