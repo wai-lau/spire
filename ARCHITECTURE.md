@@ -473,7 +473,12 @@ Waves 12, 24 .. 120 (`ARCANA`, each with a haiku above the title): the boss plus
 a little shield, armor 0, a size a step bigger than the last. HP = the wave's bonus HP x
 `bossHpMul` (`BOSS_HP` x `BOSS_HP_K` x `BOSS_FAR`, Death x `BOSS_DEATH_K`) x the lane x `BOSS_HEFT` (ARCHAEOLOGY §12); the wave list
 shows that same number. **Balance runs one way** (owner, 2026-10-28): the bosses to the towers, the towers to the waves (waves not
-counting bosses). Death's window: the strongest trio needs at least 30 of its 39 points to beat it (`trioplan`).
+counting bosses). **The boss rule** (owner, 2026-11-03: "The answer to this is whatever makes the game more fun and engaging";
+replaces the old "strongest / median trio needs 30 of 39 points" windows, which `trioplan` could not measure): the bosses-on good
+model (`players3b.mjs`, 8 seeds) wins at least 15%, and no boss ends more than ~20% of the runs that reach it; a boss that leaks
+costs lives without ending the run in 10-30% of them is the target, reported by `bossrep.py`, not a gate. A boss at the core costs
+its HP% left in lives (a Lover half, a Devil copy a sixth, rounded up; owner, 2026-11-03), so with 18 lives a boss with more
+than ~18% left still ends it.
 
 | wave | boss | trick | escorts |
 |---|---|---|---|
