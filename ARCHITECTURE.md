@@ -724,7 +724,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `textcache`, `effects`, `enemies`, `lanes`, `camera`, `fling`, `fog` |
 | draw (3D) | `lanegl` (the GPU lanes' atlas and GLSL, before `warp` because the shader source splices `LANE_GLSL`), `warp`, `warp-prism`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
-| UI and tail | `chooser`, `wavelist`, `wavecard`, `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave` |
+| UI and tail | `chooser`, `wavelist`, `wavecard`, `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave`, `demo` (the card's private scene: the swap, the 3D camera), `demo-layouts` (the layout registry, `demoShows`), `demo-card` (the box, the i, `demoTick`) |
 
 
 | Piece | Where |
@@ -758,6 +758,7 @@ handler's guest prefixes, the router tier); `/spire` is in all three.
 | `tests/test_spire_board.py`, `test_spire_perflog.py` | stdlib units |
 | `tests/test_spire_sliders_browser.py` | WebKit, exec-fn's fixtures: the stepper rules and the card grids at 1280x800 and 430x932 |
 | `node scripts/spire-smoke/smoke.mjs` | every script the template loads, in order, in one node vm over a fake DOM (`dom.mjs`) whose canvas RECORDS calls; drives the real 3D frame loop over a stand-in WebGL (`fakeGl`) and checks things **draw** on every canvas: boot, 3D up, each kind built, a fought wave, the sky, towers keeping their colours, a capstone (a second refused), Temporal Drive, two-finger moves, a fling, lives left, game over / a loss past 10 / a win and the Ascendants, play again. exec-fn's pre-commit runs it when a game file is staged; a new browser global needs a `dom.mjs` stub |
+| `scripts/spire-smoke/demo.mjs` (in the smoke) | the card's demo scenes: coverage (a layout per tower tier 0 and per axis, none stale), behaviour (every layout x tier shows what it declares), isolation (the real game untouched), and the card (the scene runs while open, the i flips to the sentence, closing drops it) - §11 "demo" |
 
 ### 10.4 Simulator and balance tooling (`scripts/aspira-sim/`, README there)
 
@@ -797,6 +798,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | code | one global scope, ESLint `no-undef` off: a dropped `const` throws at run time; verify placement in a browser or the smoke after touching `placeTower`. A new top-level name must not collide with another file's (GRV's projectile grid is `projGrid` / `enemiesNear` because `aspira-acid.js` owns `enemyGrid`) |
 | code | UI-only code that logic reaches needs a `typeof X === "function"` guard; a new logic script goes in `sim.mjs` `FILES`; a browser global needs a `dom.mjs` stub |
 | code | every per-tier table has exactly 4 entries (written as the old 0 I II III) before `aspira-capstone.js` loads, 6 after (the capstone V pushed, tier I inserted by `tierMid`); tier 0 and tier I are then set by hand in `aspira-tier01.js`. A new table or axis needs a `CAPSTONE_NUM` entry and a `CAPSTONE_TIERS` name; a table whose every tier holds one value is a constant, not a table |
+| demo | **a mechanic change must keep its demo passing** (owner, 2026-11-03: "Add a mechanism to ensure demo scenes are always up to date"). The tower card's scene (`aspira-demo.js`, `-layouts.js`, `-card.js`) runs the game's real step and draw on a private game; its layouts place enemies in shares of the live range and declare what they show. Smoke (`demo.mjs`) fails on a tower or axis with no layout, a layout for one that is gone, any layout at any tier 0-V that stops showing what it declares (hits, many, strips, pops, slows, fast; seeded, 6 s a scene), and any leak into the real game. A new global that `step()` writes joins `demoIn`/`demoOut`'s swap |
 | code | `fixedRand(wave, salt)`, never `Math.random`, for anything shaping a wave (a changed salt changes the sequence for everyone and every sim seed) |
 | code | whole numbers: HP, armor, hits floored, a landed hit >= 1, fractions banked; a spawned enemy never has 0 HP |
 | code | `G` stays structured-cloneable: no functions, DOM nodes or closures (autosave) |

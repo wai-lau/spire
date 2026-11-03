@@ -6,7 +6,7 @@
 let AC = null, master = null, outGain = null, noiseBuf = null, voices = 0, muted = false;
 // volume slider (owner, 2026-10-02): 0..2, applied AFTER the limiter so it
 // really scales what you hear; the default 1 is twice the old loudness
-let volume = 1;
+let volume = 1, sfxScale = 1; // sfxScale: every new voice's gain x this (the card's demo scene plays the tower's real sounds quieter - aspira-demo.js)
 const VOL_BOOST = 2;
 try {
   muted = localStorage.getItem("aspira.mute") === "1";
@@ -63,7 +63,7 @@ function setVolume(v) {
 function envelope(node, t0, dur, vol) {
   const g = AC.createGain();
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008); // 8ms fade-in: no start click
+  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol * sfxScale), t0 + 0.008); // 8ms fade-in: no start click
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   node.connect(g).connect(master);
   voices++;
@@ -203,7 +203,7 @@ function playSample(name, at = 0) {
   const list = SAMPLES[name], n = playing[name] || 0;
   const src = AC.createBufferSource(), g = AC.createGain(), clip = list[Math.floor(Math.random() * list.length)];
   src.buffer = clip.buf;
-  g.gain.value = sampleGain * (clip.norm || 1) * gainFor(name) / (SOUND_MAX[name] ? 1 + n : 1);
+  g.gain.value = sfxScale * sampleGain * (clip.norm || 1) * gainFor(name) / (SOUND_MAX[name] ? 1 + n : 1);
   src.connect(g).connect(master);
   voices++; playing[name] = n + 1;
   src.onended = () => { voices--; playing[name]--; };

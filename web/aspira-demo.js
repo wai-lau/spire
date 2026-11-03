@@ -3,20 +3,21 @@
 // upgrade (include damage numbers)"). A PRIVATE GAME: one tower and its dummies in a G of their own, run by the game's REAL step and
 // drawn by the game's real draw code, so the scene can never show a mechanic the tower does not have.
 // THE SWAP: the game keeps its run state in a few globals (G, fx, the damage numbers, coins, GRV's and CRR's lists ...). Every scene
-// frame swaps the scene's own copies in, runs, and swaps the real ones back (demoIn / demoOut) - with the sound muted and the GPU
+// frame swaps the scene's own copies in, runs, and swaps the real ones back (demoIn / demoOut) - its sound quieter (or off) and the GPU
 // effect batch off - so the real game, paused under the card, is left exactly as it was (smoke: "demo scene leaves the real game alone").
 // A new global that step() writes must join DEMO_KEEP's swap, or it leaks between the two games.
 // THE DRAW IS PLUGGABLE (demoFrame's draw): the scene only lends it the canvas and a camera; the owner picked 3D (demoDraw3d, below).
-const DEMO_HP = 1e15; // a dummy's health: it never dies (no kill, no reward, no coin), and every hit still shows its number
-const DEMO_DT = 1 / 60;
+const DEMO_HP_K = 50, DEMO_REFILL = 0.15; // HP_K: a dummy's health x its wave-30 HP - rarely killed (a killing hit strips no armor), still finite for CRR; // a dummy back to full health under this share (a kill in the private game is revived the same frame); its own wave-30 HP, so a
+// tower that commits shots by HP (CRR's carTarget) spreads them as in a game
+const DEMO_DT = 1 / 60, DEMO_VOL = 0.35; // VOL: the scene's sounds x this
 // the real game's state, kept while the scene runs (one scene at a time)
 let demoHeld = null;
 function demoIn(S) {
   if (demoHeld) throw new Error("demo scene: nested demoIn");
-  demoHeld = { G, fx, dmgLive, dmgHold, hitFrom, coins, grvAll, carObs, sparkN, grvLastHit, bannerText, bannerT, bannerCol, shakeUntil, muted, fxBroken: fxGl.broken };
+  demoHeld = { G, fx, dmgLive, dmgHold, hitFrom, coins, grvAll, carObs, sparkN, grvLastHit, bannerText, bannerT, bannerCol, shakeUntil, muted, sfxScale, fxBroken: fxGl.broken };
   G = S.G; fx = S.fx; dmgLive = S.dmgLive; dmgHold = S.dmgHold; hitFrom = S.hitFrom; coins = S.coins; grvAll = S.grvAll; carObs = S.carObs;
   sparkN = S.sparkN; grvLastHit = S.grvLastHit; bannerText = S.bannerText; bannerT = S.bannerT; bannerCol = S.bannerCol; shakeUntil = S.shakeUntil;
-  muted = true; fxGl.broken = true; // (no sound; the 2D way for hits and rings - the GPU batch belongs to the real frame)
+  if (S.sound) sfxScale = DEMO_VOL; else muted = true; fxGl.broken = true; // (sound: the tower's own, quieter - owner, 2026-11-03: "Real sounds"; the 2D way for hits and rings - the GPU batch belongs to the real frame)
 }
 function demoOut(S) {
   const H = demoHeld; if (!H) return;
@@ -24,30 +25,51 @@ function demoOut(S) {
   S.sparkN = sparkN; S.grvLastHit = grvLastHit; S.bannerText = bannerText; S.bannerT = bannerT; S.bannerCol = bannerCol; S.shakeUntil = shakeUntil;
   G = H.G; fx = H.fx; dmgLive = H.dmgLive; dmgHold = H.dmgHold; hitFrom = H.hitFrom; coins = H.coins; grvAll = H.grvAll; carObs = H.carObs;
   sparkN = H.sparkN; grvLastHit = H.grvLastHit; bannerText = H.bannerText; bannerT = H.bannerT; bannerCol = H.bannerCol; shakeUntil = H.shakeUntil;
-  muted = H.muted; fxGl.broken = H.fxBroken; demoHeld = null;
+  muted = H.muted; sfxScale = H.sfxScale; fxGl.broken = H.fxBroken; demoHeld = null;
 }
 const demoRun = (S, fn) => { demoIn(S); try { return fn(); } finally { demoOut(S); } };
-// a scene: tower `kind` with `skills` on slot `cell`, and its dummies - [{ type, pi, s }] spots on the lanes (the layouts come later, one a tower)
-function demoScene(kind, skills, cell, dummies) {
-  const S = { G: freshG(), fx: [], dmgLive: [], dmgHold: null, hitFrom: null, coins: [], grvAll: [], carObs: [], sparkN: 0, grvLastHit: 0, bannerText: "", bannerT: 0, bannerCol: "orange", shakeUntil: 0, t: 0 };
+// a scene: tower `kind` with `skills` on slot `cell`, and its enemies (the layouts: aspira-demo-layouts.js), each either
+//   { type, x, y }            a DUMMY: held where it stands (on the lane point nearest, its tail drawn from there), never moves, or
+//   { type, pi, s0, s1, at }  a WALKER (owner, 2026-11-03: "show moving enemies that get slowed to represent slow"): walks lane `pi` from
+//                             s0 to s1 at its real pace - slows and all, the game's own movement - then starts over at s0 (`at`: its start, 0..1)
+// Every enemy never dies (back to full under DEMO_REFILL, a kill revived), and its armor and shields come back every DEMO_REARM s, so strips and pops
+// keep showing. S.tally keeps, per enemy, what the scene did to it - damage, the least armor and shield, the slowest pace - for the smoke
+const DEMO_REARM = 4;
+function demoScene(kind, skills, cell, list) {
+  const S = { G: freshG(), fx: [], dmgLive: [], dmgHold: null, hitFrom: null, coins: [], grvAll: [], carObs: [], sparkN: 0, grvLastHit: 0, bannerText: "", bannerT: 0, bannerCol: "orange", shakeUntil: 0, t: 0, rearm: DEMO_REARM };
   demoRun(S, () => {
-    G.started = true; G.wave = 1; G.nextIn = Infinity; G.money = 0;
+    G.started = true; G.wave = 1; G.nextIn = Infinity; G.money = 0; G.waveIn = { 30: 1 }; // (in reach: no off-screen x3)
     const c = CELLS[cell], t = { id: G.id++, kind, cell, x: c.x, y: c.y, lvl: 1, cd: 0, mode: DEFAULT_MODE[kind], spent: 0 };
     if (hasSkills(t)) { t.skills = { ...skills }; t.lvl = 1 + towerLevel(t); }
     G.towers.push(t);
-    for (const d of dummies) {
-      spawnEnemy(d.type, d.wave || 30, d.pi, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(d.pi, d.s, 0);
-      e.s = d.s; e.x = p.x; e.y = p.y; e.seen = true; e.hp = e.max = DEMO_HP; e.demo = { s: d.s, x: p.x, y: p.y, armor: e.armor || 0, shield: e.shield || 0 };
+    for (const d of list) {
+      const walk = d.s1 != null, near = walk ? null : demoNearLane(d.x, d.y);
+      const pi = walk ? d.pi : near.pi, s = walk ? d.s0 + (d.s1 - d.s0) * (d.at || 0) : near.s;
+      spawnEnemy(d.type, 30, pi, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(pi, s, 0);
+      e.s = s; e.x = walk ? p.x : d.x; e.y = walk ? p.y : d.y; e.seen = true; e.hp = e.max = e.max * DEMO_HP_K;
+      e.demo = { walk, s, x: e.x, y: e.y, s0: d.s0, s1: d.s1, armor: e.armor || 0, shield: e.shield || 0 };
+      e.tally = { dmg: 0, armor: e.armor || 0, shield: e.shield || 0, slow: 0 };
     }
   });
   return S;
 }
-// one scene frame: the real step, then the dummies held where they stand (never moved, never leaked); then `draw` (pluggable) onto `c2d`
-// under the scene's camera `view` ({ k, ox, oy }) - the real ctx and cam come back after
+function demoNearLane(x, y) { let best = { pi: 0, s: 0, d: Infinity }; PATHS.forEach((P, pi) => { for (let s = 0; s < P.len; s += 8) { const p = pathAt(pi, s, 0), d = Math.hypot(p.x - x, p.y - y); if (d < best.d) best = { pi, s, d }; } }); return best; }
+// one scene frame: the real step; dummies held, walkers looped, the tallies kept; then `draw` (pluggable) onto `c2d` under the scene's
+// camera `view` ({ k, ox, oy, p }) - the real ctx, cam and 3D camera come back after
 function demoFrame(S, c2d, view, draw) {
   demoRun(S, () => {
+    const before = G.enemies.map(e => [e, e.hp, e.s]);
     step(DEMO_DT); S.t += DEMO_DT;
-    for (const e of G.enemies) { const h = e.demo; if (!h) continue; e.s = h.s; e.x = h.x; e.y = h.y; e.dead = false; e.gone = false; if (e.hp < DEMO_HP * 0.15) e.hp = DEMO_HP; }
+    for (const [e, hp, s0] of before) {
+      const h = e.demo; if (!h) continue; const T = e.tally;
+      T.dmg += Math.max(0, hp - Math.max(0, e.hp)); T.armor = Math.min(T.armor, e.armor || 0); T.shield = Math.min(T.shield, e.shield || 0);
+      e.dead = false; e.gone = false; if (!G.enemies.includes(e)) G.enemies.push(e); if (!(e.hp >= e.max * DEMO_REFILL)) e.hp = e.max;
+      if (h.walk) {
+        T.slow = Math.max(T.slow, e.stunT > 0 ? 1 : e.slowT > 0 ? e.slowF || 0 : 0); // (the share of its pace it lost: what effSpeed takes off)
+        if (e.s >= h.s1) { e.s = h.s0; const p = pathAt(e.pi, e.s, 0); e.x = p.x; e.y = p.y; }
+      } else { e.s = h.s; e.x = h.x; e.y = h.y; }
+    }
+    if ((S.rearm -= DEMO_DT) <= 0) { S.rearm = DEMO_REARM; for (const e of G.enemies) if (e.demo) { e.armor = e.demo.armor; e.shield = e.demo.shield; } }
     if (!draw || !c2d) return;
     const ctx0 = ctx, cam0 = { ...cam }, p0 = typeof warp !== "undefined" ? warp.p : null, band0 = warpBand, fade0 = warpFade;
     ctx = c2d; Object.assign(cam, { k: view.k, ox: view.ox, oy: view.oy }); if (view.p) warp.p = view.p; warpBand = null; warpFade = 1;
@@ -72,7 +94,8 @@ function demoView3d(S, w, h, pad = 60) {
 function demoDraw3d(S) {
   const up = (x, y, fn, h) => { const [a, b, c2, d, e, f] = warpFrame(x, y, h || 0); ctx.setTransform(a, b, c2, d, e, f); ctx.save(); fn(); ctx.restore(); };
   const t = G.towers[0], m = S.mid || [t.x, t.y];
-  up(m[0], m[1], () => { ctx.save(); drawTowerRange(t, true); ctx.restore(); drawSceneTop(); drawFx("beams"); }); // the floor
+  const th0 = drawThreat; drawThreat = () => {}; // (no threat marks: a dummy is no threat - its ETA reads as if it walked)
+  try { up(m[0], m[1], () => { ctx.save(); drawTowerRange(t, true); ctx.restore(); drawSceneTop(); drawFx("beams"); }); } finally { drawThreat = th0; } // the floor
   for (const e of G.enemies) { const w = enemyWallPieces(e); if (w.length) warpShieldLines(w, COL[ENEMIES[e.type].color], 0.8 * SHIELD_DRAW_A * enemyVis(e), [e.x, e.y]); }
   const dice = G.enemies.slice().sort((a, b) => a.y - b.y);
   for (const e of dice) up(e.x, e.y, () => drawEnemy(e, true));

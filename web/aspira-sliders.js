@@ -116,7 +116,7 @@ function refreshUpgradePreview(t) {
   if (svg) updateSliderChart(t, svg);
   const stats = $("asp-stats-box"), desc = $("asp-desc-box");
   if (stats) stats.innerHTML = cardStats(t, pv);
-  if (desc) desc.innerHTML = skillDesc(t, previewTower(t));
+  if (desc) { desc.innerHTML = demoBox(t, previewTower(t)); demoMount(t, pv); } // the demo scene, the sentence behind its "i" (aspira-demo-card.js)
   upgradeButton(t);
   if (!chooser.t) showSpend(basketPoints(t) ? basketCost(t) : null, "close", closeCard, t.kind);
   $("asp-pop").__fitDirty = true; // the description may have grown a line: refit (never scroll)
@@ -230,7 +230,7 @@ function inspectTower(el, t) {
   // the DESCRIPTION tops the card, the full width of it (owner) - the tower's prose in track
   // changes while points are pulled (aspira-sliders.js); else the current upgrade's tagline
   el.innerHTML = '<div class="asp-tower-grid">' +
-    '<div id="asp-desc-box">' + (chart ? skillDesc(t, previewTower(t)) : '<p class="asp-hint">' + towerTagline(t) + "</p>") + "</div>" +
+    '<div id="asp-desc-box">' + (chart ? demoBox(t, previewTower(t)) : '<p class="asp-hint">' + towerTagline(t) + "</p>") + "</div>" +
     (chart ? "" : '<div class="name asp-tower-title">' + towerTitle(t) + " · L" + t.lvl + " of " + maxLvl(t) + "</div>") +
     '<div class="asp-tower-ctl">' +
     (chart ? sliderChart(t) : "") + // the sliders and the chart (owner, 2026-10-07)
@@ -252,7 +252,7 @@ function inspectTower(el, t) {
   el.querySelectorAll(".asp-prio-labels span").forEach(s => { s.onclick = () => setMode(Number(s.dataset.i)); });
   // a chart tower's upgrade button locks the pulled points in (aspira-sliders.js);
   // a path / form tower's opens the card chooser
-  if (chart) { bindSliders(t, el); upgradeButton(t); }
+  if (chart) { bindSliders(t, el); upgradeButton(t); demoMount(t, pv); }
   else button($("asp-upbox"), "asp-primary asp-up-big",
     maxed ? "max level" : "upgrade → L" + (t.lvl + 1) + " · " + cr(upCost(t)), () => openChooser(t), "asp-up").disabled = maxed;
   // SELL sits left of upgrade (owner, 2026-10-13; was the card's last row) and takes TWO taps (owner):

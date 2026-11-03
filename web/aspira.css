@@ -909,6 +909,15 @@
 .asp-desc { height: calc(5 * var(--lh-tight) * var(--fs-2xs)); overflow: hidden; font-size: var(--fs-2xs); line-height: var(--lh-tight); color: hsl(var(--green-hsl)); } /* a FIXED five lines (owner): the sentences run on, wrapping; nothing moves as a sentence grows */
 .asp-desc del { color: hsl(var(--asp-bad-hsl)); text-decoration: line-through; }
 .asp-desc ins { color: hsl(var(--asp-good-hsl)); text-decoration: underline; }
+/* THE DEMO SCENE where the sentence was (owner, 2026-11-03; aspira-demo-card.js): the canvas at the box's width; its "i" bottom right, inside it, flips to the sentence */
+.asp-demo { position: relative; }
+.asp-demo-cv { display: block; width: 100%; height: auto; aspect-ratio: 372 / 180; }
+.asp-demo-txt { display: none; }
+.asp-demo.is-text .asp-demo-cv { visibility: hidden; }
+.asp-demo.is-text .asp-demo-txt { display: block; position: absolute; inset: 0; }
+.asp-demo.is-text .asp-demo-txt .asp-desc { height: 100%; }
+#asp button.asp-demo-i { position: absolute; right: var(--space-1); bottom: var(--space-1); display: grid; place-items: center; box-sizing: border-box; width: var(--space-5); height: var(--space-5); min-width: 0; min-height: 0; padding: 0; border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: 50%; background: none; color: hsl(var(--green-hsl)); font: inherit; font-size: var(--fs-2xs); line-height: var(--lh-none); cursor: pointer; }
+#asp button.asp-demo-i[aria-pressed="true"] { background: hsl(var(--green-hsl) / 0.45); }
 
 /* the CORE POWERS' BUTTONS under the title (owner, 2026-10-11; above it since 2026-10-08; aspira-powers.js): name, seconds left, and a
    bar along the bottom that fills as the power recharges; flashing when ready, lit while it runs or is armed */
