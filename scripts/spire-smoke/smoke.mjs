@@ -11,6 +11,7 @@ import { ROOT, TEMPLATE, SCRIPTS, boot, results, check, drawn, calls, frames, re
 import "./tiers.mjs"; // the tier redesign's tower checks (2026-10-24)
 import "./ifr.mjs"; // the IFR checks (split out 2026-10-28): registered first, reported with the rest
 import "./waves.mjs"; // the play box, lane, formation and spawning checks (split out 2026-10-30)
+import "./demo.mjs"; // the card's demo scene (2026-11-03)
 
 const env = boot();
 const { run } = env;

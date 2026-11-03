@@ -11,6 +11,10 @@ function newGame() {
   // NULLIFY moved the slots out; a new game puts them home (aspira-core.js
   // loads after this file, so the very first call finds no pushCells yet)
   if (typeof pushCells === "function") pushCells(0); if (typeof bossInv === "object") Object.assign(bossInv, { phase: "off", full: false, r: 0 }); // (no boss sky carried over)
+  return freshG();
+}
+// a fresh game's state alone, no side effects on the board (the card's demo scene builds its private game from it - aspira-demo.js)
+function freshG() {
   return {
     money: START_MONEY, drips: [], lives: 18, wave: 0, interest: 0.02, // 18 = two full shield rings (owner); interest 2% (owner, 2026-10-14: "balance the money" - at 3% uncapped, 97% of a run's money was interest, ~350k banked by wave 91; was 0.03)
     towers: [], enemies: [], spawns: [], fleetQ: [], chains: [], nextIn: 0, started: false, over: false,
