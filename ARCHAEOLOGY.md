@@ -1134,7 +1134,7 @@ Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alo
 - The curve: lowering `lo` weakened every level, not only tier 0. The curve is back as before (`dmg` [88.2] ARC, [1.58473, 1.8] CRR) and a `dmg0` factor scales the tier-0 hit alone (ARC 1/70.6, CRR 1/4.6: both 30). Owner picked option 1: the hit jumps back to the curve at the first purchase.
 - Both together: 103 of 200, inside the +-10 noise of 112.
 
-### 12.t The 7.1 pass (2026-11-01 .. 11-03; 012f378 .. a668088)
+### 12.t The 7.1 pass (2026-11-01 .. 11-03; 012f378 .. 5b28eac)
 Owner, 2026-10-31 / 11-01: "Nothing should ever be above like 800%", "no level damage steps above 2x", "Right now ARC is so insanely steep
 it doesnt make sense".
 - 7.1.0 (`012f378`): ARC's damage on its own geometric curve, `geo` [0.73912, 1.9]. Hit by level 0/1/2/3/9/13: 18/34/64/122/5724/74597
@@ -1199,3 +1199,16 @@ it doesnt make sense".
   little more: one tower's slow tops out at slowShape(TOWER_SLOW_MAX, fastSlowCap()) = 0.73 off a fast enemy (FRZ 0.73 vs 0.53, GRV 0.73
   vs 0.70, CRR 0.74 vs 0.69); SOL Scorch the other way (0.12 vs 0.47: a fast walker crosses the beam in fewer ticks).
 - 7.1.38 (`a668088`): the held dummies `DEMO_NUM_GAP` 1.6 x the biggest damage number apart (~48 u; were 21-34 u).
+- 7.1.39 (`b796a62`): these rows to 7.1.38.
+- 7.1.40 (`838d30a`) / 7.1.41 (`3a6111c`): the late-wave entity layer, pixel-checked (Leader: "PIXEL-IDENTICAL" savings only; stepped tracer
+  fades and flat far dice REJECTED by the owner). One save round the enemies' marks: save/restore 144 -> 10 a frame, 12 px differ (edge AA).
+  One tracer gradient a colour, the frame turned onto each tail: 75 gradient creations -> 0, 566 px differ, all 1-px AA at tail edges.
+  WebKit, wave 60 / 135 enemies: warpEntities 5.8-6.1 -> 5.4-5.5 ms; HEAD vs HEAD 0 px. Batching die faces skipped: 534 fills use 265
+  colours, and merging them changes which overlapping die paints on top. The 677-px desktop rim-strip gap parked (ARCHITECTURE §11).
+- 7.1.42 / 7.1.43 (`f16b925` / `0744a60`): comment rot; CLAUDE.md points at the demo gates.
+- 7.1.44 (`97a50e3`): aspira-draw.js -> + aspira-ranges.js, aspira-lanes.js -> + aspira-lanefade.js (479 -> ~405 each). A full-page diff
+  needs the GPU lane atlas ready first (`lgl.ready`, stepped frames - the probe's fake clock never advances a real-time wait): before it,
+  when a lit lane first shows was timing and read as a 1748 px difference. After it: HEAD x2 and split x2 differ only in the card's + blink.
+- 7.1.45 / 7.1.46 (`37add98` / `5b28eac`): the on-screen text audit - the 7.1 notes gain the boss lives rule and the Devil's six; "Shock
+  slows" dropped; armor strips read "of the armor left" (shredPct); CRR's sentence says its partial reload, no leash, every bolt's
+  CRR_SLOW and shields blocking the tether's slow; Ifrit's two 7.1 lines merged (meteor x0.75 then x0.6: 55% softer net).
