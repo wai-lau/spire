@@ -171,7 +171,7 @@ function warpLayersBind(gl, u) {
   gl.uniform1i(u("tex"), 0); gl.uniform1i(u("dyn"), 1); gl.uniform1i(u("fxt"), 2);
   hullUniforms(gl, u, warp.cv.height); // the towers' outlines: no beam under one (aspira-fog.js)
 }
-// the lanes FADING IN (laneFadeLayer, aspira-lanes.js) onto texture unit 3, sent up only when which lanes they are changes; the shader lays
+// the lanes FADING IN (laneFadeLayer, aspira-lanefade.js) onto texture unit 3, sent up only when which lanes they are changes; the shader lays
 // it over the board at litA, set every frame - a smooth fade for one upload (owner, 2026-10-22)
 function laneFadeBind(gl, u) {
   gl.activeTexture(gl.TEXTURE3);
@@ -184,7 +184,7 @@ function laneFadeBind(gl, u) {
   if (typeof laneFadeLayer === "function" && warp.texCam) { const c0 = { ...cam }; Object.assign(cam, warp.texCam); try { L = laneFadeLayer(); } catch (err) { L = null; laneFail(err); } finally { Object.assign(cam, c0); } }
   if (warp.litBmp) { /* the snapshot resolved off the frame: only this upload is left (premultiplied when it was made - an ImageBitmap ignores the unpack flag) */
     const t0 = performance.now(), R = warp.litBmpRect; if (R) gl.texSubImage2D(gl.TEXTURE_2D, 0, R.x, R.y, gl.RGBA, gl.UNSIGNED_BYTE, warp.litBmp); else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, warp.litBmp); warp.litSize = warp.litBmpSize; }
-    warp.litBmp.close(); warp.litBmp = null; warp.litSig = warp.litBmpSig; // (R: only the boxes the layer changed in - laneFadeL.dirty, aspira-lanes.js)
+    warp.litBmp.close(); warp.litBmp = null; warp.litSig = warp.litBmpSig; // (R: only the boxes the layer changed in - laneFadeL.dirty, aspira-lanefade.js)
     if (typeof perfBoardUp === "function") perfBoardUp("fadeBmp", performance.now() - t0);
   }
   /* THE FADE LAYER OFF THE FRAME (perf, 2026-10-31 - Wai: "seems a bit laggy"; a 7.0.7 iPhone log had 44 frames over 100 ms, 34 of its 36 canvas uploads on slow frames): a
