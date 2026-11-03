@@ -67,6 +67,7 @@ const BOSS_SHIELD_REGEN = { star: 0, empress: 0, strength: 0, chariot: 0, lovers
 const BOSS_INTRO = 2; /* 20% shorter (owner, 2026-10-12; was 2.5) */ // s between a boss wave starting and its boss arriving (its warning plays)
 let EMPRESS_BROOD = 12; // fitted 2026-10-05 (was 30): her HP was never the lever, her brood is; let: the boss balance test (scripts/aspira-sim/bossbal.mjs, BB_BROOD) tries other broods
 const CHARIOT_EVERY = 4, CHARIOT_T = 1, CHARIOT_SPD = 3, LOVERS_SPD = 1.5;
+const DEVIL_TRAIL = 540; // world units between the two Devils on a lane, ~1.5 s at its pace (aspira-step.js stepSpawns)
 const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, DEVIL_LANES = 3, JUSTICE_CAP = 0.02, JUDGEMENT_REVIVE = 0.5;
 
 // a boss's HP scaled with its lane's length while it rode a different lane each boss wave; it has ONE

@@ -15,6 +15,9 @@ function stepSpawns(dt) {
       // a boss's FLEET rides around it: the next boss on the same lane (the Lovers' second) waits till both fleets clear
       const lb = type === "bonus" && G.lastBoss;
       if (lb && lb.fleetSpan) w.timer = Math.max(w.timer, (lb.fleetSpan + FLEET_GAP) / Math.max(1, effSpeed(lb)));
+      // the Devil's SECOND on a lane trails the first by DEVIL_TRAIL world units (~1.5 s at its pace), so all six show and reach
+      // the core one at a time (owner, 2026-11-03: "devil seems to only have 3 bosses" - the two on a lane rode ~210 apart, 0.6 s)
+      if (lb && isA(lb, "devil") && w.idx < w.list.length) w.timer = Math.max(w.timer, DEVIL_TRAIL / Math.max(1, effSpeed(lb)));
     }
   }
   G.spawns = G.spawns.filter(w => w.idx < w.list.length);
