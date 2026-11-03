@@ -6,7 +6,7 @@
 // frame swaps the scene's own copies in, runs, and swaps the real ones back (demoIn / demoOut) - with the sound muted and the GPU
 // effect batch off - so the real game, paused under the card, is left exactly as it was (smoke: "demo scene leaves the real game alone").
 // A new global that step() writes must join DEMO_KEEP's swap, or it leaks between the two games.
-// THE DRAW IS PLUGGABLE (demoFrame's draw): flat or 3D sits on top once the owner picks; the scene only lends it the canvas and a camera.
+// THE DRAW IS PLUGGABLE (demoFrame's draw): the scene only lends it the canvas and a camera; the owner picked 3D (demoDraw3d, below).
 const DEMO_HP = 1e15; // a dummy's health: it never dies (no kill, no reward, no coin), and every hit still shows its number
 const DEMO_DT = 1 / 60;
 // the real game's state, kept while the scene runs (one scene at a time)
@@ -49,16 +49,39 @@ function demoFrame(S, c2d, view, draw) {
     step(DEMO_DT); S.t += DEMO_DT;
     for (const e of G.enemies) { const h = e.demo; if (!h) continue; e.s = h.s; e.x = h.x; e.y = h.y; e.dead = false; e.gone = false; if (e.hp < DEMO_HP * 0.15) e.hp = DEMO_HP; }
     if (!draw || !c2d) return;
-    const ctx0 = ctx, cam0 = { ...cam };
-    ctx = c2d; Object.assign(cam, view);
+    const ctx0 = ctx, cam0 = { ...cam }, p0 = typeof warp !== "undefined" ? warp.p : null, band0 = warpBand, fade0 = warpFade;
+    ctx = c2d; Object.assign(cam, { k: view.k, ox: view.ox, oy: view.oy }); if (view.p) warp.p = view.p; warpBand = null; warpFade = 1;
     try { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c2d.canvas.width, c2d.canvas.height); ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); draw(S); }
-    finally { ctx = ctx0; Object.assign(cam, cam0); }
+    finally { ctx = ctx0; Object.assign(cam, cam0); if (view.p) warp.p = p0; warpBand = band0; warpFade = fade0; }
   });
 }
-// a first FLAT draw (top-down, the 2D path), until the owner picks flat or 3D: the tower, the dummies, then the shots and the numbers
-function demoDrawFlat(S) {
-  ctx.save(); drawSceneTop(); ctx.restore();
-  for (const e of G.enemies) { ctx.save(); drawEnemy(e, false); ctx.restore(); }
-  for (const t of G.towers) { ctx.save(); drawTower(t); ctx.restore(); }
-  ctx.save(); drawFx("beams"); drawFx("shots"); drawFx("dmg"); drawFx("text"); ctx.restore();
+// THE 3D LOOK, SMALL (owner, 2026-11-03: "3D, but make the towers and enemies smaller so it all fits clearly in the box"): the scene's own
+// camera - the game's tilt, a FLAT floor (no funnel) and a long lens, so the box reads like the board, only further off. The real 3D draws
+// then work as they are: the tower's prism with its top (warpPrism, drawTower), the dice (warpSolid), the shields' floor lines, the pop-up
+// numbers; the floor's own effects (beams, tethers, pools, voids) go down under ONE frame at the scene's middle - the long lens keeps the
+// floor's perspective under a pixel across the box. A view for a w x h px canvas, fitting the tower and its dummies with `pad` world units round them
+const DEMO_LENS = 24; // the lens: focal length x the canvas's size (a long one: next to no perspective)
+function demoView3d(S, w, h, pad = 60) {
+  const pts = [...S.G.towers, ...S.G.enemies], x0 = Math.min(...pts.map(o => o.x)) - pad, x1 = Math.max(...pts.map(o => o.x)) + pad;
+  const y0 = Math.min(...pts.map(o => o.y)) - pad, y1 = Math.max(...pts.map(o => o.y)) + pad, tilt = warpTilt(), c = Math.cos(tilt), s = Math.sin(tilt);
+  const k = Math.min(w / (x1 - x0), h / ((y1 - y0) * c + 90 * s)), mx = (x0 + x1) / 2, my = (y0 + y1) / 2; // (90: room for the prism standing up)
+  const ox = w / 2 - mx * k, oy = h / 2 - CY * k - c * (my - CY) * k + 20 * s * k * 0.5, f = DEMO_LENS * Math.max(w, h);
+  S.mid = [mx, my];
+  return { k, ox, oy, p: { core: [ox + CX * k, oy + CY * k], D: 0, L: Infinity, T: Infinity, hc: 1, e: 1, P: 1, c, s, f, k, z: 1, oy: 0 } };
+}
+function demoDraw3d(S) {
+  const up = (x, y, fn, h) => { const [a, b, c2, d, e, f] = warpFrame(x, y, h || 0); ctx.setTransform(a, b, c2, d, e, f); ctx.save(); fn(); ctx.restore(); };
+  const t = G.towers[0], m = S.mid || [t.x, t.y];
+  up(m[0], m[1], () => { ctx.save(); drawTowerRange(t, true); ctx.restore(); drawSceneTop(); drawFx("beams"); }); // the floor
+  for (const e of G.enemies) { const w = enemyWallPieces(e); if (w.length) warpShieldLines(w, COL[ENEMIES[e.type].color], 0.8 * SHIELD_DRAW_A * enemyVis(e), [e.x, e.y]); }
+  const dice = G.enemies.slice().sort((a, b) => a.y - b.y);
+  for (const e of dice) up(e.x, e.y, () => drawEnemy(e, true));
+  for (const e of dice) { e.geomAt = -1; warpSolid(e); } // (the geometry under this camera, never the board's cached one)
+  if (t) {
+    const c0 = CELLS[t.cell], h = towerH(t), col = COL[TOWERS[t.kind].color];
+    warpPrism({ x: t.x, y: t.y, h, col, pts: c0.pts.map(p => ({ x: t.x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: t.y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })) });
+    up(t.x, t.y, () => drawTower(t), h / 2);
+  }
+  const pp = (x, y, fn, far) => { const P = warpProjectScratch(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); fn(); };
+  ctx.save(); try { drawFx("dmg", (x, y, fn) => pp(x, y, fn, true)); drawFx("text", pp); } finally { ctx.restore(); }
 }

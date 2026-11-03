@@ -23,9 +23,9 @@ check("demo scene: every tower's private game runs the real step and draw, dummi
       for (const q of cand) { if (spots.length >= 5) break; if (q.d > 24 && spots.every(o => o.pi !== q.pi || Math.abs(o.s - q.s) > 18)) spots.push({ type: spots.length % 2 ? "armor" : "swarm", pi: q.pi, s: q.s, d: q.d }); }
       if (!spots.length || spots[0].d > range) return "no lane spot in reach";
       const S = demoScene("${kind}", {}, cell, spots), cv = document.createElement("canvas"); cv.width = 372; cv.height = 180;
-      const c2 = cv.getContext("2d"), view = { k: 0.5, ox: 186 - c.x * 0.5, oy: 90 - c.y * 0.5 };
+      const c2 = cv.getContext("2d"), view = demoView3d(S, 372, 180);
       const e = S.G.enemies, hits = () => e.some(x => x.hp < DEMO_HP) || S.G.towers[0].dealt > 0; /* up to 10 s: GRV's first void can take a while to land */
-      for (let f = 0; f < 600 && (f < 240 || !hits()); f++) demoFrame(S, c2, view, demoDrawFlat);
+      for (let f = 0; f < 600 && (f < 240 || !hits()); f++) demoFrame(S, c2, view, demoDraw3d);
       const hit = hits(), moved = e.some(x => x.s !== x.demo.s || x.x !== x.demo.x);
       return !hit ? "the tower never hit a dummy" : moved ? "a dummy moved" : e.length !== spots.length ? "dummies " + e.length + " of " + spots.length : "";
       } finally { Math.random = rnd0; }
