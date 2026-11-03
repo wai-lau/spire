@@ -189,14 +189,26 @@ check("landscape: a tower on an open slot meets wave 1 (slots and lane picks agr
 
 check("a boss in the threat zone shows its HP left, 0-100, over itself; one further out shows nothing (owner, 2026-11-03)", () => {
   const env = boot(), r = env.run;
-  r(`G = newGame(); G.money = 1e9; G.started = true; G.nextIn = 1e9; spawnEnemy("bonus", 12, 0, 0); spawnEnemy("bonus", 12, 1, 0);
+  r(`BAR_HOLD = false; G = newGame(); G.money = 1e9; G.started = true; G.nextIn = 1e9; G.waveIn = { 12: 1 }; spawnEnemy("bonus", 12, 0, 0); spawnEnemy("bonus", 12, 1, 0);
      { const [a, b] = G.enemies; a.arcana = b.arcana = "star"; a.hp = a.max * 0.546; b.hp = b.max * 0.3;
        const v = effSpeed(a); a.s = PATHS[0].len - v * 2; const p = pathAt(0, a.s, 0); a.x = p.x; a.y = p.y; a.seen = true;
        b.s = entryS(1) + 5; const q = pathAt(1, b.s, 0); b.x = q.x; b.y = q.y; b.seen = true;}
      window.__said = []; { const t0 = text; text = (s, ...a) => { window.__said.push(String(s)); return t0(s, ...a); }; window.__t0 = t0; }`);
   for (let i = 0; i < 3; i++) env.dom.tick(1000 / 60);
-  const said = r("const s = window.__said; text = window.__t0; s"), eta = r("[etaToCore(G.enemies[0]), etaToCore(G.enemies[1])]");
+  const eta = r("[etaToCore(G.enemies[0]), etaToCore(G.enemies[1])]"), said = r("const s = window.__said; text = window.__t0; BAR_HOLD = true; s");
   if (!(eta[0] <= 4 && eta[1] > 4)) return "rig: etas " + eta.map(x => x.toFixed(1));
   if (!said.includes("55")) return "no 55 over the near boss (said: " + said.slice(0, 12).join(" ") + ")";
   if (said.includes("30")) return "the far boss (30) shows a number";
+});
+
+check("a boss's ETA to the core matches when it gets there, in reach (1x) or not (OFF_SCREEN_SPEED) (2026-11-03: a Devil trailer read 3x too far off)", () => {
+  const out = run(`(() => { const bad = [], B0 = BAR_HOLD; BAR_HOLD = false;
+    try { for (const reach of [false, true]) {
+      G = newGame(); G.money = 0; G.lives = 999; G.started = true; G.nextIn = 1e9; G.wave = 84; if (reach) G.waveIn = { 84: 1 };
+      spawnEnemy("bonus", 84, 0, 0); const e = G.enemies[0]; e.seen = true; e.s = PATHS[0].len - effSpeed(e) * waveClock(e.n) * 6;
+      const eta = etaToCore(e); let t = 0; while (G.enemies.includes(e) && !e.gone && t < 30) { step(1 / 60); t += 1 / 60; }
+      if (!(Math.abs(t - eta) <= 0.3)) bad.push((reach ? "in reach" : "out of reach") + ": ETA " + eta.toFixed(2) + ", came " + t.toFixed(2));
+    } } finally { BAR_HOLD = B0; }
+    return bad.join("; "); })()`);
+  return out;
 });
