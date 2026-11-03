@@ -55,16 +55,18 @@ const DEMO_LAYOUTS = {
   },
 };
 // the layout a card shows for tower `t` previewed as `pv`: the axis being bought (pv over t), else the tower's highest axis, else its tier 0
+const DEMO_NUM_GAP = 1.6;
 function demoLayoutKey(t, pv) {
   const axes = SKILL_TREES[t.kind] || [], up = pv ? axes.find(ax => skillOf(pv, ax.id) > skillOf(t, ax.id)) : null;
   const top = axes.reduce((b, ax) => (skillOf(pv || t, ax.id) > (b ? skillOf(pv || t, b.id) : 0) ? ax : b), null);
   return (up || top || { id: "base" }).id;
 }
 // the enemy list for a scene of `kind` (its stats `st`) on slot `cell`, from layout `L` - every spot in shares of the live range
-function demoPlace(kind, st, cell, L) {
+function demoPlace0(kind, st, cell, L) {
   const c = CELLS[cell], r = st.range || 120, a0 = Math.atan2(CY - c.y, CX - c.x) + 0.5, T = L.types, n = T.length; // (toward the core, a little off)
   const at = (a, d) => ({ x: c.x + Math.cos(a) * d * r, y: c.y + Math.sin(a) * d * r });
-  if (L.place === "clump") { const m = at(a0, L.at || 0.55); return T.map((type, i) => { const a = i * 2.4, d = 0.12 * r * Math.sqrt((i + 0.5) / n) * 2.2; return { type, x: m.x + Math.cos(a) * d, y: m.y + Math.sin(a) * d }; }); }
+  // (a clump starts DEMO_NUM_GAP x the biggest damage number apart - DMG_PX_MIN + DMG_PX_SPAN, aspira-floats.js; demoPlace keeps every pair so)
+  if (L.place === "clump") { const m = at(a0, L.at || 0.55), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN); return T.map((type, i) => { const a = i * 2.4, d = g * Math.sqrt(i + 0.5) * 0.75; return { type, x: m.x + Math.cos(a) * d, y: m.y + Math.sin(a) * d }; }); }
   if (L.place === "fan") return T.map((type, i) => ({ type, ...at(a0 - 0.9 + 1.8 * (i + 0.5) / n, 0.45 + 0.35 * ((i * 0.618) % 1)) }));
   if (L.place === "line") return T.map((type, i) => ({ type, ...at(a0, 0.3 + 0.6 * (i + 0.5) / n) }));
   // walk: the longest lane stretch inside 0.85 of the range, from a third of the range before it; the walkers staggered along it
@@ -74,6 +76,16 @@ function demoPlace(kind, st, cell, L) {
   if (!best) return T.map((type, i) => ({ type, ...at(a0, 0.5) }));
   const s0 = Math.max(0, best.s0 - r / 3);
   return T.map((type, i) => ({ type, pi: best.pi, s0, s1: best.s1, at: i / n }));
+}
+// ...then, for held dummies, any two closer than the gap pushed apart (a few relaxation passes): every dummy's numbers read on their own
+function demoPlace(kind, st, cell, L) {
+  const P = demoPlace0(kind, st, cell, L); if (L.place === "walk") return P;
+  const g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
+  for (let pass = 0; pass < 12; pass++) for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) {
+    const a = P[i], b = P[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-3;
+    if (d >= g) continue; const k = (g - d) / 2 / d; a.x -= dx * k; a.y -= dy * k; b.x += dx * k; b.y += dy * k;
+  }
+  return P;
 }
 // what a scene showed, from its tallies: the `shows` names it passed
 function demoShows(S) {

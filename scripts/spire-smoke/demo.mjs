@@ -72,3 +72,12 @@ check("demo on the card: a placed tower's card shows its scene, the frame loop r
   r("closeCard(); demoTick();");
   return r("demoCard.S === null && demoCard.cv === null && !demoCard.text") ? "" : "the scene kept running after the card closed";
 });
+
+check("demo layouts: held dummies stand far enough apart that each one's damage numbers read (DEMO_NUM_GAP x the biggest number)", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
+    for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) { if (L.place === "walk") continue;
+      const t = { kind, cell, x: CELLS[cell].x, y: CELLS[cell].y, lvl: 1 }, P = demoPlace(kind, towerStats(t), cell, L); let m = Infinity;
+      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) m = Math.min(m, Math.hypot(P[i].x - P[j].x, P[i].y - P[j].y));
+      if (m < g * 0.9) bad.push(kind + "." + key + " " + Math.round(m) + " < " + Math.round(g)); }
+    return bad.join("; "); })()`);
+});
