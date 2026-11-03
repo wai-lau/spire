@@ -483,7 +483,7 @@ counting bosses). Death's window: the strongest trio needs at least 30 of its 39
 | 48 | Chariot | sprints x3 for 1 s every 4 s, fleet with her | fast |
 | 60 | Lovers | a pair on opposite lanes; kill one and the other heals full and runs x1.5 | swarm |
 | 72 | Temperance | regenerates 6% HP a second | shield |
-| 84 | Devil | six full bosses on six lane copies; the reward paid once by the last | swarm |
+| 84 | Devil | six full bosses, two a lane on three lane copies (the second `DEVIL_TRAIL` 540 u behind, after the first's HP-bar hold: ~5 s apart in reach); the reward paid once by the last | swarm |
 | 96 | Justice | no hit takes more than 2% of her HP; slowed | armor, fewer |
 | 108 | Judgement | rises once at 50% HP; her swarm spreads over 12 lanes | swarm |
 | 120 | Death | none: a juiced-up Star | all four |
@@ -492,6 +492,13 @@ counting bosses). Death's window: the strongest trio needs at least 30 of its 39
 formation round the boss at its pace; **20% of every escort's HP moves onto its boss**
 (`FLEET_TO_BOSS`; not Temperance); the fleet enters one unit at a time (`G.fleetQ`) and the
 sky holds until all of it dies. **Rewards**: +3 lives or +0.5% interest, the core's powers at 24 / 48.
+
+**A boss at the core** (owner, 2026-11-03: "lets make bosses make you lose lives equal to the percentage of life left on the boss instead
+of rhe losing the game instantly"): it costs its HP% left in lives, a Lover half, a Devil copy a sixth, rounded up, at least one
+(`bossLeakLives`, `BOSS_LEAK_DIV`), and the game goes on. **Its HP shown** (owner: "once a boss enters the threat zone, start showing the
+hp% without the % on top of the boss"): every boss body within `THREAT_FROM` 4 s of the core shows ceil(HP% left), 0-100, white and
+outlined over it (`drawBossHp`, aspira-threat.js) - each Lover and Devil copy its own. Its ETA (`etaToCore`) counts the wave's clock
+(`waveClock`: x3 till a tower reaches the wave) and what is left of its HP-bar hold, so the number and the threat marks come on time.
 
 ### 5.5 The boss sky
 
@@ -798,6 +805,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | code | one global scope, ESLint `no-undef` off: a dropped `const` throws at run time; verify placement in a browser or the smoke after touching `placeTower`. A new top-level name must not collide with another file's (GRV's projectile grid is `projGrid` / `enemiesNear` because `aspira-acid.js` owns `enemyGrid`) |
 | code | UI-only code that logic reaches needs a `typeof X === "function"` guard; a new logic script goes in `sim.mjs` `FILES`; a browser global needs a `dom.mjs` stub |
 | code | every per-tier table has exactly 4 entries (written as the old 0 I II III) before `aspira-capstone.js` loads, 6 after (the capstone V pushed, tier I inserted by `tierMid`); tier 0 and tier I are then set by hand in `aspira-tier01.js`. A new table or axis needs a `CAPSTONE_NUM` entry and a `CAPSTONE_TIERS` name; a table whose every tier holds one value is a constant, not a table |
+| board | KNOWN GAP, desktop only (parked 2026-11-03, invisible): an in-frame strip upload can leave a lane RIM CIRCLE's 18x18 strip one state stale - 677 px at one spot over 8 waves in WebKit (`bmp-probe.py`), 0 on the off-frame (iPhone) path. Likely the rim item's key (`laneItem`: position to 0.1 u, alpha to 3 decimals; an idle and a lit circle cross-fading on one slot) missing a change the 150 ms redraw catches. Cheap fix if it ever shows: pad rim strips a few px and key the cross-fade |
 | demo | **a mechanic change must keep its demo passing** (owner, 2026-11-03: "Add a mechanism to ensure demo scenes are always up to date"). The tower card's scene (`aspira-demo.js`, `-layouts.js`, `-card.js`) runs the game's real step and draw on a private game; its layouts place enemies in shares of the live range and declare what they show. Smoke (`demo.mjs`) fails on a tower or axis with no layout, a layout for one that is gone, any layout at any tier 0-V that stops showing what it declares (hits, many, strips, pops, slows, fast; seeded, 6 s a scene), and any leak into the real game. A new global that `step()` writes joins `demoIn`/`demoOut`'s swap |
 | code | `fixedRand(wave, salt)`, never `Math.random`, for anything shaping a wave (a changed salt changes the sequence for everyone and every sim seed) |
 | code | whole numbers: HP, armor, hits floored, a landed hit >= 1, fractions banked; a spawned enemy never has 0 HP |
