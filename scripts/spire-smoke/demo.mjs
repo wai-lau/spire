@@ -32,6 +32,9 @@ check("demo behaviour: every layout at every tier shows what it declares (seeded
         for (let f = 0; f < ${DEMO_CHECK_S} * 60; f++) demoFrame(S);
         const got = demoShows(S), miss = L.shows.filter(x => !got.includes(x));
         if (miss.length) bad.push(kind + "." + key + " " + tier + ": no " + miss.join(", ") + " (showed " + (got.join(", ") || "nothing") + ")");
+        /* NUMBERS EXPIRE (owner, 2026-11-03: "carrier demo bug, numbers stuck" - the scene never aged its effects): none past its life, the list bounded */
+        const old = S.fx.filter(f => !(f.t < f.life)).length + S.dmgLive.filter(f => !(f.t < f.life)).length;
+        if (old || S.fx.length > 600 || S.G.over) bad.push(kind + "." + key + " " + tier + ": " + old + " effects past their life, " + S.fx.length + " in all" + (S.G.over ? ", game over" : ""));
       } } finally { Math.random = rnd0; }
     return bad.join("; "); })()`);
 });
@@ -73,22 +76,27 @@ check("demo on the card: a placed tower's card shows its scene, the frame loop r
   return r("demoCard.S === null && demoCard.cv === null && !demoCard.text") ? "" : "the scene kept running after the card closed";
 });
 
-check("demo layouts: held dummies stand far enough apart that each one's damage numbers read (DEMO_NUM_GAP x the biggest number)", () => {
-  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
-    for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) { if (L.place === "walk") continue;
-      const t = { kind, cell, x: CELLS[cell].x, y: CELLS[cell].y, lvl: 1 }, P = demoPlace(kind, towerStats(t), cell, L); let m = Infinity;
-      for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) m = Math.min(m, Math.hypot(P[i].x - P[j].x, P[i].y - P[j].y));
-      if (m < g * 0.9) bad.push(kind + "." + key + " " + Math.round(m) + " < " + Math.round(g)); }
-    return bad.join("; "); })()`);
+
+
+check("demo layouts: walkers in packs the number gap apart, both lanes and every walker's die and number inside the box, every layout at every tier", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell], g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
+    for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) for (let tier = key === "base" ? 0 : 1; tier <= (key === "base" ? 0 : SKILL_TIERS); tier++) {
+      const t = { kind, cell, x: C.x, y: C.y, lvl: 1, skills: key === "base" ? {} : { [key]: tier } }; t.lvl = 1 + towerLevel(t);
+      const r = towerStats(t).range, { c, hh } = demoSpan(r), P = demoPlace(kind, towerStats(t), cell, L);
+      for (let ln = 0; ln < 2; ln++) { const on = P.filter(d => d.lane === ln && d.at > 0).map(d => d.at * P.lanes[ln].len).sort((a, b) => a - b);
+        for (let i = 1; i < on.length; i++) if (on[i] - on[i - 1] < g * 0.9) { bad.push(kind + "." + key + " " + tier + " lane " + ln + ": " + Math.round(on[i] - on[i - 1]) + " u apart"); break; }
+        const Y = c * (P.lanes[ln].pts[0].y - C.y);
+        for (const d of P.filter(d => d.lane === ln)) { const sz = demoReach(d.type); if (Y + sz * c > hh + 0.5 || Y - sz - demoNumRoom() < -hh - 0.5) { bad.push(kind + "." + key + " " + tier + " lane " + ln + " " + d.type + " outside the box"); break; } } } }
+    return bad.slice(0, 6).join("; "); })()`);
 });
 
-check("demo layouts: every held dummy, its die and its number inside the scene's box, every layout at every tier (Leader, 2026-11-03)", () => {
-  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell];
-    for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) { if (L.place === "walk") continue;
-      for (let tier = key === "base" ? 0 : 1; tier <= (key === "base" ? 0 : SKILL_TIERS); tier++) {
-        const t = { kind, cell, x: C.x, y: C.y, lvl: 1, skills: key === "base" ? {} : { [key]: tier } }; t.lvl = 1 + towerLevel(t);
-        const r = towerStats(t).range, { c, hh, hw } = demoSpan(r);
-        for (const d of demoPlace(kind, towerStats(t), cell, L)) { const sz = demoReach(d.type), X = d.x - C.x, Y = c * (d.y - C.y);
-          if (Math.abs(X) > hw - sz + 0.5 || Y + sz * c > hh + 0.5 || Y - sz - demoNumRoom() < -hh - 0.5) { bad.push(kind + "." + key + " " + tier + " " + d.type + " at " + Math.round(X) + "," + Math.round(Y) + " (box +-" + Math.round(hw) + ", +-" + Math.round(hh) + ")"); break; } } } }
-    return bad.slice(0, 6).join("; "); })()`);
+check("demo isolation: a scene left running (60 s of fast laps) never ends a game - no game over, win, end screen, end stats, leaderboard or end sound (2026-11-03)", () => {
+  const env = boot(), r = env.run;
+  return r(`(() => { const seen = []; const wrap = n => { const f = window[n]; window[n] = function (...a) { seen.push(n); return f.apply(this, a); }; return f; };
+    const keep = ["gameOver", "winGame", "showOverlay", "renderEndStats", "showAscendants", "showAscend"].map(n => [n, wrap(n)]), sfx0 = sfx; sfx = (n, ...a) => { if (n === "over") seen.push("sfx over"); return sfx0(n, ...a); };
+    try { const cell = CELLS.findIndex((c, i) => cellOpen(i)), t = { kind: "frz", cell, x: CELLS[cell].x, y: CELLS[cell].y, lvl: 1 };
+      const S = demoScene("frz", {}, cell, demoPlace("frz", towerStats(t), cell, DEMO_LAYOUTS.frz.base)); S.G.lives = 18; // (a real game's lives: no walker may cost one)
+      for (let f = 0; f < 3600; f++) demoFrame(S);
+      return seen.length ? "called: " + [...new Set(seen)].join(", ") : S.G.over ? "the private game is over" : S.G.lives !== 18 ? "walkers cost " + (18 - S.G.lives) + " lives" : "";
+    } finally { for (const [n, f] of keep) window[n] = f; sfx = sfx0; } })()`);
 });
