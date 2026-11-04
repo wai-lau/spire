@@ -68,7 +68,6 @@ function demoWalker(S, type, lane, at) {
 function demoFrame(S, c2d, view, draw) {
   demoRun(S, () => {
     const before = G.enemies.filter(e => e.demo && !e.dead).map(e => [e, e.hp]);
-    for (const t of G.towers) for (const i of t.icp || []) if (i.state === "back" && Math.hypot(t.x - i.x, t.y - i.y) < CRR_TURN_R * 2) i.ang = Math.atan2(t.y - i.y, t.x - i.x); // CRR HOME STRAIGHT IN (owner, 2026-11-03: "CRR demo not launching interceptors properly"): run dry within two turn radii of the carrier - the scene's lanes pass 0.45 r from it - an interceptor's turn limit circles it ~50 u out for good and the wing never launches again. The game's own copy of this bug is routed to Balance (it moves the trio fingerprint; a 7.4.0 candidate) - DROP this line once the game aims its interceptors home itself
     step(DEMO_DT); coins.length = 0; G.money = 0; /* NO CREDITS (Leader, 2026-11-03): a kill's coins and their "+Nc" pop would mislead - none change hands */ stepFx(DEMO_DT); stepFloats(DEMO_DT); S.t += DEMO_DT; // (the effects and the numbers AGE in the frame loop, not in step: without these two they never left the scene - owner, 2026-11-03: "carrier demo bug, numbers stuck")
     for (const [e, hp] of before) {
       const h = e.demo, T = e.tally;
