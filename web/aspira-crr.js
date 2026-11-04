@@ -8,7 +8,7 @@
 // towerStats calls carSkillStats, the tower loop stepCar, drawScene drawCar.
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const CRR_HANGAR = [8, 16, 20, 26] /* more interceptors with the slower flight (owner, 2026-11-01: "I want interceptors to fly and orbit way slower / Add more interceptors to compensate?"); was 3 5 11 13 (V: the capstone 34, was 17) */; // interceptors by Hangar tier: the ladder 0..V reads 8 12 16 20 26 34 (tier 0 and I set in aspira-tier01.js, V in aspira-capstone.js; no longer primes since 2026-11-02)
+const CRR_HANGAR = [5, 10, 12, 16] /* x0.6 with the stuck-interceptor fix (owner, 2026-11-04: "b"; was 8 16 20 26) */ /* more interceptors with the slower flight (owner, 2026-11-01: "I want interceptors to fly and orbit way slower / Add more interceptors to compensate?"); was 3 5 11 13 (V: the capstone 34, was 17) */; // interceptors by Hangar tier: the ladder 0..V reads 8 12 16 20 26 34 (tier 0 and I set in aspira-tier01.js, V in aspira-capstone.js; no longer primes since 2026-11-02)
 // each axis ITS OWN job (owner, 2026-10-15: "make sure each axis for each tower feels unique"): Hangar WIDTH (more interceptors),
 // Launch TEMPO (faster there and back, a shorter reload ) - (Warp, a teleport, was removed: owner, 2026-10-17), Armament DEPTH (a far harder hit, more of them)
 const CRR_SPEED_V = 500 /* 500 flat, out and home (owner, 2026-11-02: "Lets go with 500 flat whole journey"; 300 was "slower than some fast units") */ /* 600 -> 300 (owner, 2026-11-01: "I want interceptors to fly and orbit way slower / Add more interceptors to compensate?") */ /* 2500 -> 600 (owner, 2026-11-01: "Interceptor flight speed should be reduced to 600") */ /* 1900 -> 2500 (owner, 2026-10-19: CRR toward fast; countermx 61-69 spread with the rest of 6.4: fast 34% -> 22% leaked) */ /* x1.3: keeps up with fast (owner, 2026-10-18: "more good vs fast and less good vs shield"; was 1470) */, CRR_RELOAD_S = 0.8 /* x2 with x1.5 volleys, x1.1 hit (owner, 2026-10-24 marks target: "Lower interceptor reload speed, but increase volleys/damage to make it worse vs swarm"; was 0.4) */; // an interceptor's ONE speed (out, chasing, home) and its full reload at home (partial: x the share of ammo used, carHome) - FIXED since Tether replaced Launch (owner, 2026-10-17)
@@ -159,6 +159,7 @@ function stepIcp(i, t, st, dt) {
   // back home
   const d = Math.sqrt(carDist2(i, t));
   if (d <= Math.max(i.v, 1) * dt * 1.5) { i.state = "home"; i.reload = st.reload * (i.used ?? 1); i.used = 1; i.x = t.x; i.y = t.y; i.e = null; return; } // PARTIAL RELOAD
+  if (d < CRR_TURN_R * 2) i.ang = Math.atan2(t.y - i.y, t.x - i.x); // within two turn radii of its carrier it points straight home: the turn limit kept a dry one circling ~50 u round the tower forever, never reloading (Visual, 2026-11-03: 8 of 8 stuck after 10 s)
   carSteer(i, t.x - i.x, t.y - i.y, st.speed, dt, Math.max(0, Math.min(1, (d - 39) / 78))); /* (78: the old SLOT_R - the last approach home, not the slots' distance) */ // the avoidance lets go on the last approach home
 }
 // the TETHER's work a frame (see CRR_TETHER_SLOW): slow its target (and the capstone's chained one), pulse both every CRR_TETHER_PULSE s
