@@ -38,7 +38,7 @@ const demoRun = (S, fn) => { demoIn(S); try { return fn(); } finally { demoOut(S
 // a scene: tower `kind` with `skills` on slot `cell`, and its WALKERS (the layouts: aspira-demo-layouts.js) - { type, lane, at }: on lane
 // 0 or 1 of the scene's own two (list.lanes), starting `at` of the way along it. A walker moves at its real pace - slows, stuns, the core
 // ease, the game's own movement. RESPAWNS ARE AT THE RIGHT EDGE (owner, 2026-11-03: "enemies always respawn from the right"): one that walks
-// out at the left starts again at the right, whole (health, armor, shields); one KILLED dies for real (the game's own death; its ghost drifts
+// out at the left is taken out quietly and a fresh one enters at the right ("despawn and respawn, dont just reposition"); one KILLED dies for real (the game's own death; its ghost drifts
 // off) and a fresh one of its type walks in at the right. Nothing is refilled mid-lane. S.T keeps every walker's tally (the dead ones too)
 // - damage, the least armor and shield, the most pace lost - for the smoke (demoShows)
 function demoScene(kind, skills, cell, list) {
@@ -68,13 +68,14 @@ function demoWalker(S, type, lane, at) {
 function demoFrame(S, c2d, view, draw) {
   demoRun(S, () => {
     const before = G.enemies.filter(e => e.demo && !e.dead).map(e => [e, e.hp]);
+    for (const t of G.towers) for (const i of t.icp || []) if (i.state === "back" && Math.hypot(t.x - i.x, t.y - i.y) < CRR_TURN_R * 2) i.ang = Math.atan2(t.y - i.y, t.x - i.x); // CRR HOME STRAIGHT IN (owner, 2026-11-03: "CRR demo not launching interceptors properly"): run dry within two turn radii of the carrier - the scene's lanes pass 0.45 r from it - an interceptor's turn limit circles it ~50 u out for good and the wing never launches again. The game's own copy of this bug is routed to Balance (it moves the trio fingerprint; a 7.4.0 candidate) - DROP this line once the game aims its interceptors home itself
     step(DEMO_DT); coins.length = 0; G.money = 0; /* NO CREDITS (Leader, 2026-11-03): a kill's coins and their "+Nc" pop would mislead - none change hands */ stepFx(DEMO_DT); stepFloats(DEMO_DT); S.t += DEMO_DT; // (the effects and the numbers AGE in the frame loop, not in step: without these two they never left the scene - owner, 2026-11-03: "carrier demo bug, numbers stuck")
     for (const [e, hp] of before) {
       const h = e.demo, T = e.tally;
       T.dmg += Math.max(0, hp - Math.max(0, e.hp)); T.armor = Math.min(T.armor, e.armor || 0); T.shield = Math.min(T.shield, e.shield || 0);
       T.slow = Math.max(T.slow, e.stunT > 0 ? 1 : e.slowT > 0 ? e.slowF || 0 : 0); // (the share of its pace it lost: what effSpeed takes off)
       if (e.dead) { demoWalker(S, e.type, h.lane, 0); continue; } // killed: a fresh one at the right edge (the dead one is the game's)
-      if (e.s >= h.s1) { e.s = h.s0; e.ease0 = undefined; e.hp = e.max; e.armor = h.armor; e.shield = h.shield; e.gone = false; if (!G.enemies.includes(e)) G.enemies.push(e); const p = pathAt(e.pi, e.s, 0); e.x = p.x; e.y = p.y; } // out at the left: again at the right, whole (the ease from its start: coreEase, aspira-step.js)
+      if (e.s >= h.s1) { e.dead = e.gone = true; const k = G.enemies.indexOf(e); if (k >= 0) G.enemies.splice(k, 1); demoWalker(S, e.type, h.lane, 0); } // out at the left: TAKEN OUT quietly (no death, no leak - dead, so every chain, interceptor or void holding it lets go) and a fresh one enters at the right (owner, 2026-11-03: "ARC chaining across the demo, despawn and respawn, dont just reposition?") // out at the left: again at the right, whole (the ease from its start: coreEase, aspira-step.js)
     }
     if (!draw || !c2d) return;
     const ctx0 = ctx, cam0 = { ...cam }, p0 = typeof warp !== "undefined" ? warp.p : null, band0 = warpBand, fade0 = warpFade;
@@ -90,13 +91,13 @@ function demoFrame(S, c2d, view, draw) {
 // floor's perspective under a pixel across the box.
 const DEMO_LENS = 24; // the lens: focal length x the canvas's size (a long one: next to no perspective)
 // THE TOWER at (H/2, H/2) (owner, 2026-11-03: "the tower needs to be more centered, the area occluded by the top and bottom of the area should be
-// the same"; then "move tower to the left so that the distance from top and bottom of box is equal to distance from left of box"): its floor
+// the same"; then "move tower to the left so that the distance from top and bottom of box is equal to distance from left of box"; then "move demo tower slightly right": DEMO_TOWER_X): its floor
 // point half the box's height from its top, bottom AND left edges, the scale fitting its range ellipse (2 r cos(tilt) tall) in the box's height with
 // DEMO_FIT to spare - so the ring sits with equal room above and below at every tier; the box's width (DEMO_BOX_AR) is the walkers' run
-const DEMO_FIT = 1.12, DEMO_BOX_AR = 372 / 180;
+const DEMO_FIT = 1.12, DEMO_BOX_AR = 372 / 180, DEMO_TOWER_X = 0.62; // X: the tower's floor point that many box heights from the left (owner, 2026-11-03: "move demo tower slightly right"; 0.5 before)
 function demoView3d(S, w, h) {
   const t = S.G.towers[0], r = demoRun(S, () => towerStats(t).range) || 120, tilt = warpTilt(), c = Math.cos(tilt), s = Math.sin(tilt);
-  const k = h / (2 * r * c * DEMO_FIT), ox = Math.min(w, h) / 2 - t.x * k, /* LEFT (owner, 2026-11-03: "move tower to the left so that the distance from top and bottom of box is equal to distance from left of box") */ oy = h / 2 - CY * k - c * (t.y - CY) * k, f = DEMO_LENS * Math.max(w, h);
+  const k = h / (2 * r * c * DEMO_FIT), ox = Math.min(w, h) * DEMO_TOWER_X - t.x * k, /* LEFT (owner, 2026-11-03: "move tower to the left so that the distance from top and bottom of box is equal to distance from left of box") */ oy = h / 2 - CY * k - c * (t.y - CY) * k, f = DEMO_LENS * Math.max(w, h);
   S.mid = [t.x, t.y];
   return { k, ox, oy, p: { core: [ox + CX * k, oy + CY * k], D: 0, L: Infinity, T: Infinity, hc: 1, e: 1, P: 1, c, s, f, k, z: 1, oy: 0 } };
 }

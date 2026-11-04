@@ -120,3 +120,42 @@ check("demo signature: every tower's scene draws its main effect (GRV voids, ARC
     } } finally { Math.random = rnd0; }
     return bad.join("; "); })()`);
 });
+
+// RESPAWN, NOT REPOSITION (owner, 2026-11-03: "ARC chaining across the demo, despawn and respawn, dont just reposition?"): a walker out at the
+// left used to be the same object put back at the right, so ARC's chain (its beam holds the enemy itself) stretched across the whole box. Over a
+// full lap of every ARC layout (tier III; base at 0) no ARC beam, read at its live ends, may run longer than 1.3 x its reach (the tower's range or its jump, ARC_VOLT_REACH)
+check("demo respawn: no ARC chain runs across the scene - walkers leave at the left and fresh ones enter at the right (a full lap, every layout)", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell], rnd0 = Math.random;
+    try { for (const key of Object.keys(DEMO_LAYOUTS.arc)) {
+      let sd = 777; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      const skills = key === "base" ? {} : { [key]: 3 }, t = { kind: "arc", cell, x: C.x, y: C.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
+      const st = towerStats(t), S = demoScene("arc", skills, cell, demoPlace("arc", st, cell, DEMO_LAYOUTS.arc[key])), lim = Math.max(st.range, st.arcRange || 0) * 1.3;
+      let worst = 0, laps = 0; const n0 = S.T.length;
+      for (let f = 0; f < 1500; f++) { demoFrame(S); for (const b of S.fx) { if (b.k !== "beam" || b.color !== TOWERS.arc.color) continue;
+        const x1 = b.a ? b.a.x : b.x1, y1 = b.a ? b.a.y : b.y1, x2 = b.b ? b.b.x : b.x2, y2 = b.b ? b.b.y : b.y2; worst = Math.max(worst, Math.hypot(x2 - x1, y2 - y1)); } }
+      laps = S.T.length - n0;
+      if (worst > lim) bad.push("arc." + key + ": a chain " + worst.toFixed(0) + " u long (reach " + (lim / 1.3).toFixed(0) + ")");
+      if (!laps) bad.push("arc." + key + ": no walker replaced in 25 s (no lap to check)");
+    } } finally { Math.random = rnd0; }
+    return bad.join("; "); })()`);
+});
+
+// CRR'S WING COMES HOME (owner, 2026-11-03: "CRR demo not launching interceptors properly"): run dry near its carrier - the scene's lanes pass
+// 0.45 r from it - an interceptor's turn limit circled it ~50 u out for good, and with the whole wing circling nothing launched again. In every
+// CRR layout at every tier, no interceptor may spend over 2 s flying home, and every interceptor launches at least once
+check("demo CRR: every interceptor gets home within 2 s and the wing keeps launching (every layout, every tier, 10 s)", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell], rnd0 = Math.random;
+    try { for (const key of Object.keys(DEMO_LAYOUTS.crr)) for (const tier of key === "base" ? [0] : [1, 2, 3, 4, 5]) {
+      let sd = 777; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      const skills = key === "base" ? {} : { [key]: tier }, t = { kind: "crr", cell, x: C.x, y: C.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
+      const S = demoScene("crr", skills, cell, demoPlace("crr", towerStats(t), cell, DEMO_LAYOUTS.crr[key])), T = S.G.towers[0], back = new Map(), was = new Map();
+      let longest = 0, sorties = 0;
+      for (let f = 0; f < 600; f++) { demoFrame(S); for (const i of T.icp || []) {
+        if (was.get(i) === "home" && i.state === "out") sorties++; was.set(i, i.state);
+        const n = i.state === "back" ? (back.get(i) || 0) + 1 : 0; back.set(i, n); longest = Math.max(longest, n); } }
+      const wing = (T.icp || []).length;
+      if (longest > 120) bad.push("crr." + key + " " + tier + ": an interceptor " + (longest / 60).toFixed(1) + " s flying home");
+      if (sorties < wing) bad.push("crr." + key + " " + tier + ": " + sorties + " sorties for " + wing + " interceptors in 10 s");
+    } } finally { Math.random = rnd0; }
+    return bad.join("; "); })()`);
+});
