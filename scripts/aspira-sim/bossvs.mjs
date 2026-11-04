@@ -1,15 +1,15 @@
 // BOSSES BY TOWER (owner, 2026-10-08: "so ACD is way better than SOL against bosses?"): each
-// boss wave (10, 20 .. 100) alone against a team of SIX towers of ONE kind, every slot
+// boss wave (12, 24 .. 120; WAVES=) alone against a team of SIX towers of ONE kind, every slot
 // filled, each tower's chart spent to POINTS points spread evenly, no core powers. Per
 // (kind, boss): did it breach (reach the core), how close it came, and how long the wave
 // took to clear. Answers which kind handles which boss, and how far ahead ACD is.
-// usage: node bossvs.mjs [seeds=2] [out.jsonl]   env POINTS=4,8  KINDS=sol,acd  BV_PATCH="BOSS_HP.star = 2;" (a balance try)
+// usage: node bossvs.mjs [seeds=2] [out.jsonl]   env POINTS=4,8  KINDS=sol,acd  WAVES=84,96  ASPIRA_PATCH="BOSS_HP.star = 2;" (a balance try; BV_PATCH is read as a FILE by simver.mjs but as code here - use ASPIRA_PATCH)
 import { isMainThread } from "node:worker_threads";
 import { makeGame, cellScores } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
 import { spreadStops, focusStops, snapStop, STOPS, POINTS_AT } from "./stops.mjs"; // tiers bought whole (0 I II III IV)
 
-const KINDS = (process.env.KINDS || "arc,frz,sol,acd").split(","), PATCH = process.env.BV_PATCH || "", WAVES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+const KINDS = (process.env.KINDS || "arc,frz,sol,acd,grv,crr,ifr").split(","), PATCH = process.env.BV_PATCH || "", WAVES = (process.env.WAVES || "12,24,36,48,60,72,84,96,108,120").split(",").map(Number); // a boss every STAR_EVERY 12 since 2026-10-12 (was 10 .. 100)
 const POINTS = (process.env.POINTS || "4,8").split(",").map(Number);
 
 export default async function task({ kind, wave, points, seed, patch = "" }) {
