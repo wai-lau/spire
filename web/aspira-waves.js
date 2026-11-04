@@ -179,7 +179,7 @@ function wavePlan(n, prev) {
   const count = laneCount(type, raw, split);
   // a swarm wave is never under SWARM_WAVE_MIN bodies, AFTER the lane rounding (owner, 2026-10-14: "make sure swarm waves have at least 12 units");
   // and no lane copy of any OTHER type is empty (owner, 2026-10-15: "min 1 enemy per lane also ... except swarm")
-  return { type, count: Math.max(type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyN(n)), count) : Math.max(split, count), planCount(type, n)), split, star: n % STAR_EVERY === 0 }; // (planCount: NO DROPS)
+  return { type, count: Math.round(countK(n) * Math.max(type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyN(n)), count) : Math.max(split, count), planCount(type, n))), split, star: n % STAR_EVERY === 0 }; // (planCount: NO DROPS; countK: the COUNT TAPER, below makeWave)
 }
 function makeWave(n) {
   const { type, count } = wavePlan(n, G.lastType);
@@ -188,6 +188,14 @@ function makeWave(n) {
   const list = Array(count).fill(type);
   return [list];
 }
+// THE COUNT TAPER (owner, 2026-11-03: "Can you increase enemy counts to raise difficulty?" / "And _mildly_ increase hp" / "No, just
+// divide current bounty" / "No speedup1"): every plain wave's bodies x3 in waves 11-30 and x2 in 31-40, x1 from 41 (the late waves
+// keep today's count, so the phone peak stays where it is); each of those bodies pays bounty / countK (a wave pays what it did) and
+// has x COUNT_HP its HP (spawnEnemy, aspira-game.js). Measured (players3b bosses on, 8 seeds, 7.2.2): wins 41% -> 34%, the first
+// upgrade wave 24 -> 22 (p25 23 -> 16), banked at 41 7.5k -> 5.7k, early lives lost 0.30 -> 0.04 at 21-30 - busier, earlier buys,
+// not deadlier; peak alive at 31-40 68 -> 126 (under the ~135 phone line), late peaks unchanged
+const COUNT_TAPER = [[11, 30, 3], [31, 40, 2]], COUNT_HP = 1.1;
+const countK = n => { for (const [a, b, k] of COUNT_TAPER) if (n >= a && n <= b) return k; return 1; };
 
 // Interest is paid on what you hold at the moment a wave is sent, so saving
 // beats spending early. Sending before the countdown ends pays the seconds left.

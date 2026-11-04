@@ -95,6 +95,7 @@ function spawnEnemy(type, n, pi, ang = 0) {
   if (type === "bonus") bossSpawn(G.enemies[G.enemies.length - 1], n); // which boss (aspira-bosses.js)
   const ef = G.enemies[G.enemies.length - 1]; // THE EARLY FLOOR (EARLY_FLOOR, aspira-waves.js): no body in waves 1-12 under it - none a non-SOL tier-0 hit one-shots
   if (n <= EASE_TO && !d.star && ef.max < EARLY_FLOOR) { const f = EARLY_FLOOR / ef.max; ef.max *= f; ef.hp *= f; }
+  if (!d.star && countK(n) > 1) { ef.bounty /= countK(n); ef.max *= COUNT_HP; ef.hp *= COUNT_HP; } // the count taper (aspira-waves.js)
 }
 
 // ---------- combat ----------
