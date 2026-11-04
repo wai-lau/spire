@@ -89,13 +89,14 @@ function demoFrame(S, c2d, view, draw) {
 // numbers; the floor's own effects (beams, tethers, pools, voids) go down under ONE frame at the scene's middle - the long lens keeps the
 // floor's perspective under a pixel across the box.
 const DEMO_LENS = 24; // the lens: focal length x the canvas's size (a long one: next to no perspective)
-// CENTRED ON THE TOWER (owner, 2026-11-03: "the tower needs to be more centered, the area occluded by the top and bottom of the area should be
-// the same"): the tower's floor point at the box's middle, the scale fitting its range ellipse (2 r cos(tilt) tall) in the box's height with
+// THE TOWER at (H/2, H/2) (owner, 2026-11-03: "the tower needs to be more centered, the area occluded by the top and bottom of the area should be
+// the same"; then "move tower to the left so that the distance from top and bottom of box is equal to distance from left of box"): its floor
+// point half the box's height from its top, bottom AND left edges, the scale fitting its range ellipse (2 r cos(tilt) tall) in the box's height with
 // DEMO_FIT to spare - so the ring sits with equal room above and below at every tier; the box's width (DEMO_BOX_AR) is the walkers' run
 const DEMO_FIT = 1.12, DEMO_BOX_AR = 372 / 180;
 function demoView3d(S, w, h) {
   const t = S.G.towers[0], r = demoRun(S, () => towerStats(t).range) || 120, tilt = warpTilt(), c = Math.cos(tilt), s = Math.sin(tilt);
-  const k = h / (2 * r * c * DEMO_FIT), ox = w / 2 - t.x * k, oy = h / 2 - CY * k - c * (t.y - CY) * k, f = DEMO_LENS * Math.max(w, h);
+  const k = h / (2 * r * c * DEMO_FIT), ox = Math.min(w, h) / 2 - t.x * k, /* LEFT (owner, 2026-11-03: "move tower to the left so that the distance from top and bottom of box is equal to distance from left of box") */ oy = h / 2 - CY * k - c * (t.y - CY) * k, f = DEMO_LENS * Math.max(w, h);
   S.mid = [t.x, t.y];
   return { k, ox, oy, p: { core: [ox + CX * k, oy + CY * k], D: 0, L: Infinity, T: Infinity, hc: 1, e: 1, P: 1, c, s, f, k, z: 1, oy: 0 } };
 }
@@ -114,5 +115,6 @@ function demoDraw3d(S) {
     up(t.x, t.y, () => drawTower(t), h / 2);
   }
   const pp = (x, y, fn, far) => { const P = warpProjectScratch(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); fn(); };
+  ctx.save(); try { drawGrvCores((x, y, fn) => pp(x, y, fn, true)); } finally { ctx.restore(); } // GRV's VOIDS: the real frame draws them in its pop pass (warpEntities part B), not drawSceneTop (owner, 2026-11-03: "grv demo is not showing voids")
   ctx.save(); try { drawFx("dmg", (x, y, fn) => pp(x, y, fn, true)); drawFx("text", pp); } finally { ctx.restore(); }
 }

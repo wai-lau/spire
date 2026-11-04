@@ -100,3 +100,23 @@ check("demo isolation: a scene left running (60 s of fast laps) never ends a gam
       return seen.length ? "called: " + [...new Set(seen)].join(", ") : S.G.over ? "the private game is over" : S.G.lives !== 18 ? "walkers cost " + (18 - S.G.lives) + " lives" : "";
     } finally { for (const [n, f] of keep) window[n] = f; sfx = sfx0; } })()`);
 });
+
+// THE SIGNATURE (owner, 2026-11-03: "grv demo is not showing voids" - the scene never ran the pass that draws them): every tower's scene,
+// drawn in 3D, must DRAW its main effect - canvas calls made inside that effect's own draw function (GRV the void core, ACD the jets,
+// IFR the meteors and fires, CRR the interceptors, FRZ the aura), or ARC's chain / SOL's beam in the shared effects in the tower's colour
+const SIGNATURE = { grv: "drawGrvCore", acd: "drawAcd", ifr: "drawIfr", crr: "drawCar", frz: "drawFrzSkill", arc: "beam", sol: "beam" };
+check("demo signature: every tower's scene draws its main effect (GRV voids, ARC chains, SOL beam, ACD jets, IFR meteor, CRR interceptors, FRZ aura), base and every axis", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell], SIG = ${JSON.stringify(SIGNATURE)}, rnd0 = Math.random;
+    try { for (const kind of Object.keys(DEMO_LAYOUTS)) for (const key of Object.keys(DEMO_LAYOUTS[kind])) {
+      let sd = 777; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      const skills = key === "base" ? {} : { [key]: 3 }, t = { kind, cell, x: C.x, y: C.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
+      const S = demoScene(kind, skills, cell, demoPlace(kind, towerStats(t), cell, DEMO_LAYOUTS[kind][key])), cv = document.createElement("canvas"); cv.width = 372; cv.height = 180;
+      const c2 = cv.getContext("2d"), view = demoView3d(S, 372, 180), sig = SIG[kind]; let on = false, ops = 0, beams = 0;
+      const marks = ["fill", "stroke", "drawImage", "fillRect", "strokeRect", "fillText"].map(m => [m, c2[m]]); for (const [m, f] of marks) c2[m] = function (...a) { if (on) ops++; return f.apply(this, a); };
+      const f0 = sig !== "beam" ? window[sig] : null; if (f0) window[sig] = function (...a) { const was = on; on = true; try { return f0.apply(this, a); } finally { on = was; } };
+      try { for (let f = 0; f < 360; f++) { demoFrame(S, c2, view, demoDraw3d); if (sig === "beam") beams += S.fx.filter(x => x.k === "beam" && x.color === TOWERS[kind].color).length; } }
+      finally { if (f0) window[sig] = f0; for (const [m, f] of marks) c2[m] = f; }
+      if (sig === "beam" ? !beams : !ops) bad.push(kind + "." + key + " III: no " + (sig === "beam" ? kind + "-coloured beam" : sig + " drawing"));
+    } } finally { Math.random = rnd0; }
+    return bad.join("; "); })()`);
+});
