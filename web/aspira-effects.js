@@ -6,25 +6,11 @@
 // It deals nothing; the damage comes with the bright flash on firing.
 function drawAims() {
   ctx.lineCap = "round"; ctx.lineWidth = 0.8;
-  const now = performance.now() / 1000;
   for (const t of G.towers) {
     if (t.kind !== "sol") continue;
-    const st = towerStats(t), n = st.beams || 1, col = TOWERS[t.kind].color, real = st.band || SOL_BAND0;
-    // THE PRISM PERSISTS (owner, 2026-10-26: "keep the prism rendered, instead slowly reduce the prism opacity. If another unit is being
-    // targetted, swing the existing prism over there instead of starting over" / "prism width animation should only happen when charging if
-    // the prism is not being re-used ... let the beam indicate charging / when the prism needs to go, fade it out slowly"): t.prism - a NEW
-    // one widens from 0 as its first charge fills; a re-used one keeps its width and SWINGS to the new aim (SOL_PRISM_SWING rad/s), coming
-    // back to full over SOL_PRISM_IN_S; with no lock it fades over SOL_PRISM_OUT_S and goes
-    const lock = (t.locks || []).find(l => !l.e.dead), pr = t.prism, dt = pr ? Math.min(0.1, Math.max(0, now - pr.t)) : 0;
-    // NO PRISM ON A PLAIN SOL (owner, 2026-10-28: tier 0 "a minimal version of the tower with few effects"): the band is Diffraction's
-    // (st.pierce) and the scorch rod sweeps it (st.dot) - until one is bought there is nothing for it to show
-    if ((st.pierce || st.dot) && lock && t.period) {
-      const aim = Math.atan2(lock.e.y - t.y, lock.e.x - t.x), p = Math.min(1, Math.max(0, 1 - lock.cd / t.period));
-      if (!pr || pr.alpha <= 0) t.prism = { a: aim, half: real * p, alpha: p, t: now, fresh: true };
-      else if (pr.fresh) { pr.a = aim; pr.half = real * p; pr.alpha = p; pr.t = now; if (p >= 1) pr.fresh = false; }
-      else { const d = ((aim - pr.a + 3 * Math.PI) % (2 * Math.PI)) - Math.PI, w = SOL_PRISM_SWING * dt; pr.a += Math.max(-w, Math.min(w, d)); pr.half = real; pr.alpha = Math.min(1, pr.alpha + dt / SOL_PRISM_IN_S); pr.t = now; }
-    } else if (pr) { pr.alpha -= dt / SOL_PRISM_OUT_S; pr.t = now; if (pr.alpha <= 0) t.prism = null; }
-    if (t.prism && t.prism.alpha > 0) drawBand({ x: t.x, y: t.y, a: t.prism.a, half: t.prism.half, len: SOL_CONE_EDGE, color: col }, Math.cbrt(t.prism.alpha)); // (cbrt: drawBand cubes it - linear in alpha)
+    const st = towerStats(t), n = st.beams || 1, col = TOWERS[t.kind].color;
+    // NO PRISM (owner, 2026-11-04: "wait get rid of the prism for SOL"; it persisted and swung between targets from 2026-10-26 - ARCHAEOLOGY §4)
+    const lock = (t.locks || []).find(l => !l.e.dead);
     // THE SCORCH RODS (solRodStep): an IFR flare spoke across the band at each rod's distance, FULL at the tower and clear by the play
     // box's edge along the shot (r.len; owner, 2026-10-28: "the fade should go from 100% opacity to 0" - it faded IN over 50 u until then)
     if (t.rods && t.rods.length) {
@@ -75,7 +61,6 @@ function drawSolRod(x, y, c, sn, half, al, col, low) {
     }
   }
 }
-const SOL_PRISM_SWING = 4, SOL_PRISM_IN_S = 0.3, SOL_PRISM_OUT_S = 1.5; // rad/s a re-used prism swings; s back to full; s to fade out
 
 // ACD: each line thin and faint at first, thicker and brighter as its burn
 // ramps (a Residue line, out of range, at half strength); Plague's circle

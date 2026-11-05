@@ -266,6 +266,13 @@ perfect play and interest; `eco.mjs` found ARC+FRZ+ACD owning 109-287% of a max 
   (2026-10-22). The tier redesign (2026-10-24) moved all of it: tier 0 one jet, no pools; the pools and their slow are Contagion's
   (Contagion I "Ray leaves slowing pool"); kill pools gone ("get rid of kill pools"). The doc had kept the older version until 6.17.4.
 
+### 4.4-ter SOL's prism (2026-10-26 .. 2026-11-04)
+
+The band's PRISM (`t.prism`, `drawBand` from drawAims): it widened from 0 as a new lock's first charge filled, a re-used one SWUNG to the
+new aim (`SOL_PRISM_SWING` 4 rad/s) and came back to full over `SOL_PRISM_IN_S` 0.3 s, and with no lock it faded over `SOL_PRISM_OUT_S`
+1.5 s (owner, 2026-10-26: "keep the prism rendered, instead slowly reduce the prism opacity ..."). Shown once a tower had a band (Diffraction
+or Scorch). Removed from the draw (owner, 2026-11-04: "wait get rid of the prism for SOL"), ahead of the tracking beam's flip.
+
 ### 4.5 Upgrading: UI history
 Two clicks (select, then confirm) -> the chooser (cards, one per option) -> chart axes DRAGGED on the
 card (10-07) -> three real RANGE SLIDERS stacked left of the chart (10-07) -> **+ / - steppers** (10-08;

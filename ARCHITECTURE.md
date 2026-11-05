@@ -241,7 +241,7 @@ Its checks and weak spots are measured, not designed: the build card's marks (`V
 |---|---|
 | lock | locks a target (held out to `SOL_HOLD`), charges the whole reload, then fires; a target dying mid-charge restarts it; a lost lock hands its charge only to a new target inside the shot's band (`inSolCone`) |
 | plain beam (tier 0) | strikes its first enemy and flies on straight past it, striking no one - the minimal tower |
-| band (Diffraction) | parallel walls either side of the line tower -> first enemy, out to the screen's edge; drawn as the prism (`drawBand`), swinging between targets, shown once the tower has a band (Diffraction or Scorch) |
+| band (Diffraction) | parallel walls either side of the line tower -> first enemy, out to the screen's edge; not drawn - the prism that showed it is gone (owner, 2026-11-04: "wait get rid of the prism for SOL") |
 | split (Diffraction) | every hit splits to more enemies inside the band, each the next nearest to SOL and farther than the last, weaker than the hit before (`SOL_SPLIT`, `SOL_HOP`); a line ends under `SOL_END_K` of the shot |
 | mirror (Diffraction) | a hit with no one to split to flies on to the band's wall and mirrors, angle in = angle out (at most `SOL_WALLS`), or leaves by the open end |
 | scorch (Scorch) | every hit burns a stack of ticks, each stack on its own clock, one pop a tick (`solScorchTick`); the scorch rod sweeps out from the tower across the band and puts one stack on everything it crosses (`drawSolRod`) |

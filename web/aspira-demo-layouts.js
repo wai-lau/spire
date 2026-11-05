@@ -49,7 +49,7 @@ const DEMO_LAYOUTS = {
   },
   ifr: {
     base: { place: "walk", types: ["swarm", "shield", "swarm", "shield", "swarm"], shows: ["hits", "pops"] },
-    meteor: { place: "walk", types: ["swarm", "shield", "swarm", "shield", "swarm"], shows: ["hits", "many", "pops"] },
+    meteor: { place: "walk", types: ["swarm", "swarm", "swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many", "pops"] }, // (a longer pack: the fan's shards fly straight, no homing - only what sits on their lines is hit, 2026-11-04)
     hellfire: { place: "walk", types: ["swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many", "pops"] },
     firaga: { place: "walk", types: ["swarm", "shield", "swarm", "shield"], shows: ["hits", "pops"] },
   },
