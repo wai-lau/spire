@@ -1,6 +1,7 @@
 // /aspira - WHERE THE CARDS SIT (split out of aspira-ui.js 2026-11-05, the 500-line cap): the tower / core card bottom centre, lifted
 // clear of the wave list and build buttons (cardLift), sized to the room it has (fitPop) and placed (placePop). UI only - the simulator
-// never loads it. Same global scope; loaded right after aspira-ui.js.
+// never loads it. Same global scope; loaded right BEFORE aspira-ui.js - its last lines (resize, refreshPanels, the first frame) call placePop
+// at load: after it, the page threw "Can't find variable: placePop" and the frame loop never ran (7.6.11, caught by the WebKit pytest).
 
 // the tower's / core's card sits BOTTOM CENTRE and stays there (owner: it no
 // longer follows the tower, which now moves); where it would cover the wave

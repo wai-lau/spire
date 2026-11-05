@@ -737,7 +737,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `ranges` (tower ranges, split from draw), `textcache`, `effects`, `enemies`, `lanes`, `lanefade` (the fade-in layer, split from lanes), `camera`, `fling`, `fog` |
 | draw (3D) | `lanegl` (the GPU lanes' atlas and GLSL, before `warp` because the shader source splices `LANE_GLSL`), `warp`, `warp-prism`, `warplayers`, `fxgl`, `glctx`, `pick`, `solids`, `walls` |
-| UI and tail | `chooser`, `wavelist`, `wavecard`, `ui` (HUD, input, the frame loop), `cardfit` (where the tower / core card sits, split 2026-11-05), `perflog`, `changelog`, `autosave`, `demo` (the card's private scene: the swap, the 3D camera), `demo-layouts` (the layout registry, `demoShows`), `demo-card` (the box, the i, `demoTick`) |
+| UI and tail | `chooser`, `wavelist`, `wavecard`, `cardfit` (where the tower / core card sits, split 2026-11-05; BEFORE `ui`, whose last lines call it at load), `ui` (HUD, input, the frame loop), `perflog`, `changelog`, `autosave`, `demo` (the card's private scene: the swap, the 3D camera), `demo-layouts` (the layout registry, `demoShows`), `demo-card` (the box, the i, `demoTick`) |
 
 
 | Piece | Where |
