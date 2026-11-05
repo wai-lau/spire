@@ -75,7 +75,9 @@ function ifrSkillStats(t, s, b) {
   // Meteor the meteors, Hellfire the fire the first one leaves, Flare (id firaga) the flares
   s.fan = m >= CAPSTONE_TIER ? IFR_FAN_CAP : IFR_FAN_N; s.fissure = false; s.store = IFR_STORE[m];
   s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K0;
-  s.fire = h > 0; s.flares = f > 0; // tier 0: a meteor that just hits - the fire is Hellfire's, the flares Flare's (tier redesign 2026-10-24)
+  // THE FIRE AT HELLFIRE 0 (owner, 2026-11-05: "ok IFR should start with the hellfire circle, lighting no flares, so it extinguishes the moment
+  // it reaches full size"): every IFR's first impact grows the circle (its ring hit), but only Hellfire I+ lights its flares (s.fireFlares)
+  s.fire = true; s.fireFlares = h > 0; s.flares = f > 0; // the flares are Flare's (tier redesign 2026-10-24)
   s.fireR = Math.max(s.ballR * IFR_FIRE_FLOOR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireDens = IFR_FIRE_DENS[h]; s.fireHK = IFR_FIRE_HK; 
   s.triple = f >= CAPSTONE_TIER; s.hfK = f ? IFR_HF_FK : 1;
   s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; s.burnS = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]); s.tickS = IFR_TICK_S[f]; s.flareK = IFR_TICK_K0;
@@ -245,7 +247,7 @@ function stepIfrBalls(t, st, dt) {
 // the Flare capstone's big centre flare)
 function ifrImpact(t, st, b, main = true) {
   const hk = 1 / Math.sqrt(1 + st.fan);
-  if (st.fire) (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens * hk, hk, win: st.burnS, big: main && st.triple, left: 1, eid: b.hitId ?? null });
+  if (st.fire) (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens * hk, hk, win: st.burnS, big: main && st.triple, nf: !st.fireFlares, left: 1, eid: b.hitId ?? null });
   if (st.flares) ifrLandFlares(t, st, b.ax, b.ay); /* every meteor lights a flare where it strikes, the first too (owner, 2026-10-20) */
   if (main) sfx("ifrblast");
 }
@@ -271,6 +273,7 @@ function ifrRingHit(t, st, f) {
 function stepIfrFires(t, st, dt) {
   if (!t.ifrFires || !t.ifrFires.length) return;
   for (const f of t.ifrFires) {
+    if (!f.flq && f.nf) { f.flq = []; f.until = 0; f.age0 = 0; } /* Hellfire 0: no flares - out the moment it is full (the Flare capstone's big flare still lights there, below) */
     if (!f.flq) { const n0 = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.dens || 1) * (f.R / IFR_FIRE_FLARE_R0) ** 2)), n = Math.max(IFR_FIRE_MIN, n0); f.split = n0 / n; f.flq = []; f.age0 = 0; /* AT LEAST IFR_FIRE_MIN, the fire's hits SPLIT among them (owner, 2026-10-21: "can't see the hellfire flares from IFR at 0 upgrades" - an untaken fire lit one) */ /* its flares' times, a bell round IFR_FIRE_FLARE_T */
       const w = f.win ?? IFR_FIRE_WINDOW_S; for (let i = 0; i < n; i++) f.flq.push(Math.min(w, Math.max(0, w / 2 + w / 4 * ifrNormal()))); f.flq.sort((a, b) => b - a); } /* ALL within its meteor's flare's life (f.win), a bell round its middle */
     f.age0 += dt;
@@ -278,6 +281,7 @@ function stepIfrFires(t, st, dt) {
     if (f.r < f.R) { f.r = Math.min(f.R, f.r + f.v * dt); ifrRingHit(t, st, f); }
     while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.sqrt(Math.random()); /* EVEN over the fire's area (owner, 2026-10-21: "change the positional randomness to not prefer the center"; was u^IFR_LAND_POW) */ const fl = ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true, (f.hk ?? 1) * (f.split ?? 1)); if (fl) fl.split = f.split; f.until = Math.max(f.until || 0, f.age0 + ((fl && fl.life) || 0)); /* (fl: a stand-in may return nothing) */
       if (!f.flq.length && f.big) ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* inside the fire as it is then; the last one lit, the Flare capstone's BIG flare dead centre */
+    if (f.nf && f.big && f.r >= f.R) { f.big = false; ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); }
     if (!f.flq.length && f.r >= f.R && f.age0 >= (f.until || 0)) f.left = 0; /* its last flare OUT: it goes (owner, 2026-10-21: "hellfire ring should remain on screen until all hellfire flares have gone out") */
   }
   keepLive(t.ifrFires);

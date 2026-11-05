@@ -65,7 +65,7 @@ const SPEC = {
     ["Pellets", st.autopilot ? CRR_BURST_N + " a burst" : "—"], ["Pellet hit", st.autopilot ? tdP("crr", st, st.dmg * CRR_BURST_K) : "—"]] /* no Shields row: any damage pops one charge, unsaid (owner, 2026-10-26) */,
   // IFR (aspira-ifrit.js, axes redone 2026-10-20): Damage is the base every hit multiplies (each axis by its own K), Rate meteors a second
   ifr: st => [["Burst", st.fan + " meteors"], ["Stored", (st.store || 1) + " in orbit"] /* (fire, flares, fan "—" until bought - tier redesign 2026-10-24) */, ["Hit", tdP("ifr", st, st.dmg * st.routeK)], ["Charge", +st.chargeS.toFixed(2) + "s"], ["Ball speed", st.ballV], ["Meteor", "r" + st.ballR],
-    ["Fire", st.fire ? "r" + Math.round(st.fireR) : "—"], ["Fire speed", st.fire ? st.fireV + "/s" : "—"], ["Fire flares", st.fire ? Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2) + " untaken flares" : "—"],
+    ["Fire", st.fire ? "r" + Math.round(st.fireR) : "—"], ["Fire speed", st.fire ? st.fireV + "/s" : "—"], ["Fire flares", st.fireFlares ? Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2) + " untaken flares" : "—"],
     ["Flare length", st.flares ? Math.round(st.beamL) : "—"], ["Flare width", st.flares ? Math.round(st.beamW) : "—"], ["Flare tick", st.flares ? tdP("ifr", st, st.dmg * st.flareK) : "—"], ["Flare ticks", st.flares ? +(1 / st.tickS).toFixed(1) + "/s" : "—"], ["Flare lasts", st.flares ? +st.burnS.toFixed(1) + "s" : "—"],
     ["Flare capstone", st.triple ? IFR_CAP_FLARES + " flares a landing" : "—"]],
   // GRV (aspira-grv.js; rework 2026-10-25): at STARTING mass - a void grows up to x GRV_MASS_MAX with the damage it deals
