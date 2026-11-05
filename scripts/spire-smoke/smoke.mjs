@@ -12,6 +12,7 @@ import "./tiers.mjs"; // the tier redesign's tower checks (2026-10-24)
 import "./ifr.mjs"; // the IFR checks (split out 2026-10-28): registered first, reported with the rest
 import "./waves.mjs"; // the play box, lane, formation and spawning checks (split out 2026-10-30)
 import "./demo.mjs"; // the card's demo scene (2026-11-03)
+import "./pins.mjs"; // rules shipped without a check of their own (2026-11-05)
 
 const env = boot();
 const { run } = env;
