@@ -2,10 +2,13 @@
 // the fire and the flares. Loaded right after aspira-ifrit.js (same global scope; the simulator loads only the logic).
 // ---------- the look: the charge, the meteors, the fire and the flares. Fills, strokes and lines only (the
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
+// DRAWN BIGGER UP THE METEOR AXIS (owner, 2026-11-05: "IFR meteor should visually increase meteor and shard sizes"): the meteor in flight, its trail and its
+// burst shards are drawn x IFR_METEOR_DRAW_K per Meteor tier (V x3.05) on top of their radius - the DRAWING only; the hit sizes (IFR_BALL_RAD) are the logic's
+const IFR_METEOR_DRAW_K = 1.25, ifrDrawK = t => IFR_METEOR_DRAW_K ** (typeof skillOf === "function" ? skillOf(t, "meteor") : 0);
 function drawIfrCharge(t, st, low) {
   if (t.ifrCharge <= 0) return;
   const n = Math.max(1, st.store || 1); // the stored meteors, evenly round the orbit; the one still charging grows to the meteor it launches
-  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n), f = Math.min(1, t.ifrCharge - k); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * f), true, low); }
+  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n), f = Math.min(1, t.ifrCharge - k); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * f), true, low); } // (the charges in orbit keep their size - a bigger one crowds the tower's hex)
 }
 // the ring's glow at radius r, alpha a (0.9 = full): IFR_RING_GLOW's layers, the blast's and the ball's alike
 function drawIfrRingAt(x, y, r, a, low, wk = 1, cols = null) { // wk: x every layer's width (the fire's ring: IFR_FIRE_W); cols: a layer colour map (the fire's: IFR_HF_COL)
@@ -39,13 +42,13 @@ const IFR_SHARD_DRAW = 1 / 3; // (IFR_TRACER_U: aspira-ifrit.js - the sim loads 
 // THE LAUNCHED METEOR'S TRACER, like an enemy's (owner, 2026-10-26: "meteor tracer should depend on movement and fade out like enemies"):
 // the path it FLEW (b.trail, the last IFR_TRACER_U of it - stepIfrBalls), not a line along its heading, as one tapered shape fading
 // from the meteor's colour to nothing at the tail (drawStarTrail, aspira-enemies.js)
-function drawMeteorTrail(b) {
+function drawMeteorTrail(b, dk = 1) {
   const tr = b.trail; if (!tr || tr.length < 2) return;
   const pts = [{ x: b.x, y: b.y }]; for (let i = tr.length - 1; i >= 0; i--) pts.push(tr[i]);
   const n = pts.length - 1, L = [], R = [];
   for (let i = 0; i <= n; i++) {
     const a = pts[Math.max(0, i - 1)], c = pts[Math.min(n, i + 1)], len = Math.hypot(c.x - a.x, c.y - a.y) || 1;
-    const w = b.r * 0.8 * (1 - i / n), nx = -(c.y - a.y) / len * w, ny = (c.x - a.x) / len * w;
+    const w = b.r * dk * 0.8 * (1 - i / n), nx = -(c.y - a.y) / len * w, ny = (c.x - a.x) / len * w;
     L.push({ x: pts[i].x + nx, y: pts[i].y + ny }); R.push({ x: pts[i].x - nx, y: pts[i].y - ny });
   }
   const ends = [pts[0].x, pts[0].y, pts[n].x, pts[n].y]; if (!ends.every(Number.isFinite)) return; // (a NaN end: the gradient THROWS)
@@ -54,9 +57,10 @@ function drawMeteorTrail(b) {
   ctx.fillStyle = g; ctx.globalAlpha = 0.55; ctx.fill(); ctx.globalAlpha = 1;
 } // a burst meteor DRAWN at a third of its size - its reach unchanged (owner, 2026-10-26: "make shards also visible 1/3 the current size")
 function drawIfrBalls(t, low) {
+  const dk = ifrDrawK(t);
   for (const b of t.ifrBalls) if (!(b.wait > 0)) {
-    if (!b.gen) drawMeteorTrail(b);
-    drawIfrMeteor(b.x, b.y, b.gen ? b.r * IFR_SHARD_DRAW : b.r, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
+    if (!b.gen) drawMeteorTrail(b, dk);
+    drawIfrMeteor(b.x, b.y, (b.gen ? b.r * IFR_SHARD_DRAW : b.r) * dk, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
   } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
