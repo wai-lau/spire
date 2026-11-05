@@ -162,8 +162,8 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
     const mid = t.ifrBalls.reduce((m, q) => Math.abs(Math.atan2(q.vy, q.vx) - Math.atan2(e.y - q.y, e.x - q.x)) < Math.abs(Math.atan2(m.vy, m.vx) - Math.atan2(e.y - m.y, e.x - m.x)) ? q : m, b);
     out.aimOff = Math.abs(Math.atan2(mid.vy, mid.vx) - Math.atan2(e.y - mid.y, e.x - mid.x)) * 180 / Math.PI; /* degrees off the enemy's spot at launch: led */ let n = 0; while (!t.ifrFires.length && n++ < 600) step(1 / 60); /* to the first impact (the fan flies on after it) */
     out.r = b.r; const f0 = t.ifrFires[0]; out.hit = !!f0 && Math.hypot(f0.x - e.x, f0.y - e.y) < 30; out.miss = f0 ? Math.hypot(f0.x - e.x, f0.y - e.y) : NaN;
-    out.glow2d = IFR_GLOW[0][0]; out.glowGl = IFR_GLOW_GL[0][0];
-    out.whites = [IFR_RING_GLOW, IFR_GLOW, IFR_GLOW_GL].flat().filter(q => q[2] === "white").length;
+    out.glow2d = Math.max(...IFR_GLOW_GL.map(q => 2 * q[0])); out.glowGl = Math.max(...IFR_GLOW_GL.map(q => q[0])); /* 2D: a layer's widest stroke is 2 x its half-width */
+    out.whites = [IFR_RING_GLOW, IFR_GLOW_GL].flat().filter(q => q[2] === "white").length;
     return out;
   })()`);
   if (r.noBall) return "no meteor launched at a charged tower with a target";

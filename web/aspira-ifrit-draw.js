@@ -64,15 +64,17 @@ function drawIfrBalls(t, low) {
 const IFR_FLARE_I0 = 3, IFR_FLARE_I_MAX = 6;
 const IFR_FLARE_MAIN_K = 3 /* 2 -> 3 (owner, 2026-10-20: "make the non-hellfire stars brighter") */; // a METEOR's flare (not the fire's) x this - "make non-hellfire flares more opaque and intense" (owner, 2026-10-20)
 function ifrFlareI(f) { return (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
-// THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"):
-// each spoke is three stacked strokes - wide and faint, mid, a narrow bright core - [x the beam width, alpha], each cut into
-// IFR_GLOW_BANDS lengths whose alpha falls off toward the tip as 1 - (k / bands)^2 (flat near the centre, fading at the end).
-// That is the 2D way (a canvas stroke takes no gradient that follows its length). In 3D (owner, 2026-10-19: "why can GRV have
-// smooth aura gradients while IFR spokes cannot? fix") each spoke is instead two GLOW LINES on the GPU (shape 7, aspira-fxgl.js):
-// a halo and a narrow core, each brightest on its centre line and clear at its edge, fading as 1 - t^2 to the tip - smooth, no
-// bands. IFR_GLOW_GL: [half-width x the beam width, alpha, colour]. lowQ keeps the core only, both ways
-const IFR_GLOW = [[1, 0.12, "glow"], [0.5, 0.28, "tifr"], [0.16, 0.85, "orange"], [0.05, 0.9, "yellow"]] /* the widest layer = the beam's hit band W (owner, 2026-10-20: "the glow should only be as wide as the hitbox"; was 1.6, 0.8, 0.25, 0.08) */, IFR_GLOW_BANDS = 6, IFR_GLOW_A = 0.11375; /* x0.5 (owner, 2026-10-20: "reduce flare opacity by 50%"; was 0.2275) */ /* a WHITE core in the orange (owner, 2026-10-19); IFR_GLOW_A: every spoke starts at 22.75% (owner, 2026-10-19: 65%, x0.7, then x0.5) */
-const IFR_GLOW_GL = [[0.5, 0.5, "glow"], [0.125, 0.95, "orange"], [0.0375, 0.95, "yellow"]]; /* fire colours, no white (owner, 2026-10-20) */ /* half-widths: the widest = W / 2, the hit band (was 0.8, 0.2, 0.06) */
+// THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"; 2026-11-04: "replace
+// all stepped opacity flares to use a faded glow instead"): each spoke is three glow layers - a halo, a mid and a narrow core, each brightest on
+// its centre line, clear at the hit band's edge and fading as (1 - t)^3 to the tip. 3D: GLOW LINES on the GPU (shape 7, aspira-fxgl.js); 2D:
+// drawIfrFlares. IFR_GLOW_GL: [half-width x the beam width, alpha, colour, falloff power]. lowQ keeps the two inner. IFR_GLOW_A: every spoke
+// starts at 11.375% (owner, 2026-10-19: 65%, x0.7, then x0.5; 2026-10-20: "reduce flare opacity by 50%"). The widest = the beam's hit band W
+// (owner, 2026-10-20: "the glow should only be as wide as the hitbox"); fire colours, no white but a meteor's core (owner, 2026-10-20)
+const IFR_GLOW_A = 0.11375;
+// ONE FADED GLOW, NO STEPS (owner, 2026-11-04: "replace all stepped opacity flares to use a faded glow instead"): every layer spans the whole hit
+// band (W / 2 each side) and narrows by its falloff power instead (4th: (1 - off)^pw, shape 7) - the old widths 0.5 / 0.125 / 0.0375 ended
+// each layer at its own edge, a step at each; the powers put each layer's half-bright point where its edge-to-edge bell had it
+const IFR_GLOW_GL = [[0.5, 0.5, "glow", 2], [0.5, 0.95, "orange", 9], [0.5, 0.95, "yellow", 31]]; /* fire colours, no white (owner, 2026-10-20) */ /* half-widths: the widest = W / 2, the hit band (was 0.8, 0.2, 0.06) */
 /* 3D, drawn through the GPU stand-in (glCtx, aspira-glctx.js - the real canvas keeps it as __glc): each spoke stops at a tower's edge like any
    beam (trimToTowers), its t range kept so the fade still runs over the whole spoke */
 function drawIfrFlaresGl(t, low, hf) {
@@ -83,7 +85,7 @@ function drawIfrFlaresGl(t, low, hf) {
       const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { /* lowQ: the orange core + the white one */
-        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), t0, t1);
+        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), t0, t1, q[3]);
       }
     }
   }
@@ -98,23 +100,42 @@ const ifrFlareCol = (key, f) => COL[(f.hf ? IFR_HF_COL[key] : IFR_MAIN_COL[key])
 // then (same day) "much less glow, double core opacity": the glow 0.4 -> 0.1, the core (orange and yellow) 1.6 -> 3.2; the mid layer 1.6
 const IFR_HF_GLOW_K = 0.3, IFR_HF_OPAQ = 1.6, IFR_HF_CORE = 3.2; // glow 0.1 -> 0.3 (owner, 2026-10-21, the smaller flares faint: "A, make sure it's red")
 const ifrLayerK = (key, f) => (f.hf ? (key === "glow" ? IFR_HF_GLOW_K : key === "orange" || key === "yellow" ? IFR_HF_CORE : IFR_HF_OPAQ) : 1);
+// 2D, THE SAME FADE (owner, 2026-11-04: "faded glow instead" of the stepped bands): ALONG a ray, one unit RADIAL gradient a colour (cached,
+// (1 - t)^3 to the tip like the GPU's), scaled to the flare - every ray is radial, so one gradient fades them all (the x rays, IFR_X_K
+// shorter, under their own scale; Hellfire VI's rays to the box's edge one by one). ACROSS, each IFR_GLOW_GL layer as IFR_GLOW_LV strokes
+// at the widths where its (1 - off)^pw bell crosses those levels - a canvas stroke is flat across, so the bell is three thin steps
+const IFR_GLOW_LV = [0.8, 0.5, 0.2], ifrFade = new Map();
+function ifrFadeGrad(css) {
+  let g = ifrFade.get(css); if (g) return g;
+  g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1); const m = /rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)/.exec(css), h = /^#([0-9a-f]{6})$/i.exec(css.trim()); // (COL: computed "rgb(r, g, b)")
+  const rgb = m ? m.slice(1, 4).join(",") : h ? [0, 2, 4].map(k => parseInt(h[1].slice(k, k + 2), 16)).join(",") : null;
+  for (let k = 0; k <= 6; k++) { const t = k / 6, a = (1 - t) ** 3; g.addColorStop(t, rgb ? "rgba(" + rgb + "," + a.toFixed(3) + ")" : k < 6 ? css : "transparent"); }
+  ifrFade.set(css, g); return g;
+}
+function ifrRays(S, ends, sel) { // one path: the rays of `sel` (0 the long four, 1 the x), from the centre, in units of the scale
+  for (let k = sel; k < ends.length; k += 2) { const e = ends[k]; ctx.moveTo(0, 0); ctx.lineTo((e[2] - e[0]) / S, (e[3] - e[1]) / S); }
+}
 function drawIfrFlares(t, hf) { // hf: the fire's flares only, else the meteors' only
   if (!t.ifrFlares.length) return;
   const low = typeof lowQ === "function" && lowQ();
   if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { drawIfrFlaresGl(t, low, hf); return; } /* ctx IS the stand-in (glCtx) */
-  ctx.strokeStyle = COL.tifr;
+  ctx.lineCap = "butt";
   for (const c of t.ifrFlares) {
     if (!c.hf !== !hf) continue;
-    const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c);
-    for (let g = low ? IFR_GLOW.length - 2 : 0; g < IFR_GLOW.length; g++) {
-      ctx.strokeStyle = ifrFlareCol(IFR_GLOW[g][2], c); ctx.lineWidth = Math.max(1, c.W * IFR_GLOW[g][0]);
-      for (let k = 0; k < IFR_GLOW_BANDS; k++) {
-        const a0 = k / IFR_GLOW_BANDS, a1 = (k + 1) / IFR_GLOW_BANDS;
-        ctx.globalAlpha = Math.min(1, IFR_GLOW[g][1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(IFR_GLOW[g][2], c) * (1 - a0) ** 3); // fast falloff to the tip (owner, 2026-10-19; was 1 - a0^2)
-        ctx.beginPath();
-        for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0 + (x1 - x0) * a0, y0 + (y1 - y0) * a0); ctx.lineTo(x0 + (x1 - x0) * a1, y0 + (y1 - y0) * a1); }
-        ctx.stroke();
+    const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c), x = ends[0][0], y = ends[0][1];
+    const groups = c.edges ? ends.map((e, k) => [Math.hypot(e[2] - e[0], e[3] - e[1]) || 1, k]) : [[c.L, 0], [c.L * (c.xk ?? IFR_X_K), 1]]; // [scale, which rays]
+    for (const [S, sel] of groups) {
+      ctx.save(); ctx.translate(x, y); ctx.scale(S, S);
+      for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) {
+        const q = IFR_GLOW_GL[g], col = ifrFlareCol(q[2], c), a = Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c));
+        ctx.strokeStyle = ifrFadeGrad(col); ctx.globalAlpha = a / IFR_GLOW_LV.length * 1.6;
+        for (const lv of IFR_GLOW_LV) {
+          ctx.lineWidth = Math.max(1 / S, c.W * 2 * q[0] * (1 - lv ** (1 / q[3])) / S); ctx.beginPath();
+          if (c.edges) { const e = ends[sel]; ctx.moveTo(0, 0); ctx.lineTo((e[2] - e[0]) / S, (e[3] - e[1]) / S); } else ifrRays(S, ends, sel);
+          ctx.stroke();
+        }
       }
+      ctx.restore();
     }
   }
 }

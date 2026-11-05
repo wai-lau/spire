@@ -115,7 +115,7 @@ void main() {
     fa = 1.0 - smoothstep(-0.5, 0.5, td); sa = v.y > 0.0 ? (1.0 - smoothstep(h - 0.5, h + 0.5, abs(td))) * min(1.0, v.y * 2.0) : 0.0; }
   if (sh == 7.0) { /* the glow line: brightest on its centre line, clear at r off it; fading as 1 - t^2 from p0 (t = cb.x) to p1 (cb.y) */
     float off = clamp(abs(loc.y) / max(v.x, 0.001), 0.0, 1.0), t = mix(cb.x, cb.y, clamp(loc.x / max(2.0 * v.w, 0.001) + 0.5, 0.0, 1.0));
-    fa = (1.0 - off) * (1.0 - off) * (1.0 - t) * (1.0 - t) * (1.0 - t) /* falls off fast along the spoke (owner, 2026-10-19; was 1 - t^2) */ * (1.0 - smoothstep(v.w - 0.5, v.w + 0.5, abs(loc.x))) * min(1.0, v.x * 2.0); sa = 0.0; }
+    fa = pow(1.0 - off, cb.z > 0.0 ? cb.z : 2.0) * (1.0 - t) * (1.0 - t) * (1.0 - t) /* falls off fast along the spoke (owner, 2026-10-19; was 1 - t^2) */ * (1.0 - smoothstep(v.w - 0.5, v.w + 0.5, abs(loc.x))) * min(1.0, v.x * 2.0); sa = 0.0; }
   if (sh == 8.0) { /* SOL's BAND: a butt-ended rectangle, its alpha a profile ALONG it - rising to cb.x of the way, full to cb.y, gone by cb.z (owner, 2026-10-26: "Visually make SOL a gradient, not steps!") */
     float t = clamp(loc.x / max(2.0 * v.w, 0.001) + 0.5, 0.0, 1.0), pr = t < cb.x ? t / max(cb.x, 0.0001) : t < cb.y ? 1.0 : max(0.0, 1.0 - (t - cb.y) / max(cb.z - cb.y, 0.0001));
     fa = pr * (1.0 - smoothstep(v.x - 0.5, v.x + 0.5, abs(loc.y))) * (1.0 - smoothstep(v.w - 0.5, v.w + 0.5, abs(loc.x))); sa = 0.0; }
@@ -214,7 +214,7 @@ function fxGlBeam(f, a) {
 function fxGlCoin(x, y, r, ring, fill, a) { fxGlPush(x, y, x, y, r, ring !== fill ? 1.1 : 0, COL[fill], a, COL[ring], ring !== fill ? a : 0); }
 // a GLOW LINE (shape 7): x0,y0 - x1,y1 (world), w its half-width, css at a on its centre line, clear at w off it, fading to
 // clear at p1 as 1 - t^2; t0 / t1: the line's share at each end when it is a trimmed part of a longer one (IFR's spokes)
-function fxGlGlowLine(x0, y0, x1, y1, w, css, a, t0 = 0, t1 = 1) { fxGlPush(x0, y0, x1, y1, w, 0, css, a, css, 0, 7, t0, t1); }
+function fxGlGlowLine(x0, y0, x1, y1, w, css, a, t0 = 0, t1 = 1, pw = 2) { fxGlPush(x0, y0, x1, y1, w, 0, css, a, css, 0, 7, t0, t1, pw); } // pw: its falloff across, (1 - off)^pw - 2 the soft bell; a higher one a narrower core over the same width (IFR's layers - aspira-ifrit-draw.js)
 // SOL's light CONE (drawCone, aspira-skills.js) through the GPU stand-in: a sector f.half either side of f.a, f.len long,
 // its colour at the tip fading to clear at f.len x SOL_CONE_FADE
 // SOL's BAND (drawBand, aspira-skills.js): shape 8, one quad, its along-profile at rise / fall / gone (shares of its length)
