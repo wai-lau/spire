@@ -301,7 +301,7 @@ function barHoldT() {
 }
 let BAR_HOLD = true; // (off: ?dev=boss fast-forwards its boss in - aspira-dev.js)
 const barHolding = () => BAR_HOLD && typeof bossInv !== "undefined" && bossInv.phase === "in" && barInT() < barHoldT(); // (barInT: Infinity with no fly-in on)
-const barHold = e => (e.arcana || e.bossKin || ENEMIES[e.type].star) && barHolding();
+const barHold = e => (e.arcana || (e.bossKin && !e.devilEsc) || ENEMIES[e.type].star) && barHolding(); // NOT the Devil's host (2026-11-05, Wai: "The devil boss broken / Freezes"): it walks in AHEAD of her, and she is gated until half of it is seen (devilGateShut) - held for a bar that waits on bosses that wait on it, nothing ever moved
 // ON THE ENTITY LAYER AT THE FLOOR'S LEVEL (owner, 2026-10-27: "tower ranges and effects should appear above hp"): the bar is drawn in
 // warpEntities' part A, between the floor and the dice - so the dice, the beams, the shield lines and the towers' layer cover it, and
 // the ranges (drawRangesOver) go right over it. Part A is drawn BEFORE the sky's flip (the difference inside a spreading triangle,
