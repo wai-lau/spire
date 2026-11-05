@@ -81,7 +81,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
       let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60);
       out.corpseFire = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - vx, t.ifrFires[0].y - vy) : NaN; out.decoy = 50 - decoy.shield; decoy.dead = true;
       for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; }
-    /* a SPAWNED meteor hits nothing for its first IFR_ARM_U (owner, 2026-10-20: "spawned meteors don't hit for min 50u") - then it does */
+    /* a SPAWNED meteor hits nothing for its first IFR_ARM_HIT_U, 100 u (owner, 2026-10-20: "100u instead of 50u for the non-hit"), then it does; it never bends (no homing, 2026-11-04) */
     { t.ifrFires.length = 0; t.ifrFlares.length = 0; const v = held(t, t.x + 30, t.y); egridAt = NaN;
       t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV * IFR_FAN_V, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
       const w = held(t, t.x + 20, t.y + 25); egridAt = NaN; let k = 0, bent = 0; /* w: in homing reach from the start - no turn before 50 u (owner: "no homing for first 50") */
