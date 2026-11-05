@@ -69,7 +69,7 @@ function drawAcd() {
   ctx.lineCap = "round"; ctx.strokeStyle = COL.tacd;
   for (const t of G.towers) {
     if (t.kind !== "acd") continue;
-    drawPuddles(t); // the chart ACD's puddles, under its lines (aspira-acid.js)
+    drawPuddles(t); // the chart ACD's puddles, under its lines (aspira-acid-draw.js)
     if (!t.lines || !t.lines.length) continue;
     const st = towerStats(t, true);
     // Spray V (a jet on every enemy in reach): its reach a thin pulsing ring and the JETS themselves below - it was one green

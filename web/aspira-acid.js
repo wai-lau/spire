@@ -191,6 +191,7 @@ function dripAcc(e, amt, t) {
 // ...and what is left over when the enemy DIES falls too, a smaller drop (owner, 2026-10-13: "sometimes it seems like corrosion
 // does damage without launching any goo" - a quick kill never filled a whole drop). kill(), aspira-game.js
 function dripFlush(e) { if (e.drip > 0) dripDrop(e, e.drip, e.dripBy); e.drip = 0; }
+const DRIP_HOLLOW = 0.35; // the share of drops drawn as a ring ("some hollow"): rolled per drop here, drawn by drawDrips (aspira-acid-draw.js)
 function dripDrop(e, v, t) {
   if (G.drips.length >= DRIP_MAX) G.drips.shift();
   const a = Math.random() * 6.283, r = DRIP_JIT * Math.sqrt(Math.random()), on = pathAt(e.pi, e.s, e.ang);
@@ -226,20 +227,6 @@ function stepDrips(dt) {
     if (near) { const l = Math.sqrt(nd) || 1; d.lane = null; d.vx = (near.x - d.x) / l * DRIP_HOME_V; d.vy = (near.y - d.y) / l * DRIP_HOME_V; } // homing: off the lane
   }
   G.drips = G.drips.filter(d => !d.done && d.t < DRIP_LIFE);
-}
-// a drop: a chatsubo dot like a coin, no twinkle - BIG and bright with a dark rim so it reads on the lanes (owner, 2026-10-13:
-// "make the corrosion drops much more visible"; was a faint 1.8 dot), each its own size, x0.5-1.5 ("the goo should visually have
-// mixed sizes"), fading over its last second
-const DRIP_DOT_R = 3.6, DRIP_HOLLOW = 0.35; // HOLLOW: the share drawn as a ring ("some hollow")
-function drawDrips() {
-  if (!G.drips || !G.drips.length) return;
-  ctx.fillStyle = COL.tacd; ctx.strokeStyle = COL.bg; ctx.lineWidth = 1.2;
-  for (const d of G.drips) {
-    ctx.globalAlpha = Math.min(1, DRIP_LIFE - d.t);
-    ctx.beginPath(); ctx.arc(d.x, d.y, DRIP_DOT_R * (d.sz || 1), 0, 6.283);
-    if (d.ring) { ctx.strokeStyle = COL.tacd; ctx.lineWidth = 1.6; ctx.stroke(); ctx.strokeStyle = COL.bg; ctx.lineWidth = 1.2; } else { ctx.fill(); ctx.stroke(); }
-  }
-  ctx.globalAlpha = 1;
 }
 const ACD_CORRODE = [0, 0.093, 0.254, 0.443]; /* a SHARE of the armor a tick, 6.18.0 (owner, 2026-10-28: "for armor, all strip should be changed to a % not a flat number"): today's tier III at waves 101-119 (25.4%, stripprobe), the other tiers as stacked shares of the old ladder - 1 - (1 - 0.254)^(old / old III); was 0.1 0.3 0.6 of the tick's damage */ // x2 (2026-10-12: Corrosion is the strip alone now; was .06 .. .3) // x6 (2026-10-11, roles: Corrosion meant as ACD's ARMOR answer - still behind spread in TEAM countermx; was .01 .. .05)
 // ROLES REWORK (owner, 2026-10-12: "what is acd weak to now? seems op"): a bare ACD is a tank killer, weak to the FAST
@@ -341,67 +328,6 @@ function poolNear(g, p) {
   for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { const b = g.get(x + "," + y); if (b) out.push(...b); }
   return out;
 }
-// UI (drawAcd): a puddle is a cluster of BUBBLES (owner): PUDDLE_BUBBLES at
-// once, each at a jittered spot within it, growing to its own jittered max
-// size over BUBBLE_T real seconds, then POPPING (a brief widening ring) and
-// starting again elsewhere; the whole cluster fades as the puddle dries
-const PUDDLE_BUBBLES = 5, BUBBLE_T = 0.6, BUBBLE_POP = 0.15;
-// a puddle's bubbles are as INTENSE as its damage (owner, 2026-10-07): brighter and
-// bolder the more it burns, 0.6x for a faint puddle up to 1.8x for a deadly one
-const puddleGlow = p => Math.max(0.6, Math.min(1.8, 0.6 + 0.3 * Math.log2(1 + (p.dps || 0) / 60)));
 // ...and DRAWN within a budget: past POOL_LOD pools a pool is a plain circle (no wobbling rim, no sheen) and the bubbles
 // are shared out so all of them together stay near POOL_LOD x PUDDLE_BUBBLES
 const POOL_LOD = 24;
-function drawPools(t, now) {
-  // (always the plain circle: the board is drawn into a texture and warped - the old wobbling 2D rim is gone, 2026-10-18) // 3D: always the plain circle - the board is drawn into a texture and warped, the rim's wobble barely shows and its fills cost (owner, 2026-10-12: pool perf in 3D)
-  // a PILE of pools reads as one (owner, 2026-10-14: "late game ACD has too much effects visually" - a Spill's 100+
-  // see-through pools stacked 20 deep into one bright green wash): each is drawn at 1 / the pools over its centre
-  const pools = t.puddles || [], deep = poolDepth(pools);
-  pools.forEach((p, i) => {
-    const crowd = 1 / deep[i], fade = Math.min(1, (1 - p.age / p.life) * puddleGlow(p)) * crowd, seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
-    // a pool a KILL left (Spill's spread) is a DASHED ring, no body; the jets' own drips filled: the two read apart (owner, 2026-10-14)
-    { ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.9 * (0.8 + 0.2 * (1 - p.age / p.life)), 0, 6.283); if (!p.spread) { ctx.globalAlpha = 0.14 * fade; ctx.fill(); } ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * fade / Math.sqrt(crowd); ctx.stroke(); return; } // (a crowd's rims fade only by the root of it: the rims tell one pool from the next)
-  });
-  ctx.setLineDash([]);
-}
-const POOL_DASH = [18, 12]; // board units: big enough to read as dashes once the 3D view shrinks a pool
-// how many pools cover each pool's centre (itself included), the crowd bucketed by POOL_CELL like the enemies
-function poolDepth(pools) {
-  if (pools.length <= 1) return pools.map(() => 1);
-  const g = new Map(), key = (x, y) => x + "," + y;
-  for (const q of pools) { const k = key(Math.floor(q.x / POOL_CELL), Math.floor(q.y / POOL_CELL)); const b = g.get(k); if (b) b.push(q); else g.set(k, [q]); }
-  const reach = Math.ceil(Math.max(...pools.map(q => q.r)) / POOL_CELL);
-  return pools.map(p => {
-    const cx = Math.floor(p.x / POOL_CELL), cy = Math.floor(p.y / POOL_CELL); let n = 0;
-    for (let x = cx - reach; x <= cx + reach; x++) for (let y = cy - reach; y <= cy + reach; y++) for (const q of g.get(key(x, y)) || []) if ((q.x - p.x) ** 2 + (q.y - p.y) ** 2 < (q.r * 0.9) ** 2) n++;
-    return Math.max(1, n);
-  });
-}
-function drawPuddles(t) {
-  const now = performance.now() / 1000;
-  ctx.strokeStyle = ctx.fillStyle = COL.tacd; ctx.lineWidth = 1.2;
-  drawPools(t, now);
-  const n = (t.puddles || []).length, per = Math.min(2, n > POOL_LOD ? POOL_LOD * PUDDLE_BUBBLES / n : PUDDLE_BUBBLES); // bubbles a pool, on average (3D: 2 at most)
-  (t.puddles || []).forEach((p, j) => {
-    const I = puddleGlow(p), fade = Math.min(1, (1 - p.age / p.life) * I), seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
-    ctx.lineWidth = 1.2 * I;
-    const nb = Math.floor(per * (j + 1)) - Math.floor(per * j); // spread evenly: some pools get one, some none
-    for (let i = 0; i < nb; i++) {
-      const ph = now / BUBBLE_T + i / PUDDLE_BUBBLES + (seed % 97) / 97, cyc = Math.floor(ph), f = ph - cyc;
-      const h = k => fixedRand(cyc * 13 + i * 3 + k, seed); // this bubble's own jitter, fixed for its life
-      const a = h(0) * 6.283, d = Math.sqrt(h(1)) * p.r * 0.8, x = p.x + Math.cos(a) * d, y = p.y + Math.sin(a) * d;
-      const max = p.r * (0.2 + 0.25 * h(2));
-      ctx.beginPath();
-      if (f < 1 - BUBBLE_POP) {
-        ctx.arc(x, y, max * f / (1 - BUBBLE_POP), 0, 6.283);
-        ctx.globalAlpha = Math.min(1, 0.3 * fade); ctx.fill();
-        ctx.globalAlpha = Math.min(1, 0.9 * fade); ctx.stroke();
-      } else {
-        const q = (f - 1 + BUBBLE_POP) / BUBBLE_POP; // the pop: a ring widening and gone
-        ctx.arc(x, y, max * (1 + 0.5 * q), 0, 6.283);
-        ctx.globalAlpha = 0.6 * (1 - q) * fade; ctx.stroke();
-      }
-    }
-  });
-  ctx.globalAlpha = 1;
-}
