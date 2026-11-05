@@ -732,7 +732,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | Stage (in order) | Scripts |
 |---|---|
 | data and state | `defs` (geometry, tables), `towerstats` (`towerStats`, prices), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows), `step` (the tick, spawns, enemy movement, game end) |
-| waves | `formations`, `floats` (numbers, coins), `waves`, `bosses`, `positioning` (+ the play box) |
+| waves | `formations`, `floats` (numbers, coins), `waves`, `wavelanes` (each type's lane and its turn on screen, split 2026-11-05), `bosses`, `positioning` (+ the play box) |
 | towers | `towers` (ARC, SOL, moons), `move` (leash, tower marks), `sol` (SOL), `acid` (ACD) + `acid-draw` (its look, 2026-11-05), `skills` (the charts' shared helpers), `arc` (ARC's chart, split from skills 2026-11-05), `frz`, `grv` (GRV) + `grv-draw` (its look, 2026-11-05), `crr` (CRR), `ifrit` (IFR) + `ifrit-draw` (its look), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `ranges` (tower ranges, split from draw), `textcache`, `effects`, `enemies`, `lanes`, `lanefade` (the fade-in layer, split from lanes), `camera`, `fling`, `fog` |
