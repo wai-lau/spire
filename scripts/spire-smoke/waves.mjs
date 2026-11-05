@@ -223,3 +223,8 @@ check("bosses (owner, 2026-11-05): the Star's fleet is a 3 x 10 lattice of fast,
   const s = bossRig(12);
   if (s.arc !== "star" || s.n !== 30 || s.ty.fast !== 30 || s.lats !== 3 || s.rows !== 10 || s.ahead) return "Star fleet " + JSON.stringify(s);
 });
+check("bosses (owner, 2026-11-05): Strength at the centre of a 3 x 12 armor lattice, taking 10% of any slow", () => {
+  const s = bossRig(36), k = run("bossSlowMul({ arcana: 'strength' })");
+  if (s.arc !== "strength" || s.n !== 36 || s.ty.armor !== 36 || s.lats !== 3 || !s.ahead || s.ahead !== s.behind) return "Strength fleet " + JSON.stringify(s);
+  if (k !== 0.1) return "Strength takes " + k + " of a slow (expected 0.1)";
+});

@@ -4,7 +4,7 @@
 // gets through (bossLeakLives, below; ended the game until 2026-11-03) - and adds its own trick:
 //   12 Star        none: the plain boss that teaches the rules; its fleet a 3 x 10 lattice of fast behind it (FLEET_LATTICE, 2026-11-05)
 //   20 Empress     sheds EMPRESS_BROOD swarmers each time it loses a fifth of its HP (owner: 10x, then x0.75 -> 30; fitted -> 12)
-//   30 Strength    no slow or freeze touches it
+//   36 Strength    takes 10% of any slow (BOSS_SLOW_K); at the centre of a 3 x 12 armor lattice (FLEET_LATTICE, 2026-11-05)
 //   40 Chariot     every CHARIOT_EVERY s it sprints at CHARIOT_SPD x for CHARIOT_T s
 //   50 Lovers      a PAIR; when one dies the other heals to full and runs LOVERS_SPD x faster
 //   60 Temperance  regenerates TEMPERANCE_REGEN of its HP a second (owner: tripled to 6%, and x5 HP)
@@ -129,17 +129,14 @@ const FLEET = {
 // armor lattice" / "Temperance, center of 3 x 12 shield lattice, same mechanic"): a FIXED grid, 3 across the lane and n along (not a
 // share of a wave), in place of FLEET for that boss; "centre": the boss in its middle row (the rings of fleetForm's armor lattice),
 // "behind": the whole grid after the boss (the Star goes first, its pack after - owner, 2026-10-12)
-const FLEET_LATTICE = { star: { k: "fast", n: 30, at: "behind" } };
+const FLEET_LATTICE = { star: { k: "fast", n: 30, at: "behind" }, strength: { k: "armor", n: 36, at: "centre" } };
 const LATTICE_W = 3;
 function latticeSlots(m, R, size, at) {
   const P = Math.max(ARMOR_FLEET_PITCH, 2 * size + FLEET_GAP), out = [];
   if (at === "behind") { for (let i = 0; i < m; i++) out.push([(i % LATTICE_W - (LATTICE_W - 1) / 2) * P, -(R + FLEET_GAP + size + Math.floor(i / LATTICE_W) * P)]); return out; }
-  const Pc = Math.max(P, R + size + FLEET_GAP); // the boss's own row: clear of it
-  for (let ring = 0; out.length < m; ring++) for (const row of ring ? [ring, -ring] : [0]) for (let c = 0; c < LATTICE_W && out.length < m; c++) {
-    const col = c - (LATTICE_W - 1) / 2;
-    if (!row && !col) continue; // the boss's own place
-    out.push([col * Pc, row ? Math.sign(row) * (Pc + (Math.abs(row) - 1) * P) : 0]);
-  }
+  // "centre": half the rows ahead, half behind, the boss in the gap between the middle two (3 x 12: six rows a side), each row clear of it
+  const g0 = R + size + FLEET_GAP;
+  for (let k = 0; out.length < m; k++) for (const side of [1, -1]) for (let c = 0; c < LATTICE_W && out.length < m; c++) out.push([(c - (LATTICE_W - 1) / 2) * P, side * (g0 + k * P)]);
   return out;
 }
 const FLEET_GAP = 10, FLEET_LAYER = 3 * V_BACK; // clear space between bodies, world units; a shield escort V's layers apart
@@ -271,7 +268,7 @@ function bossStep(e, dt) {
 }
 // from applySlow: Strength shrugs slows off
 /* the share of a slow each boss still takes (1 = all; Strength 0.4: owner 2026-10-18, no longer immune, which walled ARC+FRZ trios) */
-const BOSS_SLOW_K = { strength: 0.4, temperance: 0.5, justice: 0.5, judgement: 0.5, death: 0.5, devil: 0.6 };
+const BOSS_SLOW_K = { strength: 0.1 /* 0.4 -> 0.1 (owner, 2026-11-05: "strength only takes 10% of any slow") */, temperance: 0.5, justice: 0.5, judgement: 0.5, death: 0.5, devil: 0.6 };
 const bossSlowMul = e => (BOSS_SLOW_K[e.arcana] ?? 1);
 // from damage(): Justice caps any one hit
 function bossHitCap(e, amt) {
