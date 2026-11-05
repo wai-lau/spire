@@ -1,4 +1,4 @@
-// ARC's CHAINS and BURN SPARKS - render only, nothing here touches the game (no Math.random: the sims share its stream).
+// ARC's CHAINS and its CHARGE GLOW - render only, nothing here touches the game (no Math.random: the sims share its stream).
 // CHAINS (owner, 2026-10-30: "can you draw chains instead of a beam? so like interlocking rounded rectangles, odd are thinner than
 // even chains to suggest interlinking, keep them thin so that the chains are not super intrusive"): every ARC strike and jump (a soft
 // beam, fireSkillChain / skillHopTo, aspira-arc.js) is drawn as links laid along it - the even ones open rounded rectangles seen
@@ -44,27 +44,14 @@ function drawChain2D(x1, y1, x2, y2, pt, ws, css, thin) {
   ctx.lineWidth = CHAIN_LW * w * ws; ctx.stroke(ev);
   ctx.lineWidth = 2 * CHAIN_ODD_R * w * ws; ctx.stroke(od);
 }
-// BURN SPARKS (owner, 2026-10-30: "arc burn should look like sparks"): an enemy ARC is burning (e.arcBurn, set by the burn's logic:
-// { t: seconds left, k: damage a tick }) crackles - BURN_SPARKS short bent sparks in ARC's colour, re-thrown BURN_HZ times a second
-// at places hashed from the enemy and the moment (scorchHash, aspira-enemies.js), so nothing is stored and nothing random is drawn
-const BURN_SPARKS = 4, BURN_HZ = 18, BURN_REACH = 6, BURN_LEN = 8, BURN_W = 1.6;
-const arcBurning = e => !!(e.arcBurn && e.arcBurn.t > 0);
-function drawBurnSparks(e, size, vis) {
-  const tick = Math.floor(performance.now() / 1000 * BURN_HZ), p = new Path2D();
-  for (let i = 0; i < BURN_SPARKS; i++) {
-    const h = scorchHash(e.id, tick * 7 + i), h2 = scorchHash(e.id + 0.5, tick * 7 + i), a = h * 6.283, r = size + 2 + BURN_REACH * h2;
-    const x = e.x + Math.cos(a) * r, y = e.y + Math.sin(a) * r, b = a + (h2 - 0.5) * 2.4, kx = x + Math.cos(b) * BURN_LEN * 0.5, ky = y + Math.sin(b) * BURN_LEN * 0.5;
-    p.moveTo(x, y); p.lineTo(kx, ky); p.lineTo(kx + Math.cos(a) * BURN_LEN * 0.6, ky + Math.sin(a) * BURN_LEN * 0.6);
-  }
-  ctx.strokeStyle = COL[TOWERS.arc.color]; ctx.globalAlpha = 0.9 * vis; ctx.lineWidth = BURN_W; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(p);
-}
+// (ARC's BURN SPARKS - drawBurnSparks, BURN_SPARKS / BURN_HZ / BURN_REACH / BURN_LEN / BURN_W, arcBurning - GONE, owner 2026-11-05: "sparks from ARC look ugly, remove")
 // THE CHARGE-UP (owner, 2026-10-30: ARC marks the spot its target stands on and strikes there a moment later, the enemy nearest it within
 // the strike's reach, else it misses): each G.arcStrikes entry ({ id, x, y, t s left, r }, aspira-arc.js) draws a small glow on its
 // spot that grows to the strike - a bright core and a soft halo - with a faint ring closing from its reach onto the spot; an entry that
-// goes with no strike from its tower (no fresh ARC beam from it) leaves a FIZZLE: a few sparks thrown off the spot, fading over
+// goes with no strike from its tower (no fresh ARC beam from it) leaves a FIZZLE: its glow shrinking away (no sparks since 2026-11-05) over
 // FIZZLE_S. Seen per frame (chargeSeen), so a strike born and gone between two frames shows nothing. Full circles and straight
 // strokes only: in 3D the moving layer's stand-in sends them to the GPU (glCtx, aspira-glctx.js)
-const CHARGE_CORE = [0.8, 2.4], CHARGE_HALO = [2, 7], CHARGE_RING_W = 0.8, FIZZLE_S = 0.35, FIZZLE_N = 6, FIZZLE_LEN = 10;
+const CHARGE_CORE = [0.8, 2.4], CHARGE_HALO = [2, 7], CHARGE_RING_W = 0.8, FIZZLE_S = 0.35;
 const chargeSeen = new Map(), fizzles = [];
 function drawArcCharges() {
   const q = typeof G !== "undefined" && G.arcStrikes || [], now = performance.now() / 1000, col = COL[TOWERS.arc.color], live = new Set(q);
@@ -83,12 +70,7 @@ function drawArcCharges() {
   }
   for (let i = fizzles.length - 1; i >= 0; i--) {
     const z = fizzles[i], k = (now - z.at) / FIZZLE_S; if (k >= 1 || k < 0) { fizzles.splice(i, 1); continue; }
-    ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.lineCap = "round"; ctx.globalAlpha = 0.9 * (1 - k); ctx.beginPath();
-    for (let j = 0; j < FIZZLE_N; j++) {
-      const a = scorchHash(z.id, j) * 6.283, r0 = 1 + FIZZLE_LEN * k, r1 = r0 + FIZZLE_LEN * 0.5 * (1 - k);
-      ctx.moveTo(z.x + Math.cos(a) * r0, z.y + Math.sin(a) * r0); ctx.lineTo(z.x + Math.cos(a) * r1, z.y + Math.sin(a) * r1);
-    }
-    ctx.stroke();
+    /* (its spark lines - FIZZLE_N of FIZZLE_LEN - GONE: owner, 2026-11-05, "sparks from ARC look ugly, remove"; the charge's glow shrinking away stays) */
     ctx.fillStyle = col; ctx.globalAlpha = 0.6 * (1 - k); ctx.beginPath(); ctx.arc(z.x, z.y, CHARGE_CORE[1] * (1 - k), 0, 6.283); ctx.fill();
   }
   ctx.globalAlpha = 1;

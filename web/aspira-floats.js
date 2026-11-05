@@ -132,7 +132,10 @@ const SPARK_MAX = 300;
 let sparkN = 0; // alive now (stepFx recounts)
 // A HIT'S SPARKS BY TOWER (owner, 2026-10-26: "for ARC, on hit, no circle, but more thin sparks / for ACD, no circle on hit, slower and
 // thicker sparks"): per - sparks per unit of the hit's size (dmgMag), at least min; v x the speed; w the size; streak: a thin line along its flight
-const HIT_SPARKS = { arc: { per: 6, min: 3, v: 1, w: 1, streak: true }, acd: { per: 2, min: 1, v: 0.35, w: 5, life: 2 } };
+const HIT_SPARKS = { acd: { per: 2, min: 1, v: 0.35, w: 5, life: 2 } };
+// NO SPARKS FOR ARC (owner, 2026-11-05: "Also sparks from ARC look ugly, remove"): its hits throw nothing - no streaks (HIT_SPARKS.arc, was per 6, min 3), no
+// big-hit burst, no circle; the chain is the hit. Its burn's sparks went too (drawBurnSparks, aspira-chains.js - no longer called)
+const HIT_FX_NONE = { arc: true };
 function burst(x, y, color, n, o = null) {
   n = Math.min(n, SPARK_MAX - sparkN); sparkN += Math.max(0, n);
   for (let i = 0; i < n; i++) {
