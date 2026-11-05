@@ -303,7 +303,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
   };
   const onWave = () => { // a wave's send: the trace, the ledger, the player's look at the board, its pivots
     const G = g.G, spent = Math.round(G.towers.reduce((a, t) => a + (t.spent || 0), 0)), maxed = G.towers.filter(t => t.lvl >= g.maxLvl(t)).length;
-    if (strategy.trace) S.trace.push({ wave: G.wave, money: Math.round(G.money), spent, towers: G.towers.length, lives: G.lives, interest: G.interest, time: Math.round(S.time) });
+    if (strategy.trace || process.env.TRACE) (S.trace ||= []).push({ wave: G.wave, money: Math.round(G.money), spent, towers: G.towers.length, lives: G.lives, interest: G.interest, time: Math.round(S.time) });
     if (S.builtAt == null && G.towers.length >= Math.min(towerCap(), g.run("CELLS.length"))) S.builtAt = G.wave;
     if (S.fullAt == null && S.builtAt != null && maxed === G.towers.length) S.fullAt = G.wave;
     if (G.wave % 10 === 1) S.econ.push({ wave: G.wave, money: Math.round(G.money), spent, interest: Math.round(G.interestTotal || 0), rate: G.interest, towers: G.towers.length, maxed, lives: G.lives });
@@ -324,13 +324,14 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
   const tick = () => {
     if (g.G.wave !== S.lastWave) onWave();
     const alive = g.G.enemies.filter(e => !e.dead);
+    { const d = Math.floor((g.G.wave - 1) / 10); (S.peak ||= {})[d] = Math.max(S.peak[d] || 0, alive.length); }
     g.step(dt); g.clearFx(); S.time += dt;
     for (const e of alive) if (e.dead && e.gone && e.hp > 0) {
       S.leaks[e.type] = (S.leaks[e.type] || 0) + 1; S.leakWave[g.G.wave] = (S.leakWave[g.G.wave] || 0) + 1;
       waveStat(e).lost += STAR_T[e.type] ? Math.max(1, Math.ceil(Math.max(0, e.hp) / (e.max || 1) * 100 / (BOSS_DIV[e.arcana] || 1) - 1e-9)) : ENEMY_LEAK[e.type] ?? 1; // the lives this wave's enemies cost (a boss: its HP% left, bossLeakLives)
     }
     // per ORIGIN wave (each enemy knows its own, e.wave): its types and how close it came (waverep.mjs)
-    if (Math.round(S.time / dt) % 10 === 0) for (const e of alive) if (!e.dead) { const w = waveStat(e); w.near = Math.min(w.near, Math.hypot(e.x - CORE_XY.x, e.y - CORE_XY.y)); }
+    if (Math.round(S.time / dt) % 10 === 0) for (const e of alive) if (!e.dead) { const w = waveStat(e); w.near = Math.min(w.near, Math.hypot(e.x - CORE_XY.x, e.y - CORE_XY.y)); if (e.arcana) w.nearB = Math.min(w.nearB ?? Infinity, Math.hypot(e.x - CORE_XY.x, e.y - CORE_XY.y)); }
     const n = Math.round(S.time / dt);
     if (strategy.core && n % 25 === 0) pickNext(g, strategy.core); // a boss's pick costs nothing: take it at once
     if (strategy.useCore && n % 25 === 0 && (strategy.econ !== "smart" || S.powersOk)) usePowers(g, S.coreMem, strategy.relayKind); // the smart saver holds its powers for a replay (smartWave)
@@ -400,7 +401,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
         towers[key].n++; towers[key].dealt += t.dealt || 0; towers[key].kills += t.kills || 0;
         build.push({ kind: t.kind, lvl: t.lvl, skills: t.skills || null, mode: t.mode });
       }
-      return { nearest: Math.round(S.nearest), wave: G.wave, over: G.over, won: !!G.won, lives: G.lives, core: G.core ? G.core.pw : null, fires: S.coreMem.fired || null, money: Math.round(G.money), spent: Math.round(G.towers.reduce((a, t) => a + (t.spent || 0), 0)), interest: Math.round(G.interestTotal || 0), econ: S.econ, builtAt: S.builtAt, fullAt: S.fullAt, time: Math.round(S.time), towers, build, leaks: S.leaks, leakWave: S.leakWave, waveStats: S.waveStats || {}, pivots: strategy.pivots ? S.pivoted : undefined, trace: strategy.trace ? S.trace : undefined, buys: S.buys };
+      return { nearest: Math.round(S.nearest), wave: G.wave, over: G.over, won: !!G.won, lives: G.lives, core: G.core ? G.core.pw : null, fires: S.coreMem.fired || null, money: Math.round(G.money), spent: Math.round(G.towers.reduce((a, t) => a + (t.spent || 0), 0)), interest: Math.round(G.interestTotal || 0), econ: S.econ, builtAt: S.builtAt, fullAt: S.fullAt, time: Math.round(S.time), towers, build, leaks: S.leaks, leakWave: S.leakWave, waveStats: S.waveStats || {}, pivots: strategy.pivots ? S.pivoted : undefined, trace: (strategy.trace || process.env.TRACE) ? S.trace : undefined, peak: S.peak || {}, buys: S.buys };
     },
   };
 }
