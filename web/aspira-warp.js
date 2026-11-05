@@ -178,7 +178,7 @@ const WARP_TEX_R = 860, WARP_TEX_MAX = 2048; // (was 3072 - perf, 2026-10-12)
 // LOWER RESOLUTION in 3D (owner, 2026-10-09: "reduce reso to match phone"): the 3D view's canvases (picture, bell and
 // sprites) are WARP_RES of the 2D canvas's pixels a side, the CSS stretching them back - on a phone at 2x, 1.5x. The
 // frame runs with the camera scaled by it (warp3d), so all the 3D maths stays in the smaller canvas's pixels.
-let WARP_RES = 0.75; // let: a slow machine steps it down to 0.5 (stepDetail, aspira-quality.js)
+let WARP_RES = 0.75; // fixed: a slow machine no longer steps it down to 0.5 (owner, 2026-10-14: never lower the resolution; stepDetail, aspira-quality.js)
 const warpRes = () => Math.round(WARP_RES * 20) / 20; // read in steps of 0.05, so the canvases are not resized every frame
 const warpScreenFull = () => { const r = cv.getBoundingClientRect(), d = canvasDpr(); return { w: Math.round(r.width * d), h: Math.round(r.height * d) }; };
 const warpScreen = () => { const s = warpScreenFull(); return { w: Math.round(s.w * warpRes()), h: Math.round(s.h * warpRes()) }; };

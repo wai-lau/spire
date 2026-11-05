@@ -146,8 +146,8 @@ bare tower), `hi` at 13 - placeholders measured on the old tables, fitted by the
 battery. The axes add MECHANICS; one may nudge a stat up, never down, at most `NUDGE_MAX` 1.2 in
 all (`nudge`; the axes' range factors in `skillMove`, ARC Conductivity's rate). SOL's curve rate
 is flat (its rate never rises). Per-axis raw damage tables are gone; a sub-attack's factor is
-one constant (`CRR_TETHER_K0`, `FRZ_RIME_BITE0`, `ACD_POOL_HEAT`, `GRV_PELLET_K0`,
-`GRV_INNER_K0`, `IFR_ROUTE_K0`, `IFR_TICK_K0`), and so is any factor on the tower's own damage, on from its first tier
+one constant (`FRZ_RIME_BITE0`, `ACD_POOL_HEAT`,
+`GRV_INNER_K0`, `IFR_ROUTE_K0`, `IFR_TICK_K0`; GRV's pellets are a per-tier table again, `GRV_PELLET_K`, and CRR's tether deals no damage), and so is any factor on the tower's own damage, on from its first tier
 (`SOL_CRIT_K`, `SOL_SCORCH_TOTAL`, `IFR_FIRE_HK`, `IFR_HF_FK`). Per-tier tables that stay hold counts, shapes, reaches and
 debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the tower's own axes only. Each stats function sets `dmgCurve` /
 `rateCurve` (the curve plus nudges) before a mechanic splits the hit.
@@ -597,7 +597,7 @@ with a chooser open 1-4 pick the first four of its cards instead (the build choo
 | description | ONE prose a tower composed from its chart (`aspira-desc.js` `DESCRIBE`): one template where each axis swaps a few words; **only behaviour is told**; pulled points show as **track changes** (`wordDiff`); thematic words (acid: "jets", "pools", never heat); **every wording rule: `docs/spire-wording.md`** (`X%td`, no hit counts, nothing unbought, defaults unsaid). `docs/spire-descriptions.md` is the generated graph of every chain (`scripts/aspira-desc-graph.mjs`): rebuild after editing a sentence or a number |
 | control | three `[-] pips [+]` steppers (axis name and tier, `0->II` while pulled; pips filled = locked, half = pulled, hollow = to buy, the last orange, red once another axis holds the capstone) beside the chart; the + flashes while the bank covers a buy |
 | confirm | the tower's name and purchases with the cost (`Arc II (-440c)`), bold when affordable, pulsing while a basket waits; sell smaller under it; the targeting slider small |
-| stats | key rows left and bigger (`KEY_STATS`), the rest right and small; each `now -> next`, worse in red (`LOWER_BETTER`); rows the tower lacks left out; kills and damage live |
+| stats | in SECTIONS, one a mechanic (`STAT_SECTIONS`, `aspira-sliders.js`), a row no section names under "Tower" first; each `now -> next`, worse in red (`LOWER_BETTER`); rows the tower lacks left out; kills and damage live |
 
 ### 7.4 Wave list, HUD, end screens
 
@@ -619,7 +619,7 @@ fades (`aspira-fog.js`); the light comes from the core; taps map back through `u
 2026-10-16 and the flat 2D picture kept for a browser with no WebGL on 2026-10-18 (owner: "delete all the visual code for 2d") -
 such a browser gets a notice (`noWebGl`, `aspira-ui.js`). `q3d()` survives as a constant `true`.
 
-Adaptation: the **far-detail radius** shrinks on slow frames and the resolution steps to 1.25 (`stepDetail`, `RES_CAP_3D`).
+Adaptation: only the **far-detail radius** shrinks on slow frames (`stepDetail`); the resolution and pixel density never step down (owner, 2026-10-14: the canvases reallocating caused 380-540 ms iPhone hitches).
 **Never reallocate the big canvases during play** (§11).
 
 ### 8.2 The 3D pipeline
@@ -628,7 +628,7 @@ Adaptation: the **far-detail radius** shrinks on slow frames and the resolution 
 |---|---|
 | two layers | the **board** (background, graticule, lanes) is redrawn at most every `WARP_STAT_MS`; what **moves** is drawn every frame on a half-size layer the shader lays over it |
 | one batch | hits, sparks, flashes, rings are GPU instances (`aspira-fxgl.js`); `aspira-glctx.js` is a 2D-context stand-in turning fills and strokes into instances, so nothing on the moving layer falls back to canvas - a glow in any colour, the boss sky's circle or triangle clip included; any fallback re-uploads the whole layer (an Apple GPU blocks on it), so find one with the `glcWhyN` tally |
-| one density read | `canvasDpr()`, capped `RES_CAP` |
+| one density read | `canvasDpr()`, capped `RES_CAP_3D` (2; never lowered when frames run slow - only the detail radius moves, `stepDetail`) |
 | text stamped once | `aspira-textcache.js`, a pixel budget with least-recently-used eviction, evicted canvases zeroed so iOS frees them |
 | caps | damage numbers, sparks, pools a tower, goo drops (ARCHAEOLOGY §12) |
 | lit lanes on the GPU (3D) | `aspira-lanegl.js` (`LANE_GL`, 7.0.28): each lit path's distance field is baked once into a 4x3 atlas of 512-px tiles (2048x1536, ~12 MB; R = the line's SIGNED distance, G its plain distance, both to `LGL_LMAX`; B = the glow distance to `LGL_DMAX`), one path a frame by `lglBuild`. The bell shader (`WARP_FS`, `LANE_GLSL` after `HULL_GLSL`) reads them through a varying `lw` (world offset from the core) and lays glow and line over the board sample: per group of lanes sharing colour, star and alpha, the same level profiles as 2D (`LIT_GLOW_SOFT`, `LIT_LINE_SOFT` / `BOSS_LINE_SOFT`, boss widths x`BOSS_LANE_W`) and the same masks (`GLOW_FADE_R` falloff, the core fade). The line takes `max(abs(signed), plain - 0.75 texel)`: a plain field at 3 world units a texel does not interpolate at the line's V and drew it beaded. So in 3D there is no fade layer, no lane hold and no board redraw a lane; only `laneGlOn()` false (2D, `?diag=nolanegl`, atlas not ready, outside a 3D frame) draws the 2D layers. **Under the board's ink** (7.1.3; owner, 2026-11-01: "lit lanes should cover nothing"): the board is its flat `COL.bg` fill plus ink, so the shader lays the lanes over the bare `bgCol` and puts the board's ink back over them by how far each pixel is from bg (x `LANE_INK_K` 3) - labels and rim circles cover the lanes, the faint grid shows across them |
