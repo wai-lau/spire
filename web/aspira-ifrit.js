@@ -211,7 +211,7 @@ function stepIfrBalls(t, st, dt) {
   const all = G.enemies, born = [];
   for (const b of t.ifrBalls) {
     if (b.wait > 0) { b.wait -= dt; continue; } /* a fan meteor not released yet */
-    const homes = !b.gen || (b.flown || 0) >= IFR_ARM_U, armed = !b.gen || (b.flown || 0) >= IFR_ARM_HIT_U, atCorpse = homes && ifrHome(b, all, dt); /* a spawned one flies straight for IFR_ARM_U, hits only from IFR_ARM_HIT_U */
+    const homes = !b.gen, armed = !b.gen || (b.flown || 0) >= IFR_ARM_HIT_U, atCorpse = homes && ifrHome(b, all, dt); /* a SPAWNED shard never homes (owner, 2026-11-04: "also for IFR, we could make the secondary meteors not homing" / "Non-homing shards"): it flies straight in its fan at full speed, so fast enemies dodge it while swarm and armor walk in; it hits only from IFR_ARM_HIT_U (was: straight for IFR_ARM_U, then homing) */
     if (!atCorpse) { b.x += b.vx * dt; b.y += b.vy * dt; b.flown = (b.flown || 0) + Math.hypot(b.vx, b.vy) * dt; if (!b.gen) ifrTrailPush(b); }
     b.left -= dt;
     let hit = null;

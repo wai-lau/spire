@@ -52,7 +52,7 @@ check("IFR: one charge orbiting the tower close and fast (IFR_ORB_R, owner 2026-
   if (r.rAfter !== r.r) return "upgrading mid-flight changed a live meteor's size: " + r.r + " -> " + r.rAfter;
   return "";
 });
-check("IFR meteors: ONE homes onto its target from any distance; its first hit makes the fire and a 360-degree fan (Meteor's count, bell-curve release round 0.4 s) whose meteors home within 50 u, hit only, never fissure (owner, 2026-10-26: capstone does not make it split again)", () => {
+check("IFR meteors: ONE homes onto its target from any distance; its first hit makes the fire and a 360-degree fan (Meteor's count, bell-curve release round 0.4 s) whose meteors fly straight, never homing (owner, 2026-11-04: \"Non-homing shards\"), hit only, never fissure (owner, 2026-10-26: capstone does not make it split again)", () => {
   const r = run(`(() => {
     const fresh = m => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < m; k++) upgradeTower(t, "meteor", true); ifrAll(t); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
@@ -96,8 +96,9 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
       try { while (t.ifrBalls.length && k++ < 4000) stepIfrBalls(t, st, 1 / 60); } finally { ifrOnView = ov; }
       out.fuseMean = fs.reduce((a, b) => a + b, 0) / fs.length; out.fuseFlares = t.ifrFlares.length; out.fuseLeft = t.ifrBalls.length;
       out.fuseAt = t.ifrFlares.map(f => Math.hypot(f.x - CX, f.y - CY)); t.ifrFlares.length = 0; }
-    /* a fan meteor homes within 50 u (and only then), hits for damage only - no fire */
-    t.ifrFires.length = 0; const near = held(t, t.x + 150, t.y + 35), far = held(t, t.x + 250, t.y + 90); egridAt = NaN;
+    /* a fan meteor flies STRAIGHT (owner, 2026-11-04: "Non-homing shards"): it strikes what lies on its line (near, dead ahead) and
+       never turns for what lies 35 u off it (far) */
+    t.ifrFires.length = 0; const near = held(t, t.x + 150, t.y), far = held(t, t.x + 250, t.y + 35); egridAt = NaN;
     t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
     for (let i = 0; i < 120 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60);
     out.homeNear = 50 - near.shield; out.homeFar = 50 - far.shield; out.fanFire = t.ifrFires.length; near.dead = far.dead = true;
@@ -124,9 +125,9 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (r.culledFire !== 1 || r.timeoutFire !== 1) return "the launched meteor went silently: with the view seeing nothing it burst " + r.culledFire + " times, out of time " + r.timeoutFire + " (expected 1, 1)";
   if (!(r.corpseFire < 6) || r.decoy) return "its target died: the burst landed " + r.corpseFire + " u from the corpse, a live decoy took " + r.decoy + " (expected at the corpse, none)";
   if (r.bent) return "a spawned meteor turned (homed) " + r.bent + " steps in its first 45 u (expected straight)";
-  if (r.armEarly !== 0 || r.armLate !== 1) return "a spawned meteor 30 u from an enemy hit it " + r.armEarly + " times in its first 45 u (expected 0), " + r.armLate + " after (expected 1)";
+  if (r.armEarly !== 0 || r.armLate !== 0) return "a spawned meteor 30 u from an enemy hit it " + r.armEarly + " times in its first 45 u (expected 0), " + r.armLate + " after (expected 0: it flies straight on and never turns back for it - owner, 2026-11-04: \"Non-homing shards\")";
   if (!(r.fuseMean > 190 && r.fuseMean < 235) || r.fuseFlares !== 40 || r.fuseLeft || r.fuseAt.some(d => d < 150 - 2 || d > 300 + 2)) return "spawned meteors' fuses: mean " + r.fuseMean.toFixed(0) + " u, " + r.fuseFlares + " burst of 40, " + r.fuseLeft + " still flying, at " + Math.min(...r.fuseAt).toFixed(0) + ".." + Math.max(...r.fuseAt).toFixed(0) + " (expected round 200 u, all between 150 and 300 - owner 2026-10-20)";
-  if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire !== 1) return "a fan meteor: near (35 u) hit " + r.homeNear + ", far (90 u) " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 1: its own Hellfire)";
+  if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire !== 1) return "a fan meteor: dead ahead hit " + r.homeNear + ", 35 u off its line " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 1: its own Hellfire)";
   if (r.fissure || r.kidGen.some(g => g === 2)) return "the capstone still fissures: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen;
   if (!r.offGone || r.offFires || r.offSteps < 5) return "off view: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires;
   return "";
