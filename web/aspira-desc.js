@@ -107,7 +107,7 @@ const DESCRIBE = {
     return "A meteor strikes the target for " + pc(1) + " damage and bursts into " + NUM_WORD[n] + " more." +
       (st > 1 ? " " + cap(NUM_WORD[st]) + " meteors can be stored in orbit." : "") +
       " A wall of fire expands from the enemy, dealing " + pc(hf * IFR_RING_HIT_K) + " damage" + (h ? " and lights " + nf + " flares that singe for " + pc(hf * n0 / nf) + " damage each." : ".") + // (every tier: owner, 2026-11-05, the circle at Hellfire 0, no flares)
-      (f ? " Meteor impacts light " + (f >= CAPSTONE_TIER ? NUM_WORD[typeof IFR_CAP_FLARES !== "undefined" ? IFR_CAP_FLARES : 3] + " bright flares that burn" : "a bright flare that burns") + " for " + perSec(IFR_TICK_K0 / IFR_ROUTE_K0 * fl / burn) + " for " + secs(burn) + "." : "");
+      (f ? " The first impact lights " + (f >= CAPSTONE_TIER ? NUM_WORD[typeof IFR_CAP_FLARES !== "undefined" ? IFR_CAP_FLARES : 3] + " bright flares that burn" : "a bright flare that burns") + " for " + pc(IFR_MAIN_FLARE_K * IFR_TICK_K0 / IFR_ROUTE_K0) + " damage a tick for " + secs(burn) + "." : ""); /* a tick at a time: x3 the main flare (IFR_MAIN_FLARE_K, 2026-11-05) put the per-second total over 800% ("Nothing should ever be above like 800%") */
   },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows

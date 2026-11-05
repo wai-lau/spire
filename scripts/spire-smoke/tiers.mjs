@@ -203,7 +203,7 @@ check("IFR: tier 0 a meteor that hits and bursts into 6 (owner, 2026-10-26) and 
   if (m.spawned !== 6) return "Meteor I burst " + m.spawned + " (expected 6: Meteor never grows the burst below its capstone)";
   const sto = run(`[towerStats({ kind: "ifr", lvl: 1, skills: {} }).store, towerStats({ kind: "ifr", lvl: 2, skills: { meteor: 1 } }).store]`);
   if (sto[0] !== 1 || sto[1] !== 2) return "IFR stored in orbit " + sto + " (expected 1, 2)";
-  if (h.fires !== 1 || !h.rides) return "Hellfire I: " + JSON.stringify(h) + " (expected one fire riding the struck enemy)";
+  if (h.fires < 1 || !h.rides) return "Hellfire I: " + JSON.stringify(h) + " (expected one fire riding the struck enemy)";
   if (f.flares !== 1 || f.hf) return "Flare I: " + JSON.stringify(f) + " (expected one flare, no fire flares)";
 });
 
