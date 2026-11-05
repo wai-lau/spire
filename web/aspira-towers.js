@@ -216,6 +216,7 @@ const inSolCone = (t, st, a, e) => solInBand(t, st, e, a, t);
 function stepSol(t, dt) {
   const st = towerStats(t);
   t.period = 1 / st.rate; solRodStep(t, st, dt); // (the scorch rods in flight - aspira-sol.js)
+  if (SOL_TRACK) return stepSolTrack(t, st, dt); // THE TRACKING BEAM (aspira-sol.js; owner, 2026-11-04)
   // a lock can only START inside st.range (pickTargets); once charging it HOLDS its target WHEREVER it goes and fires,
   // but a target outside st.range when it fires is let go - no new charge on it until it is back in range (owner, 2026-10-26:
   // "if a target were to exit SOL's range as it is charging, it can keep charging and fire, but it cannot start charging again

@@ -161,3 +161,67 @@ function solScorchTick(e, dt) {
   if (e.slows) delete e.slows.scorch; // re-set each tick, so it shrinks as stacks run out
   if (!e.dead && e.dots) applySlow(e, Math.min(TOWER_SLOW_MAX, SOL_SCORCH_SLOW * e.dots.length), 0.2, "scorch");
 }
+// THE TRACKING BEAM (owner, 2026-11-04, the SOL rework: "SOL 0: fire a single tracking beam at a target. / Scorch: back to coming from beam
+// hits, remove prism and crossguard glow / Scorch V: scorch visual rings are doubled concentrically (more ticks vs shield) / Reflection:
+// First beam no longer pierces, instead it splits towards N targets (max range SOL range but from enemy), other beams pierce instead of
+// first. (fast answer since it can chain to what ARC cannot) / Breach: Determines carryover damage of all reflecting and piercing, also
+// determines armor reduction. no parallel beams (armor answer) / To make worse vs swarm, pierce damage reduction is applied each time it
+// passes through an enemy / It lasts as long as the first target is alive, the first target must be in range"; "SOL 0 no pierce"):
+// one beam LOCKED on its first target, hitting only it, while it lives and stays in st.range; then the volley ends and SOL locks again.
+// Reflection (id refraction) splits it at that target to st.split more enemies within st.range OF THE TARGET (the nearest, picked as the
+// volley starts); each split beam PIERCES - it hits every enemy its line crosses on the way to its own enemy, Breach's carry (st.hop) off
+// the damage at each one (the swarm weakness) - and ends when its enemy dies or the volley ends. Damage per second = the old shot's
+// (st.dmg x st.rate), in SOL_TICK ticks: each tick pops one shield charge. Scorch comes from the hits (a stack a tick at the tick's share);
+// Scorch V burns in twice the ticks at half each (v: the draw's doubled ring). No band, no bounce, no mirror, no parallel beams, no rod.
+// State for the draw: t.solB = { e, links: [{ e, from, hits: [{ e, k }] }] } (null between volleys). SOL_TRACK false = the old shot (A/B)
+let SOL_TRACK = false;
+const SOL_TICK = 0.25;
+// the fit (countermx 9 pts, 101-119, 2026-11-04): Breach's carry a pass by Breach tier, and the curve's damage x SOL_TRACK_DMG (a tracking
+// beam throws away the overkill a tick on every kill); SOL's marks hold at -2 -1 +2 +1, distance 24
+const SOL_TRACK_HOP = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75], SOL_TRACK_DMG = 3.5;
+function solTrackSt(t, st) {
+  if (st.trk) return st.trk;
+  const bk = skillOf(t, "breach"), sc = skillOf(t, "focus"), V = sc >= 5;
+  const dot = st.dot ? { k: st.dot.k / (V ? 2 : 1), n: st.dot.n * (V ? 2 : 1), t: st.dot.t * (V ? 2 : 1), v: V } : null;
+  const dmg = st.dmg * SOL_TRACK_DMG;
+  return (st.trk = Object.assign({}, st, { dmg, hop: SOL_TRACK_HOP[bk], par: 0, dot, tickSt: Object.assign({}, st, { dmg, dot: null }) }));
+}
+function solTickHit(t, st, e, d, from) {
+  if (e.dead || !e.seen) return;
+  const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1), dd = shotDamage(t, st, e, d) * (crit ? st.critMul : 1);
+  fromHit(from, () => damage(e, dd, t, false, crit, st)); onHit(e, t, st.tickSt, dd); bleed(e, st, t);
+  if (st.dot && !e.dead) { (e.dots ||= []).push({ d: d * st.dot.k, left: st.dot.n, acc: 0, src: t, v: st.dot.v }); e.dotT = Math.max(e.dotT || 0, st.dot.t); }
+}
+function solTrackStart(t, st, e) {
+  const B = { e, links: [], acc: 0 } /* the first tick ONE tick after the lock, like every later one: a lock that struck at once killed a swarmer a frame (frame-rate-bound) */, r2 = st.range * st.range;
+  const near = G.enemies.filter(o => o !== e && !o.dead && o.seen && (o.x - e.x) ** 2 + (o.y - e.y) ** 2 <= r2)
+    .sort((p, q) => ((p.x - e.x) ** 2 + (p.y - e.y) ** 2) - ((q.x - e.x) ** 2 + (q.y - e.y) ** 2));
+  for (let i = 0; i < (st.split || 0) && i < near.length; i++) B.links.push({ e: near[i], from: e, hits: [] });
+  return B;
+}
+// the enemies a split's line crosses, in order from the first target, its own enemy last, each with the share left (x st.hop a pass)
+function solLinkHits(B, l, st) {
+  const ax = B.e.x, ay = B.e.y, L = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / L, uy = (l.e.y - ay) / L, on = [];
+  for (const o of G.enemies) {
+    if (o === B.e || o === l.e || o.dead || !o.seen) continue;
+    const dx = o.x - ax, dy = o.y - ay, along = dx * ux + dy * uy;
+    if (along >= 0 && along <= L && Math.abs(dx * uy - dy * ux) <= ENEMIES[o.type].size * (o.sizeMul || 1)) on.push([along, o]);
+  }
+  on.sort((p, q) => p[0] - q[0]); on.push([L, l.e]);
+  let k = st.hop || 1; return on.map(([, o]) => { const h = { e: o, k }; k *= st.hop || 1; return h; });
+}
+function stepSolTrack(t, st0, dt) {
+  const st = solTrackSt(t, st0);
+  let B = t.solB;
+  if (B && (B.e.dead || (B.e.x - t.x) ** 2 + (B.e.y - t.y) ** 2 > st.range * st.range)) B = t.solB = null;
+  if (!B) { const e = pickTargets(t, st, 1)[0]; if (!e) return false; B = t.solB = solTrackStart(t, st, e); }
+  B.links = B.links.filter(l => !l.e.dead);
+  for (const l of B.links) l.hits = solLinkHits(B, l, st);
+  B.acc += dt;
+  while (B.acc >= SOL_TICK && !B.e.dead) {
+    B.acc -= SOL_TICK; const d = st.dmg * st.rate * SOL_TICK;
+    solTickHit(t, st, B.e, d, t);
+    for (const l of B.links) for (const h of l.hits) solTickHit(t, st, h.e, d * h.k, B.e);
+  }
+  return true;
+}
