@@ -67,7 +67,7 @@ const DESCRIBE = {
   // longer sorties (Autopilot: a spent interceptor bursts into pellets)
   crr(sk) {
     const h = sk.hangar || 0, l = sk.launch || 0, a = sk.armament || 0;
-    const nb = CRR_BOLTS_BY[a], tn = CRR_TETHER_N[l], vo = CRR_AMMO[a]; // tier 0: one interceptor, one bolt a volley, no tether; 100% = one bolt (st.dmg, 2026-10-26)
+    const tn = CRR_TETHER_N[l], vo = CRR_AMMO[a]; // tier 0: one interceptor, one bolt a volley, no tether; 100% = one bolt (st.dmg, 2026-10-26)
     // (owner, 2026-10-26): "fires Y volleys per sortie for a total of Y%td, X interceptors can be stored in orbit" / "fires Y volleys and
     // tethers the target ... Tethered targets are slowed by Y% take an additional X% damage per tether" / Armament V "does not need to state rebuilt"
     // (owner, 2026-10-26: "CRR 0: Launches an available interceptor that flies towards an enemy and fires..." / "Hangar I: Launches 2 available interceptors at a time")
@@ -76,11 +76,11 @@ const DESCRIBE = {
     // ready one waits circling the carrier at every tier, so no "stored in orbit" clause)
     const n = CRR_HANGAR[h], many = n > 1;
     return (many ? cap(NUM_WORD[n] || String(n)) + " interceptors wait in orbit round the carrier and launch at enemies in range, the longest-waiting taking the first target." : "An interceptor waits in orbit round the carrier and launches at an enemy in range.") + /* all at once (no launch rate since 2026-10-26): FIFO decides who takes which (Leader, 2026-11-04) */
-      (many ? " Each" : " It") + " circles its enemy and fires " + vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " once round it" +
+      (many ? " Each" : " It") + " circles its enemy and fires " + vo + " volleys" + " once round it" /* one bolt a volley since 2026-11-05 (its damage the volley's) */ +
       (l ? (tn === 1 && many ? " (the first one out tethering its target)" : ", tethering its target") : "") +
       ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : "flies home to reload what it used.") /* PARTIAL RELOAD (aspira-crr.js carHome) */ +
       " It stays on its target until it dies or the ammo runs out." /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage." /* td = one bolt; no slow since 2026-11-04 */ +
-      (l ? " Each tether slows its target " + pc(CRR_TETHER_SLOW[l]) + " and adds " + pc(CRR_TETHER_AMP[l]) + " to the damage it takes, tethers stacking" + (l >= CRR_CHAIN_FROM ? "; tethers run on to one more enemy nearby" : "") + " (shields block the slow)." : "");
+      (l ? " Each tether slows its target " + pc(crrTetherSlow(l)) + " and adds " + pc(CRR_TETHER_AMP[l]) + " to the damage it takes, tethers stacking" + (l >= CRR_CHAIN_FROM ? "; tethers run on to one more enemy nearby" : "") + " (shields block the slow)." : "");
   },
   // GRV (rework, owner 2026-10-25): tier 0 a tiny void a shot; Nova three novas before it, faster, stripping armor (Hypernova: the most);
   // Void a bigger void, pellets shed as it decays (Singularity: heavier); Gravity Well the aura - pull, slow - and the pellets' damage and

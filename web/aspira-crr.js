@@ -37,7 +37,12 @@ const CRR_TETHER_AMP = [0, 0.1, 0.15, 0.2, 0.25, 0.3]; // + damage taken a tethe
 const CRR_BOLT_SIDE = 6; /* the u between bolts side by side in a volley (was CRR_BOLT_PAIR 2 with it, the pair stream; a volley is now its bolts at once) (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 // BOLTS A VOLLEY by Armament tier 0..V (tier redesign, owner 2026-10-24: tier 0 "one interceptor", Armament I "shots split in two"): one bolt, then
 // two, then one more a tier - each bolt the tower's damage (2026-10-26)
-const CRR_BOLTS_BY = [1, 2, 2, 3, 3, 3] /* bolts fired at ONCE, never above 3 (owner, 2026-11-01: "My intent with volleys was to describe the number of bolts fired at once ... It should not go above 3") */; // EVERY BOLT IS THE TOWER'S DAMAGE (td) - more bolts, more damage: Armament's mechanic (owner, 2026-10-26: "use a single bolt in a volley as the td" / "an axis can raise damage using a mechanic"); was 1 2 6 6 6 6 splitting one volley's damage
+// ONE BOLT A VOLLEY, CARRYING THE VOLLEY'S DAMAGE, AND THE TETHER x3 (owner, 2026-11-05, picked "C10" for CRR's marks gap: swarm 0 / armor -2
+// vs its -2 / -1 targets): CRR_BOLTS_BY is now each bolt's damage x (the bolts a volley fired at once till 7.7.x - "My intent with volleys
+// was to describe the number of bolts fired at once", owner 2026-11-01), every volley ONE bolt; the tether slow x CRR_TETHER_K, at most
+// CRR_TETHER_MAX. Marks (9 pts, waves 101-119, 2 seeds): CRR leak 22/6/0/65 -> 20/2/0/37, row 0 +1 +1 -2 -> -1 +1 +1 -1, distance 16 -> 14
+const CRR_TETHER_K = 3, CRR_TETHER_MAX = 0.9, crrTetherSlow = l => Math.min(CRR_TETHER_MAX, CRR_TETHER_SLOW[l] * CRR_TETHER_K);
+const CRR_BOLTS_BY = [1, 2, 2, 3, 3, 3] /* now each bolt's damage x (2026-11-05, above); was */ /* bolts fired at ONCE, never above 3 (owner, 2026-11-01: "My intent with volleys was to describe the number of bolts fired at once ... It should not go above 3") */; // EVERY BOLT IS THE TOWER'S DAMAGE (td) - more bolts, more damage: Armament's mechanic (owner, 2026-10-26: "use a single bolt in a volley as the td" / "an axis can raise damage using a mechanic"); was 1 2 6 6 6 6 splitting one volley's damage
 // interceptors that TETHER, by Tether tier 0..V: none at 0, Tether I "one tethered drone", then all of them
 const CRR_TETHER_N = [0, 1, Infinity, Infinity, Infinity, Infinity];
 // (Hangar's FOCUS FIRE - each wingmate on the same target +X% a shot - removed: owner, 2026-10-26, "Remove the increased damage from hangar")
@@ -67,8 +72,8 @@ const CRR_CHAIN_FROM = 2; /* today's I, tier II since the tier redesign (2026-10
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.targets = 1; s.dmg *= CRR_BOLT_K; // the STAT CURVE (tier redesign 2026-10-24; was CRR_SHOT_MUL x CRR_SIDE_DMG)
-  s.bolts = CRR_BOLTS_BY[a]; s.tetherN = CRR_TETHER_N[l];
-  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V; s.reload = CRR_RELOAD_S; s.tSlow = CRR_TETHER_SLOW[l]; s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
+  s.bolts = 1; s.dmg *= CRR_BOLTS_BY[a]; s.tetherN = CRR_TETHER_N[l];
+  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V; s.reload = CRR_RELOAD_S; s.tSlow = crrTetherSlow(l); s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
