@@ -354,6 +354,7 @@ const CRR_DART = 33, CRR_DART_W = 7.8, /* x3 (owner, 2026-10-16: "make the inter
 // its SIZE grows with Armament (owner, 2026-10-16: "halve interceptor size (grow this as armament increases)"): half the dart
 // above, untaken, + CRR_DART_GROW a tier - the full dart at VI
 const CRR_DART_K0 = 0.5, CRR_DART_GROW = 0.1;
+const CRR_DART_DRAW = 0.5; // every interceptor DRAWN at half (owner, 2026-11-05: "Halve interceptor sizes") - its outline too; its jitter and its hold radius as they were (the draw only)
 // (perf, 2026-11-01: ONE path a carrier, one fill and one stroke - was a fill and a stroke a dart, ~200 canvas calls a frame at 3 x 34;
 // where two darts overlap the fill now shows once, not twice)
 function carDart(i, z) { // adds the dart's triangle to the open path
@@ -416,8 +417,8 @@ function drawCar(darts) {
           link(i.x, i.y, i.ve.x, i.ve.y, a, w); if (i.tc && !i.tc.dead) link(i.ve.x, i.ve.y, i.tc.x, i.tc.y, a, w);
         }
       }
-      ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
-      const z = CRR_DART_K0 + CRR_DART_GROW * TIER_LEVEL[skillOf(t, "armament")];
+      ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2 * CRR_DART_DRAW; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
+      const z = (CRR_DART_K0 + CRR_DART_GROW * TIER_LEVEL[skillOf(t, "armament")]) * CRR_DART_DRAW;
       ctx.beginPath(); for (const i of t.icp) if (i.state !== "home" || i.hold) carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); // its own size: smaller ones hold closer
       ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; ctx.stroke();
       continue;
