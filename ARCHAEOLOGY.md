@@ -273,6 +273,31 @@ new aim (`SOL_PRISM_SWING` 4 rad/s) and came back to full over `SOL_PRISM_IN_S` 
 1.5 s (owner, 2026-10-26: "keep the prism rendered, instead slowly reduce the prism opacity ..."). Shown once a tower had a band (Diffraction
 or Scorch). Removed from the draw (owner, 2026-11-04: "wait get rid of the prism for SOL"), ahead of the tracking beam's flip.
 
+### 4.4-quater SOL's band model, as ARCHITECTURE described it until 7.6.0
+
+Replaced by the tracking beam (owner, 2026-11-04; ARCHITECTURE §4.4). Verbatim:
+
+**SOL** - one beam a shot, fixed where it struck; an enemy is struck once a shot. Armor cuts it like any other tower.
+Its checks and weak spots are measured, not designed: the build card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-sol.js`; how it got here: ARCHAEOLOGY §4.
+
+| part | principle |
+|---|---|
+| lock | locks a target (held out to `SOL_HOLD`), charges the whole reload, then fires; a target dying mid-charge restarts it; a lost lock hands its charge only to a new target inside the shot's band (`inSolCone`) |
+| plain beam (tier 0) | strikes its first enemy and flies on straight past it, striking no one - the minimal tower |
+| band (Diffraction) | parallel walls either side of the line tower -> first enemy, out to the screen's edge; not drawn - the prism that showed it is gone (owner, 2026-11-04: "wait get rid of the prism for SOL") |
+| split (Diffraction) | every hit splits to more enemies inside the band, each the next nearest to SOL and farther than the last, weaker than the hit before (`SOL_SPLIT`, `SOL_HOP`); a line ends under `SOL_END_K` of the shot |
+| mirror (Diffraction) | a hit with no one to split to flies on to the band's wall and mirrors, angle in = angle out (at most `SOL_WALLS`), or leaves by the open end |
+| scorch (Scorch) | every hit burns a stack of ticks, each stack on its own clock, one pop a tick (`solScorchTick`); the scorch rod sweeps out from the tower across the band and puts one stack on everything it crosses (`drawSolRod`) |
+| breach (Breach) | every hit takes a fixed % of the armor left (`bleed` -> `shredPct`, `SOL_BREACH_ARMOR` per tier, Breach stacks multiply); parallel beams beside the first pass through every enemy in their line, never bouncing, spread no wider than the tower (`solParallel`) |
+| reach | a beam flying on is drawn to the screen's edge; what it strikes ends at the play box (`solShowLen` / `solOutLen`), the same on every device |
+| drawing | every beam thin; a section's opacity is the square of its share of the first beam's damage (`f.share`) |
+
+| axis | buys |
+|---|---|
+| Scorch (id `focus`) | a LONGER burn (`SOL_SCORCH_N` ticks), never a hotter one; the rod from I |
+| Diffraction (id `refraction`) | the band (`SOL_BAND_W`), the splits a hit (`SOL_SPLIT`, none at tier 0) and the carry (`SOL_HOP`) |
+| Breach | the armor a hit strips (`SOL_BREACH_ARMOR`, none at tier 0) and the parallel beams (`SOL_PAR_N`) |
+
 ### 4.5 Upgrading: UI history
 Two clicks (select, then confirm) -> the chooser (cards, one per option) -> chart axes DRAGGED on the
 card (10-07) -> three real RANGE SLIDERS stacked left of the chart (10-07) -> **+ / - steppers** (10-08;

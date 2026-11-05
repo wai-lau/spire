@@ -18,6 +18,8 @@ const pct = x => Math.round(x * 100) + "%";
 // what each tier of each axis DOES, from the game's tables (index 0 = no point on the axis)
 const x = v => Math.round(v * 100) / 100; // x1.3333333 -> x1.33
 const ST = (kind, ax, k) => V(`(() => { const sk = { ${ax}: ${k} }; return towerStats({ id: 99, kind: ${JSON.stringify(kind)}, x: CX, y: CY, lvl: 1 + towerLevel({ kind: ${JSON.stringify(kind)}, skills: sk }), skills: sk }, true); })()`);
+// SOL's tracking beam stats with one axis at tier k (solTrackSt, aspira-sol.js); every: a burn's period, whole ticks (solTickHit)
+const TRK = (ax, k) => V(`(() => { const t = { id: 99, kind: "sol", x: CX, y: CY, lvl: 1, skills: { ${ax}: ${k} } }; t.lvl = 1 + towerLevel(t); const s = solTrackSt(t, towerStats(t)); return { split: s.split || 0, hop: s.hop, dot: s.dot, every: Math.max(1, Math.ceil(s.scorchEvery / SOL_TICK - 1e-9)) * SOL_TICK }; })()`);
 const MECH = {
   arc: {
     conductivity: k => `each jump keeps ${pct(V("ARC_AMP_FALL")[k])} of the hit before it`, // Conductivity (the ARC redesign, 2026-10-29)
@@ -30,9 +32,10 @@ const MECH = {
     moons: k => (V("FRZ_MOON_COUNT")[k] ? `${V("FRZ_MOON_COUNT")[k]} moon${V("FRZ_MOON_COUNT")[k] > 1 ? "s" : ""} at ${pct(V("FRZ_MOON_BY")[k])} of the tower${V("FRZ_SUBMOON_N")[k] ? `, each with ${V("FRZ_SUBMOON_N")[k]} small moon${V("FRZ_SUBMOON_N")[k] > 1 ? "s" : ""}` : ""}` : "no moons"),
   },
   sol: {
-    focus: k => (V("SOL_SCORCH_N")[k] ? `every hit burns ${pct(V("SOL_SCORCH_TOTAL"))} of itself over ${V("SOL_SCORCH_N")[k]} ticks, the rod one burn on every enemy it sweeps, one every ${V("SOL_SCORCH_Q")}s, stacking without cap, each burn slowing ${pct(V("SOL_SCORCH_SLOW"))} while it runs (never a shielded enemy)` : "no burn") + ``,
-    refraction: k => (!V("SOL_SPLIT")[k] ? (k ? `no split: the beam strikes its first enemy and flies on to the wall of a band ${Math.round(V("SOL_BAND_W")[k])} u either side of the aim, mirroring there, striking no one more` : "no split, no band: the beam strikes its first enemy and flies on straight past it, striking no one more") : `every hit splits to the ${V("SOL_SPLIT")[k] > 1 ? `${V("SOL_SPLIT")[k]} nearest enemies` : "nearest enemy"} further down a band ${Math.round(V("SOL_BAND_W")[k])} u either side of the aim (none: it flies on to the cone's wall, splits or mirrors there), each split (and wall bounce) carrying ${pct(V("SOL_HOP")[k])} of the hit before, ending under 5%`),
-    breach: k => (V("SOL_BREACH_ARMOR")[k] ? `every hit strips ${pct(V("SOL_BREACH_ARMOR")[k])} of the armor left` : "no armor strip") + `, crit x${V("SOL_CRIT_K")}`,
+    // the TRACKING BEAM (SOL_TRACK, 7.6.0): its numbers from solTrackSt on a tower with only that axis raised
+    focus: k => { const s = TRK("focus", k); return s.dot ? `a burn every ${x(s.every)}s of beam time on an enemy (its ticks summed), each ${pct(V("SOL_SCORCH_TOTAL"))} of that damage over ${s.dot.n} ticks, one every ${V("SOL_SCORCH_Q")}s${s.dot.v ? " (V: twice as long at half a tick)" : ""}, stacking without cap, each slowing ${pct(V("SOL_SCORCH_SLOW"))} while it runs (never a shielded enemy)` : "no burn"; },
+    refraction: k => { const s = TRK("refraction", k); return s.split ? `${s.split} split${s.split > 1 ? "s" : ""} from the held enemy to the nearest in range, each a line through its own enemy on to the play box's edge, piercing every enemy on it, x${x(s.hop)} the damage into each it crosses (x${x(s.hop)} again for each after); a split ends when its own enemy dies` : "no split: the beam holds its one enemy"; },
+    breach: k => { const s = TRK("breach", k); return (V("SOL_BREACH_ARMOR")[k] ? `every tick strips ${pct(V("SOL_BREACH_ARMOR")[k])} of the armor left` : "no armor strip") + `, splits carry x${x(s.hop)} a pass, crit x${V("SOL_CRIT_K")}`; },
   },
   acd: {
     corrosion: k => (V("ACD_CORRODE")[k] ? `a tick strips ${pct(V("ACD_CORRODE")[k])} of its damage from armor (a share of what is left); eaten armor drops goo (pull ${V("ACD_DRIP_PULL")[k]})` : "no armor strip"),

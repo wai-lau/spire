@@ -134,10 +134,12 @@ const describeTower = (kind, skills) => DESCRIBE[kind](skills || {}).replace(/(\
 function solTrackDesc(sk) {
   const t = { kind: "sol", x: 0, y: 0, lvl: 1, skills: { ...sk } }; t.lvl = 1 + towerLevel(t);
   const st0 = towerStats(t), st = solTrackSt(t, st0), td = st0.dmg, tick = st.dmg * st.rate * SOL_TICK, k = st.split || 0, br = SOL_BREACH_ARMOR[sk.breach || 0];
-  const burn = st.dot ? tick * st.dot.k / SOL_SCORCH_Q / td : 0, lasts = st.dot ? st.dot.n * SOL_SCORCH_Q : 0;
+  // A STACK EVERY st.scorchEvery s OF BEAM TIME (solTickHit): the ticks it spans, summed - whole ticks, so its period rounds UP to one
+  const every = Math.max(1, Math.ceil((st.scorchEvery || SOL_TICK) / SOL_TICK - 1e-9)) * SOL_TICK, burn = st.dot ? tick * (every / SOL_TICK) * st.dot.k / SOL_SCORCH_Q / td : 0, lasts = st.dot ? st.dot.n * SOL_SCORCH_Q : 0;
+  const often = +(1 / every).toFixed(1), oftenW = Number.isInteger(often) && NUM_WORD[often] ? NUM_WORD[often] : String(often);
   return "A solar beam locks onto one enemy in range and deals " + perSec(tick / SOL_TICK / td) + " in " + NUM_WORD[Math.round(1 / SOL_TICK)] + " ticks, holding until it dies or leaves range." +
     (k ? " It splits from that enemy to the " + (k > 1 ? NUM_WORD[k] + " nearest enemies" : "nearest enemy") + " in range of it; " + (k > 1 ? "each split pierces" : "the split pierces") +
-      " every enemy on its way and ends when its own enemy dies, carrying " + pc(st.hop) + " of the damage into each enemy it reaches." : "") +
+      " every enemy on its line out to the edge and ends when its own enemy dies, carrying " + pc(st.hop) + " of the damage into each enemy it reaches." : "") +
     (br ? " Every tick strips " + pc(br) + " of the armor left." : "") +
-    (st.dot ? " Every tick scorches the enemy for " + perSec(burn) + " for " + secs(lasts) + ", each burn slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : "");
+    (st.dot ? " The beam scorches each enemy it holds " + (often === 1 ? "once" : often === 2 ? "twice" : oftenW + " times") + " a second, each burn dealing " + perSec(burn) + " for " + secs(lasts) + " and slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : "");
 }

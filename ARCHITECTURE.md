@@ -174,7 +174,7 @@ every tower at tiers 0-V. Burns read their share A SECOND, a CRR sortie its shar
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
 |---|---|---|---|---|
 | ARC | one hard bolt whose chain jumps twice (three enemies hit) | Conductivity (id `conductivity`): each jump keeps more of the hit (`ARC_AMP_FALL`) | Voltage: a longer chain and a farther jump (`ARC_VOLT_JUMPS`, `ARC_VOLT_REACH`); one fork from I | Shock (id `capacitance`): every hit strips armor and marks its target Shocked |
-| SOL | one beam that strikes its first enemy and flies on past it, striking no one: no band, split, bounce or prism (`st.pierce` 0, `SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn and the scorch rod across the band | Diffraction (id `refraction`): the band, one split, the mirrors | Breach: armor stripped a hit |
+| SOL | one tracking beam held on its first target, hitting only it (`SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn | Reflection (id `refraction`): one split, piercing | Breach: armor stripped a tick, the splits' carry |
 | CRR | eight interceptors, one bolt a volley, four volleys a sortie (`CRR_HANGAR`, `CRR_AMMO`) | Hangar: twelve launched, two stored in orbit | Tether: the first interceptor out tethers its target (`CRR_TETHER_N`, `carTethered`) | Armament: two bolts at once, more volleys (`CRR_BOLTS_BY`, never above 3) |
 | FRZ | a slowing circle with a light flat nip | Brittle: the real tick, more the slower | Permafrost: frost pulses (a stacking slow; no armor) | Moons: one moon |
 | ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Spill: ray pools that burn, no slow; kill pools gone |
@@ -234,26 +234,27 @@ a tick on it pops one charge.
 | Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow (its armor crack `FRZ_RIME_CRACK` is 0 at every tier); at full frost the rime spreads to the nearest enemy; slide |
 | Moons | copies of the aura orbiting the tower (separate slow sources, so they multiply), with satellites at the top tiers |
 
-**SOL** - one beam a shot, fixed where it struck; an enemy is struck once a shot. Armor cuts it like any other tower.
-Its checks and weak spots are measured, not designed: the build card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-sol.js`; how it got here: ARCHAEOLOGY §4.
+**SOL** - one TRACKING BEAM, held on its first target while that target lives and stays in range (owner, 2026-11-04: "SOL 0: fire a
+single tracking beam at a target ... It lasts as long as the first target is alive, the first target must be in range"). Armor cuts it like any
+other tower. Its checks and weak spots are measured, not designed: the build card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-sol.js`
+(`stepSolTrack`); the look: `solTrackBeams` (aspira-effects.js); how it got here: ARCHAEOLOGY §4 (the band model it replaced).
 
 | part | principle |
 |---|---|
-| lock | locks a target (held out to `SOL_HOLD`), charges the whole reload, then fires; a target dying mid-charge restarts it; a lost lock hands its charge only to a new target inside the shot's band (`inSolCone`) |
-| plain beam (tier 0) | strikes its first enemy and flies on straight past it, striking no one - the minimal tower |
-| band (Diffraction) | parallel walls either side of the line tower -> first enemy, out to the screen's edge; not drawn - the prism that showed it is gone (owner, 2026-11-04: "wait get rid of the prism for SOL") |
-| split (Diffraction) | every hit splits to more enemies inside the band, each the next nearest to SOL and farther than the last, weaker than the hit before (`SOL_SPLIT`, `SOL_HOP`); a line ends under `SOL_END_K` of the shot |
-| mirror (Diffraction) | a hit with no one to split to flies on to the band's wall and mirrors, angle in = angle out (at most `SOL_WALLS`), or leaves by the open end |
-| scorch (Scorch) | every hit burns a stack of ticks, each stack on its own clock, one pop a tick (`solScorchTick`); the scorch rod sweeps out from the tower across the band and puts one stack on everything it crosses (`drawSolRod`) |
-| breach (Breach) | every hit takes a fixed % of the armor left (`bleed` -> `shredPct`, `SOL_BREACH_ARMOR` per tier, Breach stacks multiply); parallel beams beside the first pass through every enemy in their line, never bouncing, spread no wider than the tower (`solParallel`) |
-| reach | a beam flying on is drawn to the screen's edge; what it strikes ends at the play box (`solShowLen` / `solOutLen`), the same on every device |
-| drawing | every beam thin; a section's opacity is the square of its share of the first beam's damage (`f.share`) |
+| lock | the first enemy `pickTargets` gives; the beam holds it until it dies or leaves `st.range`, then locks again. The first tick comes one `SOL_TICK` after the lock, like every later one (a lock that struck at once killed a swarmer a frame) |
+| ticks | damage per second = the curve's (`st.dmg` x `st.rate` x `SOL_TRACK_DMG`), dealt in ticks every `SOL_TICK` through `damage()`: a number a tick, one shield charge a tick |
+| first beam | hits only its target - it never pierces (owner: "SOL 0 no pierce") |
+| splits (Reflection) | as a volley starts, `st.split` splits from the first target to the nearest enemies within `st.range` OF THAT TARGET; each split is a line from the first target THROUGH its own enemy on to the play box's edge (`solLinkHits`, `solOutLen` - the same in the sim; owner: "all secondary beams fly off to edge of screen"), PIERCING every enemy on it in order, and ends when its own enemy dies |
+| carry (Breach) | a split's damage x `SOL_TRACK_HOP[Breach]` at each enemy it reaches, compounding (the swarm weakness: owner, "pierce damage reduction is applied each time it passes through an enemy") |
+| breach (Breach) | every tick takes a fixed % of the armor left (`bleed` -> `shredPct`, `SOL_BREACH_ARMOR`); no parallel beams (owner: "no parallel beams") |
+| scorch (Scorch) | one burn stack per `st.scorchEvery` of beam time on an enemy (`1 / (SOL_SCORCH_M x st.rate)`, whole ticks: the ticks it spans summed, `solTickHit`), each stack on its own clock, one pop a tick (`solScorchTick`); Scorch V doubles a stack's ticks at half each - a longer burn, more shield pops (`v`: the doubled ring) |
+| drawing | `t.solB` at its live ends every frame, never an fx entry: SOL's beam look, the splits a segment an enemy, each dimmer by its carry, and on past the last to the edge as drawn (`solShowLen` of `l.L`); a flash each tick. No prism, no rod (owner: "remove prism and crossguard glow") |
 
 | axis | buys |
 |---|---|
-| Scorch (id `focus`) | a LONGER burn (`SOL_SCORCH_N` ticks), never a hotter one; the rod from I |
-| Diffraction (id `refraction`) | the band (`SOL_BAND_W`), the splits a hit (`SOL_SPLIT`, none at tier 0) and the carry (`SOL_HOP`) |
-| Breach | the armor a hit strips (`SOL_BREACH_ARMOR`, none at tier 0) and the parallel beams (`SOL_PAR_N`) |
+| Scorch (id `focus`) | a LONGER burn (`SOL_SCORCH_N` ticks), never a hotter one; at V twice the ticks at half each |
+| Reflection (id `refraction`) | the splits (`SOL_SPLIT`, none at tier 0) |
+| Breach | the armor a tick strips (`SOL_BREACH_ARMOR`, none at tier 0) and the splits' carry (`SOL_TRACK_HOP`) |
 
 **ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; jets never share an enemy; a jet resets
 when its enemy dies or leaves, unless Flow carries its ramp on. Tier 0 is one jet and no pools. Its checks and weak spots: the build
