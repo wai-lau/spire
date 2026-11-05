@@ -37,15 +37,30 @@ function warpRender() {
       const waveMv = ps[0] !== cs[0], bossMv = ps[ps.length - 1] !== cs[ps.length - 1] || ps.length !== cs.length, laneMv = ps.slice(2, -1).join("|") !== cs.slice(2, -1).join("|") || (waveMv && gpuL);
       const part = key === warp.statKey && !!warp.statSig && (!waveMv || gpuL) && ps[1] === cs[1] && ps.length === cs.length && (!laneMv || gpuL);
       const pending = warp.statNew; warp.statKey = key; warp.statSig = sig; warp.statAt = now; warp.statNew = true;
+      const toPx = boxes => boxes.map(m => { const r = { x: Math.max(0, Math.floor(m.x0 * cam.k + cam.ox)), y: Math.max(0, Math.floor(m.y0 * cam.k + cam.oy)) }; r.w = Math.max(0, Math.min(S, Math.ceil(m.x1 * cam.k + cam.ox)) - r.x); r.h = Math.max(0, Math.min(S, Math.ceil(m.y1 * cam.k + cam.oy)) - r.y); return r; }).filter(r => r.w > 0 && r.h > 0);
+      // ONLY THE LABELS MOVED: REDRAW ONLY THEIR STRIPS (perf, 2026-11-05 - a 7.6.13 iPhone log: 41 of 45 slow frames were board redraws, ~39 ms each outside our
+      // code, 103 of them labels strips): the board's other pixels are as they were, yet every redraw filled and blitted all S x S (2048 a side on a phone) for the
+      // browser to raster. The strips are found BEFORE the draw - a dry drawLanes under an empty clip lays every label's box (laneItem), laneDirty diffs them - and
+      // the board is drawn clipped to them, whole pixels, so inside them it is the same picture and outside them the canvas keeps the board it already holds
+      // THE BOSS STRIP the same way (its HP crossed a step - bossBarMoved): a dry warpBossBarBoard lays the bar's pieces and moves its boardHp, so the real pass's box is the dry one
+      let lbl = null, moved = null, clip = null, dryMiss = false;
+      const barOn = bossBarOnBoard(), dryL = laneMv && typeof laneDirty === "function" && typeof drawLanes === "function", dryB = bossMv && barOn;
+      if (part && !(pending && !warp.statRect) && (laneMv || bossMv) && (!laneMv || (gpuL && dryL)) && (!bossMv || dryB)) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.save(); ctx.beginPath(); ctx.rect(0, 0, 0, 0); ctx.clip(); ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy);
+        try { if (laneMv) drawLanes(); if (bossMv) moved = warpBossBarBoard(); } finally { ctx.restore(); }
+        if (laneMv) lbl = laneDirty();
+        if ((!laneMv || lbl) && (!bossMv || moved)) { const px = toPx([...(bossMv ? [moved] : []), ...(laneMv ? lbl : [])]); clip = stripsMerge(pending && warp.statRect ? warp.statRect.concat(px) : px); } /* the clip IS the upload's strips (below): what goes up is drawn this frame, as before */ else dryMiss = true; /* (the dry pass moved laneItems / boardHp on: a box it could not tell is the whole board) */
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.save();
+      if (clip) { ctx.beginPath(); for (const r of clip) ctx.rect(r.x, r.y, r.w, r.h); ctx.clip(); } warp.cvPart = !!clip; /* cvPart: the canvas holds strips drawn later than the rest - only strips may go up from it (a whole redraw clears it) */
       ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); ctx.save(); drawSceneBase(); ctx.restore();
-      const moved = bossBarOnBoard() ? warpBossBarBoard() : null; // the boss's HP bar, settled: on the board, under every tower FX (below)
-      const lbl = laneMv && gpuL && typeof laneDirty === "function" ? laneDirty() : null; // (a list of world boxes, [] when nothing changed)
-      const boxes = part && (!bossMv || moved) && (!laneMv || lbl) ? [...(bossMv ? [moved] : []), ...(laneMv ? lbl : [])] : null;
+      try { if (barOn) { const m = warpBossBarBoard(); if (!clip) moved = m; } } finally { ctx.restore(); ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); } // the boss's HP bar, settled: on the board, under every tower FX (below)
+      if (!clip) lbl = laneMv && gpuL && typeof laneDirty === "function" ? laneDirty() : null; // (a list of world boxes, [] when nothing changed)
+      const boxes = part && !dryMiss && (!bossMv || moved) && (!laneMv || lbl) ? [...(bossMv ? [moved] : []), ...(laneMv ? lbl : [])] : null;
       // ...a pending whole upload stays whole; ONE STRIP A CHANGED BOX (2026-11-01): two labels across the board were one strip half its size
       if (boxes && !(pending && !warp.statRect)) {
         warp.statWhy = laneMv ? "labels" : "boss";
-        const px = boxes.map(m => { const r = { x: Math.max(0, Math.floor(m.x0 * cam.k + cam.ox)), y: Math.max(0, Math.floor(m.y0 * cam.k + cam.oy)) }; r.w = Math.max(0, Math.min(S, Math.ceil(m.x1 * cam.k + cam.ox)) - r.x); r.h = Math.max(0, Math.min(S, Math.ceil(m.y1 * cam.k + cam.oy)) - r.y); return r; }).filter(r => r.w > 0 && r.h > 0);
-        warp.statRect = stripsMerge(pending && warp.statRect ? warp.statRect.concat(px) : px);
+        warp.statRect = clip || stripsMerge(pending && warp.statRect ? warp.statRect.concat(toPx(boxes)) : toPx(boxes));
       } else warp.statRect = null;
     }
     warp.texCam = { ...cam };
@@ -149,6 +164,7 @@ function warpLayersBind(gl, u) {
       Promise.all(R ? R.map(r => createImageBitmap(cv, r.x, r.y, r.w, r.h)) : [createImageBitmap(cv)]).then(b => { if (typeof perfBoardWait === "function") perfBoardWait("bmpWait", warp.bmpP, warp.bmpTok); warp.bmpP = 0; warp.bmp = b; warp.bmpRect = R; }, () => { warp.bmpP = 0; warpUpSlow = 0; warp.statNew = true; });
     }
   } else if (warp.statNew || warp.statUp !== warp.tex) {
+    if (warp.cvPart && !(warp.statNew && warp.statUp === warp.tex && warp.statSize === cv.width && warp.statRect)) { warp.statKey = ""; warp.cvPart = false; } /* a WHOLE send (a new texture) of a canvas that holds a clipped redraw: the next render redraws it all (warpRender) and sends it whole */
     const R = warp.statNew && warp.statUp === warp.tex && warp.statSize === cv.width ? warp.statRect : null, t0 = performance.now(); warp.statRect = null;
     if (R) { for (const r of R) { const c = warp.stripCv ||= document.createElement("canvas"); if (c.width !== r.w || c.height !== r.h) { c.width = r.w; c.height = r.h; } const x = c.getContext("2d"); x.clearRect(0, 0, r.w, r.h); x.drawImage(cv, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h); gl.texSubImage2D(gl.TEXTURE_2D, 0, r.x, r.y, gl.RGBA, gl.UNSIGNED_BYTE, c); } /* (a canvas the strip's size: no pixel readback) */ } // the strips alone
     else { gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cv); warp.statSize = cv.width; }
