@@ -32,7 +32,7 @@ const DESCRIBE = {
     // THE ARC REDESIGN (owner, 2026-10-29): one bolt, a chain (Voltage: its length), one fork at the strike from Voltage ARC_FORK_FROM,
     // Conductivity the carry, Shock a slow and an armor break on every hit - every number read live (Visual polishes the prose)
     const c = sk.conductivity || 0, v = sk.voltage || 0, z = sk.capacitance || 0, TIMES = ["", " once", " twice"];
-    const fl = ARC_AMP_FALL[c], d = Math.round(Math.abs(fl - 1) * 100), j = ARC_VOLT_JUMPS[v], times = TIMES[j] || " " + NUM_WORD[j] + " times";
+    const fl = ARC_AMP_FALL[c], d = Math.round(Math.abs(fl - 1) * 100), j = ARC_VOLT_JUMPS[v], times = TIMES[j] || " " + (NUM_WORD[j] || j) + " times"; /* (24 and 30 jumps at Voltage IV / V, 7.7.0: past NUM_WORD, a numeral) */
     const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
     return "A bolt of lightning that " + (v >= ARC_FORK_FROM ? "forks once and " : "") + "chains" + times + " for " + pc + "." +
       (z ? (ARC_RES_SLOW[z] ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " : " Hits break ") + Math.round(ARC_RES_STRIP[z] * 100) + "% of the armor left." : "") + /* no slow since the ARC brief (2026-11-01) */
