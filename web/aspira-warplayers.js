@@ -97,7 +97,8 @@ function warpBoardSig(now) {
 // fly-in and the numbers' fade are done the bar leaves the overlay (where it lay over the moving layer: the prism, the scorch rods, the
 // pools, fires and shots) for the BOARD - full resolution, so still crisp, and under the moving layer. The board is redrawn when a boss's
 // HP moves a 1/BOSS_BOARD_STEPS step, at most every WARP_STAT_MS: the drain steps ~7 times a second. The fly-in stays on the overlay
-const BOSS_BOARD_STEPS = 400;
+// 1% steps (owner, 2026-11-05: "1" - 400 -> 100: each step is a board strip upload, ~11.5 ms in-frame on an iPhone; 43 -> ~11 per 3 min)
+const BOSS_BOARD_STEPS = 100;
 const bossBarOnBoard = () => typeof drawBossBarFloor === "function" && typeof barInT === "function" && barInT() >= bossBarInT() + BAR_LABEL_FADE; // (Infinity off the "in" phase: settled)
 const bossBoardSig = () => bossBarOnBoard() ? G.enemies.filter(e => e.arcana && !e.dead && e.bar).map(e => e.id + ":" + Math.round(Math.max(0, e.hp) / e.max * BOSS_BOARD_STEPS)).join(",") : "";
 // the same drawing (aspira-bossbar.js), its projection swapped for the board's flat one (world -> picture px, no perspective); under a
