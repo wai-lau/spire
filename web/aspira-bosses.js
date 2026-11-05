@@ -6,7 +6,7 @@
 //   24 Empress     no fleet; a whole swarm wave pours out of her past 2/3 and past 1/3 of her HP (2026-11-05)
 //   36 Strength    takes 10% of any slow (BOSS_SLOW_K); at the centre of a 3 x 12 armor lattice (FLEET_LATTICE, 2026-11-05)
 //   40 Chariot     every CHARIOT_EVERY s it sprints at CHARIOT_SPD x for CHARIOT_T s
-//   50 Lovers      a PAIR; when one dies the other heals to full and runs LOVERS_SPD x faster
+//   60 Lovers      a PAIR on opposite lanes, no trick (2026-11-05: the heal-and-run went), with one armor wave scattered like a swarm round them
 //   72 Temperance  regenerates TEMPERANCE_REGEN of its HP a second (owner: tripled to 6%, and x5 HP); at the centre of a 3 x 12 shield lattice (2026-11-05)
 //   70 Devil       comes as SIX (DEVIL_COPIES), each a full boss on its own copy of the
 //                  lane, two a lane - each one through costs a sixth of its HP% in lives (owner; replaced the Moon)
@@ -194,7 +194,31 @@ const FLEET_TIGHT = { star: 0.2 };
 const FLEET_BEHIND = { star: true };
 const FLEET_TRACK_W = 26, fleetTracks = n => (fixedRand(n, 7) < 0.5 ? 3 : 5); // 3 or 5, never 4 (owner, 2026-10-13: "make nothing use 4 lanes exactly"; was 3-5)
 const fleetLanes = (e, n) => (isA(e, "judgement") ? { L: 12, off: 0.5 } : { L: 1, off: 0 }); // only the Judgement spreads its escorts (owner, 2026-10-12: "escorts don't spread, only judgement"; every fleet rode 3-5 lanes briefly)
+// THE SCATTERED FLEETS (owner, 2026-11-05, the boss redesign: "Lovers: spawns with one wave of armor, except scattered like swarm"): a
+// share of a plain wave of each type (typeWaveCount; split among a pair's bodies), strewn round the boss like a swarm - each at a random
+// spot across SCATTER_W either side of the lane and along SCATTER_U a body of lane, ahead and behind, clear of the boss, wandering like a
+// swarmer (jit) at the boss's pace
+const FLEET_SCATTER = { lovers: [["armor", 1]] };
+const SCATTER_W = 52, SCATTER_U = 14;
+function bossScatter(e, n, R) {
+  const bodies = bossCount(n), parts = FLEET_SCATTER[e.arcana], span = [R, R];
+  const all = parts.map(([k, mul]) => [k, Math.max(1, Math.round(typeWaveCount(k, n) * mul / bodies))]), tot = all.reduce((a, [, c]) => a + c, 0), along = Math.max(4 * R, tot * SCATTER_U);
+  for (const [k, count] of all) for (let c = 0; c < count; c++) {
+    spawnEnemy(k, n, e.pi, e.ang || 0);
+    const m = G.enemies[G.enemies.length - 1], r = ENEMIES[k].size;
+    m.max = Math.floor(m.max * BOSS_HEFT); m.hp = m.max; // (BOSS_HEFT, as every escort)
+    let lat, ahead; do { lat = (Math.random() * 2 - 1) * SCATTER_W; ahead = (Math.random() - 0.5) * along; } while (Math.hypot(lat, ahead) < R + r + FLEET_GAP);
+    m.form = true; m.lat = lat; m.s = e.s + ahead; m.ahead = ahead; m.aheadC = 0;
+    span[0] = Math.max(span[0], ahead + r); span[1] = Math.max(span[1], -ahead + r);
+    m.spd = (e.spd || 1) * ENEMIES.bonus.speed / ENEMIES[k].speed; m.jit = 18 + Math.random() * 45; // a swarmer's wander (spawnEnemy's)
+    m.bossKin = true; m.fleetSpd = m.spd; e.fleet.push(m);
+    const moved = Math.floor(m.max * FLEET_TO_BOSS); m.max -= moved; m.hp = m.max; e.max += moved; e.hp = e.max; // (FLEET_TO_BOSS)
+  }
+  e.fleetSpan = span[0] + span[1]; G.lastBoss = e;
+  queueFleet(e);
+}
 function bossFleet(e, n) {
+  if (FLEET_SCATTER[e.arcana]) { e.fleet = []; bossScatter(e, n, ENEMIES.bonus.size * (e.sizeMul || 1)); return; }
   const lat = FLEET_LATTICE[e.arcana], kinds = lat ? [lat.k] : FLEET[e.arcana];
   if (!kinds) { e.fleet = []; e.fleetSpan = 0; G.lastBoss = e; return; } // (no fleet: the next boss body spaces off this one, never a boss before)
   e.fleet = [];
@@ -316,10 +340,7 @@ function bossKilled(e) {
       slotFlash = { ci, until: performance.now() + SLOT_FLASH_S * 1000 };
     });
   }
-  const m = e.mate;
-  if (!m || m.dead) return;
-  m.hp = m.max; m.enraged = true; m.spd = (m.baseSpd || 1) * LOVERS_SPD;
-  ring(m.x, m.y, 60, "pink", 0.5);
+  // (the Lover left alone no longer heals to full and runs LOVERS_SPD x faster: owner, 2026-11-05, "no mechanic, just 2 bosses")
 }
 // the boss reward drops ONCE a wave: a Devil only pays when it is the last one standing
 const bossPays = e => !(isA(e, "devil") && G.enemies.some(o => o !== e && !o.dead && isA(o, "devil")));

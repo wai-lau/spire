@@ -244,3 +244,10 @@ check("bosses (owner, 2026-11-05): the Empress comes alone and pours out a whole
   const [fl, a, b, c, d, z] = r.out, w = r.want;
   if (fl || a || b !== w || c !== w || d !== 2 * w || z !== 2 * w || !(w >= 12)) return "Empress fleet, brood after 0.9/0.6/0.5/0.3/0.05: " + r.out + " (a wave = " + w + ")";
 });
+check("bosses (owner, 2026-11-05): the Lovers bring one armor wave scattered like a swarm (half each), and the one left alone neither heals nor runs", () => {
+  const s = bossRig(60), r = run(`(() => { G = newGame(); G.wave = 59; spawnEnemy("bonus", 60, 0, 0); spawnEnemy("bonus", 60, 1, Math.PI);
+    const [a, b] = G.enemies.concat(G.fleetQ).filter(x => x.arcana); const jit = a.fleet.every(m => m.jit > 0); b.hp = b.max * 0.4; const hp = b.hp, sp = b.spd;
+    a.hp = 0; kill(a); return { jit, mated: a.mate === b, healed: b.hp !== hp, ran: b.spd !== sp, want: typeWaveCount("armor", 60) }; })()`);
+  if (s.arc !== "lovers" || s.ty.armor !== Math.round(r.want / 2) || s.n !== s.ty.armor || !r.jit) return "Lovers fleet " + JSON.stringify(s).slice(0, 200) + " jit " + r.jit + " (a wave " + r.want + ")";
+  if (r.healed || r.ran) return "Lovers pair " + JSON.stringify(r);
+});
