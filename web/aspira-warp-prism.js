@@ -74,9 +74,8 @@ function warpPrism(o) {
     ctx.globalAlpha = 0.8;
     if (band.lo > 0 || band.hi < Infinity) continue;
     { ctx.beginPath(); ctx.moveTo(T[w.i].x, T[w.i].y); ctx.lineTo(T[w.j].x, T[w.j].y); ctx.strokeStyle = o.col; ctx.stroke(); }
-    for (const v of [w.i, w.j]) {
-      const E = at(T[v], B[v]), g = ctx.createLinearGradient(T[v].x, T[v].y, E.x, E.y);
-      g.addColorStop(0, o.col); g.addColorStop(1, "transparent");
+    for (const v of [w.i, w.j]) { // (each upright is two walls' corner: its gradient made ONCE, kept beside the walls' - perf, 2026-11-05: 144 a late frame, half of them twins)
+      const E = at(T[v], B[v]), g = (grads.up ||= {})[v] ||= (() => { const g = ctx.createLinearGradient(T[v].x, T[v].y, E.x, E.y); g.addColorStop(0, o.col); g.addColorStop(1, "transparent"); return g; })();
       ctx.beginPath(); ctx.moveTo(T[v].x, T[v].y); ctx.lineTo(E.x, E.y); ctx.strokeStyle = g; ctx.stroke();
     }
   }
