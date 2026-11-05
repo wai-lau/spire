@@ -3,7 +3,7 @@
 // rules - it comes alone, holds the wave timer, costs its HP% left in lives if it
 // gets through (bossLeakLives, below; ended the game until 2026-11-03) - and adds its own trick:
 //   12 Star        none: the plain boss that teaches the rules; its fleet a 3 x 10 lattice of fast behind it (FLEET_LATTICE, 2026-11-05)
-//   20 Empress     sheds EMPRESS_BROOD swarmers each time it loses a fifth of its HP (owner: 10x, then x0.75 -> 30; fitted -> 12)
+//   24 Empress     no fleet; a whole swarm wave pours out of her past 2/3 and past 1/3 of her HP (2026-11-05)
 //   36 Strength    takes 10% of any slow (BOSS_SLOW_K); at the centre of a 3 x 12 armor lattice (FLEET_LATTICE, 2026-11-05)
 //   40 Chariot     every CHARIOT_EVERY s it sprints at CHARIOT_SPD x for CHARIOT_T s
 //   50 Lovers      a PAIR; when one dies the other heals to full and runs LOVERS_SPD x faster
@@ -65,7 +65,12 @@ const BOSS_SHIELD_K = 0.5; /* 0.5 -> 1.2 (2026-10-18, bosses closer without more
 const BOSS_SHIELD = { star: 0, empress: 0, strength: 0, chariot: 0, lovers: 0, temperance: 0, devil: 0, justice: 0, judgement: 0, death: 0 };
 const BOSS_SHIELD_REGEN = { star: 0, empress: 0, strength: 0, chariot: 0, lovers: 0, temperance: 0, devil: 0, justice: 0, judgement: 0, death: 0 };
 const BOSS_INTRO = 2; /* 20% shorter (owner, 2026-10-12; was 2.5) */ // s between a boss wave starting and its boss arriving (its warning plays)
-let EMPRESS_BROOD = 12; // fitted 2026-10-05 (was 30): her HP was never the lever, her brood is; let: the boss balance test (scripts/aspira-sim/bossbal.mjs, BB_BROOD) tries other broods
+// THE EMPRESS'S BROOD (owner, 2026-11-05, the boss redesign: "Empress, spawns a wave of swarm on every 3rd of hp"): past 2/3 and past 1/3 of
+// her HP, a whole swarm wave of her wave number (typeWaveCount) pours out behind her, streaming like a swarm wave. Was EMPRESS_BROOD 12
+// swarmers a fifth (fitted 2026-10-05)
+const EMPRESS_STEP = 1 / 3, EMPRESS_GAP = 6; // HP share a brood; u between swarmers as they pour out
+// a plain wave of `type` at wave n, as wavePlan would send it (the count taper, never under the wave before): the boss redesign's "a wave"
+const typeWaveCount = (type, n) => Math.max(1, Math.round(countK(n) * Math.max(waveCount(type, n), planCount(type, n))));
 const CHARIOT_EVERY = 4, CHARIOT_T = 1, CHARIOT_SPD = 3, LOVERS_SPD = 1.5;
 const DEVIL_TRAIL = 540; // world units between the two Devils on a lane, ~1.5 s at its pace (aspira-step.js stepSpawns)
 const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, DEVIL_LANES = 3, JUSTICE_CAP = 0.02, JUDGEMENT_REVIVE = 0.3; /* 0.5 -> 0.3 (2026-11-03): its second life was what reached the core (survivors lost ~10 lives each); HP x0.85 moved it 23% -> 22% ended, the revive at 30% (HP x1) 22% -> 13%, with 19% surviving a leak (the felt-threat band) */
@@ -102,7 +107,7 @@ function bossSpawn(e, n) {
   e.spd = (e.spd || 1) * (BOSS_SPEED[e.arcana] || 1) * BOSS_PACE;
   const grow = hpPow(eqWave(n)) + eqWave(n) * 4 / 18; // the armored enemy's armor curve (spawnEnemy)
   e.armor = e.armor0 = Math.floor((BOSS_ARMOR[e.arcana] || 0) * Math.pow(grow, ARMOR_EXP) * escale(e)); // (x the LATE SCALE)
-  e.baseSpd = e.spd; e.broodAt = 0.8; e.sprintT = CHARIOT_EVERY;
+  e.baseSpd = e.spd; e.broodAt = 1 - EMPRESS_STEP; e.sprintT = CHARIOT_EVERY;
   e.shield = e.shieldMax = (BOSS_SHIELD[e.arcana] || 0) + Math.round(BOSS_SHIELD_K * shieldsOf("shield", n).shield); e.shieldBuf = 0;
   // HP per boss: BOSS_HP (fitted, see there; the Devil's is each of six)
   e.max *= bossHpMul(e.arcana); // (BOSS_HP_K: every boss but the Star; BOSS_FAR: the ones that stayed far - bossHpMul, above)
@@ -122,7 +127,7 @@ function bossSpawn(e, n) {
 // six, ahead of and behind it on its lane, its own kin (the inverted sky holds till they die too). The Chariot's
 // outriders sprint when she does (bossStep). The fleet keeps the boss's pace, spaced clear of it (FLEET_GAP)
 const FLEET = {
-  star: ["fast"], empress: ["shield"], strength: ["armor"], chariot: ["fast", "armor"], lovers: ["swarm", "fast"], // shooting stars, handmaidens, lions, outriders + guards, couples + runners
+  star: ["fast"], empress: null /* none (the boss redesign, 2026-11-05: her swarm waves are her fleet) */, strength: ["armor"], chariot: ["fast", "armor"], lovers: ["swarm", "fast"], // shooting stars, handmaidens, lions, outriders + guards, couples + runners
   temperance: ["shield", "fast"], devil: ["swarm", "fast"], justice: ["armor", "fast"], judgement: ["swarm", "fast", "armor"], death: ["fast", "swarm", "armor", "shield"], // the cup + runners, imps + runners, guards + runners, the risen + runners + guards, four horsemen
 };
 // THE LATTICE FLEETS (owner, 2026-11-05, the boss redesign: "Star, 3 x 10 fast in a lattice as fleet" / "Strength, at center of 3 x 12
@@ -191,7 +196,7 @@ const FLEET_TRACK_W = 26, fleetTracks = n => (fixedRand(n, 7) < 0.5 ? 3 : 5); //
 const fleetLanes = (e, n) => (isA(e, "judgement") ? { L: 12, off: 0.5 } : { L: 1, off: 0 }); // only the Judgement spreads its escorts (owner, 2026-10-12: "escorts don't spread, only judgement"; every fleet rode 3-5 lanes briefly)
 function bossFleet(e, n) {
   const lat = FLEET_LATTICE[e.arcana], kinds = lat ? [lat.k] : FLEET[e.arcana];
-  if (!kinds) return;
+  if (!kinds) { e.fleet = []; e.fleetSpan = 0; G.lastBoss = e; return; } // (no fleet: the next boss body spaces off this one, never a boss before)
   e.fleet = [];
   const bodies = bossCount(n), R = ENEMIES.bonus.size * (e.sizeMul || 1), { L, off } = fleetLanes(e, n), span = [0, 0];
   // FORMATIONS ROUND THE BOSS (owner, 2026-10-11): shield escorts fly a V with the boss as its leader, armor a square
@@ -256,11 +261,11 @@ function stepFleetQ(dt) {
 function bossStep(e, dt) {
   const regen = BOSS_SHIELD_REGEN[e.arcana] || 0; // a shield that REFILLS (up to its full ring)
   if (regen && e.shield < e.shieldMax) { e.shieldBuf += regen * dt; const n = Math.floor(e.shieldBuf); if (n) { e.shieldBuf -= n; e.shield = Math.min(e.shieldMax, e.shield + n); } }
-  if (isA(e, "empress") && e.hp / e.max <= e.broodAt) {
-    e.broodAt -= 0.2;
-    for (let i = 0; i < EMPRESS_BROOD; i++) {
+  if (isA(e, "empress") && e.broodAt > 1e-6 && e.hp / e.max <= e.broodAt) {
+    e.broodAt -= EMPRESS_STEP;
+    for (let i = 0, N = typeWaveCount("swarm", e.n); i < N; i++) {
       spawnEnemy("swarm", e.n, e.pi, e.ang || 0);
-      const m = G.enemies[G.enemies.length - 1]; m.s = Math.max(0, e.s - 8 * i);
+      const m = G.enemies[G.enemies.length - 1]; m.s = Math.max(0, e.s - EMPRESS_GAP * i);
       m.bossKin = true; // the boss's own: the inverted sky holds till these die too
     }
   }

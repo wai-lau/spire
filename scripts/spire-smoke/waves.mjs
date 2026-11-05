@@ -237,3 +237,10 @@ check("bosses (owner, 2026-11-05): Justice at the crossing of a 7-across, 13-alo
   const s = bossRig(96);
   if (s.arc !== "justice" || s.n !== 18 || s.ty.armor !== 18 || s.lats !== 7 || s.ahead !== 6 || s.behind !== 6 || !s.shield.every(x => x > 0) || !s.armor.every(x => x > 0)) return "Justice fleet " + JSON.stringify(s).slice(0, 300);
 });
+check("bosses (owner, 2026-11-05): the Empress comes alone and pours out a whole swarm wave past 2/3 and past 1/3 of her HP", () => {
+  const r = run(`(() => { G = newGame(); G.wave = 23; spawnEnemy("bonus", 24, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana); if (!G.enemies.includes(e)) G.enemies.push(e);
+    const kin = () => G.enemies.filter(m => m.bossKin && m.type === "swarm").length, out = [e.fleet.length];
+    for (const f of [0.9, 0.6, 0.5, 0.3, 0.05]) { e.hp = e.max * f; bossStep(e, 0.01); out.push(kin()); } return { out, want: typeWaveCount("swarm", 24) }; })()`);
+  const [fl, a, b, c, d, z] = r.out, w = r.want;
+  if (fl || a || b !== w || c !== w || d !== 2 * w || z !== 2 * w || !(w >= 12)) return "Empress fleet, brood after 0.9/0.6/0.5/0.3/0.05: " + r.out + " (a wave = " + w + ")";
+});
