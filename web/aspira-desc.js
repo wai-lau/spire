@@ -128,7 +128,7 @@ function solTrackDesc(sk) {
   const often = +(1 / every).toFixed(1), oftenW = Number.isInteger(often) && NUM_WORD[often] ? NUM_WORD[often] : String(often);
   return "A solar beam locks onto one enemy in range and deals " + perSec(tick / SOL_TICK / td) + " in " + NUM_WORD[Math.round(1 / SOL_TICK)] + " ticks, holding until it dies or leaves range." +
     (k ? " It splits from that enemy to the " + (k > 1 ? NUM_WORD[k] + " nearest enemies" : "nearest enemy") + " in range of it; " + (k > 1 ? "each split pierces" : "the split pierces") +
-      " every enemy on its line out to the edge and ends when its own enemy dies, carrying " + pc(st.hop) + " of the damage into each enemy it reaches." : "") +
-    (br ? " Every tick strips " + pc(br) + " of the armor left." : "") +
+      " every enemy on its line out to the edge and ends when its own enemy dies" + (sk.breach ? "." : ", carrying " + pc(st.hop) + " of the damage into each enemy it reaches.") : "") + /* the carry is BREACH's (SOL_TRACK_HOP): said in Breach's sentence once it is bought */
+    (br ? " Every tick strips " + pc(br) + " of the armor left, and splits carry " + pc(st.hop) + " of the damage into each enemy they reach." : "") + /* (Leader, 2026-11-05: Breach IV and V read the same while the carry rose) */
     (st.dot ? " The beam scorches each enemy it holds " + (often === 1 ? "once" : often === 2 ? "twice" : oftenW + " times") + " a second, each burn dealing " + perSec(burn) + " for " + secs(lasts) + " and slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : "");
 }
