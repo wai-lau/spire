@@ -390,6 +390,21 @@ FISSURED a fan hit into two at +-30 degrees (gone 2026-10-26: every meteor burst
 and 10% after (`IFR_FIRE_A`, 2026-10-21), at least 16x the meteor, `IFR_FIRE_FLARES` 12 x density 1 .. 3, flares 0.3 s, all within
 2 s; catching fire turned OFF 2026-10-20 ("don't require lit"); the Flare capstone's three flares within 10 u.
 
+### 4.6c-ter CRR as ARCHITECTURE described it until 7.5.0 (2026-11-04)
+
+The 7.5.0 rework (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from
+orbit first, FIFO"; "interceptors should only start firing once they enter orbit"; "remove bolt slow"; "reduce the slow, so that it matters
+to have multiple interceptors on a target") replaced these rules:
+
+| Part | Rule until 7.5.0 |
+|---|---|
+| launch | one interceptor at a time on `CRR_GAP` (in the text long after the gap itself went, 2026-10-26) |
+| hold | only a share of the wing by Hangar tier (`CRR_HOLD_FRAC`) was stored in orbit; the rest waited inside the carrier |
+| firing | an interceptor fired on its way in, within `CRR_FIRE_R` 340, before it was round its target |
+| bolt slow | every bolt slowed 20% for 0.6 s (`CRR_SLOW`, `CRR_SLOW_S`, one slow a tower) |
+| tether | a slow of 0.35 / 0.45 / 0.55 / 0.65 (V 0.75) a tether, the chain read as the capstone's in the text (it is from tier II since 2026-10-18) |
+| wing | 5 / 7 / 10 / 12 / 16 (V 20) interceptors |
+
 ### 4.6d Trio scale, the rounds (2026-10-15..16)
 
 As ARCHITECTURE 4.6d stood until 6.17.11: the owner's ask (2026-10-15: "scale all trios up and down for each winning group they are in
