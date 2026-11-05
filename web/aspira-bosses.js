@@ -10,7 +10,7 @@
 //   72 Temperance  regenerates TEMPERANCE_REGEN of its HP a second (owner: tripled to 6%, and x5 HP); at the centre of a 3 x 12 shield lattice (2026-11-05)
 //   70 Devil       comes as SIX (DEVIL_COPIES), each a full boss on its own copy of the
 //                  lane, two a lane - each one through costs a sixth of its HP% in lives (owner; replaced the Moon)
-//   80 Justice     no single hit takes more than JUSTICE_CAP of its HP
+//   96 Justice     no single hit takes more than JUSTICE_CAP of its HP; at the crossing of a 7 x 13 cross of armored, shielded escorts (2026-11-05)
 //   90 Judgement   rises once at JUDGEMENT_REVIVE of its HP
 //  100 Death       a juiced-up Star (owner): no tricks, the most HP but the Chariot
 // Boss HP is ENEMIES.bonus.hp (halved, owner). Loaded after aspira-waves.js
@@ -129,10 +129,19 @@ const FLEET = {
 // armor lattice" / "Temperance, center of 3 x 12 shield lattice, same mechanic"): a FIXED grid, 3 across the lane and n along (not a
 // share of a wave), in place of FLEET for that boss; "centre": the boss in its middle row (the rings of fleetForm's armor lattice),
 // "behind": the whole grid after the boss (the Star goes first, its pack after - owner, 2026-10-12)
-const FLEET_LATTICE = { star: { k: "fast", n: 30, at: "behind" }, strength: { k: "armor", n: 36, at: "centre" }, temperance: { k: "shield", n: 36, at: "centre" } };
+const FLEET_LATTICE = { star: { k: "fast", n: 30, at: "behind" }, strength: { k: "armor", n: 36, at: "centre" }, temperance: { k: "shield", n: 36, at: "centre" },
+  // (owner, 2026-11-05: "Justice, a center of armored shield cross (armor and hp or armor, shield count of shield), 1x7 across, 1x13 down"):
+  // a plus, 7 across the lane and 13 along it, Justice at its crossing - 18 armor escorts, each with a shield escort's charges too
+  justice: { k: "armor", n: 18, at: "cross", w: 7, h: 13, shield: true } };
 const LATTICE_W = 3;
 function latticeSlots(m, R, size, at) {
   const P = Math.max(ARMOR_FLEET_PITCH, 2 * size + FLEET_GAP), out = [];
+  if (at && at.at === "cross") { // the arms out from the boss: across first (col +-1 .. +-(w-1)/2), then along (row +-1 .. +-(h-1)/2)
+    const g0 = R + size + FLEET_GAP, arm = (i, Pk) => (i === 1 ? g0 : g0 + (i - 1) * Pk);
+    for (let i = 1; i <= (at.w - 1) / 2; i++) out.push([arm(i, P), 0], [-arm(i, P), 0]);
+    for (let i = 1; i <= (at.h - 1) / 2; i++) out.push([0, arm(i, P)], [0, -arm(i, P)]);
+    return out.slice(0, m);
+  }
   if (at === "behind") { for (let i = 0; i < m; i++) out.push([(i % LATTICE_W - (LATTICE_W - 1) / 2) * P, -(R + FLEET_GAP + size + Math.floor(i / LATTICE_W) * P)]); return out; }
   // "centre": half the rows ahead, half behind, the boss in the gap between the middle two (3 x 12: six rows a side), each row clear of it
   const g0 = R + size + FLEET_GAP;
@@ -187,7 +196,7 @@ function bossFleet(e, n) {
   const bodies = bossCount(n), R = ENEMIES.bonus.size * (e.sizeMul || 1), { L, off } = fleetLanes(e, n), span = [0, 0];
   // FORMATIONS ROUND THE BOSS (owner, 2026-10-11): shield escorts fly a V with the boss as its leader, armor a square
   // lattice ARMOR_W wide with the boss in its middle; fast and swarms keep the line ahead of and behind it
-  const form = lat ? { [lat.k]: m => latticeSlots(m, R, ENEMIES[lat.k].size, lat.at) } : fleetForm(e, R);
+  const form = lat ? { [lat.k]: m => latticeSlots(m, R, ENEMIES[lat.k].size, lat.at === "cross" ? lat : lat.at) } : fleetForm(e, R);
   for (let j = 0; j < L; j++) {
     const ang = ((e.ang || 0) + (j + off) * Math.PI * 2 / L) % (Math.PI * 2), reach = [R, R], T = fleetTracks(n), track = Array.from({ length: T }, () => [R, R]);
     let i = 0;
@@ -198,6 +207,7 @@ function bossFleet(e, n) {
         spawnEnemy(k, n, e.pi, ang);
         const m = G.enemies[G.enemies.length - 1], r = ENEMIES[k].size;
         m.max = Math.floor(m.max * BOSS_HEFT); m.hp = m.max; // an escort twice as tough too (BOSS_HEFT)
+        if (lat && lat.shield) { m.shield = m.shieldMax = shieldsOf("shield", n).shield; m.shieldBuf = 0; } // (Justice's cross: armored AND shielded)
         if (slots) { // its place in the formation: across the lane, and ahead (+) or behind (-) the boss's spot
           m.form = true; m.lat = slots[c][0]; m.s = e.s + slots[c][1]; m.ahead = slots[c][1]; m.aheadC = 0;
           reach[0] = Math.max(reach[0], slots[c][1] + r); reach[1] = Math.max(reach[1], -slots[c][1] + r);

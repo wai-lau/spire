@@ -233,3 +233,7 @@ check("bosses (owner, 2026-11-05): Temperance at the centre of a 3 x 12 shield l
   if (s.arc !== "temperance" || s.n !== 36 || s.ty.shield !== 36 || s.lats !== 3 || s.ahead !== 18 || s.behind !== 18 || !s.shield.every(x => x > 0)) return "Temperance fleet " + JSON.stringify(s).slice(0, 300);
   if (!(run("TEMPERANCE_REGEN") > 0)) return "Temperance lost her regen";
 });
+check("bosses (owner, 2026-11-05): Justice at the crossing of a 7-across, 13-along cross of armored, shielded escorts", () => {
+  const s = bossRig(96);
+  if (s.arc !== "justice" || s.n !== 18 || s.ty.armor !== 18 || s.lats !== 7 || s.ahead !== 6 || s.behind !== 6 || !s.shield.every(x => x > 0) || !s.armor.every(x => x > 0)) return "Justice fleet " + JSON.stringify(s).slice(0, 300);
+});
