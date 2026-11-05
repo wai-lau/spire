@@ -7,7 +7,7 @@
 //   36 Strength    takes 10% of any slow (BOSS_SLOW_K); at the centre of a 3 x 12 armor lattice (FLEET_LATTICE, 2026-11-05)
 //   40 Chariot     every CHARIOT_EVERY s it sprints at CHARIOT_SPD x for CHARIOT_T s
 //   50 Lovers      a PAIR; when one dies the other heals to full and runs LOVERS_SPD x faster
-//   60 Temperance  regenerates TEMPERANCE_REGEN of its HP a second (owner: tripled to 6%, and x5 HP)
+//   72 Temperance  regenerates TEMPERANCE_REGEN of its HP a second (owner: tripled to 6%, and x5 HP); at the centre of a 3 x 12 shield lattice (2026-11-05)
 //   70 Devil       comes as SIX (DEVIL_COPIES), each a full boss on its own copy of the
 //                  lane, two a lane - each one through costs a sixth of its HP% in lives (owner; replaced the Moon)
 //   80 Justice     no single hit takes more than JUSTICE_CAP of its HP
@@ -129,7 +129,7 @@ const FLEET = {
 // armor lattice" / "Temperance, center of 3 x 12 shield lattice, same mechanic"): a FIXED grid, 3 across the lane and n along (not a
 // share of a wave), in place of FLEET for that boss; "centre": the boss in its middle row (the rings of fleetForm's armor lattice),
 // "behind": the whole grid after the boss (the Star goes first, its pack after - owner, 2026-10-12)
-const FLEET_LATTICE = { star: { k: "fast", n: 30, at: "behind" }, strength: { k: "armor", n: 36, at: "centre" } };
+const FLEET_LATTICE = { star: { k: "fast", n: 30, at: "behind" }, strength: { k: "armor", n: 36, at: "centre" }, temperance: { k: "shield", n: 36, at: "centre" } };
 const LATTICE_W = 3;
 function latticeSlots(m, R, size, at) {
   const P = Math.max(ARMOR_FLEET_PITCH, 2 * size + FLEET_GAP), out = [];

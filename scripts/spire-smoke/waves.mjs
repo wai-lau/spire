@@ -228,3 +228,8 @@ check("bosses (owner, 2026-11-05): Strength at the centre of a 3 x 12 armor latt
   if (s.arc !== "strength" || s.n !== 36 || s.ty.armor !== 36 || s.lats !== 3 || !s.ahead || s.ahead !== s.behind) return "Strength fleet " + JSON.stringify(s);
   if (k !== 0.1) return "Strength takes " + k + " of a slow (expected 0.1)";
 });
+check("bosses (owner, 2026-11-05): Temperance at the centre of a 3 x 12 shield lattice, her regen kept", () => {
+  const s = bossRig(72);
+  if (s.arc !== "temperance" || s.n !== 36 || s.ty.shield !== 36 || s.lats !== 3 || s.ahead !== 18 || s.behind !== 18 || !s.shield.every(x => x > 0)) return "Temperance fleet " + JSON.stringify(s).slice(0, 300);
+  if (!(run("TEMPERANCE_REGEN") > 0)) return "Temperance lost her regen";
+});
