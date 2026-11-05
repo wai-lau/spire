@@ -291,7 +291,9 @@ function carNum(i, e, dealt, raw0, vx, vy) {
   i.numN = (i.numN || 0) + 1;
   if (i.numN < CRR_NUM_HITS) return;
   const sum = i.numSum, raw = i.numRaw; i.numSum = i.numRaw = i.numN = 0;
-  if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgTick(e, sum, raw, dmgInk("crr"), { x: e.x - vx, y: e.y - vy }, raw > sum ? 1 - sum / raw : 0, 0);
+  /* MORE OFTEN (owner, 2026-11-05: "CRR should show damage numbers more frequently"): its bolts on one enemy sum over CRR_NUM_WIN, not the half second (DMG_SUM_S) every
+     other tower's stream sums over - a volley's 3x-rate bolts read as one number every 0.5 s; a number a bolt (10-28's ask) was ~65x as many, a pile no one reads */
+  if (sum > 0 && !(typeof farFx === "function" && farFx(e))) dmgSum(e, sum, raw, dmgInk("crr"), { x: e.x - vx, y: e.y - vy }, raw > sum ? 1 - sum / raw : 0, CRR_NUM_WIN);
 }
 const CRR_HOP = 0; /* was 30 (2026-10-19, away from swarm): no hop to a neighbour after a kill - home or a fresh pick */ /* back to 30 with CRR_FIRE_R 200 */ /* 30 -> 40 with a volley STOPPING when its target dies (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor: 30 39/13/0/18, 40 19/14/0/21, 50 9/13/0/21, 80 2/9/0/21) */ /* 35 -> 30 with the x1.33 hit (swarm 15% -> 24%) */ /* 40 -> 35 with the 100u circle and the homing stream (2026-10-16, countermx 61-69 spread: 25 leaked 47% of swarms, 35 25%, 45 9%) */ // (90: ATC leaked 1% of swarms; 20: 68% swarms but 50% fast - counter matrix 61-69, 2026-10-15)
 // the NEXT target after a kill: the nearest enemy within CRR_HOP that no other interceptor of this carrier is already on, else the
@@ -381,6 +383,7 @@ function carTrails(t) {
   }
   ctx.globalAlpha = 1;
 }
+let CRR_NUM_WIN = 0.1; // s: CRR's damage numbers sum over this on an enemy (others: DMG_SUM_S 0.5)
 const CRR_TETHER_A0 = 0.7, CRR_TETHER_W = 0.6; // the tether chain: its least alpha (x CHAIN_A on top, as ARC's), its links x ARC's size
 function drawCar(darts) {
   for (const t of G.towers) {
