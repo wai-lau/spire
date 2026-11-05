@@ -213,3 +213,13 @@ check("a boss's ETA to the core matches when it gets there, in reach (1x), not (
     return bad.join("; "); })()`);
   return out;
 });
+
+// THE BOSS REDESIGN (owner, 2026-11-05): each boss's fleet as the owner set it - the Star "3 x 10 fast in a lattice as fleet"
+const bossRig = n => run(`(() => { G = newGame(); G.wave = ${n} - 1; spawnEnemy("bonus", ${n}, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana);
+  const f = e.fleet || [], ty = {}; for (const m of f) ty[m.type] = (ty[m.type] || 0) + 1;
+  return { arc: e.arcana, n: f.length, ty, lats: [...new Set(f.map(m => Math.round(m.lat)))].length, ahead: f.filter(m => m.ahead > 0).length, behind: f.filter(m => m.ahead < 0).length,
+    rows: [...new Set(f.map(m => Math.round(m.ahead)))].length, shield: f.map(m => m.shield || 0), armor: f.map(m => m.armor || 0) }; })()`);
+check("bosses (owner, 2026-11-05): the Star's fleet is a 3 x 10 lattice of fast, behind it", () => {
+  const s = bossRig(12);
+  if (s.arc !== "star" || s.n !== 30 || s.ty.fast !== 30 || s.lats !== 3 || s.rows !== 10 || s.ahead) return "Star fleet " + JSON.stringify(s);
+});

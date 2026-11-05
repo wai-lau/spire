@@ -2,7 +2,7 @@
 // the Major Arcana (the Fool and the Tower left out). Each keeps the boss
 // rules - it comes alone, holds the wave timer, costs its HP% left in lives if it
 // gets through (bossLeakLives, below; ended the game until 2026-11-03) - and adds its own trick:
-//   10 Star        none: the plain boss that teaches the rules
+//   12 Star        none: the plain boss that teaches the rules; its fleet a 3 x 10 lattice of fast behind it (FLEET_LATTICE, 2026-11-05)
 //   20 Empress     sheds EMPRESS_BROOD swarmers each time it loses a fifth of its HP (owner: 10x, then x0.75 -> 30; fitted -> 12)
 //   30 Strength    no slow or freeze touches it
 //   40 Chariot     every CHARIOT_EVERY s it sprints at CHARIOT_SPD x for CHARIOT_T s
@@ -125,6 +125,23 @@ const FLEET = {
   star: ["fast"], empress: ["shield"], strength: ["armor"], chariot: ["fast", "armor"], lovers: ["swarm", "fast"], // shooting stars, handmaidens, lions, outriders + guards, couples + runners
   temperance: ["shield", "fast"], devil: ["swarm", "fast"], justice: ["armor", "fast"], judgement: ["swarm", "fast", "armor"], death: ["fast", "swarm", "armor", "shield"], // the cup + runners, imps + runners, guards + runners, the risen + runners + guards, four horsemen
 };
+// THE LATTICE FLEETS (owner, 2026-11-05, the boss redesign: "Star, 3 x 10 fast in a lattice as fleet" / "Strength, at center of 3 x 12
+// armor lattice" / "Temperance, center of 3 x 12 shield lattice, same mechanic"): a FIXED grid, 3 across the lane and n along (not a
+// share of a wave), in place of FLEET for that boss; "centre": the boss in its middle row (the rings of fleetForm's armor lattice),
+// "behind": the whole grid after the boss (the Star goes first, its pack after - owner, 2026-10-12)
+const FLEET_LATTICE = { star: { k: "fast", n: 30, at: "behind" } };
+const LATTICE_W = 3;
+function latticeSlots(m, R, size, at) {
+  const P = Math.max(ARMOR_FLEET_PITCH, 2 * size + FLEET_GAP), out = [];
+  if (at === "behind") { for (let i = 0; i < m; i++) out.push([(i % LATTICE_W - (LATTICE_W - 1) / 2) * P, -(R + FLEET_GAP + size + Math.floor(i / LATTICE_W) * P)]); return out; }
+  const Pc = Math.max(P, R + size + FLEET_GAP); // the boss's own row: clear of it
+  for (let ring = 0; out.length < m; ring++) for (const row of ring ? [ring, -ring] : [0]) for (let c = 0; c < LATTICE_W && out.length < m; c++) {
+    const col = c - (LATTICE_W - 1) / 2;
+    if (!row && !col) continue; // the boss's own place
+    out.push([col * Pc, row ? Math.sign(row) * (Pc + (Math.abs(row) - 1) * P) : 0]);
+  }
+  return out;
+}
 const FLEET_GAP = 10, FLEET_LAYER = 3 * V_BACK; // clear space between bodies, world units; a shield escort V's layers apart
 // x a plain wave, per boss: the fleet's SIZE, the balance lever (owner: "balance by adding to boss fleets") - fitted by
 // scripts/aspira-sim/bossfleet.mjs against the regular waves before each boss, which overlap where a boss wave does not
@@ -167,18 +184,18 @@ const FLEET_BEHIND = { star: true };
 const FLEET_TRACK_W = 26, fleetTracks = n => (fixedRand(n, 7) < 0.5 ? 3 : 5); // 3 or 5, never 4 (owner, 2026-10-13: "make nothing use 4 lanes exactly"; was 3-5)
 const fleetLanes = (e, n) => (isA(e, "judgement") ? { L: 12, off: 0.5 } : { L: 1, off: 0 }); // only the Judgement spreads its escorts (owner, 2026-10-12: "escorts don't spread, only judgement"; every fleet rode 3-5 lanes briefly)
 function bossFleet(e, n) {
-  const kinds = FLEET[e.arcana];
+  const lat = FLEET_LATTICE[e.arcana], kinds = lat ? [lat.k] : FLEET[e.arcana];
   if (!kinds) return;
   e.fleet = [];
   const bodies = bossCount(n), R = ENEMIES.bonus.size * (e.sizeMul || 1), { L, off } = fleetLanes(e, n), span = [0, 0];
   // FORMATIONS ROUND THE BOSS (owner, 2026-10-11): shield escorts fly a V with the boss as its leader, armor a square
   // lattice ARMOR_W wide with the boss in its middle; fast and swarms keep the line ahead of and behind it
-  const form = fleetForm(e, R);
+  const form = lat ? { [lat.k]: m => latticeSlots(m, R, ENEMIES[lat.k].size, lat.at) } : fleetForm(e, R);
   for (let j = 0; j < L; j++) {
     const ang = ((e.ang || 0) + (j + off) * Math.PI * 2 / L) % (Math.PI * 2), reach = [R, R], T = fleetTracks(n), track = Array.from({ length: T }, () => [R, R]);
     let i = 0;
     for (const k of kinds) {
-      const all = Math.max(1, Math.round(waveCount(k, n) * (FLEET_MUL[e.arcana] ?? 1) / kinds.length / bodies)), count = Math.floor(all / L) + (j < all % L ? 1 : 0);
+      const all = lat ? Math.round(lat.n / bodies) : Math.max(1, Math.round(waveCount(k, n) * (FLEET_MUL[e.arcana] ?? 1) / kinds.length / bodies)), count = Math.floor(all / L) + (j < all % L ? 1 : 0);
       const slots = form[k] && count ? form[k](count) : null;
       for (let c = 0; c < count; c++, i++) {
         spawnEnemy(k, n, e.pi, ang);
