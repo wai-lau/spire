@@ -133,7 +133,7 @@ check("CRR: tier 0 ten interceptors, all held in orbit when ready (owner, 2026-1
   const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "crr", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "crr", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts, ammo: s.ammo }; })()`);
   const z = st({}), h = st({ hangar: 1 }), a = st({ armament: 1 });
   if (z.wing !== 10 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== z.wing) return "tier 0 " + JSON.stringify(z);
-  if (z.ammo !== 4 || a.ammo !== 8) return "volleys a sortie: tier 0 " + z.ammo + ", Armament I " + a.ammo + " (expected 4 and 8 - the owner's table with mid tiers 8/12/16 (owner, 2026-11-02: \"Yes\", after the 8-seed good: 58% won, CRR 44%); was 4 and 6, 2026-11-01; was 18 and 23 - owner, 2026-10-29: x3 the bolts at a third the damage; was 6 and 8, 2026-10-28: \"interceptor should start with 6 ammo\")";
+  if (z.ammo !== 8 || a.ammo !== 16) return "volleys a sortie: tier 0 " + z.ammo + ", Armament I " + a.ammo + " (expected 8 and 16 - x2, owner 2026-11-05: \"fire for longer\"; before: 4 and 8, the owner's table with mid tiers 8/12/16 (owner, 2026-11-02: \"Yes\", after the 8-seed good: 58% won, CRR 44%); was 4 and 6, 2026-11-01; was 18 and 23 - owner, 2026-10-29: x3 the bolts at a third the damage; was 6 and 8, 2026-10-28: \"interceptor should start with 6 ammo\")";
   if (h.wing !== 14 || h.hold !== h.wing) return "Hangar I " + JSON.stringify(h);
   if (a.bolts !== 2) return "Armament I " + JSON.stringify(a);
   const n = run(`(() => { const { t } = tierLane("crr", { hangar: 3, launch: 1 }, [90, 120, 150, 170]); /* held ON the lane (a stepped game re-reads a spot from it) */
