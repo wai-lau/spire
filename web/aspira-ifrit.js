@@ -288,10 +288,14 @@ function stepIfrFires(t, st, dt) {
 }
 // a flare's size s (x the Flare length): a normal draw round half the max
 function ifrFlareS() { return IFR_FLARE_K * Math.min(1, Math.max(IFR_FLARE_MIN, IFR_FLARE_MEAN + IFR_FLARE_SD * ifrNormal())); }
+// FLARE V's FLARES AT MOST IFR_V_SPAN ACROSS (owner, 2026-11-05: "IFR flare V should only be like 300u wide and tall"): at the Flare capstone
+// every Flare flare - the landing ones and the big one dead centre - is cut to IFR_V_SPAN / 2 from its centre (its + rays; the x rays and the
+// width shrink with it), the hitbox too. Was ~450 u across on average (up to 900) a landing flare, 2520 the big one. The fire's flares keep theirs
+const IFR_V_SPAN = 300;
 function ifrFlare(t, st, x, y, s = ifrFlareS(), big = false, hf = false, hk = 1) { // hk: a fire flare's hit x its Hellfire's share // big: the Flare capstone's (hit x IFR_BIG_K, its x IFR_BIG_X as long); hf: the fire's - the UNTAKEN Flare's size, burn, tick and hit, whatever Flare's level
   const L = hf ? IFR_BEAM_L[0] : st.beamL, W = hf ? IFR_BEAM_W[0] : st.beamW, life = hf ? ifrHfLife() : st.burnS;
   const f = { x, y, L: L * s, W: W * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life, left: life, tick: 0, tickS: st.tickS, cont: hf,
-    hit: st.dmg * (hf ? IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K * hk : st.flareK) * (big ? IFR_BIG_K : 1), xk: IFR_X_K * (big ? IFR_BIG_X : 1), big, hf, edges: false }; t.ifrFlares.push(f); /* hit, tick: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
+    hit: st.dmg * (hf ? IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K * hk : st.flareK) * (big ? IFR_BIG_K : 1), xk: IFR_X_K * (big ? IFR_BIG_X : 1), big, hf, edges: false }; if (st.triple && !hf && f.L > IFR_V_SPAN / 2) { const k = IFR_V_SPAN / 2 / f.L; f.L *= k; f.W *= k; } t.ifrFlares.push(f); /* hit, tick: fixed at birth; (edges: the old VI, beams to the box edge - off since 2026-10-19; ifrBeamEnd keeps the path) */
   if (hf) ifrTickFlare(t, st, f); /* the fire's flare strikes ONCE, as it appears */
   return f;
 }
