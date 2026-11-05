@@ -174,23 +174,30 @@ function solScorchTick(e, dt) {
 // (st.dmg x st.rate), in SOL_TICK ticks: each tick pops one shield charge. Scorch comes from the hits (a stack a tick at the tick's share);
 // Scorch V burns in twice the ticks at half each (v: the draw's doubled ring). No band, no bounce, no mirror, no parallel beams, no rod.
 // State for the draw: t.solB = { e, links: [{ e, from, hits: [{ e, k }] }] } (null between volleys). SOL_TRACK false = the old shot (A/B)
-let SOL_TRACK = false;
+let SOL_TRACK = true;
 const SOL_TICK = 0.25;
 // the fit (countermx 9 pts, 101-119, 2026-11-04): Breach's carry a pass by Breach tier, and the curve's damage x SOL_TRACK_DMG (a tracking
 // beam throws away the overkill a tick on every kill); SOL's marks hold at -2 -1 +2 +1, distance 24
 const SOL_TRACK_HOP = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75], SOL_TRACK_DMG = 3.5;
+// SCORCH_M stacks a shot's worth (1 / rate s) of beam time on an enemy: 1 broke ARC's two checks, 2 CRR's (the shield column), 3 holds them
+const SOL_SCORCH_M = 3;
 function solTrackSt(t, st) {
   if (st.trk) return st.trk;
   const bk = skillOf(t, "breach"), sc = skillOf(t, "focus"), V = sc >= 5;
   const dot = st.dot ? { k: st.dot.k / (V ? 2 : 1), n: st.dot.n * (V ? 2 : 1), t: st.dot.t * (V ? 2 : 1), v: V } : null;
   const dmg = st.dmg * SOL_TRACK_DMG;
-  return (st.trk = Object.assign({}, st, { dmg, hop: SOL_TRACK_HOP[bk], par: 0, dot, tickSt: Object.assign({}, st, { dmg, dot: null }) }));
+  return (st.trk = Object.assign({}, st, { dmg, scorchEvery: 1 / (SOL_SCORCH_M * st.rate), hop: SOL_TRACK_HOP[bk], par: 0, dot, tickSt: Object.assign({}, st, { dmg, dot: null }) }));
 }
 function solTickHit(t, st, e, d, from) {
   if (e.dead || !e.seen) return;
   const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1), dd = shotDamage(t, st, e, d) * (crit ? st.critMul : 1);
   fromHit(from, () => damage(e, dd, t, false, crit, st)); onHit(e, t, st.tickSt, dd); bleed(e, st, t);
-  if (st.dot && !e.dead) { (e.dots ||= []).push({ d: d * st.dot.k, left: st.dot.n, acc: 0, src: t, v: st.dot.v }); e.dotT = Math.max(e.dotT || 0, st.dot.t); }
+  // A STACK EVERY st.scorchEvery s OF BEAM TIME on this enemy (its ticks summed: SOL_SCORCH_M stacks a shot's worth), the same damage -
+  // a stack a tick (4 a second) left ~125 stacks ticking on a held boss at Scorch V
+  if (st.dot && !e.dead) {
+    const a = (e.solSc ||= { d: 0, t: 0 }); a.d += d; a.t += SOL_TICK;
+    if (a.t >= st.scorchEvery - 1e-9) { (e.dots ||= []).push({ d: a.d * st.dot.k, left: st.dot.n, acc: 0, src: t, v: st.dot.v }); e.dotT = Math.max(e.dotT || 0, st.dot.t); a.d = 0; a.t = 0; }
+  }
 }
 function solTrackStart(t, st, e) {
   const B = { e, links: [], acc: 0 } /* the first tick ONE tick after the lock, like every later one: a lock that struck at once killed a swarmer a frame (frame-rate-bound) */, r2 = st.range * st.range;
@@ -199,15 +206,18 @@ function solTrackStart(t, st, e) {
   for (let i = 0; i < (st.split || 0) && i < near.length; i++) B.links.push({ e: near[i], from: e, hits: [] });
   return B;
 }
-// the enemies a split's line crosses, in order from the first target, its own enemy last, each with the share left (x st.hop a pass)
+// the enemies a split's line crosses, in order from the first target, THROUGH its own enemy and on to the play box's edge (owner,
+// 2026-11-04: "SOL should not bounce off the prism shape / all secondary beams fly off to edge of screen"; solOutLen, the same in the sim),
+// each with the share left (x st.hop a pass); it still ends when its own enemy dies (stepSolTrack). l.L: the drawn line's length from e
 function solLinkHits(B, l, st) {
-  const ax = B.e.x, ay = B.e.y, L = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / L, uy = (l.e.y - ay) / L, on = [];
+  const ax = B.e.x, ay = B.e.y, d0 = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / d0, uy = (l.e.y - ay) / d0, L = solOutLen(ax, ay, ux, uy), on = [];
+  l.L = L;
   for (const o of G.enemies) {
-    if (o === B.e || o === l.e || o.dead || !o.seen) continue;
+    if (o === B.e || o.dead || !o.seen) continue;
     const dx = o.x - ax, dy = o.y - ay, along = dx * ux + dy * uy;
-    if (along >= 0 && along <= L && Math.abs(dx * uy - dy * ux) <= ENEMIES[o.type].size * (o.sizeMul || 1)) on.push([along, o]);
+    if (o === l.e || (along >= 0 && along <= L && Math.abs(dx * uy - dy * ux) <= ENEMIES[o.type].size * (o.sizeMul || 1))) on.push([o === l.e ? d0 : along, o]);
   }
-  on.sort((p, q) => p[0] - q[0]); on.push([L, l.e]);
+  on.sort((p, q) => p[0] - q[0]);
   let k = st.hop || 1; return on.map(([, o]) => { const h = { e: o, k }; k *= st.hop || 1; return h; });
 }
 function stepSolTrack(t, st0, dt) {
