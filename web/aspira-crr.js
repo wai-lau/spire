@@ -367,7 +367,7 @@ function carTrails(t) {
     if (i.state === "home" && !i.hold) { i.trail = null; continue; }
     if ((mx || my) && i.state === "home" && i.trail) for (let k = 0; k < i.trail.length; k += 2) { i.trail[k] += mx; i.trail[k + 1] += my; }
     const tr = i.trail ||= [i.x, i.y], n = tr.length;
-    if ((tr[n - 2] - i.x) ** 2 + (tr[n - 1] - i.y) ** 2 >= CRR_TRAIL_STEP * CRR_TRAIL_STEP) { tr.push(i.x, i.y); } while (tr.length > nMax * 2) tr.splice(0, 2);
+    if ((tr[n - 2] - i.x) ** 2 + (tr[n - 1] - i.y) ** 2 >= CRR_TRAIL_STEP * CRR_TRAIL_STEP) { tr.push(i.x, i.y); } if (tr.length > nMax * 2) { const cut = tr.length - nMax * 2; tr.copyWithin(0, cut); tr.length -= cut; } /* in place: splice(0, 2) made a garbage array every push, ~170 a frame at 3 x 40 (2026-11-05) */
   }
   for (let b = 0; b < CRR_TRAIL_BANDS; b++) { // band b: the b-th quarter from the interceptor back, each fainter - one stroke a band for every trail
     ctx.globalAlpha = CRR_TRAIL_A * (1 - b / CRR_TRAIL_BANDS); ctx.beginPath();
