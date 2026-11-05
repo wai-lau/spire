@@ -48,7 +48,7 @@ function fxGlLutRow(stops) {
 }
 // one shape (world units): the round-ended segment x0,y0 - x1,y1 (a disc when they meet) r round it, filled at fillA in
 // fillCss and outlined lw wide at strokeA in strokeCss; shape: 0 round, 1 (or true) a fillRect's square, 2 a butt-ended
-// segment (lineCap "butt"), 3 a disc clear at its centre to its colour at the rim (gradDisc), 4 a light cone (fxGlCone),
+// segment (lineCap "butt"), 3 a disc clear at its centre to its colour at the rim (gradDisc), 4 a light cone (unused since SOL's old shot went, 2026-11-05),
 // 7 a GLOW LINE (fxGlGlowLine): butt-ended, r its half-width, lw 0, the fill colour alone; b0x / b0y are NOT joint planes
 // for it but the spoke's share t at p0 and at p1 (0 .. 1 on an untrimmed one), the alpha (1 - |off centre| / r)^2 x (1 - t^2).
 // b0 / b1: a polyline's JOINTS - the segment is cut where it meets its neighbour (the bisector, normal b pointing along
@@ -215,13 +215,7 @@ function fxGlCoin(x, y, r, ring, fill, a) { fxGlPush(x, y, x, y, r, ring !== fil
 // a GLOW LINE (shape 7): x0,y0 - x1,y1 (world), w its half-width, css at a on its centre line, clear at w off it, fading to
 // clear at p1 as 1 - t^2; t0 / t1: the line's share at each end when it is a trimmed part of a longer one (IFR's spokes)
 function fxGlGlowLine(x0, y0, x1, y1, w, css, a, t0 = 0, t1 = 1, pw = 2) { fxGlPush(x0, y0, x1, y1, w, 0, css, a, css, 0, 7, t0, t1, pw); } // pw: its falloff across, (1 - off)^pw - 2 the soft bell; a higher one a narrower core over the same width (IFR's layers - aspira-ifrit-draw.js)
-// SOL's light CONE (drawCone, aspira-skills.js) through the GPU stand-in: a sector f.half either side of f.a, f.len long,
-// its colour at the tip fading to clear at f.len x SOL_CONE_FADE
-// SOL's BAND (drawBand, aspira-skills.js): shape 8, one quad, its along-profile at rise / fall / gone (shares of its length)
-function fxGlBand(x0, y0, x1, y1, half, css, a, rise, fall, gone) { fxGlPush(x0, y0, x1, y1, half, 0, css, a, css, 0, 8, rise, fall, gone, 0); }
-function fxGlCone(f, a) {
-  fxGlPush(f.x, f.y, f.x + Math.cos(f.a) * f.half, f.y + Math.sin(f.a) * f.half, f.len, f.len * SOL_CONE_FADE, COL[f.color], a, COL[f.color], 0, 4);
-}
+// (fxGlCone / fxGlBand - SOL's light cone, shape 4, and its band, shape 8 - GONE with the old SOL shot, 2026-11-05; the shader keeps the shapes, unused)
 // BEAMS STOP AT A TOWER'S EDGE (owner, 2026-10-14: "make all beams 100% transparent when covered by a tower from the outside of the
 // hexagon rather than the middle"): a beam end inside a tower's hexagon (its footprint, CELL_S x TOWER_K, a vertex up) moves out to
 // where the beam crosses the edge; a beam wholly inside one is not drawn. World units; null: nothing left

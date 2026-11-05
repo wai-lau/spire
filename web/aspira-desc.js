@@ -51,19 +51,8 @@ const DESCRIBE = {
       (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost bite for " + pc(FRZ_RIME_BITE0 * FRZ_TEMP_TICK[0] / tdU("frz")) + " damage" /* a bite: FRZ_RIME_BITE0 full ticks */ + ", permanently slow by " + pct(FRZ_RIME[rm]) + ((ac => ac !== "0%" ? " and strip up to " + ac + " of armor" : "")(pc(Math.min(1, FRZ_RIME_CRACK[rm])))) /* nothing it does not do yet (owner, 2026-10-26) */ + " every hit." : "") +
       (mn ? " " + (mn > 1 ? cap(NUM_WORD[mn]) + " moons copy" : "A moon copies") + " the aura at " + pc(FRZ_MOON_BY[mo]) + (sub ? ", each with " + NUM_WORD[sub] + " satellite" + (sub > 1 ? "s" : "") + " at " + pc(FRZ_MOON_BY[mo] * FRZ_SUBMOON.k) : "") + "." : "");
   },
-  // SOL (owner, 2026-10-26): one beam, straight through every hit and splitting at each to SOL_SPLIT more (Diffraction), each hit SOL_HOP
-  // (Diffraction) x the one before; the armor every hit strips (SOL_BREACH_ARMOR, Breach); the stacking burn (SOL_SCORCH_N ticks, Scorch) - read live
-  sol(sk) {
-    if (typeof SOL_TRACK !== "undefined" && SOL_TRACK) return solTrackDesc(sk); // the tracking beam (owner, 2026-11-04) - the old shot's words below until the flip
-    const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, k = SOL_SPLIT[r], p = Math.round(SOL_HOP[r] * 100);
-    const br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_N[f];
-    // (owner, 2026-10-26): "A solar ray refracts within a light prism..." / Diffraction "A solar ray diffracts into two rays on every hit..."
-    return "A solar ray " + (!r ? "strikes the first enemy in its path." /* tier 0: the bare beam - no prism, no split (owner, 2026-10-28) */ : (k > 1 ? "diffracts into " + NUM_WORD[k] + " rays on every hit within a light prism" : k ? "refracts within a light prism" : "strikes the first enemy in its path, then refracts within a light prism") +
-      (p >= 100 ? " without losing intensity." : ", losing " + (100 - p) + "% intensity" + (k > 1 ? "." : k ? " every hit." : " every bounce."))) + /* no split (Diffraction I, 2026-10-31): one enemy struck, the rest of the line only bounces */
-      (br ? " Every hit strips " + pc(br) + " of the armor left." : "") +
-      (SOL_PAR_N[b] ? " " + cap(NUM_WORD[SOL_PAR_N[b]]) + " parallel ray" + (SOL_PAR_N[b] > 1 ? "s pass" : " passes") + " through every enemy in line for " + pc(SOL_PAR_K) + "td." : "") + /* Breach's parallel beams (owner, 2026-10-28) */
-      (sc ? " The light prism and hits scorch the enemy for " + perSec((typeof SOL_SCORCH_BY !== "undefined" ? SOL_SCORCH_BY[f] : SOL_SCORCH_TOTAL) / (sc * SOL_SCORCH_Q)) + " for " + secs(sc * SOL_SCORCH_Q) + ", each burn slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : ""); /* the slow: SOL_SCORCH_SLOW a stack (2026-10-31) */ /* stacking unsaid; the prism's stacks are the stat block's */
-  },
+  // SOL: the tracking beam (owner, 2026-11-04) - its words, read live: solTrackDesc below (the old shot's went with it, 2026-11-05)
+  sol(sk) { return solTrackDesc(sk); },
 
   // ACD (owner, 2026-10-22, shorter): the jets (ACD_LINES), Flow's carry (ACD_FLOW_CARRY), the pools' slow (ACD_POOL_SLOW, Spill's since the tier redesign),
   // the pools (Spill: the ray drips them; no kill pools since the tier redesign), Corrosion: the share of armor a full-ramp tick strips at the current wave (shredPc) - read live

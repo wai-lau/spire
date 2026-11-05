@@ -189,7 +189,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
 // Side effects of a landed hit, from the tower's upgrade mods.
 function onHit(e, t, st, amt) {
   if (st.shred) applyMark(e, st.shred.mul, st.shred.t, t ? t.id : "x");
-  if (st.dot) solScorch(e, t, st); // SOL's burn stacks (aspira-sol.js)
+  // (SOL's burn stacks: the tracking beam lays them itself, solTickHit - its hits pass st.tickSt, no dot)
   if (st.stun && Math.random() < st.stun.p) e.stunT = Math.max(e.stunT, st.stun.t);
   if (st.hitSlow) applySlow(e, st.hitSlow.f, st.hitSlow.t, t ? t.id : "x");
   // Melt (ARC): every hit strips armor for good (owner: every armor reduction is permanent), so later hits land

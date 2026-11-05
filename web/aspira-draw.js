@@ -325,8 +325,6 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
       if (f.outline === false) return; // Zen's pulse: the gradient wave alone
       ctx.strokeStyle = COL[f.color]; ctx.lineWidth = f.w || 2; if (f.a) ctx.globalAlpha *= f.a; // a: a fainter ring (Capacitance's burst)
       ctx.beginPath(); ctx.arc(f.x, f.y, f.r * (1 - k * 0.5), 0, 6.283); ctx.stroke();
-    } else if (f.k === "cone") {
-      drawCone(f, k); // (no SOL fx pushes a cone since 2026-10-26 - the charge cone is drawAims'; kept for an old fx in flight)
     } else if (f.k === "spark") {
       if (f.streak) { ctx.strokeStyle = COL[f.color]; ctx.lineWidth = f.w || 1; ctx.beginPath(); ctx.moveTo(f.x - f.vx * 0.02, f.y - f.vy * 0.02); ctx.lineTo(f.x, f.y); ctx.stroke(); } /* (a thin ARC spark: a streak) */
       else { const w = f.w || 3; ctx.fillStyle = COL[f.color]; ctx.fillRect(f.x - w / 2, f.y - w / 2, w, w); }
@@ -386,7 +384,7 @@ function drawSceneTop() {
   if (typeof warp === "undefined") { if (skyOn()) ranges("white")(); else skyKeep(ranges()); } // (2D only - the game is 3D)
   // BEAMS turn over with the boss sky (owner, 2026-10-11: "inversion should invert tower movement indicators and tower
   // beams"; they kept their colours since earlier that day) - only the towers and their ranges keep theirs
-  fxGlSkyOwn(() => { drawTethers(); drawAcd(); drawGrv(); drawCar(); drawIfr(); }); skyKeep(() => drawIfr(true)); skyKeep(() => drawCar(true)); fxGlSkyOwn(() => { drawAims(); drawArcCharges(); drawFx("shots"); }); /* drawArcCharges: ARC's charge-up glow and miss fizzle (aspira-chains.js) */ // (fxGlSkyOwn: the tower effects keep their colours on the full sky where they read - aspira-fxgl.js) // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
+  fxGlSkyOwn(() => { drawTethers(); drawAcd(); drawGrv(); drawCar(); drawIfr(); }); skyKeep(() => drawIfr(true)); skyKeep(() => drawCar(true)); fxGlSkyOwn(() => { ctx.lineCap = "round"; ctx.lineWidth = 0.8; ctx.globalAlpha = 1; /* the state drawAims left (SOL's charge lines and rods, gone with the old shot 2026-11-05) */ drawArcCharges(); drawFx("shots"); }); /* drawArcCharges: ARC's charge-up glow and miss fizzle (aspira-chains.js) */ // (fxGlSkyOwn: the tower effects keep their colours on the full sky where they read - aspira-fxgl.js) // on the board in 3D too (owner: "beams and tower effects can appear on the plane")
   drawCoreFx(); if (G.core) drawTimeStop(G.core); /* (3D's Relay hexagons: drawRelayHex3d, on the overlay before the towers) */ // the core's struts and beams, under the towers (aspira-core.js); 3D: Temporal Drive's field ON the floor
   // in 3D the towers, the core and the enemies are drawn FLAT over the bell instead (warpEntities, aspira-warp.js)
   skyKeep(drawLeash); // the movement indicator keeps its TOWER'S colour on a boss sky (owner, 2026-10-19: "should not be inverted in color"; it turned over with the sky, owner 2026-10-11)

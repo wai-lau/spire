@@ -75,11 +75,7 @@ const SPEC = {
     ["Particles", st.pellets ? st.pellets + " / mass" : "—"], ["Particle hit", st.pellets ? tdP("grv", st, st.dmg * st.pelletK) : "—"], ["Particle reach", st.pellets ? "×" + st.pelReach + " void" : "—"],
     ["Aura size", st.auraOn ? "×" + st.accR + " void" : "—"] /* (the aura "—" until Gravity Well buys it) */,
     ["Aura slow", st.auraOn ? Math.round(Math.min(GRV_SLOW_MAX, st.slow) * 100) + "%" : "—"], ["Inner slow", st.auraOn ? Math.round(Math.min(GRV_CORE_MAX, Math.min(GRV_SLOW_MAX, st.slow) * GRV_CORE_MUL) * 100) + "%" + (st.horizon ? " all over" : "") : "—"]]  /* (no "Shields -1 / hit" row: every hit pops one - owner, 2026-10-16: "isn't this just default behaviour? maybe no need to list") */,
-  sol: (st, t) => (typeof SOL_TRACK !== "undefined" && SOL_TRACK && t ? solTrackSpec(st, t) : [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Locks", st.targets],
-    ...(st.skill ? [["Carry", st.pierce ? "×" + st.hop + " / enemy" : "—"]] : []) /* one beam always (2026-10-25): the pass-through and reflection falloff */, ...(st.skill ? [["Splits", st.pierce ? st.split + " / hit" : "—"], ["Prism", st.pierce || st.dot ? Math.round(2 * st.band) + " wide" : "—"]] : []) /* a plain SOL has no band - Diffraction's, and the rod sweeps it (2026-10-28) */,
-    // short enough for the card's right column (owner, 2026-10-07: "1 × (−1.5 armor, +1% crit) / hit" ran off it)
-    [st.skill ? "Breach" : "Bleed", st.bleedArmor ? "−" + pc(1 - (1 - st.bleedArmor) ** (st.breach || 1)) + " armor a hit" : "—"], ...(st.skill ? [["Parallel", st.par ? st.par + " × " + Math.round(SOL_PAR_K * 100) + "%td" : "—"]] : []) /* Breach's parallel beams (aspira-sol.js) */, ...(st.bleedCrit ? [["Bleed crit", "+" + Math.round(st.bleedCrit * 100) + "%"]] : []),
-    ...(st.skill && st.dot ? [["Scorch tick", +(st.dot.k * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n], ["Scorch lasts", +st.dot.t.toFixed(1) + "s"] /* stacking unsaid: the default (owner, 2026-10-26) */] : []) /* SOL_SCORCH */, ["Form", rayForm(st)]]),
+  sol: (st, t) => solTrackSpec(st, t), // the tracking beam's rows (below; the old shot's Locks / Prism / Parallel went with it, 2026-11-05)
 };
 
 // One stat row: "now" alone at max level, "now -> next" when an upgrade
@@ -105,7 +101,7 @@ function statRow(label, now, next) {
   return "<dt>" + label + "</dt><dd>" + now + arrow + "</dd>";
 }
 
-// SOL's TRACKING BEAM's rows (owner, 2026-11-04; aspira-sol.js SOL_TRACK): the beam's ticks, Reflection's splits and their carry (Breach's,
+// SOL's TRACKING BEAM's rows (owner, 2026-11-04; aspira-sol.js): the beam's ticks, Reflection's splits and their carry (Breach's,
 // SOL_TRACK_HOP), Breach's strip, the scorch a tick - no locks, prism or parallel beams ("no parallel beams")
 function solTrackSpec(st0, t) {
   const st = solTrackSt(t, st0), d = st.dmg * st.rate * SOL_TICK;

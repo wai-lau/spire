@@ -205,66 +205,12 @@ function shatterAt(e) {
   shattering = false;
 }
 
-// A Reaper CHARGES at each locked target (t.locks: st.targets of them, 1 at base) for its whole reload
-// (t.period), drawn as a fading-in line by drawAims, then fires at it.
-// Owner's rules: if the target dies mid-charge the charge starts over on a
-// new one; if it only leaves range the Reaper re-targets but keeps its charge;
-// with no target at all it sits uncharged, so every shot is telegraphed.
-const aimAt = (t, e) => Math.atan2(e.y - t.y, e.x - t.x);
-// e within SOL's band (st.band u either side of the line from the tower along a, ahead of it)
-const inSolCone = (t, st, a, e) => solInBand(t, st, e, a, t);
-function stepSol(t, dt) {
-  const st = towerStats(t);
-  t.period = 1 / st.rate; solRodStep(t, st, dt); // (the scorch rods in flight - aspira-sol.js)
-  if (SOL_TRACK) return stepSolTrack(t, st, dt); // THE TRACKING BEAM (aspira-sol.js; owner, 2026-11-04)
-  // a lock can only START inside st.range (pickTargets); once charging it HOLDS its target WHEREVER it goes and fires,
-  // but a target outside st.range when it fires is let go - no new charge on it until it is back in range (owner, 2026-10-26:
-  // "if a target were to exit SOL's range as it is charging, it can keep charging and fire, but it cannot start charging again
-  // until it enters SOLs range again"; it held out to SOL_HOLD x the range before). It holds up
-  // to st.targets locks - 1 at base; more are PARKED for a Reaper upgrade
-  // (owner: a `targets` mod) - EACH WITH ITS OWN CHARGE TIMER (owner):
-  // a new lock charges from empty, fires its own ray when full and charges
-  // again; a lock whose target dies or slips away is dropped, and the slot
-  // refills with a fresh lock.
-  // CHARGE CONSERVATION (owner, 2026-10-08): a lost lock hands its charge on only to a new
-  // target inside the Refraction cone (st.cone either side) of the lost one's direction from
-  // the tower; anywhere else the new lock charges from empty
-  const lost = [];
-  t.locks = (t.locks || []).filter(l => { const ok = !l.e.dead; if (!ok) lost.push({ a: aimAt(t, l.e), cd: l.cd }); return ok; });
-  if (t.locks.length < st.targets) {
-    for (const e of pickTargets(t, st, st.targets + t.locks.length)) {
-      if (t.locks.length >= st.targets) break;
-      if (t.locks.some(l => l.e === e)) continue;
-      const k = lost.findIndex(o => inSolCone(t, st, o.a, e));
-      t.locks.push({ e, cd: k >= 0 ? lost.splice(k, 1)[0].cd : t.period });
-    }
-  }
-  let fired = false;
-  for (const l of t.locks) {
-    l.cd -= dt;
-    if (l.cd > 0) continue;
-    // a full charge RE-AIMS by the targeting before it fires (owner: Fresh kept
-    // hitting the enemy it had already bled): the best enemy in range that no
-    // other lock holds - inside the Refraction cone of its target, since only
-    // there does the charge carry over (owner, 2026-10-08); else it fires where it was
-    const a0 = aimAt(t, l.e), pick = pickTargets(t, st, st.targets + t.locks.length).find(e => e === l.e || (!t.locks.some(o => o.e === e) && inSolCone(t, st, a0, e)));
-    if (pick) l.e = pick;
-    fireRay(t, st, l.e); l.cd = t.period; fired = true; l.out = Math.hypot(l.e.x - t.x, l.e.y - t.y) > st.range; // out of range now: let go once it has fired
-    t.shots = (t.shots || 0) + 1;
-  }
-  if (fired) { sfx(t.kind); t.locks = t.locks.filter(l => !l.out); }
-}
+// SOL: the tracking beam, every step (stepSolTrack, aspira-sol.js; owner, 2026-11-04) - the old charged shot was deleted 2026-11-05
+function stepSol(t, dt) { const st = towerStats(t); t.period = 1 / st.rate; return stepSolTrack(t, st, dt); }
 
 
-// SOL's shot (owner, 2026-10-03). One crit roll per target, its chance the
-// tower's own plus the target's BLEED, times st.critScale (Pinpoint). Forms:
-//   st.bleedArmor / st.bleedCrit  each hit bleeds the enemy (Impale): armor
-//                 down for good (multiplied toward 0), crit chance up for every tower
-//   st.ricochet   the shot chains at full damage to this many more enemies
-//   st.beams      converging beams, each a FULL hit (Focus 2 / 3 / 4) - so each pops
-//                 its own shield charge
-//   st.smash      a kill bursts for frac x the shot within r (Nova)
-const BOUNCE_R = 120, BLEED_CRIT_CAP = 1; // Ricochet hop at 75%, with every range (owner)
+// SOL's BREACH (bleed): every tick of the tracking beam strips a share of the armor left (solTickHit, aspira-sol.js)
+const BLEED_CRIT_CAP = 1;
 function bleed(e, st, t) {
   if (!st.bleedArmor || e.dead) return;
   const k = st.breach || 1; // the chart SOL: Breach stacks per hit (aspira-skills.js)
@@ -272,46 +218,6 @@ function bleed(e, st, t) {
   shredPct(e, t, 1 - (1 - per) ** k); // per: a share of the armor a hit (6.18.0), k stacks multiply (aspira-acid.js); its share of the damage it adds is SOL's (damageCredit)
   e.bleedCrit = Math.min(BLEED_CRIT_CAP, (e.bleedCrit || 0) + st.bleedCrit * k); e.breachN = (e.breachN || 0) + k; // stacks, for the spokes
   e.breached = (e.breached || 0) + per * k; e.breachBy = t; // (it fed the breach SHRAPNEL until the SOL rework, 2026-10-22 - SCORCH now; game.js's typeof guard skips the gone breachShrapnel)
-}
-function rayHit(t, st, e, base, from) {
-  const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1);
-  const m = crit ? st.critMul : 1, d = shotDamage(t, st, e, base) * m;
-  const n = st.beams || 1, part = d; // every beam is a FULL hit (owner, 2026-10-06; was a fitted share of the shot)
-  beam(from, e, TOWERS[t.kind].color, RAY_BEAM_LIFE, SOL_BEAM_THIN, d / m, true, false); /* a CRIT draws no wider: the beam's width reads the plain hit, 3 wide (owner, 2026-10-26: "don't thicken beams on crit"; was 5 wide and the crit's hit) */ // a SOL beam is FIXED where it struck at EVERY tier (owner, 2026-10-26: "neither visual should track the enemy"; it followed with st.pierce off, which no tier had until the plain tier 0 of 2026-10-28) // a chart SOL's beams THIN (owner, 2026-10-22)
-  if (n > 1 && from === t) fx[fx.length - 1].beams = n; // n converging beams from the tower; a Refract hop past the first enemy is ONE thick beam (owner)
-  // OPACITY = THE SHARE (owner, 2026-10-23: "the section of beam should reflect the % of damage it carries compared to the initial beam" /
-  // "Opacity"): a SOL reflection's beam at base / st.dmg (its st.hop^k), the pass-through on from it x st.hop an enemy (solSpread) - drawn at
-  // share^2, past BEAM_BRIGHT's cap (owner: "These 3 lines basically look the same / Exaggerate diff / Make beams way thinner each")
-  const share = base / (st.dmg || 1); Object.assign(fx[fx.length - 1], { share, thin: SOL_THIN }); // every tier (a plain SOL drew 3 wide, unshared, for a morning - 2026-10-28)
-  dmgBatch(() => { for (let i = 0; i < n && !e.dead; i++) { fromHit(from, () => damage(e, part, t, false, crit, st)); onHit(e, t, st, part); bleed(e, st, t); } }); // ONE number for the volley (dmgBatch, aspira-floats.js); a crit PINK (owner); st: its shieldPop
-  solSpread(t, st, from, e, base, share); // (every tier, kill or not: a plain SOL only flies on, Diffraction splits - aspira-sol.js) - the RAW hit x the carry, as a reflection carries it (owner, 2026-10-26: "both carry amounts based on carryover"; was the hit after armor and crit)
-  if (e.dead && st.smash && !e.smashed) {
-    // Nova / Supernova: the kill bursts (a filled blast that lingers, owner)
-    e.smashed = true;
-    fx.push({ k: "blast", x: e.x, y: e.y, r: st.smash.r, color: TOWERS[t.kind].color, t: 0, life: 0.35 });
-    for (const o of G.enemies) {
-      if (o !== e && (!o.dead && o.seen) && Math.hypot(o.x - e.x, o.y - e.y) <= st.smash.r) damage(o, d * st.smash.frac, t, true);
-    }
-  }
-}
-function fireRay(t, st, e) {
-  const a = Math.atan2(e.y - t.y, e.x - t.x); solAim = st.pierce ? a : null; rayHit(t, st, e, st.dmg, t); // SOL: the shot's band axis - Diffraction's; a plain SOL has none (aspira-sol.js)
-  if (t.kind === "sol" && st.par) solParallel(t, st, a); // Breach's parallel beams (aspira-sol.js)
-  if (t.kind === "sol" && st.dot) solRodFire(t, st, a); // the scorch ROD slides out along the shot (aspira-sol.js) - Scorch's, band mechanic or not (2026-10-28; it rode solAim); the prism itself persists and fades on its own (drawAims)
-  if (!st.ricochet) return;
-  // Ricochet / Shredder: hop to the nearest enemy not yet hit, at full damage
-  const hit = new Set([e]);
-  let prev = e;
-  for (let k = 0; k < st.ricochet; k++) {
-    let nxt = null, nd = BOUNCE_R * BOUNCE_R;
-    for (const o of G.enemies) {
-      if (o.dead || !o.seen || hit.has(o)) continue;
-      const dd = (o.x - prev.x) ** 2 + (o.y - prev.y) ** 2;
-      if (dd < nd) { nd = dd; nxt = o; }
-    }
-    if (!nxt) break;
-    rayHit(t, st, nxt, st.dmg, prev); hit.add(nxt); prev = nxt;
-  }
 }
 
 function fire(t, st) {
@@ -325,7 +231,6 @@ function fire(t, st) {
   // ONE HIT SET AN ATTACK (owner, 2026-10-28: "reduce the number of arc hits" / "no-rehit same enemy"): the bolts share it, so no enemy is
   // struck by two bolts of one attack (each bolt struck a unit once already; Capacitance's bursts still re-hit - "capacitance should re-hit")
   if (t.kind === "arc") { const seen = new Set(); for (const e of targets) fireChain(t, st, e, t, false, seen); return true; }
-  if (t.kind === "sol") { fireRay(t, st, targets[0]); return true; }
   if (t.kind === "grv") return novaAt(t, st, targets[0]); // a nova on it, no projectile (aspira-grv.js)
   const col = TOWERS[t.kind].color;
   for (const e of targets) {

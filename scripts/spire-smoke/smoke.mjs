@@ -43,7 +43,7 @@ check("a wave spawns, towers fire, enemies draw", () => {
          const ci = CELLS.findIndex((c, i) => cellOpen(i) && !G.towers.some(t => t.cell === i)); placeTower(CELLS[ci]); }
        G.started = true; sendWave(); for (let i = 0; i < 400; i++) step(1 / 30);`);
   if (!run("G.enemies.length + (G.kills || 0)")) return "no enemies spawned";
-  const seen = calls(env, ["drawEnemy", "drawAims"], () => frames(env, 2));
+  const seen = calls(env, ["drawEnemy", "solTrackBeams"], () => frames(env, 2));
   if (!seen.drawEnemy) return "drawEnemy never called with " + run("G.enemies.length") + " enemies";
   return run("G.towers.some(t => (t.dealt || 0) > 0)") ? "" : "no tower dealt damage in 400 steps";
 });
@@ -348,17 +348,6 @@ check("GRV: a void every shot, at its starting mass, novas before it only from N
   if (r.z.n !== 2 || r.z.mass !== 3 || r.z.nN) return "tier 0: " + JSON.stringify(r.z) + " (expected a void a shot, mass 3, no nova)";
   if (r.n.nN !== 3) return "Nova I: " + JSON.stringify(r.n) + " (expected three novas)";
   return "";
-});
-check("SOL: a volley of beams shows ONE number, their sum (owner, 2026-10-21)", () => {
-  const r = run(`(() => {
-    G = newGame(); G.money = 1e6; ui.build = "sol"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); ui.build = null; const t = G.towers[0];
-    spawnEnemy("armor", 20, 0, 0); const e = G.enemies[0]; e.seen = true; e.hp = e.max = 1e12; e.armor = 0; e.shield = 0;
-    dmgLive = []; dmgSums.clear(); const st = { ...towerStats(t), beams: 3, crit: 0, pierce: 0, smash: null }; const hp0 = e.hp;
-    rayHit(t, st, e, st.dmg, t); const nums = dmgLive.map(f => f.text);
-    return { nums, dealt: hp0 - e.hp, want: String(dmgUnits(hp0 - e.hp)) };
-  })()`);
-  if (r.nums.length !== 1) return "3 beams showed " + r.nums.length + " numbers (" + r.nums.join(", ") + "; expected one)";
-  return r.nums[0] === r.want ? "" : "the volley's number " + r.nums[0] + " (expected its sum " + r.want + ")";
 });
 check("every shield pop shows its own 0 at once, quiet hits too (owner, 2026-10-21)", () => {
   const r = run(`(() => {

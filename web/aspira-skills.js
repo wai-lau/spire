@@ -109,7 +109,7 @@ const withSkills = (t, add) => { const s = { ...t.skills }; for (const [id, n] o
 
 // (FRZ's chart - aura, Rime, moons - lives in aspira-frz.js)
 
-// ---------- SOL's chart: Focus beams, Refract cone, Pierce Breaches ----------
+// ---------- SOL's chart: the tables the tracking beam reads (aspira-sol.js) - Reflection's splits, Breach's strip, the crit ----------
 // Breach stacks per hit (owner: "each beam permanently weakens the target's armor" - Breach is what strips it; the base SOL strips nothing)
 // (SOL_BEAMS - Focus's beam count, 2 3 10 17, capstone 25 - GONE: SOL is ALWAYS ONE BEAM, owner 2026-10-25)
 const SOL_SPLIT = [0, 1, 1, 2, 3, 3]; /* DIFFRACTION I SPLITS AGAIN (owner, 2026-10-31: "3" - tier I hit no one; was 0 0 1 2 3 3 in 7.0.8) */ /* ONE TIER LESS (2026-10-31, owner: "Make SOL scorch slow" + "Reduce fire rate and diffraction / Increase other things"); was 0 1 2 3 3 4 */ /* TIER 0 SPLITS NOTHING (owner, 2026-10-28: "I wanted tier 0 to be a minimal version of the tower with few effects" - one beam, its first enemy alone struck (it flies on past it), the spec's row; was 1 since 2026-10-26, "SOL should start with bouncing") */ /* II refracts TWICE (owner, 2026-10-26: "SOL diffraction 2 should say, refracts twice"; was 1 2 2 3 3 4) */ /* SPLITS A HIT by Diffraction tier 0..V (owner, 2026-10-26: "SOL should start with bouncing ... bounces have no limit" - solSpread, aspira-sol.js; Claude's numbers. Was SOL_REFRACTION, a chain's length 0 2 3 6 9 9) */
@@ -119,13 +119,8 @@ const SOL_SPLIT = [0, 1, 1, 2, 3, 3]; /* DIFFRACTION I SPLITS AGAIN (owner, 2026
 // BREACH STRIPS A FLAT AMOUNT, big from the start (owner, 2026-10-12: "SOL with any upgrades should be good vs armor", then
 // "dont scale breach with enemy armor" - it was x the wave's armor for an hour): a bare SOL strips 80 a hit (was 3)
 const SOL_BREACH_ARMOR = [0, 0.162, 0.252, 0.666, 0.95, 0.95] /* x1.5, at most 0.95 (2026-10-31, owner: "Make SOL scorch slow" + "Reduce fire rate and diffraction / Increase other things"); was 0 .108 .168 .444 .95 .95 */ /* x4, at most 0.95 (2026-10-29, the mark target SOL armor +2: owner "big damage for armor"; was 0 .027 .042 .111 .396 .497) */ /* a SHARE of the armor a hit, 6.18.0 (owner, 2026-10-28: "for armor, all strip should be changed to a % not a flat number"): tier III = today's 11.1% at waves 101-119 (stripprobe), the rest stacked shares of the old flat ladder 0 127 200 550 2359 3216 */ /* 0..V written whole (2026-10-25 SOL axes: Breach I strips - it is the armor axis now; was tier01 0 and the capstone push 3216) */ /* bigger tiers (owner, 2026-10-12: "increase breach effect to make it better" - the Breach build: armor 61-69 16% -> 12%, 81-89 9% -> 5%); was 80 120 160 210 270 330, before that 3 24 72 150 261 300 */ /* x1.5 for the crit chance it no longer gives (owner, 2026-10-12: "remove extra crit chance, just reduce armor more") */ /* doubled back (2026-10-12, trio sim: ARC+FRZ+SOL, the trio without ACD, leaked 57% of armor at 81-89 - 45% with this) */ /* halved, rounded down (2026-10-08; was 2 16 49 101 174 200) */; // (SOL_BREACH_CRIT, crit chance a hit, was 0 at every tier since 2026-10-12 - gone with the tier redesign)
-// THE SHOT'S BAND half-width, u, by Diffraction tier (owner, 2026-10-26: "instead of a cone, change the shape (not just visually) to an
-// expanding rectangle") - first guess: the old cone's half-width at SOL's range (227 x tan 15 .. 36 deg); the battery fits it (solInBand, aspira-sol.js)
-const SOL_BAND_W = [25.5, 25.5, 31.875, 38.25, 46.75, 85] /* x0.85 (owner, 2026-11-01: "refraction width can also be a good lever for SOL"; the mark target SOL swarm -3): a narrower band, worse vs swarm; was 30 30 37.5 45 55 100 */; /* ONE TIER LESS (2026-10-31, owner: "Make SOL scorch slow" + "Reduce fire rate and diffraction / Increase other things"); was 30 37.5 45 55 100 100 */ /* HALVED (owner, 2026-10-29: "thin the diffraction rectangle to make it bad for both swarm and fast"; was 60 75 90 110 200 200) */ /* IV 130 -> 200, V 165 -> 200 (2026-10-28, the FAST lever - Diffraction is SOL's fast axis: 111-119 at 13 pts swarm/fast/shield/armor 12/77/18/23 -> 7/60/4/9; more splits did nothing, a wider band let them reach the fast lines; a lower curve made fast WORSE) */
-// (was the cone's half-angle:) const SOL_CONE_BY = [15, 18, 22, 26, 30, 36] /* WIDENS with Diffraction (owner, 2026-10-26: "cone size increases with diffraction level" - ladder A, Diffraction focus 79% leaked -> 67) */ /* +/- 15 from the TOWER (owner, 2026-10-26: "go back to +/-15 first" - the shot's cone; +/- 30 for a day, "yes go to +/- 30"; before that "widen cone to 30deg (+/- 15 deg)" - bounces go anywhere in it; was 3 6 8 9, capstone 12) */ /* NARROW (owner, 2026-10-19: "SOL should not be good vs swarm whatsoever" - the cone is the lever) */ /* x2/3 (owner, 2026-10-13: "tighten the refraction angle"; was 12 36 36 48 48 48, VI 60) */ /* x0.6 (owner, 2026-10-12: "doesn't that make sol too good? ... narrow SOL" - SOL was the most-needed tower, random teams won 27%) - before that x0.75 once the cone started at the first enemy (owner, 2026-10-12: "reduce refraction angle now for all levels"; soldiag ARC+FRZ+SOL armor leaks 3-9% -> 11-19%, Refraction builds 4%; was 20 60 60 80 80 80) */
 // NO PIERCE (owner, 2026-10-30: "Nothing should have pierce"): SOL_ARMOR_PIERCE (6.18.14-27, every SOL hit saw a fifth of the armor) is
 // gone; SOL's armor target comes from damage, the Breach share and Scorch, like every tower.
-const SOL_BAND0 = SOL_BAND_W[0], BREACH_CRIT = 0.01; // (the pre-chart path's per-stack crit)
 // SOL's crit hits x SOL_CRIT_K - ONE number since the tier redesign (owner, 2026-10-25: "fix all the left for later things": a factor on the
 // tower's own damage is one constant, the curve carries the rest; was 3 5 9 25, V 33 by Breach tier)
 const SOL_CRIT_K = 3;
@@ -139,8 +134,6 @@ const SOL_HOP = [0.7, 0.8, 0.85, 0.9, 0.95, 1]; /* tier 0 0.5 -> 0.7, the rest s
 // (LIGHT OUTRUNS THE FAST, Refraction x the fast, removed 2026-10-12 - owner: no extra damage by enemy type)
 // (SOL_REFRACTION_DMG - Reflection's slight damage gain - GONE with the tier redesign, 2026-10-24: the hit is the stat curve's)
 // each Focus tier's beam STRENGTH (2026-10-08, the tier fit's lever for Focus: more beams alone measured 168% at V)
-// (SOL_PIERCE - the pass-through by Breach tier, 35% .. 125% - is GONE with the SOL rework: every beam passes through at 100%, aspira-sol.js)
-const SOL_PIERCE_OLD = [0.35, 0.6, 0.8, 1]; /* by Breach STOP: 0 35%, I 60%, II 80%, III 100%, IV (the capstone) 125% (owner, 2026-10-19: "100% carry earlier / capstone goes above 100%"; 2 and 4 are never bought) */ // the overkill a kill carries on (solPierce, aspira-towers.js) by Breach tier; VI 1 (capstone)
 // (SOL_PASS / SOL_PASS_N - the pass-through share and count by Focus - GONE 2026-10-25: every beam passes through every enemy on its line
 // (owner: "All beams always breach"), each enemy at SOL_HOP x the one before)
 // FEWER, HARDER SHOTS (2026-10-31, owner: "Make SOL scorch slow" + "Reduce fire rate and diffraction / Increase other things"): the curve's rate x SOL_RATE_K, its damage x SOL_DMG_K
@@ -148,14 +141,10 @@ const SOL_RATE_K = 0.75, SOL_DMG_K = 2.07; /* 1.8 -> 2.07, x1.15 (2026-11-02: wi
 function solSkillStats(t, s, b) {
   curveBase(t, s, b); s.rate = b.rate * SOL_RATE_K; s.dmg *= SOL_DMG_K; s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.crit = LVL_SOL_CRIT[0]; // the STAT CURVE (tier redesign 2026-10-24); SOL's rate never rises (owner, 2026-10-23)
   s.beams = 1; // ONE BEAM, always (owner, 2026-10-25)
-  s.split = SOL_SPLIT[skillOf(t, "refraction")]; s.band = SOL_BAND_W[skillOf(t, "refraction")]; s.hop = SOL_HOP[skillOf(t, "refraction")]; /* the carry is DIFFRACTION's (owner, 2026-10-26: "move the carry increase from breach to diffraction") */
-  const bk = skillOf(t, "breach"); s.par = SOL_PAR_N[bk] || 0; // Breach's parallel beams (aspira-sol.js)
-  s.breach = 1; s.pierce = skillOf(t, "refraction") > 0 ? 1 : 0; /* THE BAND IS DIFFRACTION'S (owner, 2026-10-28: tier 0 "a minimal version of the tower with few effects"): a plain SOL's beam strikes its first enemy and flies on straight past it, striking no one - no split, no mirror, no prism (fireRay, solSpread, drawAims); was 1 at every tier since 2026-10-26 ("SOL should start with bouncing") */ const sc = skillOf(t, "focus"); s.dot = sc ? { k: SOL_SCORCH_TOTAL / SOL_SCORCH_N[sc], n: SOL_SCORCH_N[sc], t: SOL_SCORCH_N[sc] * SOL_SCORCH_Q } : null; /* SCORCH (owner, 2026-10-25): a burn of frac x the hit that landed - reflections and pass-throughs burn at their own falloff - stacking without cap (solScorch) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
+  s.split = SOL_SPLIT[skillOf(t, "refraction")]; s.hop = SOL_HOP[skillOf(t, "refraction")]; // (the tracking beam takes its carry from Breach, SOL_TRACK_HOP - solTrackSt; s.hop is the old shot's Reflection carry, kept for the Reflection II fix)
+  const bk = skillOf(t, "breach");
+  s.breach = 1; const sc = skillOf(t, "focus"); s.dot = sc ? { k: SOL_SCORCH_TOTAL / SOL_SCORCH_N[sc], n: SOL_SCORCH_N[sc], t: SOL_SCORCH_N[sc] * SOL_SCORCH_Q } : null; /* SCORCH (owner, 2026-10-25): the burn the tracking beam's stacks carry (solTrackSt) */ s.critMul = SOL_CRIT_K; s.bleedArmor = SOL_BREACH_ARMOR[bk]; s.bleedCrit = 0; s.skill = true;
 }
-// THE SHOT (owner, 2026-10-22 rework .. 2026-10-26): one beam that goes on STRAIGHT through every hit and SPLITS at each one to st.split
-// more enemies inside the shot's cone (st.cone degrees either side of tower -> first enemy, seen from the tower, each farther from SOL than
-// the one before), every hit at st.hop x the one before, ending only under 5% of the shot - solSpread, aspira-sol.js (history ARCHAEOLOGY.md)
-const SOL_CONE_EDGE = 1600; // the charge cone's reach, to the screen's edge (drawAims - the only cone drawn, owner 2026-10-26)
 // a shot goes on past its last enemy far beyond the screen's edge (owner, 2026-10-08), FIXED where it struck (2026-10-26: no visual tracks the enemy)
 const SOL_OUT_LEN = 3000;
 // it ENDS AT THE PLAY BOX's edge (owner, 2026-10-27: "SOL shooting backwards? / when SOL is above target"): a far end 3000 u down
@@ -171,39 +160,6 @@ function solOutLen(x, y, ux, uy) {
     if (typeof viewCam === "function") viewCam(behind); else behind(); /* - under the TEXTURE camera (viewCam): a shot fires in the game tick, outside warp3d, where the page's camera put points 1/WARP_RES too far out and could halve a line the simulator keeps (2026-11-01) */
   }
   return k;
-}
-// UI (drawFx): the Refract light cone, a faint wedge that fades FAST (owner):
-// its opacity falls with the cube of the time left, and with DISTANCE from the
-// tower - full at the source, gone by SOL_CONE_FADE of its length (owner)
-const SOL_CONE_FADE = 0.8;
-// TWICE AS LONG AND TWICE AS STRONG (owner, 2026-10-21: "double opacity and length of SOL cones (should still fade to 0 by the end)"):
-// every cone drawn SOL_CONE_LEN_K x its length at SOL_CONE_A (was 0.5), still clear by SOL_CONE_FADE of the way out
-const SOL_CONE_LEN_K = 2, SOL_CONE_A = 0.525 /* x0.75 (owner, 2026-10-26: "reduce cone opacity by 25%"; was 0.7) */; // then 30% fainter (owner, 2026-10-21: "reduce SOL cone opacity by 30%"; 1)
-// THE BAND (owner, 2026-10-26: "an expanding rectangle" / "the indicator should fade to 0% opacity as it nears the tower, opacity should
-// increase as distance from the tower increases and go back down starting around 10 towers away"): f.half u either side of the line from
-// (f.x, f.y) along f.a, f.len long, drawn as ONE gradient: clear at the tower, full by SOL_BAND_RISE towers out, fading from
-// SOL_BAND_FALL towers to clear at SOL_BAND_GONE (a tower: its hexagon's width, 2 x CELL_S x TOWER_K)
-const SOL_BAND_RISE = 3, SOL_BAND_FALL = 10, SOL_BAND_GONE = 20; // (one gradient, 2D and GPU alike - owner, 2026-10-26: "fade gradually instead of step", "a gradient, not steps!")
-const SOL_BAND_A = 0.2625; // the band's full opacity: half the cone's SOL_CONE_A (owner, 2026-10-26: "half current opacity")
-function drawBand(f, k) {
-  const a = Math.min(1, SOL_BAND_A * k * k * k), c = Math.cos(f.a), s = Math.sin(f.a), T = 2 * CELL_S * TOWER_K, len = Math.min(f.len, T * SOL_BAND_GONE);
-  if (!(f.half > 0) || !(a > 0)) return;
-  if (typeof fxGlBand === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { // 3D: ONE quad, the profile per pixel (aspira-fxgl.js shape 8) - no steps
-    fxGlBand(f.x, f.y, f.x + c * len, f.y + s * len, f.half, COL[f.color], a, Math.min(1, SOL_BAND_RISE * T / len), Math.min(1, SOL_BAND_FALL * T / len), Math.min(1, SOL_BAND_GONE * T / len));
-    return;
-  }
-  const g = ctx.createLinearGradient(0, 0, len, 0), at = u => Math.min(1, u * T / len); // 2D: ONE rectangle, a linear gradient through the profile's corners
-  g.addColorStop(0, "transparent"); g.addColorStop(at(SOL_BAND_RISE), COL[f.color]); g.addColorStop(at(SOL_BAND_FALL), COL[f.color]); g.addColorStop(at(SOL_BAND_GONE), "transparent");
-  ctx.save(); ctx.translate(f.x, f.y); ctx.rotate(f.a); ctx.fillStyle = g; ctx.globalAlpha = a; ctx.fillRect(0, -f.half, len, 2 * f.half); ctx.restore();
-}
-function drawCone(f0, k) {
-  const f = { ...f0, len: f0.len * SOL_CONE_LEN_K }, a = Math.min(1, SOL_CONE_A * k * k * k);
-  if (typeof fxGlCone === "function" && fxGl.on && !(ctx instanceof CanvasRenderingContext2D)) { fxGlCone(f, a); return; } // 3D: by the GPU (aspira-glctx.js)
-  const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.len * SOL_CONE_FADE);
-  g.addColorStop(0, COL[f.color]); g.addColorStop(1, "transparent");
-  ctx.fillStyle = g; ctx.globalAlpha = a;
-  ctx.beginPath(); ctx.moveTo(f.x, f.y);
-  ctx.arc(f.x, f.y, f.len, f.a - f.half, f.a + f.half); ctx.closePath(); ctx.fill();
 }
 // ACD's chart numbers, stats and puddles live in aspira-acid.js
 // SCORCH (owner, 2026-10-22: "replace shrapnel with short, high damage DoT"; history ARCHAEOLOGY.md): every SOL hit - beam, pass-through,

@@ -116,7 +116,7 @@ check("demo signature: every tower's scene draws its main effect (GRV voids, ARC
       const f0 = sig !== "beam" ? window[sig] : null; if (f0) window[sig] = function (...a) { const was = on; on = true; try { return f0.apply(this, a); } finally { on = was; } };
       try { for (let f = 0; f < 360; f++) { demoFrame(S, c2, view, demoDraw3d); if (sig === "beam") { beams += S.fx.filter(x => x.k === "beam" && x.color === TOWERS[kind].color).length; if (kind === "sol") { const tb = demoRun(S, () => solTrackBeams()) || []; beams += tb.length; held = Math.max(held, tb.length); } } } }
       finally { if (f0) window[sig] = f0; for (const [m, f] of marks) c2[m] = f; }
-      if (kind === "sol" && key === "refraction" && SOL_TRACK && held < 2) bad.push("sol.refraction III: no split beam drawn (at most " + held + " held beam at once)"); // REFLECTION's splits (owner, 2026-11-04: "splits towards N targets")
+      if (kind === "sol" && key === "refraction" && held < 2) bad.push("sol.refraction III: no split beam drawn (at most " + held + " held beam at once)"); // REFLECTION's splits (owner, 2026-11-04: "splits towards N targets")
       if (sig === "beam" ? !beams : !ops) bad.push(kind + "." + key + " III: no " + (sig === "beam" ? kind + "-coloured beam" : sig + " drawing"));
     } } finally { Math.random = rnd0; }
     return bad.join("; "); })()`);

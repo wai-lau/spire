@@ -1,67 +1,6 @@
-// /aspira - the TOWERS' EFFECTS drawn on the board: aims, acid pools, ARC
+// /aspira - the TOWERS' EFFECTS drawn on the board: acid pools, ARC
 // tethers, FRZ moons (split from aspira-draw.js at its 500-line cap). Same
 // global scope; render() in aspira-draw.js calls these each frame.
-// RPR's charge-up: a thin line to the target it is reloading for, fading in
-// as the reload fills (alpha ~ progress^2), so the shot is telegraphed.
-// It deals nothing; the damage comes with the bright flash on firing.
-function drawAims() {
-  ctx.lineCap = "round"; ctx.lineWidth = 0.8;
-  for (const t of G.towers) {
-    if (t.kind !== "sol") continue;
-    const st = towerStats(t), n = st.beams || 1, col = TOWERS[t.kind].color;
-    // NO PRISM (owner, 2026-11-04: "wait get rid of the prism for SOL"; it persisted and swung between targets from 2026-10-26 - ARCHAEOLOGY §4)
-    const lock = (t.locks || []).find(l => !l.e.dead);
-    // THE SCORCH RODS (solRodStep): an IFR flare spoke across the band at each rod's distance, FULL at the tower and clear by the play
-    // box's edge along the shot (r.len; owner, 2026-10-28: "the fade should go from 100% opacity to 0" - it faded IN over 50 u until then)
-    if (t.rods && t.rods.length) {
-      const low = typeof lowQ === "function" && lowQ(); ctx.lineCap = "butt";
-      for (const r of t.rods) { const c = Math.cos(r.a), sn = Math.sin(r.a); drawSolRod(r.x + c * r.s, r.y + sn * r.s, c, sn, r.half, Math.max(0, 1 - r.s / (r.len || SOL_CONE_EDGE)), col, low); }
-      ctx.lineCap = "round";
-    }
-    if (!lock || !t.period) continue;
-    for (const l of t.locks) { // each lock's CHARGE LINE brightens on its own charge - the charging read (owner, 2026-10-26)
-      if (l.e.dead) continue;
-      const p = Math.min(1, Math.max(0, 1 - l.cd / t.period));
-      ctx.strokeStyle = COL[col]; ctx.globalAlpha = 0.32 + 0.32 * p * p; ctx.lineWidth = 0.8; // never below half its full strength (owner)
-      const len = Math.hypot(l.e.x - t.x, l.e.y - t.y) || 1, px = -(l.e.y - t.y) / len, py = (l.e.x - t.x) / len;
-      ctx.beginPath();
-      for (let i = 0; i < n; i++) {
-        const o = (i - (n - 1) / 2) * 2 * TWIN_GAP;
-        ctx.moveTo(t.x + px * o, t.y + py * o); ctx.lineTo(l.e.x, l.e.y); // converging on the target (owner)
-      }
-      ctx.stroke();
-    }
-  }
-  ctx.globalAlpha = 1;
-}
-// THE SCORCH ROD's look (owner, 2026-10-27: "re-use the flare from IFR, except color it SOL / I only want one spoke"): one spoke of an
-// IFR meteor's flare through the rod's centre across the band, its glow layers, falloff and brightness COPIED from IFR's (owner,
-// 2026-10-28: "copy it" - IFR's retunes leave it alone): SOL's colour round a white core
-// SOL_ROD_GLOW: 2D layers [x the width, alpha, colour] (null: the tower's), cut into SOL_ROD_BANDS lengths falling off as (1 - k / bands)^3;
-// SOL_ROD_GLOW_GL: 3D glow lines [half-width x the width, alpha, colour]; SOL_ROD_I: every layer's alpha x this (IFR's 0.11375 x 3 x 3);
-// SOL_ROD_WL: its width x the band's half-width - x10 IFR's 0.28 (IFR's untaken flare, 13.3 / 47.6; owner, 2026-10-28: "make the flare
-// 10x thicker"); SOL_ROD_LEN_K: its reach each way x the band's half-width (owner, 2026-10-28: "1.3x longer")
-const SOL_ROD_GLOW = [[1, 0.12, null], [0.5, 0.28, null], [0.16, 0.85, null], [0.05, 0.9, "white"]], SOL_ROD_BANDS = 6;
-const SOL_ROD_GLOW_GL = [[0.5, 0.5, null], [0.125, 0.95, null], [0.0375, 0.95, "white"]], SOL_ROD_I = 1.02375, SOL_ROD_WL = 2.8, SOL_ROD_LEN_K = 1.3;
-function drawSolRod(x, y, c, sn, half, al, col, low) {
-  if (!(half > 0) || !(al > 0) || ![x, y].every(Number.isFinite)) return;
-  const W = half * SOL_ROD_WL, I = al * SOL_ROD_I, L = half * SOL_ROD_LEN_K;
-  const ends = [[x, y, x + sn * L, y - c * L], [x, y, x - sn * L, y + c * L]]; // the spoke: out both ways from its centre
-  if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { // 3D: GPU glow lines (lowQ: the two inner)
-    for (const [x0, y0, x1, y1] of ends) for (let g = low ? SOL_ROD_GLOW_GL.length - 2 : 0; g < SOL_ROD_GLOW_GL.length; g++) { const q = SOL_ROD_GLOW_GL[g]; fxGlGlowLine(x0, y0, x1, y1, W * q[0], COL[q[2] || col], Math.min(1, q[1] * I)); }
-    return;
-  }
-  for (let g = low ? SOL_ROD_GLOW.length - 2 : 0; g < SOL_ROD_GLOW.length; g++) { // 2D: banded strokes
-    const q = SOL_ROD_GLOW[g]; ctx.strokeStyle = COL[q[2] || col]; ctx.lineWidth = Math.max(1, W * q[0]);
-    for (let k = 0; k < SOL_ROD_BANDS; k++) {
-      const a0 = k / SOL_ROD_BANDS, a1 = (k + 1) / SOL_ROD_BANDS;
-      ctx.globalAlpha = Math.min(1, q[1] * I * (1 - a0) ** 3); ctx.beginPath();
-      for (const [x0, y0, x1, y1] of ends) { ctx.moveTo(x0 + (x1 - x0) * a0, y0 + (y1 - y0) * a0); ctx.lineTo(x0 + (x1 - x0) * a1, y0 + (y1 - y0) * a1); }
-      ctx.stroke();
-    }
-  }
-}
-
 // ACD: each line thin and faint at first, thicker and brighter as its burn
 // ramps (a Residue line, out of range, at half strength); Plague's circle
 // round each target; Spill has no lines - its range glows instead.
@@ -154,14 +93,13 @@ function drawMoons(t, st, col, shimmer) {
 
 
 // SOL'S HELD BEAMS (owner, 2026-11-04: "SOL 0: fire a single tracking beam at a target" / Reflection "splits towards N targets ... other beams
-// pierce" / "pierce damage reduction is applied each time it passes through an enemy"): t.solB (aspira-sol.js, SOL_TRACK) drawn every frame
+// pierce" / "pierce damage reduction is applied each time it passes through an enemy"): t.solB (aspira-sol.js) drawn every frame
 // at its live ends as SOL beams - the same look as a shot's (drawFx / fxGlBeam: glow + white core), never an fx entry. The first beam,
 // tower -> its target; each split, from that target through every enemy its line crosses, one segment each, DIMMER past each (its share
 // k there: alpha ~ k, the core thinner). Each tick (SOL_TICK) the beams FLASH and ease back. One object a segment, kept per tower
 // (a WeakMap: nothing on the tower that the autosave could keep)
 const SOL_TRACK_FLASH = 0.35, solTrackPool = new WeakMap();
 function solTrackBeams() {
-  if (typeof SOL_TRACK === "undefined" || !SOL_TRACK) return null;
   let out = null;
   for (const t of G.towers) {
     const B = t.solB; if (t.kind !== "sol" || !B || B.e.dead) continue;
