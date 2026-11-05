@@ -308,14 +308,14 @@ check("a wave's card: tapping a wave opens its stats - no NaN, no zero rows - on
   }
   return "";
 });
-check("Temporal Drive stops Strength dead; a tower's slow still takes 40% on her (owner, 2026-10-21)", () => {
+check("Temporal Drive stops Strength dead; a tower's slow takes 10% on her (owner, 2026-10-21; 10% from 2026-11-05: \"strength only takes 10% of any slow\")", () => {
   const r = run(`(() => {
     G = newGame(); spawnEnemy("bonus", 36, 0, 0); const e = G.enemies[0]; e.arcana = "strength"; e.seen = true; e.shield = 0;
     applySlow(e, 1, 5, "core:time"); const core = e.slowF; e.slows = {}; sumSlows(e);
     applySlow(e, 0.5, 5, 7); return { core, tower: e.slowF };
   })()`);
   if (!(r.core >= 1 - 1e-9)) return "Temporal Drive slowed Strength to " + r.core + " (expected a full stop, 1)";
-  if (!(r.tower < 0.5 * 0.4 + 1e-9)) return "a tower's 0.5 slow on Strength came to " + r.tower + " (expected at most 0.2)";
+  if (!(r.tower > 0 && r.tower < 0.5 * 0.1 + 1e-9)) return "a tower's 0.5 slow on Strength came to " + r.tower + " (expected at most 0.05)";
   return "";
 });
 check("GRV support (owner, 2026-10-21): the aura slows harder past the hole, and draws enemies across toward the lane's centre", () => {

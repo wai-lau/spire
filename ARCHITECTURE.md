@@ -42,7 +42,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 |---|---|
 | one pair a type | `TYPE_PAIR` / `PAIR_TURNS`: armor the most direct, swarm almost straight, fast a curve, shield and boss ellipses (`ELLIPSE` 0.7); the type fixes the path, every enemy walks it at one base speed. The chart's dotted 250 u ring is where the pairs' "time under fire" was measured when they were solved (`FIRE_R` in `aspira-defs.js`: declared, read by nothing, kept as the record) |
 | winding | pitch-driven (`TANGENT_Q`, `LANE_SOFT_R`): no hook off the lead-in, a gentle coil at the core; plus the CORE TWIST (owner, 2026-10-22, in place of auto-wait): extra winding at rate `(1 - r/TWIST_R)^TWIST_P / r` inside `TWIST_R` 420 (softened at the core by `TWIST_SOFT`), tightest at the core, each lane `TWIST_S` 3.5 s x its rider's speed longer (`PAIR_RIDER`, `PAIR_V`; solved by bisection), sampled `TWIST_SUB` x finer there; the per-section twist sets the difficulty curve (§5.6); the drawn lane runs on under the core, the walked path ends at `CORE_R` |
-| copies | a wave rides rotated copies of its lane: swarm 20/24, fast 3/5, shield 2/3, armor 2, boss 1 (Lovers 2 opposite, Devil 6), Judgement's escorts 12, **never exactly four** (`NO_LANES`); the set is turned by `laneBestTurn` (rule in §2.2: most even copies, then most total lane, then nearest the usual turn; turned 90 degrees in landscape) |
+| copies | a wave rides rotated copies of its lane: swarm 20/24, fast 3/5, shield 2/3, armor 2, boss 1 (Lovers 2 opposite, Devil 6 on 3, her host on the same 3), **never exactly four** (`NO_LANES`); the set is turned by `laneBestTurn` (rule in §2.2: most even copies, then most total lane, then nearest the usual turn; turned 90 degrees in landscape) |
 | lit | a lane lights only with live enemies (`alive / sent`, `LANE_FADE_IN_MS`); a boss lane is wider, haloed, and waits for the sky (§5.5); Roman numerals on `LABEL_R` 430 never overlap (`placeLabels`); lit layers rebuild at most every `LIT_MIN_MS`; in 3D the lit lanes are drawn by the bell shader (§8.2), the 2D layers only off it; a finished wave's lanes go dark the frame its last enemy dies, whatever wave is up next (`laneHold` keeps a lane only while a live lane of its wave `u.n` runs) |
 | footprint | a tower is a hex of `TOWER_K` cells, `towerGap()` from another, blocked by the core only where outlines touch (`coreKeep`); building on a lane is allowed (towers and enemies never collide); `CORNER_SLOTS` is empty (dormant, §4.8) |
 
@@ -481,23 +481,27 @@ costs lives without ending the run in 10-30% of them is the target, reported by 
 its HP% left in lives (a Lover half, a Devil copy a sixth, rounded up; owner, 2026-11-03), so with 18 lives a boss with more
 than ~18% left still ends it.
 
-| wave | boss | trick | escorts |
-|---|---|---|---|
-| 12 | Star | none (needs two towers or an upgrade) | fast, x3, behind and tight |
-| 24 | Empress | sheds a brood of swarmers each fifth of HP lost | shield |
-| 36 | Strength | no slow touches her, Temporal Drive included | armor |
-| 48 | Chariot | sprints x3 for 1 s every 4 s, fleet with her | fast |
-| 60 | Lovers | a pair on opposite lanes; kill one and the other heals full and runs x1.5 | swarm |
-| 72 | Temperance | regenerates 6% HP a second | shield |
-| 84 | Devil | six full bosses, two a lane on three lane copies (the second `DEVIL_TRAIL` 540 u behind, after the first's HP-bar hold: ~5 s apart in reach); the reward paid once by the last | swarm |
-| 96 | Justice | no hit takes more than 2% of her HP; slowed | armor, fewer |
-| 108 | Judgement | rises once at 50% HP; her swarm spreads over 12 lanes | swarm |
-| 120 | Death | none: a juiced-up Star | all four |
+THE BOSS REDESIGN (owner, 2026-11-05: Wai's spec, verbatim in the 7.6.24-7.6.35 commits; "yes the boss mechanics should stay /
+strength only takes 10% of any slow"). "A wave" = `typeWaveCount(type, n)`: a plain wave of that type at the boss's wave number, as
+`wavePlan` sends it (the count taper included). The fleet code lives in `aspira-bossfleet.js` (loaded right after aspira-bosses.js).
 
-**Fleets**: ONE plain wave's worth (`FLEET_MUL`) of escorts at plain HP and bounty, in
-formation round the boss at its pace; **20% of every escort's HP moves onto its boss**
-(`FLEET_TO_BOSS`; not Temperance); the fleet enters one unit at a time (`G.fleetQ`) and the
-sky holds until all of it dies. **Rewards**: +3 lives or +0.5% interest, the core's powers at 24 / 48.
+| wave | boss | trick | fleet |
+|---|---|---|---|
+| 12 | Star | none (needs two towers or an upgrade) | a 3 x 10 lattice of fast BEHIND her (`FLEET_LATTICE`, `latticeSlots` "behind") |
+| 24 | Empress | a whole swarm wave pours out of her past 2/3 and past 1/3 of her HP (`EMPRESS_STEP`, `EMPRESS_GAP`) | none |
+| 36 | Strength | takes 10% of any slow (`BOSS_SLOW_K`); Temporal Drive still stops her | the centre of a 3 x 12 armor lattice (six rows of three ahead, six behind) |
+| 48 | Chariot | sprints x3 for 1 s every 4 s, fleet with her | fast + armor (unchanged: not in the redesign) |
+| 60 | Lovers | a pair on opposite lanes, no trick (the heal-and-run went) | one armor wave scattered like a swarm, half each (`FLEET_SCATTER`, `bossScatter`) |
+| 72 | Temperance | regenerates 6% HP a second | the centre of a 3 x 12 shield lattice |
+| 84 | Devil | six full bosses, two a lane on three lane copies (the second `DEVIL_TRAIL` 540 u behind); the reward paid once by the last | her HOST first: half a fast + half a swarm wave, loose on her three lanes like a swarm wave; the six are held (`devilGateShut`) till half the host has been on screen or died (`devilCount`) |
+| 96 | Justice | no hit takes more than 2% of her HP; slowed | the crossing of a cross 7 across x 13 along: 18 armor escorts, each with a shield escort's charges too (`latticeSlots` "cross") |
+| 108 | Judgement | killed, she rises ONCE at her lane's start at full HP and shields, with 1.2 swarm waves strewn behind her (`bossRise`, `JUDGEMENT_SWARM`); her second death is her last | none until she rises |
+| 120 | Death | none: a juiced-up Star (half slows, x1.1 speed) | half a wave of each of the four types round her at once, packed ~3x tighter (`SCATTER_UK`) |
+
+**Fleets**: at plain HP x `BOSS_HEFT` and plain bounty, at the boss's pace; **20% of every escort's HP moves onto its boss**
+(`FLEET_TO_BOSS`; not Temperance, not Judgement's risen swarm); the fleet enters one unit at a time (`G.fleetQ`) and the
+sky holds until all of it dies. Scattered escorts wander like swarmers (`jit`). No HP refit went with the redesign: bosses are out
+of the sims (owner, 2026-11-05: "ignore bosses for sims for now / want to redesign bosses"). **Rewards**: +3 lives or +0.5% interest, the core's powers at 24 / 48.
 
 **A boss at the core** (owner, 2026-11-03: "lets make bosses make you lose lives equal to the percentage of life left on the boss instead
 of rhe losing the game instantly"): it costs its HP% left in lives, a Lover half, a Devil copy a sixth, rounded up, at least one
@@ -558,7 +562,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | whole numbers | HP, armor and hits are integers; card numbers real values floored; flashes and widths scale by `VIS_DMG` |
 | slows | PER SOURCE with a shape: `refresh` (times out) · `once` (permanent) · `stack` (every hit adds); sources combine **multiplicatively**, then the total is **shaped**: linear to `SLOW_KNEE`, easing toward `SLOW_CAP` without reaching it; a tower slow alone caps at `TOWER_SLOW_MAX` |
 | fast | takes every slow double, shaped toward `fastSlowCap()` so a fully slowed fast enemy is no slower than any other |
-| full stop | only Temporal Drive; shields block all slows; Strength shrugs all of them |
+| full stop | only Temporal Drive; shields block all slows; Strength takes 10% of any slow (2026-11-05) |
 | armor loss | permanent, multiplied down, never below 0 |
 | quiet hits | ticks, pools, splash: no flash; pool hits past `POOL_LOD` show one summed number an enemy |
 | numbers | crits marigold; sized by the hit before armor - 14-30 px by (hit / half the damage a second)^0.7 (`DMG_PX_MIN`, `DMG_PX_SPAN`; owner, 2026-11-01: "narrow size band", was 10-38), a shield "0" half a full one, credit pop-ups their own 10-19 px - greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or a CRR bolt's interceptor); a GRV number flies INTO its void (`grvFloat`) (`DMG_FLY`) |
@@ -841,7 +845,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | UI | cards never scroll and sit at `--z-bubble`; every card restores the pause on close, the build dialog too - except at game start, where it unpauses; a card closed unbought drops its basket |
 | UI | iOS: `#asp` needs `user-select: none` AND the prefixed `-webkit-user-select` plus `-webkit-touch-callout: none`; the canvas preventDefaults `touchstart` (non-passive), `contextmenu`, `selectstart`; a power's hold survives `HOLD_SLOP`; the no-funds red uses a timer, not `animationend` |
 | UI | nothing on the page may shift the board; wave-list rows are all one size; the list rebuilds 4x a second, the HUD 10x |
-| rules | a shield holds off every slow; Strength shrugs all of them; Temporal Drive is the only full stop and is never shaped |
+| rules | a shield holds off every slow; Strength takes 10% of any slow; Temporal Drive is the only full stop and is never shaped |
 | rules | armor reductions are permanent and multiply armor down (never below 0), helping every tower's later hits |
 | rules | `ARMOR_ONE_BLOCK` stays false (one block on one lane made armor free) |
 | rules | the Relay stays on the tower it was given |
