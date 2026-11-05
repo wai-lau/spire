@@ -44,8 +44,8 @@ const DEMO_LAYOUTS = {
   crr: {
     base: { place: "walk", types: ["swarm", "shield", "armor", "swarm"], shows: ["hits", "pops"] },
     hangar: { place: "walk", types: ["swarm", "shield", "swarm", "armor", "swarm"], shows: ["hits", "many", "pops"] },
-    launch: { place: "walk", types: ["fast", "swarm"], shows: ["hits", "slows", "fast"] },
-    armament: { place: "walk", types: ["shield", "swarm", "shield", "armor"], shows: ["hits", "pops"] },
+    launch: { place: "walk", types: ["fast", "swarm"], shows: ["hits", "slows"] }, // (no "fast": the bolt slow that also slowed the swarm is gone, 2026-11-04 - only the tethered are slowed)
+    armament: { place: "walk", types: ["shield", "swarm", "shield", "armor", "swarm", "swarm"], shows: ["hits", "pops"] }, // (two more walkers: a wing twice the size, 2026-11-04, launches every interceptor)
   },
   ifr: {
     base: { place: "walk", types: ["swarm", "shield", "swarm", "shield", "swarm"], shows: ["hits", "pops"] },

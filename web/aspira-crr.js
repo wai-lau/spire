@@ -8,7 +8,7 @@
 // towerStats calls carSkillStats, the tower loop stepCar, drawScene drawCar.
 
 // ---------- the numbers, by tier (index 0 = untaken; capstone.js pushes tier VI) ----------
-const CRR_HANGAR = [5, 10, 12, 16] /* x0.6 with the stuck-interceptor fix (owner, 2026-11-04: "b"; was 8 16 20 26) */ /* more interceptors with the slower flight (owner, 2026-11-01: "I want interceptors to fly and orbit way slower / Add more interceptors to compensate?"); was 3 5 11 13 (V: the capstone 34, was 17) */; // interceptors by Hangar tier: the ladder 0..V reads 8 12 16 20 26 34 (tier 0 and I set in aspira-tier01.js, V in aspira-capstone.js; no longer primes since 2026-11-02)
+const CRR_HANGAR = [10, 20, 24, 32] /* x2 (owner, 2026-11-04, on picked-but-unshot leakers: "that's a problem of needing more interceptors"); was 5 10 12 16 */ /* x0.6 with the stuck-interceptor fix (owner, 2026-11-04: "b"; was 8 16 20 26) */ /* more interceptors with the slower flight (owner, 2026-11-01: "I want interceptors to fly and orbit way slower / Add more interceptors to compensate?"); was 3 5 11 13 (V: the capstone 34, was 17) */; // interceptors by Hangar tier: the ladder 0..V reads 8 12 16 20 26 34 (tier 0 and I set in aspira-tier01.js, V in aspira-capstone.js; no longer primes since 2026-11-02)
 // each axis ITS OWN job (owner, 2026-10-15: "make sure each axis for each tower feels unique"): Hangar WIDTH (more interceptors),
 // Launch TEMPO (faster there and back, a shorter reload ) - (Warp, a teleport, was removed: owner, 2026-10-17), Armament DEPTH (a far harder hit, more of them)
 const CRR_SPEED_V = 500 /* 500 flat, out and home (owner, 2026-11-02: "Lets go with 500 flat whole journey"; 300 was "slower than some fast units") */ /* 600 -> 300 (owner, 2026-11-01: "I want interceptors to fly and orbit way slower / Add more interceptors to compensate?") */ /* 2500 -> 600 (owner, 2026-11-01: "Interceptor flight speed should be reduced to 600") */ /* 1900 -> 2500 (owner, 2026-10-19: CRR toward fast; countermx 61-69 spread with the rest of 6.4: fast 34% -> 22% leaked) */ /* x1.3: keeps up with fast (owner, 2026-10-18: "more good vs fast and less good vs shield"; was 1470) */, CRR_RELOAD_S = 0.8 /* x2 with x1.5 volleys, x1.1 hit (owner, 2026-10-24 marks target: "Lower interceptor reload speed, but increase volleys/damage to make it worse vs swarm"; was 0.4) */; // an interceptor's ONE speed (out, chasing, home) and its full reload at home (partial: x the share of ammo used, carHome) - FIXED since Tether replaced Launch (owner, 2026-10-17)
@@ -29,7 +29,7 @@ const CRR_VOLLEY_K = 4; /* 2 -> 4 with CRR_AMMO halved (2026-10-18) */
 // stack (owner, 2026-10-26: "Each tether should add it's own slow, remove damage from the tether"; the pulse that hit for CRR_TETHER_K0
 // x the shot is gone). Capstone (Chain): the beam runs on to the nearest other enemy within the interceptor's circling range of its
 // target, slowing and marking it too. Index 0 = untaken; capstone.js pushes VI
-const CRR_TETHER_SLOW = [0.35 /* every CRR tethers a little (owner, 2026-10-18: CRR better vs fast) */, 0.45, 0.55, 0.65], CRR_TETHER_PULSE = 0.5 /* the beam's flash only */;
+const CRR_TETHER_SLOW = [0.175 /* (index 0 is rewritten by aspira-tier01.js: Tether 0 none, I 0.175) */ /* x0.5, EACH TETHER A MODEST SLOW so several on one target add up (owner, 2026-11-04: "for tether, also, reduce the slow, so that it matters to have multiple interceptors on a target"; was 0.35 0.45 0.55 0.65) */ /* every CRR tethers a little (owner, 2026-10-18: CRR better vs fast) */, 0.225, 0.275, 0.325], CRR_TETHER_PULSE = 0.5 /* the beam's flash only */;
 const CRR_TETHER_AMP = [0, 0.1, 0.15, 0.2, 0.25, 0.3]; // + damage taken a tether, by Tether tier 0..V (written whole) - a first guess, the battery fits it
 const CRR_SLOW = 0.2, CRR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
 const CRR_BOLT_SIDE = 6; /* the u between bolts side by side in a volley (was CRR_BOLT_PAIR 2 with it, the pair stream; a volley is now its bolts at once) (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
@@ -64,12 +64,12 @@ SKILL_TREES.crr = [
 // in orbit"); s.hold = that many interceptors (rounded up), 0 untaken
 const CRR_HOLD_FRAC = [0, 0.25, 0.75, 1, 1];
 const carHoldFrac = h => CRR_HOLD_FRAC[Math.min(h, CRR_HOLD_FRAC.length - 1)];
-const CRR_CHAIN_FROM = 2; /* today's I, tier II since the tier redesign (2026-10-24) */ // Tether runs on to one more enemy from III (owner, 2026-10-18; was the capstone's alone)
+const CRR_CHAIN_FROM = 2; /* today's I, tier II since the tier redesign (2026-10-24) */ // Tether runs on to one more enemy from tier II (owner, 2026-10-18, "from III" in the old numbering; was the capstone's alone)
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.targets = 1; // the STAT CURVE (tier redesign 2026-10-24; was CRR_SHOT_MUL x CRR_SIDE_DMG)
   s.bolts = CRR_BOLTS_BY[a]; s.tetherN = CRR_TETHER_N[l];
-  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V; s.reload = CRR_RELOAD_S; s.tSlow = CRR_TETHER_SLOW[l]; s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]); s.skill = true;
+  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V; s.reload = CRR_RELOAD_S; s.tSlow = CRR_TETHER_SLOW[l]; s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -93,7 +93,11 @@ function carTarget(t, st) {
   const sent = new Map(), cand = pickTargets(t, st, st.wing);
   if (!cand.length) return null;
   for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg * st.bolts); /* a bolt is td */ /* a volley is CRR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
-  return cand.find(e => e.hp + (e.shield || 0) * st.dmg > (sent.get(e.id) || 0)) || null;
+  // NO LOST SORTIE: never an enemy that reaches the core before the interceptor could reach it (its lane left / its pace, vs the flight
+  // from the carrier at st.speed) - CRR's core-first order sent wings at enemies already slamming in (a picked-never-shot leaker was
+  // picked with 0.02 s to go; Leader's call, 2026-11-04)
+  const inTime = e => (PATHS[e.pi].len - e.s) / Math.max(1, effSpeed(e) * waveClock(e.n)) > Math.hypot(e.x - t.x, e.y - t.y) / Math.max(1, st.speed);
+  return cand.find(e => inTime(e) && e.hp + (e.shield || 0) * st.dmg > (sent.get(e.id) || 0)) || null;
 }
 // A WAIT CUT SHORT (owner, 2026-10-16: "if a wave is spawned from the previous wave being completely cleared, ATC should spawn
 // interceptors (rounded down) based on the time that was cut short"): the cut seconds / the reload, rounded down, of the
@@ -110,7 +114,9 @@ function stepCar(t, dt) {
   const st = towerStats(t);
   carWing(t, st);
   stepCarPellets(t, dt); stepCarBolts(t, st, dt); carObstacles(t);
-  for (const i of t.icp) stepIcp(i, t, st, dt);
+  // FIFO: the longest-held interceptor takes the first target (i.heldAt: the order it entered its orbit round the carrier)
+  const order = t.icp.slice().sort((a, b) => (a.state === "home" && a.hold ? a.heldAt : Infinity) - (b.state === "home" && b.hold ? b.heldAt : Infinity));
+  for (const i of order) stepIcp(i, t, st, dt);
 }
 // (the SALVO - carSalvoN at a time, then CRR_GAP - is gone: every ready interceptor launches at once, owner 2026-10-26: "Always launch as many
 // interceptors as available")
@@ -118,7 +124,7 @@ function stepIcp(i, t, st, dt) {
   if (i.state === "home") {
     i.reload = Math.max(0, i.reload - dt);
     const held = st.hold > 0 && i.reload <= 0 && (i.hold || t.icp.reduce((n, o) => n + (o.hold ? 1 : 0), 0) < st.hold); // HELD: charged and orbiting the carrier, while the Hangar has room (st.hold of them)
-    if (held) carHoldOrbit(i, t, dt); else { i.x = t.x; i.y = t.y; i.ho = undefined; }
+    if (held) { if (!i.hold) i.heldAt = t.holdSeq = (t.holdSeq || 0) + 1; carHoldOrbit(i, t, dt); } else { i.x = t.x; i.y = t.y; i.ho = undefined; }
     i.hold = held;
     if (i.reload > 0) return; // EVERY ready interceptor goes the moment there is a target (owner, 2026-10-26: "Always launch as many interceptors as available"; one by one on CRR_GAP before)
     const e = carTarget(t, st);
@@ -138,7 +144,7 @@ function stepIcp(i, t, st, dt) {
     if (!i.e || i.e.dead) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
-    if (!i.orb && d > carR(i) * 1.3 && d > CRR_FIRE_R) return; // still on its way - but FIRING once within CRR_FIRE_R, before it is round its target (a fast enemy outran its chaser: 12 of 37 leakers were picked and never shot at, probe 2026-10-16)
+    if (!i.orb && d > carR(i) * 1.3) return; /* FIRES ONLY IN ORBIT (owner, 2026-11-04: "interceptors should only start firing once they enter orbit"; CRR_FIRE_R 340 let it fire on the way, gone) */ // still on its way - but FIRING once within CRR_FIRE_R, before it is round its target (a fast enemy outran its chaser: 12 of 37 leakers were picked and never shot at, probe 2026-10-16)
     if (!i.orb && d <= carR(i) * 1.3) i.orb = true; // onto the circle round its target
     i.cd -= dt;
     // A VOLLEY IS ITS BOLTS AT ONCE (owner, 2026-11-01: "My intent with volleys was to describe the number of bolts fired at once"): all
@@ -212,6 +218,7 @@ function carObstacles(t) {
 function carAvoid(i, dx, dy, fade) {
   const g = Math.hypot(dx, dy) || 1, hx = Math.cos(i.ang), hy = Math.sin(i.ang);
   let ux = dx / g, uy = dy / g;
+  if (i.orb && fade === 0) return [ux, uy]; // ORBITING ITS TARGET: nothing avoided, the core included (owner, 2026-11-04: "allow steering into things when orbiting an enemy")
   for (const o of carObs) {
     const ox = o.x - i.x, oy = o.y - i.y, d = Math.hypot(ox, oy) || 1, rx = ox / d, ry = oy / d, along = hx * rx + hy * ry;
     const lat = Math.abs(hx * oy - hy * ox), inside = d < o.r, f = o.core ? 1 : fade; // the core is never let go
@@ -231,15 +238,15 @@ function carOrbit(i, e, st, d, dt) {
   i.te = e; i.tx = e.x; i.ty = e.y; i.jp = (i.jp || 0) + (i.jw || 0) * dt;
   const x = i.x - e.x, y = i.y - e.y, R = carR(i), r = Math.max(d, 1), q = r * r - R * R, k = 2 * R * r;
   const f = Math.max(0, Math.min(1, (r - R * 1.2) / (R * 2))); // full Launch speed until 3 R out, easing to CRR_ORBIT_V by 1.2 R
-  carSteer(i, -(x * q + y * k), -(y * q - x * k), CRR_ORBIT_V + (Math.max(st.speed, CRR_ORBIT_V) - CRR_ORBIT_V) * f, dt);
+  carSteer(i, -(x * q + y * k), -(y * q - x * k), CRR_ORBIT_V + (Math.max(st.speed, CRR_ORBIT_V) - CRR_ORBIT_V) * f, dt, i.orb ? 0 : 1); /* ORBITING, IT STEERS INTO THINGS (owner, 2026-11-04: "allow steering into things when orbiting an enemy"): no avoidance round the core or towers on its target's circle; on the way out and home as before */
 }
-// a shot: st.bolts light-blue bolts, each the tower's damage - armor takes its flat cut from each: ATC's armor weakness (with
+// a shot: st.bolts light-blue bolts, each the tower's damage - armor takes a bigger share of small hits (armorTake: R / (R + hit), since 2026-10-28): ATC's armor weakness (with
 // the steep hit tables a single big hit shrugged armor off). A STREAM (owner, 2026-10-16: "bolts should come from the center of the
 // interceptor (from underneath) and shoot in a constant stream", "4 bolts evenly distributed over the time it takes to fire one
 // salvo", "homing, and just keep going straight if the enemy dies"): one bolt every 1 / (rate x CRR_BOLTS) s, a projectile that
 // homes on its target; its target gone, it flies on straight and hits the first enemy it touches, or nothing (was: three at once,
 // side by side, landing the instant they were fired)
-const CRR_FIRE_R = 340; /* 260 -> 340 (2026-10-19): a chaser on a fast enemy opens fire sooner */ /* 200 -> 260: a chaser opens fire on a fast enemy sooner (2026-10-18) */ // u: an interceptor on its way fires once its target is this close (2026-10-16, countermx 61-69 spread swarm/fast/shield/armor with CRR_HOP 30: 0 39/13/0/18, 200 19/5/0/23; 150 20/8/0/20)
+/* (CRR_FIRE_R - fire on the way in from 340 u - GONE 2026-11-04: interceptors fire only in orbit) */
 const CRR_BOLT_ON = 0; /* was 0.08 (2026-10-19, CRR AWAY from swarm - owner: weak to swarm): a volley's spare bolts no longer fly on into the next swarmer */ // s a bolt flies on past a dead target (~70u)
 const CRR_BOLT_V = 900, CRR_BOLT_REACH = 390 /* x1.5 with the orbit (was 260) */, CRR_BOLT_HIT = 3; // u/s; u flown before it fades; u added to the enemy's size
 function carBolt(i, e, t, st, side = 0, vk = 0) { // side: u across its flight, left or right of the interceptor; vk: -1 / 0 / +1, its place in the volley
@@ -271,7 +278,7 @@ function stepCarBolts(t, st, dt) {
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 > r * r) continue;
       const hp0 = e.hp; damage(e, b.dmg, t, false, false, CRR_NO_NUM); onHit(e, t, st, b.dmg);
       carNum(b.icp, e, hp0 - e.hp, b.dmg, b.vx, b.vy);
-      if (!e.dead) applySlow(e, CRR_SLOW, CRR_SLOW_S, "crr:" + t.id); // (doubled on fast, never the shielded - applySlow)
+      /* (the bolt SLOW - CRR_SLOW 20% for CRR_SLOW_S - GONE: owner, 2026-11-04 "remove bolt slow") */
       b.left = 0; break;
     }
   }
