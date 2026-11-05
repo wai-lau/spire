@@ -34,8 +34,18 @@ function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1, wk = 1, cols = null
 // THE FIRE'S CIRCLE, back at IFR_FIRE_A (owner, 2026-10-21: "visually restore the hellfire circle at 20% opacity"; gone 2026-10-20):
 // the meteor without its black fill at the fire's radius, as it grows - the look only (stepIfrFires still draws and burns nothing)
 const IFR_FIRE_A = 0.16, IFR_FIRE_W = 2; // its glow TWICE as wide, a little fainter (owner, 2026-10-21: "on the ring, double glow width, slightly reduce opacity"; was 0.2, x1)
+// TRACKED x3, UNTRACKED FADES (owner, 2026-11-05: "triple the opacity of tracked hellfires / untracking hellfires should fade out after they've done the
+// damage without waiting for all minifires"): a fire riding its enemy (f.eid) draws at IFR_FIRE_TRACK_K its alpha; one that rides nothing (never did, or its
+// enemy died), once grown - its ring has hit all it reached - fades out over IFR_FIRE_FADE_S game s (f.fadeAt, its age then). The LOOK only: the fire lives on,
+// lighting its queued flares (stepIfrFires); was every fire held at half till its flares were out (owner, 2026-10-21)
+const IFR_FIRE_TRACK_K = 3, IFR_FIRE_FADE_S = 0.4;
 function drawIfrFires(t, low) {
-  for (const f of t.ifrFires || []) drawIfrMeteor(f.x, f.y, f.r, false, low, f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2, 1, IFR_FIRE_W, IFR_HF_COL); /* RED, its flares' colours (owner, 2026-10-22: "hellfire's fire ring should be red") */ // grown, it stays at half till its flares are out (owner, 2026-10-21)
+  for (const f of t.ifrFires || []) {
+    let a = f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2;
+    if (f.eid != null) a = Math.min(1, a * IFR_FIRE_TRACK_K);
+    else if (f.r >= f.R) { if (f.fadeAt == null) f.fadeAt = f.age0 || 0; a *= Math.max(0, 1 - ((f.age0 || 0) - f.fadeAt) / IFR_FIRE_FADE_S); if (a <= 0) continue; }
+    drawIfrMeteor(f.x, f.y, f.r, false, low, a, 1, IFR_FIRE_W, IFR_HF_COL); /* RED, its flares' colours (owner, 2026-10-22: "hellfire's fire ring should be red") */
+  }
 }
 const IFR_FADE_IN_U = 8; // a burst meteor is full within 8 u of flight (owner, 2026-10-26: "IFR should fade in faster"; was 25)
 const IFR_SHARD_DRAW = 1 / 3; // (IFR_TRACER_U: aspira-ifrit.js - the sim loads no draw file)
