@@ -40,6 +40,7 @@ caps it) and the single-threaded ones can run side by side.
 | `players3b.mjs [out.jsonl]` | players3 with the BOSS track switchable: `BOSS_SKIP=0` plays the bosses (the boss rule, ARCHITECTURE.md §5: bosses-on good model, 8 seeds); also `SEED0=n` (seeds from n+1), `TRACE=1` (credits a wave), and per-game `early` (lives by decade 1-40), `peak` (enemies alive a decade) and each wave's `nearB` (closest a boss came to the core) |
 | `bossrep.py A.jsonl [B.jsonl ...]` | per boss wave (12..120) from a players3b bosses-on run: % of the runs reaching it that lost lives there, lives taken, runs that ended there - the boss rule's gate (no boss ends > ~20% of runs reaching it) |
 | `fp.sh [commit] [base]` | THE REFACTOR FINGERPRINT: six fixed-seed trio games to wave 40 (rewind off, `fp-task.mjs`) on a commit and on its parent (default HEAD vs HEAD~1; `WORK` = the working tree), each from a clean `git archive`; a behaviour-preserving change prints IDENTICAL |
+| `FP_DEEP=1 fp.sh ...` | the DEEP fingerprint too (`fp-deep-task.mjs`): each of the seven kinds maxed, alone, vs a held wave-90 crowd, 1200 steps in the sim's own env - reaches code fp's wave-40 games never do (an ACD drip); use it for any move or split of game code |
 
 ### More scripts, by question (each file's header says how to run it and why the owner asked)
 
