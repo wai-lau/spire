@@ -363,3 +363,27 @@ check("IFR: 200 enemies and 40 Flare IV flares tick under 16 ms", () => {
   if (!run("G.enemies.some(e => e.hp < 1e6)")) return "Hellfire ticks hit nothing";
   return ms < 16 /* was 8 (owner, 2026-10-20): the droplet now measures 9-18 ms on code that passed - box drift, not a regression; 16 still catches a 2x */ ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms" + note;
 });
+
+// THE TICK SPEED IS NOT A HIT LOSS (2026-11-05 dig, after 11-04's "faster ticks did less to moving enemies"): the same flare damage per
+// second in ticks twice as fast must deal a still enemy exactly the same and a moving one about as much (x0.97-1.2: its first tick lands sooner),
+// armor 0 - what faster ticks lose late is the armor curve's share (armorTake), never a missed hit. One flare by hand, a fast enemy
+// crossing its long beam and running out along it, 40 even start phases; ifrTickFlare + stepIfrFlares are the game's own
+run(`function ifrTickRig(tk, path) {
+  G = newGame(); G.money = 1e9; ui.build = "ifr"; placeTower(CELLS[CELLS.findIndex((c, i) => cellOpen(i))]); const t = G.towers[0]; ifrInit(t); const st = towerStats(t);
+  G.enemies.length = 0; spawnEnemy("fast", 30, 0, 0); const e = G.enemies[0]; e.seen = true; e.armor = e.armor0 = 0; e.shield = e.shieldMax = 0; e.stunT = 1e9; e.hp = e.max = 1e9;
+  const X = t.x + 1000, Y = t.y + 1000, f = ifrFlare(t, st, X, Y, 1); f.L = 60; f.W = 14; f.life = f.left = 2.1; f.tickS = 0.25 / tk; f.hit = 100 / tk; f.tick = 0;
+  for (let time = 0.02; t.ifrFlares.length; time += 0.02) { const p = path(time); e.x = X + p[0]; e.y = Y + p[1]; stepIfrFlares(t, st, 0.02); }
+  return e.max - e.hp;
+}`);
+check("IFR flares: the same damage a second in ticks twice as fast hits a MOVING enemy as hard as a still one (armor 0) - faster ticks lose only armor's share, never a hit", () => {
+  const r = run(`(() => { const v = ENEMIES.fast.speed, o = {};
+    for (const tk of [1, 2]) { let cross = 0, along = 0;
+      for (let i = 0; i < 40; i++) { const y0 = -60 - 120 * i / 40, s0 = -60 * i / 40; cross += ifrTickRig(tk, s => [30, y0 + v * s]); along += ifrTickRig(tk, s => [s0 + v * s, 0]); }
+      o[tk] = { still: ifrTickRig(tk, () => [20, 0]), cross, along }; }
+    return o; })()`);
+  const a = r[1], b = r[2];
+  if (!a.still || !a.cross || !a.along) return "a flare dealt nothing: " + JSON.stringify(r);
+  if (b.still !== a.still) return "still enemy: " + a.still + " at the tick, " + b.still + " at twice the ticks (expected the same)";
+  for (const k of ["cross", "along"]) { const q = b[k] / a[k]; /* live 1.05 / 1.11 */
+    if (q < 0.97 || q > 1.2) return k + " (moving): " + b[k] + " at twice the ticks vs " + a[k] + " (x" + q.toFixed(2) + "; expected x0.97-1.2: a little more, its first tick lands sooner - a tick speed that loses or gains a moving enemy's hits)"; }
+});
