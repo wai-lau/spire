@@ -139,6 +139,7 @@ function glcRegular(p, w2) {
   return { x, y, r, rot, n };
 }
 // the batch's strokes: whole circles (with a glow, soft rings under it) and polylines cut at their joints
+let GLC_X = new Float64Array(0), GLC_Y = GLC_X, GLC_DX = GLC_X, GLC_DY = GLC_X; const GLC_SEG = [0, 0, 0, 0]; // glcStroke's scratch
 function glcStroke(g, parts, st, dash, scale, glow) {
   const real = g.real, lw = real.lineWidth * scale / g.w2.k, A = real.globalAlpha, dk = scale / g.w2.k, butt = real.lineCap === "butt";
   const dOn = dash ? dash[0] * dk : 0, dOff = dash ? dash[1] * dk : 0, dAt0 = dash ? real.lineDashOffset * dk : 0; // (a dash: on, off, its offset - world units)
@@ -151,22 +152,29 @@ function glcStroke(g, parts, st, dash, scale, glow) {
     }
     const reg = real.lineJoin !== "round" && glcRegular(p, g.w2); // a sharp-cornered regular polygon (Temporal Drive's octagons): shape 5, its corners exact
     if (reg) { fxGlPush(reg.x, reg.y, reg.x + Math.cos(reg.rot) * reg.n, reg.y + Math.sin(reg.rot) * reg.n, reg.r, lw, st, 0, st, A, 5); continue; }
-    const closed = p.closed && p.pts.length > 2, P = (closed ? [...p.pts, p.pts[0]] : p.pts).map(q => g.w2(q[0], q[1])), n = P.length - 1;
-    const dir = i => { const dx = P[i + 1][0] - P[i][0], dy = P[i + 1][1] - P[i][1], l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
-    const D = Array.from({ length: n }, (_, i) => dir(i));
+    // (PERF, 2026-11-05: plain numbers in reused buffers - an array a point, a direction and a joint were most of glcStroke's time; the
+    // same arithmetic in the same order, so the same instances to the bit)
+    const closed = p.closed && p.pts.length > 2, m = p.pts.length + (closed ? 1 : 0), n = m - 1, w2 = g.w2, inl = w2.ox !== undefined;
+    if (GLC_X.length < m) { GLC_X = new Float64Array(m * 2); GLC_Y = new Float64Array(m * 2); GLC_DX = new Float64Array(m * 2); GLC_DY = new Float64Array(m * 2); }
+    const X = GLC_X, Y = GLC_Y, DX = GLC_DX, DY = GLC_DY;
+    for (let k = 0; k < m; k++) { const q = p.pts[k < p.pts.length ? k : 0]; if (inl) { X[k] = (q[0] - w2.ox) / w2.k; Y[k] = (q[1] - w2.oy) / w2.k; } else { const w = w2(q[0], q[1]); X[k] = w[0]; Y[k] = w[1]; } }
+    for (let k = 0; k < n; k++) { const dx = X[k + 1] - X[k], dy = Y[k + 1] - Y[k], l = Math.hypot(dx, dy) || 1; DX[k] = dx / l; DY[k] = dy / l; }
     // each segment cut at its joints (the bisector of its direction and its neighbour's): seen-through lines never overlap
-    const joint = (u, w) => { const x = u[0] + w[0], y = u[1] + w[1], l = Math.hypot(x, y); return l > 1e-6 ? [x / l, y / l] : [0, 0]; };
     let along = 0; // the dash carries on round the corners
     for (let i = 0; i < n; i++) {
-      const prev = i > 0 ? D[i - 1] : closed ? D[n - 1] : null, next = i < n - 1 ? D[i + 1] : closed ? D[0] : null;
-      const [b0x, b0y] = prev ? joint(prev, D[i]) : [0, 0], [b1x, b1y] = next ? joint(D[i], next) : [0, 0];
-      const seg = trimToTowers(P[i][0], P[i][1], P[i + 1][0], P[i + 1][1]); // nothing of a line inside a tower's hexagon (aspira-fxgl.js)
+      const pi = i > 0 ? i - 1 : closed ? n - 1 : -1, ni = i < n - 1 ? i + 1 : closed ? 0 : -1, prev = pi >= 0, next = ni >= 0;
+      let b0x = 0, b0y = 0, b1x = 0, b1y = 0;
+      if (prev) { const x = DX[pi] + DX[i], y = DY[pi] + DY[i], l = Math.hypot(x, y); if (l > 1e-6) { b0x = x / l; b0y = y / l; } }
+      if (next) { const x = DX[i] + DX[ni], y = DY[i] + DY[ni], l = Math.hypot(x, y); if (l > 1e-6) { b1x = x / l; b1y = y / l; } }
+      const ax = X[i], ay = Y[i], bx = X[i + 1], by = Y[i + 1];
+      const seg = inTowerHex(ax, ay) || inTowerHex(bx, by) ? trimToTowers(ax, ay, bx, by) : GLC_SEG; // nothing of a line inside a tower's hexagon (aspira-fxgl.js); clear of them all, it is whole
+      if (seg === GLC_SEG) { GLC_SEG[0] = ax; GLC_SEG[1] = ay; GLC_SEG[2] = bx; GLC_SEG[3] = by; }
       if (seg) {
-        const cutA = seg[0] !== P[i][0] || seg[1] !== P[i][1], cutB = seg[2] !== P[i + 1][0] || seg[3] !== P[i + 1][1], j0x = cutA ? 0 : b0x, j0y = cutA ? 0 : b0y, j1x = cutB ? 0 : b1x, j1y = cutB ? 0 : b1y; // (a cut end is a plain end)
+        const cutA = seg[0] !== X[i] || seg[1] !== Y[i], cutB = seg[2] !== X[i + 1] || seg[3] !== Y[i + 1], j0x = cutA ? 0 : b0x, j0y = cutA ? 0 : b0y, j1x = cutB ? 0 : b1x, j1y = cutB ? 0 : b1y; // (a cut end is a plain end)
         if (glow) { const b = real.shadowBlur / g.w2.k; for (const [wk, ak] of [[b, 0.18], [b * 0.45, 0.3]]) fxGlPush(seg[0], seg[1], seg[2], seg[3], (lw + wk) / 2, 0, glow, A * ak, glow, 0, 0, j0x, j0y, j1x, j1y); } // a glow: two soft wider strokes under it (the Relay's beam)
-        fxGlPush(seg[0], seg[1], seg[2], seg[3], lw / 2, 0, st, A, st, 0, butt && !prev && !next ? 2 : 0, j0x, j0y, j1x, j1y, dOn, dOff, dAt0 + along + (cutA ? Math.hypot(seg[0] - P[i][0], seg[1] - P[i][1]) : 0));
+        fxGlPush(seg[0], seg[1], seg[2], seg[3], lw / 2, 0, st, A, st, 0, butt && !prev && !next ? 2 : 0, j0x, j0y, j1x, j1y, dOn, dOff, dAt0 + along + (cutA ? Math.hypot(seg[0] - X[i], seg[1] - Y[i]) : 0));
       }
-      along += Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]);
+      along += Math.hypot(X[i + 1] - X[i], Y[i + 1] - Y[i]);
     }
   }
 }

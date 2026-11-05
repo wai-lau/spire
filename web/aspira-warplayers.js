@@ -55,7 +55,7 @@ function warpRender() {
     warpTexCamFor(D); // the same board, D px across: the layers line up in the shader's 0..1
     // the stand-in context (aspira-glctx.js): what the GPU batch can draw goes there; the canvas gets the rest, and is cleared
     // and sent up only when it held something this frame or the last (warp.dynUp, warpLayersBind)
-    const k = cam.k, ox = cam.ox, oy = cam.oy, toWorld = Object.assign((x, y) => [(x - ox) / k, (y - oy) / k], { k });
+    const k = cam.k, ox = cam.ox, oy = cam.oy, toWorld = Object.assign((x, y) => [(x - ox) / k, (y - oy) / k], { k, ox, oy }); /* ox, oy: glcStroke's inline transform (no array a point) */
     const g = typeof glCtx === "function" && fxGlTake() ? glCtx(real, toWorld) : null;
     if (warp.dynDirty || !g) { real.setTransform(1, 0, 0, 1, 0, 0); real.clearRect(0, 0, D, D); }
     ctx = g || real;
