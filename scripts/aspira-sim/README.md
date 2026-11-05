@@ -39,8 +39,21 @@ caps it) and the single-threaded ones can run side by side.
 | `players3.mjs [out.jsonl]` | THE THREE PLAYERS (owner, 2026-10-28, the difficulty targets): `MODEL=perfect` (smart saver with rewind, the planner's axes, every tower re-placed every 0.5 s), `good` (the same with rewind but human hands), `random` (spends as it goes, a random open axis never the right one, no rewind, human hands); diagnostics `rightspend` (the planner's axis, spending at once), `goodnorewind`, `randomsave` (random's axes on the smart economy). Every trio (or `TRIOS=arc+frz+sol,...`), `SEEDS`, to `TO` (120). Bosses are always skipped (`BOSS_SKIP=1`, set in the script). Human hands = `POS_ONE` + `POS_EVERY` 0.5 (one tower checked at a time, round robin; moves teleport, `POS_GLIDE` off). Each game returns its wave, win, lives, a leak record from wave 40 and its buys as `[wave, kind, tower id, axis, tier]` |
 | `fp.sh [commit] [base]` | THE REFACTOR FINGERPRINT: six fixed-seed trio games to wave 40 (rewind off, `fp-task.mjs`) on a commit and on its parent (default HEAD vs HEAD~1; `WORK` = the working tree), each from a clean `git archive`; a behaviour-preserving change prints IDENTICAL |
 
-`ASPIRA_WEB=<dir>` pins a run to a snapshot of the game files (`cp web/aspira-*.js`
-somewhere first): every game re-reads them, so a balance commit landing mid-run
+### More scripts, by question (each file's header says how to run it and why the owner asked)
+
+| question | scripts |
+|---|---|
+| a tower's power | `holdpower.mjs` (the enemy HP it holds), `powercurve.mjs` (power vs cost by type, good and bad builds), `typepower.mjs` (the tower + every pairing), `teambal.mjs` (a fifth tower added to one of each), `swap.mjs` (one trio tower swapped for a copy), `wavesvs.mjs` / `bossvs.mjs` (six of one kind vs ordinary waves / each boss) |
+| axes and tiers | `axis.mjs` + `axisrep.py` (each axis pushed first; margin and wins by phase), `axisvs.py` (countermx output -> `axis-vs.json`, read by sim.mjs's adaptive spend), `isolation.mjs` (one axis tier alone), `payoff.mjs` (one axis bought up its tiers), `stops.mjs` (spending points by purchase; `stops.test.mjs` its test), `held.py` (the build a perfect player holds, per chapter) |
+| enemy types and waves | `breakpoint.mjs` (each type's speed / HP break point), `autotune.mjs` (break points section by section), `typecal.mjs` (type difficulty by band), `waverep.mjs` (enemy, boss and difficulty report), `gates.mjs` (the early gates at 24 / 36 / 40), `bossfleet.mjs` (boss fleet size), `zerosum.py` (ties as one band) |
+| teams and players | `covering.mjs` (only teams that cover every type), `duo.mjs` (two towers only), `solo.mjs` (each tower alone to 11, the Star), `opener.mjs` (every build order), `skill.mjs` (perfect vs human play), `buildlog.mjs` (when winning builds buy what), `modes.mjs` (default targeting), `fsa.mjs` (FRZ+SOL+ACD, Spill first) |
+| one tower's diagnosis | `arcdiag.mjs` (why an extra ARC hurts), `nosol.mjs` (is SOL required), `solarmor.mjs` / `soldiag.mjs` (SOL vs armor) |
+| plumbing | `playjob.mjs` (one play() as a pool task), `simver.mjs` (the hash of everything a result depends on), `hues.py` (the seven tower hues, OKLCH) |
+
+Some of these predate the tier redesign (2026-10-24) or the 3-tower game and no longer run as written; the header dates say which era.
+
+`ASPIRA_WEB=<dir>` pins a run to a snapshot of the game files (`battery.sh snap`, or
+`git archive <commit> web scripts` unpacked somewhere, `ASPIRA_WEB` at its `web/`, the scripts run from its `scripts/`: a copy of `web/` alone broke under the crr rename): every game re-reads them, so a balance commit landing mid-run
 would otherwise mix two versions.
 `pool.mjs` runs a task module over a job list on a worker pool (`pool-worker.mjs`
 is the entry); with an `out.jsonl` a run resumes where it stopped.
