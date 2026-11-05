@@ -718,7 +718,11 @@ do the diag things"); the `?diag=` switches are for the dev box.
 `web/aspira-version.txt` is hand-kept semver `major.minor.patch` (owner, 2026-10-19: "patch", never "tiny"). **The next minor** = a balance
 battery's changes (the group of changes one battery run - every trio in `scripts/aspira-sim/` -
 produced), and ONLY that: a new day is not a minor (owner 2026-10-19; 5.1 became 5.1-5.8 by
-that rule, ARCHAEOLOGY §9); every other deploy bumps patch; **a new tower is a new major** (GRV
+that rule, ARCHAEOLOGY §9); every other SHIP bumps patch - once a ship, not once a commit (owner, 2026-11-05: separate copies of the code):
+the peer sessions commit on their own branches in their own worktrees (`peer-balance`, `peer-visual` at `.wt/balance`, `.wt/visual`, gitignored
+inside the shared tree) and never touch `aspira-version.txt`; `~/.claude/spire-ship2.sh [--minor] "<subject>" [branch ...]` cherry-picks their
+unshipped commits onto `tier-redesign` (a conflict names the commit and stops), bumps the version once (`--minor` for a battery's ship), then
+smokes, runs the spire pytest, pushes, moves exec-fn's pointer and deploys; each peer then `git rebase tier-redesign`; **a new tower is a new major** (GRV
 and ATC made 4.5 into 5.0 and 4.6 into 5.1). `spire_build()` stamps the newest file mtime; both go into
 the template and every slow log. The changelog card (`aspira-changelog.js`, tap the version)
 lists each minor's player-visible changes as facts, grouped by SUBJECT (`logSubject`: a tower, an enemy type, the core ... read from a leading "Subject:" or the first one a line names; Buffs and Nerfs are no longer headed, the lines keep their three kinds underneath, Perf/UI smaller):
