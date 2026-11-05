@@ -31,7 +31,7 @@ const CRR_VOLLEY_K = 4; /* 2 -> 4 with CRR_AMMO halved (2026-10-18) */
 // target, slowing and marking it too. Index 0 = untaken; capstone.js pushes VI
 const CRR_TETHER_SLOW = [0.175 /* (index 0 is rewritten by aspira-tier01.js: Tether 0 none, I 0.175) */ /* x0.5, EACH TETHER A MODEST SLOW so several on one target add up (owner, 2026-11-04: "for tether, also, reduce the slow, so that it matters to have multiple interceptors on a target"; was 0.35 0.45 0.55 0.65) */ /* every CRR tethers a little (owner, 2026-10-18: CRR better vs fast) */, 0.225, 0.275, 0.325], CRR_TETHER_PULSE = 0.5 /* the beam's flash only */;
 const CRR_TETHER_AMP = [0, 0.1, 0.15, 0.2, 0.25, 0.3]; // + damage taken a tether, by Tether tier 0..V (written whole) - a first guess, the battery fits it
-const CRR_SLOW = 0.2, CRR_SLOW_S = 0.6; // every bolt SLOWS (owner, 2026-10-15: "make interceptors slow") - one slow a tower, refreshed
+// (CRR_SLOW / CRR_SLOW_S - every bolt slowed 20% for 0.6 s, 2026-10-15 - GONE: owner, 2026-11-04 "remove bolt slow")
 const CRR_BOLT_SIDE = 6; /* the u between bolts side by side in a volley (was CRR_BOLT_PAIR 2 with it, the pair stream; a volley is now its bolts at once) (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 // BOLTS A VOLLEY by Armament tier 0..V (tier redesign, owner 2026-10-24: tier 0 "one interceptor", Armament I "shots split in two"): one bolt, then
 // two, then one more a tier - each bolt the tower's damage (2026-10-26)
@@ -60,10 +60,7 @@ SKILL_TREES.crr = [
   { id: "armament", name: "Armament", tiers: [{ name: "Pulse" }, { name: "Strafe" }, { name: "Salvo" }] },
 ];
 
-// how much of the wing the Hangar can STORE in orbit, by tier (owner, 2026-10-16: "hanger tiers can store 25% 50% 75% 100% of interceptors
-// in orbit"); s.hold = that many interceptors (rounded up), 0 untaken
-const CRR_HOLD_FRAC = [0, 0.25, 0.75, 1, 1];
-const carHoldFrac = h => CRR_HOLD_FRAC[Math.min(h, CRR_HOLD_FRAC.length - 1)];
+// (CRR_HOLD_FRAC - the share of the wing the Hangar could STORE in orbit, 2026-10-16 - GONE 2026-11-04: s.hold is the whole wing at every tier)
 const CRR_CHAIN_FROM = 2; /* today's I, tier II since the tier redesign (2026-10-24) */ // Tether runs on to one more enemy from tier II (owner, 2026-10-18, "from III" in the old numbering; was the capstone's alone)
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
@@ -130,7 +127,7 @@ function stepIcp(i, t, st, dt) {
     const e = carTarget(t, st);
     if (!e) return;
     const fx = held ? i.x : t.x, fy = held ? i.y : t.y;
-    i.e = e; i.ammo = st.ammo; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; sfx("crr"); /* RELAYED: RELAY_MUL leave per CRR_GAP slot, not one (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1") */
+    i.e = e; i.ammo = st.ammo; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; sfx("crr"); /* RELAYED: a relayed carrier's wing is RELAY_MUL x as many, all launching at once like any (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1"; the CRR_GAP launch slots are gone since 2026-10-26) */
     i.v = st.speed; i.ang = held ? i.ang : Math.atan2(e.y - fy, e.x - fx); i.jp = Math.random() * 6.283; i.jw = CRR_JIT_W[0] + Math.random() * (CRR_JIT_W[1] - CRR_JIT_W[0]); // (held: out along its orbit, turning in)
     for (let k = 0; k < 4 && !held; k++) { const [ax, ay] = carAvoid(i, e.x - fx, e.y - fy, 1); i.ang = Math.atan2(ay, ax); } // leaves already bent round the core (a carrier by it has no room to turn)
     return;
@@ -183,8 +180,9 @@ function carTether(i, t, st, dt) {
 }
 // THE HOLD (owner, 2026-10-16: "hangar upgrades should allow the atc tower to have charged interceptors orbit it (with orbit distance
 // jitter) when idle, so that they can be released at once"): with any Hangar, an interceptor reloaded and given nothing to hit
-// circles its carrier CRR_HOLD_R out (+- CRR_HOLD_JIT by its own oj, -1..1), easing onto it - STORED there, it still leaves one by one
-// on CRR_GAP when a target comes (owner: "just that unused interceptors can be stored in orbit"), from where it circles. Its SIZE goes with the same oj ("smaller interceptors fly closer": carDart)
+// circles its carrier CRR_HOLD_R out (+- CRR_HOLD_JIT by its own oj, -1..1), easing onto it - WAITING there - every ready interceptor, at
+// every tier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"),
+// the longest-held (i.heldAt) taking the first target, all launching at once from where they circle. Its SIZE goes with the same oj ("smaller interceptors fly closer": carDart)
 const CRR_HOLD_R = 80 /* 48 -> 80 (owner, 2026-10-16: "circling interceptors should circle further away from tower") */, CRR_HOLD_JIT = 0.25, CRR_HOLD_V = 110, CRR_SIZE_JIT = 0.15; // u; +-; u/s round the carrier; +- size
 function carHoldOrbit(i, t, dt) {
   i.oj ??= Math.random() * 2 - 1;

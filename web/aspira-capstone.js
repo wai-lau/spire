@@ -125,7 +125,7 @@ function tierMid(a, b) {
 const withTierI = T => [T[0], tierMid(T[0], T[1]), ...T.slice(1)]; // (a new array: a table may be shared)
 for (const entry of CAPSTONE_NUM) if (Array.isArray(entry[0]) && entry[0].length === CAPSTONE_TIER) entry[0].splice(0, entry[0].length, ...withTierI(entry[0]));
 // ...and the tables WRITTEN with their capstone in (not in CAPSTONE_NUM): the same tier I
-const FULL_TIER_TABLES = [VOLT_CARRY_N, CAP_BURST_K, CRR_HOLD_FRAC];
+const FULL_TIER_TABLES = [VOLT_CARRY_N, CAP_BURST_K];
 for (const T of FULL_TIER_TABLES) if (T.length === CAPSTONE_TIER) T.splice(0, T.length, ...withTierI(T));
 // TIER I NAMES (tier redesign 2026-10-24; Claude's calls, the design doc lists them for the owner): each axis's first hint, put in front of
 // its written tiers here, after the capstone's name is pushed (that push keys on the written count, so the trees cannot hold them)

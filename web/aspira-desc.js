@@ -82,13 +82,16 @@ const DESCRIBE = {
     // (owner, 2026-10-26): "fires Y volleys per sortie for a total of Y%td, X interceptors can be stored in orbit" / "fires Y volleys and
     // tethers the target ... Tethered targets are slowed by Y% take an additional X% damage per tether" / Armament V "does not need to state rebuilt"
     // (owner, 2026-10-26: "CRR 0: Launches an available interceptor that flies towards an enemy and fires..." / "Hangar I: Launches 2 available interceptors at a time")
-    return "Launches " + (CRR_HANGAR[h] > 1 ? CRR_HANGAR[h] + " available interceptors at a time that fly towards an enemy and fire " : "an available interceptor that flies towards an enemy and fires ") +
-      vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " per sortie" +
-      (l ? (tn === 1 ? ", the first one tethering its target" : CRR_HANGAR[h] > 1 ? " and tether their targets" : " and tethers its target") : "") +
-      ", then " + (a >= CAPSTONE_TIER ? (CRR_HANGAR[h] > 1 ? "burst" : "bursts") + " into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : (CRR_HANGAR[h] > 1 ? "fly home to reload what they used." : "flies home to reload what it used.")) /* PARTIAL RELOAD (aspira-crr.js carHome) */ +
-      (CRR_HANGAR[h] > 1 ? " Each" : " It") + " stays on its target until it dies or the ammo runs out." /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage and slows by " + pc(CRR_SLOW) + "." /* td = one bolt (2026-10-26); per bolt, never the sortie's total (2026-11-01: "Nothing should ever be above like 800%") */ +
-      (h ? ((n => " " + n + (n > 1 ? " interceptors" : " interceptor") + " can be stored in orbit.")(Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]))) : "") +
-      (l ? " Tethered targets are slowed by " + pc(CRR_TETHER_SLOW[l]) + " and take " + pc(CRR_TETHER_AMP[l]) + " more damage per tether" + (l >= CRR_CHAIN_FROM ? "; tethers run on to one more enemy nearby" : "") /* from tier II, as the code (st.tChain; it said V alone until 2026-11-04) */ + " (shields block the slow)." : "");
+    // (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first,
+    // FIFO"; "interceptors should only start firing once they enter orbit"; "remove bolt slow"; Hangar stays "how many interceptors" - every
+    // ready one waits circling the carrier at every tier, so no "stored in orbit" clause)
+    const n = CRR_HANGAR[h], many = n > 1;
+    return (many ? cap(NUM_WORD[n] || String(n)) + " interceptors wait in orbit round the carrier and launch at enemies in range, the longest-waiting taking the first target." : "An interceptor waits in orbit round the carrier and launches at an enemy in range.") + /* all at once (no launch rate since 2026-10-26): FIFO decides who takes which (Leader, 2026-11-04) */
+      (many ? " Each" : " It") + " circles its enemy and fires " + vo + " volleys" + (nb > 1 ? " of " + NUM_WORD[nb] + " bolts" : "") + " once round it" +
+      (l ? (tn === 1 && many ? " (the first one out tethering its target)" : ", tethering its target") : "") +
+      ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : "flies home to reload what it used.") /* PARTIAL RELOAD (aspira-crr.js carHome) */ +
+      " It stays on its target until it dies or the ammo runs out." /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage." /* td = one bolt; no slow since 2026-11-04 */ +
+      (l ? " Each tether slows its target " + pc(CRR_TETHER_SLOW[l]) + " and adds " + pc(CRR_TETHER_AMP[l]) + " to the damage it takes, tethers stacking" + (l >= CRR_CHAIN_FROM ? "; tethers run on to one more enemy nearby" : "") + " (shields block the slow)." : "");
   },
   // GRV (rework, owner 2026-10-25): tier 0 a tiny void a shot; Nova three novas before it, faster, stripping armor (Hypernova: the most);
   // Void a bigger void, pellets shed as it decays (Singularity: heavier); Gravity Well the aura - pull, slow - and the pellets' damage and
