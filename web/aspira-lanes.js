@@ -134,6 +134,9 @@ function laneHold(live) {
 const SWARM_LANE_MIN = 0.1; // a swarm lane's brightness is its SHARE of the swarm - the fullest lane of its wave at 1, the rest in proportion, never under this (owner, 2026-10-26: "swarm lane opacity should be correlated to the number of units in that lane"; was a flat SWARM_LANE_A 0.25 on every one)
 const swarmMax = (live, n) => live.reduce((m, v) => (v.swarm && v.n === n ? Math.max(m, v.sent || 0) : m), 0);
 const LIT_GLOW_A = 0.34; // (the line's numbers are LIT_LINE_SOFT, below)
+// HALF AS BRIGHT but swarm's and a boss's (owner, 2026-11-05: "also halve lane opacity of all lanes except swarm and boss"): a fast, shield or armor lane's
+// line and glow at x LANE_PLAIN_K, in 2D (strokeLit) and on the GPU (laneGlBind); its label and rim circle as they were
+const LANE_PLAIN_K = 0.5, laneLitK = u => (u.star || u.swarm ? 1 : LANE_PLAIN_K);
 const BOSS_LANE_W = 3.5, BOSS_LANE_K = 1.5; // a boss lane: x its glow's widths, x brightness (its line: BOSS_LINE_SOFT) (owner, 2026-10-09: "make boss lanes half as intense"; was 3)
 function drawLaneStrokes(all) {
   const S = laneSet(), { laneCv, lctx, glowCv, gctx, baseCv, bctx } = S, live = laneSplit(all).board; // (a lane still fading in is the fade layer's - laneFadeLayer)
@@ -182,7 +185,7 @@ let laneScratch = null;
 const LANE_SOFT_DS = 1; // FULL resolution (owner, 2026-10-26: "can we render lanes at higher res?"; was 2, half and scaled up) - a rebuild only when the lit lanes change
 function strokeSoft(dst, list, key, prof, alphaOf, wk, cap) {
   const groups = new Map();
-  for (const u of list) { const g = u.color + ":" + (u.star ? 1 : 0) + ":" + u.a.toFixed(3); groups.set(g, [...(groups.get(g) || []), u]); }
+  for (const u of list) { const g = u.color + ":" + (u.star ? 1 : 0) + ":" + laneLitK(u) + ":" + u.a.toFixed(3); groups.set(g, [...(groups.get(g) || []), u]); }
   laneScratch ||= (() => { const c = document.createElement("canvas"), x = c.getContext("2d"); if (!x) throw new Error("lane scratch: no 2d context"); return { c, x }; })();
   const { c, x } = laneScratch, W = Math.ceil(laneW() / LANE_SOFT_DS), H = Math.ceil(laneH() / LANE_SOFT_DS), LK = LANE_SOFT_DS * laneLD();
   if (c.width !== W || c.height !== H) { c.width = W; c.height = H; }
@@ -226,11 +229,11 @@ function strokeLit(lctx, gctx, list) { // each lane IN USE lit in its rider's co
   // a wide GLOW that grows in intensity toward the core (owner), on its own layer with a much steeper fade outward (owner: "stronger
   // gradient"); butt ends - a round end was a disc by the core. A BOSS lane is much THICKER (w) with much more GLOW (owner)
   const w = u => (u.star ? BOSS_LANE_W : 1);
-  strokeSoft(gctx, list, "glow2d", laneLD() > 1 ? LIT_GLOW_SOFT3 : LIT_GLOW_SOFT, u => Math.min(1, (u.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * u.a), w, "butt");
+  strokeSoft(gctx, list, "glow2d", laneLD() > 1 ? LIT_GLOW_SOFT3 : LIT_GLOW_SOFT, u => Math.min(1, (u.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * u.a) * laneLitK(u), w, "butt");
   // the line: the bonus STAR's lane burns brighter than the rest (owner); its halo is the profile's wide faint levels - one stroke
   // each, never a shadowBlur along the whole (doubled) lane (with the Devil's six lanes the blur was ~60% of an 82 ms rebuild, 2026-10-11)
   const plain = list.filter(u => !u.star), boss = list.filter(u => u.star);
-  if (plain.length) strokeSoft(lctx, plain, "lit2d", LIT_LINE_SOFT, u => u.a, () => 1, "round");
+  if (plain.length) strokeSoft(lctx, plain, "lit2d", LIT_LINE_SOFT, u => u.a * laneLitK(u), () => 1, "round");
   if (boss.length) strokeSoft(lctx, boss, "lit2d", BOSS_LINE_SOFT, u => BOSS_LANE_K * u.a, () => 1, "round");
 }
 // the faint base, the glow and the lit lines laid onto ONE cached layer whenever any of them changes, and that blitted:

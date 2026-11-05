@@ -108,11 +108,11 @@ function laneGlBind(gl, u) {
   let n = 0;
   if (laneGlOn()) {
     const groups = new Map();
-    for (const v of litLanes()) { if (!(v.a > 0)) continue; const g = v.color + ":" + (v.star ? 1 : 0) + ":" + v.a.toFixed(3); (groups.get(g) || groups.set(g, []).get(g)).push(v); }
+    for (const v of litLanes()) { if (!(v.a > 0)) continue; const g = v.color + ":" + (v.star ? 1 : 0) + ":" + laneLitK(v) + ":" + v.a.toFixed(3); (groups.get(g) || groups.set(g, []).get(g)).push(v); }
     const order = [...groups.values()].sort((a, b) => (a[0].star ? 1 : 0) - (b[0].star ? 1 : 0));
     let gi = 0;
     for (const us of order) {
-      const v = us[0], rgb = warpGridRgb(v.color), ga = Math.min(1, (v.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * v.a), la = v.star ? BOSS_LANE_K * v.a : v.a;
+      const v = us[0], rgb = warpGridRgb(v.color), ga = Math.min(1, (v.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * v.a) * laneLitK(v), la = (v.star ? BOSS_LANE_K * v.a : v.a) * laneLitK(v); /* laneLitK: fast / shield / armor at half (aspira-lanes.js) */
       for (const w of us) {
         if (n >= LGL_N) break;
         lglA.set([Math.cos(w.ang), Math.sin(w.ang), (w.pi % 4) / 4, Math.floor(w.pi / 4) / 3], 4 * n); lglB.set([rgb[0], rgb[1], rgb[2], gi], 4 * n); lglC.set([ga, la, v.star ? 1 : 0, 0], 4 * n); n++;
