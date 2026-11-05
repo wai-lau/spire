@@ -14,14 +14,19 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
   const g = real.__glc = { real, used: false, dash: false, m: [1, 0, 0, 1, 0, 0], stack: [], w2: toWorld, clipC: null }; fxGl.clipC = null;
   for (const k of GLCTX_PASS) Object.defineProperty(g, k, { get: () => real[k], set: v => { real[k] = v; } });
   g.canvas = real.canvas;
-  const T = (x, y) => [g.m[0] * x + g.m[2] * y + g.m[4], g.m[1] * x + g.m[3] * y + g.m[5]];
+  // POOLS (perf, 2026-11-05: a moving-layer path allocated an op entry, its args, a point and a part every call - the Carrier's trails
+  // alone ~1.5 MB a late frame): each reused from the last path, reset at beginPath; nothing keeps a path past the next beginPath
+  const ptPool = [], opPool = [], partPool = []; let ptN = 0, opsN = 0, partN = 0;
+  const T = (x, y) => { const q = ptPool[ptN] || (ptPool[ptN] = [0, 0]); ptN++; q[0] = g.m[0] * x + g.m[2] * y + g.m[4]; q[1] = g.m[1] * x + g.m[3] * y + g.m[5]; return q; };
+  const part = () => { const p = partPool[partN] || (partPool[partN] = { pts: [] }); partN++; p.pts.length = 0; p.closed = false; p.circle = undefined; return p; };
   const sc = () => Math.sqrt(Math.abs(g.m[0] * g.m[3] - g.m[1] * g.m[2]));
   // the path as recorded (user units, under the transform of the moment) and as GPU parts (device px)
-  let ops = [], parts = [], odd = false, cur = null;
-  const op = (name, a) => { ops.push([name, a, g.m]); }; // (g.m is replaced, never changed in place: safe to keep)
-  g.beginPath = () => { ops = []; parts = []; odd = false; cur = null; };
-  g.moveTo = (x, y) => { op("moveTo", [x, y]); cur = { pts: [T(x, y)] }; parts.push(cur); };
-  g.lineTo = (x, y) => { op("lineTo", [x, y]); if (!cur) { cur = { pts: [] }; parts.push(cur); } cur.pts.push(T(x, y)); };
+  const ops = opPool, parts = []; let odd = false, cur = null;
+  const op = (name, a) => { const o = opPool[opsN] || (opPool[opsN] = [null, null, null, [0, 0]]); opsN++; o[0] = name; o[1] = a; o[2] = g.m; }; // (g.m is replaced, never changed in place: safe to keep)
+  const op2 = (name, x, y) => { const o = opPool[opsN] || (opPool[opsN] = [null, null, null, [0, 0]]); opsN++; o[0] = name; o[3][0] = x; o[3][1] = y; o[1] = o[3]; o[2] = g.m; }; // (its args in the entry's own pair)
+  g.beginPath = () => { opsN = 0; ptN = 0; partN = 0; parts.length = 0; odd = false; cur = null; };
+  g.moveTo = (x, y) => { op2("moveTo", x, y); cur = part(); cur.pts.push(T(x, y)); parts.push(cur); };
+  g.lineTo = (x, y) => { op2("lineTo", x, y); if (!cur) { cur = part(); parts.push(cur); } cur.pts.push(T(x, y)); };
   g.closePath = () => { op("closePath", []); if (cur) cur.closed = true; };
   g.arc = (x, y, r, a0, a1, ccw) => {
     op("arc", [x, y, r, a0, a1, ccw]);
@@ -29,27 +34,27 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
     if (!uni) { odd = "arc:skewed"; return; }
     if (!full) { // a PART arc (the threat ring): short straight pieces on from the current point, as the canvas would join it
       const span = ccw ? -(((a0 - a1) % GLCTX_TAU + GLCTX_TAU) % GLCTX_TAU) : ((a1 - a0) % GLCTX_TAU + GLCTX_TAU) % GLCTX_TAU, n = Math.max(8, Math.min(160, Math.round(Math.abs(span) * r * sc() / 3)));
-      if (!cur || cur.circle) { cur = { pts: [] }; parts.push(cur); }
+      if (!cur || cur.circle) { cur = part(); parts.push(cur); }
       for (let i = 0; i <= n; i++) { const t = a0 + span * i / n; cur.pts.push(T(x + r * Math.cos(t), y + r * Math.sin(t))); }
       return;
     }
     if (cur && cur.pts.length === 1 && !cur.circle) parts.pop(); // a moveTo just before a whole circle (its start): no line
     const [cx, cy] = T(x, y);
-    cur = { circle: [cx, cy, r * sc()] }; parts.push(cur);
+    cur = part(); cur.circle = [cx, cy, r * sc()]; parts.push(cur);
   };
   for (const name of ["rect", "quadraticCurveTo", "bezierCurveTo", "arcTo", "roundRect"]) g[name] = (...a) => { op(name, a); odd = name; };
   g.ellipse = (x, y, rx, ry, rot, a0, a1, ccw) => { // a whole one: a closed line of short straight pieces (the moons' orbit)
     op("ellipse", [x, y, rx, ry, rot, a0, a1, ccw]);
     if (Math.abs(a1 - a0) < GLCTX_TAU - 1e-3) { odd = "ellipse:part"; return; }
     const n = Math.max(48, Math.min(160, Math.round(Math.max(rx, ry) * sc() / 3))), c = Math.cos(rot), sn = Math.sin(rot); // a piece every ~3 px
-    cur = { pts: [], closed: true }; parts.push(cur);
+    cur = part(); cur.closed = true; parts.push(cur);
     for (let i = 0; i < n; i++) { const t = i / n * GLCTX_TAU, ex = rx * Math.cos(t), ey = ry * Math.sin(t); cur.pts.push(T(x + ex * c - ey * sn, y + ex * sn + ey * c)); }
   };
   const replay = (why, quiet) => { // the path onto the real context, each op under its own transform (quiet: the moving layer is not marked as drawn on)
     if (!quiet) glcWhy(why);
     const m0 = real.getTransform();
     real.beginPath();
-    for (const [name, a, m] of ops) { real.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]); real[name](...a); }
+    for (let i = 0; i < opsN; i++) { const [name, a, m] = ops[i]; real.setTransform(m[0], m[1], m[2], m[3], m[4], m[5]); real[name](...a); }
     real.setTransform(m0); if (!quiet) g.used = true;
   };
   const plain = s => typeof s === "string";
