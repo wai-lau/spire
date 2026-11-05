@@ -91,15 +91,22 @@ const IFR_GLOW_A = 0.11375;
 const IFR_GLOW_GL = [[0.5, 0.5, "glow", 2], [0.5, 0.95, "orange", 9], [0.5, 0.95, "yellow", 31]]; /* fire colours, no white (owner, 2026-10-20) */ /* half-widths: the widest = W / 2, the hit band (was 0.8, 0.2, 0.06) */
 /* 3D, drawn through the GPU stand-in (glCtx, aspira-glctx.js - the real canvas keeps it as __glc): each spoke stops at a tower's edge like any
    beam (trimToTowers), its t range kept so the fade still runs over the whole spoke */
+// ALIVE, LIKE FIRE (owner, 2026-11-05: "flares should glow like fire"): every flare flickers on its own - its brightness by up to ~IFR_FLICK_B either
+// way, its size by ~IFR_FLICK_S - two waves each at a phase hashed from its spot (nothing stored, no Math.random); real time, so it burns on paused
+const IFR_FLICK_B = 0.22, IFR_FLICK_S = 0.06, IFR_FLICK_HZ = [1.9, 4.3, 2.6];
+function ifrFlick(c, now) { // [brightness x, size x]
+  const ph = Math.sin(c.x * 12.9898 + c.y * 78.233) * 43758.5453, h = (ph - Math.floor(ph)) * 6.283, w = 6.283 * now;
+  return [1 + IFR_FLICK_B * (0.65 * Math.sin(w * IFR_FLICK_HZ[0] + h) + 0.35 * Math.sin(w * IFR_FLICK_HZ[1] + 2.7 * h)), 1 + IFR_FLICK_S * Math.sin(w * IFR_FLICK_HZ[2] + 1.9 * h)];
+}
 function drawIfrFlaresGl(t, low, hf) {
   for (const c of t.ifrFlares) {
     if (!c.hf !== !hf) continue;
-    const f = Math.max(0, c.left / c.life);
-    for (const [x0, y0, x1, y1] of ifrBeamEnds(c)) {
-      const s = trimToTowers(x0, y0, x1, y1); if (!s) continue;
+    const [fb, fs] = ifrFlick(c, performance.now() / 1000), f = Math.max(0, c.left / c.life) * fb;
+    for (const [x0, y0, xe, ye] of ifrBeamEnds(c)) {
+      const x1 = x0 + (xe - x0) * fs, y1 = y0 + (ye - y0) * fs, s = trimToTowers(x0, y0, x1, y1); if (!s) continue; /* (the ray x its size flicker - the look only) */
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { /* lowQ: the orange core + the white one */
-        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), t0, t1, q[3]);
+        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * fs * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), t0, t1, q[3]);
       }
     }
   }
@@ -107,7 +114,7 @@ function drawIfrFlaresGl(t, low, hf) {
 // a flare layer's colour: the fire's flares glow BRIGHT RED outside (the palette's threat red) round an ORANGE core (owner, 2026-10-20: "bright red
 // cores", then "this red should be the outer color, and the orange the inner color") - and a METEOR's burn WHITE-hot at the core, yellow round
 // it ("make non-hellfire flares more white" - the one place IFR draws white since "no white", 2026-10-20)
-const IFR_HF_COL = { glow: "threat", tifr: "threat", orange: "threat", yellow: "orange" } /* RED through the core, only the thinnest line orange (owner, 2026-10-21: "make sure it's red") */, IFR_MAIN_COL = { yellow: "white", orange: "yellow" };
+const IFR_HF_COL = { glow: "threat", tifr: "threat", orange: "threat", yellow: "orange" } /* RED through the core, only the thinnest line orange (owner, 2026-10-21: "make sure it's red") */, IFR_MAIN_COL = { yellow: "white", orange: "orange", glow: "threat" }; /* LIKE FIRE (owner, 2026-11-05: "flares should glow like fire"): white-hot core, orange round it, an ember-red halo at the edge (was white / yellow / the orange glow) */
 const ifrFlareCol = (key, f) => COL[(f.hf ? IFR_HF_COL[key] : IFR_MAIN_COL[key]) || key];
 // a FIRE flare's layers: its outer glow IFR_HF_GLOW_K as strong, the rest IFR_HF_OPAQ x (owner, 2026-10-21: "reduce the amount of glow on the
 // hellfire stars but increase the opacity") - the look only: sizes stay (owner-locked, 2026-10-20)
@@ -136,7 +143,7 @@ function drawIfrFlares(t, hf) { // hf: the fire's flares only, else the meteors'
   ctx.lineCap = "butt";
   for (const c of t.ifrFlares) {
     if (!c.hf !== !hf) continue;
-    const f = Math.max(0, c.left / c.life);
+    const f = Math.max(0, c.left / c.life) * ifrFlick(c, performance.now() / 1000)[0]; // (2D: the brightness flicker only - a stamp's fade step, no new strokes)
     if (IFR_STAMP_ON && !c.edges && ifrSpriteDraw(c, f, low)) continue; // one stamp, not ~18 strokes (perf, below)
     ifrFlareStrokes(c, f, low);
   }
