@@ -267,3 +267,7 @@ check("bosses (owner, 2026-11-05): the Devil's host (half a fast + half a swarm 
   if (r.tot !== r.want || !r.kin || !r.wander) return "Devil host " + JSON.stringify(r);
   if (r.at == null || r.at < r.tot / 2 || r.most !== 6) return "Devil gate: first devil after " + r.at + " of " + r.tot + " seen, " + r.most + " devils at once";
 });
+check("bosses (owner, 2026-11-05): Death comes with half a plain wave of each of the four types, all at once round her", () => {
+  const s = bossRig(120), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.round(typeWaveCount(k, 120) / 2))`);
+  if (s.arc !== "death" || ["fast", "swarm", "armor", "shield"].some((k, i) => s.ty[k] !== want[i]) || !s.ahead || !s.behind) return "Death fleet " + JSON.stringify(s.ty) + " (want " + want + ")";
+});

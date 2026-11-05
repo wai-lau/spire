@@ -12,7 +12,7 @@
 //                  lane, two a lane - each one through costs a sixth of its HP% in lives (owner; replaced the Moon)
 //   96 Justice     no single hit takes more than JUSTICE_CAP of its HP; at the crossing of a 7 x 13 cross of armored, shielded escorts (2026-11-05)
 //  108 Judgement   comes alone; killed, she rises once at the start of her lane at full HP with 1.2 swarm waves (bossRise, 2026-11-05)
-//  100 Death       a juiced-up Star (owner): no tricks, the most HP but the Chariot
+//  120 Death       a juiced-up Star (owner): no tricks, the most HP but the Chariot; half a wave of each of the four types round her at once (2026-11-05)
 // Boss HP is ENEMIES.bonus.hp (halved, owner). Loaded after aspira-waves.js
 // (the simulator loads it too).
 // each with a HINT (owner): a mythic subtitle under its name - its trick told
