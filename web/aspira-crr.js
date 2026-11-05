@@ -183,7 +183,7 @@ function carTether(i, t, st, dt) {
 // circles its carrier CRR_HOLD_R out (+- CRR_HOLD_JIT by its own oj, -1..1), easing onto it - WAITING there - every ready interceptor, at
 // every tier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"),
 // the longest-held (i.heldAt) taking the first target, all launching at once from where they circle. Its SIZE goes with the same oj ("smaller interceptors fly closer": carDart)
-const CRR_HOLD_R = 80 /* 48 -> 80 (owner, 2026-10-16: "circling interceptors should circle further away from tower") */, CRR_HOLD_JIT = 0.25, CRR_HOLD_V = 110, CRR_SIZE_JIT = 0.15; // u; +-; u/s round the carrier; +- size
+const CRR_HOLD_R = 40 /* 80 -> 40 (owner, 2026-11-05: "CRR orbit around tower should be half current distance"; 48 -> 80 on 2026-10-16: "circling interceptors should circle further away from tower") */, CRR_HOLD_JIT = 0.25, CRR_HOLD_V = 55 /* 110 -> 55 with the radius: the same loop time (2.3 s), only the distance moves */, CRR_SIZE_JIT = 0.15; // u; +-; u/s round the carrier; +- size
 function carHoldOrbit(i, t, dt) {
   i.oj ??= Math.random() * 2 - 1;
   const R = CRR_HOLD_R * (1 + CRR_HOLD_JIT * i.oj);
