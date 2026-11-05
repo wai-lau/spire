@@ -38,11 +38,15 @@ const FRZ_TEMP_TICK = [0.21, 0.19, 0.17, 0.15, 0.125, 0.1] /* even, never under 
 let FRZ_NIP = 0.15; // x1.5 (2026-10-26: FRZ+IFR let the wave-12 Star through with a third of its HP, every other pair clean; was 0.1)
 const FRZ_TICK = 0.3 /* x0.6 with FRZ_TEMP_TICK x0.6 (2026-10-24 marks target; was 0.5) - the bare L1 FRZ (b.dmg, b.rate) untouched */, FRZ_RIME_GROW = 2.4; // a Rime ring takes FRZ_RIME_GROW game s to reach the edge (owner: much slower; was 0.6)
 const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit of slow (owner: thicker the colder) // an aura slow outlasts one step only: it is gone the moment the enemy leaves
+// FEWER, HARDER AURA TICKS (2026-11-05, the marks gap: FRZ fast +1 / shield 0 vs its +2 / -1 targets): the aura ticks x FRZ_TICK_RATE_K as
+// often at 1 / that the hit - the same damage a second, fewer shield pops. Marks (9 pts, waves 101-119, 2 seeds): FRZ leak 0/13/34/91 ->
+// 1/18/66/87, row +1 +1 0 -2 -> +1 +2 -1 -2 (its target exactly); the aura slow x1.2 alone moved nothing
+const FRZ_TICK_RATE_K = 0.7;
 function frzSkillStats(t, s, b) {
   const f = skillOf(t, "temp"), c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; // the STAT CURVE (tier redesign 2026-10-24)
   // the aura's damage a SECOND is the curve's; Brittle splits it over more ticks (more shield pops, not more damage); tier 0 slows and nips (FRZ_NIP)
   const tick0 = b.dmg * c.dmg * b.rate * FRZ_TICK; s.biteDmg = tick0; // a tier 0 tick's worth: what the Rime ring's bite multiplies
-  s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = tick0 * (f ? FRZ_TEMP_TICK[f] / FRZ_TEMP_TICK[0] : FRZ_NIP); s.chill = f > 0; s.rate = 1 / FRZ_TEMP_TICK[f]; // dmg / rate: a TICK
+  s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = tick0 * (f ? FRZ_TEMP_TICK[f] / FRZ_TEMP_TICK[0] : FRZ_NIP); s.chill = f > 0; s.rate = FRZ_TICK_RATE_K / FRZ_TEMP_TICK[f]; s.dmg /= FRZ_TICK_RATE_K; // dmg / rate: a TICK
   s.rime = FRZ_RIME[skillOf(t, "rime")]; s.rimeCrack = FRZ_RIME_CRACK[skillOf(t, "rime")]; s.rimeBite = skillOf(t, "rime") ? FRZ_RIME_BITE0 : 0; s.rimeEvery = FRZ_RIME_PERIOD[skillOf(t, "rime")]; s.moonN = FRZ_MOON_COUNT[skillOf(t, "moons")]; s.moonK = FRZ_MOON_BY[skillOf(t, "moons")]; s.subN = FRZ_SUBMOON_N[skillOf(t, "moons")]; s.skill = true;
 }
 // moons and SMALL MOONS by tier (owner, 2026-10-08): 1 / 2 / 3 moons at I-III, then still THREE at IV and V,
