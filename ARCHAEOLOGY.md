@@ -1277,3 +1277,30 @@ it doesnt make sense".
 - 7.1.45 / 7.1.46 (`37add98` / `5b28eac`): the on-screen text audit - the 7.1 notes gain the boss lives rule and the Devil's six; "Shock
   slows" dropped; armor strips read "of the armor left" (shredPct); CRR's sentence says its partial reload, no leash, every bolt's
   CRR_SLOW and shields blocking the tether's slow; Ifrit's two 7.1 lines merged (meteor x0.75 then x0.6: 55% softer net).
+
+### 12.s Levers measured and DROPPED, 2026-11-05 - do not re-run
+
+Wai's lever table of 11-05 (per tower x enemy type), measured by Balance/Sims with countermx at 9 points, late windows 101-109 / 111-119
+(the marks run), on 7.6.0 unless noted. Leak % is swarm / fast / shield / armor; "distance" is the marks' distance to the target (24 live).
+Balance's rule: a +-2 distance change is noise; a lever is real only when the leak % moves.
+
+**The method fact**: the marks build spreads its 9 points as tier III on every axis, so tiers I-II are never in play - any lever that
+changes only tiers I-II is unmeasurable by marks (GRV G1 / G2 / G2T below).
+
+| lever | what | result | verdict |
+|---|---|---|---|
+| SLOW_CAP 0.85 / 0.90 / 0.95 (live 0.8; only higher caps, Wai) | a stronger slow cap, game-wide | no mark moves (0.90 showed distance 22 + a CRR RULE FAIL from cut-line noise); FRZ fast/shield/armor 13/34/91 -> 6/27/78 at 0.95, GRV slightly better | dropped |
+| ARMOR_ALL 5 (5 / 5 / 7.5%) and 0 (live 10 / 10 / 15%) | light types' share of the armor type's armor | AA5 distance 22, no RULE FAIL; AA0 distance 22, RULE FAIL (CRR). Mostly hurts IFR (shield leak 26 -> 8 -> 0), ACD (swarm 45 -> 21 -> 6), FRZ (fast 13 -> 7 -> 3) | no change (AA5 the safe option if Wai wants IFR / ACD stronger late) |
+| ARMOR_K 4 / 8 (live 1) | the armor curve's hit weight | K4: armor-type leak FRZ 91 -> 48, CRR 62 -> 26, IFR 94 -> 66, distance 24, RULE FAIL (CRR); K8 distance 30, RULE FAIL x3. Flattens the armor column | dropped |
+| R85 / R70 | every non-ARC tower's fire rate x0.85 / x0.70 at the same dps (Wai's ARC-swarm lever) | RULE FAIL (CRR); ARC's swarm cell never moves - fewer, bigger hits pop fewer shields and overkill drops, so the others leak LESS swarm (ACD 45 -> 14) | dropped |
+| ARC A0 | burn 12 ticks, same total | same marks (ARC live 0 / 0 / 66 / 0) | dropped |
+| ARC A1-A3 | damage x0.7 / x0.5, chain carry x1.25-1.5 | shield -3 -> -2 but armor +2 -> +1, distance 24; ARC leaks ~0% swarm / fast / armor even at half damage | dropped |
+| ARC damage x0.5 / x0.3 / x0.2 / x0.1 | damage only | x0.5 0/2/56/0; x0.3 2/48/79/26, marks +1 0 -2 +1, distance 20; x0.2 10/68/90/49, distance 20; x0.1 RULE FAIL. ARC's late damage is ~3x what it needs vs swarm | x0.3 (a 70% cut) not shipped: goes to Wai with a good-model wins run first |
+| GRV G0 | void tick 0.5 s | moves the wrong way (fast leak 25 -> 29) | dropped |
+| GRV G1 / G2 / G2T | Gravity Well slow at tiers I-II | no change - tiers I-II are never in the marks build (above) | unmeasurable; dropped |
+| ACD Q0 | Flow carry 0 / .15 / .3 / .4 / .5 / .5 | 56/91/20/17 (live 45/82/14/12), distance 24 | dropped |
+| ACD Q1 | ramp cap 32, floor x2, ramp 1.5x slower | 62/94/32/22, distance 24 | dropped |
+| ACD Q2 / Q3 | ramp variants | Q2 47/..; Q3 57/89/26/30 - weaker everywhere by the same share, the row holds; distance 24 | dropped (boss checks queued: Wai's ACD brief was about bosses, which marks cannot see) |
+| IFR I1 | 8 shards a burst, 12 at the capstone | 1/35/10/91 (live 2/44/26/94), distance 24 | dropped |
+| IFR I2 / I3 | I1 + shards 0.5 speed / 0.5 speed only | I2 1/32/6/84; I3 no change; distance 24 | dropped |
+| CRR E0-E5 (old SOL, `492f6b7`; each on top of 1-2 bolts a volley at the same damage per volley) | E0 same reload; E1 reload x1.5; E2 x2; E3 hangar x0.75; E4 reload x1.5 + ammo x1.5; E5 ammo x0.5 | leaks (baseline 7.5.0 9/10/0/61): E0 8/8/0/52, E1 10/12/0/55, E2 14/16/0/60, E3 15/18/0/60, E4 8/6/0/44, E5 12/24/0/70 - all six RULE FAIL; fewer bolts reaches armor -1, swarm never passes 15% (a minus needs ~20%), fast and shield trade the one check. E2 / E3 rerun on 7.6.0: the same | dropped |
