@@ -381,6 +381,7 @@ function carTrails(t) {
   }
   ctx.globalAlpha = 1;
 }
+const CRR_TETHER_A0 = 0.7, CRR_TETHER_W = 0.6; // the tether chain: its least alpha (x CHAIN_A on top, as ARC's), its links x ARC's size
 function drawCar(darts) {
   for (const t of G.towers) {
     if (t.kind !== "crr" || !t.icp) continue;
@@ -389,10 +390,14 @@ function drawCar(darts) {
       if (skillOf(t, "launch") > 0) { // the TETHER beams: interceptor -> target (-> the chained one), brighter on a pulse
         ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round";
         const st = towerStats(t);
+        // an ARC-style CHAIN, thinner, in CRR's blue (owner, 2026-11-05: "replace the beam with a thinner arc chain (still blue)"), never under 70% (owner: "tether
+        // should have a min opacity of 70%"); a pulse (i.tf) still flashes it brighter and wider. 3D: one GPU capsule a link (fxGlChain), 2D: drawChain2D
+        const gl3 = !!(ctx && ctx.real && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlChain === "function");
+        const link = (x1, y1, x2, y2, a, w) => { if (gl3) fxGlChain({ x1, y1, x2, y2, color: "ltblue", thin: w }, a); else if (typeof drawChain2D === "function") { ctx.globalAlpha = a; drawChain2D(x1, y1, x2, y2, (x, y) => ({ x, y }), 1, COL.ltblue, w); } };
         for (const i of t.icp) {
           if (!carTethered(t, i, st)) continue;
-          i.tf = Math.max(0, (i.tf || 0) - 0.08); ctx.globalAlpha = 0.45 + 0.55 * i.tf; ctx.lineWidth = 1.2 + 1.8 * i.tf;
-          ctx.beginPath(); ctx.moveTo(i.x, i.y); ctx.lineTo(i.ve.x, i.ve.y); if (i.tc && !i.tc.dead) ctx.lineTo(i.tc.x, i.tc.y); ctx.stroke();
+          i.tf = Math.max(0, (i.tf || 0) - 0.08); const a = CRR_TETHER_A0 + (1 - CRR_TETHER_A0) * i.tf, w = CRR_TETHER_W * (1 + 0.6 * i.tf);
+          link(i.x, i.y, i.ve.x, i.ve.y, a, w); if (i.tc && !i.tc.dead) link(i.ve.x, i.ve.y, i.tc.x, i.tc.y, a, w);
         }
       }
       ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
