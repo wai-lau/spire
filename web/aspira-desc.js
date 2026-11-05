@@ -101,13 +101,13 @@ const DESCRIBE = {
     // 100% = a meteor's hit (IFR_ROUTE_K0 x st.dmg); a fire flare's hit shrinks as the burst grows (hk), the fire's wall is IFR_RING_HIT_K of it
     const hf = IFR_TICK_K[0] * (f ? IFR_HF_FK : 1) * IFR_FIRE_HK * IFR_HF_HIT_K / Math.sqrt(1 + n) / IFR_ROUTE_K0;
     const fr = Math.max(IFR_BALL_RAD[m] * IFR_FIRE_FLOOR, IFR_FIRE_R[h]), n0 = Math.max(1, Math.round(IFR_FIRE_FLARES * IFR_FIRE_DENS[h] * (fr / IFR_FIRE_FLARE_R0) ** 2)), nf = Math.max(IFR_FIRE_MIN, n0); // as stepIfrFires lights them
-    const burn = Math.min(EFFECT_MAX_S, IFR_BURN_S[f]), fl = Math.floor(burn / IFR_TICK_S[f] + 1e-9);
+    const ft = ifrFlareTiming(f), burn = ft.burn, fl = ft.n; // (a third as long, the same per flare: 2026-11-05)
     // (owner, 2026-10-26): "A meteor strikes the target for X%td and bursts into 6 more." / Hellfire "A wall of fire expands from the enemy, dealing X%td
     // and lights Y flares that singe for Z%td each" (no spread distance) / Flare "Meteor impacts light a bright flare that burns..." / Meteor: orbit storage
     return "A meteor strikes the target for " + pc(1) + " damage and bursts into " + NUM_WORD[n] + " more." +
       (st > 1 ? " " + cap(NUM_WORD[st]) + " meteors can be stored in orbit." : "") +
       " A wall of fire expands from the enemy, dealing " + pc(hf * IFR_RING_HIT_K) + " damage" + (h ? " and lights " + nf + " flares that singe for " + pc(hf * n0 / nf) + " damage each." : ".") + // (every tier: owner, 2026-11-05, the circle at Hellfire 0, no flares)
-      (f ? " The first impact lights " + (f >= CAPSTONE_TIER ? NUM_WORD[typeof IFR_CAP_FLARES !== "undefined" ? IFR_CAP_FLARES : 3] + " bright flares that burn" : "a bright flare that burns") + " for " + pc(IFR_MAIN_FLARE_K * IFR_TICK_K0 / IFR_ROUTE_K0) + " damage a tick for " + secs(burn) + "." : ""); /* a tick at a time: x3 the main flare (IFR_MAIN_FLARE_K, 2026-11-05) put the per-second total over 800% ("Nothing should ever be above like 800%") */
+      (f ? " The first impact lights " + (f >= CAPSTONE_TIER ? NUM_WORD[typeof IFR_CAP_FLARES !== "undefined" ? IFR_CAP_FLARES : 3] + " bright flares that burn" : "a bright flare that burns") + " for " + pc(IFR_MAIN_FLARE_K * IFR_TICK_K0 * ft.k / IFR_ROUTE_K0) + " damage a tick for " + secs(burn) + "." : ""); /* a tick at a time: x3 the main flare (IFR_MAIN_FLARE_K, 2026-11-05) put the per-second total over 800% ("Nothing should ever be above like 800%") */
   },
 };
 // the description for a chart (`skills`): every chart tower has a composer - the only prose a chart tower shows
