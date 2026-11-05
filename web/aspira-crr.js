@@ -113,15 +113,26 @@ function stepCar(t, dt) {
   const st = towerStats(t);
   carWing(t, st);
   stepCarPellets(t, dt); stepCarBolts(t, st, dt); carObstacles(t);
+  t.reloadCd = Math.max(0, (t.reloadCd || 0) - dt); if (t.readyQ) t.readyQ = t.readyQ.filter(o => o.state === "home" && t.icp.includes(o)); // ONE RELOAD FINISHES AT A TIME (CRR_RELOAD_GAP, below); (a wing that shrank, or one sent off, leaves the queue)
   // FIFO: the longest-held interceptor takes the first target (i.heldAt: the order it entered its orbit round the carrier)
   const order = t.icp.slice().sort((a, b) => (a.state === "home" && a.hold ? a.heldAt : Infinity) - (b.state === "home" && b.hold ? b.heldAt : Infinity));
   for (const i of order) stepIcp(i, t, st, dt);
 }
 // (the SALVO - carSalvoN at a time, then CRR_GAP - is gone: every ready interceptor launches at once, owner 2026-10-26: "Always launch as many
 // interceptors as available")
+// ONE OUT OF THE HANGAR AT A TIME (owner, 2026-11-05: "interceptors can launch all at once, but interceptors can only finish reloading one at
+// a time, so the queue is from inside to orbit"): reloads run side by side inside the carrier, but at most one FINISHES each CRR_RELOAD_GAP s,
+// in the order they came due (t.readyQ, FIFO); one done early waits inside till its turn. let: the balance lever ("the rate you can use as a
+// lever for something, I'm thinking something minisacule like 0.05s")
+let CRR_RELOAD_GAP = 0.05;
 function stepIcp(i, t, st, dt) {
   if (i.state === "home") {
     i.reload = Math.max(0, i.reload - dt);
+    if (i.reload <= 0 && !i.out) { // reloaded: in the queue out of the hangar (i.out: let out, till it launches)
+      const q = (t.readyQ ||= []); if (!q.includes(i)) q.push(i);
+      if (q[0] !== i || t.reloadCd > 0) { i.x = t.x; i.y = t.y; i.ho = undefined; i.hold = false; return; }
+      q.shift(); i.out = true; t.reloadCd = CRR_RELOAD_GAP;
+    }
     const held = st.hold > 0 && i.reload <= 0 && (i.hold || t.icp.reduce((n, o) => n + (o.hold ? 1 : 0), 0) < st.hold); // HELD: charged and orbiting the carrier, while the Hangar has room (st.hold of them)
     if (held) { if (!i.hold) i.heldAt = t.holdSeq = (t.holdSeq || 0) + 1; carHoldOrbit(i, t, dt); } else { i.x = t.x; i.y = t.y; i.ho = undefined; }
     i.hold = held;
@@ -129,7 +140,7 @@ function stepIcp(i, t, st, dt) {
     const e = carTarget(t, st);
     if (!e) return;
     const fx = held ? i.x : t.x, fy = held ? i.y : t.y;
-    i.e = e; i.ammo = st.ammo; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; sfx("crr"); /* RELAYED: a relayed carrier's wing is RELAY_MUL x as many, all launching at once like any (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1"; the CRR_GAP launch slots are gone since 2026-10-26) */
+    i.e = e; i.ammo = st.ammo; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; i.out = false; sfx("crr"); /* RELAYED: a relayed carrier's wing is RELAY_MUL x as many, all launching at once like any (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1"; the CRR_GAP launch slots are gone since 2026-10-26) */
     i.v = st.speed; i.ang = held ? i.ang : Math.atan2(e.y - fy, e.x - fx); i.jp = Math.random() * 6.283; i.jw = CRR_JIT_W[0] + Math.random() * (CRR_JIT_W[1] - CRR_JIT_W[0]); // (held: out along its orbit, turning in)
     for (let k = 0; k < 4 && !held; k++) { const [ax, ay] = carAvoid(i, e.x - fx, e.y - fy, 1); i.ang = Math.atan2(ay, ax); } // leaves already bent round the core (a carrier by it has no room to turn)
     return;

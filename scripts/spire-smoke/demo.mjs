@@ -144,19 +144,19 @@ check("demo respawn: no ARC chain runs across the scene - walkers leave at the l
 // CRR'S WING COMES HOME (owner, 2026-11-03: "CRR demo not launching interceptors properly"): run dry near its carrier - the scene's lanes pass
 // 0.45 r from it - an interceptor's turn limit circled it ~50 u out for good, and with the whole wing circling nothing launched again. In every
 // CRR layout at every tier, no interceptor may spend over 2 s flying home, and every interceptor launches at least once
-check("demo CRR: every interceptor gets home within 2 s and the wing keeps launching (every layout, every tier, 10 s)", () => {
+check("demo CRR: every interceptor gets home within 2 s and the wing keeps launching (every layout, every tier, 12 s)", () => {
   return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell], rnd0 = Math.random;
     try { for (const key of Object.keys(DEMO_LAYOUTS.crr)) for (const tier of key === "base" ? [0] : [1, 2, 3, 4, 5]) {
       let sd = 777; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
       const skills = key === "base" ? {} : { [key]: tier }, t = { kind: "crr", cell, x: C.x, y: C.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
       const S = demoScene("crr", skills, cell, demoPlace("crr", towerStats(t), cell, DEMO_LAYOUTS.crr[key])), T = S.G.towers[0], back = new Map(), was = new Map();
       let longest = 0, sorties = 0;
-      for (let f = 0; f < 600; f++) { demoFrame(S); for (const i of T.icp || []) {
+      for (let f = 0; f < 720; f++) { demoFrame(S); for (const i of T.icp || []) { /* 12 s: a sortie is up to 30 volleys since 2026-11-05 ("fire for longer"), so Armament III-V make ~one sortie an interceptor in 10 */
         if (was.get(i) === "home" && i.state === "out") sorties++; was.set(i, i.state);
         const n = i.state === "back" ? (back.get(i) || 0) + 1 : 0; back.set(i, n); longest = Math.max(longest, n); } }
       const wing = (T.icp || []).length;
       if (longest > 120) bad.push("crr." + key + " " + tier + ": an interceptor " + (longest / 60).toFixed(1) + " s flying home");
-      if (sorties < wing) bad.push("crr." + key + " " + tier + ": " + sorties + " sorties for " + wing + " interceptors in 10 s");
+      if (sorties < wing) bad.push("crr." + key + " " + tier + ": " + sorties + " sorties for " + wing + " interceptors in 12 s");
     } } finally { Math.random = rnd0; }
     return bad.join("; "); })()`);
 });
