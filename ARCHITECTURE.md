@@ -148,7 +148,7 @@ all (`nudge`; the axes' range factors in `skillMove`, ARC Conductivity's rate). 
 is flat (its rate never rises). Per-axis raw damage tables are gone; a sub-attack's factor is
 one constant (`CRR_TETHER_K0`, `FRZ_RIME_BITE0`, `ACD_POOL_HEAT`, `GRV_PELLET_K0`,
 `GRV_INNER_K0`, `IFR_ROUTE_K0`, `IFR_TICK_K0`), and so is any factor on the tower's own damage, on from its first tier
-(`SOL_CRIT_K`, `SOL_SCORCH_K`, `IFR_FIRE_HK`, `IFR_HF_FK`). Per-tier tables that stay hold counts, shapes, reaches and
+(`SOL_CRIT_K`, `SOL_SCORCH_TOTAL`, `IFR_FIRE_HK`, `IFR_HF_FK`). Per-tier tables that stay hold counts, shapes, reaches and
 debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the tower's own axes only. Each stats function sets `dmgCurve` /
 `rateCurve` (the curve plus nudges) before a mechanic splits the hit.
 
@@ -269,7 +269,7 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`; how it got her
 
 | Rule | |
 |---|---|
-| no tier lowers a stat | pillar 4; `SOL_FOCUS_DMG`, `ACD_SPRAY_MUL` floored at 1 |
+| no tier lowers a stat | pillar 4; `ACD_SPRAY_MUL` floored at 1 |
 | a tier's words | change only when behaviour changes (§7.3) |
 | debuff credit | damage a debuff adds goes to the tower that caused it (`damageCredit`) |
 | armor shred | EVERY strip is a % of the CURRENT armor (owner 2026-10-28: "all strip should be changed to a % not a flat number"; `shredPct`, per-tier tables, the same at every wave), so strips multiply toward 0, never below; `SHRED_MAX` 0.9 stays as a safety. The goo keeps `shredArmor` (its drop is a fixed share of the wave's armor reference). No negative armor, no "shredded takes extra" |
@@ -545,7 +545,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 |---|---|---|
 | 1 | charges | this hit sets off any charge on `e` (ARC Capacitance) |
 | 2 | **shield** | unless the hit ignores shields (`st.ignoreShield`), the shield takes the whole hit and pops `st.shieldPop` charges (a quiet hit bounces off); nothing else applies |
-| 3 | bleed crit | wired (a non-SOL tower may crit a bleeding enemy for x `BLEED_CRIT_MUL`), but `SOL_BREACH_CRIT` is 0 at every tier, so nothing bleeds crit-ably and the step is inert |
+| 3 | bleed crit | wired (a non-SOL tower may crit a bleeding enemy for x `BLEED_CRIT_MUL`), but no skilled tower sets `st.bleedCrit` (SOL's Breach crit table is gone), so nothing bleeds crit-ably and the step is inert |
 | 4 | marks | damage-taken x `shredMul` |
 | 5 | **Brittle** | x while slowed |
 | 6 | **armor** | THE CURVE: a hit loses `R / (R + ARMOR_K x hit)`, at most `ARMOR_CAP` (`armorTake`) - a hit as big as the armor loses half, smaller more, bigger less; armor never counts below 0; every type carries `ARMOR_ALL` of an armor unit's armor; frost removes a SHARE of it; EVERY hit, quiet ones too (the old flat bite, 10% floor, negative-armor bonus and minus-reference floor: ARCHAEOLOGY.md) |
