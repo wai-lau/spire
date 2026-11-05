@@ -251,3 +251,10 @@ check("bosses (owner, 2026-11-05): the Lovers bring one armor wave scattered lik
   if (s.arc !== "lovers" || s.ty.armor !== Math.round(r.want / 2) || s.n !== s.ty.armor || !r.jit) return "Lovers fleet " + JSON.stringify(s).slice(0, 200) + " jit " + r.jit + " (a wave " + r.want + ")";
   if (r.healed || r.ran) return "Lovers pair " + JSON.stringify(r);
 });
+check("bosses (owner, 2026-11-05): Judgement comes alone; killed, she rises once at her lane's start at full HP with 1.2 swarm waves behind her, and her second death is her last", () => {
+  const r = run(`(() => { G = newGame(); G.wave = 107; spawnEnemy("bonus", 108, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana);
+    if (!G.enemies.includes(e)) { G.fleetQ.splice(G.fleetQ.indexOf(e), 1); G.enemies.push(e); } const f0 = e.fleet.length; e.s = PATHS[0].len * 0.7; e.hp = 0; kill(e);
+    const a = { f0, dead: e.dead, hp: e.hp / e.max, at: e.s - entryS(0), kin: G.fleetQ.concat(G.enemies).filter(m => m.type === "swarm" && m.bossKin).length, want: Math.round(1.2 * typeWaveCount("swarm", 108)) };
+    e.hp = 0; kill(e); a.dead2 = e.dead; return a; })()`);
+  if (r.f0 || r.dead || r.hp !== 1 || Math.abs(r.at) > 0.01 || r.kin !== r.want || !r.dead2) return "Judgement " + JSON.stringify(r);
+});

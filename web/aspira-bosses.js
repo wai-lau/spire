@@ -11,7 +11,7 @@
 //   70 Devil       comes as SIX (DEVIL_COPIES), each a full boss on its own copy of the
 //                  lane, two a lane - each one through costs a sixth of its HP% in lives (owner; replaced the Moon)
 //   96 Justice     no single hit takes more than JUSTICE_CAP of its HP; at the crossing of a 7 x 13 cross of armored, shielded escorts (2026-11-05)
-//   90 Judgement   rises once at JUDGEMENT_REVIVE of its HP
+//  108 Judgement   comes alone; killed, she rises once at the start of her lane at full HP with 1.2 swarm waves (bossRise, 2026-11-05)
 //  100 Death       a juiced-up Star (owner): no tricks, the most HP but the Chariot
 // Boss HP is ENEMIES.bonus.hp (halved, owner). Loaded after aspira-waves.js
 // (the simulator loads it too).
@@ -73,7 +73,7 @@ const EMPRESS_STEP = 1 / 3, EMPRESS_GAP = 6; // HP share a brood; u between swar
 const typeWaveCount = (type, n) => Math.max(1, Math.round(countK(n) * Math.max(waveCount(type, n), planCount(type, n))));
 const CHARIOT_EVERY = 4, CHARIOT_T = 1, CHARIOT_SPD = 3, LOVERS_SPD = 1.5;
 const DEVIL_TRAIL = 540; // world units between the two Devils on a lane, ~1.5 s at its pace (aspira-step.js stepSpawns)
-const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, DEVIL_LANES = 3, JUSTICE_CAP = 0.02, JUDGEMENT_REVIVE = 0.3; /* 0.5 -> 0.3 (2026-11-03): its second life was what reached the core (survivors lost ~10 lives each); HP x0.85 moved it 23% -> 22% ended, the revive at 30% (HP x1) 22% -> 13%, with 19% surviving a leak (the felt-threat band) */
+const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, DEVIL_LANES = 3, JUSTICE_CAP = 0.02; /* (JUDGEMENT_REVIVE 0.3 GONE 2026-11-05: she rises at full HP at her lane's start - bossRise) */ /* 0.5 -> 0.3 (2026-11-03): its second life was what reached the core (survivors lost ~10 lives each); HP x0.85 moved it 23% -> 22% ended, the revive at 30% (HP x1) 22% -> 13%, with 19% surviving a leak (the felt-threat band) */
 
 // a boss's HP scaled with its lane's length while it rode a different lane each boss wave; it has ONE
 // spiral now (owner, 2026-10-08), so the old average factor (1.107 over the boss waves) stands as a constant
@@ -128,7 +128,7 @@ function bossSpawn(e, n) {
 // outriders sprint when she does (bossStep). The fleet keeps the boss's pace, spaced clear of it (FLEET_GAP)
 const FLEET = {
   star: ["fast"], empress: null /* none (the boss redesign, 2026-11-05: her swarm waves are her fleet) */, strength: ["armor"], chariot: ["fast", "armor"], lovers: ["swarm", "fast"], // shooting stars, handmaidens, lions, outriders + guards, couples + runners
-  temperance: ["shield", "fast"], devil: ["swarm", "fast"], justice: ["armor", "fast"], judgement: ["swarm", "fast", "armor"], death: ["fast", "swarm", "armor", "shield"], // the cup + runners, imps + runners, guards + runners, the risen + runners + guards, four horsemen
+  temperance: ["shield", "fast"], devil: ["swarm", "fast"], justice: ["armor", "fast"], judgement: null /* alone (2026-11-05): her swarm comes when she rises (bossRise) */, death: ["fast", "swarm", "armor", "shield"], // the cup + runners, imps + runners, guards + runners, the risen + runners + guards, four horsemen
 };
 // THE LATTICE FLEETS (owner, 2026-11-05, the boss redesign: "Star, 3 x 10 fast in a lattice as fleet" / "Strength, at center of 3 x 12
 // armor lattice" / "Temperance, center of 3 x 12 shield lattice, same mechanic"): a FIXED grid, 3 across the lane and n along (not a
@@ -200,20 +200,22 @@ const fleetLanes = (e, n) => (isA(e, "judgement") ? { L: 12, off: 0.5 } : { L: 1
 // swarmer (jit) at the boss's pace
 const FLEET_SCATTER = { lovers: [["armor", 1]] };
 const SCATTER_W = 52, SCATTER_U = 14;
-function bossScatter(e, n, R) {
-  const bodies = bossCount(n), parts = FLEET_SCATTER[e.arcana], span = [R, R];
+function bossScatter(e, n, R, parts = FLEET_SCATTER[e.arcana], rise = false) { // rise: Judgement's second coming - all behind her, held at the mouth, no queueFleet (she is already on the board)
+  const bodies = rise ? 1 : bossCount(n), span = [R, R], s0 = entryS(e.pi);
   const all = parts.map(([k, mul]) => [k, Math.max(1, Math.round(typeWaveCount(k, n) * mul / bodies))]), tot = all.reduce((a, [, c]) => a + c, 0), along = Math.max(4 * R, tot * SCATTER_U);
   for (const [k, count] of all) for (let c = 0; c < count; c++) {
     spawnEnemy(k, n, e.pi, e.ang || 0);
     const m = G.enemies[G.enemies.length - 1], r = ENEMIES[k].size;
     m.max = Math.floor(m.max * BOSS_HEFT); m.hp = m.max; // (BOSS_HEFT, as every escort)
-    let lat, ahead; do { lat = (Math.random() * 2 - 1) * SCATTER_W; ahead = (Math.random() - 0.5) * along; } while (Math.hypot(lat, ahead) < R + r + FLEET_GAP);
+    let lat, ahead; do { lat = (Math.random() * 2 - 1) * SCATTER_W; ahead = (Math.random() - (rise ? 1 : 0.5)) * along; } while (Math.hypot(lat, ahead) < R + r + FLEET_GAP);
     m.form = true; m.lat = lat; m.s = e.s + ahead; m.ahead = ahead; m.aheadC = 0;
     span[0] = Math.max(span[0], ahead + r); span[1] = Math.max(span[1], -ahead + r);
     m.spd = (e.spd || 1) * ENEMIES.bonus.speed / ENEMIES[k].speed; m.jit = 18 + Math.random() * 45; // a swarmer's wander (spawnEnemy's)
     m.bossKin = true; m.fleetSpd = m.spd; e.fleet.push(m);
+    if (rise) { if (m.s < s0 - 0.01) { G.enemies.splice(G.enemies.lastIndexOf(m), 1); G.fleetQ.push(m); } continue; } // (walks in at the mouth, stepFleetQ; her HP is not raised again)
     const moved = Math.floor(m.max * FLEET_TO_BOSS); m.max -= moved; m.hp = m.max; e.max += moved; e.hp = e.max; // (FLEET_TO_BOSS)
   }
+  if (rise) return;
   e.fleetSpan = span[0] + span[1]; G.lastBoss = e;
   queueFleet(e);
 }
@@ -313,12 +315,17 @@ const bossSlowMul = e => (BOSS_SLOW_K[e.arcana] ?? 1);
 function bossHitCap(e, amt) {
   return isA(e, "justice") ? Math.min(amt, e.max * JUSTICE_CAP) : amt;
 }
-// from kill(): Judgement rises once; returns true when it does
+// from kill(): Judgement rises once; returns true when it does - AT THE START OF HER LANE, AT FULL HP, with 1.2 swarm waves strewn behind
+// her like a swarm (owner, 2026-11-05, the boss redesign: "Judgement spawns alone, when defeated, respawns at the start of lane at 100%,
+// except with 1.2 waves worth of swarm in swarm pattern, no respawn at 30%"); her second death is her last. Was: rose where she fell at
+// JUDGEMENT_REVIVE (30%) of her HP
+const JUDGEMENT_SWARM = 1.2;
 function bossRise(e) {
   if (e.risen || !isA(e, "judgement")) return false;
-  e.risen = true; e.dead = false;
-  e.hp = Math.floor(e.max * JUDGEMENT_REVIVE);
-  ring(e.x, e.y, 60, "orange", 0.5);
+  ring(e.x, e.y, 60, "orange", 0.5); // (where she fell)
+  e.risen = true; e.dead = false; e.hp = e.max; e.shield = e.shieldMax; e.shieldBuf = 0;
+  e.s = entryS(e.pi); const p = pathAt(e.pi, e.s, e.ang || 0); e.x = p.x; e.y = p.y; e.ease0 = null; e.slows = null; e.slowT = 0; e.stunT = 0; e.seen = false;
+  bossScatter(e, e.n, ENEMIES.bonus.size * (e.sizeMul || 1), [["swarm", JUDGEMENT_SWARM]], true);
   return true;
 }
 // from kill(): a Lover left alone heals to full and runs faster
