@@ -114,7 +114,7 @@ function solidGeom(e) {
     D.v = Q[E[0]]; D.w = Q[E[1]]; D.n = (sa >= 0) + (sb >= 0); D.f.length = 0; if (sa < 0) D.f.push(sb); else if (sb < 0) D.f.push(sa); else D.f.push(sa, sb);
   }
   edges.length = ne;
-  return { faces, edges, spike, size, fa, col: COL[d.color], ocol: COL[ENEMIES[e.aug || e.type].color], /* ocol: the OUTLINE's - an augmented enemy's in its augment's colour */ frz: SOLID_FROZEN_A * frostK(e), rime: rimeK(e), lw: (e.armor ? 2.2 : 1.2) * cam.k };
+  return { faces, edges, spike, size, fa, col: COL[d.color], ocol: COL[d.color], /* ocol: the OUTLINE's - its OWN type's colour (owner, 2026-11-05: "for all the enemies, remove the 'double type' visual effects"; a late swarm with shields / fast with armor wore that type's outline since 2026-10-13 - e.aug stays, the wave card's "late trait" row) */ frz: SOLID_FROZEN_A * frostK(e), rime: rimeK(e), lw: (e.armor ? 2.2 : 1.2) * cam.k };
 }
 // the opacity the floor's slices give depth z (aspira-fog.js warpBands): 1 at the floor, down to the deepest slice's
 const belowFade = z => Math.max(1 - (WARP_FADE_BANDS - 0.5) / WARP_FADE_BANDS, Math.min(1, 1 + z / WARP_FADE_Z));
@@ -181,7 +181,7 @@ function warpFlatDie(e) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath();
   for (let i = 0; i < n; i++) { const a = (e.rot || 0) + i * 6.283 / n; if (i) ctx.lineTo(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); else ctx.moveTo(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); }
   ctx.closePath(); ctx.fillStyle = blendFill([[rgbOf(col), 0.35 * fa], [rgbOf(COL.tfrz), 0.35 * fa * SOLID_FROZEN_A * frostK(e)]]); ctx.fill();
-  ctx.strokeStyle = blendFill([[rgbOf(COL[ENEMIES[e.aug || e.type].color]), 0.9 * fa], [rgbOf(COL.white), 0.9 * fa * rimeK(e)]]); ctx.lineWidth = 1.2 * cam.k; ctx.stroke(); // (the augment's outline)
+  ctx.strokeStyle = blendFill([[rgbOf(COL[ENEMIES[e.type].color]), 0.9 * fa], [rgbOf(COL.white), 0.9 * fa * rimeK(e)]]); ctx.lineWidth = 1.2 * cam.k; ctx.stroke(); // (its own type's outline - no augment colour since 2026-11-05)
   return true;
 }
 // NO FOG ON ENEMIES (owner, 2026-10-12: "remove fog on enemies"): a die draws ONCE, whole and at full strength, in the pass
