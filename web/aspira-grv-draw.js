@@ -24,6 +24,7 @@ function drawGrvPellets() {
 const GRV_BANDS = [[0.15, "bhwhite"], [0.19, "yellow"], [0.3, "bhcoral"], [0.47, "bhpink"], [0.66, "bhplum"]]; // the outermost band CLEAR, not the near-black deep purple (owner, 2026-10-24: "GRV BH outermost color should be transparent, not black"; was [0.86, "bhdeep"])
 // the NOVA: a thick ring (GRV_NOVA_W of its reach), GRV purple turning white as it collapses (owner, 2026-10-15; it was a red /
 // orange / yellow ring going OUT for an hour)
+const GRV_NOVA_GLOW = [0.25, 0.5]; // the 3D glow's [outer, middle] ring alpha x this (owner, 2026-11-05: "for nova, visually halve the opacity of the middle ring, and quarter opacity of the outermost"; glcStroke's GLC_GLOW_K); the ring itself as it was
 const GRV_NOVA_A = 0.9, GRV_NOVA_W = 0.025 /* much THINNER (owner, 2026-10-17; was 0.08) */, GRV_NOVA_WHITE = 0.2; // a THIN line, only 20% of the way to white (owner, 2026-10-15; was 0.45 thick, all the way)
 // a colour between two "rgb(r, g, b)" palette strings, f 0..1
 function mixRgb(a, b, f) {
@@ -92,7 +93,8 @@ function drawSphere(sp, st, auraOwn = true) {
       ctx.globalAlpha = Math.min(1, GRV_NOVA_A * (0.45 + 0.65 * p)); ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, GRV_NOVA_WHITE + 0.6 * p ** 2); ctx.lineWidth = Math.max(1, w); // (a solid stroke: the 3D board takes no gradient stroke)
       ctx.shadowColor = COL.violet; ctx.shadowBlur = 14 * cam.k * p;
       const ring = () => { ctx.beginPath(); ctx.arc(sp.nova ? sp.nova.x : sp.x, sp.nova ? sp.nova.y : sp.y, r - w / 2, 0, 6.283); ctx.stroke(); };
-      if (typeof fxGlSkyOff === "function") fxGlSkyOff(ring); else ring(); ctx.shadowBlur = 0; // (always inverted on the boss sky: it whitens as it closes - aspira-fxgl.js)
+      const ringK = () => { if (typeof GLC_GLOW_K === "undefined") return ring(); GLC_GLOW_K = GRV_NOVA_GLOW; try { ring(); } finally { GLC_GLOW_K = null; } }; // its glow's middle ring x0.5, outer x0.25 (GRV_NOVA_GLOW)
+      if (typeof fxGlSkyOff === "function") fxGlSkyOff(ringK); else ringK(); ctx.shadowBlur = 0; // (always inverted on the boss sky: it whitens as it closes - aspira-fxgl.js)
     }
   }
 

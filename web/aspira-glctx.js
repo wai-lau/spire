@@ -145,13 +145,16 @@ function glcRegular(p, w2) {
 }
 // the batch's strokes: whole circles (with a glow, soft rings under it) and polylines cut at their joints
 let GLC_X = new Float64Array(0), GLC_Y = GLC_X, GLC_DX = GLC_X, GLC_DY = GLC_X; const GLC_SEG = [0, 0, 0, 0]; // glcStroke's scratch
+// a glow's two rings' alphas x [outer, middle] while a draw sets it (GRV's nova: owner, 2026-11-05: "for nova, visually halve the opacity of the middle ring,
+// and quarter opacity of the outermost"); null: as drawn
+let GLC_GLOW_K = null;
 function glcStroke(g, parts, st, dash, scale, glow) {
   const real = g.real, lw = real.lineWidth * scale / g.w2.k, A = real.globalAlpha, dk = scale / g.w2.k, butt = real.lineCap === "butt";
   const dOn = dash ? dash[0] * dk : 0, dOff = dash ? dash[1] * dk : 0, dAt0 = dash ? real.lineDashOffset * dk : 0; // (a dash: on, off, its offset - world units)
   for (const p of parts) {
     if (p.circle) {
       const [x, y] = g.w2(p.circle[0], p.circle[1]), r = p.circle[2] / g.w2.k;
-      if (glow) { const b = real.shadowBlur / g.w2.k; fxGlPush(x, y, x, y, r, lw + b, glow, 0, glow, A * 0.18); fxGlPush(x, y, x, y, r, lw + b * 0.45, glow, 0, glow, A * 0.3); } // a canvas glow, as two soft rings
+      if (glow) { const b = real.shadowBlur / g.w2.k, gk = GLC_GLOW_K; fxGlPush(x, y, x, y, r, lw + b, glow, 0, glow, A * 0.18 * (gk ? gk[0] : 1)); fxGlPush(x, y, x, y, r, lw + b * 0.45, glow, 0, glow, A * 0.3 * (gk ? gk[1] : 1)); } // a canvas glow, as two soft rings
       fxGlPush(x, y, x, y, r, lw, st, 0, st, A, 0, 0, 0, 0, 0, dOn, dOff, dAt0);
       continue;
     }
@@ -176,7 +179,7 @@ function glcStroke(g, parts, st, dash, scale, glow) {
       if (seg === GLC_SEG) { GLC_SEG[0] = ax; GLC_SEG[1] = ay; GLC_SEG[2] = bx; GLC_SEG[3] = by; }
       if (seg) {
         const cutA = seg[0] !== X[i] || seg[1] !== Y[i], cutB = seg[2] !== X[i + 1] || seg[3] !== Y[i + 1], j0x = cutA ? 0 : b0x, j0y = cutA ? 0 : b0y, j1x = cutB ? 0 : b1x, j1y = cutB ? 0 : b1y; // (a cut end is a plain end)
-        if (glow) { const b = real.shadowBlur / g.w2.k; for (const [wk, ak] of [[b, 0.18], [b * 0.45, 0.3]]) fxGlPush(seg[0], seg[1], seg[2], seg[3], (lw + wk) / 2, 0, glow, A * ak, glow, 0, 0, j0x, j0y, j1x, j1y); } // a glow: two soft wider strokes under it (the Relay's beam)
+        if (glow) { const b = real.shadowBlur / g.w2.k, gk = GLC_GLOW_K; for (const [wk, ak, i] of [[b, 0.18, 0], [b * 0.45, 0.3, 1]]) fxGlPush(seg[0], seg[1], seg[2], seg[3], (lw + wk) / 2, 0, glow, A * ak * (gk ? gk[i] : 1), glow, 0, 0, j0x, j0y, j1x, j1y); } // a glow: two soft wider strokes under it (the Relay's beam)
         fxGlPush(seg[0], seg[1], seg[2], seg[3], lw / 2, 0, st, A, st, 0, butt && !prev && !next ? 2 : 0, j0x, j0y, j1x, j1y, dOn, dOff, dAt0 + along + (cutA ? Math.hypot(seg[0] - X[i], seg[1] - Y[i]) : 0));
       }
       along += Math.hypot(X[i + 1] - X[i], Y[i + 1] - Y[i]);
