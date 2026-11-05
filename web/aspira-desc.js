@@ -88,7 +88,7 @@ const DESCRIBE = {
       ", then " + (a >= CAPSTONE_TIER ? (CRR_HANGAR[h] > 1 ? "burst" : "bursts") + " into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : (CRR_HANGAR[h] > 1 ? "fly home to reload what they used." : "flies home to reload what it used.")) /* PARTIAL RELOAD (aspira-crr.js carHome) */ +
       (CRR_HANGAR[h] > 1 ? " Each" : " It") + " stays on its target until it dies or the ammo runs out." /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage and slows by " + pc(CRR_SLOW) + "." /* td = one bolt (2026-10-26); per bolt, never the sortie's total (2026-11-01: "Nothing should ever be above like 800%") */ +
       (h ? ((n => " " + n + (n > 1 ? " interceptors" : " interceptor") + " can be stored in orbit.")(Math.ceil(carHoldFrac(h) * CRR_HANGAR[h]))) : "") +
-      (l ? " Tethered targets are slowed by " + pc(CRR_TETHER_SLOW[l]) + " and take " + pc(CRR_TETHER_AMP[l]) + " more damage per tether" + (l >= CAPSTONE_TIER ? "; tethers run on to one more enemy nearby" : "") + " (shields block the slow)." : "");
+      (l ? " Tethered targets are slowed by " + pc(CRR_TETHER_SLOW[l]) + " and take " + pc(CRR_TETHER_AMP[l]) + " more damage per tether" + (l >= CRR_CHAIN_FROM ? "; tethers run on to one more enemy nearby" : "") /* from tier II, as the code (st.tChain; it said V alone until 2026-11-04) */ + " (shields block the slow)." : "");
   },
   // GRV (rework, owner 2026-10-25): tier 0 a tiny void a shot; Nova three novas before it, faster, stripping armor (Hypernova: the most);
   // Void a bigger void, pellets shed as it decays (Singularity: heavier); Gravity Well the aura - pull, slow - and the pellets' damage and
