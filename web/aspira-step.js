@@ -6,11 +6,13 @@ function stepSpawns(dt) {
     // a boss list's next body waits while the first is held for its HP bar (barHold, aspira-bossbar.js: page only), or the Devil's
     // second on a lane spawned during the hold and stood on the first (Visual, 2026-11-03: six bodies in three exact pairs)
     if (w.idx > 0 && ENEMIES[w.list[0]].star && typeof barHolding === "function" && barHolding()) continue;
+    if (devilGateShut(w)) continue; // the Devil's six wait for half her host (aspira-bosses.js)
     w.timer -= dt * waveClock(w.n); // a wave not yet reached runs OFF_SCREEN_SPEED x - its releases too, so its gaps in distance hold (waveClock, aspira-formations.js)
     while (w.timer <= 0 && w.idx < w.list.length) {
       const type = w.list[w.idx++];
       // FORMATIONS (aspira-formations.js): fast Vs and armor's lattice spawn as a group; the rest one by one
-      const m = formSpawn(w, type) || (spawnEnemy(type, w.n, w.lanes[type], w.ang || 0), 1);
+      const m = (!w.loose && formSpawn(w, type)) || (spawnEnemy(type, w.n, w.lanes[type], w.ang || 0), 1);
+      if (w.kin) { const k = G.enemies[G.enemies.length - 1]; k.bossKin = true; k.devilEsc = true; if (!k.jit) k.jit = 18 + Math.random() * 45; } // the Devil's host: hers, loose, wandering like swarm
       // spacing is a balance lever: swarms stream evenly and very densely
       // (5x the bodies in the same time as before), trains spread ~60+ apart; a formation waits its members' worth
       w.timer += (1 / plainK(type)) * (w.gaps ? w.gaps[w.idx - 1] : type === "fast" ? FAST_PAIR / (ENEMIES.fast.speed * ENEMY_SPEED * (w.n === 1 ? FIRST_FAST_SPD : 1)) // fast Vs: the next one FAST_PAIR behind (aspira-formations.js; pairs until 2026-10-29)
@@ -49,7 +51,7 @@ const JIT_FADE_R = 400; // swarm wander is full beyond this radius, 0 at the cor
 let FACING = true;
 function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower's reach = off screen: aspira-positioning.js)
   for (const e of G.enemies) {
-    if (e.gone) continue; if (!e.seen && enemySeen(e)) { e.seen = true; e.seenAt = performance.now(); } // (off-screen: untouchable - enemySeen, aspira-positioning.js)
+    if (e.gone) continue; if (!e.seen && enemySeen(e)) { e.seen = true; devilCount(e); e.seenAt = performance.now(); } // (off-screen: untouchable - enemySeen, aspira-positioning.js)
     if (e.dead) {
       // a GHOST (owner): the dead keep drifting in at their plain pace,
       // untargetable and harmless, and are removed at the core with no life lost

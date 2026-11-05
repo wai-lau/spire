@@ -295,6 +295,7 @@ function shotDamage(t, st, e, base) {
 
 function kill(e, t) {
   if (bossRise(e)) return; // Judgement / Death rise once (aspira-bosses.js)
+  devilCount(e); // (a Devil's host member dead before it was seen still counts toward her gate)
   e.dead = true; if (e.breached && typeof breachShrapnel === "function") breachShrapnel(e); if (e.drip > 0) dripFlush(e); // a breached enemy bursts (aspira-skills.js); its last goo falls (aspira-acid.js)
   if (t) t.kills = (t.kills || 0) + 1;
   const mul = (e.markT > 0 ? e.markMul : 1) * (G.power.MNY > 0 ? 2 : 1) * (e.slowT > 0 && e.siphon ? e.siphon : 1);

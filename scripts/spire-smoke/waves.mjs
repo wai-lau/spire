@@ -258,3 +258,12 @@ check("bosses (owner, 2026-11-05): Judgement comes alone; killed, she rises once
     e.hp = 0; kill(e); a.dead2 = e.dead; return a; })()`);
   if (r.f0 || r.dead || r.hp !== 1 || Math.abs(r.at) > 0.01 || r.kin !== r.want || !r.dead2) return "Judgement " + JSON.stringify(r);
 });
+check("bosses (owner, 2026-11-05): the Devil's host (half a fast + half a swarm wave, loose like swarm) comes first; her six come once half of it has been on screen", () => {
+  const r = run(`(() => { const bh = BAR_HOLD; BAR_HOLD = false; try { G = newGame(); G.lives = 1e6; G.started = true; G.wave = 83; sendWave(); let at = null, most = 0, preSeen = -1;
+    for (let i = 0; i < 60 * 12; i++) { if (G.enemies.concat(G.fleetQ).every(e => e.arcana !== "devil")) preSeen = G.devilEsc.seen; step(1 / 60);
+      const dv = G.enemies.concat(G.fleetQ).filter(e => e.arcana === "devil").length; most = Math.max(most, dv); if (dv && at == null) at = preSeen; }
+    const host = G.enemies.filter(e => e.devilEsc); return { at, most, tot: G.devilEsc.total, want: Math.round(typeWaveCount("fast", 84) / 2) + Math.round(typeWaveCount("swarm", 84) / 2),
+      kin: host.every(e => e.bossKin && !e.form), wander: host.filter(e => e.type === "fast").every(e => e.jit > 0) }; } finally { BAR_HOLD = bh; } })()`);
+  if (r.tot !== r.want || !r.kin || !r.wander) return "Devil host " + JSON.stringify(r);
+  if (r.at == null || r.at < r.tot / 2 || r.most !== 6) return "Devil gate: first devil after " + r.at + " of " + r.tot + " seen, " + r.most + " devils at once";
+});

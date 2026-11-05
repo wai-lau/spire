@@ -250,11 +250,12 @@ function sendWave() {
       if (!part.length) continue;
       const ang = (laneBestTurn(lanes[list[0]], k, G.wave, list[0]) + (j / k) * Math.PI * 2) % (Math.PI * 2); // laneBestTurn: the most even copies, then the most lane, then nearest the usual turn; then the split
       // a boss arrives BOSS_INTRO s into its wave, after its warning (owner)
-      G.spawns.push({ n: G.wave, list: part, lanes, ang, idx: 0, timer: boss ? BOSS_INTRO : 0 });
+      G.spawns.push({ n: G.wave, list: part, lanes, ang, idx: 0, timer: boss ? BOSS_INTRO : 0, gate: boss && arcanaOf(G.wave).id === "devil" }); // (gate: the Devil's wait for her host - devilGateShut)
       // each lane copy remembers how many it was sent, for its brightness
       for (const type of part) { const key = laneKey(lanes[type], ang); (G.laneTotals ||= {})[key] = (G.laneTotals[key] || 0) + 1; }
     }
   });
+  if (G.wave % STAR_EVERY === 0 && arcanaOf(G.wave).id === "devil") devilEscorts(lanes, G.wave); // her host, ahead of her (aspira-bosses.js)
   G.nextIn = WAVE_TIMER;
   G.started = true;
 }
