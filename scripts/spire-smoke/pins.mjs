@@ -1,9 +1,9 @@
 // /spire RULE PINS (2026-11-05): rules shipped without a check of their own. Each one FAILS on the behaviour it replaced (proven by
 // putting the old code back on a scratch copy). Registered into the smoke harness; smoke.mjs imports this file before it reports.
 // Its own page env, so the smoke checks' game state never leaks in.
-import { boot, check } from "./harness.mjs";
+import { boot, check, frames } from "./harness.mjs";
 
-const { run } = boot();
+const env = boot(), { run } = env;
 // a fresh game with one CRR bought to `skills` and enemies held ON LANE 0 at about each distance (a stepped game re-reads a spot from its lane)
 run(`function pinCrr(skills, dists, hp = 1e9) {
   G = newGame(); G.money = 1e9; ui.build = "crr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
@@ -56,4 +56,14 @@ check("armor is LATE-SCALED at spawn: the armor type's armor is x scaleOf(wave),
     if (!(w.armor <= w.raw * w.sc + 1 && w.armor >= w.raw * w.sc * 0.9 - 1)) return "wave " + w.n + ": armor type " + w.armor + " (expected about " + Math.round(w.raw * w.sc) + " = " + w.raw + " unscaled x scaleOf " + w.sc.toFixed(3) + ")";
     if (w.swarm !== w.sw || w.shield !== w.sh) return "wave " + w.n + ": swarm " + w.swarm + " / shield " + w.shield + " (expected their ARMOR_ALL share of the scaled armor, " + w.sw + " / " + w.sh + ")";
   }
+});
+
+check("the 3D moving layer's plain strokes go to the GPU, not the real canvas (glCtx); the harness's context reads `filter` as \"none\" like a browser's (2026-11-05: it read a function, and every stroke fell back unseen)", () => {
+  frames(env, 15); /* (the lane atlas builds a lane a frame first) */
+  run(`G = newGame(); G.money = 1e6; ui.build = "crr"; { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); } G.towers[0].skills = { hangar: 2 }; G.towers[0].lvl = 1 + towerLevel(G.towers[0]);
+    G.started = true; G.nextIn = 1e9; G.spawns = []; spawnEnemy("armor", 30, 0, 0); { const e = G.enemies[G.enemies.length - 1]; e.hp = e.max = 1e9; e.seen = true; e.stunT = 1e9; }`);
+  frames(env, 90); run("for (const k in glcWhyN) delete glcWhyN[k]"); frames(env, 30);
+  const why = run("JSON.stringify(glcWhyN)"), ctxF = run("String(warp.cv.getContext('2d').filter)");
+  if (ctxF !== "none") return "the harness's 2D context reads filter as " + ctxF.slice(0, 40) + " (expected \"none\", as a browser's)";
+  if (/filter/.test(why)) return "strokes fell back to the real canvas for a filter nobody set: " + why;
 });

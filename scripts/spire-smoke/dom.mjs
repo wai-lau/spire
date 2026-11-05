@@ -31,7 +31,7 @@ function fakeGl(canvas) {
 const ALL_RECS = []; // every recording context made: the 3D frame draws on several canvases (#asp-cv's board texture, the moving layer, #asp-ent)
 function recordingCtx(canvas) {
   const rec = { n: 0, ops: {}, texts: [] }; ALL_RECS.push(rec);
-  const state = { canvas, globalAlpha: 1, globalCompositeOperation: "source-over", lineWidth: 1, font: "10px sans", shadowBlur: 0 };
+  const state = { canvas, globalAlpha: 1, globalCompositeOperation: "source-over", lineWidth: 1, font: "10px sans", shadowBlur: 0, /* every style a real context starts with (2026-11-05: an unset `filter` read as a FUNCTION - truthy, so glCtx sent every stroke to the real canvas and the GPU path went untested) */ filter: "none", lineJoin: "miter", lineCap: "butt", shadowColor: "rgba(0, 0, 0, 0)", strokeStyle: "#000000", fillStyle: "#000000", lineDashOffset: 0, miterLimit: 10, imageSmoothingEnabled: true, shadowOffsetX: 0, shadowOffsetY: 0, textAlign: "start", textBaseline: "alphabetic" };
   const special = {
     measureText: s => ({ width: String(s).length * 7, actualBoundingBoxAscent: 7, actualBoundingBoxDescent: 2 }),
     getImageData: (x, y, w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(Math.max(1, w * h) * 4) }),
