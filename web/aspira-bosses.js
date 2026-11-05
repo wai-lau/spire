@@ -23,7 +23,7 @@ const ARCANA = [
   { id: "empress", name: "The Empress", hint: ["Strike the mother once", "and the field fills with her young:", "her children answer."] },
   { id: "strength", name: "Strength", hint: ["No frost can bind her,", "no chain will shorten her stride.", "She walks through the cold."] },
   { id: "chariot", name: "The Chariot", hint: ["The reins slip loose now", "and the horses break and run,", "faster than your aim."] },
-  { id: "lovers", name: "The Lovers", hint: ["Two walk as one heart.", "Part them, and the one who stays", "will never forgive."] },
+  { id: "lovers", name: "The Lovers", hint: ["Apart, they still come", "the same hour from either side,", "armored in their vow."] /* new poem (owner, 2026-11-05: "new poem" - two bosses on opposite lanes, an armor wave round them, no trick; was "Two walk as one heart. / Part them, and the one who stays / will never forgive.", the heal-and-run) */ },
   { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "the wound fills, and heals."] },
   { id: "devil", name: "The Devil", hint: ["Six faces, one want,", "six roads leading to your door.", "Let not one get through."] },
   { id: "justice", name: "Justice", hint: ["The scales hold steady.", "No blow, however heavy,", "outweighs the balance."] },
