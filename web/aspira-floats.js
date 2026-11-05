@@ -58,14 +58,14 @@ function dmgBatch(fn) {
   const h = (dmgHold = new Map());
   try { return fn(); } finally { dmgHold = null; for (const q of h.values()) dmgSum(q.e, q.amt, q.size, q.color, q.src, q.size > 0 ? q.grey / q.size : 0); }
 }
-function dmgSum(e, amt, size, color, src, grey = 0) {
+function dmgSum(e, amt, size, color, src, grey = 0, win = DMG_SUM_S) { // win: this source's window, s (CRR's shorter: CRR_NUM_WIN)
   const key = e.id + "|" + color;
   if (dmgHold) { const q = dmgHold.get(key); if (q) { q.amt += amt; q.size += size; q.grey += grey * size; } else dmgHold.set(key, { e, amt, size, color, src: src ? { x: src.x ?? e.x, y: src.y ?? e.y } : null, grey: grey * size }); return; }
   const now = performance.now(), b = dmgSums.get(key);
   if (b && b.g === G) { b.amt += amt; b.size += size; b.grey += grey * size; return; }
   dmgNumber(e, String(dmgUnits(amt)), size, color, src, grey);
   // the window's source as a COPY: callers reuse one point (HIT_AT) or a throwaway
-  dmgSums.set(key, { e, color, src: src ? { x: src.x ?? e.x, y: src.y ?? e.y } : null, amt: 0, size: 0, grey: 0, until: now + DMG_SUM_S * 1000, g: G });
+  dmgSums.set(key, { e, color, src: src ? { x: src.x ?? e.x, y: src.y ?? e.y } : null, amt: 0, size: 0, grey: 0, until: now + win * 1000, win, g: G });
 }
 function dmgTick(e, amt, raw, color, t, grey) { dmgSum(e, amt, raw, color, t, grey); } // (rate: the old split's - no longer read)
 function drainTicks() {
@@ -75,7 +75,7 @@ function drainTicks() {
     if (b.until > now) continue;
     if (b.g !== G || !(b.amt > 0)) { dmgSums.delete(key); continue; } // a quiet window ends the run (or a new game)
     dmgNumber(b.e, String(dmgUnits(b.amt)), b.size, b.color, b.src, b.size > 0 ? b.grey / b.size : 0);
-    b.amt = 0; b.size = 0; b.grey = 0; b.until = now + DMG_SUM_S * 1000;
+    b.amt = 0; b.size = 0; b.grey = 0; b.until = now + (b.win ?? DMG_SUM_S) * 1000;
   }
 }
 // WHERE A HIT CAME FROM (owner, 2026-10-16: "Make all damage numbers go in the direction the beam/dmg was coming from, a lot of them
