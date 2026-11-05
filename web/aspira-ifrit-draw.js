@@ -77,7 +77,7 @@ function drawIfrBalls(t, low) {
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)
 const IFR_FLARE_I0 = 3, IFR_FLARE_I_MAX = 6;
 const IFR_FLARE_MAIN_K = 3 /* 2 -> 3 (owner, 2026-10-20: "make the non-hellfire stars brighter") */; // a METEOR's flare (not the fire's) x this - "make non-hellfire flares more opaque and intense" (owner, 2026-10-20)
-function ifrFlareI(f) { return (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
+function ifrFlareI(f) { if (f.hitI != null) return f.hitI; return (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"; 2026-11-04: "replace
 // all stepped opacity flares to use a faded glow instead"): each spoke is three glow layers - a halo, a mid and a narrow core, each brightest on
 // its centre line, clear at the hit band's edge and fading as (1 - t)^3 to the tip. 3D: GLOW LINES on the GPU (shape 7, aspira-fxgl.js); 2D:
@@ -136,22 +136,52 @@ function drawIfrFlares(t, hf) { // hf: the fire's flares only, else the meteors'
   ctx.lineCap = "butt";
   for (const c of t.ifrFlares) {
     if (!c.hf !== !hf) continue;
-    const f = Math.max(0, c.left / c.life), ends = ifrBeamEnds(c), x = ends[0][0], y = ends[0][1];
-    const groups = c.edges ? ends.map((e, k) => [Math.hypot(e[2] - e[0], e[3] - e[1]) || 1, k]) : [[c.L, 0], [c.L * (c.xk ?? IFR_X_K), 1]]; // [scale, which rays]
-    for (const [S, sel] of groups) {
-      ctx.save(); ctx.translate(x, y); ctx.scale(S, S);
-      for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) {
-        const q = IFR_GLOW_GL[g], col = ifrFlareCol(q[2], c), a = Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c));
-        ctx.strokeStyle = ifrFadeGrad(col); ctx.globalAlpha = a / IFR_GLOW_LV.length * 1.6;
-        for (const lv of IFR_GLOW_LV) {
-          ctx.lineWidth = Math.max(1 / S, c.W * 2 * q[0] * (1 - lv ** (1 / q[3])) / S); ctx.beginPath();
-          if (c.edges) { const e = ends[sel]; ctx.moveTo(0, 0); ctx.lineTo((e[2] - e[0]) / S, (e[3] - e[1]) / S); } else ifrRays(S, ends, sel);
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
-    }
+    const f = Math.max(0, c.left / c.life);
+    if (IFR_STAMP_ON && !c.edges && ifrSpriteDraw(c, f, low)) continue; // one stamp, not ~18 strokes (perf, below)
+    ifrFlareStrokes(c, f, low);
   }
+}
+// THE STROKED FLARE (2D): every IFR_GLOW_GL layer as IFR_GLOW_LV strokes of its rays, under the flare's own scale
+function ifrFlareStrokes(c, f, low) {
+  const ends = ifrBeamEnds(c), x = ends[0][0], y = ends[0][1];
+  const groups = c.edges ? ends.map((e, k) => [Math.hypot(e[2] - e[0], e[3] - e[1]) || 1, k]) : [[c.L, 0], [c.L * (c.xk ?? IFR_X_K), 1]]; // [scale, which rays]
+  for (const [S, sel] of groups) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(S, S);
+    for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) {
+      const q = IFR_GLOW_GL[g], col = ifrFlareCol(q[2], c), a = Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c));
+      ctx.strokeStyle = ifrFadeGrad(col); ctx.globalAlpha = a / IFR_GLOW_LV.length * 1.6;
+      for (const lv of IFR_GLOW_LV) {
+        ctx.lineWidth = Math.max(1 / S, c.W * 2 * q[0] * (1 - lv ** (1 / q[3])) / S); ctx.beginPath();
+        if (c.edges) { const e = ends[sel]; ctx.moveTo(0, 0); ctx.lineTo((e[2] - e[0]) / S, (e[3] - e[1]) / S); } else ifrRays(S, ends, sel);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+}
+// FLARE STAMPS (perf, 2026-11-05 - Wai: "Fix IFR hellfire demo slow"; a 7.7.7 iPhone log: the tower card's menu at 58.7 ms a frame): the card's
+// demo draws on a 2D canvas, where a flare was ~18 strokes - Hellfire V's ~107 live flares ~1900 strokes a frame. A flare's look is fixed by its
+// kind, its size in px, its intensity and its life's fade, so each look is drawn ONCE (ifrFlareStrokes, onto a small canvas, at the screen's scale
+// and the same sub-pixel phase) and stamped. Keys round the life fade to 1/IFR_STAMP_F and the size to whole px; at most IFR_STAMP_MAX looks, the
+// set dropped whole past it (a palette flip - the boss sky - or a zoom makes new ones). Built once each, never a canvas a frame
+const IFR_STAMP_F = 16, IFR_STAMP_MAX = 400, ifrStamps = new Map();
+let IFR_STAMP_ON = true; // (let: a test draws the strokes to compare)
+function ifrSpriteDraw(c, f, low) {
+  if (typeof document === "undefined") return false;
+  const m = ctx.getTransform(), px = m.a * c.x + m.c * c.y + m.e, py = m.b * c.x + m.d * c.y + m.f, k = Math.max(Math.hypot(m.a, m.b), Math.hypot(m.c, m.d)); // (the view's linear part goes INTO the stamp: the card demo's floor is squeezed)
+  const fq = Math.round(f * IFR_STAMP_F) / IFR_STAMP_F, I = Math.round(ifrFlareI(c) * 4) / 4, L = Math.round(c.L * k) / k, W = Math.round(c.W * k * 2) / (2 * k);
+  const key = (c.hf ? 1 : 0) + "|" + (low ? 1 : 0) + "|" + L.toFixed(3) + "|" + W.toFixed(3) + "|" + (c.xk ?? IFR_X_K) + "|" + I + "|" + fq + "|" + [m.a, m.b, m.c, m.d].map(v => v.toFixed(3)).join() + "|" + COL.orange + COL.threat;
+  let sp = ifrStamps.get(key);
+  if (!sp) {
+    if (ifrStamps.size >= IFR_STAMP_MAX) ifrStamps.clear();
+    const R = Math.ceil((L + W) * k) + 3, cv = document.createElement("canvas"); cv.width = cv.height = 2 * R;
+    const g = cv.getContext("2d"), c0 = ctx, q = Object.assign({}, c, { L, W, hitI: I }); ctx = g; // (q: the key's look - its rounded size and intensity)
+    try { g.setTransform(m.a, m.b, m.c, m.d, R + 0.5 - (m.a * c.x + m.c * c.y), R + 0.5 - (m.b * c.x + m.d * c.y)); g.lineCap = "butt"; ifrFlareStrokes(q, fq, low); } finally { ctx = c0; }
+    sp = { cv, R }; ifrStamps.set(key, sp);
+  }
+  const a0 = ctx.globalAlpha; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
+  ctx.drawImage(sp.cv, px - 0.5 - sp.R, py - 0.5 - sp.R); ctx.restore(); ctx.globalAlpha = a0; // (at its exact spot: the stamp's centre is px (R + 0.5))
+  return true;
 }
 /* balls true (drawn in skyKeep, aspira-draw.js): the balls in flight (the charge balls: drawIfrTop, on the prism's top), which keep their orange on a
    boss sky (owner, 2026-10-19: "ifrit balls should stay orange on boss inversion"); else the fires and spokes, which turn over with it */
