@@ -1,5 +1,5 @@
 // /aspira - FRZ's CHART: the aura, the Rime pulses, the moons (split from aspira-skills.js
-// at its 500-line cap, 2026-10-08). Loaded right after aspira-skills.js (the simulator too):
+// at its 500-line cap, 2026-10-08). Loaded right after aspira-arc.js (the simulator too):
 // towerStats / the game loop call frzSkillStats, frzStep and drawFrzSkill at run time.
 
 // ---------- FRZ's chart: the aura, the Rime pulses, the moons ----------

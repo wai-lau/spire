@@ -1,7 +1,7 @@
 // ARC's CHAINS and BURN SPARKS - render only, nothing here touches the game (no Math.random: the sims share its stream).
 // CHAINS (owner, 2026-10-30: "can you draw chains instead of a beam? so like interlocking rounded rectangles, odd are thinner than
 // even chains to suggest interlinking, keep them thin so that the chains are not super intrusive"): every ARC strike and jump (a soft
-// beam, fireSkillChain / skillHopTo, aspira-skills.js) is drawn as links laid along it - the even ones open rounded rectangles seen
+// beam, fireSkillChain / skillHopTo, aspira-arc.js) is drawn as links laid along it - the even ones open rounded rectangles seen
 // face on, the odd ones thin solid bars seen edge on, each odd link bridging the two evens it joins. One GPU instance a link in 3D
 // (fxGlChain, called from fxGlBeam); two strokes a beam in 2D (drawChain2D, from drawFx). At most CHAIN_MAX links a beam: a longer
 // one stretches its links. let ARC_CHAINS = false brings the old glow line back.
@@ -59,7 +59,7 @@ function drawBurnSparks(e, size, vis) {
   ctx.strokeStyle = COL[TOWERS.arc.color]; ctx.globalAlpha = 0.9 * vis; ctx.lineWidth = BURN_W; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.stroke(p);
 }
 // THE CHARGE-UP (owner, 2026-10-30: ARC marks the spot its target stands on and strikes there a moment later, the enemy nearest it within
-// the strike's reach, else it misses): each G.arcStrikes entry ({ id, x, y, t s left, r }, aspira-skills.js) draws a small glow on its
+// the strike's reach, else it misses): each G.arcStrikes entry ({ id, x, y, t s left, r }, aspira-arc.js) draws a small glow on its
 // spot that grows to the strike - a bright core and a soft halo - with a faint ring closing from its reach onto the spot; an entry that
 // goes with no strike from its tower (no fresh ARC beam from it) leaves a FIZZLE: a few sparks thrown off the spot, fading over
 // FIZZLE_S. Seen per frame (chargeSeen), so a strike born and gone between two frames shows nothing. Full circles and straight

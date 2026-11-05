@@ -5,7 +5,7 @@
 // so every table already holds its six tiers 0..V.
 
 // ARC: one bolt that CHAINS ONCE (owner, 2026-10-28: "ARC to chain once"; the spec's chainless tier 0, 2026-10-24, is gone) - the table's own
-// tier 0 (ARC_CONDUCTIVITY, aspira-skills.js), nothing written here; Conductivity I chains twice (tierMid's tier I). (Voltage I's fork: VOLT_FORK)
+// tier 0 (ARC_CONDUCTIVITY, aspira-arc.js), nothing written here; Conductivity I chains twice (tierMid's tier I). (Voltage I's fork: VOLT_FORK)
 
 // SOL: one beam that strikes its first enemy and flies on straight past it, striking no one (owner, 2026-10-28: "go straight even if there is
 // nobody to hit") - no band, split, bounce or prism (st.pierce 0, SOL_SPLIT[0] 0 - solSkillStats), no burn, no armor strip (owner,

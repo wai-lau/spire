@@ -69,7 +69,7 @@ function drawAcd() {
   ctx.lineCap = "round"; ctx.strokeStyle = COL.tacd;
   for (const t of G.towers) {
     if (t.kind !== "acd") continue;
-    drawPuddles(t); // the chart ACD's puddles, under its lines (aspira-skills.js)
+    drawPuddles(t); // the chart ACD's puddles, under its lines (aspira-acid.js)
     if (!t.lines || !t.lines.length) continue;
     const st = towerStats(t, true);
     // Spray V (a jet on every enemy in reach): its reach a thin pulsing ring and the JETS themselves below - it was one green
@@ -110,7 +110,7 @@ function drawTethers() {
   for (const t of G.towers) {
     if (t.kind !== "frz") continue;
     const st = towerStats(t, true), r = st.range, col = COL[TOWERS[t.kind].color];
-    if (st.skill) { ownColours(() => drawFrzSkill(t, st)); continue; } // the chart FRZ: aura, moons, Rime (aspira-skills.js)
+    if (st.skill) { ownColours(() => drawFrzSkill(t, st)); continue; } // the chart FRZ: aura, moons, Rime (aspira-frz.js)
     // Moons / Desolation: orbiting moons, always shown - in FRZ's OWN colour on a
     // boss sky, like the towers (owner)
     if (st.moons) { ownColours(() => drawMoons(t, st, COL[TOWERS[t.kind].color], shimmer)); continue; }

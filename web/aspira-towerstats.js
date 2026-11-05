@@ -32,7 +32,7 @@ function towerStats(t, noAura = false) {
     // arc reach = the tower's own range (owner: tripled from half the old range),
     // measured from each arc's parent enemy
     // ARC levels up MODESTLY (owner, option A): the L2 path brings the big change
-    // ARC runs on its SKILL CHART now (aspira-skills.js; owner 2026-10-05)
+    // ARC runs on its SKILL CHART now (aspira-arc.js; owner 2026-10-05)
     case "arc": arcSkillStats(t, s, b); break;
     // SOL levels up MODESTLY like ARC and ACD (owner): the L2 path brings the change
     case "sol":

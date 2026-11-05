@@ -35,7 +35,7 @@ const chainReach = st => (st.skill ? st.range + st.arcRange * (1 - st.arcShrink 
 // charged enemy died; relay: this shot was fired by Static (its hits charge
 // enemies only at L4, Thunderhead, so kills cannot chain-react below that)
 function fireChain(t, st, e, from = t, relay = false, seen = null) {
-  if (st.skill) { fireSkillChain(t, st, e, seen); return; } // the skill-chart ARC (aspira-skills.js)
+  if (st.skill) { fireSkillChain(t, st, e, seen); return; } // the skill-chart ARC (aspira-arc.js)
   const col = TOWERS[t.kind].color, dmg = shotDamage(t, st, e, st.dmg);
   beam(from, e, col, CHAIN_BEAM_LIFE, 1.5, dmg); const root = { e, fx: fx[fx.length - 1], up: null, kids: new Set() };
   if (st.ignoreShield) root.fx.pierce = true; // Ion: a white core - it pierces (owner)

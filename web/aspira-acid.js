@@ -87,7 +87,7 @@ function stepAcd(t, dt) {
     // at once, each quieter than the last
     while (l.tick >= every && !l.e.dead) { l.tick -= every; acdTick(t, st, l, every); sfx("acd"); }
   }
-  if (st.contagion) stepPuddles(t, st, dt); // the chart ACD's puddles (aspira-skills.js)
+  if (st.contagion) stepPuddles(t, st, dt); // the chart ACD's puddles (below)
 }
 
 // ---------- ACD's chart (moved from aspira-skills.js at its 500-line cap, 2026-10-07): Catalyst ramp, Pour lines, Seep puddles ----------

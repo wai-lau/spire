@@ -125,14 +125,14 @@ function step(dt) {
   if (!stopped) { stepSpawns(dt); stepFleetQ(dt); } // a boss fleet still riding in (aspira-bosses.js)
   stepEnemies(dt);
   if (G.over) return;
-  stepChains(dt); arcBurnStep(dt); // ARC's burns tick (aspira-skills.js)
+  stepChains(dt); arcBurnStep(dt); // ARC's burns tick (aspira-arc.js)
   for (const t of G.towers) {
     t.spin = (t.spin || 0) + dt; // game-time clock for anything that orbits (FRZ's moons)
     if (AUTO_POS) autoPosition(t, dt); else if (autoMove && best.ascended && !towersFrozen()) autoGlide(t, dt); // the simulator's player jumps; a real tower moves when dragged, or AUTO-MOVE glides it (aspira-positioning.js)
-    if (t.kind === "frz" && hasSkills(t)) { frzStep(t, dt); continue; } // the chart FRZ: an aura, every step (aspira-skills.js)
+    if (t.kind === "frz" && hasSkills(t)) { frzStep(t, dt); continue; } // the chart FRZ: an aura, every step (aspira-frz.js)
     if (t.kind === "sol") { stepSol(t, dt); continue; }
     if (t.kind === "acd") { stepAcd(t, dt); continue; } if (t.kind === "crr") { stepCar(t, dt); continue; } if (t.kind === "ifr") { stepIfr(t, dt); continue; } if (t.kind === "grv") stepGrv(t, dt); // GRV: its spheres every step, its novas on the cooldown below (aspira-grv.js)
-    t.cd -= dt; if (t.echo > 0 && (t.echo -= dt) <= 0) { const st = towerStats(t); for (let i = 0, n = relayMul(t); i < n; i++) fire(t, st); if (--t.burst > 0) t.echo += ARC_ECHO_S; } // ARC's burst (ARC_BURST_N, ARC_ECHO_S apart - aspira-skills.js)
+    t.cd -= dt; if (t.echo > 0 && (t.echo -= dt) <= 0) { const st = towerStats(t); for (let i = 0, n = relayMul(t); i < n; i++) fire(t, st); if (--t.burst > 0) t.echo += ARC_ECHO_S; } // ARC's burst (ARC_BURST_N, ARC_ECHO_S apart - aspira-arc.js)
     if (t.cd > 0) continue;
     const st = towerStats(t);
     let fired = false;
