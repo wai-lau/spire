@@ -134,9 +134,9 @@ function laneHold(live) {
 const SWARM_LANE_MIN = 0.1; // a swarm lane's brightness is its SHARE of the swarm - the fullest lane of its wave at 1, the rest in proportion, never under this (owner, 2026-10-26: "swarm lane opacity should be correlated to the number of units in that lane"; was a flat SWARM_LANE_A 0.25 on every one)
 const swarmMax = (live, n) => live.reduce((m, v) => (v.swarm && v.n === n ? Math.max(m, v.sent || 0) : m), 0);
 const LIT_GLOW_A = 0.34; // (the line's numbers are LIT_LINE_SOFT, below)
-// HALF AS BRIGHT but swarm's and a boss's (owner, 2026-11-05: "also halve lane opacity of all lanes except swarm and boss"): a fast, shield or armor lane's
+// HALF AS BRIGHT but a boss's (owner, 2026-11-05: "also halve lane opacity of all lanes except swarm and boss", then "Halve swarm lane opacity as well"): every lit lane's
 // line and glow at x LANE_PLAIN_K, in 2D (strokeLit) and on the GPU (laneGlBind); its label and rim circle as they were
-const LANE_PLAIN_K = 0.5, laneLitK = u => (u.star || u.swarm ? 1 : LANE_PLAIN_K);
+const LANE_PLAIN_K = 0.5, laneLitK = u => (u.star ? 1 : LANE_PLAIN_K); // swarm's too since (owner, 2026-11-05) "Halve swarm lane opacity as well"; a boss's stays full
 const BOSS_LANE_W = 3.5, BOSS_LANE_K = 1.5; // a boss lane: x its glow's widths, x brightness (its line: BOSS_LINE_SOFT) (owner, 2026-10-09: "make boss lanes half as intense"; was 3)
 function drawLaneStrokes(all) {
   const S = laneSet(), { laneCv, lctx, glowCv, gctx, baseCv, bctx } = S, live = laneSplit(all).board; // (a lane still fading in is the fade layer's - laneFadeLayer)
