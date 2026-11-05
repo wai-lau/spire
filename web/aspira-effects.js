@@ -167,3 +167,26 @@ function drawMoons(t, st, col, shimmer) {
   ctx.globalAlpha = 1;
 }
 
+
+// SOL'S HELD BEAMS (owner, 2026-11-04: "SOL 0: fire a single tracking beam at a target" / Reflection "splits towards N targets ... other beams
+// pierce" / "pierce damage reduction is applied each time it passes through an enemy"): t.solB (aspira-sol.js, SOL_TRACK) drawn every frame
+// at its live ends as SOL beams - the same look as a shot's (drawFx / fxGlBeam: glow + white core), never an fx entry. The first beam,
+// tower -> its target; each split, from that target through every enemy its line crosses, one segment each, DIMMER past each (its share
+// k there: alpha ~ k, the core thinner). Each tick (SOL_TICK) the beams FLASH and ease back. One object a segment, kept per tower
+// (a WeakMap: nothing on the tower that the autosave could keep)
+const SOL_TRACK_FLASH = 0.35, solTrackPool = new WeakMap();
+function solTrackBeams() {
+  if (typeof SOL_TRACK === "undefined" || !SOL_TRACK) return null;
+  let out = null;
+  for (const t of G.towers) {
+    const B = t.solB; if (t.kind !== "sol" || !B || B.e.dead) continue;
+    const st = solTrackSt(t, towerStats(t)), d = st.dmg * st.rate * SOL_TICK, fl = 1 - SOL_TRACK_FLASH + SOL_TRACK_FLASH * (1 - Math.min(1, B.acc / SOL_TICK)) ** 2;
+    let pool = solTrackPool.get(t); if (!pool) solTrackPool.set(t, pool = []);
+    let n = 0;
+    const seg = (a, b, k) => { const f = pool[n] || (pool[n] = { k: "beam", t: 0, life: 1, m: true, slim: true, color: TOWERS.sol.color }); n++;
+      f.a = a; f.b = b; f.d = d * k; f.bw = undefined; f.share = Math.sqrt(k); f.alpha = fl; (out ||= []).push(f); };
+    seg(t, B.e, 1);
+    for (const l of B.links) { let from = B.e; for (const h of l.hits) { if (h.e.dead) break; seg(from, h.e, h.k); from = h.e; } }
+  }
+  return out;
+}

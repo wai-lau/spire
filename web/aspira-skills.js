@@ -62,7 +62,7 @@ SKILL_TREES.frz = [
 // 4 beams x 6 = 24 Breaches a volley on one target.
 SKILL_TREES.sol = [
   { id: "focus", name: "Scorch" /* (owner, 2026-10-25: SOL is always one beam - Focus became Scorch; the id stays - saves, sims) */, tiers: [{ name: "Sear" }, { name: "Blaze" }, { name: "Inferno" }] },
-  { id: "refraction", name: "Diffraction" /* (owner, 2026-10-25: "Rename Reflection to Diffraction"; 2026-10-22 Reflection; the id stays - saves) */, tiers: [{ name: "Lens" }, { name: "Spectrum" }, { name: "Aurora" }] },
+  { id: "refraction", name: "Reflection" /* (owner, 2026-11-04, the tracking-beam spec: "Reflection: First beam no longer pierces, instead it splits towards N targets"; 2026-10-25: "Rename Reflection to Diffraction"; 2026-10-22 Reflection; the id stays - saves) */, tiers: [{ name: "Lens" }, { name: "Spectrum" }, { name: "Aurora" }] },
   { id: "breach", name: "Breach", tiers: [{ name: "Pierce" }, { name: "Glare" }, { name: "Sunfire" }] },
 ];
 // ACD (owner, 2026-10-05): its lines DRIP burning PUDDLES onto the lane by

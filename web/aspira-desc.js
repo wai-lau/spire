@@ -54,6 +54,7 @@ const DESCRIBE = {
   // SOL (owner, 2026-10-26): one beam, straight through every hit and splitting at each to SOL_SPLIT more (Diffraction), each hit SOL_HOP
   // (Diffraction) x the one before; the armor every hit strips (SOL_BREACH_ARMOR, Breach); the stacking burn (SOL_SCORCH_N ticks, Scorch) - read live
   sol(sk) {
+    if (typeof SOL_TRACK !== "undefined" && SOL_TRACK) return solTrackDesc(sk); // the tracking beam (owner, 2026-11-04) - the old shot's words below until the flip
     const f = sk.focus || 0, r = sk.refraction || 0, b = sk.breach || 0, k = SOL_SPLIT[r], p = Math.round(SOL_HOP[r] * 100);
     const br = SOL_BREACH_ARMOR[b], sc = SOL_SCORCH_N[f];
     // (owner, 2026-10-26): "A solar ray refracts within a light prism..." / Diffraction "A solar ray diffracts into two rays on every hit..."
@@ -122,3 +123,18 @@ const DESCRIBE = {
 // A SHARE OF THE TOWER'S HIT READS "X%td" - tower damage, the card's "Damage (td)" row (owner, 2026-10-26: "use X%td as shorthand for
 // tower damage") - a change ("50% less damage") is not a share and keeps its words
 const describeTower = (kind, skills) => DESCRIBE[kind](skills || {}).replace(/(\d%) damage/g, "$1td");
+
+// SOL'S TRACKING BEAM (owner, 2026-11-04: "SOL 0: fire a single tracking beam at a target" / Reflection "splits towards N targets (max range
+// SOL range but from enemy), other beams pierce" / Breach "Determines carryover damage of all reflecting and piercing, also determines armor
+// reduction" / "pierce damage reduction is applied each time it passes through an enemy" / "It lasts as long as the first target is alive,
+// the first target must be in range"): read from a tower with these skills (solTrackSt, aspira-sol.js) - per second, never a burn's total
+function solTrackDesc(sk) {
+  const t = { kind: "sol", x: 0, y: 0, lvl: 1, skills: { ...sk } }; t.lvl = 1 + towerLevel(t);
+  const st0 = towerStats(t), st = solTrackSt(t, st0), td = st0.dmg, tick = st.dmg * st.rate * SOL_TICK, k = st.split || 0, br = SOL_BREACH_ARMOR[sk.breach || 0];
+  const burn = st.dot ? tick * st.dot.k / SOL_SCORCH_Q / td : 0, lasts = st.dot ? st.dot.n * SOL_SCORCH_Q : 0;
+  return "A solar beam locks onto one enemy in range and deals " + perSec(tick / SOL_TICK / td) + " in " + NUM_WORD[Math.round(1 / SOL_TICK)] + " ticks, holding until it dies or leaves range." +
+    (k ? " It splits from that enemy to the " + (k > 1 ? NUM_WORD[k] + " nearest enemies" : "nearest enemy") + " in range of it; " + (k > 1 ? "each split pierces" : "the split pierces") +
+      " every enemy on its way and ends when its own enemy dies, carrying " + pc(st.hop) + " of the damage into each enemy it reaches." : "") +
+    (br ? " Every tick strips " + pc(br) + " of the armor left." : "") +
+    (st.dot ? " Every tick scorches the enemy for " + perSec(burn) + " for " + secs(lasts) + ", each burn slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : "");
+}

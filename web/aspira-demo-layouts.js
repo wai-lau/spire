@@ -24,9 +24,9 @@ const DEMO_LAYOUTS = {
     moons: { place: "walk", types: ["fast", "swarm", "swarm"], shows: ["hits", "slows", "fast"] },
   },
   sol: {
-    base: { place: "walk", types: ["swarm", "swarm", "swarm", "swarm"], shows: ["hits"] },
-    focus: { place: "walk", types: ["fast", "armor"], shows: ["hits", "slows"] }, // (no "fast": a fast walker crosses the beam in fewer scorch ticks - 0.12 of its pace lost vs 0.47, 2026-11-03)
-    refraction: { place: "walk", types: ["swarm", "swarm", "swarm", "swarm", "swarm", "swarm"], shows: ["hits", "many"] },
+    base: { place: "walk", types: ["swarm", "swarm", "swarm", "swarm"], shows: ["hits"] }, // (a plain line: the beam holds one walker till it dies - Leader, 2026-11-04)
+    focus: { place: "walk", types: ["shield", "armor", "shield"], shows: ["hits", "slows"] }, // (shields: Scorch V's ticks pop them - owner, 2026-11-04 "more ticks vs shield"; "pops" joins when SOL_TRACK is on: the old shot left a tier-I shield whole)
+    refraction: { place: "walk", types: ["fast", "swarm", "fast", "swarm", "fast"], shows: ["hits", "many"] }, // (spread fast: the splits reach what the first beam cannot - Leader, 2026-11-04)
     breach: { place: "walk", types: ["armor", "armor", "armor", "armor"], shows: ["hits", "strips"] },
   },
   acd: {

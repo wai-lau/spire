@@ -111,11 +111,12 @@ check("demo signature: every tower's scene draws its main effect (GRV voids, ARC
       let sd = 777; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
       const skills = key === "base" ? {} : { [key]: 3 }, t = { kind, cell, x: C.x, y: C.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
       const S = demoScene(kind, skills, cell, demoPlace(kind, towerStats(t), cell, DEMO_LAYOUTS[kind][key])), cv = document.createElement("canvas"); cv.width = 372; cv.height = 180;
-      const c2 = cv.getContext("2d"), view = demoView3d(S, 372, 180), sig = SIG[kind]; let on = false, ops = 0, beams = 0;
+      const c2 = cv.getContext("2d"), view = demoView3d(S, 372, 180), sig = SIG[kind]; let on = false, ops = 0, beams = 0, held = 0;
       const marks = ["fill", "stroke", "drawImage", "fillRect", "strokeRect", "fillText"].map(m => [m, c2[m]]); for (const [m, f] of marks) c2[m] = function (...a) { if (on) ops++; return f.apply(this, a); };
       const f0 = sig !== "beam" ? window[sig] : null; if (f0) window[sig] = function (...a) { const was = on; on = true; try { return f0.apply(this, a); } finally { on = was; } };
-      try { for (let f = 0; f < 360; f++) { demoFrame(S, c2, view, demoDraw3d); if (sig === "beam") beams += S.fx.filter(x => x.k === "beam" && x.color === TOWERS[kind].color).length; } }
+      try { for (let f = 0; f < 360; f++) { demoFrame(S, c2, view, demoDraw3d); if (sig === "beam") { beams += S.fx.filter(x => x.k === "beam" && x.color === TOWERS[kind].color).length; if (kind === "sol") { const tb = demoRun(S, () => solTrackBeams()) || []; beams += tb.length; held = Math.max(held, tb.length); } } } }
       finally { if (f0) window[sig] = f0; for (const [m, f] of marks) c2[m] = f; }
+      if (kind === "sol" && key === "refraction" && SOL_TRACK && held < 2) bad.push("sol.refraction III: no split beam drawn (at most " + held + " held beam at once)"); // REFLECTION's splits (owner, 2026-11-04: "splits towards N targets")
       if (sig === "beam" ? !beams : !ops) bad.push(kind + "." + key + " III: no " + (sig === "beam" ? kind + "-coloured beam" : sig + " drawing"));
     } } finally { Math.random = rnd0; }
     return bad.join("; "); })()`);

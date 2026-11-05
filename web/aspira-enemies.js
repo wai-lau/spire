@@ -164,7 +164,7 @@ function drawStatus(e, d, size, solid) {
   // SCORCH: acid's dotted circle in SOL's pink, a step further out than acid's (Breach's 2026-10-26 .. 27 - owner, 2026-10-27: "swap
   // breach and scorch visual effect ... scorch becomes dotted line ... make the dots in the dotted line flicker independently"; Breach is
   // the upright spike again, warpSolid): acid's [2, 4] dots one by one, each its own flicker (scorchFlick)
-  if (e.dots && e.dots.length) drawScorchRing(e, size + (e.corrodeT > 0 ? 7 : 3), vis);
+  if (e.dots && e.dots.length) { const r = size + (e.corrodeT > 0 ? 7 : 3); drawScorchRing(e, r, vis); if (e.dots.some(d => d.v)) drawScorchRing(e, r + SCORCH_V_GAP, vis, 1); } // SCORCH V: the ring doubled, concentric (owner, 2026-11-04: "scorch visual rings are doubled concentrically"; v - aspira-sol.js)
   if (arcBurning(e)) drawBurnSparks(e, size, vis); // ARC's burn: sparks (aspira-chains.js)
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
@@ -177,12 +177,12 @@ function drawStatus(e, d, size, solid) {
 
 // a SCORCHED enemy's ring: dots SCORCH_DOT u long, SCORCH_GAP apart, each flickering at its own speed and phase (from the enemy's id
 // and its place on the ring), binned into SCORCH_BINS strengths - one stroke a bin, not a dot
-const SCORCH_DOT = 2, SCORCH_GAP = 4, SCORCH_BINS = 4, SCORCH_HZ = [4, 14]; // the flicker's speed range, rad/s
+const SCORCH_DOT = 2, SCORCH_GAP = 4, SCORCH_BINS = 4, SCORCH_HZ = [4, 14], SCORCH_V_GAP = 3.5; // HZ: the flicker's speed range, rad/s; V_GAP: Scorch V's second ring, u out
 const scorchHash = (id, i) => { const v = Math.sin((id || 0) * 12.9898 + i * 78.233) * 43758.5453; return v - Math.floor(v); };
-function drawScorchRing(e, r, vis) {
+function drawScorchRing(e, r, vis, ring = 0) { // ring 1: Scorch V's outer ring, its own flicker
   const n = Math.max(6, Math.round(2 * Math.PI * r / (SCORCH_DOT + SCORCH_GAP))), da = 2 * Math.PI / n, dw = SCORCH_DOT / r, now = performance.now() / 1000;
   const bin = new Array(n);
-  for (let i = 0; i < n; i++) { const h = scorchHash(e.id, i), hz = SCORCH_HZ[0] + (SCORCH_HZ[1] - SCORCH_HZ[0]) * scorchHash(e.id, i + n); bin[i] = Math.min(SCORCH_BINS - 1, Math.floor((0.5 + 0.5 * Math.sin(now * hz + h * 6.283)) * SCORCH_BINS)); }
+  for (let i = 0; i < n; i++) { const h = scorchHash(e.id + ring * 0.37, i), hz = SCORCH_HZ[0] + (SCORCH_HZ[1] - SCORCH_HZ[0]) * scorchHash(e.id + ring * 0.37, i + n); bin[i] = Math.min(SCORCH_BINS - 1, Math.floor((0.5 + 0.5 * Math.sin(now * hz + h * 6.283)) * SCORCH_BINS)); }
   ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.lineWidth = 2;
   for (let b = 0; b < SCORCH_BINS; b++) {
     ctx.beginPath();

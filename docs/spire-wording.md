@@ -31,7 +31,7 @@ A tier that only moves a number changes no words - the stat row shows it (2026-1
 6. **Only behaviour** (2026-10-07): harder hits, a colder or wider aura, faster pulses, more puddles change no words.
 7. **Short.** One or two sentences a mechanic (2026-10-22 "shorter"); drop filler, even an article ("Emits aura that slows enemies by 45%").
 8. **Counts in words** where the sentence counts: "Three bolts", "refracts twice", "three times", "two jets" (`NUM_WORD`, `TIMES`).
-9. **The extreme gets its own phrase**, not a number: SOL Diffraction V "refracts four times within a cone without losing intensity"
+9. **The extreme gets its own phrase**, not a number: SOL Reflection (was Diffraction) V "refracts four times within a cone without losing intensity"
    (not "losing 0%"); FRZ Permafrost V "Rapid pulses".
 10. **Live numbers**: HP-sized numbers are the CURRENT wave's ("just put the actual current armor number"), shown in k/M units,
     never past 9999 (2026-10-22). An armor strip reads as the **share of armor** it takes at the current wave - "Every hit strips 40%
