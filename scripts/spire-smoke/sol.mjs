@@ -33,15 +33,15 @@ check("SOL tracking beam: it lets go when its target dies or leaves range, then 
   if (!r.gone) return "a target moved out of range is still held (expected the beam to let go, with no one else in range)";
 });
 
-check("SOL Reflection: each split goes to its OWN enemy, the nearest ones within SOL's range OF THE HELD ONE - none past it", () => {
+check("SOL Reflection: each split goes to its OWN enemy, the nearest ones - ANYWHERE (owner, 2026-11-05: \"grant unlimited range to SOL's reflected beams\"; within SOL's range of the held one before)", () => {
   const r = run(`(() => { const { t, es, st } = solRig({ refraction: 4 }, [[40, 0], [40, 50], [40, -60], [40, 0]]); es[3].x = es[0].x + st.range * 1.5; es[3].y = es[0].y;
     t.solB = solTrackStart(t, solTrackSt(t, st), es[0]); /* held by hand: which enemy the targeting picks is not this check's */ solRun(t, 0.3); const B = t.solB, ls = B ? B.links : [];
     return { held: B ? es.indexOf(B.e) : -1, split: st.split, to: ls.map(l => es.indexOf(l.e)), far: ls.some(l => l.e === es[3]),
       inRange: ls.every(l => Math.hypot(l.e.x - B.e.x, l.e.y - B.e.y) <= st.range + 1e-6) }; })()`);
   if (r.held !== 0) return "the beam let go of the enemy held by hand (" + r.held + ")";
-  if (r.to.length !== Math.min(r.split, 2)) return "splits to " + JSON.stringify(r.to) + " (Reflection IV: " + r.split + " splits, 2 enemies in reach - the third out of it)";
+  if (r.to.length !== Math.min(r.split, 3)) return "splits to " + JSON.stringify(r.to) + " (Reflection IV: " + r.split + " splits, 3 other enemies - one far off, reached anyway)";
   if (new Set(r.to).size !== r.to.length) return "two splits share an enemy: " + JSON.stringify(r.to);
-  if (r.far || !r.inRange) return "a split reached past SOL's range of the held enemy";
+  if (!r.far) return "no split reached the far enemy (unlimited range, 2026-11-05)";
 });
 
 check("SOL Reflection: a split pierces every enemy on its line out to the play box's edge, losing Breach's carry at each (SOL_TRACK_HOP)", () => {
@@ -66,10 +66,10 @@ check("SOL Reflection: a split ends when its own enemy dies, the held beam goes 
   if (r.n1 !== 0 || !r.held) return "after its enemy died: " + r.n1 + " splits, held beam " + (r.held ? "on" : "gone") + " (expected 0 splits, beam on)";
 });
 
-check("SOL Breach: every tick strips its tier's share of the armor left (SOL_BREACH_ARMOR), none at tier 0", () => {
+check("SOL Breach: every pulse strips its tier's share of the armor left (SOL_BREACH_ARMOR), none at tier 0", () => {
   const r = run(`(() => { const out = []; for (const b of [0, 1, 3]) { const { t, es } = solRig({ breach: b }, [[50, 0]]); const e = es[0]; e.armor = e.armor0 = 1000;
-    t.solB = null; solRun(t, SOL_TICK + 0.01); out.push({ b, left: e.armor / 1000, want: 1 - SOL_BREACH_ARMOR[b] }); } return out; })()`);
-  for (const w of r) if (Math.abs(w.left - w.want) > 0.02) return "Breach " + w.b + ": one tick left " + (w.left * 100).toFixed(1) + "% of the armor (expected " + (w.want * 100).toFixed(1) + "%)";
+    t.solB = null; solRun(t, SOL_AIM + 0.05); /* the first pulse: after the new lock's aim (2026-11-05) */ out.push({ b, left: e.armor / 1000, want: 1 - SOL_BREACH_ARMOR[b] }); } return out; })()`);
+  for (const w of r) if (Math.abs(w.left - w.want) > 0.02) return "Breach " + w.b + ": one pulse left " + (w.left * 100).toFixed(1) + "% of the armor (expected " + (w.want * 100).toFixed(1) + "%)";
 });
 
 check("SOL Scorch: the beam lays TWO burn stacks a second on what it holds (a stack per 1 / (SOL_SCORCH_M x rate) s of beam time, whole ticks), Scorch V twice the ticks at half", () => {

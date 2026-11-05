@@ -104,8 +104,8 @@ function statRow(label, now, next) {
 // SOL's TRACKING BEAM's rows (owner, 2026-11-04; aspira-sol.js): the beam's ticks, Reflection's splits and their carry (Breach's,
 // SOL_TRACK_HOP), Breach's strip, the scorch a tick - no locks, prism or parallel beams ("no parallel beams")
 function solTrackSpec(st0, t) {
-  const st = solTrackSt(t, st0), d = st.dmg * st.rate * SOL_TICK;
-  return [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Beam ticks", Math.round(1 / SOL_TICK) + "/s × " + Math.round(d / st0.dmg * 100) + "%td"],
+  const st = solTrackSt(t, st0), d = st.dmg / SOL_SCORCH_M; // (d: a scorch stack's share of a shot - the pulse, 2026-11-05)
+  return [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Shot", "every " + +(1 / (st.rate * SOL_PULSE_K)).toFixed(2) + "s × " + Math.round(st.dmg / SOL_PULSE_K / st0.dmg * 100) + "%td"],
     ["Splits", st.split ? st.split + "" : "—"], ["Carry", st.split ? "×" + st.hop + " / enemy" : "—"],
     ["Breach", st.bleedArmor ? "−" + pc(1 - (1 - st.bleedArmor) ** (st.breach || 1)) + " armor a tick" : "—"],
     ...(st.dot ? [["Scorch tick", +(d * st.dot.k / st0.dmg * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n]] : []), ["Form", rayForm(st)]];

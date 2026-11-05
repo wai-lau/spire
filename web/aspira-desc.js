@@ -126,9 +126,12 @@ function solTrackDesc(sk) {
   // A STACK EVERY st.scorchEvery s OF BEAM TIME (solTickHit): the ticks it spans, summed - whole ticks, so its period rounds UP to one
   const every = Math.max(1, Math.ceil((st.scorchEvery || SOL_TICK) / SOL_TICK - 1e-9)) * SOL_TICK, burn = st.dot ? tick * (every / SOL_TICK) * st.dot.k / SOL_SCORCH_Q / td : 0, lasts = st.dot ? st.dot.n * SOL_SCORCH_Q : 0;
   const often = +(1 / every).toFixed(1), oftenW = Number.isInteger(often) && NUM_WORD[often] ? NUM_WORD[often] : String(often);
-  return "A solar beam locks onto one enemy in range and deals " + perSec(tick / SOL_TICK / td) + " in " + NUM_WORD[Math.round(1 / SOL_TICK)] + " ticks, holding until it dies or leaves range." +
-    (k ? " It splits from that enemy to the " + (k > 1 ? NUM_WORD[k] + " nearest enemies" : "nearest enemy") + " in range of it; " + (k > 1 ? "each split pierces" : "the split pierces") +
-      " every enemy on its line out to the edge and ends when its own enemy dies" + (sk.breach ? "." : ", carrying " + pc(st.hop) + " of the damage into each enemy it reaches.") : "") + /* the carry is BREACH's (SOL_TRACK_HOP): said in Breach's sentence once it is bought */
-    (br ? " Every tick strips " + pc(br) + " of the armor left, and splits carry " + pc(st.hop) + " of the damage into each enemy they reach." : "") + /* (Leader, 2026-11-05: Breach IV and V read the same while the carry rose) */
-    (st.dot ? " The beam scorches each enemy it holds " + (often === 1 ? "once" : often === 2 ? "twice" : oftenW + " times") + " a second, each burn dealing " + perSec(burn) + " for " + secs(lasts) + " and slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : "");
+  // THE PULSE (owner, 2026-11-05: "fire, pause, fire, pause"): a shot every 1 / rate s, each the shot's damage; its splits pierce only with
+  // Breach ("SOL reflections shouldn't pierce without breach"); no enemy twice a shot; scorch SOL_SCORCH_M stacks a shot ("scorch is what pops shields")
+  const M = Math.max(1, Math.round(SOL_SCORCH_M / SOL_PULSE_K)), shot = st.dmg / SOL_PULSE_K / td, gap = 1 / (st.rate * SOL_PULSE_K), pb = st.dot ? (st.dmg / SOL_PULSE_K / M) * st.dot.k / SOL_SCORCH_Q / td : 0;
+  return "A solar beam locks onto one enemy in range and fires every " + secs(gap) + " for " + pc(shot) + " damage, holding until it dies or leaves range." +
+    (k ? " Each shot splits from that enemy to the " + (k > 1 ? NUM_WORD[k] + " nearest other enemies" : "nearest other enemy") + "" +
+      (sk.breach ? "; " + (k > 1 ? "each split pierces" : "the split pierces") + " every enemy on its line out to the edge." : ", dealing " + pc(st.hop) + " of the damage.") + " No enemy is hit twice by one shot." : sk.breach ? " The beam pierces every enemy on its line out to the edge." : "") + /* (Reflection 0 + Breach: the main beam pierces - owner, 2026-11-05) */
+    (br ? " Every hit strips " + pc(br) + " of the armor left, and " + (k ? "splits carry " : "the beam carries ") + pc(st.hop) + " of the damage into each enemy " + (k ? "they reach." : "beyond its target.") : "") + /* (Leader, 2026-11-05: Breach IV and V read the same while the carry rose) */
+    (st.dot ? " Each shot scorches what it hits " + NUM_WORD[M] + " times, each burn dealing " + perSec(pb) + " for " + secs(lasts) + " and slowing it " + pc(SOL_SCORCH_SLOW) + " while it burns (shields block the slow)." : "");
 }
