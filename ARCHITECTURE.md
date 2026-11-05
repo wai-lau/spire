@@ -292,7 +292,7 @@ swarm `[frz, ifr]` / `[acd, grv]`, fast `[frz, crr]` / `[arc, grv]`, armor `[arc
 `BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 since 6.16.0 - CLAUDE.md has the command), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
 measures it.
 
-### 4.6b GRV, the gravity tower (`web/aspira-grv.js`)
+### 4.6b GRV, the gravity tower (`web/aspira-grv.js`, the look `aspira-grv-draw.js`)
 
 Its target (the mark target, §7.2): a help against swarm, fast and armor, weak to shields; mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
 §4.6). Palette: a violet aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*`). There is no projectile: everything
