@@ -930,6 +930,24 @@ Temporal Drive: hold 400 ms, 6 game s, cooldown 3 waves (`TEMPORAL[3]`), `TEMPOR
 
 Spawn gaps: a swarm body every `0.024 / ENEMY_SPEED` s, others 0.8 s, `BOSS_INTRO` 2 s. Formations: `FORM_FADE_R` 160, `FAST_PAIR` 26, `FORM_SPIN` 160, `V_N` 5, `V_BACK` 28, `V_LAT` 24, `ARMOR_W` 3, `ARMOR_PITCH` 36, `e.jit` 18-63, `JIT_FADE_R` 400.
 
+### 12.9-bis Late armor against raw hits (7.5.3, 2026-11-05)
+
+Measured on the game code (`spawnEnemy` at each wave, the most armor of six spawns; scratch probe `armor-probe.mjs`). "Raw at cap" is the
+largest raw tower hit that loses the full `ARMOR_CAP` 90% (hit x `scaleOf` <= R / 9); the last columns are the share a raw hit loses.
+
+| wave | `scaleOf` | armor: swarm / fast / shield / armor | raw at cap: armor | shield | swarm | raw 1000 loses: armor / shield / swarm | raw 100 loses: armor / swarm |
+|---|---|---|---|---|---|---|---|
+| 60 | 1.000 | 7 / 7 / 11 / 319 | 35 | 1 | 1 | 24% / 1% / 1% | 76% / 7% |
+| 70 | 0.450 | 8 / 8 / 13 / 380 | 94 | 3 | 2 | 46% / 3% / 2% | 89% / 15% |
+| 80 | 0.213 | 11 / 11 / 16 / 479 | 250 | 8 | 6 | 69% / 7% / 5% | 90% / 34% |
+| 90 | 0.113 | 15 / 15 / 23 / 678 | 665 | 23 | 15 | 86% / 17% / 12% | 90% / 57% |
+| 100 | 0.060 | 18 / 18 / 27 / 795 | 1,471 | 50 | 33 | 90% / 31% / 23% | 90% / 75% |
+| 110 | 0.035 | 18 / 18 / 27 / 782 | 2,451 | 85 | 56 | 90% / 43% / 34% | 90% / 84% |
+| 119 | 0.022 | 17 / 17 / 26 / 764 | 3,855 | 131 | 86 | 90% / 54% / 44% | 90% / 89% |
+
+Fast's armor is swarm's (`ARMOR_ALL` 10% each). The scaled armor itself stops growing near wave 100; the cap point keeps climbing because
+`scaleOf` keeps shrinking the hit.
+
 ### 12.10 Bosses
 
 | wave | boss | `BOSS_HP` | `BOSS_FAR` | trick | fleet (escort type) |
