@@ -202,9 +202,12 @@ function fxGlBeam(f, a) {
   const line = (w, css, al) => { for (let i = 0; i < cut.length; i++) { const c = cut[i]; fxGlPush(c[0], c[1], c[2], c[3], w / 2, 0, css, al, css, 0); } };
   const core = (f.soft ? BEAM_MIN + ((f.bw ??= beamWidth(f.d || 0)) - BEAM_MIN) * ARC_W_CORR : (f.bw ??= beamWidth(f.d || 0))) * (f.thin || 1), col = COL[f.color];
   if (f.m) {
-    if (f.slim) for (let i = 4; i >= 1; i--) line(core * SOL_BEAM_W * (1 + i * 0.25), col, Math.min(1, a * SOL_GLOW_A * BEAM_BRIGHT));
+    // SMOOTH GLOWS, NOT STEPS (owner, 2026-11-06: "never use step glow unless huge perf gains"): one glow line (shape 7, a (1 - off)^pw fade
+    // across) in place of the stacked bands - SOL's four widening lines (to 2x the core, 0.45 each: ~0.9 at the centre) and the plain beams' one x3 band
+    // at 0.22 - the same reach and centre weight, fewer instances
+    if (f.slim) for (const c of cut) fxGlGlowLine(c[0], c[1], c[2], c[3], core * SOL_BEAM_W * 1.05, col, Math.min(1, a * 0.9 * BEAM_BRIGHT), 0, 0, 1.5);
     else if (f.soft) { for (const c of cut) fxGlGlowLine(c[0], c[1], c[2], c[3], core * ARC_GLOW_R * ARC_BEAM_W, col, Math.min(1, a * (1 + ARC_GLOW_C * BEAM_BRIGHT)), 0, 0); line(Math.max(0.8, core * ARC_BEAM_W), col, Math.min(1, f.fadeA ?? 1)); return; } /* glow x ARC_BEAM_W + a thin opaque core (owner, 2026-10-26) */ // ARC: ONLY a GLOW, brightest on the line (the old core's alpha + the glow's), clear ARC_GLOW_R x its width off it - no hard core on top (owner, 2026-10-24: "all arc beams should use the glow instead of the hard edge"; 2026-10-23: "Beams should have glow, not semiopaque second layer")
-    else line(core * 3, col, Math.min(1, a * 0.22 * BEAM_BRIGHT));
+    else for (const c of cut) fxGlGlowLine(c[0], c[1], c[2], c[3], core * 1.6, col, Math.min(1, a * 0.4 * BEAM_BRIGHT), 0, 0, 2);
   }
   const ca = f.slim ? Math.min(1, a * 1.5) : a, cw = f.slim ? core * SOL_BEAM_W : core;
   line(cw, f.slim ? COL.white : col, ca);

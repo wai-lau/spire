@@ -21,7 +21,7 @@ function drawGrvPellets() {
 // ---------- the nova's damage numbers fly INWARD, toward the sphere (owner) ----------
 // the aura's BANDS, the sphere outward, in the black-hole image's colours and shares (owner, 2026-10-15): white-hot 2, yellow 6,
 // coral 13, pink 13, plum 18, deep purple 17 - each stop where its band starts, clear inside the first and past the last
-const GRV_BANDS = [[0.15, "violet"], [0.4, "violet"], [0.66, "bhplum"]]; /* THE TOWER'S COLOURS (owner, 2026-11-06: "for GRV, update the void attack to use the same colors as the ones used by the tower now"): violet into plum, then clear; was white-hot, yellow, coral, pink, plum */ // the outermost band CLEAR, not the near-black deep purple (owner, 2026-10-24: "GRV BH outermost color should be transparent, not black"; was [0.86, "bhdeep"])
+const GRV_BANDS = [[0, "white"], [0.12, "violet"], [0.4, "violet"], [0.66, "bhplum"]]; /* NO DARK GAP (owner, 2026-11-06: "make the black gap around void white, or at least very light purple"): white right at the core's edge, into violet */ /* THE TOWER'S COLOURS (owner, 2026-11-06: "for GRV, update the void attack to use the same colors as the ones used by the tower now"): violet into plum, then clear; was white-hot, yellow, coral, pink, plum */ // the outermost band CLEAR, not the near-black deep purple (owner, 2026-10-24: "GRV BH outermost color should be transparent, not black"; was [0.86, "bhdeep"])
 // the NOVA: a thick ring (GRV_NOVA_W of its reach), GRV purple turning white as it collapses (owner, 2026-10-15; it was a red /
 // orange / yellow ring going OUT for an hour)
 const GRV_NOVA_LOOK_A = 0.5; // the WHOLE nova - ring and glow - at half (owner, 2026-11-05: "Halve opacity of all gr novas"), on top of GRV_NOVA_GLOW
@@ -109,6 +109,7 @@ function drawSphere(sp, st, auraOwn = true) {
 // another black hole", "the dark part needs to be drawn over all accretion disk layers")
 // the HALO: a smooth radial fade in GRV violet to nothing at 2.4 r (owner, 2026-11-06: "never use step glow unless huge perf gains") - IFR's cached
 // unit fade (ifrFadeGrad, aspira-ifrit-draw.js: (1 - t)^3 from the centre, one gradient a colour, made once) scaled to it; the black core covers its middle
+const GRV_RIM_GLOW = 0.5; // the rim's white glow, x the orb's radius (screen px through the transform)
 function grvHalo(x, y, r1) {
   if (typeof ifrFadeGrad !== "function") return;
   ctx.save(); ctx.translate(x, y); ctx.scale(r1, r1); ctx.fillStyle = ifrFadeGrad(COL.violet); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 6.283); ctx.fill(); ctx.restore();
@@ -121,7 +122,7 @@ function drawGrvCore(sp, st, pass) {
   // THE BODY'S COLOURS (owner, 2026-11-06: "for GRV, update the void attack to use the same colors as the ones used by the tower now"; "don't have that
   // reflective arc on the sphere, black holes don't reflect"): a soft violet halo (a smooth radial fade, no steps), a violet rim, a black core - as drawGrvBody's orb
   if (pass === 0) grvHalo(sp.x, sp.y, 2.4 * r);
-  else if (pass === 1) { ctx.strokeStyle = COL.violet; ctx.lineWidth = Math.min(1.5, 0.15 * r + 0.5); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.stroke(); }
+  else if (pass === 1) { const m = ctx.getTransform(); ctx.shadowColor = COL.white; ctx.shadowBlur = GRV_RIM_GLOW * r * Math.hypot(m.a, m.b); ctx.strokeStyle = COL.violet; ctx.lineWidth = Math.min(1.5, 0.15 * r + 0.5); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0; } // the rim lit white just outside it - no dark band before the halo
   else { ctx.fillStyle = COL.bg; ctx.arc(sp.x, sp.y, Math.max(0, r - 0.5), 0, 6.283); ctx.fill(); } /* r - 0.5: the rim's outer half stays */
 }
 function drawGrvCores(at) {
@@ -152,8 +153,8 @@ function drawGrvBody(t, x, y, top, R) { // top: the prism top's height (warpFram
     ctx.save(); ctx.scale(1, sq); ctx.lineCap = "round";
     ctx.beginPath(); ctx.arc(0, 0, rho, front ? 0 : Math.PI, front ? Math.PI : 2 * Math.PI);
     ctx.restore(); // (the path keeps its squash; the strokes stay round)
-    ctx.strokeStyle = col; ctx.globalAlpha = 0.35 * a; ctx.lineWidth = w * 2.6; ctx.stroke();
-    ctx.strokeStyle = COL.white; ctx.globalAlpha = 0.85 * a; ctx.lineWidth = w; ctx.stroke();
+    ctx.shadowColor = col; ctx.shadowBlur = 3.2 * w * k; // a smooth glow (was a wide faint stroke under the core - owner, 2026-11-06: "never use step glow")
+    ctx.strokeStyle = COL.white; ctx.globalAlpha = 0.85 * a; ctx.lineWidth = w; ctx.stroke(); ctx.shadowBlur = 0;
   };
   const well = front => { // the debris: spiralling in from 4 r, a 3-segment trail behind each, fading with distance from the orb; ONE path an alpha band
     const n = GRB_WELL_N[wl], at = (k, p) => { const th = k * 2.4 - 2 * Math.PI * 1.4 * p, rho = r * (4 - 3 * p ** 1.1); return [rho * Math.cos(th), rho * sq * Math.sin(th), Math.sin(th), rho]; };
@@ -179,7 +180,7 @@ function drawGrvBody(t, x, y, top, R) { // top: the prism top's height (warpFram
   if (nv) nova(false); if (wl) well(false);
   ctx.globalAlpha = 1; grvHalo(0, 0, r * 2.4); // the halo (smooth)
   ctx.fillStyle = COL.bg; ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.fill();
-  ctx.strokeStyle = col; ctx.lineWidth = 0.035 * R; ctx.stroke(); // the rim (no glint: "black holes don't reflect", owner 2026-11-06)
+  ctx.shadowColor = COL.white; ctx.shadowBlur = GRV_RIM_GLOW * r * k; ctx.strokeStyle = col; ctx.lineWidth = 0.035 * R; ctx.stroke(); ctx.shadowBlur = 0; // the rim, lit white just outside (no dark band) (no glint: "black holes don't reflect", owner 2026-11-06)
   if (nv) nova(true); if (wl) well(true);
   ctx.globalAlpha = 1;
 }
