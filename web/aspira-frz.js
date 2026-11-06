@@ -79,7 +79,9 @@ function frzSources(t, st) {
 // the enemy's slow now, 0..1) - every slow on it counts, so the fast (slowed twice as hard) and anything held by other
 // slows take the most. let: the simulator sweeps it
 let FRZ_CHILL_K = 27; /* x3 (2026-10-29, the mark target FRZ fast +2: countermx 9 pts 101-119 fast leaked 47% at 18, 22% at 27, 6% at 36 - 36 lifted shield and armor too); was 9 */ // x1.5: lifts Brittle (owner, 2026-10-26 "Lift sublimation": Temp focus 33% leaked vs Rime 18, Moons 14 -> 25; was 6)
-const frzBite = e => 1 + FRZ_CHILL_K * (e.slowT > 0 ? e.slowF : 0);
+// THE CHILL BITES BY THE SPEED IT TAKES (owner, 2026-11-06: "1 yes"): the bonus x the enemy's own speed / ENEMY_BASE_SPEED - speed lost in u/s, not a
+// share - fast 1.71x, swarm 1.10x, shield 0.93x, armor 0.70x (marks 9 pts 101-119: FRZ row +2 +1 -1 -2 -> +1 +2 -1 -2 = the target; reads speed, never type)
+const frzBite = e => 1 + FRZ_CHILL_K * (e.slowT > 0 ? e.slowF : 0) * ENEMIES[e.type].speed * (e.spd || 1) / ENEMY_BASE_SPEED;
 // MAX RIME (owner, 2026-10-11: "if something reaches max rime, it spreads to the nearest unit that is not yet max
 // rime"): an enemy its rime alone slows FRZ_RIME_FULL (before the slow's shaping) holds no more - a pulse that reaches it
 // passes its rime to the nearest living enemy that can still take it, a frost line between them
