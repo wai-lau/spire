@@ -196,11 +196,23 @@ function warpSolid(e) {
   warpBand = null; warpFade = 1;
   try { warpSolidWhole(e); } finally { warpBand = band; warpFade = fade; }
 }
+// OFF THE CANVAS (perf, 2026-11-06): a die whose every corner (and breach spike) lies outside the canvas, past its line width,
+// cannot paint a pixel - skip its fills and strokes. A late wave walks in from r 2400, far off screen: on a wave-110 board with
+// the crowd along the whole path it was ~3 in 10 of the frame's 2D path ops (8769 -> 5971 a frame), pixel-identical in WebKit.
+// Its points are device pixels under the identity transform warpSolidWhole sets, so the bounds are the canvas's own.
+function solidOffCanvas(g) {
+  const W = ctx.canvas.width, H = ctx.canvas.height, m = Math.max(g.lw || 1, g.spike ? g.spike.w : 0) + 2;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const take = p => { if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x; if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y; };
+  for (const F of g.faces) for (const p of F.poly3) take(p);
+  if (g.spike) { take(g.spike.a); take(g.spike.b); }
+  return x1 < -m || y1 < -m || x0 > W + m || y0 > H + m;
+}
 function warpSolidWhole(e) {
   // (tiny swarmers drew FLAT here for an afternoon - owner, 2026-10-12: "swarm should render in full 3d all the time"; warpFlatDie unused)
   if (e.geomAt !== warp.frame) { e.geomAt = warp.frame; e.geom = solidGeom(e); }
   const g = e.geom, band = warpBand;
-  if (!g) return;
+  if (!g || solidOffCanvas(g)) return;
   // TWO passes, not one per floor slice (perf, 2026-10-09): deeper slices skip it, and the slice AT the floor (hi -0)
   // draws all of it below the floor at once (warpSolidBelow)
   if (band && band.hi < 0) return;
