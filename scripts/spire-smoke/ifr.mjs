@@ -200,7 +200,7 @@ check("IFR Hellfire V: a fire strikes IFR_CHAINS_N seeded chains between two poi
     const rad = (c, i) => Math.hypot(c.seg[i] - c.cx, c.seg[i + 1] - c.cy); /* the circle's radius when it struck: both ends are on it */
     o.chord = a.chains.map(c => Math.hypot(c.seg[2] - c.seg[0], c.seg[3] - c.seg[1]) - rad(c, 0)); o.onCircle = a.chains.map(c => Math.abs(rad(c, 0) - rad(c, 2)));
     const c0 = a.chains[0].c; const near = still("swarm", c0.x, c0.y), far = still("swarm", c0.x + 900, c0.y); const t = a.t; c0.left = c0.life; ifrTickFlare(t, a.st, c0); o.near = near.max - near.hp; o.far = far.max - far.hp;
-    o.dV = a.st.fireDens; o.dIV = iv.st.fireDens;
+    const cnt = st => Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2); o.dV = cnt(a.st); o.dIV = cnt(iv.st); o.R = [a.st.fireR, iv.st.fireR]; o.dens = [a.st.fireDens, iv.st.fireDens];
     return o; })()`);
   if (r.n !== 3) return "Hellfire V struck " + r.n + " chains (expected IFR_CHAINS_N 3)";
   if (r.ivN) return "Hellfire IV struck " + r.ivN + " chains";
@@ -208,7 +208,7 @@ check("IFR Hellfire V: a fire strikes IFR_CHAINS_N seeded chains between two poi
   if (r.chord.some(d => d < -1e-6)) return "a chain shorter than the circle's radius: " + r.chord;
   if (r.onCircle.some(d => d > 1e-6)) return "a chain end off the circle: " + r.onCircle;
   if (!(r.near > 0) || r.far) return "a chain burns what touches it (" + r.near + ") and nothing else (" + r.far + ")";
-  if (r.dV !== r.dIV) return "Hellfire V's flare density " + r.dV + ", IV's " + r.dIV + " (expected the same: chains instead of more flares, owner 2026-11-06)";
+  if (Math.abs(r.dV - r.dIV) > 1 || !(r.dens[0] < r.dens[1])) return "Hellfire V lights " + r.dV + " flares (density " + r.dens[0] + "), IV " + r.dIV + " (density " + r.dens[1] + "): expected IV's count over the wider fire (owner, 2026-11-06)";
   return "";
 });
 check("IFR Flare V: ONE flare a landing and a flare-styled circle IFR_RING_AT of the way up its spokes that burns what it touches", () => {
@@ -291,7 +291,7 @@ check("IFR flares: one where the main meteor lands; a fire lights its flares on 
       try { while ((f.left > 0) && tm < 60) { stepIfrFires(t, st, 1 / 60); tm += 1 / 60; } } finally { ifrFlare = of; }
       const d = lit.map(q => Math.hypot(q.x - CX, q.y - CY)), ts = lit.map(q => q.t).sort((a, b) => a - b);
       return { n: lit.length, R: f.R, window: st.burnS, share: f.hk, shareWant: 1 / Math.sqrt(1 + st.fan), lastT: ts[ts.length - 1] || 0, meanT: ts.reduce((a, b) => a + b, 0) / ts.length, minGap: Math.min(...ts.slice(1).map((v, i) => v - ts[i])), maxD: Math.max(...d), meanD: d.reduce((x, y) => x + y, 0) / d.length, sizes: new Set(t.ifrFlares.filter(q => q.hf).map(q => q.L.toFixed(2))).size, dens: st.fireDens }; };
-    out.f0 = fire(0); out.f3 = fire(4); /* today\'s III, tier IV since the tier redesign (2026-10-24) */ out.f6 = fire(6); out.base = IFR_FIRE_FLARES; out.timeK = IFR_FIRE_TIME_K;
+    out.f0 = fire(0); out.f3 = fire(4); /* today\'s III, tier IV since the tier redesign (2026-10-24) */ out.f6 = fire(6); out.d3 = IFR_FIRE_DENS[3]; out.d4 = IFR_FIRE_DENS[4]; /* III < IV strictly; V is IV's count, not denser */ out.base = IFR_FIRE_FLARES; out.timeK = IFR_FIRE_TIME_K;
     /* the fire's flares are the UNTAKEN Flare's, whatever Flare's level (owner, 2026-10-20), and not the meteors' brighter kind */
     { const t = fresh("firaga", 6), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
       for (let i = 0; i < 600 && t.ifrFires.length; i++) stepIfrFires(t, st, 1 / 60); const hf = t.ifrFlares.filter(q => q.hf);
@@ -327,7 +327,7 @@ check("IFR flares: one where the main meteor lands; a fire lights its flares on 
   if (!(r.hfK > 1 && r.hfK < 1.3)) return "Flare IV raises the fire's flares x" + r.hfK + " (expected slightly - owner 2026-10-20)";
   if (!(r.iMain > r.iHf)) return "a meteor's flare (" + r.iMain + ") is not brighter than a fire's (" + r.iHf + ") at the same hit (owner, 2026-10-20: more opaque and intense)";
   const dens3 = r.f3.n / r.f3.R ** 2, dens6 = r.f6.n / r.f6.R ** 2;
-  if (Math.abs(dens6 / dens3 / (r.f6.dens / r.f3.dens) - 1) > 0.15 || !(r.f6.dens >= r.f3.dens)) return "flare density: " + r.f3.n + " in r" + r.f3.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected " + (r.f6.dens / r.f3.dens).toFixed(2) + "x denser - owner 2026-10-20: denser as Hellfire levels)";
+  if (Math.abs(dens6 / dens3 / (r.f6.dens / r.f3.dens) - 1) > 0.15 || !(r.d4 > r.d3) || Math.abs(r.f6.n - r.f3.n) > 2) return "flare density: " + r.f3.n + " in r" + r.f3.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected " + (r.f6.dens / r.f3.dens).toFixed(2) + "x denser - owner 2026-10-20: denser as Hellfire levels)";
   return "";
 });
 check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the outline, flares brighten with their hit", () => {

@@ -66,7 +66,7 @@ check("boss sky keeps tower colours: ranges drawn under it", () => {
 });
 
 check("capstone: a capstone value never runs against its table (no tier lowers a stat - GRV_SLOW and CRR_AMMO V fell below IV when their tables were scaled, 2026-10-24)", () => {
-  const bad = run(`CAPSTONE_NUM.filter(([t]) => Array.isArray(t) && typeof t[5] === "number").map(([t], i) => ({ i, t: t.slice() }))
+  const bad = run(`CAPSTONE_NUM.filter(([t]) => Array.isArray(t) && typeof t[5] === "number" && t !== IFR_FIRE_DENS /* Hellfire V: IV's flare count over a wider fire, owner 2026-11-06 */).map(([t], i) => ({ i, t: t.slice() }))
     .filter(({ t }) => { const d1 = Math.sign(t[4] - t[3]), d2 = Math.sign(t[5] - t[4]); return d1 && d2 && d1 !== d2; }).map(({ i, t }) => i + ": " + t.join(" "))`);
   if (bad.length) return "CAPSTONE_NUM rows whose V turns back: " + bad.join(" | ");
 });
