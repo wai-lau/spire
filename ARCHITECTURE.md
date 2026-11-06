@@ -378,14 +378,14 @@ in, of (mean score / trio score), applied to `TOWERS[k].dmg` and squared to conv
 designed deaths are the exception** (pillar 2). `triodiag.mjs` shows why a trio loses (per enemy type: lives lost and closest
 approach). The rounds, their numbers and the dated lists: ARCHAEOLOGY §4.6d; the tooling, §10.4.
 
-**OLD - derived from the 6.16.0 marks; to be recomputed from `scripts/aspira-sim/mark-target.json` (`triscale.py`).** At the 6.16.0 marks (derived from `VS_MARKS`; recompute after a marks refresh):
+The list, read off the marks (`VS_MARKS`, `aspira-chooser.js`) as they stand at 7.7.27 (recompute after every marks refresh; the older lists: ARCHAEOLOGY §4.6d) - thirteen:
 
 | Missing | Trios |
 |---|---|
-| fast | FRZ+SOL+ACD, FRZ+SOL+GRV, FRZ+SOL+IFR, FRZ+ACD+GRV, FRZ+ACD+IFR, FRZ+GRV+IFR, SOL+ACD+GRV, SOL+ACD+IFR, SOL+GRV+IFR, ACD+GRV+IFR |
+| fast | ARC+SOL+ACD, ARC+SOL+GRV, ARC+SOL+IFR, ARC+ACD+GRV, ARC+ACD+IFR, ARC+GRV+IFR, SOL+ACD+GRV, SOL+ACD+IFR, SOL+GRV+IFR, ACD+GRV+IFR |
 | shield | ARC+FRZ+GRV |
-| swarm | ARC+ACD+CRR |
-| armor | SOL+CRR+IFR |
+| swarm | SOL+ACD+CRR |
+| armor | FRZ+CRR+IFR |
 
 ### 4.7 The core and its two powers
 
@@ -565,7 +565,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | full stop | only Temporal Drive; shields block all slows; Strength takes 10% of any slow (2026-11-05) |
 | armor loss | permanent, multiplied down, never below 0 |
 | quiet hits | ticks, pools, splash: no flash; pool hits past `POOL_LOD` show one summed number an enemy |
-| numbers | crits marigold; sized by the hit before armor - 14-30 px by (hit / half the damage a second)^0.7 (`DMG_PX_MIN`, `DMG_PX_SPAN`; owner, 2026-11-01: "narrow size band", was 10-38), a shield "0" half a full one, credit pop-ups their own 10-19 px - greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or a CRR bolt's interceptor); a GRV number flies INTO its void (`grvFloat`) (`DMG_FLY`) |
+| numbers | crits marigold; sized by the hit before armor - 14-30 px by (hit / half the damage a second)^0.7 (`DMG_PX_MIN`, `DMG_PX_SPAN`; owner, 2026-11-01: "narrow size band"; the history: ARCHAEOLOGY §12), a shield "0" half a full one, credit pop-ups their own 10-19 px - greyed by armor's share; a shield-soaked "0" in cyan; they hold, shrink and fly away from where the hit came from (`hitFrom` / `fromHit`: the tower, or a CRR bolt's interceptor); a GRV number flies INTO its void (`grvFloat`) (`DMG_FLY`) |
 
 ## 7. Interface
 
