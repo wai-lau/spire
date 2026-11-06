@@ -25,7 +25,13 @@ function warpFrame(x, y, h) {
 }
 // one hexagonal PRISM's walls: its floor hex `pts` raised `h` world units, the walls farthest first, each
 // filled with the background and tinted by how squarely it faces the camera, its edges in the colour
-const WARP_PRISM_STOPS = 6, WARP_PRISM_GONE = 0.95; // GONE: the share of a prism's height, from its top, where it has faded out; STOPS: its gradient's (the blend is not linear)
+const WARP_PRISM_STOPS = 6, WARP_PRISM_GONE = 0.95;
+// THE WALLS' GRADIENTS KEPT FROM FRAME TO FRAME (perf, 2026-11-05 - Wai: "No bursts, just faster consistently"): a prism's geo is the frame's
+// (o.geo on this frame's object), so every wall and upright made its gradient anew each frame - ~96 a late frame, each wall's 7 blended stops. Keyed by
+// the EXACT numbers it is made from (ends, light, colours), so a reused one is the same gradient; a tower that moves or a shaking screen makes new
+// ones, and past PRISM_GRAD_MAX the set is dropped whole
+const PRISM_GRAD_MAX = 600, prismGrads = new Map();
+function prismGrad(key, make) { let g = prismGrads.get(key); if (!g) { if (prismGrads.size >= PRISM_GRAD_MAX) prismGrads.clear(); g = make(); prismGrads.set(key, g); } return g; } // GONE: the share of a prism's height, from its top, where it has faded out; STOPS: its gradient's (the blend is not linear)
 function warpPrism(o) {
   const pf = 1 - (1 - warpFade) * WARP_PRISM_FADE; // they fade less below the floor than the dice
   // CENTRED on the floor (owner: "their center is on the plane, not the bottom"): half below it, half above
@@ -63,10 +69,11 @@ function warpPrism(o) {
     if (warpPath(quad)) {
       ctx.globalAlpha = 1; ctx.fillStyle = grads[w.i] ||= (() => {
         const P = T[w.i], E = at(P, B[w.i]), dx = T[w.j].x - P.x, dy = T[w.j].y - P.y, nn = dx * dx + dy * dy;
-        const k = nn > 1e-6 ? ((E.x - P.x) * -dy + (E.y - P.y) * dx) / nn : 0, gx = k ? P.x - dy * k : E.x, gy = k ? P.y + dx * k : E.y;
-        const g = ctx.createLinearGradient(P.x, P.y, gx, gy), l = 0.12 + 0.28 * w.lit; // lit from the CORE (owner: "the light source should come from the core")
-        for (let s = 0; s <= WARP_PRISM_STOPS; s++) { const a = 1 - s / WARP_PRISM_STOPS; g.addColorStop(s / WARP_PRISM_STOPS, blendFill([[COL.bg, a], [o.col, l * a]])); }
-        return g;
+        const k = nn > 1e-6 ? ((E.x - P.x) * -dy + (E.y - P.y) * dx) / nn : 0, gx = k ? P.x - dy * k : E.x, gy = k ? P.y + dx * k : E.y, l = 0.12 + 0.28 * w.lit; // lit from the CORE (owner: "the light source should come from the core")
+        return prismGrad("w|" + P.x + "," + P.y + "," + gx + "," + gy + "|" + l + "|" + o.col + "|" + COL.bg, () => {
+          const g = ctx.createLinearGradient(P.x, P.y, gx, gy);
+          for (let s = 0; s <= WARP_PRISM_STOPS; s++) { const a = 1 - s / WARP_PRISM_STOPS; g.addColorStop(s / WARP_PRISM_STOPS, blendFill([[COL.bg, a], [o.col, l * a]])); }
+          return g; });
       })();
       ctx.fill();
     }
@@ -75,7 +82,7 @@ function warpPrism(o) {
     if (band.lo > 0 || band.hi < Infinity) continue;
     { ctx.beginPath(); ctx.moveTo(T[w.i].x, T[w.i].y); ctx.lineTo(T[w.j].x, T[w.j].y); ctx.strokeStyle = o.col; ctx.stroke(); }
     for (const v of [w.i, w.j]) { // (each upright is two walls' corner: its gradient made ONCE, kept beside the walls' - perf, 2026-11-05: 144 a late frame, half of them twins)
-      const E = at(T[v], B[v]), g = (grads.up ||= {})[v] ||= (() => { const g = ctx.createLinearGradient(T[v].x, T[v].y, E.x, E.y); g.addColorStop(0, o.col); g.addColorStop(1, "transparent"); return g; })();
+      const E = at(T[v], B[v]), g = (grads.up ||= {})[v] ||= prismGrad("u|" + T[v].x + "," + T[v].y + "," + E.x + "," + E.y + "|" + o.col, () => { const g = ctx.createLinearGradient(T[v].x, T[v].y, E.x, E.y); g.addColorStop(0, o.col); g.addColorStop(1, "transparent"); return g; });
       ctx.beginPath(); ctx.moveTo(T[v].x, T[v].y); ctx.lineTo(E.x, E.y); ctx.strokeStyle = g; ctx.stroke();
     }
   }
