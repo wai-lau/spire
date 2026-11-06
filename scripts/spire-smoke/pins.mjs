@@ -87,3 +87,16 @@ check("a die wholly off the canvas draws nothing, one on it still draws (solidOf
   if (!(r.near > 0)) return "the die by the core drew no face (the rig is broken, or the cull culls what shows)";
   if (r.far) return "the die at the lane's start (r " + r.r + ", off the canvas) still drew " + r.far + " faces";
 });
+
+check("a tracer wholly off the canvas draws nothing, one on it still draws (drawStarTrail's cull through warp.eF, perf 2026-11-06)", () => {
+  run(`(() => { G = newGame(); G.started = true; G.nextIn = 1e9; G.spawns = []; ui.paused = false;
+    const put = s => { spawnEnemy("fast", 30, 0, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(0, s, 0); e.s = s; e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e9; return e; };
+    put(0); put(PATHS[0].len - 200); })()`);
+  frames(env, 3);
+  const r = JSON.parse(run(`(() => { const [far, near] = G.enemies, c = warp.ent.getContext("2d"), main = ctx; ctx = c; let n = 0; const f0 = c.fill;
+    c.fill = (...a) => { n++; return f0.apply(c, a); };
+    const fills = e => { n = 0; const F = warpFrame(e.x, e.y, 0); ctx.setTransform(F[0], F[1], F[2], F[3], F[4], F[5]); warp.eF = F; try { drawStarTrail(e, 10); } finally { warp.eF = null; } return n; };
+    try { return JSON.stringify({ far: fills(far), near: fills(near) }); } finally { c.fill = f0; ctx = main; } })()`));
+  if (!(r.near > 0)) return "the tracer by the core drew nothing (the rig is broken, or the cull culls what shows)";
+  if (r.far) return "the tracer at the lane's start (off the canvas) still drew " + r.far + " fills";
+});
