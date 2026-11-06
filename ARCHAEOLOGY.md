@@ -455,7 +455,7 @@ coverage hole (swarm and armor), not tower power. Scripts (this repo's `scripts/
 `SKILL_STEP_COST` (2026-10-15, `eco.mjs`): the no-weakness trio ARC+FRZ+ACD owned 109-287% of a max build at x1.5 and 86-93% at x1.75,
 and the owner's rule is that the worst one just affords a full build with perfect play.
 
-The list ARCHITECTURE 4.6d carried from 6.16.0 until 2026-11-06 (marked OLD there from the 10-29 mark target on): fast FRZ+SOL+ACD, FRZ+SOL+GRV, FRZ+SOL+IFR, FRZ+ACD+GRV, FRZ+ACD+IFR, FRZ+GRV+IFR, SOL+ACD+GRV, SOL+ACD+IFR, SOL+GRV+IFR, ACD+GRV+IFR; shield ARC+FRZ+GRV; swarm ARC+ACD+CRR; armor SOL+CRR+IFR. At the 7.7.27 marks fast's ten swap FRZ for ARC (FRZ checks fast now, ARC does not), swarm's ARC+ACD+CRR becomes SOL+ACD+CRR and armor's SOL+CRR+IFR becomes FRZ+CRR+IFR.
+The list ARCHITECTURE 4.6d carried from 6.16.0 until 2026-11-06 (marked OLD there from the 10-29 mark target on): fast FRZ+SOL+ACD, FRZ+SOL+GRV, FRZ+SOL+IFR, FRZ+ACD+GRV, FRZ+ACD+IFR, FRZ+GRV+IFR, SOL+ACD+GRV, SOL+ACD+IFR, SOL+GRV+IFR, ACD+GRV+IFR; shield ARC+FRZ+GRV; swarm ARC+ACD+CRR; armor SOL+CRR+IFR. At the 7.7.27 marks fast's ten swap FRZ for ARC (FRZ checks fast now, ARC does not), swarm's ARC+ACD+CRR becomes SOL+ACD+CRR and armor's SOL+CRR+IFR becomes FRZ+CRR+IFR. At the 7.7.42 marks (GRV checks fast) the fast list drops every trio with GRV - thirteen to seven: fast ARC+SOL+ACD, ARC+SOL+IFR, ARC+ACD+IFR, SOL+ACD+IFR; the others as at 7.7.27.
 
 ### 4.7 The core and its powers
 10-02: click the core, from wave 30 (`CORE_UNLOCK`), for Zen (a slow pulse) / Nullify -> Space (slots
