@@ -5,7 +5,7 @@ const CRR_DART = 33, CRR_DART_W = 7.8, /* x3 (owner, 2026-10-16: "make the inter
 // its SIZE grows with Armament (owner, 2026-10-16: "halve interceptor size (grow this as armament increases)"): half the dart
 // above, untaken, + CRR_DART_GROW a tier - the full dart at VI
 const CRR_DART_K0 = 0.5, CRR_DART_GROW = 0.1;
-const CRR_DART_DRAW = 0.5; // every interceptor DRAWN at half (owner, 2026-11-05: "Halve interceptor sizes") - its outline too; its jitter and its hold radius as they were (the draw only)
+const CRR_DART_DRAW = 0.25; // every interceptor DRAWN at a quarter (owner, 2026-11-06: "halve all interceptor sizes"; 2026-11-05: "Halve interceptor sizes", 0.5) - its outline too; its jitter and its hold radius as they were (the draw only)
 // V=V (owner, 2026-11-06: "change the interceptors for it to look like V=V (V = current triangle, this is interceptor facing down, bolts fire out of
 // tip of Vs alternating between) / tether should be connected to the = part"): two of the old darts side by side, noses (the V tips) forward,
 // joined by two bars (the "="); the tether leaves the middle of the "=" (carBar). One path a carrier still: one fill, one stroke
@@ -48,7 +48,7 @@ function drawCarBodies(t, far, top) { // top: the prism's top height (warpFrame 
   } finally { carM = null; }
   if (any) { ctx.fill(); ctx.stroke(); }
 }
-const CRR_EDGE_W = 0.5; // the lighter edge, world u
+const CRR_EDGE_W = 0.3; // the lighter edge, world u (0.5 at the old double size)
 const carBar = (i, z) => { const a = i.fa ?? i.ang, u = (CRR_VV_BARS[0] + CRR_VV_BARS[1]) / 2 * CRR_DART * z; return { x: i.x + Math.cos(a) * u, y: i.y + Math.sin(a) * u }; }; // the "=" middle
 const carTip = (i, z, k) => { const a = i.fa ?? i.ang, L = CRR_DART * z * 0.5, o = carVVOff(CRR_DART_W * z) * k, c = Math.cos(a), s = Math.sin(a); return [i.x - s * o + c * L, i.y + c * o + s * L]; }; // k -1 / +1
 // FACING (owner, 2026-11-06: "when in orbit, have the interceptors rotate to face the target being orbited"; "when in orbit around the tower, also face
