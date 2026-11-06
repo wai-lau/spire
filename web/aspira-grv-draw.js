@@ -123,3 +123,44 @@ function drawGrvCores(at) {
     for (const sp of t.spheres) at(sp.x, sp.y, () => drawGrvCore(sp, st, pass));
   }
 }
+// ---------- THE BODY SHOWS THE BUILD (owner, 2026-11-06, the approved mockup: "GRV is good, but move the orb a bit higher off the top of the
+// tower", then "also move the ball another 5u up"; "on GRV, the tracers on gravity well, their tracers should be split into 3 sections to make it look
+// smoother") - over the prism's top, in screen-upright units (a sphere stays round; the rings lie in the board's tilt):
+// VOID a black orb with a violet rim and a soft halo, GRB_GAP x the hex radius clear of the top, its radius GRB_ORB_R a Void tier (V = 2x I);
+// NOVA a thin ring round it, contracting onto it every GRB_NOVA_T s, brighter and thicker a tier; GRAVITY WELL GRB_WELL_N debris spiralling in,
+// each with a 3-segment trail along its spiral. Back halves before the orb, front halves after. Nova or Well with Void 0: a Void I orb. Look only
+const GRB_GAP = (29 - 40 * 0.58) / 40, GRB_ORB_R = [0, 7.5, 9, 10.8, 12.8, 15].map(r => r / 40), GRB_NOVA_T = 2, GRB_WELL_T = 3.2;
+const GRB_NOVA_A = [0, 0.5, 0.6, 0.72, 0.86, 1], GRB_NOVA_W = [0, 0.9, 1.2, 1.5, 1.9, 2.4].map(w => w / 40), GRB_WELL_N = [0, 3, 5, 7, 9, 12];
+function drawGrvBody(t, x, y, top, R) { // top: the prism top's height (warpFrame units); R: the hex radius (world u)
+  const v = skillOf(t, "void"), nv = skillOf(t, "supernova"), wl = skillOf(t, "radiation"), vt = v || (nv || wl ? 1 : 0); if (!vt) return;
+  const F = warpFrame(x, y, top), k = Math.hypot(F[0], F[1]), sq = Math.hypot(F[2], F[3]) / k, r = GRB_ORB_R[vt] * R, oy = -(sq * R + GRB_GAP * R + r), now = performance.now() / 1000;
+  ctx.setTransform(k, 0, 0, k, F[0] * x + F[2] * y + F[4], F[1] * x + F[3] * y + F[5] + oy * k); // (screen-upright, centred on the orb)
+  const col = COL.violet;
+  const nova = front => { // the ring: contracting from 3.3 r to 1.25 r, fading in and out
+    const p = (now / GRB_NOVA_T) % 1, rho = r * (3.3 - 2.05 * p), env = Math.min(p / 0.15, 1) * Math.min((1 - p) / 0.22, 1), a = GRB_NOVA_A[nv] * env, w = GRB_NOVA_W[nv] * R;
+    ctx.save(); ctx.scale(1, sq); ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(0, 0, rho, front ? 0 : Math.PI, front ? Math.PI : 2 * Math.PI);
+    ctx.restore(); // (the path keeps its squash; the strokes stay round)
+    ctx.strokeStyle = col; ctx.globalAlpha = 0.35 * a; ctx.lineWidth = w * 2.6; ctx.stroke();
+    ctx.strokeStyle = COL.white; ctx.globalAlpha = 0.85 * a; ctx.lineWidth = w; ctx.stroke();
+  };
+  const well = front => { // the debris: spiralling in from 4 r, a 3-segment trail behind each
+    const n = GRB_WELL_N[wl], at = (i, p) => { const th = i * 2.4 - 2 * Math.PI * 1.4 * p, rho = r * (4 - 3 * p ** 1.1); return [rho * Math.cos(th), rho * sq * Math.sin(th), Math.sin(th)]; };
+    ctx.lineWidth = 0.028 * R; ctx.lineCap = "round"; ctx.strokeStyle = col;
+    for (let i = 0; i < n; i++) {
+      const p = (now / GRB_WELL_T + i / n) % 1, q = at(i, p); if ((q[2] > 0) !== front) continue;
+      const al = Math.min(p / 0.1, 1) * Math.min((1 - p) / 0.1, 1);
+      ctx.globalAlpha = 0.55 * al; ctx.beginPath();
+      for (const [j, d] of [0.05, 0.0333, 0.0167].entries()) { const w = at(i, Math.max(0, p - d)); if (j) ctx.lineTo(w[0], w[1]); else ctx.moveTo(w[0], w[1]); }
+      ctx.lineTo(q[0], q[1]); ctx.stroke();
+      ctx.fillStyle = COL.white; ctx.globalAlpha = al * (0.45 + 0.55 * p); ctx.beginPath(); ctx.arc(q[0], q[1], (0.052 - 0.0175 * p) * R, 0, 2 * Math.PI); ctx.fill();
+    }
+  };
+  if (nv) nova(false); if (wl) well(false);
+  ctx.fillStyle = col; for (const [m, a] of [[2.4, 0.08], [1.8, 0.12], [1.35, 0.16]]) { ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(0, 0, r * m, 0, 2 * Math.PI); ctx.fill(); } // the halo
+  ctx.globalAlpha = 1; ctx.fillStyle = COL.bg; ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.fill();
+  ctx.strokeStyle = col; ctx.lineWidth = 0.06 * R; ctx.globalAlpha = 0.55; ctx.stroke(); ctx.lineWidth = 0.025 * R; ctx.globalAlpha = 1; ctx.stroke(); // the rim
+  ctx.strokeStyle = COL.white; ctx.lineWidth = 0.02 * R; ctx.globalAlpha = 0.45; ctx.beginPath(); ctx.arc(0, 0, r * 0.78, Math.PI * 1.05, Math.PI * 1.45); ctx.stroke(); // a glint
+  if (nv) nova(true); if (wl) well(true);
+  ctx.globalAlpha = 1;
+}

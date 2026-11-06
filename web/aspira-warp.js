@@ -319,7 +319,7 @@ function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid 
       const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
       const h = towerH(t);
       return { x, y, h, col: COL[TOWERS[t.kind].color], pts: c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })),
-        under: () => ownColours(() => up(x, y, () => drawIfrTop(t), 0)), top: () => ownColours(() => up(x, y, () => drawTower(t), h / 2)), own: true }; /* drawIfrTop: IFR's charge balls on the prism's corners AT THE FLOOR, before the prism - the tower always covers them (aspira-ifrit.js) */
+        under: () => ownColours(() => up(x, y, () => drawIfrTop(t), 0)), top: () => ownColours(() => { up(x, y, () => drawTower(t), h / 2); if (t.kind === "grv" && typeof drawGrvBody === "function") { ctx.save(); try { drawGrvBody(t, x, y, h / 2, Math.hypot(c0.pts[0].x - c0.x, c0.pts[0].y - c0.y) * TOWER_K * TOWER_DRAW_K); } finally { ctx.restore(); } } }), own: true }; /* drawGrvBody: GRV's orb over its top (aspira-grv-draw.js) */ /* drawIfrTop: IFR's charge balls on the prism's corners AT THE FLOOR, before the prism - the tower always covers them (aspira-ifrit.js) */
     });
     CELLS.forEach((c, ci) => {
       if (!cellOpen(ci) || G.towers.some(t => t.cell === ci)) return;
