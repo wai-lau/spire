@@ -2,6 +2,7 @@
 // putting the old code back on a scratch copy). Registered into the smoke harness; smoke.mjs imports this file before it reports.
 // Its own page env, so the smoke checks' game state never leaks in.
 import { boot, check, frames } from "./harness.mjs";
+import { makeGame } from "../aspira-sim/sim.mjs";
 
 const env = boot(), { run } = env;
 // a fresh game with one CRR bought to `skills` and enemies held ON LANE 0 at about each distance (a stepped game re-reads a spot from its lane)
@@ -66,4 +67,10 @@ check("the 3D moving layer's plain strokes go to the GPU, not the real canvas (g
   const why = run("JSON.stringify(glcWhyN)"), ctxF = run("String(warp.cv.getContext('2d').filter)");
   if (ctxF !== "none") return "the harness's 2D context reads filter as " + ctxF.slice(0, 40) + " (expected \"none\", as a browser's)";
   if (/filter/.test(why)) return "strokes fell back to the real canvas for a filter nobody set: " + why;
+});
+
+check("the simulator's card sentences match the page's (2026-11-06: TD_UNIT lived in aspira-stats.js, which the sim never loads, so the description graph - docs/spire-descriptions.md, built on the sim - read every ACD, FRZ and GRV share x8, x3, x4 high): describeTower, 7 towers x 3 axes x tiers 0-V", () => {
+  const g = makeGame(1), E = `JSON.stringify((() => { const o = []; for (const kind of Object.keys(SKILL_TREES)) for (const ax of SKILL_TREES[kind]) for (let k = 0; k <= 5; k++) o.push([kind + " " + ax.id + " " + k, describeTower(kind, { [ax.id]: k })]); return o; })())`;
+  const a = JSON.parse(run(E)), b = JSON.parse(g.run(E)), bad = a.filter(([k, s], i) => !b[i] || b[i][1] !== s).map(([k]) => k);
+  return a.length !== b.length ? `page ${a.length} sentences, sim ${b.length}` : bad.length ? bad.length + " differ: " + bad.slice(0, 5).join(", ") : "";
 });
