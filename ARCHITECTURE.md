@@ -168,7 +168,7 @@ CRR is GEOMETRIC too: `geo` [0.8565, 1.4444], boosted early and tapering to the 
 
 **The card's damage unit** (`td`): ACD, FRZ and GRV count theirs `TD_UNIT` {acd 8, frz 3, grv 4} x bigger (`tdOf`, aspira-stats.js; the
 card reads it through `tdU`, aspira-desc.js) - a LABEL only, the damage dealt is unchanged - so no share on a card passes 800% (FRZ's chill
-top 2260% -> 753%, GRV Void V 3000% -> 750%, ACD's ramp 1/8 to 8 td). Smoke: no card sentence names a number over 800%, every axis of
+top 2260% -> 753%, now capped at 800% by `FRZ_BITE_TD`, GRV Void V 3000% -> 750%, ACD's ramp 1/8 to 8 td). Smoke: no card sentence names a number over 800%, every axis of
 every tower at tiers 0-V. Burns read their share A SECOND, a CRR sortie its share A BOLT (`docs/spire-wording.md` rule 3).
 
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
@@ -223,8 +223,8 @@ ARCHAEOLOGY §4.
 | Shock (id `capacitance`) | never slows (`ARC_RES_SLOW` all 0: the owner's ARC brief, ARCHAEOLOGY §12.t); every hit strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); **Shocked** (owner, 2026-11-01, "1": "Shock makes shocked enemies take more damage from ARC"): each hit marks its target for `STAT_SLOW_T` (0.6 s; `shockT`, refreshed on hit), and a marked enemy takes x(1 + `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2) from ARC's hits (not the burn); the mark shows as a thin triangle in ARC's colour round the die (aspira-enemies.js), the card says "Shocked enemies take X% more damage from ARC."; no area zap |
 
 **FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
-**armor bites the tick**, and it hurts by the enemy's slow (`FRZ_CHILL_K`: "the colder, the
-harder", so fast enemies take most). **No armor reduction** (owner, 2026-10-29: "no armor reduction effects, more slow").
+**armor bites the tick**, and it hurts by the speed the slow takes (`frzBite`: `FRZ_CHILL_K` x slow x the enemy's own speed / `ENEMY_BASE_SPEED`, owner
+2026-11-06 "1 yes"; it reads speed, never type, so fast enemies take most), never over `FRZ_BITE_TD` (8) x td. **No armor reduction** (owner, 2026-10-29: "no armor reduction effects, more slow").
 **Weakness: shields and armor** - a shielded enemy cannot be slowed (no chill, no Brittle, a Permafrost pulse does nothing);
 a tick on it pops one charge.
 
