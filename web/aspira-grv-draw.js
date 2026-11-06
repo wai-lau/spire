@@ -21,7 +21,7 @@ function drawGrvPellets() {
 // ---------- the nova's damage numbers fly INWARD, toward the sphere (owner) ----------
 // the aura's BANDS, the sphere outward, in the black-hole image's colours and shares (owner, 2026-10-15): white-hot 2, yellow 6,
 // coral 13, pink 13, plum 18, deep purple 17 - each stop where its band starts, clear inside the first and past the last
-const GRV_BANDS = [[0.15, "bhwhite"], [0.19, "yellow"], [0.3, "bhcoral"], [0.47, "bhpink"], [0.66, "bhplum"]]; // the outermost band CLEAR, not the near-black deep purple (owner, 2026-10-24: "GRV BH outermost color should be transparent, not black"; was [0.86, "bhdeep"])
+const GRV_BANDS = [[0.15, "violet"], [0.4, "violet"], [0.66, "bhplum"]]; /* THE TOWER'S COLOURS (owner, 2026-11-06: "for GRV, update the void attack to use the same colors as the ones used by the tower now"): violet into plum, then clear; was white-hot, yellow, coral, pink, plum */ // the outermost band CLEAR, not the near-black deep purple (owner, 2026-10-24: "GRV BH outermost color should be transparent, not black"; was [0.86, "bhdeep"])
 // the NOVA: a thick ring (GRV_NOVA_W of its reach), GRV purple turning white as it collapses (owner, 2026-10-15; it was a red /
 // orange / yellow ring going OUT for an hour)
 const GRV_NOVA_LOOK_A = 0.5; // the WHOLE nova - ring and glow - at half (owner, 2026-11-05: "Halve opacity of all gr novas"), on top of GRV_NOVA_GLOW
