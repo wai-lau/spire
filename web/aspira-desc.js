@@ -87,12 +87,12 @@ const DESCRIBE = {
   // Void a bigger void, pellets shed as it decays (Singularity: heavier); Gravity Well the aura - pull, slow - and the pellets' damage and
   // range (Event Horizon: the whole aura slows as hard as its inside)
   grv(sk) {
-    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0, U = GRV_INNER_K[0] * GRV_START_MASS * tdU("grv"), lo = GRV_INNER_K[v] * GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1) / U; // 100% = a second of a tier 0 void's crush (owner, 2026-10-25: "yes" - it was a nova's hit, and tier 0 has none)
+    const v = sk.void || 0, n = sk.supernova || 0, r = sk.radiation || 0, U = GRV_INNER_K[0] * GRV_START_MASS * tdU("grv"), lo = GRV_INNER_K[v] * GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1) * GRV_NOVA_RATE[n] / U; // 100% = a second of a tier 0 void's crush (owner, 2026-10-25: "yes" - it was a nova's hit, and tier 0 has none)
     // (owner, 2026-10-25): "0: void only" / "the void crushes" / "always call it a void, and an aura" / "122% to X% depending on the size"
     // (owner, 2026-10-26): "A void crushes for 100% to 300%td over 1s as it grows. Particles radiate as it decays dealing X%td each." - the merge sentence dropped
-    return (n ? cap(NUM_WORD[GRV_NOVA_N]) + " novas implode in quick succession, each dealing " + pc(GRV_NOVA_K / U) + " damage" + (a => a !== "0%" ? " and stripping " + a + " of armor" : "")((st => st.strip ? pc(st.strip) : "0%")(descStats("grv", sk))) + "; then a" : "A") +
+    return (n ? "A nova implodes, dealing " + pc(GRV_NOVA_K * GRV_NOVA_RATE[n] / U) + " damage" + (a => a !== "0%" ? " and stripping " + a + " of armor" : "")((st => st.strip ? pc(st.strip) : "0%")(descStats("grv", sk))) + "; then a" : "A") +
       " void" + (v >= CAPSTONE_TIER ? ", twice as heavy," : "") + " crushes for " + pc(lo) + " to " + perSec(lo * GRV_MASS_MAX) + " as it grows." +
-      " Particles radiate as it decays dealing " + pc(GRV_PELLET_K[r] / U) + " damage each." +
+      " Particles radiate as it decays dealing " + pc(GRV_PELLET_K[r] * GRV_NOVA_RATE[n] / U) + " damage each." +
       (r ? " An aura around it pulls enemies together and slows them" + (r >= CAPSTONE_TIER ? " twice as hard." : ", twice as hard inside the void.") : ""); /* V (owner, 2026-10-26): "An aura... pulls enemies together and slows them twice as hard." */ /* (no "flings its particles farther": owner, 2026-10-26) */
   },
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six

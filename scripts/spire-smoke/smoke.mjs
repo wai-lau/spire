@@ -347,7 +347,7 @@ check("GRV: a void every shot, at its starting mass, novas before it only from N
       out[k] = { n: t.spheres.length, mass: t.spheres[0].mass, nN: t.spheres[0].nN || 0 }; }
     return out; })()`);
   if (r.z.n !== 2 || r.z.mass !== 3 || r.z.nN) return "tier 0: " + JSON.stringify(r.z) + " (expected a void a shot, mass 3, no nova)";
-  if (r.n.nN !== 3) return "Nova I: " + JSON.stringify(r.n) + " (expected three novas)";
+  if (r.n.nN !== 1) return "Nova I: " + JSON.stringify(r.n) + " (expected one nova - owner, 2026-11-06)";
   return "";
 });
 check("every shield pop shows its own 0 at once, quiet hits too (owner, 2026-10-21)", () => {

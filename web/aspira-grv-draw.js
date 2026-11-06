@@ -87,7 +87,7 @@ function drawSphere(sp, st, auraOwn = true) {
     ctx.globalAlpha = 0.45 * (1 - f) ** 2; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar * GRV_RING_OUT * f, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0;
   }
   if (sp.age < novaEnd(sp)) { // the NOVA: a thick ring collapsing INWARD, accelerating, GRV purple slowly turning white (owner)
-    const p = Math.min(1, novaLocal(sp)[1] / GRV_FRONT_T), r = grvNovaR(sp, st), w = Math.min(r, st.novaR * GRV_NOVA_W);
+    const p = Math.min(1, novaLocal(sp)[1] / GRV_NOVA_T), r = grvNovaR(sp, st), w = Math.min(r, st.novaR * GRV_NOVA_W);
     if (r > 0.5) {
       // BRIGHTER as it closes on the centre (owner, 2026-10-17: "make GRV nova rings much thinner, however, they should get brighter as
       // they approach the center"): fainter far out, whiter and glowing as it collapses
