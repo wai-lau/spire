@@ -8,7 +8,25 @@ const IFR_METEOR_DRAW_K = 1.25, ifrDrawK = t => IFR_METEOR_DRAW_K ** (typeof ski
 function drawIfrCharge(t, st, low) {
   if (t.ifrCharge <= 0) return;
   const n = Math.max(1, st.store || 1); // the stored meteors, evenly round the orbit; the one still charging grows to the meteor it launches
-  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n), f = Math.min(1, t.ifrCharge - k); drawIfrMeteor(c.x, c.y, st.ballR * (0.3 + 0.7 * f), true, low); } // (the charges in orbit keep their size - a bigger one crowds the tower's hex)
+  const h = skillOf(t, "hellfire"), fl = skillOf(t, "firaga");
+  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n), f = Math.min(1, t.ifrCharge - k), r = st.ballR * (0.3 + 0.7 * f); drawIfrMeteor(c.x, c.y, r, true, low); ifrBodyMarks(c.x, c.y, r, h, fl, f); } // (the charges in orbit keep their size - a bigger one crowds the tower's hex)
+}
+// THE BODY SHOWS THE BUILD (owner, 2026-11-06: "I want the upgrades to each update a visual feature of the tower as well as their attacks / for example
+// with IFR / for the meteors that orbit it / meteor: bigger (already exists) / hellfire: brighter/thicker red ring around / flare: little flare on top of
+// meteor (up to 2x the size of IFR 0 meteor at flare V)"): on each ORBITING meteor (the charges, not the ones in flight) - Hellfire a red ring round it,
+// wider and brighter each tier (none untaken); Flare a little four-ray flare over it, its rays IFR_BODY_FL_K x the untaken meteor's radius a tier, 2x at V.
+// The look only; 3 strokes a meteor at most. h, fl: the Hellfire and Flare tiers; f: the charge's fill (the marks grow in with it)
+const IFR_BODY_HF_GAP = 2.6, IFR_BODY_HF_W = [0, 0.7, 1.1, 1.5, 1.9, 2.4], IFR_BODY_HF_A = [0, 0.5, 0.62, 0.74, 0.87, 1], IFR_BODY_FL_K = 0.4, IFR_BODY_FL_X = 0.55;
+function ifrBodyMarks(x, y, r, h, fl, f) {
+  if (h > 0) { ctx.strokeStyle = COL.threat; ctx.lineWidth = IFR_BODY_HF_W[h]; ctx.globalAlpha = IFR_BODY_HF_A[h] * f; ctx.beginPath(); ctx.arc(x, y, r + IFR_BODY_HF_GAP, 0, 6.283); ctx.stroke(); }
+  if (fl > 0) {
+    const L = IFR_BALL_RAD[0] * IFR_BODY_FL_K * fl * f, d = L * IFR_BODY_FL_X * Math.SQRT1_2; // the long four + a shorter x, one path
+    ctx.lineCap = "round"; ctx.beginPath();
+    ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.moveTo(x - d, y - d); ctx.lineTo(x + d, y + d); ctx.moveTo(x - d, y + d); ctx.lineTo(x + d, y - d);
+    ctx.strokeStyle = COL.orange; ctx.lineWidth = 1.2 + 0.15 * fl; ctx.globalAlpha = 0.55 * f; ctx.stroke(); /* an orange halo, then the white-hot core over it - a meteor's flare's colours (IFR_MAIN_COL) */
+    ctx.strokeStyle = COL.white; ctx.lineWidth = 0.45 + 0.08 * fl; ctx.globalAlpha = Math.min(1, 0.6 + 0.08 * fl) * f; ctx.stroke(); ctx.lineCap = "butt";
+  }
+  ctx.globalAlpha = 1;
 }
 // the ring's glow at radius r, alpha a (0.9 = full): IFR_RING_GLOW's layers, the blast's and the ball's alike
 function drawIfrRingAt(x, y, r, a, low, wk = 1, cols = null) { // wk: x every layer's width (the fire's ring: IFR_FIRE_W); cols: a layer colour map (the fire's: IFR_HF_COL)
