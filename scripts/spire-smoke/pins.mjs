@@ -74,3 +74,16 @@ check("the simulator's card sentences match the page's (2026-11-06: TD_UNIT live
   const a = JSON.parse(run(E)), b = JSON.parse(g.run(E)), bad = a.filter(([k, s], i) => !b[i] || b[i][1] !== s).map(([k]) => k);
   return a.length !== b.length ? `page ${a.length} sentences, sim ${b.length}` : bad.length ? bad.length + " differ: " + bad.slice(0, 5).join(", ") : "";
 });
+
+check("a die wholly off the canvas draws nothing, one on it still draws (solidOffCanvas, perf 2026-11-06: late waves walk in from r 2400, far off screen, and were filled and stroked every frame)", () => {
+  run(`(() => { G = newGame(); G.started = true; G.nextIn = 1e9; G.spawns = []; ui.paused = false;
+    const put = s => { spawnEnemy("armor", 30, 0, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(0, s, 0); e.s = s; e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e9; return e; };
+    put(0); put(PATHS[0].len - 120); })()`);
+  frames(env, 3);
+  const r = JSON.parse(run(`(() => { const [far, near] = G.enemies, c = warp.ent.getContext("2d"), main = ctx; ctx = c; let n = 0; const f0 = c.fill;
+    c.fill = (...a) => { n++; return f0.apply(c, a); };
+    const fills = e => { n = 0; warpBand = null; warpSolidWhole(e); return n; };
+    try { return JSON.stringify({ far: fills(far), near: fills(near), r: Math.round(Math.hypot(far.x - CX, far.y - CY)) }); } finally { c.fill = f0; ctx = main; } })()`));
+  if (!(r.near > 0)) return "the die by the core drew no face (the rig is broken, or the cull culls what shows)";
+  if (r.far) return "the die at the lane's start (r " + r.r + ", off the canvas) still drew " + r.far + " faces";
+});
