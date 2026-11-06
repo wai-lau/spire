@@ -214,13 +214,13 @@ function carTether(i, t, st, dt) {
 // the longest-held (i.heldAt) taking the first target, all launching at once from where they circle. Its SIZE goes with the same oj ("smaller interceptors fly closer": carDart)
 const CRR_HOLD_R = 40 /* 80 -> 40 (owner, 2026-11-05: "CRR orbit around tower should be half current distance"; 48 -> 80 on 2026-10-16: "circling interceptors should circle further away from tower") */, CRR_HOLD_JIT = 0.25, CRR_HOLD_V = 55 /* 110 -> 55 with the radius: the same loop time (2.3 s), only the distance moves */, CRR_SIZE_JIT = 0.15; // u; +-; u/s round the carrier; +- size
 // WIDER, AND WIDER WITH THE CARRIER'S LEVEL (owner, 2026-11-06: "increase orbit around tower distance and jitter the tower gains in levels"): the
-// radius x CRR_HOLD_K, + CRR_HOLD_LVL a level past the first (a full carrier ~x1.8 of the old 40 u), each interceptor's jitter CRR_HOLD_JIT2 by its oj;
+// radius x CRR_HOLD_K, + CRR_HOLD_LVL a level past the first (a full carrier ~x1.8 of the old 40 u), each interceptor's jitter CRR_HOLD_JIT (+-25%) of that growing radius by its oj, so the spread grows too;
 // its pace grows with the level factor, so a loop still takes ~2.3 s
-const CRR_HOLD_K = 1.4, CRR_HOLD_LVL = 0.022, CRR_HOLD_JIT2 = 0.15;
+const CRR_HOLD_K = 1.4, CRR_HOLD_LVL = 0.022;
 const carHoldF = t => CRR_HOLD_K * (1 + CRR_HOLD_LVL * Math.max(0, (t.lvl || 1) - 1));
 function carHoldOrbit(i, t, dt) {
   i.oj ??= Math.random() * 2 - 1;
-  const f = carHoldF(t), R = CRR_HOLD_R * f * (1 + CRR_HOLD_JIT2 * i.oj);
+  const f = carHoldF(t), R = CRR_HOLD_R * f * (1 + CRR_HOLD_JIT * i.oj);
   if (i.ho === undefined) { i.ho = Math.atan2(i.y - t.y, i.x - t.x) || Math.random() * 6.283; i.htx = t.x; i.hty = t.y; }
   i.x += t.x - i.htx; i.y += t.y - i.hty; i.htx = t.x; i.hty = t.y; // CARRIED with its carrier, as if fixed to it - a quick drag never pulls it through the tower (owner, 2026-10-16: "have the circling interceptors move as if physically connected to the tower")
   i.ho += CRR_HOLD_V * f / R * dt;
