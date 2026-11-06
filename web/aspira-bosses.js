@@ -5,7 +5,7 @@
 //   12 Star        none: the plain boss that teaches the rules; its fleet a 3 x 10 lattice of fast behind it (FLEET_LATTICE, 2026-11-05)
 //   24 Empress     no fleet; a whole swarm wave pours out of her past 2/3 and past 1/3 of her HP (2026-11-05)
 //   36 Strength    takes 10% of any slow (BOSS_SLOW_K); at the centre of a 3 x 12 armor lattice (FLEET_LATTICE, 2026-11-05)
-//   40 Chariot     every CHARIOT_EVERY s it sprints at CHARIOT_SPD x for CHARIOT_T s
+//   48 Chariot     every CHARIOT_EVERY s it sprints at CHARIOT_SPD x for CHARIOT_T s
 //   60 Lovers      a PAIR on opposite lanes, no trick (2026-11-05: the heal-and-run went), with one armor wave scattered like a swarm round them
 //   72 Temperance  regenerates TEMPERANCE_REGEN of its HP a second (owner: tripled to 6%, and x5 HP); at the centre of a 3 x 12 shield lattice (2026-11-05)
 //   84 Devil       her host first (half a fast + half a swarm wave, devilEscorts), the six once half of it is on screen; comes as SIX (DEVIL_COPIES), each a full boss on its own copy of the
