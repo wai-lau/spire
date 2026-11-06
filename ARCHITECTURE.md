@@ -378,11 +378,11 @@ in, of (mean score / trio score), applied to `TOWERS[k].dmg` and squared to conv
 designed deaths are the exception** (pillar 2). `triodiag.mjs` shows why a trio loses (per enemy type: lives lost and closest
 approach). The rounds, their numbers and the dated lists: ARCHAEOLOGY §4.6d; the tooling, §10.4.
 
-The list, read off the marks (`VS_MARKS`, `aspira-chooser.js`) as they stand at 7.7.42 (recompute after every marks refresh; the older lists: ARCHAEOLOGY §4.6d) - seven:
+The list, read off the marks (`VS_MARKS`, `aspira-chooser.js`) as they stand at 7.7.44 (recompute after every marks refresh; the older lists: ARCHAEOLOGY §4.6d) - four, one a type:
 
 | Missing | Trios |
 |---|---|
-| fast | ARC+SOL+ACD, ARC+SOL+IFR, ARC+ACD+IFR, SOL+ACD+IFR |
+| fast | ARC+ACD+IFR |
 | shield | ARC+FRZ+GRV |
 | swarm | SOL+ACD+CRR |
 | armor | FRZ+CRR+IFR |
