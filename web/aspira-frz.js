@@ -174,7 +174,8 @@ function drawFrzSkill(t, st) {
   ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowColor = col; ctx.shadowBlur = 12 * cam.k;
   for (const p of t.pulses || []) {
     const f = Math.min(1, p.age / FRZ_RIME_GROW);
-    ctx.globalAlpha = 0.45 /* halved with the doubled rate (owner, 2026-10-14; was 0.9) */ * (1 - f * 0.6) * (p.moon ? MOON_FX : 1); ctx.beginPath(); ctx.arc(p.x, p.y, p.R * f, 0, 6.283); ctx.stroke();
+    if (p.alt == null) { const q = (t.rimeSeq ||= {}); p.alt = (q[p.id] = (q[p.id] || 0) + 1) % 2 === 0; } // EVERY SECOND RING AT HALF (owner, 2026-11-06: "visually halve opacity of every second permafrost ring"): counted per source as first drawn (look only)
+    ctx.globalAlpha = 0.45 /* halved with the doubled rate (owner, 2026-10-14; was 0.9) */ * (1 - f * 0.6) * (p.moon ? MOON_FX : 1) * (p.alt ? 0.5 : 1); ctx.beginPath(); ctx.arc(p.x, p.y, p.R * f, 0, 6.283); ctx.stroke();
   }
   ctx.shadowBlur = 0; ctx.globalAlpha = 1;
 }
