@@ -90,8 +90,11 @@ const FRZ_RIME_FULL = 0.7, FRZ_SPREAD_FX = 0.35;
 // how much frost an enemy holds, 0..1 of FRZ_RIME_FULL - its armor loss and its white outline (rimeK, aspira-enemies.js)
 const frostShare = e => (e.rimeKeep == null ? 0 : Math.min(1, (1 - e.rimeKeep) / FRZ_RIME_FULL));
 const rimeFull = e => 1 - (e.rimeKeep ?? 1) >= FRZ_RIME_FULL;
+// CONDUCTION REACHES 200 u (owner, 2026-11-06: "Limit FRZ permafrost conduction to things that are within 200u of conducting target"): the
+// spread goes to the nearest non-full enemy within FRZ_CONDUCT_R of the full one, else the ring does nothing to it (it reached any distance till then)
+const FRZ_CONDUCT_R = 200;
 function rimeSpread(e) {
-  let best = null, bd = Infinity;
+  let best = null, bd = FRZ_CONDUCT_R ** 2;
   for (const o of G.enemies) {
     if (o.dead || !o.seen || o === e || rimeFull(o)) continue;
     const d = (o.x - e.x) ** 2 + (o.y - e.y) ** 2;
