@@ -12,3 +12,5 @@ node_modules/
 /.archaeology/
 # the peers' own worktrees (Wai, 2026-11-05: separate copies of the code - peer-balance, peer-visual), never committed
 /.wt/
+# Leader's open questions for Wai (owner, 2026-11-06), never committed
+/OPEN-QUESTIONS.md
