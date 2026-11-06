@@ -44,6 +44,9 @@ const GRV_START_MASS = 3, GRV_BIG_MASS = 2; // a void's starting mass (the three
 const GRV_TICK = 0.25, GRV_FRONT_T = 0.2; // the nova's collapse, s (0.12 outward, then inward: a touch longer to read)
 // THE NOVAS (three from 2026-10-18, owner: "3 novas in quick succession, then the bh forms"; ONE since 2026-11-06, below):
 // GRV_NOVA_N fronts, one every GRV_NOVA_GAP s, each hitting every enemy it sweeps once; the hole opens after the last
+// THE CRUSH NEVER OVER 8x td (owner, 2026-10-31: "Nothing should ever be above like 800%"): with the Nova factor on the void (one nova, 2026-11-06) a Void V +
+// Nova V void crushed 2325%td a second at full mass; capped at GRV_CRUSH_TD x td (marks 9 pts 101-119: unchanged)
+const GRV_CRUSH_TD = 8;
 const GRV_NOVA_N = 1, GRV_NOVA_GAP = 0.3, GRV_NOVA_K = 9, GRV_NOVA_T = 0.8; /* ONE NOVA a shot (owner, 2026-11-06: "1. Yes, make this ring move slower too, so that it takes up the time of the three (can only hit an enemy once)"): its hit x3 (K 3 -> 9) and its front sweeps over GRV_NOVA_T s, the old three's span ((3 - 1) x 0.3 + 0.2); was N 3 */ /* THREE novas again, from Nova I only (owner, 2026-10-25: "Nova 1: 3 novas in quick succession before each void"; tier 0 "void only") - each its old x3 hit, at a third the shots */ // ONE nova at THREE times the hit (owner, 2026-10-21: "change the initial ring to 1 ring again, except triple damage"; three since 2026-10-18)
 const novaLocal = sp => { if (!sp.nN) return [-1, Infinity]; const k = Math.min(sp.nN - 1, Math.floor(sp.age / GRV_NOVA_GAP)); return [k, sp.age - k * GRV_NOVA_GAP]; }; // [which nova, its own age]
 const novaEnd = sp => sp.nN ? (sp.nN - 1) * GRV_NOVA_GAP + GRV_NOVA_T : 0; // the nova GONE (collapsed into its centre) - only then the centre and aura (owner: "finish exploding before growing the circle")
@@ -223,7 +226,7 @@ function stepSphere(sp, t, st, dt) {
       const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
       if (e.dead || !e.seen || d2 > reach * reach) continue;
       const inIn = d2 <= inner * inner, slow = inIn ? core : outer;
-      if (st.hole && inIn && sp.age >= novaEnd(sp)) { const d = grvHit(sp, t, st, e, st.hdmg * st.innerK * k * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
+      if (st.hole && inIn && sp.age >= novaEnd(sp)) { const d = grvHit(sp, t, st, e, Math.min(st.hdmg * st.innerK * k, GRV_CRUSH_TD * GRV_INNER_K[0] * GRV_START_MASS * tdU("grv") * st.dmg) * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy doubled like every other slow (owner, 2026-10-24 marks target: "Increase slow to make good vs fast")
       if (!st.auraOn) continue; // the slow and the pull are Nova's aura (tier redesign 2026-10-24)
       const lane = grvLane(e, sp), sk = lane.ahead ? GRV_AHEAD_K : 1;

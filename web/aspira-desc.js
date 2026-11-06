@@ -91,7 +91,7 @@ const DESCRIBE = {
     // (owner, 2026-10-25): "0: void only" / "the void crushes" / "always call it a void, and an aura" / "122% to X% depending on the size"
     // (owner, 2026-10-26): "A void crushes for 100% to 300%td over 1s as it grows. Particles radiate as it decays dealing X%td each." - the merge sentence dropped
     return (n ? "A nova implodes, dealing " + pc(GRV_NOVA_K * GRV_NOVA_RATE[n] / U) + " damage" + (a => a !== "0%" ? " and stripping " + a + " of armor" : "")((st => st.strip ? pc(st.strip) : "0%")(descStats("grv", sk))) + "; then a" : "A") +
-      " void" + (v >= CAPSTONE_TIER ? ", twice as heavy," : "") + " crushes for " + pc(lo) + " to " + perSec(lo * GRV_MASS_MAX) + " as it grows." +
+      " void" + (v >= CAPSTONE_TIER ? ", twice as heavy," : "") + " crushes for " + pc(Math.min(GRV_CRUSH_TD, lo)) + " to " + perSec(Math.min(GRV_CRUSH_TD, lo * GRV_MASS_MAX)) + " as it grows." +
       " Particles radiate as it decays dealing " + pc(GRV_PELLET_K[r] * GRV_NOVA_RATE[n] / U) + " damage each." +
       (r ? " An aura around it pulls enemies together and slows them" + (r >= CAPSTONE_TIER ? " twice as hard." : ", twice as hard inside the void.") : ""); /* V (owner, 2026-10-26): "An aura... pulls enemies together and slows them twice as hard." */ /* (no "flings its particles farther": owner, 2026-10-26) */
   },

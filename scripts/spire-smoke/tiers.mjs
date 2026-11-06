@@ -285,6 +285,10 @@ check("later: CRR's tether rides the first interceptor OUT on a target, not inte
     t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
   if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
 });
+check("no card sentence names a number over 800% for ANY build, every axis mix 0-V (owner, 2026-10-31; a Void V + Nova V GRV read 2325%, 2026-11-06)", () => {
+  const r = run(`(() => { const out = []; for (const kind of Object.keys(SKILL_TREES)) { const ids = SKILL_TREES[kind].map(a => a.id); for (let a = 0; a <= 5; a++) for (let b = 0; b <= 5; b++) for (let c = 0; c <= 5; c++) { const d = describeTower(kind, { [ids[0]]: a, [ids[1]]: b, [ids[2]]: c }); for (const m of d.matchAll(/(\\d+)%/g)) if (+m[1] > 800) { out.push(kind + " " + a + b + c + ": " + m[0]); break; } } } return out; })()`);
+  if (r.length) return r.length + " over 800%: " + r.slice(0, 6).join("; ");
+});
 check("FRZ's chill never bites over 8x td (owner, 2026-10-31: \"Nothing should ever be above like 800%\"; the bite by speed, 2026-11-06): a fully slowed enemy at the fastest regular speed", () => {
   const r = run(`(() => { const sp = Math.max(...["swarm", "fast", "shield", "armor"].map(k => ENEMIES[k].speed)), k = Object.keys(ENEMIES).find(k => ENEMIES[k].speed === sp); return [frzBite({ type: k, slowT: 1, slowF: 1 }), 8 * tdU("frz")]; })()`);
   if (!(r[0] <= r[1] + 1e-9)) return "bite " + r[0] + " > " + r[1];
