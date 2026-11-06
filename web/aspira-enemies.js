@@ -143,6 +143,8 @@ function drawEnemy(e, solid) {
 //   Deep Freeze a frost HEXAGON around it while the 95% chill holds
 //   Corrosion  a DOTTED ring tight around it while its armor is being eaten
 // (Permafrost's thicker freeze outline is drawn with the outline itself)
+// a chill among an enemy's slows (no array a frame: Object.keys was one per enemy per frame - perf, 2026-11-06)
+const slowsChill = sl => { for (const k in sl) if (k.endsWith(":chill")) return true; return false; };
 function drawStatus(e, d, size, solid) {
   const vis = enemyVis(e); // (off the board: as faint as the body - owner, 2026-10-26)
   if (e.biteT > 0) {
@@ -156,7 +158,7 @@ function drawStatus(e, d, size, solid) {
     ctx.lineTo(ptx(s * 0.2, -s * 0.25), pty(s * 0.2, -s * 0.25)); ctx.lineTo(ptx(s, s * 0.15), pty(s, s * 0.15));
     ctx.strokeStyle = COL.white; ctx.globalAlpha = (0.85) * vis; ctx.lineWidth = 1.5; ctx.stroke();
   }
-  if (e.slows && Object.keys(e.slows).some(k => k.endsWith(":chill"))) {
+  if (e.slows && slowsChill(e.slows)) {
     poly(e.x, e.y, size + 9, 6, Math.PI / 6, false);
     ctx.strokeStyle = COL.cyan; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2.5; ctx.stroke();
   }
