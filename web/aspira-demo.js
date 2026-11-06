@@ -7,7 +7,10 @@
 // effect batch off - so the real game, paused under the card, is left exactly as it was (smoke: "demo scene leaves the real game alone").
 // A new global that step() writes must join demoIn / demoOut's swap, or it leaks between the two games (smoke: demo isolation).
 // THE DRAW IS PLUGGABLE (demoFrame's draw): the scene only lends it the canvas and a camera; the owner picked 3D (demoDraw3d, below).
-const DEMO_LANE_END = 40; // u short of a lane's end where a walker turns back to the right edge (the lane runs 60 u past the box's edges: out of sight)
+// EVERY WALKER IN SIGHT (owner, 2026-11-06: "ARC demo keeps reflecting between offscreen invincible enemies"): the scene's lanes run DEMO_BOX_OVER u past the
+// box's edges (aspira-demo-layouts.js); a walker now walks in AT the right edge and is taken out AT the left one, so nothing a hop, a split or an
+// interceptor can reach stands outside the box (was: in from 60 u out, back 40 u short of the lane's end - 20 u out)
+const DEMO_BOX_OVER = 60;
 const DEMO_HP_K = 50; // a walker's health x its wave-30 HP - rarely killed (a killing hit strips no armor), still finite for CRR's carTarget; // a dummy back to full health under this share (a kill in the private game is revived the same frame); its own wave-30 HP, so a
 // tower that commits shots by HP (CRR's carTarget) spreads them as in a game
 const DEMO_DT = 1 / 60, DEMO_STEP = 0.02, DEMO_VOL = 0.35; // DT: a bare demoFrame's real seconds; STEP: the longest one step (the game's, aspira-ui.js frame); // VOL: the scene's sounds x this
@@ -55,10 +58,10 @@ function demoScene(kind, skills, cell, list) {
 }
 // one walker on lane `lane`, `at` of the way along it (0: the right edge), at DEMO_HP_K x a wave-30 body's health
 function demoWalker(S, type, lane, at) {
-  const pi = S.pi0 + lane, L = S.lanes[lane], s = L.len * at;
+  const pi = S.pi0 + lane, L = S.lanes[lane], s = Math.max(DEMO_BOX_OVER, L.len * at); // (never out past the box: the lanes' overhang is DEMO_BOX_OVER u)
   spawnEnemy(type, 30, pi, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(pi, s, 0);
   e.s = s; e.x = p.x; e.y = p.y; e.seen = true; e.hp = e.max = e.max * DEMO_HP_K;
-  e.demo = { walk: true, lane, s0: 0, s1: L.len - DEMO_LANE_END, armor: e.armor || 0, shield: e.shield || 0 }; // (s1: it turns back short of the lane's end - at the end step() takes it for a leak at the core)
+  e.demo = { walk: true, lane, s0: 0, s1: L.len - DEMO_BOX_OVER, armor: e.armor || 0, shield: e.shield || 0 }; // (s1: it turns back short of the lane's end - at the end step() takes it for a leak at the core)
   e.tally = { type, demo: e.demo, dmg: 0, armor: e.armor || 0, shield: e.shield || 0, slow: 0 }; S.T.push(e.tally);
   return e;
 }

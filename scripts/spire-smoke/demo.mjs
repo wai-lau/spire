@@ -129,6 +129,20 @@ check("demo signature: every tower's scene draws its main effect (GRV voids, ARC
 // RESPAWN, NOT REPOSITION (owner, 2026-11-03: "ARC chaining across the demo, despawn and respawn, dont just reposition?"): a walker out at the
 // left used to be the same object put back at the right, so ARC's chain (its beam holds the enemy itself) stretched across the whole box. Over a
 // full lap of every ARC layout (tier III; base at 0) no ARC beam, read at its live ends, may run longer than 1.3 x its reach (the tower's range or its jump, ARC_VOLT_REACH)
+check("demo in sight: every walker stays inside the box and every beam lands inside it, every tower and layout (owner, 2026-11-06: \"ARC demo keeps reflecting between offscreen invincible enemies\")", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell], rnd0 = Math.random;
+    try { for (const kind of Object.keys(DEMO_LAYOUTS)) for (const key of Object.keys(DEMO_LAYOUTS[kind])) {
+      let sd = 4242; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      const skills = key === "base" ? {} : { [key]: 3 }, t = { kind, cell, x: C.x, y: C.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
+      const S = demoScene(kind, skills, cell, demoPlace(kind, towerStats(t), cell, DEMO_LAYOUTS[kind][key])), lo = DEMO_BOX_OVER - 1;
+      const inBox = e => !e.demo || !e.demo.walk || (e.s >= lo && e.s <= S.lanes[e.demo.lane].len - lo);
+      for (let f = 0; f < 600; f++) { demoFrame(S); let msg = "";
+        for (const e of S.G.enemies) if (!e.dead && !inBox(e)) { msg = "a walker at s " + e.s.toFixed(0); break; }
+        if (!msg) for (const b of S.fx) if (b.k === "beam" && b.b && b.b.demo && !b.b.dead && !(b.t > 0) && !inBox(b.b)) { msg = "a beam onto a walker outside the box"; break; }
+        if (msg) { bad.push(kind + "." + key + " frame " + f + ": " + msg); break; } }
+    } } finally { Math.random = rnd0; }
+    return bad.slice(0, 6).join("; "); })()`);
+});
 check("demo respawn: no ARC chain runs across the scene - walkers leave at the left and fresh ones enter at the right (a full lap, every layout)", () => {
   return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), C = CELLS[cell], rnd0 = Math.random;
     try { for (const key of Object.keys(DEMO_LAYOUTS.arc)) {
