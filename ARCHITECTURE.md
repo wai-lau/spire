@@ -647,8 +647,9 @@ Adaptation: only the **far-detail radius** shrinks on slow frames (`stepDetail`)
 range fills) -> tethers / acid / aims / shots -> the core's beams -> leash rings and box
 lines -> towers -> goo / coins / chevrons / threats -> placement ghost -> the core and its
 credits -> **enemies** (over towers and core) -> core HUD -> pop-ups -> banner. In 3D the
-towers, core, enemies, shields and text are flat layers over the floor (`warpEntities`);
-only the board, ranges, beams and effects ride the picture. Enemy tracers taper along the
+towers and the core stand up as prisms (`warpPrism`) and the enemies as dice (`warpSolid`); their tracers, shields, status marks
+and text lie flat on the floor under each one's local frame (`warpEntities`, `drawEnemy(e, true)`); the board, ranges, beams and
+effects ride the picture. Enemy tracers taper along the
 lane; beam width is log of the hit; the screen shakes on a core hit.
 
 **Formation spacing is for the 1x zone, and nothing pops in.** An enemy runs `OFF_SCREEN_SPEED` (3x) until it is on screen and in
@@ -658,7 +659,7 @@ way in and closes back to its slot in reach. The next group waits the formation'
 type or boss fleet first appears more than a step past the entry.
 
 **Drawn size is not hit size.** Enemies, towers and the core draw at 0.8 of their game size
-(`DRAW_ALL`, `TOWER_DRAW_K`, `CORE_DRAW_K` in `aspira-defs.js`); hits, clicks, drags and
+(`DRAW_ALL`, `TOWER_DRAW_K`, `CORE_DRAW_K` in `aspira-drawsize.js`); hits, clicks, drags and
 spacing still read `ENEMIES[type].size`, `TOWER_K` and `CORE_R`. A swarmer's 50-300% size roll
 draws at 100-240% (`swarmDrawJit`, `e.drawJit`).
 
