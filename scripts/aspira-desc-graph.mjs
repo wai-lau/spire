@@ -45,7 +45,7 @@ const MECH = {
   // (GRV, CRR, IFR: read off the tower's stats at that tier - towerStats, one axis raised)
   grv: {
     void: k => { const s = ST("grv", "void", k); return `void starts at mass ${s.startM}, crush tick x${s.innerK} the hit${s.big ? ", heavier cap" : ""}`; },
-    supernova: k => { const s = ST("grv", "supernova", k); return s.novaN ? `${s.novaN} novas before each void, rate x${x(s.rate / ST("grv", "supernova", 0).rate)}, each strips ${pct(s.strip)} of the armor left` : "no novas"; },
+    supernova: k => { const s = ST("grv", "supernova", k); return s.novaN ? `${s.novaN === 1 ? "one nova" : s.novaN + " novas"} before each void, its hit x${x(s.novaMul || 1)}, strips ${pct(s.strip)} of the armor left` : "no novas"; },
     radiation: k => { const s = ST("grv", "radiation", k); return (s.auraOn ? `aura x${s.accR} the void's radius, slow ${pct(s.slow)} (x2 inside${s.horizon ? ", all of it" : ""}), ` : "no aura, ") + `pellets ${x(s.pelletK)}x the hit, reach x${s.pelReach}, ${x(s.pellets)} a mass lost`; },
   },
   crr: {
