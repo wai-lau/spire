@@ -19,6 +19,7 @@ function chainLinks(x0, y0, x1, y1, link) {
 }
 // 3D: one capsule a link (shape 0, aspira-fxgl.js): an even link its outline only, an odd one filled - trimmed clear of the towers
 function fxGlChain(f, a) {
+  if (f.soft && typeof fxGlArcBolt === "function") { fxGlArcBolt(f); return; } // ARC: a lightning bolt (aspira-arc-body.js)
   const x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, c = trimToTowers(x1, y1, x2, y2);
   if (!c) return;
   const col = COL[f.color], al = Math.min(1, a * CHAIN_A), w = f.thin || 1;
@@ -30,7 +31,8 @@ function fxGlChain(f, a) {
 }
 // 2D: the even links as one path of stadium outlines, the odd ones as one path of round-capped bars (pt: drawFx's projection,
 // ws: its world-to-pixel width scale; the canvas alpha is set by the caller)
-function drawChain2D(x1, y1, x2, y2, pt, ws, css, thin) {
+function drawChain2D(x1, y1, x2, y2, pt, ws, css, thin, f) {
+  if (f && f.soft && typeof drawArcBolt2D === "function") { drawArcBolt2D(f, x1, y1, x2, y2, pt, ws); return; } // ARC: a lightning bolt (aspira-arc-body.js)
   const w = thin || 1, ev = new Path2D(), od = new Path2D();
   chainLinks(x1, y1, x2, y2, (ax, ay, bx, by, odd) => {
     const A = pt(ax, ay), B = pt(bx, by), r = (odd ? CHAIN_ODD_R : CHAIN_R) * w * ws, d = Math.hypot(B.x - A.x, B.y - A.y) || 1;
