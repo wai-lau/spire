@@ -155,7 +155,7 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr";
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
-    const t = ifrAll(G.towers[0]); ifrInit(t); const st = towerStats(t), s0 = towerStats({ ...t, skills: {}, lvl: 1 }, true), out = { chargeS: s0.chargeS, dmg: s0.dmg, dmgWant: TOWERS.ifr.dmg * curveAt("ifr", 0).dmg, chargeWant: 1.4 / curveAt("ifr", 0).rate };
+    const t = ifrAll(G.towers[0]); ifrInit(t); const st = towerStats(t), s0 = towerStats({ ...t, skills: {}, lvl: 1 }, true), out = { chargeS: s0.chargeS, dmg: s0.dmg, dmgWant: TOWERS.ifr.dmg * curveAt("ifr", 0).dmg, chargeWant: 1.4 / curveAt("ifr", 0).rate / IFR_RATE_K }; /* (IFR_RATE_K: x0.65 as often since 2026-11-05 - "Cant it just reduce attack rate?") */
     spawnEnemy("fast", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
     for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - 0.9 * st.range); if (d < bd) { bd = d; bs = s; } }
     e.s = bs; const p0 = pathAt(0, bs, 0); e.x = p0.x; e.y = p0.y; e.seen = true; e.hp = e.max = 1e9; e.armor = 0; e.shield = 0; e.jit = 0; e.spd = 1;

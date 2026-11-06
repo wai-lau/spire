@@ -78,6 +78,11 @@ SKILL_TREES.ifr = [
   { id: "firaga", name: "Flare", tiers: [{ name: "Fire" }, { name: "Fira" }, { name: "Firaga" }] }, /* Blk Magic: Fire, Fira, Firaga, Mega Firaga (owner, 2026-10-20; was the Firaga axis - id kept for saves). Stops I III V VI: the 2 and 4 an old save may hold read as the stop below */
 ];
 
+// IFR ATTACKS x0.65 AS OFTEN, no damage back (owner, 2026-11-05, on IFR's marks gap: "Cant it just reduce attack rate?" / "Or increase"; the
+// mark by type, not its strength - "The different types need to be differentiated"): every charge x1 / IFR_RATE_K long. Marks (9 pts, waves
+// 101-119, 2 seeds): IFR leak 2/44/22/87 -> 9/68/42/92, row +1 0 +1 -2 -> +2 -1 +1 -2 (target +2 -1 +2 -3: gap 4 -> 2), distance 16 -> 12;
+// x0.5 the same distance (nearest x1 taken), x0.8 / x1.25 / x1.5 moved no mark
+const IFR_RATE_K = 0.65;
 function ifrSkillStats(t, s, b) {
   const m = skillOf(t, "meteor"), h = skillOf(t, "hellfire"), f = skillOf(t, "firaga");
   s.targets = 1;
@@ -93,7 +98,7 @@ function ifrSkillStats(t, s, b) {
   s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; const ft = ifrFlareTiming(f); s.burnS = ft.burn; s.tickS = ft.tick; s.flareK = IFR_TICK_K0 * ft.k; // (a third as long, the same per flare - ifrFlareTiming)
   // every hit is st.dmg x its axis's K AT THE HIT, so what towerStats does to dmg after this (the DAM core power, an aura) reaches all of them
   const c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.range = b.range * RANGE_BONUS * c.range; // the STAT CURVE (tier redesign 2026-10-24)
-  s.chargeS = IFR_CHARGE_S0 / c.rate / IFR_METEOR_RATE[m]; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
+  s.chargeS = IFR_CHARGE_S0 / c.rate / IFR_METEOR_RATE[m]; s.chargeS /= IFR_RATE_K; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
   s.skill = true;
 }
 // ---------- the charge ----------
