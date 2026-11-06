@@ -256,7 +256,6 @@ const ACD_POOL_HEAT = 0.21; /* x2 with the bigger pools (2026-10-29; was 0.105) 
 // Flow's slimy pools, owner 2026-10-22: "move slow from jets to pools")
 // CONTAGION SPREADS (owner, 2026-10-13: "make acd contagion better vs swarms"): from Spill I an enemy a POOL kills leaves
 // a pool of its own, as hot - a crowd dying in acid carries it down the lane (a full pool since 2026-10-22; was 0.8x wide, half as long).
-// At most ACD_SPREAD_MAX pools a tower (the late-game lag)
 // (KILL POOLS - a kill under a jet or in a pool leaving a pool, ACD_SPREAD_MAX - GONE with the tier redesign, owner 2026-10-24: "get rid of kill pools")
 function acdSkillStats(t, s, b) {
   const c = skillOf(t, "corrosion");

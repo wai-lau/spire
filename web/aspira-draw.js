@@ -23,7 +23,7 @@ let viewZoom = ZOOM_WHEEL ? ZOOM_DEFAULT : 1;
 function zoomApply() { // the view from the fit: x viewZoom about the core (a resize keeps the zoom, laid on the new fit)
   cam.k = cam.fit * viewZoom; cam.ox = cam.fitOx + CX * (cam.fit - cam.k); cam.oy = cam.fitOy + CY * (cam.fit - cam.k);
 }
-// the canvas draws at most RES_CAP device pixels per CSS pixel (owner: "need
+// the canvas draws at most RES_CAP_3D device pixels per CSS pixel (owner: "need
 // more perf"): a phone at 3x drew 3.4 million pixels a frame; 2x is 2.25x fewer
 // for a barely softer line. EVERY dpr use in the game reads canvasDpr().
 let RES_CAP_3D = 2; // fixed: the slow-frame step to 1.25 is gone (owner, 2026-10-14: never lower the resolution; stepDetail, aspira-quality.js, moves only the detail radius)

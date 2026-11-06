@@ -11,7 +11,7 @@ const BOSS_BAR_MARKS = [0.85, 0.65, 0.4, 0.25, 0.1, 0.05]; // the %HP marks alon
 // six); on the board, so 3D warps it onto the floor (a line along the horizon through the core, 2026-10-09 .. 10-26)
 // THE BAR'S SPAN (owner, 2026-10-26: "start 100% 50u onto the screen, end the hp bar about 100u before the boss lane reaches the core" /
 // "the HP should be the lane color, the non-hp should be a white core (remember these colors are inverted or sth)"): from BOSS_BAR_IN u
-// past the mouth (100%) to BOSS_BAR_OUT u short of the core (0%); the HP left in the lane's colour, drawn as the lane is (it turns over
+// past the mouth (100%) to the core's rim (bossBarOut, 0%); the HP left in the lane's colour, drawn as the lane is (it turns over
 // with the lane under the sky), the rest a WHITE core kept white under the sky (skyKeep - drawSceneTop)
 const BOSS_LANE_STEP = 10, BOSS_BAR_IN = 50; const bossBarOut = () => (typeof coreOuterR === "function" ? coreOuterR() : CORE_R); // the 0% end AT the core - its rim, not its centre, or the last few % hide under it (owner, 2026-10-26: "leave it at core" / "disappears before boss dies")
 // the 100% end: where the boss first comes within a tower's reach on its lane (owner, 2026-10-26: "boss label should start where the boss is

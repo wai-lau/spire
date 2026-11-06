@@ -27,9 +27,9 @@ const GLOW_FALLOFF = 5; // harder (owner; was 3)
 // one set would rebuild them twice a frame while the sky spreads
 const laneSets = {};
 // HALF-RES LANE LAYERS on a device whose board upload stalls (perf, 2026-10-31 - Wai: "Fix the lag!!"; a 7.0.17 iPhone log: 53 frames over 100 ms in 3 min, mostly
-// lane rebuilds in Safari's GPU process): every lane layer (line, glow, base, combo, the masks, the scratch, the fade layer and its GPU copy) is built at 1/LANE_LD of
+// lane rebuilds in Safari's GPU process): every lane layer (line, glow, base, combo, the masks, the scratch, the fade layer and its GPU copy) is built at 1/laneLD() of
 // the board's pixels and laid on scaled back up - a quarter of the pixels to stroke, mask, copy and hold (~144 -> ~36 MB at 2048 px). Softer lane edges there;
-// desktop is untouched (LANE_LD 1). laneLD() is the divisor, laneW/laneH the layers' size, laneCam their transform
+// desktop is untouched (laneLD() 1). laneLD() is the divisor, laneW/laneH the layers' size, laneCam their transform
 const laneLD = () => (!(typeof laneGlOn === "function" && laneGlOn()) && typeof warpUpSlow !== "undefined" && warpUpSlow >= 3 ? 2 : 1); // (the GPU lanes: only the faint base is drawn here, once a camera - full size)
 const laneW = () => Math.ceil(cv.width / laneLD()), laneH = () => Math.ceil(cv.height / laneLD());
 const laneCam = x => { const d = laneLD(); x.setTransform(cam.k / d, 0, 0, cam.k / d, cam.ox / d, cam.oy / d); };
@@ -291,7 +291,7 @@ function litLanes() {
   for (const u of live) { u.a0 = u.a; if (u.star) u.a *= k; }
   bossLaneRise(live);
   // EACH LANE'S FADE-IN, u.f 0..1 (u.a0 its brightness without it): an ordinary lane over LANE_FADE_IN_MS of REAL time from when it is
-  // first seen, whatever the game speed (owner); a boss lane by its sky (above); swarm lanes at SWARM_LANE_A (owner, 2026-10-12)
+  // first seen, whatever the game speed (owner); a boss lane by its sky (above); a swarm lane x its share of the swarm, never under SWARM_LANE_MIN (owner, 2026-10-26)
   const now = performance.now(), fm = laneFadeMs();
   for (const key of laneSeen.keys()) if (!live.some(u => u.pi + ":" + u.ang === key)) laneSeen.delete(key); // gone dark: fades in again next time
   for (const u of live) {

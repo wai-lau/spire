@@ -161,7 +161,7 @@ function fleetForm(e, R) {
 // THE JUDGEMENT'S FLEET SPREADS: lane copies evenly round the rim, each its own share of the escorts in the same formation
 // round where the boss would be. The Judgement's boss rides ONE lane and its swarm TWELVE others ("change judgement boss to have boss arrive
 // on one lane and the swarms in 12 different ones"); the Devil's six and the Lovers' two already come from their own lanes
-// the LINE escorts (fast, swarms) ride FLEET_TRACKS parallel tracks across the boss's own lane, 3-5, the boss in the middle
+// the LINE escorts (fast, swarms) ride fleetTracks() parallel tracks (3 or 5) FLEET_TRACK_W apart across the boss's own lane, the boss in the middle
 // (owner, 2026-10-12: "the escorts should travel on parallel lanes to its own (some already do)" - shields and armor did)
 // a TIGHTER fleet packs its line escorts closer along their tracks (owner, 2026-10-12: "tighten the escorts" - the Star's spread
 // out at the boss's pace was picked off one by one by a lone single-shot tower): x the gap between bodies on a track

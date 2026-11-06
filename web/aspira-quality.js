@@ -10,7 +10,7 @@ function noWebGl() {
   const m = document.createElement("div"); m.className = "asp-nogl"; m.textContent = "THE SPIRE needs WebGL, which this browser could not start.";
   $("asp").append(m);
 }
-// DETAIL BY DISTANCE (owner, 2026-10-12: "details by distance yes"): in 3D, past DETAIL_FAR_R from the core - the far half of
+// DETAIL BY DISTANCE (owner, 2026-10-12: "details by distance yes"): in 3D, past the detail radius from the core (DETAIL_MIN_R .. DETAIL_MAX_R, below) - the far half of
 // the board, where little is decided - no tracers, no hit flashes, no damage numbers, and swarmers draw flat (CPU per frame
 // was the slow machines' limit); the centre keeps everything
 // ...SCALED BY THE FRAME RATE (owner, 2026-10-12: "3d detail by distance should be scaled based on FPS - try to stay above 600
