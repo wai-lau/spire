@@ -135,7 +135,7 @@ check("CRR: tier 0 ten interceptors, all held in orbit when ready (owner, 2026-1
   if (z.wing !== 10 || z.tSlow !== 0 || z.bolts !== 1 || z.hold !== z.wing) return "tier 0 " + JSON.stringify(z);
   if (z.ammo !== 8 || a.ammo !== 16) return "volleys a sortie: tier 0 " + z.ammo + ", Armament I " + a.ammo + " (expected 8 and 16 - x2, owner 2026-11-05: \"fire for longer\"; before: 4 and 8, the owner's table with mid tiers 8/12/16 (owner, 2026-11-02: \"Yes\", after the 8-seed good: 58% won, CRR 44%); was 4 and 6, 2026-11-01; was 18 and 23 - owner, 2026-10-29: x3 the bolts at a third the damage; was 6 and 8, 2026-10-28: \"interceptor should start with 6 ammo\")";
   if (h.wing !== 14 || h.hold !== h.wing) return "Hangar I " + JSON.stringify(h);
-  if (a.bolts !== 1 || Math.abs(a.dmg / z.dmg - 2) > 1e-9) return "Armament I " + JSON.stringify(a) + " (expected ONE bolt a volley carrying two bolts' damage - owner, 2026-11-05: \"C10\")";
+  if (a.bolts !== 1 || Math.abs(a.dmg / z.dmg - 2) > 1e-9 /* (1.3 / 0.65 since 2026-11-05) */) return "Armament I " + JSON.stringify(a) + " (expected ONE bolt a volley carrying two bolts' damage - owner, 2026-11-05: \"C10\")";
   const n = run(`(() => { const { t } = tierLane("crr", { hangar: 3, launch: 1 }, [90, 120, 150, 170]); /* held ON the lane (a stepped game re-reads a spot from it) */
     G.started = true; G.nextIn = 1e9; G.spawns = []; /* the rig's enemies alone - no real wave */ let most = 0, ever = 0;
     for (let k = 0; k < 600; k++) { step(1 / 60); const st = towerStats(t), c = t.icp.filter(i => carTethered(t, i, st)).length; most = Math.max(most, c); ever += c; } /* AT ONCE: tethered at a frame's end (a frame runs several steps, and which one rides it moves - 2026-10-26) */ return [most, ever]; })()`);
