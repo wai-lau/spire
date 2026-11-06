@@ -802,6 +802,9 @@
 
 /* a boss row: the boss centred, a line out to either side (owner) */
 .asp-bline { flex: 1; height: 0; margin: 0 var(--space-1); border-top: 1px solid currentcolor; }
+.asp-bside { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; } /* a boss row: the escort either side (bossRowIcons, aspira-wavelist.js) */
+.asp-bmid { display: flex; align-items: center; flex: none; }
+.asp-wavenote .e-boss > .asp-bside { filter: none; } /* the escort keeps its own colours; only the boss icons invert */
 
 /* every LIVE wave's row: one unbroken light white band (owner); every cell
    stretches to the row's full height, its text centred in it */

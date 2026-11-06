@@ -90,6 +90,31 @@ const COMBO_NAME = { swarm: "psi-swarm", fast: "shell-fast", armor: "hyper-armor
 const comboOn = (type, n) => { const l = TUNE_AFTER[type]; if (!l || tuneSection(n) < TUNE_LATE) return false; const v = tune(type, l, n); return TUNE_SHARE[type] ? v > 0 : v !== 1; };
 const waveName = (type, n) => (comboOn(type, n) ? COMBO_NAME[type] : type);
 const WAVE_PLANS = new Map(); // n -> its plan, as the list last drew it (a tap opens its card: aspira-wavecard.js)
+// WHAT A BOSS WAVE BRINGS (owner, 2026-11-06: "no, just show escort like other waves, but keep boss at center"): its escort, type by type, counted
+// the way the boss code spawns it (aspira-bossfleet.js, aspira-bosses.js) - a lattice's fixed grid, a scattered share of plain waves, the Chariot's
+// FLEET, the Devil's host, the Empress's two broods (at 2/3 and 1/3 of her HP), Judgement's swarm when she rises - the late arrivals included. Pure
+// (no spawn, no Math.random): [[type, count], ...]
+function bossBrings(n) {
+  const id = arcanaOf(n).id, bodies = bossCount(n), lat = FLEET_LATTICE[id], out = [];
+  const per = (k, c) => out.push([k, c * bodies]);
+  if (FLEET_SCATTER[id]) for (const [k, mul] of FLEET_SCATTER[id]) per(k, Math.max(1, Math.round(typeWaveCount(k, n) * mul / bodies)));
+  else if (lat) per(lat.k, Math.round(lat.n / bodies));
+  else if (FLEET[id]) for (const k of FLEET[id]) per(k, Math.max(1, Math.round(waveCount(k, n) * (FLEET_MUL[id] ?? 1) / FLEET[id].length / bodies)));
+  if (id === "devil") for (const [k, mul] of DEVIL_ESC) out.push([k, Math.max(1, Math.round(typeWaveCount(k, n) * mul))]);
+  if (id === "empress") { let b = 0; for (let at = 1 - EMPRESS_STEP; at > 1e-6; at -= EMPRESS_STEP) b++; out.push(["swarm", b * typeWaveCount("swarm", n)]); } // a brood at each step bossStep fires (2/3, 1/3)
+  if (id === "judgement") out.push(["swarm", Math.max(1, Math.round(typeWaveCount("swarm", n) * JUDGEMENT_SWARM))]);
+  return out.filter(([, c]) => c > 0);
+}
+// a boss row: its escort's icons split either side of the boss, each type in its own colour, each side as a plain wave's band (waveBand)
+// in its share of the row; the boss icon(s) in the middle, shrunk only when a pair or the Devil's six would not fit
+const WAVE_BOSS_SHARE = 0.36; // at most this share of the row for the boss icons
+function bossRowIcons(n, w, span, escPx) {
+  const esc = bossBrings(n), H = waveRowH(), nb = w.count, bpx = Math.min(WAVE_BOSS_PX, H, (span * WAVE_BOSS_SHARE) / nb - 1);
+  const mid = enemyIcon(w.type, bpx, 1).repeat(nb - 1) + enemyIcon(w.type, bpx, 0), midW = nb * (bpx + 1), side = Math.max(0, (span - midW) / 2 - 2);
+  const tot = esc.reduce((a, [, c]) => a + c, 0) || 1;
+  const half = right => esc.map(([k, c]) => { const m = right ? Math.floor(c / 2) : Math.ceil(c / 2), sw = Math.max(4, side * c / tot); return m ? '<span class="asp-besc e-' + ENEMIES[k].color + '">' + waveBand(k, m, Math.min(escPx(k), H), sw) + "</span>" : ""; }).join("");
+  return '<span class="asp-bside">' + half(false) + '</span><span class="asp-bmid">' + mid + '</span><span class="asp-bside">' + half(true) + "</span>";
+}
 function updateWaveList() {
   // the waves still alive and the next ones, one per row (owner; waves are fixed, so they are
   // known): its Roman number : its enemies, ONE ICON EACH, sized by HP : name.
@@ -149,7 +174,7 @@ function updateWaveList() {
     // the name column never moves. A boss sits centred between two lines.
     const px = Math.min(pxOf(hp, boss), waveRowH());
     let icons = boss
-      ? '<span class="asp-bline"></span>' + enemyIcon(w.type, px, 2).repeat(w.count - 1) + enemyIcon(w.type, px, 0) + '<span class="asp-bline"></span>'
+      ? bossRowIcons(n, w, span, k => pxOf(enemyHp(k, n) * BOSS_HEFT, false))
       : waveBand(w.type, w.count, px, span, alive);
     // NO wave numbers (owner, 2026-10-06); the first column is empty and takes no room since the
     // countdown moved to the heading, the ":" column is empty
