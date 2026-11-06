@@ -108,5 +108,5 @@ function solTrackSpec(st0, t) {
   return [["Crit", Math.round(st.crit * 100) + "%"], ["Crit ×", st.critMul], ["Shot", "every " + +(1 / (st.rate * SOL_PULSE_K)).toFixed(2) + "s × " + Math.round(st.dmg / SOL_PULSE_K / st0.dmg * 100) + "%td"],
     ["Splits", st.split ? st.split + "" : "—"], ["Carry", st.split ? "×" + st.hop + " / enemy" : "—"],
     ["Breach", st.bleedArmor ? "−" + pc(1 - (1 - st.bleedArmor) ** (st.breach || 1)) + " armor a hit" : "—"] /* a hit: SOL fires in pulses (2026-11-05) */,
-    ...(st.dot ? [["Scorch tick", +(d * st.dot.k / st0.dmg * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n]] : []), ["Form", rayForm(st)]];
+    ...(st.dot ? [["Scorch tick", +(d * st.dot.k / st0.dmg * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n], ["Scorch slow", pc(SOL_SCORCH_SLOW) + " / stack"]] : []), ["Form", rayForm(st)]];
 }
