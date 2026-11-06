@@ -47,7 +47,7 @@ function solScorchTick(e, dt) {
 const SOL_TICK = 0.25;
 // the fit (countermx 9 pts, 101-119, 2026-11-04): Breach's carry a pass by Breach tier, and the curve's damage x SOL_TRACK_DMG (a tracking
 // beam throws away the overkill a tick on every kill); SOL's marks hold at -2 -1 +2 +1, distance 24
-const SOL_TRACK_HOP = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75], SOL_TRACK_DMG = 3.5;
+const SOL_TRACK_HOP = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75], SOL_TRACK_DMG = 4.55; /* x1.3 (2026-11-06, after GRV one-nova: SOL trios 6/18 -> 7/18 over a 50-game screen, marks distance 14 held; was 3.5) */
 // SCORCH_M stacks a shot's worth (1 / rate s) of beam time on an enemy: 1 broke ARC's two checks, 2 CRR's (the shield column), 3 holds them
 const SOL_SCORCH_M = 3;
 // THE PULSE'S CADENCE (owner, 2026-11-05: "pulse at the old rate! for SOL" / "reduce fire rate of SOL then" / "short aim time is mostly for
