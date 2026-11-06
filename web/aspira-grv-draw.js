@@ -61,6 +61,27 @@ function grvAurasCapped(list) { // [[sp, ar]] that overlap: through the scratch 
 }
 const GRV_RING_OUT = 0.5; // the reach rings run out to half the aura (drawSphere)
 // ---------- the look: yellow front, the aura's gradient band, the black sphere, the inward numbers ----------
+// THE WELL'S CHAINS (owner, 2026-11-06: "when WELL acting on something, show a purple chain, bigger the slow/pull, thicker the chain"): from the void to every
+// enemy its Gravity Well aura is slowing now (its "grv:<tower>" slow, live - applySlow), the nearest of the tower's voids that reaches it, as the CRR tether's
+// chain in GRV violet, its links GRV_CHAIN_Q[0] .. [1] x ARC's by that slow's share of the cap (TOWER_SLOW_MAX). 3D: one GPU capsule a link (fxGlChain); 2D: drawChain2D.
+// On the moving layer: the void (drawGrvCores, the pop pass) is drawn OVER them (owner: "make sure the void renders over the chain")
+const GRV_CHAIN_Q = [0.3, 1.4], GRV_CHAIN_A = 0.8;
+function drawGrvChains(all) {
+  const gl3 = !!(ctx && ctx.real && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlChain === "function");
+  if (!gl3 && typeof drawChain2D !== "function") return;
+  for (const t of G.towers) {
+    if (t.kind !== "grv" || !t.spheres || !t.spheres.length || skillOf(t, "radiation") < CAPSTONE_TIER) continue; // Gravity Well V only (owner, 2026-11-06: "actually, only show chains for WELL 5")
+    const tag = "grv:" + t.id, mine = all.filter(([sp, st, ar]) => st.auraOn && ar > 1 && t.spheres.includes(sp)); if (!mine.length) continue;
+    for (const e of G.enemies) {
+      const d = !e.dead && e.slows && e.slows[tag]; if (!d || !(d.t > 0) || !(d.v > 0)) continue;
+      let best = null, bd = Infinity; for (const m of mine) { const dd = Math.hypot(e.x - m[0].x, e.y - m[0].y); if (dd < m[2] && dd < bd) { bd = dd; best = m[0]; } } if (!best) continue;
+      const q = GRV_CHAIN_Q[0] + (GRV_CHAIN_Q[1] - GRV_CHAIN_Q[0]) * Math.min(1, d.v / TOWER_SLOW_MAX);
+      if (gl3) fxGlChain({ x1: best.x, y1: best.y, x2: e.x, y2: e.y, color: "violet", thin: q }, GRV_CHAIN_A);
+      else { ctx.globalAlpha = GRV_CHAIN_A; drawChain2D(best.x, best.y, e.x, e.y, (x, y) => ({ x, y }), 1, COL.violet, q); }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
 function drawGrv() {
   const now = performance.now() / 1000, all = [];
   for (const t of G.towers) {
@@ -71,15 +92,14 @@ function drawGrv() {
   const over = all.filter(([sp, st, ar]) => ar > 1 && st.auraOn && all.some(([q, qs, qr]) => q !== sp && qr > 1 && qs.auraOn && Math.hypot(q.x - sp.x, q.y - sp.y) < ar + qr));
   const capped = over.length > 1 && grvAurasCapped(over.map(([sp, st, ar]) => [sp, ar, ar / st.accR])); // (the lone ones are drawn by drawSphere, at A)
   for (const [sp, st] of all) drawSphere(sp, st, !(capped && over.some(o => o[0] === sp)));
+  drawGrvChains(all);
   drawGrvPellets();
   ctx.globalAlpha = 1;
 }
-const GRV_WELL_PULL_A = 1.35; // the aura's alpha x this while an enemy is inside it
-const grvPulling = (sp, ar) => { const r2 = ar * ar; for (const e of G.enemies) if (!e.dead && (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2 < r2) return true; return false; };
 function drawSphere(sp, st, auraOwn = true) {
   const k = grvMassK(sp), ar = grvCoreR(grvAuraNow(sp, st)) * st.accR; // the AURA's reach (Gravity Well): x the void's own radius, x2 at most
   if (ar > 1 && st.auraOn) { // the aura: clear at the sphere, its alpha (grvAuraAlpha) at mid-radius, clear at the edge (auraOwn false: drawn capped with its overlaps - drawGrv)
-    if (auraOwn) grvAura(ctx, sp, ar, Math.min(1, grvAuraAlpha(sp, ar) * (grvPulling(sp, ar) ? GRV_WELL_PULL_A : 1)), ar / st.accR); // a little brighter while it is pulling something
+    if (auraOwn) grvAura(ctx, sp, ar, grvAuraAlpha(sp, ar), ar / st.accR);
     // its REACH, shown like Permafrost's rings (owner, 2026-10-16: "for bh aura, show range of aura using a range indicator similar to
     // permafrost"): a thin glowing ring out from the centre to the edge every GRV_RING_S, fading as it goes
     const f = (sp.age % GRV_RING_S) / GRV_RING_S;
