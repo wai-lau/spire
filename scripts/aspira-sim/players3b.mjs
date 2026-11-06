@@ -10,7 +10,7 @@
 import { isMainThread } from "node:worker_threads";
 import { makePlayer } from "./sim.mjs";
 import { runPool } from "./pool.mjs";
-import { coveringTeams } from "./covering.mjs";
+import { coveringTeams, targetMarks, vsMarks } from "./covering.mjs";
 // BOSSES SKIPPED, ALWAYS (owner, 2026-10-28: "bosses must never cause a loss in the balance sims"): every boss-wave unit dies at once,
 // bounty, drop and unlocks paid (sim.mjs BOSS_SKIP). Set here, not by env, so no run forgets it; bosses balance in bossbal/bossvs.
 process.env.BOSS_SKIP = process.env.BOSS_SKIP ?? "1";
@@ -34,7 +34,7 @@ export default async function task({ trio, seed, model, to }) {
   return { trio: trio.join("+"), seed, model, wave: r.wave, won: r.won, lives: r.lives, late, kill: r.won ? null : (late[r.wave] || {}).t || null, buys: (r.buys || []).map(b => [b.w, b.k, b.id, b.a, b.to]), early: Object.fromEntries(Object.entries(r.waveStats || {}).filter(([n]) => +n < 41).map(([n, w]) => [n, w.lost])), trace: (r.trace || []).filter(t => t.wave <= 41), peak: r.peak || {} }; // buys: [wave, kind, tower id, axis, tier] (the build-convergence check, 2026-10-28)
 }
 if (isMainThread && process.argv[1].endsWith("players3b.mjs")) {
-  const all = coveringTeams(3); // COVERING trios only, every model (owner, 2026-10-29: "Ignore teams that don't cover every enemy type")
+  const all = coveringTeams(3, process.env.COVER === "vs" ? vsMarks() : targetMarks()); // the MARK TARGET's covering trios (frozen: the same games every build, 2026-11-06); COVER=vs: the old VS_MARKS set // COVERING trios only, every model (owner, 2026-10-29: "Ignore teams that don't cover every enemy type")
   const model = process.env.MODEL || "good", to = Number(process.env.TO) || 120, SEEDS = Number(process.env.SEEDS) || 1;
   if (!MODELS[model]) throw new Error("MODEL: " + Object.keys(MODELS).join("|"));
   const trios = process.env.TRIOS ? process.env.TRIOS.split(",").map(t => t.split("+")) : all;

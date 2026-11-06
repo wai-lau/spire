@@ -11,10 +11,16 @@ export function vsMarks() {
   if (!m) throw new Error("VS_MARKS not found in " + WEB);
   return Function("return " + m[1])();
 }
+// THE MARK TARGET's checks (mark-target.json, frozen - owner 2026-10-29): the covering set a SCREEN plays (players3b), so the same trios
+// are played across builds - a VS_MARKS refresh swapped 8 trios in or out and every screen needed a new 90-min base (2026-11-06)
+export function targetMarks() {
+  const T = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "mark-target.json"), "utf8"));
+  return Object.fromEntries(KINDS.map(k => [k, Object.fromEntries(TYPES.map((ty, i) => [ty, T[k][i]]))]));
+}
 export const covers = (team, marks = vsMarks()) => TYPES.every(ty => team.some(k => ((marks[k] || {})[ty] || 0) > 0));
 // every team of `size` distinct kinds that covers (size 2: the 2-tower gates; the duo RULE keeps every pair - duo.mjs / duo0.mjs)
-export function coveringTeams(size) {
-  const marks = vsMarks(), out = [];
+export function coveringTeams(size, marks = vsMarks()) {
+  const out = [];
   const walk = (from, team) => { if (team.length === size) { if (covers(team, marks)) out.push(team); return; } for (let i = from; i < KINDS.length; i++) walk(i + 1, [...team, KINDS[i]]); };
   walk(0, []); return out;
 }
