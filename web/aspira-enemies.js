@@ -178,15 +178,16 @@ function drawStatus(e, d, size, solid) {
 // a SCORCHED enemy's ring: dots SCORCH_DOT u long, SCORCH_GAP apart, each flickering at its own speed and phase (from the enemy's id
 // and its place on the ring), binned into SCORCH_BINS strengths - one stroke a bin, not a dot
 const SCORCH_DOT = 2, SCORCH_GAP = 4, SCORCH_BINS = 4, SCORCH_HZ = [4, 14], SCORCH_V_GAP = 3.5; // HZ: the flicker's speed range, rad/s; V_GAP: Scorch V's second ring, u out
+let scorchBin = new Uint8Array(64);
 const scorchHash = (id, i) => { const v = Math.sin((id || 0) * 12.9898 + i * 78.233) * 43758.5453; return v - Math.floor(v); };
 function drawScorchRing(e, r, vis, ring = 0) { // ring 1: Scorch V's outer ring, its own flicker
   const n = Math.max(6, Math.round(2 * Math.PI * r / (SCORCH_DOT + SCORCH_GAP))), da = 2 * Math.PI / n, dw = SCORCH_DOT / r, now = performance.now() / 1000;
-  const bin = new Array(n);
+  if (scorchBin.length < n) scorchBin = new Uint8Array(n * 2); const bin = scorchBin; // (one scratch for every ring - no array a ring a frame)
   for (let i = 0; i < n; i++) { const h = scorchHash(e.id + ring * 0.37, i), hz = SCORCH_HZ[0] + (SCORCH_HZ[1] - SCORCH_HZ[0]) * scorchHash(e.id + ring * 0.37, i + n); bin[i] = Math.min(SCORCH_BINS - 1, Math.floor((0.5 + 0.5 * Math.sin(now * hz + h * 6.283)) * SCORCH_BINS)); }
   ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.lineWidth = 2;
   for (let b = 0; b < SCORCH_BINS; b++) {
     ctx.beginPath();
-    for (let i = 0; i < n; i++) if (bin[i] === b) { const a = i * da; ctx.moveTo(e.x + r * Math.cos(a), e.y + r * Math.sin(a)); ctx.arc(e.x, e.y, r, a, a + dw); }
+    for (let i = 0; i < n; i++) if (bin[i] === b) { const a = i * da; ctx.moveTo(e.x + r * Math.cos(a), e.y + r * Math.sin(a)); ctx.arc(e.x, e.y, r, a, a + dw); } // (an arc a dot: its chord was tried - 16-36 px a ring off by >24/255 at the dots' ends, 2026-11-05)
     ctx.globalAlpha = 0.9 * vis * (0.15 + 0.85 * (b + 0.5) / SCORCH_BINS); ctx.stroke();
   }
 }
