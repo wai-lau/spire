@@ -113,6 +113,7 @@ document.querySelector(".asp-foot").addEventListener("click", ev => {
   if (chooser.t) closeChooser(); else if (ui.sel != null) closeCard();
 });
 function closeChooser() {
+  if (typeof buyDemoClose === "function") buyDemoClose();
   if (!chooser.t) return;
   const building = chooser.ci != null;
   chooser.t = null; chooser.ci = null; chooserEl().classList.remove("asp-building");
@@ -183,6 +184,7 @@ function openBuildChooser(ci) {
     const c = button(row, "asp-card", buildCard(k, gaps), () => chooseBuild(i));
     c.dataset.kind = k; c.dataset.cost = towerCost(k); c.classList.toggle("poor", G.money < towerCost(k)); // updateHud keeps it current
   });
+  if (typeof buyDemoButtons === "function") buyDemoButtons(row, ci); // each card's "i": a demo of the kind (aspira-demo-buy.js)
   showSpend(towerCost(kinds[0]), "cancel", closeChooser); // every kind costs the same (towerCost counts towers)
   el.hidden = false;
   el.style.paddingBottom = spendRoom() + "px";

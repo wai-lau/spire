@@ -921,6 +921,17 @@
 .asp-demo.is-text .asp-demo-txt { display: block; position: absolute; inset: 0; }
 .asp-demo.is-text .asp-demo-txt .asp-desc { height: 100%; }
 #asp button.asp-demo-i { position: absolute; right: var(--space-1); bottom: var(--space-1); display: grid; place-items: center; box-sizing: border-box; width: var(--space-5); height: var(--space-5); min-width: 0; min-height: 0; padding: 0; border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: 50%; background: none; color: hsl(var(--green-hsl)); font: inherit; font-size: var(--fs-2xs); line-height: var(--lh-none); cursor: pointer; }
+#asp .asp-build-cards .asp-card { position: relative; }
+#asp button.asp-buy-i { position: absolute; top: var(--space-1); right: var(--space-1); display: grid; place-items: center; box-sizing: border-box; width: var(--space-10); height: var(--space-10); min-width: 0; min-height: 0; padding: 0; border: 2px solid hsl(var(--green-hsl)); border-radius: 50%; background: hsl(var(--green-hsl) / 0.45); color: hsl(var(--green-hsl)); font: inherit; font-weight: var(--fw-bold); font-size: var(--fs-sm); line-height: var(--lh-none); cursor: pointer; } /* the buy card's demo "i": top right, bigger and brighter than the tower card's (aspira-demo-buy.js) */
+.asp-buy-tri { position: fixed; z-index: var(--z-modal); pointer-events: none; padding: var(--space-1); border-radius: var(--radius-1); background: hsl(var(--bg-hsl)); } /* the demo's build triangle (aspira-demo-buy.js) */
+.asp-buy-tri[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-buy-tri[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
+.asp-buy-tri[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
+.asp-buy-tri[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
+.asp-buy-tri[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
+.asp-buy-tri[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-buy-tri[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
+.asp-buy-demo { position: fixed; z-index: var(--z-modal); overflow: hidden; border-radius: var(--radius-1); background: hsl(var(--bg-hsl)); } .asp-buy-demo canvas { width: 100%; height: 100%; display: block; }
 #asp button.asp-demo-i[aria-pressed="true"] { background: hsl(var(--green-hsl) / 0.45); }
 
 /* the CORE POWERS' BUTTONS under the title (owner, 2026-10-11; above it since 2026-10-08; aspira-powers.js): name, seconds left, and a

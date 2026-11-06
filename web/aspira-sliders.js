@@ -38,6 +38,20 @@ function axisRoom(t, id) {
 const SL_R = 50, SL_C = 60, SL_R0 = 8, LABEL_GAP = 7, SL_TOP = -3, SL_H = 97;
 const labelPt = (i, n) => { const a = axisAngle(i, n), r = SL_R + LABEL_GAP; return [SL_C + Math.cos(a) * r, SL_C + Math.sin(a) * r]; };
 const axisAngle = (i, n) => -Math.PI / 2 + i * 2 * Math.PI / n;
+// AN AXIS'S SHORT NAME (owner, 2026-11-06: "METR yes" / "yes to metr and all your other suggestions"): fixed where its first four letters read
+// badly, else those four - the chart corners everywhere (the tower card, the buy card's demo)
+const AX_ABBR = { Meteor: "METR", Shock: "SHCK", Breach: "BRCH", Spill: "SPLL", "Gravity Well": "WELL", Tether: "TTHR", Armament: "ARMS" };
+const axAbbr = ax => AX_ABBR[ax.name] || ax.name.slice(0, 4).toUpperCase();
+// a kind's chart for skills `sk` alone (the tier rings, its shape, the corner names) - the buy card's demo (aspira-demo-buy.js)
+function triSvg(kind, sk) {
+  const axes = SKILL_TREES[kind] || [], n = axes.length;
+  let svg = '<svg class="asp-chart" viewBox="0 ' + SL_TOP + ' 120 ' + SL_H + '">';
+  for (let k = 1; k <= SKILL_TIERS; k++) svg += '<polygon class="grid' + (k === SKILL_TIERS ? " capstone" : "") + '" points="' + axes.map((_, i) => axisPt(i, k, n).map(v => v.toFixed(1)).join(",")).join(" ") + '"/>';
+  axes.forEach((ax, i) => { const [ex, ey] = axisPt(i, SKILL_TIERS, n); svg += '<line class="grid" x1="' + SL_C + '" y1="' + SL_C + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) + '"/>'; });
+  svg += '<polygon class="now" points="' + shapeOf(axes, sk, n) + '"/>';
+  axes.forEach((ax, i) => { const [tx, ty] = labelPt(i, n); svg += '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="middle">' + axAbbr(ax) + "</text>"; });
+  return svg + "</svg>";
+}
 function axisPt(i, k, n) {
   const a = axisAngle(i, n), r = SL_R0 + (SL_R - SL_R0) * k / SKILL_TIERS; // a ring a PURCHASE (aspira-capstone.js)
   return [SL_C + Math.cos(a) * r, SL_C + Math.sin(a) * r];
@@ -57,7 +71,7 @@ function sliderChart(t) {
   for (let k = 1; k <= SKILL_TIERS; k++) svg += '<polygon class="grid' + (k === SKILL_TIERS ? " capstone" : "") + '" points="' + axes.map((_, i) => axisPt(i, k, n).map(v => v.toFixed(1)).join(",")).join(" ") + '"/>';
   axes.forEach((ax, i) => { const [ex, ey] = axisPt(i, SKILL_TIERS, n); svg += '<line class="grid" x1="' + SL_C + '" y1="' + SL_C + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) + '"/>'; });
   svg += '<polygon class="next" points="' + shapeOf(axes, pv.skills, n) + '"/><polygon class="now" points="' + shapeOf(axes, t.skills, n) + '"/>';
-  axes.forEach((ax, i) => { const [tx, ty] = labelPt(i, n); svg += '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="middle">' + ax.name.slice(0, 4).toUpperCase() + "</text>"; });
+  axes.forEach((ax, i) => { const [tx, ty] = labelPt(i, n); svg += '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1) + '" text-anchor="middle">' + axAbbr(ax) + "</text>"; });
   svg += "</svg>";
   // each axis: its name and tier, then [-] pips [+] (owner, 2026-10-08: + and - buttons, were range sliders)
   const rows = axes.map((ax, i) => {
