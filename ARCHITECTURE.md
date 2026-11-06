@@ -197,7 +197,7 @@ Tier I names: `TIER_I_NAMES` (`aspira-capstone.js`). Checks: `scripts/spire-smok
 
 **Targeting** (a card slider; ties go to the furthest along the spiral; ARC's jumps
 and SOL's hops use the tower's own mode, `chainPick`): **Fresh** = no debuff first, then
-nearest the core · **Biggest** = most HP left (a boss always) · **Near** = nearest the CORE,
+nearest the core · **Strengths** = the enemy types this tower checks best first (its `VS_MARKS`), its worst last, then the biggest (most HP left; a boss always) - was **Biggest** till 2026-11-06 · **Near** = nearest the CORE,
 not the tower.
 
 **Positioning** (`bestSpot`; the simulator and Auto-move): every half second score 36 spots
