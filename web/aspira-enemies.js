@@ -14,6 +14,7 @@ const TRAIL = { bonus: 320, fast: 120, shield: 80, armor: 80 }, // swarm: none (
   TRAIL_STEP = 10, TRAIL_ALPHA = 0.55; // STEP 6 -> 10 (perf, 2026-10-28: 40% fewer path points and none of the look - a 10 u chord bows 0.06 u off a lane turning at r 200, 0.25 u at r 50; 10 divides every TRAIL, so each tail still ends at its full length)
 // (perf: the tail's points live in these, reused every enemy every frame - three new objects a point were the frame's biggest churn)
 const TRAIL_P = [], TRAIL_L = [], TRAIL_R = [], trailPt = (A, i) => A[i] || (A[i] = { x: 0, y: 0 });
+const trailM = M => [M.a, M.b, M.c, M.d, M.e, M.f]; // a DOMMatrix as warpFrame's [a, b, c, d, e, f]
 const BREACH_SPOKES = 24; // the most Breach spokes drawn on one enemy
 // the tracers' one gradient a colour, per context (body colour -> clear along x, 0 to 1 - drawStarTrail turns the frame onto each tail)
 const trailGrads = new WeakMap();
@@ -52,8 +53,9 @@ function drawStarTrail(e, size) {
     const l = trailPt(L, i), r = trailPt(R, i); l.x = pts[i].x + nx; l.y = pts[i].y + ny; r.x = pts[i].x - nx; r.y = pts[i].y - ny;
   }
   // OFF THE CANVAS (perf, 2026-11-06, as solidOffCanvas): the tail's outline under the enemy's frame, every point outside the canvas - no fill
-  { const M = ctx.getTransform(), W = ctx.canvas.width, H = ctx.canvas.height; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const A of [L, R]) for (let i = 0; i <= n; i++) { const p = A[i], X = M.a * p.x + M.c * p.y + M.e, Y = M.b * p.x + M.d * p.y + M.f; if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; }
+  // (the frame warpEntities set for this enemy, warp.eF - no matrix object a tracer a frame; the demo's draw reads the context's)
+  { const F = (typeof warp !== "undefined" && warp.eF) || trailM(ctx.getTransform()), W = ctx.canvas.width, H = ctx.canvas.height; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let k = 0; k < 2; k++) { const A = k ? R : L; for (let i = 0; i <= n; i++) { const p = A[i], X = F[0] * p.x + F[2] * p.y + F[4], Y = F[1] * p.x + F[3] * p.y + F[5]; if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; } }
     if (x1 < -2 || y1 < -2 || x0 > W + 2 || y0 > H + 2) return; }
   // every tail FADES toward its end (owner, 2026-10-09: "make all tracers lose opacity towards tail"): the star's
   // by a radial gradient from it, the rest by a straight one from the body to the tail's end (the fast ones were a
