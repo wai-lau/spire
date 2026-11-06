@@ -69,11 +69,14 @@ SKILL_TREES.crr = [
 
 // (CRR_HOLD_FRAC - the share of the wing the Hangar could STORE in orbit, 2026-10-16 - GONE 2026-11-04: s.hold is the whole wing at every tier)
 const CRR_CHAIN_FROM = 2; /* today's I, tier II since the tier redesign (2026-10-24) */ // Tether runs on to one more enemy from tier II (owner, 2026-10-18, "from III" in the old numbering; was the capstone's alone)
+// FASTER WITH EVERY LEVEL (owner, 2026-11-06: "crr interceptor speed should increase by 1.05x per level"): the flight out and home x CRR_SPEED_LVL a
+// carrier level past the first (~x1.89 at level 14); the home orbit (CRR_HOLD_V) and the enemy orbit (CRR_ORBIT_V) keep their pace
+const CRR_SPEED_LVL = 1.05;
 function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.targets = 1; s.dmg *= CRR_BOLT_K; // the STAT CURVE (tier redesign 2026-10-24; was CRR_SHOT_MUL x CRR_SIDE_DMG)
   s.bolts = 1; s.dmg *= CRR_BOLTS_BY[a]; s.tetherN = CRR_TETHER_N[l];
-  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V; s.reload = CRR_RELOAD_S; s.tSlow = crrTetherSlow(l); s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
+  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V * CRR_SPEED_LVL ** Math.max(0, (t.lvl || 1) - 1); s.reload = CRR_RELOAD_S; s.tSlow = crrTetherSlow(l); s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
