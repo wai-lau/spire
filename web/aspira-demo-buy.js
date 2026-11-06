@@ -2,7 +2,7 @@
 // and more visible / On click, randomly allocate 5 points on that tower randomly, then show the demo video for that tower within the buy card bounds /
 // while demo is playing, a click anywhere on the screen closes the demo"): each build card gets an "i" (top right); a tap builds a demo of that
 // kind with BUY_DEMO_PTS points spread at random over its axes (one tier a point, at most one capstone - the purchase rules), and plays the tower
-// card's scene (demoScene / demoFrame / demoDraw3d, aspira-demo.js) over the card on its own canvas and its own animation frames - paused or not.
+// card's scene (demoScene / demoFrame / demoDraw3d, aspira-demo.js) in a panel over the cards (buyDemoOpen) on its own animation frames - paused or not.
 // Any tap then closes it and is swallowed (nothing bought, no other control). UI only: a UI-side PRNG (never Math.random), no game state touched.
 // Loaded after aspira-demo-card.js; openBuildChooser (aspira-chooser.js) calls buyDemoButtons.
 const BUY_DEMO_PTS = 5;
@@ -28,35 +28,28 @@ function buyDemoButtons(row, ci) {
     c.appendChild(b);
   }
 }
+// THE PANEL (owner, 2026-11-06: "for the build menu demo box / vertically stack the demo over triangle / center them over a matching tower buy button
+// styled card that is the width of 2 buildcards + gap, / expand demo to meet either pair of edges of the card (with a little bit of padding) / add a close
+// button underneath, but clicking anywhere will close demo / ensure all demos have a black background"; "also all demos should have rounded corners"):
+// a card in the tower's own look, two cards and their gap wide, centred over the cards; inside, the demo (its box's shape, as wide as the panel less
+// BUY_PAD each side), the build's triangle under it, then "close"
+const BUY_PAD = 8, BUY_TRI_W = 150; // (BUY_PAD: the panel's padding, --space-2-5)
 function buyDemoOpen(card, kind, ci) {
   buyDemoClose(); buyDemo.seed ^= Math.round(performance.now() * 1000) | 0;
-  const r = card.getBoundingClientRect(), box = document.createElement("div"); box.className = "asp-buy-demo";
-  Object.assign(box.style, { left: r.left + "px", top: r.top + "px", width: r.width + "px", height: r.height + "px" });
-  const cv = document.createElement("canvas"), dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); box.appendChild(cv);
-  (document.getElementById("asp") || document.body).appendChild(box);
+  const row = card.parentElement, rr = row.getBoundingClientRect(), cr = card.getBoundingClientRect(), gap = parseFloat(getComputedStyle(row).columnGap) || 8;
+  const pw = Math.min(window.innerWidth - 2 * BUY_PAD, 2 * cr.width + gap), cw = pw - 2 * BUY_PAD, ch = cw / DEMO_BOX_AR;
+  const box = document.createElement("div"); box.className = "asp-buy-panel"; box.dataset.kind = kind; box.style.width = pw + "px";
+  const cv = document.createElement("canvas"), dpr = Math.min(2, window.devicePixelRatio || 1); cv.className = "asp-buy-cv"; cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); box.appendChild(cv);
   const sk = buyDemoSkills(kind), t = { kind, skills: sk, cell: ci, id: -1 }, lay = demoLayoutKey(t, null), L = DEMO_LAYOUTS[kind] && (DEMO_LAYOUTS[kind][lay] || DEMO_LAYOUTS[kind].base);
-  if (!L) { box.remove(); return; }
+  if (!L) return;
+  if (typeof triSvg === "function") { const tri = document.createElement("div"); tri.className = "asp-buy-tri"; tri.style.width = Math.min(BUY_TRI_W, cw) + "px"; tri.innerHTML = triSvg(kind, sk); box.appendChild(tri); }
+  const close = document.createElement("button"); close.type = "button"; close.className = "asp-buy-close"; close.textContent = "close"; box.appendChild(close); // (any tap closes it - buyDemoSwallow - this one too)
+  (document.getElementById("asp") || document.body).appendChild(box);
+  const bh = box.getBoundingClientRect().height, vh = window.innerHeight; // centred over the cards, kept on screen
+  box.style.left = Math.max(BUY_PAD, rr.left + rr.width / 2 - pw / 2) + "px"; box.style.top = Math.max(BUY_PAD, Math.min(vh - BUY_PAD - bh, rr.top + rr.height / 2 - bh / 2)) + "px";
   buyDemo.S = demoScene(kind, sk, ci, demoPlace(kind, towerStats(t), ci, L)); buyDemo.cv = cv; buyDemo.c2 = cv.getContext("2d"); buyDemo.view = demoView3d(buyDemo.S, cv.width, cv.height); buyDemo.box = box;
   setTimeout(() => { document.addEventListener("pointerdown", buyDemoSwallow, true); document.addEventListener("click", buyDemoSwallow, true); }, 0); // (not the tap that opened it)
-  buyDemoTri(kind, sk, r);
   buyDemo.last = performance.now(); buyDemo.raf = requestAnimationFrame(buyDemoTick);
-}
-// THE BUILD'S TRIANGLE BESIDE IT (owner, 2026-11-06: "when showing the demo, show the upgrade triangle that was randomly allocated to the tower on an
-// adjacent side of the demo, wherever there is space, and it can be most centered"): the side (right, left, below, above) where a BUY_TRI_W chart fits
-// and sits most centred on the card; none fits: the roomiest side, the chart shrunk to it. Inside #asp (its colour tokens)
-const BUY_TRI_W = 150, BUY_TRI_AR = 97 / 120, BUY_TRI_PAD = 8;
-function buyDemoTri(kind, sk, r) {
-  if (typeof triSvg !== "function") return;
-  const vw = window.innerWidth, vh = window.innerHeight, P = BUY_TRI_PAD, room = { right: vw - r.right - 2 * P, left: r.left - 2 * P, below: vh - r.bottom - 2 * P, above: r.top - 2 * P };
-  const fitW = side => (side === "right" || side === "left" ? Math.min(BUY_TRI_W, room[side], (vh - 2 * P) / BUY_TRI_AR) : Math.min(BUY_TRI_W, room[side] / BUY_TRI_AR, vw - 2 * P));
-  const place = (side, w) => { const h = w * BUY_TRI_AR, cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-    const x = side === "right" ? r.right + P : side === "left" ? r.left - P - w : Math.max(P, Math.min(vw - P - w, cx - w / 2));
-    const y = side === "below" ? r.bottom + P : side === "above" ? r.top - P - h : Math.max(P, Math.min(vh - P - h, cy - h / 2));
-    return { x, y, w, h, off: side === "right" || side === "left" ? Math.abs(y + h / 2 - cy) : Math.abs(x + w / 2 - cx) }; };
-  const sides = ["right", "left", "below", "above"], fits = sides.filter(s => fitW(s) >= BUY_TRI_W).map(s => place(s, BUY_TRI_W));
-  const at = fits.length ? fits.reduce((a, b) => (b.off < a.off ? b : a)) : (s => place(s, Math.max(40, fitW(s))))(sides.reduce((a, b) => (fitW(b) > fitW(a) ? b : a)));
-  const el = document.createElement("div"); el.className = "asp-buy-tri"; el.dataset.kind = kind; el.innerHTML = triSvg(kind, sk);
-  Object.assign(el.style, { left: at.x + "px", top: at.y + "px", width: at.w + "px" }); (document.getElementById("asp") || document.body).appendChild(el); buyDemo.tri = el;
 }
 function buyDemoTick(now) {
   if (!buyDemo.S) return;
@@ -68,6 +61,6 @@ function buyDemoSwallow(ev) { ev.stopPropagation(); ev.preventDefault(); if (ev.
 function buyDemoClose() {
   if (buyDemo.raf) cancelAnimationFrame(buyDemo.raf);
   document.removeEventListener("pointerdown", buyDemoSwallow, true); document.removeEventListener("click", buyDemoSwallow, true);
-  if (buyDemo.box) buyDemo.box.remove(); if (buyDemo.tri) buyDemo.tri.remove();
-  Object.assign(buyDemo, { S: null, cv: null, c2: null, view: null, raf: 0, box: null, tri: null });
+  if (buyDemo.box) buyDemo.box.remove();
+  Object.assign(buyDemo, { S: null, cv: null, c2: null, view: null, raf: 0, box: null });
 }

@@ -917,7 +917,7 @@
 .asp-desc ins { color: hsl(var(--asp-good-hsl)); text-decoration: underline; }
 /* THE DEMO SCENE where the sentence was (owner, 2026-11-03; aspira-demo-card.js): the canvas at the box's width; its "i" bottom right, inside it, flips to the sentence */
 .asp-demo { position: relative; }
-.asp-demo-cv { display: block; width: 100%; height: auto; aspect-ratio: 372 / 180; }
+.asp-demo-cv { display: block; width: 100%; height: auto; aspect-ratio: 372 / 180; background: hsl(var(--bg-hsl)); border-radius: var(--radius-3); } /* black, rounded (owner, 2026-11-06: "ensure all demos have a black background", "all demos should have rounded corners") */
 .asp-demo-txt { display: none; }
 .asp-demo.is-text .asp-demo-cv { visibility: hidden; }
 .asp-demo.is-text .asp-demo-txt { display: block; position: absolute; inset: 0; }
@@ -925,15 +925,17 @@
 #asp button.asp-demo-i { position: absolute; right: var(--space-1); bottom: var(--space-1); display: grid; place-items: center; box-sizing: border-box; width: var(--space-5); height: var(--space-5); min-width: 0; min-height: 0; padding: 0; border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: 50%; background: none; color: hsl(var(--green-hsl)); font: inherit; font-size: var(--fs-2xs); line-height: var(--lh-none); cursor: pointer; }
 #asp .asp-build-cards .asp-card { position: relative; }
 #asp button.asp-buy-i { position: absolute; top: var(--space-1); right: var(--space-1); display: grid; place-items: center; box-sizing: border-box; width: var(--space-10); height: var(--space-10); min-width: 0; min-height: 0; padding: 0; border: 2px solid hsl(var(--green-hsl)); border-radius: 50%; background: hsl(var(--green-hsl) / 0.45); color: hsl(var(--green-hsl)); font: inherit; font-weight: var(--fw-bold); font-size: var(--fs-sm); line-height: var(--lh-none); cursor: pointer; } /* the buy card's demo "i": top right, bigger and brighter than the tower card's (aspira-demo-buy.js) */
-.asp-buy-tri { position: fixed; z-index: var(--z-modal); pointer-events: none; padding: var(--space-1); border-radius: var(--radius-1); background: hsl(var(--bg-hsl)); } /* the demo's build triangle (aspira-demo-buy.js) */
-.asp-buy-tri[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
-.asp-buy-tri[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
-.asp-buy-tri[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
-.asp-buy-tri[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
-.asp-buy-tri[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
-.asp-buy-tri[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
-.asp-buy-tri[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
-.asp-buy-demo { position: fixed; z-index: var(--z-modal); overflow: hidden; border-radius: var(--radius-1); background: hsl(var(--bg-hsl)); } .asp-buy-demo canvas { width: 100%; height: 100%; display: block; }
+.asp-buy-panel[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-buy-panel[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
+.asp-buy-panel[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
+.asp-buy-panel[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
+.asp-buy-panel[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
+.asp-buy-panel[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-buy-panel[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
+.asp-buy-panel { position: fixed; z-index: var(--z-modal); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-2-5); border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: var(--radius-3); background: linear-gradient(hsl(var(--green-hsl) / 0.12), hsl(var(--green-hsl) / 0.12)), hsl(var(--bg-hsl)); color: hsl(var(--green-hsl)); } /* the buy card's demo panel, in the card's own look (aspira-demo-buy.js) */
+.asp-buy-cv { display: block; width: 100%; height: auto; aspect-ratio: 372 / 180; background: hsl(var(--bg-hsl)); border-radius: var(--radius-3); } /* black, rounded - every demo (owner, 2026-11-06) */
+.asp-buy-tri { pointer-events: none; }
+#asp button.asp-buy-close { min-height: 0; padding: var(--space-1) var(--space-4); border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: var(--radius-3); background: none; color: hsl(var(--green-hsl)); font: inherit; cursor: pointer; }
 #asp button.asp-demo-i[aria-pressed="true"] { background: hsl(var(--green-hsl) / 0.45); }
 
 /* the CORE POWERS' BUTTONS under the title (owner, 2026-10-11; above it since 2026-10-08; aspira-powers.js): name, seconds left, and a

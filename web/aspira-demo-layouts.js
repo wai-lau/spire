@@ -72,7 +72,7 @@ function demoLayoutKey(t, pv) {
 // types alternate. Each lap starts at the right edge with its health full and its armor and shields back (demoFrame)
 function demoPlace0(kind, st, cell, L) {
   const c = CELLS[cell], r = st.range || 120, T = L.types, n = T.length;
-  const hh = r * Math.cos(warpTilt()) * DEMO_FIT, xr = hh * (2 * DEMO_BOX_AR - 2 * DEMO_TOWER_X) + DEMO_BOX_OVER, xl = hh * 2 * DEMO_TOWER_X + DEMO_BOX_OVER, dy = DEMO_LANE_DY * r, /* (the box: the tower hh from its left edge, 2 AR hh wide - demoView3d; 60 u past each edge) */ pace = PATHS.slice(0, N_PATHS).reduce((a, P) => a + P.pace, 0) / N_PATHS;
+  const span = DEMO_BOX_AR - 2 * DEMO_TOWER_X, xr = r * (DEMO_BOX_AR - DEMO_TOWER_X) / span + DEMO_BOX_OVER, xl = r * DEMO_TOWER_X / span + DEMO_BOX_OVER, /* the box in world u under demoView3d's zoom (the range's far edge DEMO_TOWER_X box heights from the right edge) */ dy = DEMO_LANE_DY * r, /* (60 u past each edge) */ pace = PATHS.slice(0, N_PATHS).reduce((a, P) => a + P.pace, 0) / N_PATHS;
   const lane = y => { const pts = []; for (let x = c.x + xr, s = 0; x >= c.x - xl - 1e-6; x -= 8, s += 8) pts.push({ x, y, s }); return { pts, len: pts[pts.length - 1].s, pace, rim: pts[pts.length - 1], demo: true }; };
   const lanes = [lane(c.y - dy), lane(c.y + dy)], hasFast = T.includes("fast"), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN), k = [0, 0];
   const at0 = Math.max(0, xr - 0.9 * r) / lanes[0].len; // (the scene OPENS with each pack's lead at the range's edge; respawns come from the right)
