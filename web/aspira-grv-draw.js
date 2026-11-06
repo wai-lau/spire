@@ -21,7 +21,7 @@ function drawGrvPellets() {
 // ---------- the nova's damage numbers fly INWARD, toward the sphere (owner) ----------
 // the aura's BANDS, the sphere outward, in the black-hole image's colours and shares (owner, 2026-10-15): white-hot 2, yellow 6,
 // coral 13, pink 13, plum 18, deep purple 17 - each stop where its band starts, clear inside the first and past the last
-const GRV_BANDS = [[0, "white"], [0.12, "violet"], [0.4, "violet"], [0.66, "bhplum"]]; /* NO DARK GAP (owner, 2026-11-06: "make the black gap around void white, or at least very light purple"): white right at the core's edge, into violet */ /* THE TOWER'S COLOURS (owner, 2026-11-06: "for GRV, update the void attack to use the same colors as the ones used by the tower now"): violet into plum, then clear; was white-hot, yellow, coral, pink, plum */ // the outermost band CLEAR, not the near-black deep purple (owner, 2026-10-24: "GRV BH outermost color should be transparent, not black"; was [0.86, "bhdeep"])
+const GRV_BANDS = [[0, "white"], [0.12, "violet"], [0.4, "violet"], [0.66, "bhplum"], [0.86, "violet"]]; /* + a soft violet glow toward the edge (owner, 2026-11-06: "can't actually see WELL very much / add a faint glow?") - one gradient, no steps */ /* NO DARK GAP (owner, 2026-11-06: "make the black gap around void white, or at least very light purple"): white right at the core's edge, into violet */ /* THE TOWER'S COLOURS (owner, 2026-11-06: "for GRV, update the void attack to use the same colors as the ones used by the tower now"): violet into plum, then clear; was white-hot, yellow, coral, pink, plum */ // the outermost band CLEAR, not the near-black deep purple (owner, 2026-10-24: "GRV BH outermost color should be transparent, not black"; was [0.86, "bhdeep"])
 // the NOVA: a thick ring (GRV_NOVA_W of its reach), GRV purple turning white as it collapses (owner, 2026-10-15; it was a red /
 // orange / yellow ring going OUT for an hour)
 const GRV_NOVA_LOOK_A = 0.5; // the WHOLE nova - ring and glow - at half (owner, 2026-11-05: "Halve opacity of all gr novas"), on top of GRV_NOVA_GLOW
@@ -74,10 +74,12 @@ function drawGrv() {
   drawGrvPellets();
   ctx.globalAlpha = 1;
 }
+const GRV_WELL_PULL_A = 1.35; // the aura's alpha x this while an enemy is inside it
+const grvPulling = (sp, ar) => { const r2 = ar * ar; for (const e of G.enemies) if (!e.dead && (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2 < r2) return true; return false; };
 function drawSphere(sp, st, auraOwn = true) {
   const k = grvMassK(sp), ar = grvCoreR(grvAuraNow(sp, st)) * st.accR; // the AURA's reach (Gravity Well): x the void's own radius, x2 at most
   if (ar > 1 && st.auraOn) { // the aura: clear at the sphere, its alpha (grvAuraAlpha) at mid-radius, clear at the edge (auraOwn false: drawn capped with its overlaps - drawGrv)
-    if (auraOwn) grvAura(ctx, sp, ar, grvAuraAlpha(sp, ar), ar / st.accR);
+    if (auraOwn) grvAura(ctx, sp, ar, Math.min(1, grvAuraAlpha(sp, ar) * (grvPulling(sp, ar) ? GRV_WELL_PULL_A : 1)), ar / st.accR); // a little brighter while it is pulling something
     // its REACH, shown like Permafrost's rings (owner, 2026-10-16: "for bh aura, show range of aura using a range indicator similar to
     // permafrost"): a thin glowing ring out from the centre to the edge every GRV_RING_S, fading as it goes
     const f = (sp.age % GRV_RING_S) / GRV_RING_S;
