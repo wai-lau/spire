@@ -107,14 +107,22 @@ function drawSphere(sp, st, auraOwn = true) {
 // pass: 0 the pink rim, 1 the yellow ring, 2 the BLACK - each pass for EVERY sphere before the next (drawGrvCores), so two disks that
 // overlap join into one, the dark of each over all the rings (owner, 2026-10-16: "accretion disks should connect, not be drawn over
 // another black hole", "the dark part needs to be drawn over all accretion disk layers")
+// the HALO: a smooth radial fade in GRV violet to nothing at 2.4 r (owner, 2026-11-06: "never use step glow unless huge perf gains") - IFR's cached
+// unit fade (ifrFadeGrad, aspira-ifrit-draw.js: (1 - t)^3 from the centre, one gradient a colour, made once) scaled to it; the black core covers its middle
+function grvHalo(x, y, r1) {
+  if (typeof ifrFadeGrad !== "function") return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(r1, r1); ctx.fillStyle = ifrFadeGrad(COL.violet); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 6.283); ctx.fill(); ctx.restore();
+}
 function drawGrvCore(sp, st, pass) {
   if (sp.age < novaEnd(sp) || !st.hole) return; // (the nova first - the centre appears once it is gone; no centre without Void - tier redesign)
   const r = grvCoreR(grvAuraNow(sp, st)); // LOGARITHMIC in its aura (owner, 2026-10-16: "make the center sphere of a bh increase logarithmically visually instead of linearly"; was 0.16 x the aura + 2 root mass); shrinks with its mass, to nothing
   if (r < 0.3) return;
   ctx.globalAlpha = 1; ctx.beginPath();
-  if (pass === 0) { ctx.strokeStyle = COL.bhpink; ctx.lineWidth = 1; ctx.arc(sp.x, sp.y, r + Math.min(2, r), 0, 6.283); ctx.stroke(); }
-  else if (pass === 1) { ctx.strokeStyle = COL.yellow; ctx.lineWidth = 2; ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.stroke(); }
-  else { ctx.fillStyle = "#000"; ctx.arc(sp.x, sp.y, Math.max(0, r - 1), 0, 6.283); ctx.fill(); } /* r - 1: the yellow ring's outer half stays */
+  // THE BODY'S COLOURS (owner, 2026-11-06: "for GRV, update the void attack to use the same colors as the ones used by the tower now"; "don't have that
+  // reflective arc on the sphere, black holes don't reflect"): a soft violet halo (a smooth radial fade, no steps), a violet rim, a black core - as drawGrvBody's orb
+  if (pass === 0) grvHalo(sp.x, sp.y, 2.4 * r);
+  else if (pass === 1) { ctx.strokeStyle = COL.violet; ctx.lineWidth = Math.min(1.5, 0.15 * r + 0.5); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.stroke(); }
+  else { ctx.fillStyle = COL.bg; ctx.arc(sp.x, sp.y, Math.max(0, r - 0.5), 0, 6.283); ctx.fill(); } /* r - 0.5: the rim's outer half stays */
 }
 function drawGrvCores(at) {
   for (let pass = 0; pass < 3; pass++) for (const t of G.towers) {
@@ -126,7 +134,7 @@ function drawGrvCores(at) {
 // ---------- THE BODY SHOWS THE BUILD (owner, 2026-11-06, the approved mockup: "GRV is good, but move the orb a bit higher off the top of the
 // tower", then "also move the ball another 5u up"; "on GRV, the tracers on gravity well, their tracers should be split into 3 sections to make it look
 // smoother") - over the prism's top, in screen-upright units (a sphere stays round; the rings lie in the board's tilt):
-// VOID a black orb with a violet rim and a soft halo, GRB_GAP x the hex radius clear of the top, its radius GRB_ORB_R a Void tier (V = 2x I);
+// VOID a black orb with a violet rim and a soft halo (no glint), GRB_GAP x the hex radius clear of the top, its radius GRB_ORB_R a Void tier (V = 2x I);
 // NOVA a thin ring round it, contracting onto it every GRB_NOVA_T s, brighter and thicker a tier; GRAVITY WELL GRB_WELL_N debris spiralling in,
 // each with a 3-segment trail along its spiral. Back halves before the orb, front halves after. Nova or Well with Void 0: a Void I orb. Look only
 const GRB_GAP = (29 - 40 * 0.58) / 40, GRB_ORB_R = [0, 7.5, 9, 10.8, 12.8, 15].map(r => r / 40), GRB_NOVA_T = 2, GRB_WELL_T = 3.2;
@@ -169,10 +177,9 @@ function drawGrvBody(t, x, y, top, R) { // top: the prism top's height (warpFram
     }
   };
   if (nv) nova(false); if (wl) well(false);
-  ctx.fillStyle = col; for (const [m, a] of [[2.4, 0.08], [1.8, 0.12], [1.35, 0.16]]) { ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(0, 0, r * m, 0, 2 * Math.PI); ctx.fill(); } // the halo
-  ctx.globalAlpha = 1; ctx.fillStyle = COL.bg; ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.fill();
-  ctx.strokeStyle = col; ctx.lineWidth = 0.06 * R; ctx.globalAlpha = 0.55; ctx.stroke(); ctx.lineWidth = 0.025 * R; ctx.globalAlpha = 1; ctx.stroke(); // the rim
-  ctx.strokeStyle = COL.white; ctx.lineWidth = 0.02 * R; ctx.globalAlpha = 0.45; ctx.beginPath(); ctx.arc(0, 0, r * 0.78, Math.PI * 1.05, Math.PI * 1.45); ctx.stroke(); // a glint
+  ctx.globalAlpha = 1; grvHalo(0, 0, r * 2.4); // the halo (smooth)
+  ctx.fillStyle = COL.bg; ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.fill();
+  ctx.strokeStyle = col; ctx.lineWidth = 0.035 * R; ctx.stroke(); // the rim (no glint: "black holes don't reflect", owner 2026-11-06)
   if (nv) nova(true); if (wl) well(true);
   ctx.globalAlpha = 1;
 }
