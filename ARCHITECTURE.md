@@ -149,7 +149,7 @@ is flat (its rate never rises). Per-axis raw damage tables are gone; a sub-attac
 one constant (`FRZ_RIME_BITE0`, `ACD_POOL_HEAT`,
 `GRV_INNER_K0`, `IFR_ROUTE_K0`, `IFR_TICK_K0`; GRV's pellets are a per-tier table again, `GRV_PELLET_K`, and CRR's tether deals no damage), and so is any factor on the tower's own damage, on from its first tier
 (`SOL_CRIT_K`, `SOL_SCORCH_TOTAL`, `IFR_FIRE_HK`, `IFR_HF_FK`, ARC's `ARC_DMG_K`). A whole-tower RATE factor on the curve is one constant too: SOL `SOL_RATE_K` (with `SOL_DMG_K`, fewer, harder shots), FRZ's aura `FRZ_TICK_RATE_K` (fewer, harder ticks: the same damage a second, fewer shield pops), IFR's charge `IFR_RATE_K` (a plain rate cut, no damage back). Per-tier tables that stay hold counts, shapes, reaches and
-debuffs on the enemy (FRZ Brittle, slows, armor strips). `towerLevel` counts the tower's own axes only. Each stats function sets `dmgCurve` /
+debuffs on the enemy (FRZ Fracture, slows, armor strips). `towerLevel` counts the tower's own axes only. Each stats function sets `dmgCurve` /
 `rateCurve` (the curve plus nudges) before a mechanic splits the hit.
 
 **ARC's damage is geometric in the level** (7.1.0; owner, 2026-11-01: "Right now ARC is so insanely steep it doesnt make sense" /
@@ -176,7 +176,7 @@ number over 800%, every axis of every tower at tiers 0-V, and every axis MIX 0-V
 | ARC | one hard bolt whose chain jumps twice (three enemies hit) | Conductivity (id `conductivity`): each jump keeps more of the hit (`ARC_AMP_FALL`) | Voltage: a longer chain and a farther jump (`ARC_VOLT_JUMPS`, `ARC_VOLT_REACH`); one fork from I | Shock (id `capacitance`): every hit strips armor and marks its target Shocked |
 | SOL | one tracking beam held on its first target, hitting only it (`SOL_SPLIT[0]` 0) | Scorch (id `focus`): the stacking burn | Reflection (id `refraction`): one split, piercing | Breach: armor stripped a tick, the splits' carry |
 | CRR | eight interceptors, one bolt a volley, four volleys a sortie (`CRR_HANGAR`, `CRR_AMMO`) | Hangar: twelve launched, two stored in orbit | Tether: the first interceptor out tethers its target (`CRR_TETHER_N`, `carTethered`) | Armament: a harder bolt (`CRR_BOLTS_BY`, x0.65 at 0 .. x3) and more volleys |
-| FRZ | a slowing circle with a light flat nip | Brittle: the real tick, more the slower | Permafrost: frost pulses (a stacking slow; no armor) | Moons: one moon |
+| FRZ | a slowing circle with a light flat nip | Fracture: the real tick, more the slower | Permafrost: frost pulses (a stacking slow; no armor) | Moons: one moon |
 | ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Spill: ray pools that burn, no slow; kill pools gone |
 | GRV | a void a shot that crushes as it grows, shedding pellets as it decays | Void: a heavier void | Nova (id `supernova`): one nova before each void, harder by tier (`GRV_NOVA_RATE`), stripping armor | Gravity Well (id `radiation`): the aura (pull, slow) and harder pellets |
 | IFR | a meteor that bursts into a fan of six (`IFR_FAN_N`) | Meteor: meteors stored in orbit | Hellfire: a wall of fire lighting flares | Flare: a bright flare at each impact |
@@ -225,12 +225,12 @@ ARCHAEOLOGY §4.
 **FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the speed the slow takes (`frzBite`: `FRZ_CHILL_K` x slow x the enemy's own speed / `ENEMY_BASE_SPEED`, owner
 2026-11-06 "1 yes"; it reads speed, never type, so fast enemies take most), never over `FRZ_BITE_TD` (8) x td. **No armor reduction** (owner, 2026-10-29: "no armor reduction effects, more slow").
-**Weakness: shields and armor** - a shielded enemy cannot be slowed (no chill, no Brittle, a Permafrost pulse does nothing);
+**Weakness: shields and armor** - a shielded enemy cannot be slowed (no chill, no Fracture, a Permafrost pulse does nothing);
 a tick on it pops one charge.
 
 | axis | buys |
 |---|---|
-| Brittle (id `temp`) | a colder aura, a faster tick, more **damage taken** (a slowed enemy takes more from EVERY tower, credited to the FRZ; the card row "Damage taken"); range |
+| Fracture (id `temp`; Brittle until 2026-11-06, owner: "rename it to Fracture") | a colder aura, a faster tick, more **damage taken** (a slowed enemy takes more from EVERY tower, credited to the FRZ; the card row "Damage taken"); range |
 | Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow (its armor crack `FRZ_RIME_CRACK` is 0 at every tier); at full frost the rime spreads to the nearest enemy; slide |
 | Moons | copies of the aura orbiting the tower (separate slow sources, so they multiply), with satellites at the top tiers |
 
@@ -552,7 +552,7 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 | 2 | **shield** | unless the hit ignores shields (`st.ignoreShield`), the shield takes the whole hit and pops `st.shieldPop` charges (a quiet hit bounces off); nothing else applies |
 | 3 | bleed crit | wired (a non-SOL tower may crit a bleeding enemy for x `BLEED_CRIT_MUL`), but no skilled tower sets `st.bleedCrit` (SOL's Breach crit table is gone), so nothing bleeds crit-ably and the step is inert |
 | 4 | marks | damage-taken x `shredMul` |
-| 5 | **Brittle** | x while slowed |
+| 5 | **Fracture** | x while slowed |
 | 6 | **armor** | THE CURVE: a hit loses `R / (R + ARMOR_K x hit)`, at most `ARMOR_CAP` (`armorTake`) - a hit as big as the armor loses half, smaller more, bigger less; armor never counts below 0; every type carries `ARMOR_ALL` of an armor unit's armor; frost removes a SHARE of it; armor is LATE-SCALED at spawn (`spawnEnemy`, x `scaleOf`) while tower hits stay raw and are scaled where they meet the enemy, so the curve reads hit x `escale(e)` against R: from wave 60 the same raw hit is a smaller and smaller share of the armor, and late the armor type sits at the cap for every hit whose scaled size is under R / 9 (about 2,500 raw by wave 110), while the LIGHT types' `ARMOR_ALL` share (swarm / fast 10%, shield 15%) now eats most of a small hit too: late, many small hits cost most against swarm, fast and shield (numbers: ARCHAEOLOGY §12.9-bis); EVERY hit, quiet ones too (the old flat bite, 10% floor, negative-armor bonus and minus-reference floor: ARCHAEOLOGY.md) |
 | 7 | `bossHitCap` | Justice |
 | 8 | floor | a **whole number, at least 1 if it landed** |

@@ -22,7 +22,7 @@ const shredPc = amt => { const w = descWave(); return pc(Math.min(SHRED_MAX, SHR
 // a chart tower's stats at these skills (as scripts/aspira-desc-graph.mjs reads them) - for strips sized by its damage
 const descStats = (kind, sk) => towerStats({ id: -1, kind, x: CX, y: CY, lvl: 1 + towerLevel({ kind, skills: sk }), skills: sk });
 const NUM_WORD = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
-// thematic words where they fit (owner): chill, rime, brittle, moons; rays, refract, pierce; jets, etch.
+// thematic words where they fit (owner): chill, rime, fracture, moons; rays, refract, pierce; jets, etch.
 // ONLY BEHAVIOUR is told here (owner, 2026-10-07): a tier that just moves a number - harder
 // hits, a colder or wider aura, faster pulses, a stronger acid, more or bigger puddles -
 // changes no words; the card's stat rows show that change (now -> next)
@@ -46,7 +46,7 @@ const DESCRIBE = {
   // armor rework the share of its armor a fully frosted enemy loses, FRZ_RIME_CRACK) / Moons: the moons and their satellites (owner: "satellites instead of moonlets") - every number read live
   frz(sk) {
     const tp = sk.temp || 0, rm = sk.rime || 0, mo = sk.moons || 0, pct = x => Math.round(x * 100) + "%", mn = FRZ_MOON_COUNT[mo], sub = FRZ_SUBMOON_N[mo];
-    const hits = 1 / FRZ_TEMP_TICK[tp]; // ticks a second; 100% = a second of the full aura (Brittle's - tier 0 nips FRZ_NIP of it)
+    const hits = 1 / FRZ_TEMP_TICK[tp]; // ticks a second; 100% = a second of the full aura (Fracture's - tier 0 nips FRZ_NIP of it)
     return "Emits aura that slows enemies by " /* owner's words, 2026-10-26 */ + pct(FRZ_TEMP_SLOW[tp]) + " and deals " + (tp ? perSec(1 / tdU("frz")) + ", up to " + pc(Math.min(FRZ_BITE_TD * tdU("frz"), 1 + FRZ_CHILL_K * fastSlowCap() * ENEMIES.fast.speed / ENEMY_BASE_SPEED) / tdU("frz")) + " the more speed it takes." : perSec(FRZ_NIP / tdU("frz")) + ".") + /* tier 0 slows and nips (owner, 2026-10-25) */
       (FRZ_BRITTLE[tp] > 1 ? " Enemies in the aura take " + pct(FRZ_BRITTLE[tp] - 1) + " more damage." : "") +
       (rm ? " " + (rm >= CAPSTONE_TIER ? "Rapid pulses" : "Pulses") + " of frost bite for " + pc(FRZ_RIME_BITE0 * FRZ_TEMP_TICK[0] / tdU("frz")) + " damage" /* a bite: FRZ_RIME_BITE0 full ticks */ + ", permanently slow by " + pct(FRZ_RIME[rm]) + ((ac => ac !== "0%" ? " and strip up to " + ac + " of armor" : "")(pc(Math.min(1, FRZ_RIME_CRACK[rm])))) /* nothing it does not do yet (owner, 2026-10-26) */ + " every hit." : "") +

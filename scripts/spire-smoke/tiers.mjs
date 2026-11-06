@@ -144,17 +144,17 @@ check("CRR: tier 0 ten interceptors, all held in orbit when ready (owner, 2026-1
 
 // ---------- FRZ ----------
 towerTierChecks("frz", ["hurts", "pulse", "moon", "more damage"]);
-check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Brittle I hurts, more the slower; Permafrost I pulses frost and crack no armor (owner, 2026-10-29); Moons I one moon (tier redesign 2026-10-24)", () => {
+check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Fracture I hurts, more the slower; Permafrost I pulses frost and crack no armor (owner, 2026-10-29); Moons I one moon (tier redesign 2026-10-24)", () => {
   const go = (sk, extra = "") => run(`(() => { const { t, es } = tierLane("frz", ${JSON.stringify(sk)}, [30]); const e = es[0]; e.armor = e.armor0 = 40; G.started = true;
     let slowed = false; for (let k = 0; k < 180; k++) { ${extra} step(1 / 60); if (e.slowT > 0 && e.slowF > 0) slowed = true; }
     return { dealt: e.max - e.hp, slowed, frost: frostShare(e), crack: towerStats(t).rimeCrack || 0, moons: towerStats(t).moonN || 0 }; })()`);
   const z = go({}), s = go({ temp: 1 }), sx = go({ temp: 1 }, `applySlow(e, 0.5, 0.2, "test");`), p = go({ rime: 1 }), m = go({ moons: 1 });
   if (!z.slowed || !(z.dealt > 0)) return "tier 0: " + JSON.stringify(z) + " (expected a slow and a nip)";
   const zx = go({}, `applySlow(e, 0.5, 0.2, "test");`);
-  if (zx.dealt > z.dealt * 1.01) return "tier 0 nip: " + zx.dealt + " slowed vs " + z.dealt + " (expected flat - more the slower is Brittle's)";
-  if (!(s.dealt > z.dealt * 2)) return "Brittle I: " + s.dealt + " vs the tier 0 nip " + z.dealt + " (expected the full hurt, well past a nip)";
-  if (!(s.dealt > 0)) return "Brittle I dealt nothing";
-  if (!(sx.dealt > s.dealt)) return "Brittle I: " + sx.dealt + " slowed vs " + s.dealt + " (expected more on the slower)";
+  if (zx.dealt > z.dealt * 1.01) return "tier 0 nip: " + zx.dealt + " slowed vs " + z.dealt + " (expected flat - more the slower is Fracture's)";
+  if (!(s.dealt > z.dealt * 2)) return "Fracture I: " + s.dealt + " vs the tier 0 nip " + z.dealt + " (expected the full hurt, well past a nip)";
+  if (!(s.dealt > 0)) return "Fracture I dealt nothing";
+  if (!(sx.dealt > s.dealt)) return "Fracture I: " + sx.dealt + " slowed vs " + s.dealt + " (expected more on the slower)";
   if (z.frost > 0) return "tier 0 frosted " + z.frost;
   if (!(p.frost > 0 && p.crack === 0)) return "Permafrost I: frost " + p.frost + ", crack " + p.crack + " (expected a pulse's frost that cracks NO armor - owner 2026-10-29: FRZ \"no armor reduction effects\")";
   if (m.moons !== 1) return "Moons I: " + m.moons + " moons";
@@ -255,21 +255,21 @@ check("GRV merge (owner, 2026-10-25): two voids' caps do not add - the mass past
 // ---------- the left-for-later list (owner, 2026-10-25: "zero" / "fix all the left for later things") ----------
 const statsOf = (kind, sk) => run(`(() => { G = newGame(); const sk = ${JSON.stringify(sk)}; const st = towerStats({ id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, true);
   return { critMul: st.critMul, scorch: st.dot ? st.dot.n : 0, brittle: st.brittle, fireHK: st.fireHK, hfK: st.hfK }; })()`);
-check("later: tier I adds no extra numbers the spec does not name - SOL Breach I crit as tier 0, FRZ Brittle I no damage-taken boost", () => {
+check("later: tier I adds no extra numbers the spec does not name - SOL Breach I crit as tier 0, FRZ Fracture I no damage-taken boost", () => {
   const s0 = statsOf("sol", {}), s1 = statsOf("sol", { breach: 1 }), f1 = statsOf("frz", { temp: 1 });
   if (s1.critMul !== s0.critMul) return "SOL Breach I crit x" + s1.critMul + " (tier 0 x" + s0.critMul + ")";
-  if (f1.brittle !== 1) return "FRZ Brittle I damage taken x" + f1.brittle + " (expected 1)";
+  if (f1.brittle !== 1) return "FRZ Fracture I damage taken x" + f1.brittle + " (expected 1)";
 });
 check("later: a factor on the tower's OWN damage is one constant, on from its first tier (SOL crit, IFR fire hit + Flare's fire boost)", () => {
   const same = (kind, ax, key, from) => { const v = [1, 2, 3, 4, 5].map(n => statsOf(kind, { [ax]: n })[key]); return v.every(x => x === v[0]) && statsOf(kind, {})[key] === from ? "" : kind + " " + ax + " " + key + " " + JSON.stringify(v) + " (tier 0 " + statsOf(kind, {})[key] + ")"; };
   return same("sol", "breach", "critMul", 3) /* (SOL scorch left this rule 2026-10-25: Breach "increases ... burn" again) */ || same("ifr", "hellfire", "fireHK", statsOf("ifr", { hellfire: 1 }).fireHK) || same("ifr", "firaga", "hfK", 1);
 });
-check("later: the card rows read no zero mechanic - ARC Jumps 2 at tier 0 (one chain hitting three, owner 2026-10-29), FRZ Cold bite before Brittle (the nip is flat)", () => {
+check("later: the card rows read no zero mechanic - ARC Jumps 2 at tier 0 (one chain hitting three, owner 2026-10-29), FRZ Cold bite before Fracture (the nip is flat)", () => {
   const a0 = rows("arc", {}).rows, a1 = rows("arc", { voltage: 1 }).rows, f0 = rows("frz", {}).rows, f1 = rows("frz", { temp: 1 }).rows;
   if (String(a0.Jumps) !== "2") return "ARC tier 0 Jumps reads " + a0.Jumps + " (expected 2: one chain hitting three, owner 2026-10-29)";
   if (String(a1.Jumps) !== String(run("ARC_VOLT_JUMPS[1]")) || !(a1.Jumps > a0.Jumps)) return "ARC Voltage I Jumps reads " + a1.Jumps + " (expected ARC_VOLT_JUMPS[1], above tier 0: Voltage increases chains)";
   if (f0["Cold bite"] !== "—") return "FRZ tier 0 Cold bite reads " + f0["Cold bite"];
-  if (f1["Cold bite"] === "—") return "FRZ Brittle I Cold bite blank";
+  if (f1["Cold bite"] === "—") return "FRZ Fracture I Cold bite blank";
 });
 check("later: ACD's sentence says the jet, not Jets, when it sprays one", () => {
   const d = run(`describeTower("acd", { corrosion: 1, contagion: 1, flow: 0 })`);

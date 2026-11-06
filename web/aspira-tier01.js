@@ -18,7 +18,7 @@
 // Tether I one tethered drone (CRR_TETHER_N) at today's base slow, its pulse from II
 CRR_HANGAR[0] = 10; CRR_HANGAR[1] = 15; /* +1 (2026-11-06; was 14) */ /* x2 (owner, 2026-11-04, on picked-but-unshot leakers: "that's a problem of needing more interceptors"); was 5 7 */ /* x0.6 with the stuck-interceptor fix (owner, 2026-11-04: "b"; was 8 12) */ /* more interceptors with the slower flight (2026-11-02; was 3 5) */ CRR_TETHER_SLOW[0] = 0; CRR_TETHER_SLOW[1] = 0.175; /* x0.5 (owner, 2026-11-04: "reduce the slow"; was 0.35) */
 
-// FRZ: Brittle I is the hurt alone - no damage-taken boost until II, today's I (owner, 2026-10-25: "zero" - tierMid gave it +7%)
+// FRZ: Fracture I is the hurt alone - no damage-taken boost until II, today's I (owner, 2026-10-25: "zero" - tierMid gave it +7%)
 // (FRZ_BRITTLE written 0..V since 2026-10-26: I = 1)
 
 // ACD: one acid ray, no pools (ACD_CONTAGION null); Flow I two rays and the carry; Spill I the ray drips a slowing pool (ACD_POOL_SLOW)

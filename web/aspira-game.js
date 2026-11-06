@@ -153,7 +153,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   // x BLEED_CRIT_MUL (SOL rolls the bleed into its own crit, rayHit)
   if (!quiet && !crit && e.bleedCrit > 0 && !(t && t.kind === "sol") && Math.random() < e.bleedCrit) { crit = true; amt *= BLEED_CRIT_MUL; }
   if (e.shredT > 0) amt *= e.shredMul;
-  const pre = amt; // before Brittle - damageCredit splits what the debuffs added
+  const pre = amt; // before Fracture - damageCredit splits what the debuffs added
   if (e.slowT > 0 && e.brittle) amt *= e.brittle;
   // (SOL Refraction x the FAST here until 2026-10-12 - owner: no extra damage by enemy type)
   // armor takes its share of every hit (armorTake, above)
@@ -241,7 +241,7 @@ function addDebuff(map, src, v, dur, shape) {
   if (d) { d.v = d.t > 0 ? Math.max(d.v, v) : v; d.t = d.t === Infinity ? Infinity : dur; } else map[src] = { v, t: dur }; // (refreshed IN PLACE: the aura refreshes every step - perf)
 }
 // A SHIELD HOLDS OFF EVERY SLOW (owner, 2026-10-12: "shielded units cannot be slowed while they have shields") - FRZ's
-// weakness to shields, by mechanics: no slow, so no chill (frzBite) and no brittle. Temporal Drive ("core:") still stops it
+// weakness to shields, by mechanics: no slow, so no chill (frzBite) and no Fracture. Temporal Drive ("core:") still stops it
 function applySlow(e, f, dur, src = "x", shape = "refresh") {
   if (!e.seen) return false; // (off-screen: immune - enemySeen)
   const core = typeof src === "string" && src.startsWith("core:"); // (a number - a tower's id - never is: no String() a call, perf)
@@ -256,7 +256,7 @@ function applySlow(e, f, dur, src = "x", shape = "refresh") {
   return true;
 }
 // age every slow by dt, drop the spent ones, and fold the rest into e.slowF /
-// e.slowT (what effSpeed, Brittle, Shatter and the drawing read)
+// e.slowT (what effSpeed, Fracture, Shatter and the drawing read)
 function sumSlows(e, dt = 0) {
   let keep = 1, t = 0;
   for (const k in e.slows) {

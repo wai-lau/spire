@@ -145,7 +145,7 @@ function drawEnemy(e, solid) {
 
 // what the upgrades are doing to an enemy, drawn on it (owner, 2026-10-02):
 //   Frostbite  a frost TINT over the body (biteT)
-//   Brittle    a white CRACK across it while it is slowed
+//   Fracture   a white CRACK across it while it is slowed
 //   Deep Freeze a frost HEXAGON around it while the 95% chill holds
 //   Corrosion  a DOTTED ring tight around it while its armor is being eaten
 // (Permafrost's thicker freeze outline is drawn with the outline itself)

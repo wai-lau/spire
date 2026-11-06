@@ -10,19 +10,19 @@
 // early-game balance 2026-10-06: +0.03 on every tier (FRZ stays a pure SUPPORT tower - owner)
 const FRZ_TEMP_SLOW = [0.55, 0.6, 0.65, 0.7, 0.75, 0.8] /* +0.1 a tier, marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28) (Temp, FRZ's fast axis) */ /* EVEN LADDERS, 0..V written whole (owner, 2026-10-26 "Go": tier II bought nearly nothing, IV-V jumped - the spread build leaked 67% of fast; was 0.45 0.45 0.45 0.45 0.534 0.67) */ /* BATTERY 6.7.0 (2026-10-20): untaken 0.4 -> 0.45 (and I-V to match) */; /* V +0.094, VI +0.12 (steeper late tiers, tuned 2026-10-17) */ // a small ramp (overnight fit 2026-10-08: even a flat 0.4 overshot - Temp's reach is the next lever) // weakened (owner, 2026-10-08; isolation: Temp V 438% team, leaks 660 -> 56); was .43 .46 .5 .54 .58 // the aura's range is in SKILL_MOVE
 // Temp's TEAM hook (owner, 2026-10-07: FRZ's chart was flat, 97-103%): an enemy
-// its aura touches turns BRITTLE - while slowed it takes x FRZ_BRITTLE from every
+// its aura touches FRACTURES - while slowed it takes x FRZ_BRITTLE from every
 // tower (damage(), which already reads e.brittle; drawStatus shows the crack)
 // from tier I (owner, 2026-10-11: slows are SHAPED now - aspira-game.js slowShape - so FRZ's payoff moves from how
 // slow to what the slowed suffer; was 1 1 1 1.15 1.2 1.25, from III)
 const FRZ_BRITTLE = [1, 1, 2.2, 3, 3.4, 3.8]; /* II-V up, no tier lower than the one before (marks at 9 pts, 101-119 (6.16.0 battery, 2026-10-28): FRZ +swarm +armor -fast -shield) */ /* IV 1.5 -> 1.75, V 1.75 -> 2 (2026-10-28, FRZ's FAST lever - Temp is its fast axis: Temp V cut fast 81 -> 18% at 111-119; IV at 2 took fast 81 -> 39% but every type with it) */ /* even, far lower at the top (owner, 2026-10-26 "Go"; was 1 1 1.15 1.45 3.56 9.02) */ // x damage from every tower while slowed (an armor-taking Brittle was tried 2026-10-12 and reverted the same day - ARCHAEOLOGY.md); was 1.06 .. 1.3 - the no-ARC team 0/9 -> 5/9 with the ARC nerf and fast HP x0.75
 // FROST TAKES ARMOR (owner, 2026-10-12: "let rime reduce armor"): an enemy at FULL frost loses this share of its armor
 // (less frost, that share of it; at most all of it, never below 0 since the 2026-10-28 armor rework) - damage(). Rime is FRZ's armor answer, Temp the
-// fast (slow + tick + brittle); a pulse no longer breaks shield charges (it did until 2026-10-12)
+// fast (slow + tick + fracture); a pulse no longer breaks shield charges (it did until 2026-10-12)
 /* RIME'S BITE (owner, 2026-10-18: Rime is the weakest FRZ axis): each ring that reaches an enemy hits it for this x a tick (quiet, armor still bites) */
 let FRZ_RIME_BITE0 = 4; // x2 with the rate halved (owner, 2026-10-26: "halve rime ring pulse rate, but double effect") // a ring's bite, x a tier 0 tick - ONE number since the tier redesign (2026-10-24; was 0 4 45 200, V 300 - its tier I value)
 const FRZ_RIME_CRACK = [0, 0, 0, 0]; /* NO ARMOR REDUCTION (owner, 2026-10-29: FRZ "no armor reduction effects, more slow" - the mark target FRZ +2 +2 -2 -2; was 0 1 2.86 4.42) */ /* x2 with the rate halved (owner, 2026-10-26) */ /* x2 (axis balance, owner 2026-10-25: Rime focus 45% leaked, Temp 9, Moons 6) */
 // Moons only add aura sources; their armor crack (FRZ_MOON_CRACK) and the hard-types-skip-brittle table (FRZ_HARD)
-// were removed with the effects (2026-10-12; ARCHAEOLOGY.md) - brittle applies to every slowed enemy.
+// were removed with the effects (2026-10-12; ARCHAEOLOGY.md) - Fracture applies to every slowed enemy.
 // a tick is QUIET (no flash, no crit) yet ARMOR takes its flat bite like any hit (owner, 2026-10-12: "frz ticks should not
 // ignore armor" - damage() now bites every hit); the empty opts the shield-pop call passes
 const FRZ_TICK_HIT = {};
@@ -33,7 +33,7 @@ const FRZ_RIME_PERIOD = [1.333, 1.333, 1, 0.7, 0.5, 0.3] /* x2: half the pulse r
 // the same bite each tick, so more damage and more shield pops a second (capstone VI in aspira-capstone.js)
 const FRZ_TEMP_TICK = [0.21, 0.19, 0.17, 0.15, 0.125, 0.1] /* even, never under 0.1 (owner, 2026-10-26 "Go"; was 0.21 0.207 0.204 0.192 0.1 0.1) */ /* IV 0.0586 -> 0.1, capstone 0.0495 -> 0.1: no tick under 0.1s (owner, 2026-10-25: "Fastest tick rate should be 0.1/s, on anything") - the same damage a second, a tick's bite scales with it */ /* x0.6 with FRZ_TICK x0.6: more ticks, same damage - better vs shield (2026-10-24 marks target) */ /* BATTERY 6.7.0 (2026-10-20): untaken 0.5 -> 0.35 and I-III to match - a lone L1 FRZ lost 3-10 on waves 1-11 after the 6.5 spacing (armor 2x, fast 3x) */; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
 // THE NIP (owner, 2026-10-25, the tier redesign's duo rule: "FRZ chill nips"): tier 0's chill hurts a little - FRZ_NIP x a tier 0 tick,
-// enough to finish a 1-HP swarmer and pop an eased early shield; Brittle I still makes it hurt in full (FRZ+SOL and FRZ+CRR lost
+// enough to finish a 1-HP swarmer and pop an eased early shield; Fracture I still makes it hurt in full (FRZ+SOL and FRZ+CRR lost
 // 5-8 / 2-4 lives on waves 1-12 with a chill that only slowed - scripts/aspira-sim/duo0.mjs). let: the battery's sims set it
 let FRZ_NIP = 0.15; // x1.5 (2026-10-26: FRZ+IFR let the wave-12 Star through with a third of its HP, every other pair clean; was 0.1)
 const FRZ_TICK = 0.3 /* x0.6 with FRZ_TEMP_TICK x0.6 (2026-10-24 marks target; was 0.5) - the bare L1 FRZ (b.dmg, b.rate) untouched */, FRZ_RIME_GROW = 2.4; // a Rime ring takes FRZ_RIME_GROW game s to reach the edge (owner: much slower; was 0.6)
@@ -44,7 +44,7 @@ const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit 
 const FRZ_TICK_RATE_K = 0.7;
 function frzSkillStats(t, s, b) {
   const f = skillOf(t, "temp"), c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; // the STAT CURVE (tier redesign 2026-10-24)
-  // the aura's damage a SECOND is the curve's; Brittle splits it over more ticks (more shield pops, not more damage); tier 0 slows and nips (FRZ_NIP)
+  // the aura's damage a SECOND is the curve's; Fracture splits it over more ticks (more shield pops, not more damage); tier 0 slows and nips (FRZ_NIP)
   const tick0 = b.dmg * c.dmg * b.rate * FRZ_TICK; s.biteDmg = tick0; // a tier 0 tick's worth: what the Rime ring's bite multiplies
   s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = tick0 * (f ? FRZ_TEMP_TICK[f] / FRZ_TEMP_TICK[0] : FRZ_NIP); s.chill = f > 0; s.rate = FRZ_TICK_RATE_K / FRZ_TEMP_TICK[f]; s.dmg /= FRZ_TICK_RATE_K; // dmg / rate: a TICK
   s.rime = FRZ_RIME[skillOf(t, "rime")]; s.rimeCrack = FRZ_RIME_CRACK[skillOf(t, "rime")]; s.rimeBite = skillOf(t, "rime") ? FRZ_RIME_BITE0 : 0; s.rimeEvery = FRZ_RIME_PERIOD[skillOf(t, "rime")]; s.moonN = FRZ_MOON_COUNT[skillOf(t, "moons")]; s.moonK = FRZ_MOON_BY[skillOf(t, "moons")]; s.subN = FRZ_SUBMOON_N[skillOf(t, "moons")]; s.skill = true;
@@ -78,7 +78,7 @@ function frzSources(t, st) {
 // TYPE - "get rid of all enemy based damage multis"; the tables above are dead): a tick hurts x (1 + FRZ_CHILL_K x
 // the enemy's slow now, 0..1) - every slow on it counts, so the fast (slowed twice as hard) and anything held by other
 // slows take the most. let: the simulator sweeps it
-let FRZ_CHILL_K = 27; /* x3 (2026-10-29, the mark target FRZ fast +2: countermx 9 pts 101-119 fast leaked 47% at 18, 22% at 27, 6% at 36 - 36 lifted shield and armor too); was 9 */ // x1.5: lifts Brittle (owner, 2026-10-26 "Lift sublimation": Temp focus 33% leaked vs Rime 18, Moons 14 -> 25; was 6)
+let FRZ_CHILL_K = 27; /* x3 (2026-10-29, the mark target FRZ fast +2: countermx 9 pts 101-119 fast leaked 47% at 18, 22% at 27, 6% at 36 - 36 lifted shield and armor too); was 9 */ // x1.5: lifts Fracture (owner, 2026-10-26 "Lift sublimation": Temp focus 33% leaked vs Rime 18, Moons 14 -> 25; was 6)
 // THE CHILL BITES BY THE SPEED IT TAKES (owner, 2026-11-06: "1 yes"): the bonus x the enemy's own speed / ENEMY_BASE_SPEED - speed lost in u/s, not a
 // share - fast 1.71x, swarm 1.10x, shield 0.93x, armor 0.70x (marks 9 pts 101-119: FRZ row +2 +1 -1 -2 -> +1 +2 -1 -2 = the target; reads speed, never type)
 // ... and NEVER over 8x td (owner, 2026-10-31: "Nothing should ever be above like 800%" - the number itself, not only the card): FRZ_BITE_TD x td at most
@@ -110,17 +110,17 @@ function frzStep(t, dt) {
     for (const e of G.enemies) {
       if (e.dead || !e.seen || (e.x - s.x) ** 2 + (e.y - s.y) ** 2 > r2) continue;
       applySlow(e, st.aura * s.k, FRZ_AURA_HOLD, s.id);
-      // BRITTLE: x this from EVERY tower while slowed (damage()) - back to that (owner, 2026-10-12: "brittle should increase damage
-      // like before, not reduce armor"; it took armor for an hour). A shield takes no slow, so it holds Brittle off
+      // FRACTURE (the axis, was Brittle until 2026-11-06): x this from EVERY tower while slowed (damage()) - back to that (owner, 2026-10-12: "brittle should increase damage
+      // like before, not reduce armor"; it took armor for an hour). A shield takes no slow, so it holds Fracture off
       if (st.brittle > 1 && st.brittle >= (e.brittle || 1)) { e.brittle = st.brittle; e.brittleBy = t.id; } // brittleBy: its added damage is this FRZ's (damageCredit)
-      if (!tick || !(st.dmg > 0)) continue; // (Brittle 0: a plain slowing circle, no tick - tier redesign 2026-10-24)
+      if (!tick || !(st.dmg > 0)) continue; // (Fracture 0: a plain slowing circle, no tick - tier redesign 2026-10-24)
       ticked = true;
       // (Moons cracked armor for good here until 2026-10-12 - owner: "moons should not affect armor"; Rime's frost is the armor answer)
       // a tick POPS a shield (owner, 2026-10-06) and is never blunted by armor;
       // otherwise it is quiet (no flash) but shows its NUMBER, sized by what it took
       if (e.shield > 0) { damage(e, st.dmg * s.k * (s.hit || 1), t, false, false, FRZ_TICK_HIT); continue; } // a tick POPS a shield (owner, 2026-10-12: "shields should not absorb ticks")
       const hp = e.hp;
-      damage(e, st.dmg * s.k * (s.hit || 1) * (st.chill ? frzBite(e) : 1), t, true); // (the nip: flat - "more the slower" is Brittle's) // quiet, but armor still bites it (damage())
+      damage(e, st.dmg * s.k * (s.hit || 1) * (st.chill ? frzBite(e) : 1), t, true); // (the nip: flat - "more the slower" is Fracture's) // quiet, but armor still bites it (damage())
       if (hp - e.hp > 0) dmgTick(e, hp - e.hp, hp - e.hp, dmgInk("frz"), t, 0, st.rate); // (slow motion splits it - aspira-floats.js)
     }
   }

@@ -111,7 +111,7 @@ function stepAcd(t, dt) {
 // wave's armor, x16 on bosses, held it 2026-10-12)
 const acdArmorRef = new Map(), armorRefOf = n => acdArmorRef.get(n) ?? acdArmorRef.set(n, ENEMIES.armor.armor * ENEMY_HP_MUL * armorGrow(n) * scaleOf(n)).get(n); // (x the LATE SCALE)
 // DAMAGE CREDIT (owner, 2026-10-12: "damage caused by debuff from another tower should attribute damage source to
-// the debuffing tower"): of a hit's tally (`got`), what BRITTLE added goes to the FRZ that made it brittle (e.brittleBy),
+// the debuffing tower"): of a hit's tally (`got`), what FRACTURE added goes to the FRZ that fractured it (e.brittleBy),
 // what LOWER ARMOR added (stripped by Breach / Corrosion - e.strip, by tower id - and frost, e.frostBy) to those towers
 // by their shares, and the rest to the hitter. hit(a, A): the hit `a` through armor A, as damage() takes it
 // ARMOR IS A CURVE (owner, 2026-10-28: "armor is a percentage / applied non-linearly"; was a flat bite, never below 10% of the hit, and
