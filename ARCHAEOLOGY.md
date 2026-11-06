@@ -430,6 +430,8 @@ to have multiple interceptors on a target") replaced these rules:
 | tether | a slow of 0.35 / 0.45 / 0.55 / 0.65 (V 0.75) a tether, the chain read as the capstone's in the text (it is from tier II since 2026-10-18) |
 | wing | 5 / 7 / 10 / 12 / 16 (V 20) interceptors |
 
+The volleys as ARCHITECTURE 4.6c read them until 2026-11-06 (one bolt a volley since 2026-11-05, owner's "C10" for CRR's marks gap): `CRR_AMMO` volleys a sortie, each `CRR_BOLTS_BY` bolts (never above 3; owner: "volleys ... the number of bolts fired at once") leaving in the SAME frame side by side - the lead and its wings (`vk` 0 / -1 / +1). Three times the bolts at a third the damage (owner, 2026-10-29: "just 3x? keep the way shields are counted"): a sortie did as much and popped three times the charges; armor cut each small bolt (CRR's armor weakness). Armament bought "two bolts at once". Since C10 `CRR_BOLTS_BY` is the one bolt's damage x (0.65 / 1.3 at Armament 0 / I since 7.7.29); the V of wing bolts is draw only (`carBoltV`).
+
 ### 4.6d Trio scale, the rounds (2026-10-15..16)
 
 As ARCHITECTURE 4.6d stood until 6.17.11: the owner's ask (2026-10-15: "scale all trios up and down for each winning group they are in
