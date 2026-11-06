@@ -112,3 +112,12 @@ function unwarp(sx, sy) {
   }
   return null;
 }
+// ORBITERS SPLIT BY THEIR TOWER (owner, 2026-11-06: "both ifr and CRR are not occluding the tower when orbiting / also, IFR meteors should orbit at
+// 75% of the height of the tower"): what circles a tower is drawn on the towers' layer with it - the far side (behind the tower's centre) BEFORE its
+// prism, so the prism's walls cover it, the near side AFTER it (and its top). IFR's orbiting meteors at IFR_ORB_ALT of the prism's height, CRR's
+// interceptors each at its own (drawCarBodies). The board (warpEntities) and the card's demo (demoDraw3d) both call it. up: their frame helper
+const IFR_ORB_ALT = 0.75;
+function drawOrbiters(t, far, up, x, y, h) { // h: the prism's height (towerH); its top at h / 2
+  if (t.kind === "ifr" && typeof drawIfrTop === "function") up(x, y, () => drawIfrTop(t, far), IFR_ORB_ALT * h / 2);
+  if (t.kind === "crr" && t.icp && typeof drawCarBodies === "function") { ctx.save(); try { drawCarBodies(t, far, h / 2); } finally { ctx.restore(); } }
+}

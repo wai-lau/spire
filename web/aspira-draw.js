@@ -143,6 +143,7 @@ function drawBoard() {
 
 const LIFE_RINGS = 5, LIFE_GAP = 3.75; // (5 before the 25% shrink) // room kept for 5 rings of life segments (20 lives fill 3 and a bit)
 
+const TOP_TINT = 0.12; // the top face's tint over its opaque fill (the walls' own top tint is 0.12 - 0.4, aspira-warp-prism.js)
 function drawTower(t, ghost) {
   // drawn where the tower IS (it slides along its spoke), its slot's hex moved with it
   const b = TOWERS[t.kind], c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
@@ -151,6 +152,9 @@ function drawTower(t, ghost) {
   // draw of a late-game frame (profiled 2026-10-05). Stamped here 1:1 with the
   // canvas's pixels, then the label on top.
   const sp = towerSprite(t.kind, shownLvl(t), c0), w = sp.width / cam.k; // a chart tower's 9 points drawn as 4 glows
+  // AN OPAQUE TOP (owner, 2026-11-06: "increase tower top face opacity to hide stuff behind it"): the hex filled in the background colour, then the
+  // tower's tint (TOP_TINT), under its sprite - what is behind the tower no longer shows through its top. (Not for a ghost.)
+  if (!ghost) { ctx.beginPath(); towerPts({ ...t, x, y }, TOWER_DRAW_K).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.globalAlpha = 1; ctx.fillStyle = COL.bg; ctx.fill(); ctx.globalAlpha = TOP_TINT; ctx.fillStyle = COL[b.color]; ctx.fill(); ctx.globalAlpha = 1; }
   ctx.save(); ctx.translate(x, y); ctx.scale(TOWER_DRAW_K, TOWER_DRAW_K); ctx.translate(-x, -y); // drawn smaller, clicked the same (aspira-defs.js)
   ctx.globalAlpha = ghost ? 0.55 : 1;
   ctx.drawImage(sp, x - w / 2, y - w / 2, w, w);

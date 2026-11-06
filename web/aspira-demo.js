@@ -115,8 +115,10 @@ function demoDraw3d(S) {
   for (const e of dice) { e.geomAt = -1; warpSolid(e); } // (the geometry under this camera, never the board's cached one)
   if (t) {
     const c0 = CELLS[t.cell], h = towerH(t), col = COL[TOWERS[t.kind].color];
+    drawOrbiters(t, true, up, t.x, t.y, h); // (what circles it: far side under the prism, near side over - aspira-warp-prism.js)
     warpPrism({ x: t.x, y: t.y, h, col, pts: c0.pts.map(p => ({ x: t.x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: t.y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })) });
     up(t.x, t.y, () => drawTower(t), h / 2);
+    drawOrbiters(t, false, up, t.x, t.y, h);
   }
   const pp = (x, y, fn, far) => { const P = warpProjectScratch(x, y), k = cam.k * (far ? P.s : 1); ctx.setTransform(k, 0, 0, k, P.x - x * k, P.y - y * k); fn(); };
   ctx.save(); try { drawGrvCores((x, y, fn) => pp(x, y, fn, true)); } finally { ctx.restore(); } // GRV's VOIDS: the real frame draws them in its pop pass (warpEntities part B), not drawSceneTop (owner, 2026-11-03: "grv demo is not showing voids")

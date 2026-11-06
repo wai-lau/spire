@@ -12,17 +12,43 @@ const CRR_DART_DRAW = 0.5; // every interceptor DRAWN at half (owner, 2026-11-05
 // (perf, 2026-11-01: ONE path a carrier - was a fill and a stroke a dart, ~200 canvas calls a frame at 3 x 34)
 const CRR_VV_GAP = 0.9, CRR_VV_BARS = [0, -0.22]; // gap: the bar between the two Vs, x a V's half-width; bars: along the heading, x its length (0 = the middle)
 const carVVOff = W => W * (1 + CRR_VV_GAP); // a V's centre, across the heading from the interceptor's
+const CRR_VV_K = [-1, 1];
+let carM = null; // the frame its points go through (an interceptor's own, at its height - drawCarBodies), else drawn as given
+const carMv = (x, y) => (carM ? ctx.moveTo(carM[0] * x + carM[2] * y + carM[4], carM[1] * x + carM[3] * y + carM[5]) : ctx.moveTo(x, y));
+const carLn = (x, y) => (carM ? ctx.lineTo(carM[0] * x + carM[2] * y + carM[4], carM[1] * x + carM[3] * y + carM[5]) : ctx.lineTo(x, y));
 function carDart(i, z) { // adds the V=V to the open path, facing i.fa (its drawn heading, carFace)
   const a = i.fa ?? i.ang, L = CRR_DART * z, W = CRR_DART_W * z, c = Math.cos(a), s = Math.sin(a), o = carVVOff(W);
-  for (const k of [-1, 1]) {
+  for (const k of CRR_VV_K) {
     const cx = i.x - s * o * k, cy = i.y + c * o * k, bx = cx - c * L * 0.5, by = cy - s * L * 0.5;
-    ctx.moveTo(cx + c * L * 0.5, cy + s * L * 0.5); ctx.lineTo(bx - s * W, by + c * W); ctx.lineTo(bx + s * W, by - c * W); ctx.closePath();
+    carMv(cx + c * L * 0.5, cy + s * L * 0.5); carLn(bx - s * W, by + c * W); carLn(bx + s * W, by - c * W); ctx.closePath();
   }
   for (const u of CRR_VV_BARS) { // the "=": from the inner edge of one V to the other's, where the Vs are that wide
     const hw = W * (0.5 - u), ax = i.x + c * L * u, ay = i.y + s * L * u, r = o - hw;
-    ctx.moveTo(ax - s * r, ay + c * r); ctx.lineTo(ax + s * r, ay - c * r);
+    carMv(ax - s * r, ay + c * r); carLn(ax + s * r, ay - c * r);
   }
 }
+// AT ITS OWN HEIGHT, IN FRONT OF OR BEHIND ITS CARRIER (owner, 2026-11-06: "interceptors also no longer occluding the tower properly"; "distribute
+// interceptor height vertically, normal distribution about the center of the tower's height"): the bodies are drawn on the towers' layer with their
+// carrier (drawOrbiters, aspira-warp-prism.js) - those behind its centre before its prism, the rest after - each at its own height: a normal draw
+// round half the prism's height, sd a sixth of it, kept in [CRR_ALT_LO, CRR_ALT_HI] of it, fixed per interceptor (hashed from its carrier and slot:
+// no Math.random). (Their trails, tethers and bolts stay on the moving layer, on the floor.) SOLID (owner, 2026-11-06: "CRR shapes should be 100%
+// opaque with color same as tower color"): filled in the tower's colour, edged lighter
+const CRR_ALT_SD = 1 / 6, CRR_ALT_LO = 0.08, CRR_ALT_HI = 0.92;
+const carHash = (a, b) => { const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return v - Math.floor(v); };
+function carAlt(t, i, k) { // its height as a share of the prism's
+  if (i.alt == null) { const u1 = Math.max(1e-6, carHash(t.id || 0, k)), u2 = carHash(k + 0.5, (t.id || 0) + 7.3); i.alt = Math.max(CRR_ALT_LO, Math.min(CRR_ALT_HI, 0.5 + CRR_ALT_SD * Math.sqrt(-2 * Math.log(u1)) * Math.cos(6.283185307 * u2))); }
+  return i.alt;
+}
+function drawCarBodies(t, far, top) { // top: the prism's top height (warpFrame units); far: the ones behind the carrier's centre, else the rest
+  const z = carZ(t), Fk = warpFrame(t.x, t.y, top * 0.5), k = Math.hypot(Fk[0], Fk[1]);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.ltblue; ctx.lineWidth = CRR_EDGE_W * k; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
+  ctx.beginPath(); let any = false;
+  try {
+    t.icp.forEach((i, n) => { if (!(i.state !== "home" || i.hold) || (i.y < t.y) !== far) return; carM = warpFrame(i.x, i.y, top * carAlt(t, i, n)); carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); any = true; });
+  } finally { carM = null; }
+  if (any) { ctx.fill(); ctx.stroke(); }
+}
+const CRR_EDGE_W = 0.5; // the lighter edge, world u
 const carBar = (i, z) => { const a = i.fa ?? i.ang, u = (CRR_VV_BARS[0] + CRR_VV_BARS[1]) / 2 * CRR_DART * z; return { x: i.x + Math.cos(a) * u, y: i.y + Math.sin(a) * u }; }; // the "=" middle
 const carTip = (i, z, k) => { const a = i.fa ?? i.ang, L = CRR_DART * z * 0.5, o = carVVOff(CRR_DART_W * z) * k, c = Math.cos(a), s = Math.sin(a); return [i.x - s * o + c * L, i.y + c * o + s * L]; }; // k -1 / +1
 // FACING (owner, 2026-11-06: "when in orbit, have the interceptors rotate to face the target being orbited"; "when in orbit around the tower, also face
@@ -65,7 +91,7 @@ function carTrails(t) {
 // along the path it flew from the "=" (carBar), fading to nothing at the tail; CRR_CHAIN_L0 + CRR_CHAIN_LK a Tether tier long, its links
 // CRR_CHAIN_Q0 + CRR_CHAIN_QK a tier x ARC's. A TETHERED interceptor draws none: its chain runs to its enemy instead (drawCar). Fewer out, the
 // same shortening as the old hairline (CRR_TRAIL_REF). 3D: one GPU capsule a link; 2D: CRR_TRAIL_BANDS alpha bands, two strokes each, all trails
-const CRR_CHAIN_L0 = 36, CRR_CHAIN_LK = 18, CRR_CHAIN_Q0 = 0.5, CRR_CHAIN_QK = 0.1, CRR_CHAIN_A = 0.55;
+const CRR_CHAIN_L0 = 54, CRR_CHAIN_LK = 27, CRR_CHAIN_Q0 = 0.5, CRR_CHAIN_QK = 0.1, CRR_CHAIN_A = 0.88; // (owner, 2026-11-06: "increase opacity and length of interceptor tracers": x1.5 long, x1.6 alpha; were 36, 18, 0.55)
 const carCur = [{ k: 0, s0: 0 }, { k: 0, s0: 0 }], carPt = { x: 0, y: 0 };
 function carAlong(P, n, cur, s) { // the point s along the polyline P (n points, x y pairs), the cursor kept moving forward
   while (cur.k < n - 2) { const d = Math.hypot(P[cur.k * 2 + 2] - P[cur.k * 2], P[cur.k * 2 + 3] - P[cur.k * 2 + 1]); if (cur.s0 + d >= s) break; cur.s0 += d; cur.k++; }
@@ -134,11 +160,7 @@ function drawCar(darts) {
           const b0 = carBar(i, carZ(t) * (1 + CRR_SIZE_JIT * (i.oj || 0))); link(b0.x, b0.y, i.ve.x, i.ve.y, a, w); /* from the "=" (owner, 2026-11-06) */ if (i.tc && !i.tc.dead) link(i.ve.x, i.ve.y, i.tc.x, i.tc.y, a, w);
         }
       }
-      ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.blue; ctx.lineWidth = 2 * CRR_DART_DRAW; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
-      const z = carZ(t);
-      ctx.beginPath(); for (const i of t.icp) if (i.state !== "home" || i.hold) carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); // its own size: smaller ones hold closer
-      ctx.globalAlpha = 0.35; ctx.fill(); ctx.globalAlpha = 1; ctx.stroke();
-      continue;
+      continue; // (the bodies: drawCarBodies, with the towers)
     }
     ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CRR_PELLET_PX; ctx.globalAlpha = 1;
     ctx.beginPath(); // bolts and pellets: ONE path, one stroke (perf)

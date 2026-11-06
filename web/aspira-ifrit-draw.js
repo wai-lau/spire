@@ -5,11 +5,12 @@
 // DRAWN BIGGER UP THE METEOR AXIS (owner, 2026-11-05: "IFR meteor should visually increase meteor and shard sizes"): the meteor in flight, its trail and its
 // burst shards are drawn x IFR_METEOR_DRAW_K per Meteor tier (V x3.05) on top of their radius - the DRAWING only; the hit sizes (IFR_BALL_RAD) are the logic's
 const IFR_METEOR_DRAW_K = 1.25, ifrDrawK = t => IFR_METEOR_DRAW_K ** (typeof skillOf === "function" ? skillOf(t, "meteor") : 0);
-function drawIfrCharge(t, st, low) {
+function drawIfrCharge(t, st, low, far) { // far: true the meteors behind the tower's centre only, false those in front, undefined all
   if (t.ifrCharge <= 0) return;
+  const cy = ifrCentre(t).y;
   const n = Math.max(1, st.store || 1); // the stored meteors, evenly round the orbit; the one still charging grows to the meteor it launches
   const h = skillOf(t, "hellfire"), fl = skillOf(t, "firaga");
-  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n), f = Math.min(1, t.ifrCharge - k), r = st.ballR * (0.3 + 0.7 * f); drawIfrMeteor(c.x, c.y, r, true, low); ifrBodyMarks(c.x, c.y, r, h, fl, f); } // (the charges in orbit keep their size - a bigger one crowds the tower's hex)
+  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n); if (far != null && (c.y < cy) !== far) continue; const f = Math.min(1, t.ifrCharge - k), r = st.ballR * (0.3 + 0.7 * f); drawIfrMeteor(c.x, c.y, r, true, low); ifrBodyMarks(c.x, c.y, r, h, fl, f); } // (the charges in orbit keep their size - a bigger one crowds the tower's hex)
 }
 // THE BODY SHOWS THE BUILD (owner, 2026-11-06: "I want the upgrades to each update a visual feature of the tower as well as their attacks / for example
 // with IFR / for the meteors that orbit it / meteor: bigger (already exists) / hellfire: brighter/thicker red ring around / flare: little flare on top of
@@ -223,8 +224,8 @@ function drawIfr(balls) {
 // the CHARGE BALLS UNDER THE PRISM (owner, 2026-10-20: "centered on the corner of the hexagon where it meets the floor ... always tower
 // occludes balls"): drawn with the tower (aspira-warp.js, warpEntities' `under`, at floor height, BEFORE the prism), each centred on a
 // corner of the prism's floor hex. In the tower's own colours, as the tower (ownColours)
-function drawIfrTop(t) {
+function drawIfrTop(t, far) {
   if (t.kind !== "ifr" || !t.ifrInit0) return;
   const low = typeof lowQ === "function" && lowQ();
-  ctx.lineCap = "butt"; drawIfrCharge(t, towerStats(t), low); ctx.globalAlpha = 1;
+  ctx.lineCap = "butt"; drawIfrCharge(t, towerStats(t), low, far); ctx.globalAlpha = 1;
 }
