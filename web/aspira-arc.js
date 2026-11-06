@@ -186,7 +186,7 @@ function dischargeOne(e) {
 // the nearest enemy this bolt has not hit yet, within this jump's (shrunk) reach
 // CHAINS TARGET LIKE THEIR TOWER (owner, 2026-10-07: "chains should use the same targeting
 // algorithm as the parent"): of the enemies a jump can reach, the one the tower's own mode
-// ranks first (MODE_KEY: Near = closest to the core, Biggest = most HP, Fresh = undebuffed
+// ranks first (MODE_KEY: Near = closest to the core, Strengths = the best-marked type then most HP, Fresh = undebuffed
 // first); ties go to the nearest. Used by ARC's jumps, Capacitance's leaps and SOL's refraction
 function chainPick(t, from, r2, skip) {
   const key = MODE_KEY[t.mode] || MODE_KEY.close;
@@ -195,7 +195,7 @@ function chainPick(t, from, r2, skip) {
     if (o.dead || !o.seen || skip(o)) continue;
     const d = (o.x - from.x) ** 2 + (o.y - from.y) ** 2;
     if (d > r2) continue;
-    const k = key({ e: o, d });
+    const k = key({ e: o, d }, t);
     if (k < bk || (k === bk && d < bd)) { bk = k; bd = d; best = o; }
   }
   return best;

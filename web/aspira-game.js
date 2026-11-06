@@ -114,8 +114,13 @@ const MODE_KEY = {
   close: a => coreD2(a.e),
   // fresh: undebuffed first (nearest the core among them), then the rest
   fresh: a => (debuffed(a.e) ? 1e9 : 0) + coreD2(a.e),
-  biggest: a => (a.e.arcana ? -1e15 : 0) - a.e.hp, // the most HP left (owner) - a BOSS always counts biggest, whatever its HP (owner, 2026-10-12)
+  // STRENGTHS (owner, 2026-11-06: "replace Biggest with Strengths, order enemies by mark tier (try to kill enemies for which the tower's tier
+  // with most checks first, and most X last)"): the enemy whose TYPE this tower's build card marks highest (VS_MARKS, read live), then
+  // within a mark the old Biggest - a boss first, then the most HP left. Was Biggest (the most HP left, a boss always first; owner 2026-10-12)
+  strengths: (a, t) => -strengthMark(t, a.e) * 1e16 + (a.e.arcana ? -1e15 : 0) - a.e.hp,
 };
+MODE_KEY.biggest = MODE_KEY.strengths; // a save or a sim from before 2026-11-06 says "biggest"
+const strengthMark = (t, e) => (typeof VS_MARKS === "object" && t && VS_MARKS[t.kind] && VS_MARKS[t.kind][e.type]) || 0;
 
 function pickTargets(t, st, count) {
   const r2 = st.range * st.range, c = [];
@@ -126,7 +131,7 @@ function pickTargets(t, st, count) {
   }
   const key = MODE_KEY[t.mode];
   // ties go to whoever is furthest along the spiral
-  c.sort((a, b) => key(a) - key(b) || b.e.s - a.e.s);
+  c.sort((a, b) => key(a, t) - key(b, t) || b.e.s - a.e.s);
   return c.slice(0, count).map(a => a.e);
 }
 

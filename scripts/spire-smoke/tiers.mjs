@@ -106,6 +106,19 @@ check("ARC: every jump goes further out (owner, 2026-11-06: \"for each subsequen
   if (!(r.n >= 2) || r.bad || r.inward) return JSON.stringify(r) + " (expected 2+ jumps, none to an enemy no further out, nothing inside the first target hit)";
 });
 
+check("targeting STRENGTHS (owner, 2026-11-06: \"replace Biggest with Strengths, order enemies by mark tier (try to kill enemies for which the tower's tier with most checks first, and most X last)\"): a tower picks the type its build card marks highest first and its worst-marked type last; within a type the most HP; an old save's \"biggest\" reads the same", () => {
+  const r = run(`(() => { const out = []; for (const kind of ["arc", "sol", "acd", "frz"]) {
+      const { t, st } = tierRig(kind, {}, []); t.mode = "strengths"; const types = ["swarm", "fast", "shield", "armor"];
+      const es = types.flatMap((ty, i) => [0, 1].map(j => { spawnEnemy(ty, 30, 0, 0); const e = G.enemies[G.enemies.length - 1];
+        e.x = t.x + 20 + 4 * i; e.y = t.y + 10 * j; e.seen = true; e.stunT = 1e9; e.hp = e.max = 100 + 50 * j; return e; }));
+      const order = pickTargets(t, { ...st, range: 1e4 }, es.length), m = e => (VS_MARKS[kind] || {})[e.type] || 0;
+      const best = Math.max(...types.map(ty => (VS_MARKS[kind] || {})[ty] || 0)), worst = Math.min(...types.map(ty => (VS_MARKS[kind] || {})[ty] || 0));
+      t.mode = "biggest"; const old = pickTargets(t, { ...st, range: 1e4 }, 1)[0];
+      out.push({ kind, first: order[0].type, fm: m(order[0]), best, hp: order[0].hp, last: m(order[order.length - 1]), worst, sorted: order.every((e, i) => !i || m(order[i - 1]) >= m(e)), alias: old === order[0] }); } return out; })()`);
+  const bad = r.filter(x => x.fm !== x.best || x.last !== x.worst || !x.sorted || x.hp !== 150 || !x.alias);
+  if (bad.length) return JSON.stringify(bad);
+});
+
 check("ARC: no enemy is struck twice by the bolts of one attack (owner, 2026-10-28: \"reduce the number of arc hits\" - one hit set an attack); Capacitance's bursts may re-hit", () => {
   const r = run(`(() => { const { t, es, st } = tierRig("arc", { voltage: 3 }, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20], [80, -10], [50, 15]]);
     const n = new Map(), _d = damage; damage = (e, ...a) => { n.set(e.id, (n.get(e.id) || 0) + 1); return _d(e, ...a); };

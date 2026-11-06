@@ -382,7 +382,7 @@ let RANGE_BONUS = 1.165; /* x0.75 (owner, 2026-10-12: "reduce all tower ranges b
 // Near = nearest the core (aspira-game.js MODE_KEY; the key stays "close", the
 // label is Near so it does not read as "close this card" - owner)
 // (Tagged - taking extra damage right now - came and went on 2026-10-07, owner)
-const MODES = [["fresh", "Fresh"], ["biggest", "Biggest"], ["close", "Near"]];
+const MODES = [["fresh", "Fresh"], ["strengths", "Strengths"] /* was ["biggest", "Biggest"] (owner, 2026-11-06: "replace Biggest with Strengths") */, ["close", "Near"]];
 
 // shield = hits absorbed (any size) before the
 // enemy takes damage; armor = flat damage removed from every hit (floor 10%).
