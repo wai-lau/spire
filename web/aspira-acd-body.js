@@ -20,7 +20,7 @@ const acdDrip = () => ({ hex: COL.drip || COL.tacd, lite: COL.driplite || COL.wh
 function acdFrame(x, y, top, S) {
   const F = warpFrame(x, y, top), k = Math.hypot(F[0], F[1]), sq = Math.hypot(F[2], F[3]) / k, G2 = warpFrame(x, y, top - 1);
   const oy = F[1] * x + F[3] * y + F[5], zs = (G2[1] * x + G2[3] * y + G2[5] - oy) / k; // screen px (in k) one world unit down
-  return { k, sq, V: Math.max(0.2, zs) * S, ox: F[0] * x + F[2] * y + F[4], oy, F };
+  return { k, sq, V: Math.max(0.2, zs) * S, ox: F[0] * x + F[2] * y + F[4], oy, F, x, y, top };
 }
 function drawAcdBody(t, far, x, y, top) { // top: the prism top's height (warpFrame units)
   const sp = skillOf(t, "contagion"), fl = skillOf(t, "spray"), co = skillOf(t, "corrosion");
@@ -33,7 +33,7 @@ function drawAcdBody(t, far, x, y, top) { // top: the prism top's height (warpFr
     if (far) { acdSpill(sp, x, y, R, now); return; }
     const f = acdFrame(x, y, top, S);
     ctx.setTransform(f.k * S, 0, 0, f.k * S, f.ox, f.oy);
-    if (fl) acdFlow(fl, off, S, f, now, id, dp);
+    if (fl) acdFlow(fl, off, S, f, now, id, dp, 2 * top / S / ACD_SIDE); // drips scale with the prism's height (its side, mockup units, over the side they were tuned on)
     if (co) acdCorr(co, S, f, now, id, dp, R / S);
   } finally { ctx.restore(); ctx.globalAlpha = 1; }
 }
@@ -63,12 +63,23 @@ function acdSpill(tier, x, y, R, t) {
 // FLOW: drips down the two front faces. A pair is long + short, a three has the long one in the middle; groups nearer the tower's middle run
 // longer (x1.45) than the side ones (x0.65); lengths jittered hard and oozing. The drop latches at the line's bottom when it forms, fades in
 // there, falls while fading and never rides upward
-function acdFlow(tier, off, S, f, now, id, dp) {
+// DRIPS GROW WITH THE TOWER (owner, 2026-11-06: "ACD drip length should correlate to tower height at each level"): every length and the cap
+// x hk = the prism's side height / ACD_SIDE (the side they were tuned on), so a drip keeps its share of the wall at every level
+// DRIPS RUN DOWN THE WALL (owner, 2026-11-06: "drip direction should be along the side faces, might need to be 3d"): a drip's way down is the
+// projected vertical at its own spot - its top on the face's top edge and a point one world unit lower, both through warpFrame - so in 3D it
+// follows the wall's slant on screen (straight down in 2D, where the projection has no slant); local units, per world unit of height
+function acdDown(f, px, py, S) {
+  const wx = f.x + px * S, wy = f.y + py * S / f.sq, A = warpFrame(wx, wy, f.top), B = warpFrame(wx, wy, f.top - 1);
+  const dx = (B[0] - A[0]) * wx + (B[2] - A[2]) * wy + B[4] - A[4], dy = (B[1] - A[1]) * wx + (B[3] - A[3]) * wy + B[5] - A[5];
+  if (!(dy > 0)) return [0, f.V / S]; // (no downward way: the old straight drop)
+  return [dx / f.k, dy / f.k];
+}
+function acdFlow(tier, off, S, f, now, id, dp, hk = 1) {
   const lay = ACD_FLOW[tier]; if (!lay) return;
   const pt = off.map(o => [o[0] / S, o[1] / S * f.sq]), faces = [];
   for (let i = 0; i < 6; i++) { const a = off[i], b = off[(i + 1) % 6]; if ((a[1] + b[1]) / 2 > 0.3 * 40 * S) faces.push([pt[i], pt[(i + 1) % 6]]); } // the faces turned toward the camera
   faces.sort((p, q) => p[0][0] + p[1][0] - q[0][0] - q[1][0]);
-  const front = faces.length > 2 ? [faces[0], faces[faces.length - 1]] : faces, base = ACD_BASE[tier], maxLen = ACD_SIDE - 3, V = f.V / S;
+  const front = faces.length > 2 ? [faces[0], faces[faces.length - 1]] : faces, base = ACD_BASE[tier] * hk, maxLen = ACD_SIDE * hk - 3;
   const lines = new Path2D(), drops = [];
   front.forEach(([a, b], face) => {
     const W = Math.abs(b[0] - a[0]) || 1;
@@ -81,9 +92,11 @@ function acdFlow(tier, off, S, f, now, id, dp) {
         const kd = ACD_KM[kinds[di]], m = kd[0] + kd[1] * rr(), ph0 = rr() * 6.283185, per = 3.4 + 2.4 * rr(), dph = rr();
         const pf = 1.45 - 0.8 * Math.min(1, Math.abs(px) / (40 * ACD_COS30));
         const lenAt = tt => Math.min(maxLen, base * m * pf * (1 + 0.28 * Math.sin(tt * 6.283185 / per + ph0))), len = lenAt(now);
-        lines.moveTo(px, py); lines.lineTo(px, py + len * V);
-        const DP = 2.4, u = now / DP + dph, ph = u - Math.floor(u), y0 = py + (lenAt((Math.floor(u) - dph) * DP) + 1.6) * V, IN = 0.25;
-        drops.push(px, y0 + (ph < IN ? 0 : Math.pow((ph - IN) / (1 - IN), 1.6) * 10 * V), ph < IN ? ph / IN : 1 - (ph - IN) / (1 - IN)); // x, y, alpha
+        const [dx, dy] = acdDown(f, px, py, S); // the wall's way down here, per height unit
+        lines.moveTo(px, py); lines.lineTo(px + len * dx, py + len * dy);
+        const DP = 2.4, u = now / DP + dph, ph = u - Math.floor(u), d0 = lenAt((Math.floor(u) - dph) * DP) + 1.6, IN = 0.25;
+        const dd = d0 + (ph < IN ? 0 : Math.pow((ph - IN) / (1 - IN), 1.6) * 10); // only ever further down the wall
+        drops.push(px + dd * dx, py + dd * dy, ph < IN ? ph / IN : 1 - (ph - IN) / (1 - IN)); // x, y, alpha
       });
     });
   });
