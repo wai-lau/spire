@@ -241,20 +241,20 @@ other tower. Its checks and weak spots are measured, not designed: the build car
 
 | part | principle |
 |---|---|
-| lock | the first enemy `pickTargets` gives; the beam holds it until it dies or leaves `st.range`, then locks again. The first tick comes one `SOL_TICK` after the lock, like every later one (a lock that struck at once killed a swarmer a frame) |
-| ticks | damage per second = the curve's (`st.dmg` x `st.rate` x `SOL_TRACK_DMG`), dealt in ticks every `SOL_TICK` through `damage()`: a number a tick, one shield charge a tick |
+| lock | the first enemy `pickTargets` gives; the beam holds it until it dies or leaves `st.range`, then locks again. A NEW lock aims `SOL_AIM` s before it may fire (a lock that struck at once killed a swarmer a frame) |
+| pulses | damage per second = the curve's (`st.dmg` x `st.rate` x `SOL_TRACK_DMG`), dealt as PULSES (owner, 2026-11-05: "fire, pause, fire, pause"): a shot every 1 / (`st.rate` x `SOL_PULSE_K`) s carrying that second's share, through `damage()` - a number a shot, one shield charge a shot |
 | first beam | hits only its target - it never pierces (owner: "SOL 0 no pierce") |
 | splits (Reflection) | as a volley starts, `st.split` splits from the first target to the nearest enemies within `st.range` OF THAT TARGET; each split is a line from the first target THROUGH its own enemy on to the play box's edge (`solLinkHits`, `solOutLen` - the same in the sim; owner: "all secondary beams fly off to edge of screen"), PIERCING every enemy on it in order, and ends when its own enemy dies |
 | carry (Breach) | a split's damage x `SOL_TRACK_HOP[Breach]` at each enemy it reaches, compounding (the swarm weakness: owner, "pierce damage reduction is applied each time it passes through an enemy") |
-| breach (Breach) | every tick takes a fixed % of the armor left (`bleed` -> `shredPct`, `SOL_BREACH_ARMOR`); no parallel beams (owner: "no parallel beams") |
-| scorch (Scorch) | one burn stack per `st.scorchEvery` of beam time on an enemy (`1 / (SOL_SCORCH_M x st.rate)`, whole ticks: the ticks it spans summed, `solTickHit`), each stack on its own clock, one pop a tick (`solScorchTick`); Scorch V doubles a stack's ticks at half each - a longer burn, more shield pops (`v`: the doubled ring) |
+| breach (Breach) | every hit takes a fixed % of the armor left (`bleed` -> `shredPct`, `SOL_BREACH_ARMOR`); no parallel beams (owner: "no parallel beams") |
+| scorch (Scorch) | a pulse lays `SOL_SCORCH_M` / `SOL_PULSE_K` burn stacks at once (4) on every enemy it hits, each a share of its hit (`solTickHit`, `pulse`; owner, 2026-11-05: "scorch is what pops shields" - the stacks a second held), each stack on its own clock, one pop a tick (`solScorchTick`); Scorch V doubles a stack's ticks at half each - a longer burn, more shield pops (`v`: the doubled ring) |
 | drawing | `t.solB` at its live ends, never an fx entry: a pulse's FLASH (`SOL_PULSE_FLASH` 0.15 s, fading; dark between shots), the splits a segment an enemy, each dimmer by its carry. A beam that stops at its enemy (the main, a split without Breach) is THIN (`SOL_THIN_W` 0.3 x its hit's width); one that PIERCES (the main at Reflection 0 + Breach, a split with Breach, on to the edge: `solShowLen`) is full width (`SOL_PIERCE_W`) - owner, 2026-11-05: "primary beam way thinner (thicker with pierce)". Between shots the AIM LINE: a thin plain line to the lock, alpha 0.4 -> 0.8 as the next shot comes (over a new lock's `SOL_AIM` or the gap; "I want the aiming visual effect back"). No prism, no rod |
 
 | axis | buys |
 |---|---|
 | Scorch (id `focus`) | a LONGER burn (`SOL_SCORCH_N` ticks), never a hotter one; at V twice the ticks at half each |
 | Reflection (id `refraction`) | the splits (`SOL_SPLIT`, none at tier 0) |
-| Breach | the armor a tick strips (`SOL_BREACH_ARMOR`, none at tier 0) and the splits' carry (`SOL_TRACK_HOP`) |
+| Breach | the armor a hit strips (`SOL_BREACH_ARMOR`, none at tier 0) and the splits' carry (`SOL_TRACK_HOP`) |
 
 **ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; jets never share an enemy; a jet resets
 when its enemy dies or leaves, unless Flow carries its ramp on. Tier 0 is one jet and no pools. Its checks and weak spots: the build
