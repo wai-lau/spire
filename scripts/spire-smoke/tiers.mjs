@@ -106,6 +106,37 @@ check("ARC: every jump goes further out (owner, 2026-11-06: \"for each subsequen
   if (!(r.n >= 2) || r.bad || r.inward) return JSON.stringify(r) + " (expected 2+ jumps, none to an enemy no further out, nothing inside the first target hit)";
 });
 
+check("ARC Conductivity V GROUNDING (owner, 2026-11-06: \"arc ones are good\"): the last hop of each chain bursts - every enemy within 40 u of it the bolt had not struck takes a hit, none outside does, and tier IV has no burst", () => {
+  const r = run(`(() => { const spots = [[60, 0], [100, 0], [100, 30], [100, -30], [110, 10], [90, -20], [60, 40], [400, 0]];
+    const once = c => { const { t, es, st } = tierRig("arc", { conductivity: c, voltage: 1 }, spots), snap = [], _g = arcGround;
+      arcGround = (cc, node) => { if (cc.st.ground && node.up && !node.grounded) snap.push({ at: node.e, ids: G.enemies.filter(o => !o.dead && !cc.seen.has(o.id) && Math.hypot(o.x - node.e.x, o.y - node.e.y) <= ARC_GROUND_R).map(o => o.id), far: G.enemies.filter(o => Math.hypot(o.x - node.e.x, o.y - node.e.y) > ARC_GROUND_R).map(o => o.id) }); return _g(cc, node); };
+      let before; try { fireSkillChain(t, st, es[0]); before = G.enemies.filter(o => o.hp < o.max).map(o => o.id); for (let i = 0; i < 40; i++) stepChains(0.05); } finally { arcGround = _g; }
+      const hurt = new Set(G.enemies.filter(o => o.hp < o.max).map(o => o.id));
+      return { snaps: snap.length, inMiss: snap.reduce((n, x) => n + x.ids.filter(id => !hurt.has(id)).length, 0), inN: snap.reduce((n, x) => n + x.ids.length, 0), farHit: es[7].hp < es[7].max, hurt: hurt.size }; };
+    return { v: once(5), iv: once(4) }; })()`);
+  if (!(r.v.snaps >= 1) || !(r.v.inN >= 1)) return "Grounding V: no burst caught an unhit enemy within 40 u (" + JSON.stringify(r.v) + ")";
+  if (r.v.inMiss || r.v.farHit) return "Grounding V: an enemy in the burst took no hit, or the one 400 u out did (" + JSON.stringify(r.v) + ")";
+  if (r.iv.snaps) return "Conductivity IV bursts (" + JSON.stringify(r.iv) + ")";
+});
+
+check("ARC Voltage V STORM (owner, 2026-11-06): every 5th strike a tower throws forks 3 ways at the strike, strikes 1-4 fork 2; Voltage IV never forks 3", () => {
+  const r = run(`(() => { const forks = v => { const { t, es, st } = tierRig("arc", { voltage: v }, [[60, 0], [100, 20], [100, -20], [140, 0]]); const out = [];
+      for (let i = 0; i < 10; i++) { G.chains = []; fireSkillChain(t, st, es[0], null); out.push(G.chains.filter(p => !p.node.up).length); } return out; };
+    return { v: forks(5), iv: forks(4) }; })()`);
+  if (JSON.stringify(r.v) !== JSON.stringify([2, 2, 2, 2, 3, 2, 2, 2, 2, 3])) return "Voltage V forks per strike: " + r.v + " (expected 2 2 2 2 3, twice over)";
+  if (r.iv.some(n => n !== 2)) return "Voltage IV forks per strike: " + r.iv;
+});
+
+check("ARC Shock V (owner, 2026-11-06: \"shock V should apply the dead shocked enemy debuffs from ARC to all nearby enemies, zap goes to all affected\"): a Shocked enemy's death passes the mark to every enemy within the radius (a zap each), none outside; Shock IV passes nothing", () => {
+  const r = run(`(() => { const go = z => { const { t, es, st } = tierRig("arc", { capacitance: z }, [[60, 0], [100, 0], [130, 20], [300, 0]]);
+      fireSkillChain(t, st, es[0]); for (const e of [es[1], es[2], es[3]]) { e.shockT = 0; e.shockPass = false; e.arcBurn = null; }
+      const b0 = fx.length; kill(es[0], t); const zaps = fx.slice(b0).filter(f => f.k === "beam").length;
+      return { src: es[0].shockPass === true || z < 5, near: [es[1], es[2]].every(e => e.shockT > 0), far: es[3].shockT > 0, zaps }; };
+    return { v: go(5), iv: go(4) }; })()`);
+  if (!r.v.src || !r.v.near || r.v.far || r.v.zaps !== 2) return "Shock V: " + JSON.stringify(r.v) + " (expected both near enemies shocked, the 300 u one not, 2 zaps)";
+  if (r.iv.near || r.iv.zaps) return "Shock IV passes its mark: " + JSON.stringify(r.iv);
+});
+
 check("targeting STRENGTHS (owner, 2026-11-06: \"replace Biggest with Strengths, order enemies by mark tier (try to kill enemies for which the tower's tier with most checks first, and most X last)\"): a tower picks the type its build card marks highest first and its worst-marked type last; within a type the most HP; an old save's \"biggest\" reads the same", () => {
   const r = run(`(() => { const out = []; for (const kind of ["arc", "sol", "acd", "frz"]) {
       const { t, st } = tierRig(kind, {}, []); t.mode = "strengths"; const types = ["swarm", "fast", "shield", "armor"];

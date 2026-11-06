@@ -67,9 +67,18 @@ function arcSkillStats(t, s, b) {
   s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= ARC_BURST_RATE; s.dmg *= ARC_ECHO_K;
   s.arcRange = ARC_VOLT_REACH[v]; s.targets = 1; s.branch = 1; s.fork = v >= ARC_FORK_FROM; s.layers = ARC_VOLT_JUMPS[v]; s.revisit = 0;
   s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.charge = null; s.statSlow = 0; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.shockAmp = ARC_SHOCK_AMP[z]; s.burn = ARC_BURN; s.skill = true;
+  s.ground = c >= CAPSTONE_TIER; s.storm = v >= CAPSTONE_TIER; s.shockPass = z >= CAPSTONE_TIER; // the capstones (ARC_GROUND_R ..)
   s.dmg *= ARC_RES_DMG[z] * ARC_DMG_K; // Shock (id capacitance) hits a little harder by tier, each tier at most 2x the last with the curve's x1.9 (owner, 2026-11-01: "no level damage steps above 2x")
 }
 
+// THE THREE CAPSTONES (owner, 2026-11-06, "arc ones are good, except, shock V should apply the dead shocked enemy debuffs from ARC to all
+// nearby enemies, zap goes to all affected"): Conductivity V GROUNDING - the last hop of each chain bursts, one hit of that hop's damage on
+// every enemy within ARC_GROUND_R u of it that the bolt had not struck; Voltage V STORM - every ARC_STORM_EVERY-th strike a tower throws forks
+// ARC_STORM_FORK ways at the strike (its usual fork is 2); Shock V - a Shocked enemy that dies passes its ARC debuffs (the Shocked mark and
+// the burn, time refreshed) to every enemy within ARC_SHOCK_PASS_R u, a zap to each. The passes are bounded: ARC_PASS_DEPTH deep, ARC_PASS_FRAME zaps a frame
+const ARC_GROUND_R = 40, ARC_STORM_EVERY = 5, ARC_STORM_FORK = 3, ARC_SHOCK_PASS_R = 80, ARC_PASS_DEPTH = 3, ARC_PASS_FRAME = 60;
+const ARC_GROUND_FLASH = 0.3, ARC_STORM_LIVE = 0.8, ARC_STORM_TURNS = 3; // looks: the ring's life (s); how long a Storm strike's spin-up lasts (s); turns a second it adds at its peak
+let arcPassDepth = 0, arcPassLeft = ARC_PASS_FRAME;
 // ---------- ARC's chart firing ----------
 // A bolt is a TREE grown a generation per hop: the strike, then every hit
 // forks st.branch ways, st.layers jumps deep. A bolt NEVER hits the same
@@ -95,6 +104,8 @@ function fireSkillChain(t, st, e, seen) {
   if (v) root.fx.pierce = true;
   if (v >= SKILL_TIERS - 1) burst(e.x, e.y, "white", v > SKILL_TIERS - 1 ? 12 : 6); // III sparks, the capstone IV twice as many
   const c = { t, st, col, skill: true, seen: seen || new Set(), hits: new Map() }; // shared by the attack's strikes
+  c.forks = 2; // ways the strike forks (branchFrom): a Storm strike (every ARC_STORM_EVERY-th this tower throws) forks ARC_STORM_FORK
+  if (st.storm) { t.strikeN = (t.strikeN || 0) + 1; if (t.strikeN % ARC_STORM_EVERY === 0) { c.forks = ARC_STORM_FORK; t.stormT = ARC_STORM_LIVE; } }
   c.seen.add(e.id); c.hits.set(e.id, 1);
   const dx = e.x - t.x, dy = e.y - t.y, dl = Math.hypot(dx, dy) || 1; c.vx = t.x + ARC_VTX_R * dx / dl; c.vy = t.y + ARC_VTX_R * dy / dl; // the firing vertex (arcOut)
   skillHit(c, e, d);
@@ -122,6 +133,8 @@ function voltCarry(c, e, left) {
 // ARC_BURN_Q s, e.arcBurn { t (s left), k (a tick), id, acc }; a new hit restarts it. It moved no mark (shield leaked 94% with it and without)
 const ARC_BURN = 0.2, ARC_BURN_N = 6, ARC_BURN_Q = 0.1; // 0.1 x2 ticks -> 0.2 x6: more, smaller ticks, each a shield pop (owner, 2026-11-01, the ARC brief: "ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm / increase damage and reduce fire rate to make good vs armor"; "yes and yes" to more, smaller burn ticks)
 function arcBurnStep(dt) {
+  arcPassLeft = ARC_PASS_FRAME; // a frame's budget of Shock V zaps
+  for (const t of G.towers) if (t.stormT > 0) { const k = t.stormT / ARC_STORM_LIVE; t.stormPh = (t.stormPh || 0) + ARC_STORM_TURNS * k * dt; t.stormT = Math.max(0, t.stormT - dt); } // Storm's spin-up: the body draw reads stormT / stormPh
   for (const e of G.enemies) {
     if (e.shockT > 0) e.shockT -= dt; // SHOCKED wears off
     const u = e.arcBurn; if (!u || e.dead) continue;
@@ -135,7 +148,7 @@ function skillHit(c, e, d) {
   damage(e, d, c.t, false, false, c.st); onHit(e, c.t, c.st, d); // (discharges e's own charges, if any)
   if (c.st.carry && e.dead && hp0 > 0 && d > hp0) voltCarry(c, e, d - hp0);
   if (c.st.resSlow && !e.dead) applySlow(e, c.st.resSlow, STAT_SLOW_T, c.t.id); // Shock (the ARC redesign, 2026-10-29)
-  if (c.st.shockAmp && !e.dead) { e.shockAmp = Math.max(e.shockT > 0 && e.shockAmp || 0, c.st.shockAmp); e.shockT = STAT_SLOW_T; } // SHOCKED for the slow's time, refreshed on hit
+  if (c.st.shockAmp && !e.dead) { e.shockAmp = Math.max(e.shockT > 0 && e.shockAmp || 0, c.st.shockAmp); e.shockT = STAT_SLOW_T; if (c.st.shockPass) e.shockPass = true; } // SHOCKED for the slow's time, refreshed on hit
   if (c.st.resStrip && !e.dead) shredPct(e, c.t, c.st.resStrip); // a SHARE of the armor left, as every strip since 6.18.0 (Wai 2026-10-28)
   if (c.st.burn && !e.dead) e.arcBurn = { t: ARC_BURN_N * ARC_BURN_Q, k: d * c.st.burn / ARC_BURN_N, id: c.t.id, acc: 0 }; // THE BURN (arcBurnStep)
   const b = c.st.charge;
@@ -227,8 +240,36 @@ function skillHopTo(c, node, nxt, depth) {
   beam(node.e, nxt, c.col, arcBeamLife(c.st), 1.5, d);
   Object.assign(fx[fx.length - 1], { soft: true, alpha: Math.min(1, ARC_A * (raw / c.st.dmg) ** ARC_CORR) }); // brighter as its share of the strike grows (ARC_A)
   if (skillOf(c.t, "voltage")) fx[fx.length - 1].pierce = true; // Voltage's white-hot core
-  const child = { e: nxt, fx: fx[fx.length - 1], up: node, kids: new Set() };
+  const child = { e: nxt, fx: fx[fx.length - 1], up: node, kids: new Set(), d };
   keepLit(node, arcBeamLife(c.st));
   fromHit(node.e, () => skillHit(c, nxt, d)); // its number flies on from the enemy the arc jumped from
   return child;
+}
+
+// GROUNDING (Conductivity V): a chain's last hop - its final layer, or the last it could make before nothing was in reach - bursts: one hit of
+// that hop's damage on every enemy within ARC_GROUND_R of the enemy it struck, bar those its bolt (the attack's seen set) already took
+function arcGround(c, node) {
+  if (!c.st.ground || !node.up || node.grounded) return; // the strike alone is no hop
+  node.grounded = true;
+  ring(node.e.x, node.e.y, ARC_GROUND_R, "white", ARC_GROUND_FLASH, true, false); // a white ring flash
+  for (const o of G.enemies) {
+    if (o.dead || !o.seen || c.seen.has(o.id) || (o.x - node.e.x) ** 2 + (o.y - node.e.y) ** 2 > ARC_GROUND_R * ARC_GROUND_R) continue;
+    c.seen.add(o.id); c.hits.set(o.id, 1); fromHit(node.e, () => skillHit(c, o, node.d));
+  }
+}
+// SHOCK V: a Shocked enemy that dies (kill, aspira-game.js) hands its ARC debuffs - the Shocked mark and the burn - to every enemy within
+// ARC_SHOCK_PASS_R, their time refreshed whole, and a short ARC zap runs to each. A pass whose debuffs later kill passes on again, but never
+// ARC_PASS_DEPTH deep and never more than ARC_PASS_FRAME zaps a frame (arcPassLeft)
+function arcShockPass(e) {
+  if (!e.shockPass || !(e.shockT > 0) || arcPassDepth >= ARC_PASS_DEPTH) return;
+  arcPassDepth++;
+  try {
+    for (const o of G.enemies) {
+      if (o === e || o.dead || !o.seen || arcPassLeft <= 0 || (o.x - e.x) ** 2 + (o.y - e.y) ** 2 > ARC_SHOCK_PASS_R * ARC_SHOCK_PASS_R) continue;
+      arcPassLeft--;
+      o.shockAmp = Math.max(o.shockT > 0 && o.shockAmp || 0, e.shockAmp || 0); o.shockT = STAT_SLOW_T; o.shockPass = true;
+      if (e.arcBurn) o.arcBurn = { t: ARC_BURN_N * ARC_BURN_Q, k: e.arcBurn.k, id: e.arcBurn.id, acc: 0 };
+      beam(e, o, TOWERS.arc.color, CHAIN_BEAM_LIFE, 1, 0, false, false); Object.assign(fx[fx.length - 1], { soft: true, alpha: ARC_A, pierce: true }); // the zap: a fixed, short ARC bolt (the dead one does not follow)
+    }
+  } finally { arcPassDepth--; }
 }

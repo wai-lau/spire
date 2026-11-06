@@ -84,8 +84,8 @@ for (const [table, v] of CAPSTONE_NUM) if (table.length === WRITTEN_TIERS) table
 
 // ---------- the words: each axis's capstone tier, and the composers' (aspira-desc.js) ----------
 const CAPSTONE_TIERS = {
-  conductivity: { name: "Hyperstorm" },
-  voltage: { name: "Gigavolt" },
+  conductivity: { name: "Grounding" },
+  voltage: { name: "Storm" },
   capacitance: { name: "Superstorm" },
   temp: { name: "Zero Point" },
   rime: { name: "Ice Age" },

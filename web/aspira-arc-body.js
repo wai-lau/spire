@@ -35,12 +35,14 @@ function arcRing(g, rr, th, back, mt, cx, cy) { // one ring's back or front edge
 }
 function drawArcRings(t, far, up, x, y, h) {
   const n = 1 + skillOf(t, "voltage"), ct = skillOf(t, "conductivity"), g = arcGeom(t), s = g.R / 40, now = performance.now() / 1000;
-  const css = arcMix(COL[TOWERS.arc.color], 0.6 + 0.08 * ct), gl = (0.6 + 3.2 * ARC_RING_GL[ct]) * s;
+  const sk = t.stormT > 0 ? t.stormT / ARC_STORM_LIVE : 0, ph = t.stormPh || 0; // a Storm strike spins the rings up (stormPh turns, banked in arcBurnStep) and flashes them
+  const css = arcMix(COL[TOWERS.arc.color], Math.min(1, 0.6 + 0.08 * ct + ARC_STORM_WHITE * sk)), gl = (0.6 + 3.2 * ARC_RING_GL[ct]) * s * (1 + ARC_STORM_GLOW * sk);
   for (let i = 0; i < n; i++) {
-    const z = h / 2 - h * (n === 1 ? 0.5 : 0.2 + 0.6 * i / (n - 1)), ti = n > 1 ? i * ARC_RING_T / (n - 1) : 0, th = arcTAU * (now + ARC_RING_T - ti) / ARC_RING_T; // ring 0 is the lowest
+    const z = h / 2 - h * (n === 1 ? 0.5 : 0.2 + 0.6 * i / (n - 1)), ti = n > 1 ? i * ARC_RING_T / (n - 1) : 0, th = arcTAU * ((now + ARC_RING_T - ti) / ARC_RING_T + ph); // ring 0 is the lowest
     up(x, y, () => { const mt = ctx.getTransform(); arcStroke(arcRing(g, g.R * 1.25, th, far, mt, x, y), css, css, ARC_RING_W[ct] * s, gl, 0.8 + 0.04 * ct); }, z);
   }
 }
+const ARC_STORM_GLOW = 1.5, ARC_STORM_WHITE = 0.3; // STORM (Voltage V, aspira-arc.js): a Storm strike's flash - the rings' glow up to x(1 + this) and whiter by this much at the peak
 const ARC_SHOCK_W = 1.7; // the Shock arc's core, mockup units (x2 the first cut: it read as a faint flicker at 1x)
 function drawArcShock(t) { // in the frame of the prism's top; x, y the tower's centre
   const tier = skillOf(t, "capacitance"); if (!tier) return;

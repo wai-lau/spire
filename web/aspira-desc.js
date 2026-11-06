@@ -38,6 +38,9 @@ const DESCRIBE = {
     return "A bolt of lightning that " + (v >= ARC_FORK_FROM ? "forks once and " : "") + "chains" + times + " for " + pc + "." + (j > 0 ? " Each jump goes further out from ARC." : "") + /* the radial jumps (owner, 2026-11-06; Balance's line) */
       (z ? (ARC_RES_SLOW[z] ? " Hits slow by " + Math.round(ARC_RES_SLOW[z] * 100) + "% and break " : " Hits break ") + Math.round(ARC_RES_STRIP[z] * 100) + "% of the armor left." : "") + /* no slow since the ARC brief (2026-11-01) */
       (ARC_RES_DMG[z] > 1 ? " Its bolts hit ×" + +ARC_RES_DMG[z].toFixed(2) + " harder." : "") +
+      (c >= CAPSTONE_TIER ? " The last jump of each chain bursts, hitting every enemy within " + ARC_GROUND_R + " u." : "") + /* Grounding (owner, 2026-11-06) */
+      (v >= CAPSTONE_TIER ? " Every " + ["", "", "second", "third", "fourth", "fifth"][ARC_STORM_EVERY] + " strike forks " + NUM_WORD[ARC_STORM_FORK] + " ways." : "") + /* Storm */
+      (z >= CAPSTONE_TIER ? " A shocked enemy that dies passes its shock to every enemy within " + ARC_SHOCK_PASS_R + " u." : "") + /* Shock V */
       (typeof ARC_SHOCK_AMP !== "undefined" && ARC_SHOCK_AMP[z] > 0 ? " Shocked enemies take " + Math.round(ARC_SHOCK_AMP[z] * 100) + "% more damage from ARC." : ""); /* Shock option 1 (Wai, 2026-11-01): its mark, e.shockT */ /* (and its hit factor, Wai approved 2026-11-01) */
   },
 

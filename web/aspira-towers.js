@@ -72,9 +72,9 @@ function keepLit(node, left) {
 // (ARMOR GROUNDED THE ARC 2026-10-08 .. 2026-10-26 - a chain stopped at any armored enemy; removed, owner: "Remove grounding" - its
 // armor weakness is now its small hits' loss to flat armor alone)
 function branchFrom(c, node, depth) {
-  if (depth > c.st.layers) return;
+  if (depth > c.st.layers) { if (c.skill) arcGround(c, node); return; } // the chain's last hop was made (Grounding, aspira-arc.js)
   keepLit(node, hopDelay(c.st) + 0.05); // stay lit until the children land
-  const n = c.st.fork && !node.up ? 2 : c.st.branch; // ARC FORKS ONCE, at the strike, never after (owner, 2026-10-29: "1 fork per node, doesn't refork")
+  const n = c.st.fork && !node.up ? (c.forks || 2) : c.st.branch; // ARC FORKS ONCE, at the strike, never after (owner, 2026-10-29: "1 fork per node, doesn't refork")
   for (let i = 0; i < n; i++) (G.chains ||= []).push({ c, node, depth, wait: hopDelay(c.st) });
 }
 function stepChains(dt) {
@@ -84,7 +84,7 @@ function stepChains(dt) {
     p.wait -= dt;
     if (p.wait > 0) { G.chains.push(p); continue; }
     const nxt = p.c.skill ? skillHop(p.c, p.node, p.depth) : nextHop(p.c, p.node);
-    if (!nxt) continue; // nothing left in reach: this arc fizzles
+    if (!nxt) { if (p.c.skill) arcGround(p.c, p.node); continue; } // nothing left in reach: this arc fizzles (its last hop still grounds)
     branchFrom(p.c, (p.c.skill ? skillHopTo : hopTo)(p.c, p.node, nxt, p.depth), p.depth + 1);
   }
 }

@@ -311,6 +311,7 @@ function kill(e, t) {
   burst(e.x, e.y, ENEMIES[e.type].color, 14);
   if (e.type === "bonus") { if (bossPays(e) && e.wave < WIN_WAVE) bonusDrop(e); bossKilled(e); } // the last Devil pays; a Lover's mate enrages (aspira-bosses.js)
   if (e.shatter && e.slowT > 0 && !shattering) shatterAt(e); // FRZ's Shatter
+  if (e.shockT > 0 && e.shockPass) arcShockPass(e); // Shock V: its debuffs pass to the enemies round it (aspira-arc.js)
   if (e.charged) staticDischarge(e); // ARC's Static (the old path)
   // the chart ARC's Static: a charged enemy that DIES lets its charges go too
   // (owner) - unless a Static blast killed it (no chain reaction)
