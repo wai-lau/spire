@@ -46,6 +46,7 @@ if (isMainThread && process.argv[1].endsWith("players3b.mjs")) {
   if (process.env.SHUFFLE !== "0") { let a = 20261105; const rnd = () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
     for (let i = jobs.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [jobs[i], jobs[j]] = [jobs[j], jobs[i]]; } }
   if (Number(process.env.GAMES) > 0) jobs = jobs.slice(Number(process.env.GSKIP) || 0, (Number(process.env.GSKIP) || 0) + Number(process.env.GAMES)); // GSKIP=n: the next block of the same shuffled order (a second screen block)
+  if (process.env.SKIPDONE) { const fs = await import("node:fs"); const done = new Set(fs.readFileSync(process.env.SKIPDONE, "utf8").split("\n").filter(Boolean).map(l => { const r = JSON.parse(l).res; return r.trio + "|" + r.seed; })); jobs = jobs.filter(j => !done.has(j.trio.join("+") + "|" + j.seed)); } // SKIPDONE=file: drop the games a killed run already wrote (a resumed screen)
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true, out: process.argv[2] || null });
   const won = res.filter(r => r.won).length, waves = res.map(r => r.wave).sort((a, b) => a - b);
   console.log(`${model}: ${won}/${res.length} won; wave reached median ${waves[waves.length >> 1]}, min ${waves[0]}, max ${waves[waves.length - 1]}`);
