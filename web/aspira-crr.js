@@ -121,7 +121,7 @@ function stepCar(t, dt) {
   t.reloadCd = Math.max(0, (t.reloadCd || 0) - dt); if (t.readyQ) t.readyQ = t.readyQ.filter(o => o.state === "home" && t.icp.includes(o)); // ONE RELOAD FINISHES AT A TIME (CRR_RELOAD_GAP, below); (a wing that shrank, or one sent off, leaves the queue)
   // FIFO: the longest-held interceptor takes the first target (i.heldAt: the order it entered its orbit round the carrier)
   const order = t.icp.slice().sort((a, b) => (a.state === "home" && a.hold ? a.heldAt : Infinity) - (b.state === "home" && b.hold ? b.heldAt : Infinity));
-  for (const i of order) stepIcp(i, t, st, dt);
+  for (const i of order) { stepIcp(i, t, st, dt); if (i.state === "back" || (i.state === "home" && i.hold)) carTurn(i, i.ang, dt); else if (i.state === "home") i.fa = null; } // (out: stepIcp turns it)
 }
 // (the SALVO - carSalvoN at a time, then CRR_GAP - is gone: every ready interceptor launches at once, owner 2026-10-26: "Always launch as many
 // interceptors as available")
@@ -130,6 +130,16 @@ function stepCar(t, dt) {
 // in the order they came due (t.readyQ, FIFO); one done early waits inside till its turn. let: the balance lever ("the rate you can use as a
 // lever for something, I'm thinking something minisacule like 0.05s")
 let CRR_RELOAD_GAP = 0.05;
+// IT TURNS BEFORE IT FIRES (owner, 2026-11-06: "do not fire until the turning is done for CRR", after "when in orbit, have the interceptors
+// rotate to face the target being orbited" / "when in orbit around the tower, also face the way they fly"): each interceptor's FACING, i.fa, turns at
+// CRR_TURN_RATE rad a s - to the enemy it orbits, else along its flight (i.ang; the hold orbit's too); in orbit it fires only once it faces its
+// enemy within CRR_FACE_TOL. The V=V is drawn along i.fa (aspira-crr-draw.js). let: the balance lever (Balance tunes it)
+let CRR_TURN_RATE = 12; const CRR_FACE_TOL = 0.14; // rad a s (a quarter turn ~0.13 s); rad (~8 degrees)
+function carTurn(i, want, dt) { // -> the angle still to turn, signed
+  if (i.fa == null) i.fa = want;
+  let d = want - i.fa; d -= 6.283185307179586 * Math.round(d / 6.283185307179586);
+  const w = CRR_TURN_RATE * dt, s = Math.max(-w, Math.min(w, d)); i.fa += s; return d - s;
+}
 function stepIcp(i, t, st, dt) {
   if (i.state === "home") {
     i.reload = Math.max(0, i.reload - dt);
@@ -159,9 +169,10 @@ function stepIcp(i, t, st, dt) {
     if (!i.e || i.e.dead) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
-    if (!i.orb && d > carR(i) * 1.3) return; /* FIRES ONLY IN ORBIT (owner, 2026-11-04: "interceptors should only start firing once they enter orbit"; CRR_FIRE_R 340 let it fire on the way, gone) */
+    if (!i.orb && d > carR(i) * 1.3) { carTurn(i, i.ang, dt); return; } /* FIRES ONLY IN ORBIT (owner, 2026-11-04: "interceptors should only start firing once they enter orbit"; CRR_FIRE_R 340 let it fire on the way, gone) */
     if (!i.orb && d <= carR(i) * 1.3) i.orb = true; // onto the circle round its target
     i.cd -= dt;
+    if (Math.abs(carTurn(i, Math.atan2(e.y - i.y, e.x - i.x), dt)) > CRR_FACE_TOL) i.cd = Math.max(i.cd, 0); // still turning: no volley yet, none banked
     // A VOLLEY IS ITS BOLTS AT ONCE (owner, 2026-11-01: "My intent with volleys was to describe the number of bolts fired at once"): all
     // st.bolts (at most 3) leave in the same frame, side by side - the lead and its wings (vk 0 / -1 / +1) - then one volley interval
     while (i.cd <= 0 && i.ammo > 0) {

@@ -16,7 +16,7 @@ const CRR_VV_K = [-1, 1];
 let carM = null; // the frame its points go through (an interceptor's own, at its height - drawCarBodies), else drawn as given
 const carMv = (x, y) => (carM ? ctx.moveTo(carM[0] * x + carM[2] * y + carM[4], carM[1] * x + carM[3] * y + carM[5]) : ctx.moveTo(x, y));
 const carLn = (x, y) => (carM ? ctx.lineTo(carM[0] * x + carM[2] * y + carM[4], carM[1] * x + carM[3] * y + carM[5]) : ctx.lineTo(x, y));
-function carDart(i, z) { // adds the V=V to the open path, facing i.fa (its drawn heading, carFace)
+function carDart(i, z) { // adds the V=V to the open path, facing i.fa (its facing, carTurn - aspira-crr.js)
   const a = i.fa ?? i.ang, L = CRR_DART * z, W = CRR_DART_W * z, c = Math.cos(a), s = Math.sin(a), o = carVVOff(W);
   for (const k of CRR_VV_K) {
     const cx = i.x - s * o * k, cy = i.y + c * o * k, bx = cx - c * L * 0.5, by = cy - s * L * 0.5;
@@ -51,17 +51,6 @@ function drawCarBodies(t, far, top) { // top: the prism's top height (warpFrame 
 const CRR_EDGE_W = 0.3; // the lighter edge, world u (0.5 at the old double size)
 const carBar = (i, z) => { const a = i.fa ?? i.ang, u = (CRR_VV_BARS[0] + CRR_VV_BARS[1]) / 2 * CRR_DART * z; return { x: i.x + Math.cos(a) * u, y: i.y + Math.sin(a) * u }; }; // the "=" middle
 const carTip = (i, z, k) => { const a = i.fa ?? i.ang, L = CRR_DART * z * 0.5, o = carVVOff(CRR_DART_W * z) * k, c = Math.cos(a), s = Math.sin(a); return [i.x - s * o + c * L, i.y + c * o + s * L]; }; // k -1 / +1
-// FACING (owner, 2026-11-06: "when in orbit, have the interceptors rotate to face the target being orbited"; "when in orbit around the tower, also face
-// the way they fly"): orbiting an enemy, the V tips turn to it; otherwise (flying, or the hold orbit round the carrier) along its heading. The DRAWN
-// heading i.fa turns at CRR_FACE_W rad a real second - the look only (the game's heading, i.ang, is untouched)
-const CRR_FACE_W = 14; // ~0.11 s for a quarter turn
-let carFaceT = 0, carFaceDt = 0;
-function carFace(i) {
-  const want = i.state === "out" && i.orb && i.e && !i.e.dead ? Math.atan2(i.e.y - i.y, i.e.x - i.x) : i.ang;
-  if (i.fa == null || !(carFaceDt > 0)) { i.fa = i.fa ?? want; if (i.fa === want || carFaceDt <= 0) return; }
-  let d = want - i.fa; d -= 6.283185307 * Math.round(d / 6.283185307);
-  const w = CRR_FACE_W * carFaceDt; i.fa += Math.max(-w, Math.min(w, d));
-}
 // darts: the INTERCEPTORS alone, drawn in skyKeep - their colour is not inverted by a boss sky (owner, 2026-10-16: "Interceptor color
 // should also not be inverted"); else the bolts and pellets, which turn over with it like every tower's shots
 // THE TRAIL (owner, 2026-10-16: "add a super thin but long line along the paths travelled by interceptor"): each interceptor out of
@@ -141,11 +130,9 @@ function carBoltTip(b, t, fl) {
 }
 const CRR_TETHER_A0 = 0.7, CRR_TETHER_W = 0.6; // the tether chain: its least alpha (x CHAIN_A on top, as ARC's), its links x ARC's size
 function drawCar(darts) {
-  if (darts) { const now = performance.now() / 1000; carFaceDt = carFaceT ? Math.min(0.1, now - carFaceT) : 0; carFaceT = now; } // (real time: the turn eases on paused too)
   for (const t of G.towers) {
     if (t.kind !== "crr" || !t.icp) continue;
     if (darts) {
-      for (const i of t.icp) if (i.state !== "home" || i.hold) carFace(i);
       carTrails(t);
       if (skillOf(t, "launch") > 0) { // the TETHER beams: interceptor -> target (-> the chained one), brighter on a pulse
         ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round";
