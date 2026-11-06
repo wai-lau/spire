@@ -297,6 +297,10 @@ check("no card sentence names a number over 800% for ANY build, every axis mix 0
   const r = run(`(() => { const out = []; for (const kind of Object.keys(SKILL_TREES)) { const ids = SKILL_TREES[kind].map(a => a.id); for (let a = 0; a <= 5; a++) for (let b = 0; b <= 5; b++) for (let c = 0; c <= 5; c++) { const d = describeTower(kind, { [ids[0]]: a, [ids[1]]: b, [ids[2]]: c }); for (const m of d.matchAll(/(\\d+)%/g)) if (+m[1] > 800) { out.push(kind + " " + a + b + c + ": " + m[0]); break; } } } return out; })()`);
   if (r.length) return r.length + " over 800%: " + r.slice(0, 6).join("; ");
 });
+check("no tower card stat row shows a float artefact or more than 2 decimals, every kind at every axis mix 0-V (owner, 2026-11-06: \"wacky decimal places are back\" - GRV Particles 8.399999999999999)", () => {
+  const r = run(`(() => { const out = []; for (const kind of Object.keys(SKILL_TREES)) { const ids = SKILL_TREES[kind].map(a => a.id); for (let a = 0; a <= 5; a++) for (let b = 0; b <= 5; b++) for (let c = 0; c <= 5; c++) { const sk = { [ids[0]]: a, [ids[1]]: b, [ids[2]]: c }, t = { id: -7, kind, cell: 0, skills: sk, lvl: 1 + a + b + c, x: CELLS[0].x, y: CELLS[0].y }; let h; try { h = cardStats(t, null); } catch (e) { out.push(kind + " " + a + b + c + ": threw " + e.message); continue; } const m = h.replace(/<[^>]*>/g, " ").match(/\\d\\.\\d{3,}/); if (m) out.push(kind + " " + a + b + c + ": " + m[0]); } } return out; })()`);
+  if (r.length) return r.length + " bad: " + r.slice(0, 6).join("; ");
+});
 check("FRZ's chill never bites over 8x td (owner, 2026-10-31: \"Nothing should ever be above like 800%\"; the bite by speed, 2026-11-06): a fully slowed enemy at the fastest regular speed", () => {
   const r = run(`(() => { const sp = Math.max(...["swarm", "fast", "shield", "armor"].map(k => ENEMIES[k].speed)), k = Object.keys(ENEMIES).find(k => ENEMIES[k].speed === sp); return [frzBite({ type: k, slowT: 1, slowF: 1 }), 8 * tdU("frz")]; })()`);
   if (!(r[0] <= r[1] + 1e-9)) return "bite " + r[0] + " > " + r[1];

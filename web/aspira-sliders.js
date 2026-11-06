@@ -136,6 +136,10 @@ const STAT_SECTIONS = {
   ifr: [["Meteor", ["Burst", "Stored", "Hit", "Charge", "Rate", "Ball speed", "Meteor", "Range"]], ["Hellfire", ["Fire", "Fire speed", "Fire flares"]], ["Flare", ["Flare length", "Flare width", "Flare tick", "Flare ticks", "Flare lasts", "Flare capstone"]]],
   acd: [["Jets", ["Jet tick", "Ticks", "Doubles every", "Peak tick", "Jets", "Carry", "Jet slow", "Range", "Rate"]], ["Corrosion", ["Armor", "Goo", "Goo pull"]], ["Pools", ["Pool burn", "Drips every", "Pool size", "Pool lasts", "Pool spread", "Circle"]]],
 };
+// EVERY NUMBER THROUGH ONE FORMATTER (owner, 2026-11-06: "wacky decimal places are back" - GRV's Particles read 8.399999999999999, 6 x 1.4): a row's
+// value, a number or any number inside its text, at most 2 decimals, trailing zeros dropped (a whole number as it is)
+const statNum = x => (Number.isInteger(x) ? String(x) : String(+x.toFixed(2)));
+const statTidy = v => (typeof v === "number" && isFinite(v) ? statNum(v) : typeof v === "string" ? v.replace(/\d+\.\d{3,}/g, m => statNum(+m)) : v);
 function cardStats(t, pv) {
   const b = TOWERS[t.kind], st = towerStats(t), nx = pv ? towerStats(pv) : null, spN = nx ? SPEC[t.kind](nx, pv) : null;
   const rows = [];
@@ -145,7 +149,7 @@ function cardStats(t, pv) {
     ["Leash", slideSpan(t), nx && slideSpan(pv)]);
   SPEC[t.kind](st, t).forEach((r, k) => rows.push([r[0], r[1], spN ? spN[k][1] : null]));
   const shown = rows.filter(r => r[1] !== "—" || (r[2] != null && r[2] !== "—")), secs = STAT_SECTIONS[t.kind] || [];
-  const row = ([label, now, next]) => statRow(label, now, nx && String(next) !== String(now) ? next : null);
+  const row = ([label, now, next]) => { now = statTidy(now); next = statTidy(next); return statRow(label, now, nx && String(next) !== String(now) ? next : null); };
   const named = new Set(secs.flatMap(([, ls]) => ls)), sec = (title, rs, extra = "") => (rs.length || extra ? '<section class="asp-sec"><h5>' + title + "</h5><dl>" + rs.map(row).join("") + extra + "</dl></section>" : "");
   return '<div class="asp-cols asp-secs">' + sec("Tower", shown.filter(r => !named.has(r[0])), '<dt>Kills</dt><dd id="asp-kills"></dd>') + // FIRST (owner, 2026-10-15: "maybe tower should go first?")
     secs.map(([title, ls]) => sec(title, ls.map(l => shown.find(r => r[0] === l)).filter(Boolean))).join("") + "</div>";
