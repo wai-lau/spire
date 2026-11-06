@@ -51,6 +51,10 @@ function drawStarTrail(e, size) {
     const w = size * 0.55 * (1 - i / n), nx = -(b.y - a.y) / len * w, ny = (b.x - a.x) / len * w;
     const l = trailPt(L, i), r = trailPt(R, i); l.x = pts[i].x + nx; l.y = pts[i].y + ny; r.x = pts[i].x - nx; r.y = pts[i].y - ny;
   }
+  // OFF THE CANVAS (perf, 2026-11-06, as solidOffCanvas): the tail's outline under the enemy's frame, every point outside the canvas - no fill
+  { const M = ctx.getTransform(), W = ctx.canvas.width, H = ctx.canvas.height; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const A of [L, R]) for (let i = 0; i <= n; i++) { const p = A[i], X = M.a * p.x + M.c * p.y + M.e, Y = M.b * p.x + M.d * p.y + M.f; if (X < x0) x0 = X; if (X > x1) x1 = X; if (Y < y0) y0 = Y; if (Y > y1) y1 = Y; }
+    if (x1 < -2 || y1 < -2 || x0 > W + 2 || y0 > H + 2) return; }
   // every tail FADES toward its end (owner, 2026-10-09: "make all tracers lose opacity towards tail"): the star's
   // by a radial gradient from it, the rest by a straight one from the body to the tail's end (the fast ones were a
   // plain fill while a gradient each looked like a late-game frame cost, 2026-10-05)

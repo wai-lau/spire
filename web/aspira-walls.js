@@ -29,9 +29,17 @@ function hexPieces(x, y, r, n, rot, ring) {
 // (since: "keep all shields as lines on plane instead of 3d objects, incl core") the pieces as LINES on the floor
 // at: [x, y] the pieces cluster round - they go through warpFrame's local frame there, the same to a hair over a
 // shield's few units and three projections instead of two per piece (perf, 2026-10-09)
+// every piece's ends (through pt) outside the canvas past the widest line: the lines cannot paint a pixel
+function linesOffCanvas(pieces, pt) {
+  const W = ctx.canvas.width, H = ctx.canvas.height, m = SHIELD_LAST_W * 1.4 * cam.k + 2;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of pieces) for (const q of [p.a, p.b]) { const A = pt(q[0], q[1]); if (A.x < x0) x0 = A.x; if (A.x > x1) x1 = A.x; if (A.y < y0) y0 = A.y; if (A.y > y1) y1 = A.y; }
+  return x1 < -m || y1 < -m || x0 > W + m || y0 > H + m;
+}
 function warpShieldLines(pieces, col, a0, at) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineWidth = 1.4 * cam.k; ctx.strokeStyle = col;
   const F = at && warpFrame(at[0], at[1], 0), pt = F ? (x, y) => ({ x: F[0] * x + F[2] * y + F[4], y: F[1] * x + F[3] * y + F[5] }) : (x, y) => warpProject(x, y, 0);
+  if (at && linesOffCanvas(pieces, pt)) { ctx.globalAlpha = 1; return; } // (nothing of it can show - perf, 2026-11-06, as solidOffCanvas)
   const byRing = new Map();
   for (const p of pieces) (byRing.get(p.r) || byRing.set(p.r, []).get(p.r)).push(p);
   for (const [r, ps] of byRing) {
