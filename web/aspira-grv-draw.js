@@ -130,7 +130,10 @@ function drawGrvCores(at) {
 // NOVA a thin ring round it, contracting onto it every GRB_NOVA_T s, brighter and thicker a tier; GRAVITY WELL GRB_WELL_N debris spiralling in,
 // each with a 3-segment trail along its spiral. Back halves before the orb, front halves after. Nova or Well with Void 0: a Void I orb. Look only
 const GRB_GAP = (29 - 40 * 0.58) / 40, GRB_ORB_R = [0, 7.5, 9, 10.8, 12.8, 15].map(r => r / 40), GRB_NOVA_T = 2, GRB_WELL_T = 3.2;
-const GRB_NOVA_A = [0, 0.5, 0.6, 0.72, 0.86, 1], GRB_NOVA_W = [0, 0.9, 1.2, 1.5, 1.9, 2.4].map(w => w / 40), GRB_WELL_N = [0, 3, 5, 7, 9, 12];
+const GRB_NOVA_A = [0, 0.5, 0.6, 0.72, 0.86, 1], GRB_NOVA_W = [0, 0.9, 1.2, 1.5, 1.9, 2.4].map(w => w / 40), GRB_WELL_N = [0, 6, 10, 14, 18, 24]; // (Well: owner, 2026-11-06 "double the number of particles and add size jitter"; was 3 5 7 9 12)
+// each particle's dot x 0.5..1.6 (hashed per tower and particle - no Math.random; the trails one width, batched); drawn in GRB_BANDS alpha bands
+const GRB_BANDS = 5, GRB_SEGS = Array.from({ length: GRB_BANDS }, () => []), GRB_DOTS = Array.from({ length: GRB_BANDS }, () => []);
+const grbHash = (a, b) => { const v = Math.sin(a * 91.7 + b * 47.3) * 43758.5453; return v - Math.floor(v); };
 function drawGrvBody(t, x, y, top, R) { // top: the prism top's height (warpFrame units); R: the hex radius (world u)
   const v = skillOf(t, "void"), nv = skillOf(t, "supernova"), wl = skillOf(t, "radiation"), vt = v || (nv || wl ? 1 : 0); if (!vt) return;
   const F = warpFrame(x, y, top), k = Math.hypot(F[0], F[1]), sq = Math.hypot(F[2], F[3]) / k, r = GRB_ORB_R[vt] * R, oy = -(sq * R + GRB_GAP * R + r), now = performance.now() / 1000;
@@ -144,16 +147,25 @@ function drawGrvBody(t, x, y, top, R) { // top: the prism top's height (warpFram
     ctx.strokeStyle = col; ctx.globalAlpha = 0.35 * a; ctx.lineWidth = w * 2.6; ctx.stroke();
     ctx.strokeStyle = COL.white; ctx.globalAlpha = 0.85 * a; ctx.lineWidth = w; ctx.stroke();
   };
-  const well = front => { // the debris: spiralling in from 4 r, a 3-segment trail behind each
-    const n = GRB_WELL_N[wl], at = (i, p) => { const th = i * 2.4 - 2 * Math.PI * 1.4 * p, rho = r * (4 - 3 * p ** 1.1); return [rho * Math.cos(th), rho * sq * Math.sin(th), Math.sin(th)]; };
-    ctx.lineWidth = 0.028 * R; ctx.lineCap = "round"; ctx.strokeStyle = col;
-    for (let i = 0; i < n; i++) {
-      const p = (now / GRB_WELL_T + i / n) % 1, q = at(i, p); if ((q[2] > 0) !== front) continue;
-      const al = Math.min(p / 0.1, 1) * Math.min((1 - p) / 0.1, 1);
-      ctx.globalAlpha = 0.55 * al; ctx.beginPath();
-      for (const [j, d] of [0.05, 0.0333, 0.0167].entries()) { const w = at(i, Math.max(0, p - d)); if (j) ctx.lineTo(w[0], w[1]); else ctx.moveTo(w[0], w[1]); }
-      ctx.lineTo(q[0], q[1]); ctx.stroke();
-      ctx.fillStyle = COL.white; ctx.globalAlpha = al * (0.45 + 0.55 * p); ctx.beginPath(); ctx.arc(q[0], q[1], (0.052 - 0.0175 * p) * R, 0, 2 * Math.PI); ctx.fill();
+  const well = front => { // the debris: spiralling in from 4 r, a 3-segment trail behind each, fading with distance from the orb; ONE path an alpha band
+    const n = GRB_WELL_N[wl], at = (k, p) => { const th = k * 2.4 - 2 * Math.PI * 1.4 * p, rho = r * (4 - 3 * p ** 1.1); return [rho * Math.cos(th), rho * sq * Math.sin(th), Math.sin(th), rho]; };
+    const band = a => Math.min(GRB_BANDS - 1, Math.floor(a * GRB_BANDS)), segs = GRB_SEGS, dots = GRB_DOTS;
+    for (let b = 0; b < GRB_BANDS; b++) { segs[b].length = 0; dots[b].length = 0; }
+    for (let k = 0; k < n; k++) {
+      const p = (now / GRB_WELL_T + k / n) % 1, q = at(k, p); if ((q[2] > 0) !== front) continue;
+      const al = Math.min(p / 0.1, 1) * Math.min((1 - p) / 0.1, 1), j = 0.5 + 1.1 * grbHash(t.id || 0, k);
+      let w0 = at(k, Math.max(0, p - 0.05));
+      for (const d of [0.0333, 0.0167, 0]) { // three sections, each faded by its middle's distance from the orb (owner, 2026-11-06: "tracers should become lower and lower in opacity further away from the ball")
+        const w1 = d ? at(k, Math.max(0, p - d)) : q, f = Math.max(0, Math.min(1, 1 - ((w0[3] + w1[3]) / 2 - r) / (3 * r))) ** 1.5, a = 0.55 * al * f;
+        if (a > 0.004) segs[band(a)].push(w0[0], w0[1], w1[0], w1[1]); w0 = w1;
+      }
+      const a = al * (0.45 + 0.55 * p); if (a > 0.004) dots[band(a)].push(q[0], q[1], (0.052 - 0.0175 * p) * R * j);
+    }
+    ctx.lineCap = "round"; ctx.strokeStyle = col; ctx.fillStyle = COL.white;
+    for (let b = 0; b < GRB_BANDS; b++) {
+      const sg = segs[b], dt = dots[b], a = (b + 0.5) / GRB_BANDS;
+      if (sg.length) { ctx.globalAlpha = a; ctx.lineWidth = 0.028 * R; ctx.beginPath(); for (let m = 0; m < sg.length; m += 4) { ctx.moveTo(sg[m], sg[m + 1]); ctx.lineTo(sg[m + 2], sg[m + 3]); } ctx.stroke(); }
+      if (dt.length) { ctx.globalAlpha = a; ctx.beginPath(); for (let m = 0; m < dt.length; m += 3) { ctx.moveTo(dt[m] + dt[m + 2], dt[m + 1]); ctx.arc(dt[m], dt[m + 1], dt[m + 2], 0, 2 * Math.PI); } ctx.fill(); }
     }
   };
   if (nv) nova(false); if (wl) well(false);
