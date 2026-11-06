@@ -178,7 +178,7 @@ every tower at tiers 0-V. Burns read their share A SECOND, a CRR sortie its shar
 | CRR | eight interceptors, one bolt a volley, four volleys a sortie (`CRR_HANGAR`, `CRR_AMMO`) | Hangar: twelve launched, two stored in orbit | Tether: the first interceptor out tethers its target (`CRR_TETHER_N`, `carTethered`) | Armament: two bolts at once, more volleys (`CRR_BOLTS_BY`, never above 3) |
 | FRZ | a slowing circle with a light flat nip | Brittle: the real tick, more the slower | Permafrost: frost pulses (a stacking slow; no armor) | Moons: one moon |
 | ACD | one ray, no pools | Corrosion: eats armor | Flow: two rays + carry | Spill: ray pools that burn, no slow; kill pools gone |
-| GRV | a void a shot that crushes as it grows, shedding pellets as it decays | Void: a heavier void | Nova (id `supernova`): three novas before each void, stripping armor | Gravity Well (id `radiation`): the aura (pull, slow) and harder pellets |
+| GRV | a void a shot that crushes as it grows, shedding pellets as it decays | Void: a heavier void | Nova (id `supernova`): one nova before each void, harder by tier (`GRV_NOVA_RATE`), stripping armor | Gravity Well (id `radiation`): the aura (pull, slow) and harder pellets |
 | IFR | a meteor that bursts into a fan of six (`IFR_FAN_N`) | Meteor: meteors stored in orbit | Hellfire: a wall of fire lighting flares | Flare: a bright flare at each impact |
 
 Tier I names: `TIER_I_NAMES` (`aspira-capstone.js`). Checks: `scripts/spire-smoke/tiers.mjs`.
@@ -306,7 +306,7 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 | decay | it evaporates by its circumference - a big or merged void burns out sooner - and it is gone by `EFFECT_MAX_S` from its oldest part's birth whatever it eats |
 | pellets (tier 0) | a void sheds pellets as it decays, paced by the mass it loses: each flies out at random and hits the first enemy it touches or nothing; each pops one shield charge; past `GRV_PEL_SOFT` in flight they bundle (perf) |
 | pull and merge | open voids (any GRV's) drift toward each other by the other's mass; touching, the bigger takes the other in (`grvMerge`) - masses, caps and areas add |
-| novas (Nova) | `GRV_NOVA_N` novas implode on the best spot before each void (`grvNovaSpot`: the reach holding the most enemies), each front hitting what it passes once and stripping armor; they set the void's size |
+| novas (Nova) | ONE nova (`GRV_NOVA_N` 1, owner 2026-11-06; three until then) implodes on the best spot before each void (`grvNovaSpot`: the reach holding the most enemies) over `GRV_NOVA_T` 0.8 game s - the three's time, so at the base rate two rings overlap briefly - its front hitting what it passes once (x `GRV_NOVA_RATE` by tier) and stripping armor; it sets the void's size |
 | aura (Gravity Well) | an aura round the void, never past twice its size: it slows (never the shielded), harder inside the void and on an enemy already past it, and every enemy in it glides across its lane toward the lane's centre line (`GRV_LAT_V`, easing back after); it deals no damage |
 | look | the void's black centre is logarithmic in its size (`grvCoreR`), touching disks join; the aura is a radial band clear at both ends; every GRV damage number flies into its void (`grvFloat`) |
 

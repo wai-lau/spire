@@ -42,7 +42,7 @@ const GRV_SLOW_MAX = Infinity /* no cap of its own (owner, 2026-10-24 marks targ
 // shields swallowed leaves a small aura)
 const GRV_START_MASS = 3, GRV_BIG_MASS = 2; // a void's starting mass (the three banked shots' it replaced), its cap GRV_MASS_MAX x that; Void V (Singularity - owner, 2026-10-25: "Void V: bigger start mass and cap") x2 both (was Hawking's last burst of 12 pellets)
 const GRV_TICK = 0.25, GRV_FRONT_T = 0.2; // the nova's collapse, s (0.12 outward, then inward: a touch longer to read)
-// THREE NOVAS (owner, 2026-10-18: "triple the nova (3x damage from this change), i.e. 3 novas in quick succession, then the bh forms"):
+// THE NOVAS (three from 2026-10-18, owner: "3 novas in quick succession, then the bh forms"; ONE since 2026-11-06, below):
 // GRV_NOVA_N fronts, one every GRV_NOVA_GAP s, each hitting every enemy it sweeps once; the hole opens after the last
 const GRV_NOVA_N = 1, GRV_NOVA_GAP = 0.3, GRV_NOVA_K = 9, GRV_NOVA_T = 0.8; /* ONE NOVA a shot (owner, 2026-11-06: "1. Yes, make this ring move slower too, so that it takes up the time of the three (can only hit an enemy once)"): its hit x3 (K 3 -> 9) and its front sweeps over GRV_NOVA_T s, the old three's span ((3 - 1) x 0.3 + 0.2); was N 3 */ /* THREE novas again, from Nova I only (owner, 2026-10-25: "Nova 1: 3 novas in quick succession before each void"; tier 0 "void only") - each its old x3 hit, at a third the shots */ // ONE nova at THREE times the hit (owner, 2026-10-21: "change the initial ring to 1 ring again, except triple damage"; three since 2026-10-18)
 const novaLocal = sp => { if (!sp.nN) return [-1, Infinity]; const k = Math.min(sp.nN - 1, Math.floor(sp.age / GRV_NOVA_GAP)); return [k, sp.age - k * GRV_NOVA_GAP]; }; // [which nova, its own age]
@@ -176,7 +176,7 @@ function grvPull(t, st, dt) {
 // should be exponential with size"): fed by the damage it deals, a big merged hole in a thick wave gained as fast as it lost; its
 // evaporation now grows EXPONENTIALLY with its size (stepSphere), so a giant burns off whatever it eats
 const GRV_FADE_S = 2; const GRV_EVAP_EXP = 0.5; /* steeper (owner, 2026-10-16; was 0.25) */ // evaporation x e^(0.5 (R - 1)) for a hole R base auras across: R 3 ~x2.7, R 5 ~x7.4, R 9 ~x55 its old pace
-// A VOID EVERY SHOT (owner, 2026-10-25: tier 0 "void only, atk speed 1/3"; Nova I's three novas come before it): what was a hole every
+// A VOID EVERY SHOT (owner, 2026-10-25: tier 0 "void only, atk speed 1/3"; Nova's nova comes before it): what was a hole every
 // GRV_BH_EVERY shots, banking the shots between (2026-10-21), is now ONE shot at a third the rate, its void as heavy as the banked one
 // (GRV_START_MASS) - grvBank went with it
 function grvMerge(big, small) {
