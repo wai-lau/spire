@@ -19,7 +19,7 @@ function solShowWalk(x, y, ux, uy, k) {
 }
 
 // SCORCH SLOWS what it burns (2026-10-31, owner: "Make SOL scorch slow" + "Reduce fire rate and diffraction / Increase other things"): SOL_SCORCH_SLOW a live stack, for as long as the burn runs (shields still refuse it - applySlow)
-const SOL_SCORCH_SLOW = 0.06;
+const SOL_SCORCH_SLOW = 0.12; /* x2 (2026-11-06: SOL trios died mostly to fast; screen 50 games vs 7.7.42 +6.0, SOL trios 6/20 -> 9/20; was 0.06) */
 function solScorchTick(e, dt) {
   const q = SOL_SCORCH_Q; e.dotT -= dt;
   for (const s of e.dots || []) {
