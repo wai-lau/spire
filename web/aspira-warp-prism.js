@@ -119,5 +119,6 @@ function unwarp(sx, sy) {
 const IFR_ORB_ALT = 0.75;
 function drawOrbiters(t, far, up, x, y, h) { // h: the prism's height (towerH); its top at h / 2
   if (t.kind === "ifr" && typeof drawIfrTop === "function") up(x, y, () => drawIfrTop(t, far), IFR_ORB_ALT * h / 2);
+  if (t.kind === "acd" && typeof drawAcdBody === "function") drawAcdBody(t, far, x, y, h / 2); // ACD: the puddle before the prism (far), the drips and bubbles after it (aspira-acd-body.js)
   if (t.kind === "crr" && t.icp && typeof drawCarBodies === "function") { ctx.save(); try { drawCarBodies(t, far, h / 2); } finally { ctx.restore(); } }
 }
