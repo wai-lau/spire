@@ -92,10 +92,18 @@ function towerTierChecks(kind, tier0Words) {
 // ---------- ARC ----------
 towerTierChecks("arc", ["fork", "charge", "same place"]);
 check("ARC: tier 0 strikes one enemy and chains once (owner, 2026-10-28); Conductivity I chains twice; Voltage I forks the strike three ways (VOLT_FORK x1.5, axis balance 2026-10-25); Capacitance I chains once too", () => {
-  const n = sk => run(`(() => { const { t, es, st } = tierRig("arc", ${JSON.stringify(sk)}, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20]]);
+  const n = sk => run(`(() => { const { t, es, st } = tierRig("arc", ${JSON.stringify(sk)}, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20], [100, -40]]); /* [100, -40]: further out, for the fork's second way (jumps go only outward, 2026-11-06) */
     fireSkillChain(t, st, es[0]); for (let i = 0; i < 30; i++) stepChains(0.05); return ${hitCount("es")}; })()`);
   const r = [n({}), n({ conductivity: 1 }), n({ voltage: 1 }), n({ capacitance: 1 })];
   if (r[0] !== 3 || r[1] !== 3 || r[3] !== 3 || !(r[2] > 3)) return "enemies hit (tier 0, Amp I, Volt I, Res I): " + r + " (expected 3, 3, more, 3: owner 2026-10-29 \"ARC 0: one chain (hits 3)\"; Voltage I forks and chains more - Wai, 2026-11-01, the ARC brief: \"ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm\")";
+});
+
+check("ARC: every jump goes further out (owner, 2026-11-06: \"for each subsequent arc, it can only choose targets that are radially further from ARC tower vertex that fired it\") - each hop or fork lands on an enemy further from the firing vertex than the one it leaves", () => {
+  const r = run(`(() => { const { t, es, st } = tierRig("arc", { voltage: 3, conductivity: 2 }, [[60, 0], [60, 30], [60, -30], [90, 20], [30, -20], [80, -10], [50, 15], [120, 0], [20, 40]]);
+    const pairs = [], _h = skillHopTo; let c0 = null; skillHopTo = (c, node, nxt, depth) => { c0 = c; pairs.push([node.e, nxt]); return _h(c, node, nxt, depth); };
+    try { fireSkillChain(t, st, es[0]); for (let i = 0; i < 30; i++) stepChains(0.05); } finally { skillHopTo = _h; }
+    const d = e => Math.hypot(e.x - c0.vx, e.y - c0.vy); return { n: pairs.length, bad: pairs.filter(([a, b]) => !(d(b) > d(a))).length, inward: es.filter(e => e.hp < e.max && d(e) < d(es[0])).length }; })()`);
+  if (!(r.n >= 2) || r.bad || r.inward) return JSON.stringify(r) + " (expected 2+ jumps, none to an enemy no further out, nothing inside the first target hit)";
 });
 
 check("ARC: no enemy is struck twice by the bolts of one attack (owner, 2026-10-28: \"reduce the number of arc hits\" - one hit set an attack); Capacitance's bursts may re-hit", () => {

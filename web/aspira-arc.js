@@ -53,7 +53,7 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // jump keeps ARC_AMP_FALL x the hit before (Conductivity, id conductivity). Shock (id capacitance): every hit slows (ARC_RES_SLOW, for
 // STAT_SLOW_T s - never a shielded enemy, applySlow) and breaks ARC_RES_STRIP of the armor left (shredPct); no
 // charges, no bursts. A bolt never strikes a unit twice (skillHop). Numbers 0..V, let: the battery fits them
-let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 8, 12, 18, 24, 30] /* x1.5 from Voltage I with ARC_DMG_K (battery 7.7.0, 2026-11-05: ARC less damage, more hits - the 10-29 lever; tier 0 kept at 2 for "ARC 0: one chain (hits 3)"); was 2 5 8 12 16 20 */ /* more chaining, the brief; tier 0 stays one chain hitting three (owner, 2026-10-29) (was 2 3 4 5 6 8) */, ARC_VOLT_REACH = [150, 170, 190, 215, 240, 270] /* BACK to the 7.7.13 reach (2026-11-05): halved in 7.7.16 for the marks gap, it took ARC trios to 6/23 won vs 7.6.0's 17/23 over two 50-game screens; the marks pay ARC 2 -> 4, distance 12 -> 14 (reach x0.75 the same) */, ARC_FORK_FROM = 1; /* forks from Voltage I, the brief (was II) */
+let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 8, 12, 18, 24, 30] /* x1.5 from Voltage I with ARC_DMG_K (battery 7.7.0, 2026-11-05: ARC less damage, more hits - the 10-29 lever; tier 0 kept at 2 for "ARC 0: one chain (hits 3)"); was 2 5 8 12 16 20 */ /* more chaining, the brief; tier 0 stays one chain hitting three (owner, 2026-10-29) (was 2 3 4 5 6 8) */, ARC_VOLT_REACH = [187.5, 212.5, 237.5, 268.75, 300, 337.5] /* x1.25 with the radial hops (2026-11-06; was 150 170 190 215 240 270): a jump that may only go further out needs the reach - marks distance 10 -> 8 */ /* BACK to the 7.7.13 reach (2026-11-05): halved in 7.7.16 for the marks gap, it took ARC trios to 6/23 won vs 7.6.0's 17/23 over two 50-game screens; the marks pay ARC 2 -> 4, distance 12 -> 14 (reach x0.75 the same) */, ARC_FORK_FROM = 1; /* forks from Voltage I, the brief (was II) */
 let ARC_RES_SLOW = [0, 0, 0, 0, 0, 0] /* Shock no longer slows, the brief - worse vs fast (was 0 .15 .25 .38 .47 .58) */ /* 0..V, with ARC's geometric curve (owner, 2026-11-01: "Release the arc change") */, ARC_RES_STRIP = [0, 0.05, 0.1, 0.19, 0.32, 0.48] /* 0..V, with it */;
 // ARC_DMG_K (battery 7.7.0, 2026-11-05): every ARC hit x0.3 with the jumps x1.5 - its overkill on light types (0% leak late) traded for reach
 const ARC_DMG_K = 0.3; // (x1.15 = 0.345 for 7.7.25 only: a patch for the halved reach, reverted with it)
@@ -96,6 +96,7 @@ function fireSkillChain(t, st, e, seen) {
   if (v >= SKILL_TIERS - 1) burst(e.x, e.y, "white", v > SKILL_TIERS - 1 ? 12 : 6); // III sparks, the capstone IV twice as many
   const c = { t, st, col, skill: true, seen: seen || new Set(), hits: new Map() }; // shared by the attack's strikes
   c.seen.add(e.id); c.hits.set(e.id, 1);
+  const dx = e.x - t.x, dy = e.y - t.y, dl = Math.hypot(dx, dy) || 1; c.vx = t.x + ARC_VTX_R * dx / dl; c.vy = t.y + ARC_VTX_R * dy / dl; // the firing vertex (arcOut)
   skillHit(c, e, d);
   branchFrom(c, root, 1);
 }
@@ -203,12 +204,17 @@ function chainPick(t, from, r2, skip) {
 // restrict ARC jumps to within arc range" / "each chain should be able to jump to an enemy within 1/2 arc range of enemy"; was
 // st.arcRange x arcShrink a depth, inside the tower's range - "Confine all targets to within arc range", 2026-10-24)
 const ARC_JUMP_K = 1 /* the FULL range (owner, 2026-10-26: "*100% of arc range on chain"; half for an hour) */, arcJumpR = st => (st.skill && st.arcRange) || st.range * ARC_JUMP_K; // the chart's ARC: Voltage's own reach (2026-10-29)
+// EVERY JUMP GOES FURTHER OUT (owner, 2026-11-06: "for each subsequent arc, it can only choose targets that are radially further from ARC
+// tower vertex that fired it"): a hop or fork takes only an enemy strictly further (floor distance) from the firing vertex than the enemy it
+// leaves - the vertex the prism corner toward the first target (ARC_VTX_R u out from the tower's centre, the way the bolt is drawn leaving it)
+let ARC_VTX_R = 22;
+const arcOut = (c, o) => (o.x - c.vx) ** 2 + (o.y - c.vy) ** 2;
 function skillHop(c, node, depth) {
   const r = arcJumpR(c.st);
   // ONE BOLT STRIKES A UNIT ONCE (owner, 2026-10-26: "lightning from the same bolt can never strike the same unit more than once (so a
   // unit can be hit once for each bolt)"; Conductivity III+ let it re-strike, st.revisit, before)
-  const max = 1, hit = c.st.dmg;
-  return chainPick(c.t, node.e, r * r, o => o.id === node.e.id || (c.hits.get(o.id) || 0) >= max || c.seen.has(o.id) || // c.seen: the attack's other bolts' (fire, aspira-towers.js)
+  const max = 1, hit = c.st.dmg, out = arcOut(c, node.e);
+  return chainPick(c.t, node.e, r * r, o => o.id === node.e.id || arcOut(c, o) <= out || (c.hits.get(o.id) || 0) >= max || c.seen.has(o.id) || // c.seen: the attack's other bolts' (fire, aspira-towers.js)
     (ARC_JUMP_TOUGH && (o.max || 0) < (node.e.max || 0)) || (ARC_JUMP_MIN > 0 && (o.max || 0) < ARC_JUMP_MIN * hit * escale(o))); // the swarm rules (prototype, OFF)
 }
 // BAD VS SWARM, A PROTOTYPE (owner, 2026-10-29: ARC "Now bad vs swarm" - a chain clears swarmers whatever its numbers, 1cc1c0c): OFF by
