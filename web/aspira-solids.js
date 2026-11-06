@@ -142,6 +142,10 @@ function solidEdges(type) {
 // layers [[css colour, alpha], ...] composited source-over onto nothing, as ONE rgba (cached by its rounded inputs)
 const rgbOf = (() => { const m = new Map(); return c => { let v = m.get(c); if (!v) { const n = (c || "").match(/[\d.]+/g) || [0, 0, 0]; v = n.slice(0, 3).map(Number); m.set(c, v); } return v; }; })();
 const blendCache = new Map();
+// THE BLENDED STRINGS (perf, 2026-11-05 - Wai: "No bursts, just faster consistently"): keyed by the 8-BIT alpha the canvas keeps anyway (was 1/1000 -
+// a die's fade and distance are continuous, so ~120 new strings a late frame and the 4000-cap cleared about once a second, a burst of rebuilds;
+// now 6-18 a frame, no clears). WebKit, 3000 random fills over random backgrounds: worst 1/255 apart, none over 24
+const BLEND_CACHE_MAX = 20000;
 function blendFill(layers) {
   let r = 0, g = 0, b = 0, A = 0;
   for (const [c, a0] of layers) {
@@ -150,9 +154,9 @@ function blendFill(layers) {
     const [cr, cg, cb] = typeof c === "string" ? rgbOf(c) : c, na = a + A * (1 - a);
     r = (cr * a + r * A * (1 - a)) / na; g = (cg * a + g * A * (1 - a)) / na; b = (cb * a + b * A * (1 - a)) / na; A = na;
   }
-  const a = Math.round(A * 1000), key = (((r | 0) * 256 + (g | 0)) * 256 + (b | 0)) * 1001 + a; // a number: no string built per call
+  const a = Math.round(A * 255), key = (((r | 0) * 256 + (g | 0)) * 256 + (b | 0)) * 256 + a; // a number: no string built per call
   let s = blendCache.get(key);
-  if (!s) { if (blendCache.size > 4000) blendCache.clear(); s = "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + a / 1000 + ")"; blendCache.set(key, s); }
+  if (!s) { if (blendCache.size > BLEND_CACHE_MAX) blendCache.clear(); s = "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + a / 255 + ")"; blendCache.set(key, s); }
   return s;
 }
 // blendFill for three layers (colour arrays), the same three again if `twice` - the same arithmetic, no arrays built
@@ -164,9 +168,9 @@ function blendFill3(c0, a0, c1, a1, c2, a2, twice) {
     const na = a + A * (1 - a);
     r = (c[0] * a + r * A * (1 - a)) / na; g = (c[1] * a + g * A * (1 - a)) / na; b = (c[2] * a + b * A * (1 - a)) / na; A = na;
   }
-  const a = Math.round(A * 1000), key = (((r | 0) * 256 + (g | 0)) * 256 + (b | 0)) * 1001 + a;
+  const a = Math.round(A * 255), key = (((r | 0) * 256 + (g | 0)) * 256 + (b | 0)) * 256 + a;
   let s = blendCache.get(key);
-  if (!s) { if (blendCache.size > 4000) blendCache.clear(); s = "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + a / 1000 + ")"; blendCache.set(key, s); }
+  if (!s) { if (blendCache.size > BLEND_CACHE_MAX) blendCache.clear(); s = "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + a / 255 + ")"; blendCache.set(key, s); }
   return s;
 }
 // LOD (owner, 2026-10-12: "do some major perf work for 3d"): a die SMALLER than SOLID_LOD_PX on screen - most of a late
