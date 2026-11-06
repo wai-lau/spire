@@ -41,6 +41,7 @@ function drawArcRings(t, far, up, x, y, h) {
     up(x, y, () => { const mt = ctx.getTransform(); arcStroke(arcRing(g, g.R * 1.25, th, far, mt, x, y), css, css, ARC_RING_W[ct] * s, gl, 0.8 + 0.04 * ct); }, z);
   }
 }
+const ARC_SHOCK_W = 1.7; // the Shock arc's core, mockup units (x2 the first cut: it read as a faint flicker at 1x)
 function drawArcShock(t) { // in the frame of the prism's top; x, y the tower's centre
   const tier = skillOf(t, "capacitance"); if (!tier) return;
   const g = arcGeom(t), c = CELLS[t.cell], x = t.x ?? c.x, y = t.y ?? c.y, s = g.R / 40, lam = ARC_SHOCK_RATE[tier], now = performance.now() / 1000, id = t.cell + 1, col = COL[TOWERS.arc.color];
@@ -54,7 +55,8 @@ function drawArcShock(t) { // in the frame of the prism's top; x, y the tower's 
     path.moveTo(a[0], a[1]);
     for (let q = 1; q < 7; q++) { const f = q / 7, jg = (rj() - 0.5) * 2 * amp; path.lineTo(a[0] + dx * f + nx * jg, a[1] + dy * f + ny * jg); }
     path.lineTo(b[0], b[1]);
-    arcStroke(path, col, core, 0.85 * s, 3.2 * 0.85 * s, 0.95 * fa);
+    const px = (typeof devicePixelRatio === "number" ? devicePixelRatio : 1) / (Math.hypot(ctx.getTransform().a, ctx.getTransform().b) || 1), w = Math.max(ARC_SHOCK_W * s, px); // x2, and never under 1 css px (Leader, 2026-11-06: "make it read at default zoom")
+    arcStroke(path, col, core, w, 3.2 * w, 0.95 * fa);
     ctx.save(); ctx.fillStyle = core; ctx.globalAlpha = fa; ctx.beginPath();
     for (const e of [a, b]) { ctx.moveTo(e[0] + 1.45 * s, e[1]); ctx.arc(e[0], e[1], 1.45 * s, 0, arcTAU); }
     ctx.fill(); ctx.restore();
