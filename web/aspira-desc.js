@@ -79,8 +79,8 @@ const DESCRIBE = {
     return (many ? cap(NUM_WORD[n] || String(n)) + " interceptors wait in orbit round the carrier and launch at enemies in range, the longest-waiting taking the first target." : "An interceptor waits in orbit round the carrier and launches at an enemy in range.") + /* all at once (no launch rate since 2026-10-26): FIFO decides who takes which (Leader, 2026-11-04) */
       (many ? " Each" : " It") + " circles its enemy and fires " + vo + " volleys" + " once round it" /* one bolt a volley since 2026-11-05 (its damage the volley's) */ +
       (l ? (tn === 1 && many ? " (the first one out tethering its target)" : ", tethering its target") : "") +
-      ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage." : "flies home to reload what it used.") /* PARTIAL RELOAD (aspira-crr.js carHome) */ +
-      " It stays on its target until it dies or the ammo runs out." /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage." /* td = one bolt; no slow since 2026-11-04 */ +
+      ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage whenever it flies home, for any reason." : "flies home to reload what it used.") /* PARTIAL RELOAD (aspira-crr.js carHome) */ +
+      " It stays on its target until it dies or the ammo runs out." + (h >= CAPSTONE_TIER ? " If its target dies with ammo left it picks another near it, up to " + NUM_WORD[CRR_RETARGETS] + " times a sortie." : "") /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage." /* td = one bolt; no slow since 2026-11-04 */ +
       (l ? " Each tether slows its target " + pc(crrTetherSlow(l)) + " and adds " + pc(CRR_TETHER_AMP[l]) + " to the damage it takes, tethers stacking" + (l >= CRR_CHAIN_FROM ? "; tethers run on to one more enemy nearby" : "") + " (shields block the slow)." : "");
   },
   // GRV (rework, owner 2026-10-25): tier 0 a tiny void a shot; Nova one nova before it (three until 2026-11-06), harder by tier, stripping armor (Hypernova: the most);

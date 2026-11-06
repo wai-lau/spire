@@ -158,6 +158,11 @@ function drawCar(darts) {
     }
     for (const p of t.carPellets || []) { ctx.moveTo(p.x - p.vx * CRR_PELLET_TAIL, p.y - p.vy * CRR_PELLET_TAIL); ctx.lineTo(p.x, p.y); }
     ctx.stroke();
+    for (const p of t.carPops || []) { // Armament V's POP: a quick bright disc at the interceptor, swelling and fading (smooth glow)
+      const f = Math.max(0, p.left / CRR_POP_S), r = CRR_POP_R * (1.6 - 0.6 * f);
+      ctx.fillStyle = COL.ltblue; ctx.shadowColor = COL.ltblue; ctx.shadowBlur = 14; ctx.globalAlpha = 0.3 * f; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 6.283185307179586); ctx.fill();
+      ctx.globalAlpha = 0.9 * f; ctx.beginPath(); ctx.arc(p.x, p.y, r * 0.35, 0, 6.283185307179586); ctx.fill(); ctx.shadowBlur = 0;
+    }
   }
   ctx.globalAlpha = 1;
 }

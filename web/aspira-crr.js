@@ -59,6 +59,9 @@ const carR = i => CRR_ORBIT * (1 + CRR_ORBIT_JIT * Math.sin(i.jp || 0));
 const CRR_TURN_R = 50; // the tightest turn, in u: turn rate = speed / this (twice the circle's, so the circle can be held)
 const CRR_LEASH = 7.4; /* ~1180 at range 160 (as simmed 2026-10-16) */ /* the 960 chase at range 130 (owner, 2026-10-16: "Interceptor range should still be huge") */ /* 4: a 960 chase at range 240 (2026-10-16: 780, 960 and 1200 all leaked the same - the chase is not what binds) */ /* the same 780 chase at range 330 (2026-10-16) */ /* 3 at range 260: the same 780 chase now the range is 460 (2026-10-16) */ // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
 // enemies left reach mid-sortie and ATC, built against fast, leaked them worst - counter matrix 2026-10-15)
+// CAPSTONES (owner, 2026-11-06): Hangar V - an interceptor with ammo left whose target is lost picks a fresh enemy near it, up to CRR_RETARGETS times a sortie, within CRR_RETARGET_R u of it;
+// Armament V - it bursts into pellets on EVERY way home (ammo out, target lost with no retarget left), with a quick pop (CRR_POP_S s, CRR_POP_R u, drawn in aspira-crr-draw.js)
+let CRR_RETARGETS = 2, CRR_RETARGET_R = 300, CRR_POP_S = 0.18, CRR_POP_R = 26;
 const CRR_BURST_N = 10, CRR_BURST_K = 1.125 /* x3 with the bolt at a third (2026-10-29): the pellet keeps its damage; was 0.375 */ /* x td: /4 when a bolt became td (2026-10-26; was 1.5 of the old st.dmg) */, CRR_PELLET_V = 340, CRR_PELLET_REACH = 90, CRR_PELLET_HIT = 3; // Autopilot's pellets
 
 SKILL_TREES.crr = [
@@ -76,7 +79,7 @@ function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.targets = 1; s.dmg *= CRR_BOLT_K; // the STAT CURVE (tier redesign 2026-10-24; was CRR_SHOT_MUL x CRR_SIDE_DMG)
   s.bolts = 1; s.dmg *= CRR_BOLTS_BY[a]; s.tetherN = CRR_TETHER_N[l];
-  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V * CRR_SPEED_LVL ** Math.max(0, (t.lvl || 1) - 1); s.reload = CRR_RELOAD_S; s.tSlow = crrTetherSlow(l); s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
+  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V * CRR_SPEED_LVL ** Math.max(0, (t.lvl || 1) - 1); s.reload = CRR_RELOAD_S; s.tSlow = crrTetherSlow(l); s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.retargets = h >= CAPSTONE_TIER ? CRR_RETARGETS : 0; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -96,14 +99,15 @@ const carDist2 = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 // LAUNCHES only at what is IN RANGE (owner, 2026-10-16: "ATC should only launch when something comes into range, but the
 // interceptors themselves can keep the range"): the wing's first target is inside the tower's range; once out, an interceptor
 // hops on to anything within its reach (carHop, CRR_LEASH) - an in-range enemy already covered launches nothing more
-function carTarget(t, st) {
-  const sent = new Map(), cand = pickTargets(t, st, st.wing);
+function carTarget(t, st, from) { // from: an interceptor retargeting (Hangar V) - the pick is the nearest within CRR_RETARGET_R of IT, reachable from where it is
+  const sent = new Map(); let cand = pickTargets(t, st, st.wing);
+  if (from) cand = cand.filter(e => carDist2(e, from) < CRR_RETARGET_R * CRR_RETARGET_R).sort((a, b) => carDist2(a, from) - carDist2(b, from));
   if (!cand.length) return null;
   for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg * st.bolts); /* a bolt is td */ /* a volley is CRR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
   // NO LOST SORTIE: never an enemy that reaches the core before the interceptor could reach it (its lane left / its pace, vs the flight
   // from the carrier at st.speed) - CRR's core-first order sent wings at enemies already slamming in (a picked-never-shot leaker was
   // picked with 0.02 s to go; Leader's call, 2026-11-04)
-  const inTime = e => (PATHS[e.pi].len - e.s) / Math.max(1, effSpeed(e) * waveClock(e.n)) > Math.hypot(e.x - t.x, e.y - t.y) / Math.max(1, st.speed);
+  const inTime = e => (PATHS[e.pi].len - e.s) / Math.max(1, effSpeed(e) * waveClock(e.n)) > Math.hypot(e.x - (from || t).x, e.y - (from || t).y) / Math.max(1, st.speed);
   return cand.find(e => inTime(e) && e.hp + (e.shield || 0) * st.dmg > (sent.get(e.id) || 0)) || null;
 }
 // A WAIT CUT SHORT (owner, 2026-10-16: "if a wave is spawned from the previous wave being completely cleared, ATC should spawn
@@ -158,7 +162,7 @@ function stepIcp(i, t, st, dt) {
     const e = carTarget(t, st);
     if (!e) return;
     const fx = held ? i.x : t.x, fy = held ? i.y : t.y;
-    i.e = e; i.ammo = st.ammo; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; i.out = false; sfx("crr"); /* RELAYED: a relayed carrier's wing is RELAY_MUL x as many, all launching at once like any (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1"; the CRR_GAP launch slots are gone since 2026-10-26) */
+    i.e = e; i.rt = 0; i.ammo = st.ammo; i.state = "out"; i.cd = 0; i.orb = false; i.hold = false; i.ho = undefined; i.out = false; sfx("crr"); /* RELAYED: a relayed carrier's wing is RELAY_MUL x as many, all launching at once like any (owner, 2026-10-17: "orbital relay should also launch 3 interceptors at a time instead of just 1"; the CRR_GAP launch slots are gone since 2026-10-26) */
     i.v = st.speed; i.ang = held ? i.ang : Math.atan2(e.y - fy, e.x - fx); i.jp = Math.random() * 6.283; i.jw = CRR_JIT_W[0] + Math.random() * (CRR_JIT_W[1] - CRR_JIT_W[0]); // (held: out along its orbit, turning in)
     for (let k = 0; k < 4 && !held; k++) { const [ax, ay] = carAvoid(i, e.x - fx, e.y - fy, 1); i.ang = Math.atan2(ay, ax); } // leaves already bent round the core (a carrier by it has no room to turn)
     return;
@@ -169,7 +173,7 @@ function stepIcp(i, t, st, dt) {
     // kill to kill across reach it leaked 1% of swarms; one target a sortie, 85% - and 66% of fast, its own type)
     // HOME ON TWO CONDITIONS ONLY (owner, 2026-11-01: "Interceptor flies home only on one of two conditions: / Target is dead (or slammed
     // into core) / Or / Out of ammo"): no leash lets a target go; a dead target sends it home (CRR_HOP 0)
-    if (!i.e || i.e.dead) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carHome(i, t, st); return; } }
+    if (!i.e || i.e.dead) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e && i.ammo > 0 && (i.rt || 0) < st.retargets) { i.e = carTarget(t, st, i); if (i.e) i.rt = (i.rt || 0) + 1; } /* Hangar V: a fresh enemy near it, up to twice a sortie */ if (!i.e) { carReturn(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3) { carTurn(i, i.ang, dt); return; } /* FIRES ONLY IN ORBIT (owner, 2026-11-04: "interceptors should only start firing once they enter orbit"; CRR_FIRE_R 340 let it fire on the way, gone) */
@@ -186,8 +190,7 @@ function stepIcp(i, t, st, dt) {
     }
     if (st.tSlow > 0 && carTethered(t, i, st)) carTether(i, t, st, dt); else i.tc = null; // the TETHER, once it has fired at its target
     if (i.ammo <= 0) {
-      if (st.autopilot) { carBurst(i, t, st); i.state = "home"; i.reload = st.reload; i.x = t.x; i.y = t.y; i.e = null; return; } // rebuilt at home
-      carHome(i, t, st);
+      carReturn(i, t, st);
     }
     return;
   }
@@ -348,16 +351,26 @@ function carHop(i, t, st) { // (i: where the last target was - the interceptor i
   return best || any;
 }
 // PARTIAL RELOAD (owner, 2026-11-01, picked "1" of the interceptor reworks): a return reloads only the share of the magazine it used
+// EVERY way home (ammo out, target lost with no retarget left): Armament V bursts into pellets there and is rebuilt at home (the reload the share of the magazine it used, a dry one the whole), else it flies home
+function carReturn(i, t, st) {
+  if (!st.autopilot) { carHome(i, t, st); return; }
+  const used = Math.max(0, Math.min(1, 1 - Math.max(0, i.ammo) / Math.max(1, st.ammo)));
+  carBurst(i, t, st); i.state = "home"; i.reload = st.reload * used; i.used = 1; i.x = t.x; i.y = t.y; i.e = null; i.orb = false;
+}
 function carHome(i, t, st) { i.used = Math.max(0, Math.min(1, 1 - Math.max(0, i.ammo) / Math.max(1, st.ammo))); i.state = "back"; i.e = null; i.orb = false; i.v = Math.max(i.v || 0, CRR_ORBIT_V); }
 
 // AUTOPILOT: out of ammo, the interceptor bursts into pellets - projectiles that hit the first enemy they touch, or miss
 function carBurst(i, t, st) {
+  (t.carPops ||= []).push({ x: i.x, y: i.y, left: CRR_POP_S }); // the pop (drawn)
+  // DETERMINISTIC (was Math.random, 2026-11-06): evenly spaced, the ring turned by a hash of the interceptor's place in the wing and its burst count
+  const h = (Math.imul(t.icp.indexOf(i) + 1, 2654435761) ^ Math.imul((i.bn = (i.bn || 0) + 1), 40503)) >>> 0, a0 = (h % 6283) / 1000;
   for (let k = 0; k < CRR_BURST_N; k++) {
-    const a = Math.random() * 6.283;
+    const a = a0 + k * 6.283185307179586 / CRR_BURST_N;
     (t.carPellets ||= []).push({ x: i.x, y: i.y, vx: Math.cos(a) * CRR_PELLET_V, vy: Math.sin(a) * CRR_PELLET_V, left: CRR_PELLET_REACH / CRR_PELLET_V, dmg: st.dmg * CRR_BURST_K });
   }
 }
 function stepCarPellets(t, dt) {
+  if (t.carPops && t.carPops.length) { for (const p of t.carPops) p.left -= dt; keepLive(t.carPops); }
   if (!t.carPellets || !t.carPellets.length) return;
   const g = projGrid();
   for (const p of t.carPellets) {

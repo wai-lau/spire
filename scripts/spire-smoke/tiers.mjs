@@ -163,6 +163,25 @@ check("CRR: tier 0 ten interceptors, all held in orbit when ready (owner, 2026-1
   if (n[0] !== 1) return "Tether I: " + n[0] + " interceptors tethered at once (expected 1 - " + n[1] + " tether steps in all)"; // at most ONE at a time; which one rides it moves (carTethered, 2026-10-25)
 });
 
+check("CRR Hangar V retargets: an interceptor whose target dies with ammo left picks a fresh enemy, at most CRR_RETARGETS (2) times a sortie, then goes home; below Hangar V it goes home at once (owner, 2026-11-06: \"Hangar V, retargets up to 2 times\")", () => {
+  const go = hangar => run(`(() => { const { t, es, st } = tierLane("crr", { hangar: ${hangar} }, [90, 110, 130, 150]); G.started = true; G.nextIn = 1e9; G.spawns = []; step(1 / 60);
+    const i = t.icp[0], seq = []; i.state = "out"; i.e = es[0]; i.ammo = 99; i.rt = 0; i.hold = false; i.x = es[0].x; i.y = es[0].y; i.orb = true;
+    for (let k = 0; k < 400 && i.state === "out"; k++) { if (i.e && !i.e.dead) { if (!seq.includes(i.e)) seq.push(i.e); i.e.dead = true; } stepIcp(i, t, towerStats(t), 1 / 60); }
+    return { targets: seq.length, rt: i.rt, state: i.state, retargets: towerStats(t).retargets }; })()`);
+  const v = go(5), iv = go(4);
+  if (v.retargets !== 2 || v.targets !== 3 || v.rt !== 2 || v.state === "out") return "Hangar V " + JSON.stringify(v) + " (expected 3 targets in a sortie, 2 retargets, then home)";
+  if (iv.retargets !== 0 || iv.targets !== 1 || iv.state === "out") return "Hangar IV " + JSON.stringify(iv) + " (expected no retarget: one target, then home)";
+});
+check("CRR Armament V bursts on EVERY way home: a forced return with ammo left throws CRR_BURST_N pellets, deterministically; below V none (owner, 2026-11-06: \"Arms, explodes into pellets if about to return to base for any reason\")", () => {
+  const go = armament => run(`(() => { const { t, es } = tierLane("crr", { armament: ${armament} }, [90]); G.started = true; G.nextIn = 1e9; G.spawns = []; step(1 / 60);
+    const i = t.icp[0]; i.state = "out"; i.e = es[0]; i.ammo = 3; i.hold = false; i.x = es[0].x; i.y = es[0].y; i.orb = true; t.carPellets = []; es[0].dead = true;
+    stepIcp(i, t, towerStats(t), 1 / 60); return { n: (t.carPellets || []).length, a: (t.carPellets || []).map(p => Math.round(Math.atan2(p.vy, p.vx) * 1e4)), state: i.state, pops: (t.carPops || []).length }; })()`);
+  const v = go(5), v2 = go(5), iv = go(4);
+  if (v.n !== 10 || v.state !== "home" || v.pops !== 1) return "Armament V " + JSON.stringify(v) + " (expected 10 pellets, a pop, rebuilt at home)";
+  if (JSON.stringify(v.a) !== JSON.stringify(v2.a)) return "the pellet angles differ between two identical runs (Math.random crept back)";
+  if (iv.n !== 0 || iv.state !== "back") return "Armament IV " + JSON.stringify(iv) + " (expected no pellets, flying home)";
+});
+
 // ---------- FRZ ----------
 towerTierChecks("frz", ["hurts", "pulse", "moon", "more damage"]);
 check("FRZ: tier 0 slows and nips, flat (owner 2026-10-25); Fracture I hurts, more the slower; Permafrost I pulses frost and crack no armor (owner, 2026-10-29); Moons I one moon (tier redesign 2026-10-24)", () => {
