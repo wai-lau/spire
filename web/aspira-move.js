@@ -19,7 +19,7 @@ const MOVE_EDGE = 12; // world units kept clear of the screen's edge
 const leashR = t => MOVE_BASE[t.kind] * Math.min(towerStats(t, true).slide, SLIDE_MAX);
 const slideSpan = t => Math.round(leashR(t)); // the card's Leash row
 const towerAt = p => G.towers.find(t => Math.hypot(p.x - t.x, p.y - t.y) <= CELL_S);
-// two towers' centres stay TOWER_GAP apart (a hex each plus a sliver), and the core
+// two towers' centres stay towerGap() apart (a hex each plus a sliver), and the core
 // blocks a tower only where their outlines would meet (owner, 2026-10-12: "right now
 // there's an air gap"; was a SLOT_R circle): two pointy hexes of one orientation touch
 // when the offset lies on a hex of their summed radii, coreKeep(a) out along angle a

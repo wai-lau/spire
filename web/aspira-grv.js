@@ -34,8 +34,8 @@ const GRV_LIFE = 2; /* x2.5 */ // s: an unfed BASE sphere's life (one bare hit's
 const GRV_R_MAX = 9; /* x3 (owner, 2026-10-16: "triple black hole visual max size"; was 3) */ //  // a hole's radius at most, in base auras (its MASS may go on: radiation, strip and slow scale by it)
 const GRV_EVAP = 2 / GRV_LIFE, GRV_RAD_LIFE = 1.6; /* x0.32 of the linear sphere's pace (countermx 61-69 spread: 5 0/0/0/0, 2 1/10/7/2, 1.25 2/19/8/20; 4.6.15 was 2/27/13/7) */ // RAD_LIFE: the pellets a unit of mass gives off stay the linear 5 s sphere's (radiation is not the life)
 const GRV_MASS_MAX = 3, GRV_GAIN = 0.12; // mass gained per one tower-hit of damage dealt (nova, aura, pellets)
-// the slow in TWO RINGS (owner, 2026-10-15: "two tiers, much bigger slow close to the center"): the CORE (inner GRV_CORE_FRAC of
-// the radius - the hot bands) slows GRV_CORE_MUL x the outer ring; each capped
+// the slow in TWO RINGS (owner, 2026-10-15: "two tiers, much bigger slow close to the center"): the CORE (the black core's own size, grvCoreR -
+// the hot bands) slows GRV_CORE_MUL x the outer ring; each capped
 const GRV_SLOW_MAX = Infinity /* no cap of its own (owner, 2026-10-24 marks target: "remove that cap"; was 0.45) - SLOW_CAP still keeps 20% of the speed */, GRV_CORE_MUL = 2, GRV_CORE_MAX = Infinity; /* the aura in TWO TIERS always (owner, 2026-10-25: "1 outside void and 1 inside, inside should do 2x outer slow"; was x2.5 to 0.8, and Event Horizon a 90% hold) */ // Void VI (Event Horizon): a full-grown core
 // the aura's SIZE comes from the NOVA's damage (owner, 2026-10-15: "make the max aura size depend on supernova damage"): x the
 // square root of what the nova really dealt, in tower hits (one enemy taking a bare nova = x1), between these (a nova the
