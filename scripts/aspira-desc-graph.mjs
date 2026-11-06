@@ -56,7 +56,7 @@ const MECH = {
   ifr: {
     meteor: k => { const s = ST("ifr", "meteor", k); return `1 meteor + a burst of ${s.fan}, ${s.store} stored in orbit, charge ${+s.chargeS.toFixed(2)}s`; },
     hellfire: k => { const s = ST("ifr", "hellfire", k); return s.fire ? `a fire, radius ${x(s.fireR)}, growth ${x(s.fireV)}` : "no fire"; },
-    firaga: k => { const s = ST("ifr", "firaga", k); return s.flares ? `flares ${x(s.beamL)} long, ${x(s.beamW)} wide, burning ${x(s.burnS)}s at a tick every ${s.tickS}s${s.triple ? `, ${V("IFR_CAP_FLARES")} at the impact` : ""}` : "no flares"; },
+    firaga: k => { const s = ST("ifr", "firaga", k); return s.flares ? `flares ${x(s.beamL)} long, ${x(s.beamW)} wide, burning ${x(s.burnS)}s at a tick every ${s.tickS}s${s.triple ? `, one at the impact with a circle ${V("IFR_RING_AT")} of the way up its spokes` : ""}` : "no flares"; },
   },
 };
 // the words that change from a to b, b's changed words marked *so* (the card's wordDiff, in text)

@@ -67,6 +67,8 @@ function drawIfrFires(t, low) {
   }
 }
 const IFR_FADE_IN_U = 8; // a burst meteor is full within 8 u of flight (owner, 2026-10-26: "IFR should fade in faster"; was 25)
+const IFR_BIG_DRAW_K = 2; // Meteor V: a big meteor (b.big, aspira-ifrit.js) is drawn this x - its tracer too; the hitbox is unchanged
+const IFR_CHAIN_I = 3, IFR_CHAIN_LINK = 1.1, IFR_CHAIN_GLOW_A = 0.8, IFR_RING_SEGS = 28; // Hellfire V's chains: glow intensity (as a flare's, IFR_FLARE_I0), the chain links' size (x ARC's) and alpha; Flare V's circle: drawn as this many glow segments
 const IFR_SHARD_DRAW = 1 / 3; // (IFR_TRACER_U: aspira-ifrit.js - the sim loads no draw file)
 // THE LAUNCHED METEOR'S TRACER, like an enemy's (owner, 2026-10-26: "meteor tracer should depend on movement and fade out like enemies"):
 // the path it FLEW (b.trail, the last IFR_TRACER_U of it - stepIfrBalls), not a line along its heading, as one tapered shape fading
@@ -88,15 +90,16 @@ function drawMeteorTrail(b, dk = 1) {
 function drawIfrBalls(t, low) {
   const dk = ifrDrawK(t);
   for (const b of t.ifrBalls) if (!(b.wait > 0)) {
-    if (!b.gen) drawMeteorTrail(b, dk);
-    drawIfrMeteor(b.x, b.y, (b.gen ? b.r * IFR_SHARD_DRAW : b.r) * dk, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
+    const bk = b.big ? IFR_BIG_DRAW_K : 1; /* Meteor V's big one */
+    if (!b.gen) drawMeteorTrail(b, dk * bk);
+    drawIfrMeteor(b.x, b.y, (b.gen ? b.r * IFR_SHARD_DRAW : b.r) * dk * bk, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
   } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)
 const IFR_FLARE_I0 = 3, IFR_FLARE_I_MAX = 6;
 const IFR_FLARE_MAIN_K = 3 /* 2 -> 3 (owner, 2026-10-20: "make the non-hellfire stars brighter") */; // a METEOR's flare (not the fire's) x this - "make non-hellfire flares more opaque and intense" (owner, 2026-10-20)
-function ifrFlareI(f) { if (f.hitI != null) return f.hitI; return (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
+function ifrFlareI(f) { if (f.hitI != null) return f.hitI; if (f.chain) return IFR_CHAIN_I; return (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"; 2026-11-04: "replace
 // all stepped opacity flares to use a faded glow instead"): each spoke is three glow layers - a halo, a mid and a narrow core, each brightest on
 // its centre line, clear at the hit band's edge and fading as (1 - t)^3 to the tip. 3D: GLOW LINES on the GPU (shape 7, aspira-fxgl.js); 2D:
@@ -117,10 +120,38 @@ function ifrFlick(c, now) { // [brightness x, size x]
   const ph = Math.sin(c.x * 12.9898 + c.y * 78.233) * 43758.5453, h = (ph - Math.floor(ph)) * 6.283, w = 6.283 * now;
   return [1 + IFR_FLICK_B * (0.65 * Math.sin(w * IFR_FLICK_HZ[0] + h) + 0.35 * Math.sin(w * IFR_FLICK_HZ[1] + 2.7 * h)), 1 + IFR_FLICK_S * Math.sin(w * IFR_FLICK_HZ[2] + 1.9 * h)];
 }
+// A FLAT glow line (no fade along it: t0 = t1 = 0): each IFR_GLOW_GL layer across, smooth (shape 7)
+function ifrGlowFlat(x0, y0, x1, y1, c, f, low) {
+  const s = trimToTowers(x0, y0, x1, y1); if (!s) return;
+  for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), 0, 0, q[3]); }
+}
+// FLARE V's CIRCLE (3D): the ring at c.circ as IFR_RING_SEGS glow segments, in the flare's own glow
+function ifrRingGl(c, f, low) {
+  for (let k = 0; k < IFR_RING_SEGS; k++) { const a0 = 2 * Math.PI * k / IFR_RING_SEGS, a1 = 2 * Math.PI * (k + 1) / IFR_RING_SEGS; ifrGlowFlat(c.x + Math.cos(a0) * c.circ, c.y + Math.sin(a0) * c.circ, c.x + Math.cos(a1) * c.circ, c.y + Math.sin(a1) * c.circ, c, f, low); }
+}
+// HELLFIRE V's CHAIN: a glow along its segment, the chain's links on it (aspira-chains.js; 3D one GPU capsule a link, 2D drawChain2D)
+function ifrChainDraw(c, f, low) {
+  const [x0, y0, x1, y1] = c.seg, gl3 = !!(ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlGlowLine === "function");
+  if (gl3) { ifrGlowFlat(x0, y0, x1, y1, c, f, low); fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: "orange", thin: IFR_CHAIN_LINK }, Math.min(1, IFR_CHAIN_GLOW_A * f)); return; }
+  ctx.save(); const a = Math.min(1, IFR_CHAIN_GLOW_A * f), m = ctx.getTransform(), k = Math.hypot(m.a, m.b);
+  ctx.lineCap = "round"; ctx.strokeStyle = COL.threat; ctx.shadowColor = COL.threat; ctx.shadowBlur = c.W * k * 0.7; ctx.globalAlpha = a * 0.6; ctx.lineWidth = c.W * 0.5;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.shadowBlur = 0; ctx.globalAlpha = a;
+  if (typeof drawChain2D === "function") drawChain2D(x0, y0, x1, y1, (x, y) => ({ x, y }), 1, COL.orange, IFR_CHAIN_LINK);
+  ctx.restore();
+}
+// FLARE V's CIRCLE (2D): a ring with a blurred glow (shadowBlur - a smooth halo, not bands) round a bright thin core
+function ifrRing2D(c, f) {
+  const a = Math.min(1, IFR_GLOW_A * ifrFlareI(c) * f * 4), m = ctx.getTransform(), k = Math.hypot(m.a, m.b);
+  ctx.save(); ctx.lineCap = "butt";
+  ctx.strokeStyle = COL.orange; ctx.shadowColor = COL.threat; ctx.shadowBlur = c.W * k * 0.8; ctx.globalAlpha = a; ctx.lineWidth = c.W * 0.3;
+  ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); ctx.stroke(); ctx.restore();
+}
 function drawIfrFlaresGl(t, low, hf) {
   for (const c of t.ifrFlares) {
-    if (!c.hf !== !hf) continue;
+    if (!(c.hf || c.chain) !== !hf) continue; /* Hellfire V's chains are drawn with the fire */
     const [fb, fs] = ifrFlick(c, performance.now() / 1000), f = Math.max(0, c.left / c.life) * fb;
+    if (c.chain) { ifrChainDraw(c, f, low); continue; }
+    if (c.circ) ifrRingGl(c, f, low);
     for (const [x0, y0, xe, ye] of ifrBeamEnds(c)) {
       const x1 = x0 + (xe - x0) * fs, y1 = y0 + (ye - y0) * fs, s = trimToTowers(x0, y0, x1, y1); if (!s) continue; /* (the ray x its size flicker - the look only) */
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
@@ -134,7 +165,7 @@ function drawIfrFlaresGl(t, low, hf) {
 // cores", then "this red should be the outer color, and the orange the inner color") - and a METEOR's burn WHITE-hot at the core, yellow round
 // it ("make non-hellfire flares more white" - the one place IFR draws white since "no white", 2026-10-20)
 const IFR_HF_COL = { glow: "threat", tifr: "threat", orange: "threat", yellow: "orange" } /* RED through the core, only the thinnest line orange (owner, 2026-10-21: "make sure it's red") */, IFR_MAIN_COL = { yellow: "white", orange: "orange", glow: "threat" }; /* LIKE FIRE (owner, 2026-11-05: "flares should glow like fire"): white-hot core, orange round it, an ember-red halo at the edge (was white / yellow / the orange glow) */
-const ifrFlareCol = (key, f) => COL[(f.hf ? IFR_HF_COL[key] : IFR_MAIN_COL[key]) || key];
+const ifrFlareCol = (key, f) => COL[((f.hf || f.chain) ? IFR_HF_COL[key] : IFR_MAIN_COL[key]) || key];
 // a FIRE flare's layers: its outer glow IFR_HF_GLOW_K as strong, the rest IFR_HF_OPAQ x (owner, 2026-10-21: "reduce the amount of glow on the
 // hellfire stars but increase the opacity") - the look only: sizes stay (owner-locked, 2026-10-20)
 // then (same day) "much less glow, double core opacity": the glow 0.4 -> 0.1, the core (orange and yellow) 1.6 -> 3.2; the mid layer 1.6
@@ -161,8 +192,10 @@ function drawIfrFlares(t, hf) { // hf: the fire's flares only, else the meteors'
   if (typeof fxGlGlowLine === "function" && fxGl.on && ctx.real && ctx.real.__glc === ctx) { drawIfrFlaresGl(t, low, hf); return; } /* ctx IS the stand-in (glCtx) */
   ctx.lineCap = "butt";
   for (const c of t.ifrFlares) {
-    if (!c.hf !== !hf) continue;
+    if (!(c.hf || c.chain) !== !hf) continue;
     const f = Math.max(0, c.left / c.life) * ifrFlick(c, performance.now() / 1000)[0]; // (2D: the brightness flicker only - a stamp's fade step, no new strokes)
+    if (c.chain) { ifrChainDraw(c, f, low); continue; }
+    if (c.circ) ifrRing2D(c, f);
     if (IFR_STAMP_ON && !c.edges && ifrSpriteDraw(c, f, low)) continue; // one stamp, not ~18 strokes (perf, below)
     ifrFlareStrokes(c, f, low);
   }

@@ -175,6 +175,56 @@ check("IFR: the meteor leads a moving target - it lands on it; the flare glow is
   if (Math.abs(r.chargeS - r.chargeWant) > 1e-9 || Math.abs(r.dmg - r.dmgWant) > 1e-9) return "untaken: charge " + r.chargeS + " s, dmg " + r.dmg + " (expected 1.4 s - 2026-10-21 - over the curve's level 0 rate, " + r.chargeWant + ", and its dmg, " + r.dmgWant + " - tier redesign 2026-10-24)";
   return "";
 });
+// THE THREE CAPSTONES (owner, 2026-11-06; aspira-ifrit.js IFR_BIG_*, IFR_CHAIN*, IFR_RING_AT)
+const capFresh = `const fresh = (ax, k) => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let i = 0; i < k; i++) upgradeTower(t, ax, true); ifrAll(t, ax === "meteor" ? ["hellfire", "firaga"] : ax === "hellfire" ? ["meteor", "firaga"] : ["meteor", "hellfire"]); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
+    const still = (type, x, y) => { const e = ifrNear(type, G.towers[0], 300); e.x = x; e.y = y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e9; e.armor = e.armor0 = 0; e.shield = e.shieldMax = 0; egridAt = NaN; return e; };`;
+check("IFR Meteor V: every third CHARGED meteor is big and its first hit does 4x (the other two 1x); no big one below V", () => {
+  const r = run(`(() => { ${capFresh}
+    const rig = k => { const t = fresh("meteor", k), st = towerStats(t), bigs = [], hits = [];
+      for (let i = 0; i < 6; i++) { t.ifrBalls.length = 0; t.ifrFires.length = 0; t.ifrFlares.length = 0; const e = still("armor", t.x + 100, t.y - 40);
+        t.ifrCharge = 1; t.ifrGap = 0; ifrLaunch(t, st); bigs.push(!!t.ifrBalls[0].big); let n = 0; while (!t.ifrFires.length && n++ < 600) stepIfrBalls(t, st, 1 / 60); hits.push(e.max - e.hp); e.dead = true; }
+      return { bigs, hits, unit: st.dmg * st.routeK }; };
+    return { v: rig(6), iv: rig(4), every: IFR_BIG_EVERY, k: IFR_BIG_HIT_K }; })()`);
+  if (r.v.bigs.join() !== "false,false,true,false,false,true") return "big pattern at V " + r.v.bigs + " (expected every " + r.every + "rd)";
+  if (r.iv.bigs.some(b => b)) return "a big meteor below V: " + r.iv.bigs;
+  for (let i = 0; i < 6; i++) { const q = r.v.hits[i] / r.v.unit, want = r.v.bigs[i] ? r.k : 1; if (Math.abs(q - want) > 0.01) return "launch " + i + " hit x" + q.toFixed(3) + " (expected x" + want + ")"; }
+  return "";
+});
+check("IFR Hellfire V: a fire strikes IFR_CHAINS_N seeded chains between two points of its circle (chord >= the circle's radius) that burn what they touch; IV's flare count held; none below V", () => {
+  const r = run(`(() => { ${capFresh}
+    const go = k => { const t = fresh("hellfire", k), st = towerStats(t); ifrImpact(t, st, { ax: CX + 40, ay: CY + 40, r: st.ballR, flown: 7 }); const f = t.ifrFires[0], chains = [];
+      for (let i = 0; i < 360; i++) { const was = t.ifrFlares.filter(c => c.chain).length; stepIfrFires(t, st, 1 / 60); stepIfrFlares(t, st, 1 / 60); for (const c of t.ifrFlares.filter(c => c.chain).slice(was)) chains.push({ seg: c.seg.slice(), r: f.r, cx: f.x, cy: f.y, c }); }
+      return { chains, st, f, t }; };
+    const a = go(6), b = go(6), iv = go(4), o = {};
+    o.n = a.chains.length; o.ivN = iv.chains.length; o.same = JSON.stringify(a.chains.map(c => c.seg)) === JSON.stringify(b.chains.map(c => c.seg));
+    const rad = (c, i) => Math.hypot(c.seg[i] - c.cx, c.seg[i + 1] - c.cy); /* the circle's radius when it struck: both ends are on it */
+    o.chord = a.chains.map(c => Math.hypot(c.seg[2] - c.seg[0], c.seg[3] - c.seg[1]) - rad(c, 0)); o.onCircle = a.chains.map(c => Math.abs(rad(c, 0) - rad(c, 2)));
+    const c0 = a.chains[0].c; const near = still("swarm", c0.x, c0.y), far = still("swarm", c0.x + 900, c0.y); const t = a.t; c0.left = c0.life; ifrTickFlare(t, a.st, c0); o.near = near.max - near.hp; o.far = far.max - far.hp;
+    o.dV = a.st.fireDens; o.dIV = iv.st.fireDens;
+    return o; })()`);
+  if (r.n !== 3) return "Hellfire V struck " + r.n + " chains (expected IFR_CHAINS_N 3)";
+  if (r.ivN) return "Hellfire IV struck " + r.ivN + " chains";
+  if (!r.same) return "the chains' points are not the same on a replay (a seeded draw)";
+  if (r.chord.some(d => d < -1e-6)) return "a chain shorter than the circle's radius: " + r.chord;
+  if (r.onCircle.some(d => d > 1e-6)) return "a chain end off the circle: " + r.onCircle;
+  if (!(r.near > 0) || r.far) return "a chain burns what touches it (" + r.near + ") and nothing else (" + r.far + ")";
+  if (r.dV !== r.dIV) return "Hellfire V's flare density " + r.dV + ", IV's " + r.dIV + " (expected the same: chains instead of more flares, owner 2026-11-06)";
+  return "";
+});
+check("IFR Flare V: ONE flare a landing and a flare-styled circle IFR_RING_AT of the way up its spokes that burns what it touches", () => {
+  const r = run(`(() => { ${capFresh}
+    const land = k => { const t = fresh("firaga", k), st = towerStats(t); t.ifrFlares.length = 0; ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); return { t, st, fl: t.ifrFlares.filter(f => !f.hf) }; };
+    const v = land(6), iv = land(4), o = { n: v.fl.length, ivN: iv.fl.length, ivRing: !!iv.fl[0].circ };
+    const f = v.fl[0]; o.ratio = f.circ / f.L; f.L = 150; f.W = 16; f.circ = f.L * IFR_RING_AT; /* (a fixed size: the landing flare's is a seeded draw) */ const ang = Math.PI / 8; /* between a + spoke and an x one */
+    const on = still("swarm", f.x + Math.cos(ang) * f.circ, f.y + Math.sin(ang) * f.circ), out = still("swarm", f.x + Math.cos(ang) * f.circ * 1.7, f.y + Math.sin(ang) * f.circ * 1.7);
+    ifrTickFlare(v.t, v.st, f); o.on = on.max - on.hp; o.out = out.max - out.hp; on.hp = on.max; const c = f.circ; delete f.circ; ifrTickFlare(v.t, v.st, f); o.noRing = on.max - on.hp; f.circ = c;
+    return o; })()`);
+  if (r.n !== 1) return "Flare V lit " + r.n + " flares a landing (expected one)";
+  if (r.ivN !== 1 || r.ivRing) return "below V: " + r.ivN + " flares, ring " + r.ivRing;
+  if (Math.abs(r.ratio - 0.6) > 1e-9) return "the circle sits at " + r.ratio + " of the spokes (expected 0.6)";
+  if (!(r.on > 0) || r.out || r.noRing) return "the circle burns what it touches (" + r.on + "), not what is outside (" + r.out + "); off-spoke without it " + r.noRing;
+  return "";
+});
 check("IFR: the fire (Hellfire, its circle drawn at 16%, then 8%, its glow twice as wide) opens at the meteor's size, its ring hits each enemy once, grows to its max, lights its flares and goes when they are out", () => {
   const r = run(`(() => {
     const fresh = h => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let k = 0; k < h; k++) upgradeTower(t, "hellfire", true); ifrAll(t); ifrInit(t); return t; };
@@ -219,7 +269,7 @@ check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () 
   if (r.fires !== 40) return "40 impacts left " + r.fires + " live fires (owner, 2026-10-20: \"dont cap fire stacks\")";
   return "";
 });
-check("IFR flares: one where each meteor lands, the first too (two within 10 u at the Flare capstone); a fire lights its flares on a bell round its first second, inside it, near the centre more often, more of them in a wider fire", () => {
+check("IFR flares: one where the main meteor lands; a fire lights its flares on a bell round its first second, inside it, near the centre more often, more of them in a wider fire", () => {
   const r = run(`(() => {
     const fresh = (ax, k, need) => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let i = 0; i < k; i++) upgradeTower(t, ax, true); ifrAll(t, need); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
@@ -229,12 +279,12 @@ check("IFR flares: one where each meteor lands, the first too (two within 10 u a
     t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 0, skip: null, left: 10, wait: 0 });
     for (let i = 0; i < 60 && !t.ifrFires.length; i++) stepIfrBalls(t, st, 1 / 60);
     out.firstFlares = t.ifrFlares.filter(f => !f.hf).length; a.dead = true;
-    /* a fan meteor's landing: one flare there; at the Flare capstone three, within IFR_TRIPLE_JIT */
+    /* a fan meteor's landing: no flare (only the main meteor's) */
     const land = (t, st) => { t.ifrFlares.length = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0; const v = held(t, t.x + 65, t.y); egridAt = NaN; /* past IFR_ARM_HIT_U (50), inside the shortest fuse (75) - halved 2026-11-05; was 150 */
       t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
       for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); v.dead = true;
       const lf = t.ifrFlares.filter(f => !f.hf); return { n: lf.length, fires: t.ifrFires.length, jit: Math.max(...lf.map(f => Math.hypot(f.x - v.x, f.y - v.y))) }; };
-    out.land0 = land(t, st); t = fresh("firaga", 6); st = towerStats(t); out.land6 = land(t, st); out.jmax = IFR_TRIPLE_JIT;
+    out.land0 = land(t, st); t = fresh("firaga", 6); st = towerStats(t); out.land6 = land(t, st);
     /* the fire's flares, at Hellfire 0 and 6 */
     const fire = h => { const t = fresh("hellfire", h, ["hellfire"]), st = towerStats(t); st.fan = IFR_FAN_REF; /* the fire alone, at the fan share this check was written for (the old untaken fan of 6: tier 0 has none since the tier redesign) */ ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); t.ifrFlares.length = 0; const f = t.ifrFires[0];
       const lit = [], of = ifrFlare; let tm = 0; ifrFlare = function (t2, st2, x, y, sz, big, hf) { if (hf) lit.push({ x, y, t: tm }); return of.apply(this, arguments); };
@@ -277,7 +327,7 @@ check("IFR flares: one where each meteor lands, the first too (two within 10 u a
   if (!(r.hfK > 1 && r.hfK < 1.3)) return "Flare IV raises the fire's flares x" + r.hfK + " (expected slightly - owner 2026-10-20)";
   if (!(r.iMain > r.iHf)) return "a meteor's flare (" + r.iMain + ") is not brighter than a fire's (" + r.iHf + ") at the same hit (owner, 2026-10-20: more opaque and intense)";
   const dens3 = r.f3.n / r.f3.R ** 2, dens6 = r.f6.n / r.f6.R ** 2;
-  if (Math.abs(dens6 / dens3 / (r.f6.dens / r.f3.dens) - 1) > 0.15 || !(r.f6.dens > r.f3.dens)) return "flare density: " + r.f3.n + " in r" + r.f3.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected " + (r.f6.dens / r.f3.dens).toFixed(2) + "x denser - owner 2026-10-20: denser as Hellfire levels)";
+  if (Math.abs(dens6 / dens3 / (r.f6.dens / r.f3.dens) - 1) > 0.15 || !(r.f6.dens >= r.f3.dens)) return "flare density: " + r.f3.n + " in r" + r.f3.R + " vs " + r.f6.n + " in r" + r.f6.R + " (expected " + (r.f6.dens / r.f3.dens).toFixed(2) + "x denser - owner 2026-10-20: denser as Hellfire levels)";
   return "";
 });
 check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the outline, flares brighten with their hit", () => {
