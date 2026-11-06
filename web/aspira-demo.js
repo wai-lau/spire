@@ -10,7 +10,7 @@
 const DEMO_LANE_END = 40; // u short of a lane's end where a walker turns back to the right edge (the lane runs 60 u past the box's edges: out of sight)
 const DEMO_HP_K = 50; // a walker's health x its wave-30 HP - rarely killed (a killing hit strips no armor), still finite for CRR's carTarget; // a dummy back to full health under this share (a kill in the private game is revived the same frame); its own wave-30 HP, so a
 // tower that commits shots by HP (CRR's carTarget) spreads them as in a game
-const DEMO_DT = 1 / 60, DEMO_VOL = 0.35; // VOL: the scene's sounds x this
+const DEMO_DT = 1 / 60, DEMO_STEP = 0.02, DEMO_VOL = 0.35; // DT: a bare demoFrame's real seconds; STEP: the longest one step (the game's, aspira-ui.js frame); // VOL: the scene's sounds x this
 // the real game's state, kept while the scene runs (one scene at a time)
 let demoHeld = null;
 function demoIn(S) {
@@ -65,10 +65,14 @@ function demoWalker(S, type, lane, at) {
 // one scene frame: the real step and the effects' and numbers' ageing; tallies kept; a walker out at the left back at the right, whole; a
 // killed one replaced at the right; then `draw` (pluggable) onto `c2d` under the scene's camera `view` ({ k, ox, oy, p }) - the real ctx,
 // cam and 3D camera come back after
-function demoFrame(S, c2d, view, draw) {
+// THE SCENE'S CLOCK (Wai, 2026-11-06: "why does GRV nova so often"): `rdt` real seconds pass as rdt x `gk` game seconds, in steps of at most
+// DEMO_STEP like the game's own loop - the card passes the frame's real time and BASE_SPEED (demoTick), so the scene runs at 1x play on any
+// refresh rate (one DEMO_DT a drawn frame was 1.25x on 60 Hz, 2.5x on 120 Hz); the smoke's bare calls keep one DEMO_DT a call
+function demoFrame(S, c2d, view, draw, rdt = DEMO_DT, gk = 1) {
   demoRun(S, () => {
     const before = G.enemies.filter(e => e.demo && !e.dead).map(e => [e, e.hp]);
-    step(DEMO_DT); coins.length = 0; G.money = 0; /* NO CREDITS (Leader, 2026-11-03): a kill's coins and their "+Nc" pop would mislead - none change hands */ stepFx(DEMO_DT); stepFloats(DEMO_DT); S.t += DEMO_DT; // (the effects and the numbers AGE in the frame loop, not in step: without these two they never left the scene - owner, 2026-11-03: "carrier demo bug, numbers stuck")
+    for (let left = rdt * gk; left > 1e-9;) { const h = Math.min(DEMO_STEP, left); step(h); stepFx(h); S.t += h; left -= h; }
+    coins.length = 0; G.money = 0; /* NO CREDITS (Leader, 2026-11-03): a kill's coins and their "+Nc" pop would mislead - none change hands */ stepFloats(rdt); // (the effects and the numbers AGE outside step, as in the frame loop - the numbers in REAL time: without stepFx and stepFloats they never left the scene - owner, 2026-11-03: "carrier demo bug, numbers stuck")
     for (const [e, hp] of before) {
       const h = e.demo, T = e.tally;
       T.dmg += Math.max(0, hp - Math.max(0, e.hp)); T.armor = Math.min(T.armor, e.armor || 0); T.shield = Math.min(T.shield, e.shield || 0);

@@ -2,7 +2,7 @@
 // dummies"; "T2 except the i is bottom right of demo box (within demo box)"; build chooser: "No"; sound: "Real sounds"): the placed tower's
 // card shows, where its sentence was, the tower with its build - the PREVIEWED build while points are pulled - in its own small scene
 // (aspira-demo.js, the layout from aspira-demo-layouts.js). An "i" in the scene's bottom-right corner flips the box to the sentence (with
-// its preview changes marked, skillDesc) and back; the choice holds while the card stays open. The scene runs one step a frame only while
+// its preview changes marked, skillDesc) and back; the choice holds while the card stays open. The scene runs at 1x play's pace only while
 // its canvas is on the page and the tab is visible, and drops when the card closes (demoTick).
 const DEMO_ASPECT = 1 / DEMO_BOX_AR; // the box's height over its width (aspira-demo.js)
 const demoCard = { key: "", S: null, cv: null, c2: null, view: null, text: false, tid: null };
@@ -25,10 +25,10 @@ function demoMount(t, pv) {
   }
   demoCard.cv = cv; demoCard.tid = t.id; demoCard.c2 = cv.getContext("2d"); demoCard.view = demoView3d(demoCard.S, cv.width, cv.height);
 }
-// every frame (aspira-ui.js frame): one scene step and draw while its box is up and showing the scene
-function demoTick() {
+// every frame (aspira-ui.js frame, its real `dt`, already capped at 0.05 s so a stalled tab takes no huge step): the scene at 1x play
+function demoTick(dt = DEMO_DT) {
   const D = demoCard; if (!D.cv) return;
   if (D.cv.isConnected === false || ui.sel !== D.tid) { D.cv = D.c2 = D.S = null; D.key = ""; D.text = false; return; } // the card closed (or redrew without it): the next card opens on its scene
   if (D.text || document.hidden) return;
-  try { demoFrame(D.S, D.c2, D.view, demoDraw3d); } catch (err) { D.cv = null; D.S = null; D.key = ""; if (typeof console !== "undefined") console.error("demo scene", err); } // (a broken scene leaves the card, never the game)
+  try { demoFrame(D.S, D.c2, D.view, demoDraw3d, Math.min(0.05, dt), BASE_SPEED); } catch (err) { D.cv = null; D.S = null; D.key = ""; if (typeof console !== "undefined") console.error("demo scene", err); } // (a broken scene leaves the card, never the game)
 }

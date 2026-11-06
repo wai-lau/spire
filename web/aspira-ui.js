@@ -378,7 +378,7 @@ function frame(now) {
   // flips too once the inversion fills the screen, so it stays readable
   $("asp").classList.toggle("asp-boss", bossInv.full);
   if (typeof perfCb === "function") perfCb(now, cb0);
-  if (typeof demoTick === "function") demoTick(); // the tower card's demo scene (aspira-demo-card.js)
+  if (typeof demoTick === "function") demoTick(dt); // the tower card's demo scene (aspira-demo-card.js)
   requestAnimationFrame(frame);
 }
 

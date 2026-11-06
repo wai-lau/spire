@@ -68,6 +68,10 @@ check("demo on the card: a placed tower's card shows its scene, the frame loop r
   if (!r("__ticks")) return "the frame loop never calls demoTick";
   for (let i = 0; i < 20; i++) r("demoTick()");
   if (!r("!!demoCard.S && demoCard.S.t > 0.2")) return "the scene does not run (t " + r("demoCard.S && demoCard.S.t") + ")";
+  // 1x play on any screen (Wai, 2026-11-06: "why does GRV nova so often" - one step a drawn frame was 2.5x on a 120 Hz phone): one real
+  // second is BASE_SPEED game seconds at 120 Hz and at 60 Hz alike, and a stalled tab's long frame steps no more than 0.05 s of it
+  for (const hz of [120, 60]) { const a = r("demoCard.S.t"); for (let i = 0; i < hz; i++) r(`demoTick(${1 / hz})`); const g = r("demoCard.S.t") - a; if (Math.abs(g - 0.8) > 1e-6) return `one real second at ${hz} Hz ran ${g.toFixed(4)} game s, not BASE_SPEED 0.8`; }
+  { const a = r("demoCard.S.t"); r("demoTick(3)"); const g = r("demoCard.S.t") - a; if (Math.abs(g - 0.04) > 1e-6) return `a 3 s stall stepped ${g.toFixed(4)} game s, not 0.05 x 0.8`; }
   r(`document.querySelector(".asp-demo-i").onclick({ stopPropagation() {} })`);
   const t0 = r("demoCard.S.t"); for (let i = 0; i < 10; i++) r("demoTick()");
   if (!r("demoCard.text")) return "the i did not flip to the sentence";
