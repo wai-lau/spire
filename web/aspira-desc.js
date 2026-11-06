@@ -123,10 +123,8 @@ const describeTower = (kind, skills) => DESCRIBE[kind](skills || {}).replace(/(\
 // the first target must be in range"): read from a tower with these skills (solTrackSt, aspira-sol.js) - per second, never a burn's total
 function solTrackDesc(sk) {
   const t = { kind: "sol", x: 0, y: 0, lvl: 1, skills: { ...sk } }; t.lvl = 1 + towerLevel(t);
-  const st0 = towerStats(t), st = solTrackSt(t, st0), td = st0.dmg, tick = st.dmg * st.rate * SOL_TICK, k = st.split || 0, br = SOL_BREACH_ARMOR[sk.breach || 0];
-  // A STACK EVERY st.scorchEvery s OF BEAM TIME (solTickHit): the ticks it spans, summed - whole ticks, so its period rounds UP to one
-  const every = Math.max(1, Math.ceil((st.scorchEvery || SOL_TICK) / SOL_TICK - 1e-9)) * SOL_TICK, burn = st.dot ? tick * (every / SOL_TICK) * st.dot.k / SOL_SCORCH_Q / td : 0, lasts = st.dot ? st.dot.n * SOL_SCORCH_Q : 0;
-  const often = +(1 / every).toFixed(1), oftenW = Number.isInteger(often) && NUM_WORD[often] ? NUM_WORD[often] : String(often);
+  const st0 = towerStats(t), st = solTrackSt(t, st0), td = st0.dmg, k = st.split || 0, br = SOL_BREACH_ARMOR[sk.breach || 0];
+  const lasts = st.dot ? st.dot.n * SOL_SCORCH_Q : 0;
   // THE PULSE (owner, 2026-11-05: "fire, pause, fire, pause"): a shot every 1 / rate s, each the shot's damage; its splits pierce only with
   // Breach ("SOL reflections shouldn't pierce without breach"); no enemy twice a shot; scorch SOL_SCORCH_M stacks a shot ("scorch is what pops shields")
   const M = Math.max(1, Math.round(SOL_SCORCH_M / SOL_PULSE_K)), shot = st.dmg / SOL_PULSE_K / td, gap = 1 / (st.rate * SOL_PULSE_K), pb = st.dot ? (st.dmg / SOL_PULSE_K / M) * st.dot.k / SOL_SCORCH_Q / td : 0;

@@ -60,21 +60,17 @@ function solTrackSt(t, st) {
   const bk = skillOf(t, "breach"), sc = skillOf(t, "focus"), V = sc >= 5;
   const dot = st.dot ? { k: st.dot.k / (V ? 2 : 1), n: st.dot.n * (V ? 2 : 1), t: st.dot.t * (V ? 2 : 1), v: V } : null;
   const dmg = st.dmg * SOL_TRACK_DMG;
-  return (st.trk = Object.assign({}, st, { bk, dmg, scorchEvery: 1 / (SOL_SCORCH_M * st.rate), hop: SOL_TRACK_HOP[bk], par: 0, dot, tickSt: Object.assign({}, st, { dmg, dot: null }) }));
+  return (st.trk = Object.assign({}, st, { bk, dmg, hop: SOL_TRACK_HOP[bk], par: 0, dot, tickSt: Object.assign({}, st, { dmg, dot: null }) }));
 }
 function solTickHit(t, st, e, d, from, pulse = false) {
   if (e.dead || !e.seen) return;
   const crit = Math.random() < ((st.crit || 0) + (e.bleedCrit || 0)) * (st.critScale || 1), dd = shotDamage(t, st, e, d) * (crit ? st.critMul : 1);
   bleed(e, st, t); fromHit(from, () => damage(e, dd, t, false, crit, st)); onHit(e, t, st.tickSt, dd); // (Breach strips as the pulse lands - a killing pulse strips too)
-  // A STACK EVERY st.scorchEvery s OF BEAM TIME on this enemy (its ticks summed: SOL_SCORCH_M stacks a shot's worth), the same damage -
-  // a stack a tick (4 a second) left ~125 stacks ticking on a held boss at Scorch V
+  // (a stack every 1 / (SOL_SCORCH_M x rate) s of BEAM TIME, its ticks summed - the held beam's scorch, st.scorchEvery and e.solSc - GONE
+  // with the pulse, 2026-11-06: every hit is a pulse's; a stack a tick, before that, left ~125 stacks ticking on a held boss at Scorch V)
   // A PULSE lays SOL_SCORCH_M stacks at once, each a share of its hit (owner, 2026-11-05: "scorch is what pops shields") - the same stacks a
   // second, the same burn, the same ticks as the held beam laid over the shot's worth of beam time
   if (pulse && st.dot && !e.dead) { const M = Math.max(1, Math.round(SOL_SCORCH_M / SOL_PULSE_K)); for (let j = 0; j < M; j++) (e.dots ||= []).push({ d: d / M * st.dot.k, left: st.dot.n, acc: 0, src: t, v: st.dot.v }); e.dotT = Math.max(e.dotT || 0, st.dot.t); return; }
-  if (st.dot && !e.dead) {
-    const a = (e.solSc ||= { d: 0, t: 0 }); a.d += d; a.t += SOL_TICK;
-    if (a.t >= st.scorchEvery - 1e-9) { (e.dots ||= []).push({ d: a.d * st.dot.k, left: st.dot.n, acc: 0, src: t, v: st.dot.v }); e.dotT = Math.max(e.dotT || 0, st.dot.t); a.d = 0; a.t = 0; }
-  }
 }
 function solTrackStart(t, st, e) {
   const B = { e, links: [], acc: 0 } /* the first tick ONE tick after the lock, like every later one: a lock that struck at once killed a swarmer a frame (frame-rate-bound) */;
