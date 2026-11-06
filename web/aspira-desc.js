@@ -11,9 +11,10 @@ const pc = x => Math.round(x * 100) + "%";
 const secs = x => +x.toFixed(2) + "s";
 const ticking = (x, hits, z) => pc(x) + " damage over " + secs(z); // (hits: the stat block's, never the sentence's)
 // PER UNIT, NEVER A TOTAL (owner, 2026-10-31: "Nothing should ever be above like 800%"): a steady burn reads its share A SECOND, a CRR
-// sortie its share A BOLT; ACD, FRZ and GRV shares are of their td (TD_UNIT[kind] x the old unit, aspira-stats.js), so a table read here divides by it
+// sortie its share A BOLT; ACD, FRZ and GRV shares are of their td (TD_UNIT[kind] x the old unit - why: aspira-stats.js), so a table read here divides by it
 const perSec = x => pc(x) + " damage a second";
-const tdU = kind => (typeof TD_UNIT !== "undefined" && TD_UNIT[kind]) || 1;
+const TD_UNIT = { acd: 8, frz: 3, grv: 4 }; // HERE, not in aspira-stats.js: the simulator loads this file (the description graph) and not that one
+const tdU = kind => TD_UNIT[kind] || 1;
 // ARMOR STRIPS READ AS A SHARE OF THE ARMOR (2026-10-28 armor rework: a strip multiplies armor down, never below 0 - shredArmor,
 // aspira-acid.js): a strip of `amt` armor (before the LATE SCALE) takes that share of what is left at the CURRENT wave (wording rule 10)
 const descWave = () => Math.max(1, (typeof G !== "undefined" && G && G.wave) || 1);
