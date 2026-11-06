@@ -52,12 +52,13 @@ function frzSkillStats(t, s, b) {
 // moons and SMALL MOONS by tier (owner, 2026-10-08): 1 / 2 / 3 moons at I-III, then still THREE at IV and V,
 // each with 1 (IV) or 3 (V) small moons of its own (was 4 and 5 moons, V's with 2 small moons each)
 // CAPPED (owner, 2026-10-20: "max 3 sattelites per moon, max 3 moons, find another way to scale it"): at most 3 moons, 3 moonlets each; the top
-// stops scale by FRZ_MOON_HIT instead - the moons' and moonlets' DAMAGE (not their reach or slow), making up the sources they lost
+// stops scaled the moons' and moonlets' DAMAGE by FRZ_MOON_HIT instead, making up the sources they lost (FRZ_MOON_HIT gone with the tier
+// redesign: a moon is FRZ_MOON_BY of the tower by Moons tier - reach, slow and damage alike, frzSources)
 // (V: 24 -> 9, VI: 35 -> 12, weighted by their aura scale: x2.4, x2.75). Were [0, 1, 2, 3, 3, 4] VI 5 and [0, 0, 0, 0, 1, 5] VI 6
 const FRZ_MOON_COUNT = [0, 1, 2, 3, 3, 3] /* even, no two tiers alike - IV and V by their moonlets (owner, 2026-10-26: "for moons, don't make two tiers identical"; was 0 1 1 3 3 3) */, FRZ_SUBMOON_N = [0, 0, 0, 0, 1, 1] /* one moonlet a moon at IV and V (owner, 2026-10-26 "Fix moons"; was 2, 3 - 9 and 12 aura copies), 0..V written whole */;
 // a small moon circles its moon at r, the other way round and faster, an aura at k x its moon's
 const FRZ_SUBMOON = { r: 84, k: 0.6, spin: 2 }; // r tripled (owner, 2026-10-08; was 28) // k 0.2: V at 195% (0.1 -> 194, 0.3 -> 203, 0.5 -> 216; five moons alone sit near 190)
-// the aura's sources: the tower, then each moon at FRZ_MOON_SCALE of everything, then their small moons
+// the aura's sources: the tower, then each moon at FRZ_MOON_BY (by Moons tier) of everything, then their small moons at FRZ_SUBMOON.k of that
 function frzSources(t, st) {
   const out = [{ x: t.x, y: t.y, k: 1, id: t.id }];
   if (!st.moonN) return out;
