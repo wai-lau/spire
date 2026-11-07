@@ -100,3 +100,17 @@ check("a tracer wholly off the canvas draws nothing, one on it still draws (draw
   if (!(r.near > 0)) return "the tracer by the core drew nothing (the rig is broken, or the cull culls what shows)";
   if (r.far) return "the tracer at the lane's start (off the canvas) still drew " + r.far + " fills";
 });
+
+check("ARC: the Voltage rings never touch the prism at any turn (owner, 2026-11-06: \"dont let arc volt rings clip into tower, size correctly\"; at R x 1.25 a ring's flat edge cut the prism's corners)", () => {
+  const r = JSON.parse(run(`(() => { G = newGame(); G.money = 1e9; ui.build = "arc"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); ui.build = null;
+    const t = G.towers[0], g = arcGeom(t), s = g.R / 40, out = [];
+    const segD = (px, py, ax, ay, bx, by) => { const vx = bx - ax, vy = by - ay, u = Math.max(0, Math.min(1, ((px - ax) * vx + (py - ay) * vy) / (vx * vx + vy * vy))); return Math.hypot(px - ax - u * vx, py - ay - u * vy); };
+    for (let ct = 0; ct < ARC_RING_W.length; ct++) { const rr = arcRingR(g, ct, s), half = ARC_RING_W[ct] * s / 2; let worst = Infinity;
+      for (let deg = 0; deg <= 60; deg++) { const th = deg * Math.PI / 180;
+        for (let k = 0; k < 6; k++) { const a = g.a0 + Math.PI / 3 * k, px = g.R * Math.cos(a), py = g.R * Math.sin(a);
+          for (let j = 0; j < 6; j++) { const a1 = g.a0 + Math.PI / 3 * j + th, a2 = a1 + Math.PI / 3; worst = Math.min(worst, segD(px, py, rr * Math.cos(a1), rr * Math.sin(a1), rr * Math.cos(a2), rr * Math.sin(a2)) - half); } } }
+      out.push({ ct, worst: +worst.toFixed(3) }); }
+    return JSON.stringify(out); })()`));
+  const bad = r.filter(x => !(x.worst >= 3 - 1e-6));
+  if (bad.length) return "a ring's line comes within " + bad.map(x => x.worst + " u (Conductivity " + x.ct + ")").join(", ") + " of the prism's corners; ARC_RING_GAP is 3";
+});

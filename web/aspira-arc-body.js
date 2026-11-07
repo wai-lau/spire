@@ -24,6 +24,11 @@ function arcStroke(path, css, core, w, glow, a) {
   ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.shadowColor = css; ctx.shadowBlur = glow * sc;
   ctx.globalAlpha = a; ctx.lineWidth = w; ctx.strokeStyle = core; ctx.stroke(path); ctx.restore();
 }
+// THE RINGS CLEAR THE PRISM AT EVERY TURN (owner, 2026-11-06: "dont let arc volt rings clip into tower, size correctly"): a ring turned up to 30 deg
+// off the prism brings its flat edges in to its corner radius x cos 30, so its corner radius is the prism's corner radius plus ARC_RING_GAP (the
+// glow's room) plus half its line, over cos 30 - the inside of its line never nearer the prism than ARC_RING_GAP at any angle (pinned, pins.mjs)
+const ARC_RING_GAP = 3, ARC_COS30 = Math.cos(Math.PI / 6);
+const arcRingR = (g, ct, s) => (g.R + ARC_RING_GAP + ARC_RING_W[ct] * s / 2) / ARC_COS30;
 function arcRing(g, rr, th, back, mt, cx, cy) { // one ring's back or front edges as a path (world coords in the frame mt)
   const path = new Path2D(), cyS = mt.b * cx + mt.d * cy + mt.f;
   const pt = k => { const a = g.a0 + arcTAU / 6 * k + th; return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)]; };
@@ -39,7 +44,7 @@ function drawArcRings(t, far, up, x, y, h) {
   const css = arcMix(COL[TOWERS.arc.color], Math.min(1, 0.6 + 0.08 * ct + ARC_STORM_WHITE * sk)), gl = (0.6 + 3.2 * ARC_RING_GL[ct]) * s * (1 + ARC_STORM_GLOW * sk);
   for (let i = 0; i < n; i++) {
     const z = h / 2 - h * (n === 1 ? 0.5 : 0.2 + 0.6 * i / (n - 1)), ti = n > 1 ? i * ARC_RING_T / (n - 1) : 0, th = arcTAU * ((now + ARC_RING_T - ti) / ARC_RING_T + ph); // ring 0 is the lowest
-    up(x, y, () => { const mt = ctx.getTransform(); arcStroke(arcRing(g, g.R * 1.25, th, far, mt, x, y), css, css, ARC_RING_W[ct] * s, gl, 0.8 + 0.04 * ct); }, z);
+    up(x, y, () => { const mt = ctx.getTransform(); arcStroke(arcRing(g, arcRingR(g, ct, s), th, far, mt, x, y), css, css, ARC_RING_W[ct] * s, gl, 0.8 + 0.04 * ct); }, z);
   }
 }
 const ARC_STORM_GLOW = 1.5, ARC_STORM_WHITE = 0.3; // STORM (Voltage V, aspira-arc.js): a Storm strike's flash - the rings' glow up to x(1 + this) and whiter by this much at the peak
