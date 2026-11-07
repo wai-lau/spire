@@ -290,8 +290,28 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`, the look `aspi
 
 The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds and a `help` list of two, DERIVED FROM THE MARK TARGET (main = a +2, help = a +1;
 swarm `[frz, ifr]` / `[acd, grv]`, fast `[frz, crr]` / `[arc, grv]`, armor `[arc, sol]` / `[acd, grv]`, shield `[crr, ifr]` / `[sol, acd]`). The build card derives from it: `GOOD_VS` / `HELPS_VS` (SOL and ACD add bosses,
-`BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 since 6.16.0 - CLAUDE.md has the command), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
+`BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 since 6.16.0 - the command below, with the other four levels), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
 measures it.
+
+**THE MARKS AT FIVE POINT LEVELS** (owner, 2026-11-06: "1B, but also add a 0 point and 3 point check", then "most important marks are 9 and 13,
+but 0 3 and 6 should never drift more than +/- 1 point away from target marks"). Every balance patch runs all five against the mark target:
+
+| points | what it is | marks.py | the bar |
+|---|---|---|---|
+| 9 | the card's marks (spread builds) | `--write` | the first target: written into `VS_MARKS` |
+| 13 | each axis maxed in turn (V + IV + IV), averaged a tower | `--focus` | the second target (the capstone check) |
+| 0, 3, 6 | the early and mid game | `--band` | every cell within 1 of the target, else `RULE FAIL` |
+
+The windows follow the good model's tower points by wave (median 3 at wave 60, 5 at 80, 8 at 100-110). From `scripts/aspira-sim`, with
+`KINDS=arc,frz,sol,acd,grv,crr,ifr` and 2 seeds (the 13-point run takes about 4x the 9-point one):
+
+| points | command |
+|---|---|
+| 0 | `SPREAD_ONLY=1 POINTS=0 WINDOWS=5-19 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
+| 3 | `SPREAD_ONLY=1 POINTS=3 WINDOWS=55-65 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
+| 6 | `SPREAD_ONLY=1 POINTS=6 WINDOWS=81-89 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
+| 9 | `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
+| 13 | `POINTS=13 WINDOWS=101-109,111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus` |
 
 ### 4.6b GRV, the gravity tower (`web/aspira-grv.js`, the look `aspira-grv-draw.js`)
 
