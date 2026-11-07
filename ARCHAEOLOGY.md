@@ -1316,3 +1316,18 @@ changes only tiers I-II is unmeasurable by marks (GRV G1 / G2 / G2T below).
 | IFR I1 | 8 shards a burst, 12 at the capstone | 1/35/10/91 (live 2/44/26/94), distance 24 | dropped |
 | IFR I2 / I3 | I1 + shards 0.5 speed / 0.5 speed only | I2 1/32/6/84; I3 no change; distance 24 | dropped |
 | CRR E0-E5 (old SOL, `492f6b7`; each on top of 1-2 bolts a volley at the same damage per volley) | E0 same reload; E1 reload x1.5; E2 x2; E3 hangar x0.75; E4 reload x1.5 + ammo x1.5; E5 ammo x0.5 | leaks (baseline 7.5.0 9/10/0/61): E0 8/8/0/52, E1 10/12/0/55, E2 14/16/0/60, E3 15/18/0/60, E4 8/6/0/44, E5 12/24/0/70 - all six RULE FAIL; fewer bolts reaches armor -1, swarm never passes 15% (a minus needs ~20%), fast and shield trade the one check. E2 / E3 rerun on 7.6.0: the same | dropped |
+
+### 12.r Look and demo numbers, 2026-11-07 (7.7.111 .. 7.7.115; Visual)
+
+Draw and card-demo values only - none touches the board's balance (fp IDENTICAL on each).
+
+| what | value | where | why |
+|---|---|---|---|
+| Hypernova's second ring | pure white, full alpha, glow `GRV_SUPER_FLASH` 40 (at least half from its start) | aspira-grv-draw.js | Wai: "bigger whiter flash"; it read as a grey band (67540a6) |
+| a nova in the card demo | both rings x one factor so the widest fits the canvas from its centre, `GRV_FIT_PAD` 1.1 | `grvNovaFit` | the 1.5x ring (345 u at Nova V) is wider than the ~520 u box |
+| Nova layout's lanes | `dy` 0.2 x the range (default `DEMO_LANE_DY` 0.45) | aspira-demo-layouts.js | room for the flash |
+| demo walkers' health | the wave `30 + DEMO_WAVE_PT` (7) a point, to 119, never a boss wave; size of a wave-30 body | `demoWave`, `demoSizeK` | a 13-point ACD's goo (16.7k a hit) one-shot wave-30 walkers: no pools after 2 s (572715f) |
+| the demo's wave hold | one inert spawn, timer Infinity | `demoScene` | an empty field sent real waves 2-3 onto the board's lanes (ARC, FRZ, ACD ...) |
+| Undertow in the demo | not shown (the layout declares no reels) | `DEMO_LAYOUTS.grv.radiation` | the voids sit on the entering cluster, upstream; a tower 0.15 box heights from the entry edge fired 1-3 reels in 4 s, 0.2-0.5 none |
+| the acid lake | one fill over the lake pools' union, one outline (uncovered arcs only); per pool over `POOL_LOD` | `drawLake`, `lakeArcs` | Wai: "overlapping pools merge" (21c2591) |
+| pool bubbles' seed | `fixedRand` of the pool's x/y x8 rounded | `poolSeed` | no Math.random in draw (eadf950) |
