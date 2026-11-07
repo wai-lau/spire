@@ -159,7 +159,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   if (!quiet && !crit && e.bleedCrit > 0 && !(t && t.kind === "sol") && Math.random() < e.bleedCrit) { crit = true; amt *= BLEED_CRIT_MUL; }
   if (e.shredT > 0) amt *= e.shredMul;
   const pre = amt; // before Fracture - damageCredit splits what the debuffs added
-  if (e.slowT > 0 && e.brittle) amt *= e.brittle;
+  if ((e.slowT > 0 || e.fractT > 0) && e.brittle) amt *= e.brittle; // (fractT: Fracture V's Lingering cold, aspira-frz.js)
   // (SOL Refraction x the FAST here until 2026-10-12 - owner: no extra damage by enemy type)
   // armor takes its share of every hit (armorTake, above)
   const raw = amt;

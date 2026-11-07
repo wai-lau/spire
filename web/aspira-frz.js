@@ -42,12 +42,18 @@ const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit 
 // often at 1 / that the hit - the same damage a second, fewer shield pops. Marks (9 pts, waves 101-119, 2 seeds): FRZ leak 0/13/34/91 ->
 // 1/18/66/87, row +1 +1 0 -2 -> +1 +2 -1 -2 (its target exactly); the aura slow x1.2 alone moved nothing
 const FRZ_TICK_RATE_K = 0.7;
+// THE CAPSTONES (owner, 2026-11-06: "yes all FRZ, except keep moons as original; also I don't think you need any look here, the sheer effect of freezing
+// something in place is neat"; game logic only, no looks). Fracture V LINGERING COLD: an enemy the aura slowed stays FRACTURED (takes the Fracture x from every tower,
+// damage()) FRZ_LINGER_S after it leaves - the slow itself ends at once. Permafrost V DEEP FREEZE: an enemy a ring leaves at FULL frost (rimeFull) is frozen
+// solid (stunT, the game's full stop) FRZ_DEEP_S, at most once per FRZ_DEEP_CD s each; a boss's stop is cut by bossSlowMul like its slows (Strength 10%)
+const FRZ_LINGER_S = 2, FRZ_DEEP_S = 0.5, FRZ_DEEP_CD = 6;
 function frzSkillStats(t, s, b) {
   const f = skillOf(t, "temp"), c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; // the STAT CURVE (tier redesign 2026-10-24)
   // the aura's damage a SECOND is the curve's; Fracture splits it over more ticks (more shield pops, not more damage); tier 0 slows and nips (FRZ_NIP)
   const tick0 = b.dmg * c.dmg * b.rate * FRZ_TICK; s.biteDmg = tick0; // a tier 0 tick's worth: what the Rime ring's bite multiplies
   s.aura = FRZ_TEMP_SLOW[f]; s.brittle = FRZ_BRITTLE[f]; s.dmg = tick0 * (f ? FRZ_TEMP_TICK[f] / FRZ_TEMP_TICK[0] : FRZ_NIP); s.chill = f > 0; s.rate = FRZ_TICK_RATE_K / FRZ_TEMP_TICK[f]; s.dmg /= FRZ_TICK_RATE_K; // dmg / rate: a TICK
   s.rime = FRZ_RIME[skillOf(t, "rime")]; s.rimeCrack = FRZ_RIME_CRACK[skillOf(t, "rime")]; s.rimeBite = skillOf(t, "rime") ? FRZ_RIME_BITE0 : 0; s.rimeEvery = FRZ_RIME_PERIOD[skillOf(t, "rime")]; s.moonN = FRZ_MOON_COUNT[skillOf(t, "moons")]; s.moonK = FRZ_MOON_BY[skillOf(t, "moons")]; s.subN = FRZ_SUBMOON_N[skillOf(t, "moons")]; s.skill = true;
+  s.linger = skillOf(t, "temp") >= CAPSTONE_TIER; s.deep = skillOf(t, "rime") >= CAPSTONE_TIER;
 }
 // moons and SMALL MOONS by tier (owner, 2026-10-08): 1 / 2 / 3 moons at I-III, then still THREE at IV and V,
 // each with 1 (IV) or 3 (V) small moons of its own (was 4 and 5 moons, V's with 2 small moons each)
@@ -102,6 +108,10 @@ function rimeSpread(e) {
   }
   return best;
 }
+function deepFreeze(e) { // Permafrost V (FRZ_DEEP_S): a boss's stop is cut like its slows
+  if (!rimeFull(e) || e.deepCd > 0) return;
+  e.deepCd = FRZ_DEEP_CD; e.stunT = Math.max(e.stunT, FRZ_DEEP_S * (e.arcana ? bossSlowMul(e) : 1));
+}
 function frzStep(t, dt) {
   const st = towerStats(t), srcs = frzSources(t, st);
   t.auraT = (t.auraT || 0) - dt;
@@ -112,7 +122,7 @@ function frzStep(t, dt) {
     const r2 = (st.range * s.k) ** 2;
     for (const e of G.enemies) {
       if (e.dead || !e.seen || (e.x - s.x) ** 2 + (e.y - s.y) ** 2 > r2) continue;
-      applySlow(e, st.aura * s.k, FRZ_AURA_HOLD, s.id);
+      if (applySlow(e, st.aura * s.k, FRZ_AURA_HOLD, s.id) && st.linger && st.brittle > 1) e.fractT = FRZ_LINGER_S; // (a shield takes no slow, so no Fracture to linger)
       // FRACTURE (the axis, was Brittle until 2026-11-06): x this from EVERY tower while slowed (damage()) - back to that (owner, 2026-10-12: "brittle should increase damage
       // like before, not reduce armor"; it took armor for an hour). A shield takes no slow, so it holds Fracture off
       if (st.brittle > 1 && st.brittle >= (e.brittle || 1)) { e.brittle = st.brittle; e.brittleBy = t.id; } // brittleBy: its added damage is this FRZ's (damageCredit)
@@ -144,9 +154,11 @@ function frzStep(t, dt) {
         p.hit.add(e.id);
         // (Rime shattered shields until 2026-10-12 - owner: "rime should not strip shield")
         const to = rimeFull(e) ? rimeSpread(e) : e;
+        if (st.deep) deepFreeze(e); // (a full enemy a ring touches, even with no one to pass it to)
         if (!to) continue;
         if (to !== e) beam(e, to, TOWERS.frz.color, FRZ_SPREAD_FX, 1.5, 0, true);
         if (applySlow(to, p.v, Infinity, p.id, "stack")) { to.rimeKeep = (to.rimeKeep ?? 1) * (1 - p.v); to.frostArmor = Math.max(to.frostArmor || 0, st.rimeCrack); to.frostBy = t.id; }
+        if (st.deep) deepFreeze(to); // (...and one this very ring filled)
         if (st.rimeBite > 0) damage(to, st.biteDmg * st.rimeBite, t, !(to.shield > 0)); /* the ring's own bite - quiet, but a shield loses ONE charge to it (owner, 2026-10-25: "Yes"; it bounced off until then) */ // (a shield takes no slow, so no frost)
       }
     }

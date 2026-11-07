@@ -326,6 +326,31 @@ check("GRV merge (owner, 2026-10-25): two voids' caps do not add - the mass past
 // ---------- the left-for-later list (owner, 2026-10-25: "zero" / "fix all the left for later things") ----------
 const statsOf = (kind, sk) => run(`(() => { G = newGame(); const sk = ${JSON.stringify(sk)}; const st = towerStats({ id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, true);
   return { critMul: st.critMul, scorch: st.dot ? st.dot.n : 0, brittle: st.brittle, fireHK: st.fireHK, hfK: st.hfK }; })()`);
+check("FRZ Fracture V LINGERING COLD (owner, 2026-11-06: \"yes all FRZ\"): an enemy that left the aura still takes the Fracture x 1.9 s later, not 2.1 s later; Fracture IV never lingers", () => {
+  const r = run(`(() => { const go = temp => { const { t, es } = tierLane("frz", { temp }, [50]), e = es[0]; e.stunT = 1e9; const x0 = t.x;
+      for (let i = 0; i < 4; i++) { frzStep(t, 0.05); stepEnemies(0.05); }
+      const inAura = e.slowT > 0; t.x = x0 + 5000; const out = {};
+      for (let i = 1; i <= 42; i++) { frzStep(t, 0.05); stepEnemies(0.05); if (i === 38 || i === 42) { const h = e.hp; damage(e, 1000, t, true); out[i] = (h - e.hp) / 1000; } }
+      return { inAura, brittle: e.brittle, x38: out[38], x42: out[42] }; };
+    return { v: go(5), iv: go(4) }; })()`);
+  if (!r.v.inAura || !(r.v.brittle > 1)) return "Lingering cold: the rig's enemy was never fractured (" + JSON.stringify(r.v) + ")";
+  if (Math.abs(r.v.x38 - r.v.brittle) > 1e-6 || Math.abs(r.v.x42 - 1) > 1e-6) return "Lingering cold V: x" + r.v.x38 + " at 1.9 s (expected x" + r.v.brittle + "), x" + r.v.x42 + " at 2.1 s (expected x1) " + JSON.stringify(r.v);
+  if (Math.abs(r.iv.x38 - 1) > 1e-6) return "Fracture IV lingers: x" + r.iv.x38 + " at 1.9 s";
+});
+check("FRZ Permafrost V DEEP FREEZE (owner, 2026-11-06: \"yes all FRZ\"): a ring that leaves an enemy at full frost stops it 0.5 s, then it cannot be frozen again within 6 s, then can; Permafrost IV never freezes", () => {
+  const r = run(`(() => { const go = rime => { const { t, es } = tierLane("frz", { rime }, [50]), e = es[0]; e.stunT = 0; t.rimeT = 1e9; e.rimeKeep = 0.29; e.seen = true; const out = {};
+      const ring = () => (t.pulses ||= []).push({ x: t.x, y: t.y, R: 1e5, v: 0.01, id: "t:rime", age: FRZ_RIME_GROW * 0.9, hit: new Set(), moon: false });
+      const run1 = (secs, tag) => { for (let i = 0; i < Math.round(secs / 0.05); i++) { e.s = e.s0 ??= e.s; frzStep(t, 0.05); stepEnemies(0.05); if (tag && i === 0) out[tag + "On"] = e.stunT > 0; } };
+      ring(); run1(0.05, "a"); out.stunAfterRing = e.stunT; run1(0.6); out.stunAt065 = e.stunT; ring(); run1(0.05, "b"); run1(5.0); ring(); run1(0.05, "c"); // rings at 0, 0.65, 5.75 s
+      run1(0.4); ring(); run1(0.05, "d"); // 6.2 s after the first
+      return out; }; return { v: go(5), iv: go(4) }; })()`);
+  const v = r.v;
+  if (!(v.aOn && v.stunAfterRing > 0.3 && v.stunAfterRing <= 0.5 + 1e-9)) return "Deep freeze V: first full-frost ring did not stop it ~0.5 s " + JSON.stringify(v);
+  if (!(v.stunAt065 <= 0)) return "Deep freeze V: still stopped 0.65 s on " + JSON.stringify(v);
+  if (v.bOn || v.cOn) return "Deep freeze V: refroze inside the 6 s cooldown " + JSON.stringify(v);
+  if (!v.dOn) return "Deep freeze V: no refreeze after the 6 s cooldown " + JSON.stringify(v);
+  if (r.iv.aOn) return "Permafrost IV freezes " + JSON.stringify(r.iv);
+});
 check("later: tier I adds no extra numbers the spec does not name - SOL Breach I crit as tier 0, FRZ Fracture I no damage-taken boost", () => {
   const s0 = statsOf("sol", {}), s1 = statsOf("sol", { breach: 1 }), f1 = statsOf("frz", { temp: 1 });
   if (s1.critMul !== s0.critMul) return "SOL Breach I crit x" + s1.critMul + " (tier 0 x" + s0.critMul + ")";

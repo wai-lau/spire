@@ -58,6 +58,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       e.s += ENEMIES[e.type].speed * ENEMY_SPEED * (e.spd || 1) * PATHS[e.pi].pace * dt;
     } else if (!(typeof barHold === "function" && barHold(e))) { // (a boss waiting for its HP bar to slam in - aspira-bossbar.js: page only)
       if (e.stunT > 0) e.stunT -= dt;
+      if (e.fractT > 0) e.fractT -= dt; if (e.deepCd > 0) e.deepCd -= dt; // FRZ's Lingering cold and Deep freeze timers (aspira-frz.js)
       if (e.slows) sumSlows(e, dt);
       if (e.markT > 0) e.markT -= dt; else e.markMul = 1;
       if (e.arcana) bossStep(e, dt); // the bosses' tricks (aspira-bosses.js)
