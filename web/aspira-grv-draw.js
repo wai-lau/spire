@@ -32,6 +32,8 @@ function mixRgb(a, b, f) {
   const p = s => (String(s).match(/\d+(\.\d+)?/g) || [0, 0, 0]).map(Number), A = p(a), B = p(b);
   return "rgb(" + [0, 1, 2].map(i => Math.round(A[i] + (B[i] - A[i]) * f)).join(", ") + ")";
 }
+const GRV_SUPER_W = 1.8, GRV_SUPER_WHITE = 0.3, GRV_SUPER_GLOW = 26; // Nova V's double ring (Hypernova): thicker, whiter, a bigger glow than a single nova's
+const GRV_REEL_Q = 1.5, GRV_EH_RING = [1.35, 0.35, 0.65]; // Undertow: a reeling enemy's chain x thicker; Event Horizon: the accretion ring's radius (x the core), its alpha floor, its alpha gain per kill share
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // a sphere's numbers are ORDINARY damage numbers, FLYING OFF THE ENEMY hit, away from the hole (owner, 2026-10-16: "damage
 // numbers coming from rads should be shown flying off of the enemy (all damage numbers should) instead of coming out of the bh")
@@ -75,7 +77,8 @@ function drawGrvChains(all) {
     for (const e of G.enemies) {
       const d = !e.dead && e.slows && e.slows[tag]; if (!d || !(d.t > 0) || !(d.v > 0)) continue;
       let best = null, bd = Infinity; for (const m of mine) { const dd = Math.hypot(e.x - m[0].x, e.y - m[0].y); if (dd < m[2] && dd < bd) { bd = dd; best = m[0]; } } if (!best) continue;
-      const q = GRV_CHAIN_Q[0] + (GRV_CHAIN_Q[1] - GRV_CHAIN_Q[0]) * Math.min(1, d.v / TOWER_SLOW_MAX);
+      const reel = e.reelT > 0 ? 1 + (GRV_REEL_Q - 1) * e.reelT / GRV_REEL_T : 1; // a chain being reeled in: thicker, pulling taut as the enemy comes
+      const q = (GRV_CHAIN_Q[0] + (GRV_CHAIN_Q[1] - GRV_CHAIN_Q[0]) * Math.min(1, d.v / TOWER_SLOW_MAX)) * reel;
       if (gl3) fxGlChain({ x1: best.x, y1: best.y, x2: e.x, y2: e.y, color: "violet", thin: q }, GRV_CHAIN_A);
       else { ctx.globalAlpha = GRV_CHAIN_A; drawChain2D(best.x, best.y, e.x, e.y, (x, y) => ({ x, y }), 1, COL.violet, q); }
     }
@@ -109,12 +112,12 @@ function drawSphere(sp, st, auraOwn = true) {
     ctx.globalAlpha = 0.45 * (1 - f) ** 2; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar * GRV_RING_OUT * f, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0;
   }
   if (sp.age < novaEnd(sp)) { // the NOVA: a thick ring collapsing INWARD, accelerating, GRV purple slowly turning white (owner)
-    const p = Math.min(1, novaLocal(sp)[1] / GRV_NOVA_T), r = grvNovaR(sp, st), w = Math.min(r, st.novaR * GRV_NOVA_W);
+    const p = Math.min(1, novaLocal(sp)[1] / GRV_NOVA_T), r = grvNovaR(sp, st), dbl = sp.nN > 1, w = Math.min(r, grvNovaReach(sp, st) * GRV_NOVA_W * (dbl ? GRV_SUPER_W : 1));
     if (r > 0.5) {
       // BRIGHTER as it closes on the centre (owner, 2026-10-17: "make GRV nova rings much thinner, however, they should get brighter as
       // they approach the center"): fainter far out, whiter and glowing as it collapses
-      ctx.globalAlpha = GRV_NOVA_LOOK_A * Math.min(1, GRV_NOVA_A * (0.45 + 0.65 * p)); /* GRV_NOVA_LOOK_A: the whole nova, its glow too (glcStroke reads this alpha) */ ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, GRV_NOVA_WHITE + 0.6 * p ** 2); ctx.lineWidth = Math.max(1, w); // (a solid stroke: the 3D board takes no gradient stroke)
-      ctx.shadowColor = COL.violet; ctx.shadowBlur = 14 * cam.k * p;
+      ctx.globalAlpha = GRV_NOVA_LOOK_A * Math.min(1, GRV_NOVA_A * (0.45 + 0.65 * p)); /* GRV_NOVA_LOOK_A: the whole nova, its glow too (glcStroke reads this alpha) */ ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, Math.min(1, GRV_NOVA_WHITE + 0.6 * p ** 2 + (dbl ? GRV_SUPER_WHITE : 0))); ctx.lineWidth = Math.max(1, w); // (a solid stroke: the 3D board takes no gradient stroke)
+      ctx.shadowColor = dbl ? COL.white : COL.violet; ctx.shadowBlur = (dbl ? GRV_SUPER_GLOW : 14) * cam.k * p;
       const ring = () => { ctx.beginPath(); ctx.arc(sp.nova ? sp.nova.x : sp.x, sp.nova ? sp.nova.y : sp.y, r - w / 2, 0, 6.283); ctx.stroke(); };
       const ringK = () => { if (typeof GLC_GLOW_K === "undefined") return ring(); GLC_GLOW_K = GRV_NOVA_GLOW; try { ring(); } finally { GLC_GLOW_K = null; } }; // its glow's middle ring x0.5, outer x0.25 (GRV_NOVA_GLOW)
       if (typeof fxGlSkyOff === "function") fxGlSkyOff(ringK); else ringK(); ctx.shadowBlur = 0; // (always inverted on the boss sky: it whitens as it closes - aspira-fxgl.js)
@@ -144,7 +147,13 @@ function drawGrvCore(sp, st, pass) {
   // THE BODY'S COLOURS (owner, 2026-11-06: "for GRV, update the void attack to use the same colors as the ones used by the tower now"; "don't have that
   // reflective arc on the sphere, black holes don't reflect"): a soft violet halo (a smooth radial fade, no steps), a violet rim, a black core - as drawGrvBody's orb
   if (pass === 0) grvHalo(sp.x, sp.y, 2.4 * r);
-  else if (pass === 1) { const m = ctx.getTransform(); ctx.shadowColor = COL.white; ctx.shadowBlur = GRV_RIM_GLOW * r * Math.hypot(m.a, m.b); ctx.strokeStyle = COL.violet; ctx.lineWidth = Math.min(1.5, 0.15 * r + 0.5); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0; } // the rim lit white just outside it - no dark band before the halo
+  else if (pass === 1) {
+    if (st.eh && sp.evK > 1) { // EVENT HORIZON's accretion ring: brighter per kill (its growth share), a flash on the kill, dimming as the growth fades
+      const g = (grvEvK(sp) - 1) / (GRV_EH_MAX - 1), fl = Math.max(0, 1 - (sp.age - sp.evAt) / 0.3), m0 = ctx.getTransform();
+      ctx.globalAlpha = Math.min(1, GRV_EH_RING[1] * g + GRV_EH_RING[2] * g * g + 0.5 * fl) * (g > 0 ? 1 : 0); ctx.shadowColor = COL.white; ctx.shadowBlur = (2 + 6 * fl) * r * Math.hypot(m0.a, m0.b) * 0.3;
+      ctx.strokeStyle = mixRgb(COL.violet, COL.white, Math.min(1, g + fl * 0.5)); ctx.lineWidth = Math.min(3, 0.18 * r + 0.8); ctx.beginPath(); ctx.arc(sp.x, sp.y, r * GRV_EH_RING[0], 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.beginPath();
+    }
+    const m = ctx.getTransform(); ctx.shadowColor = COL.white; ctx.shadowBlur = GRV_RIM_GLOW * r * Math.hypot(m.a, m.b); ctx.strokeStyle = COL.violet; ctx.lineWidth = Math.min(1.5, 0.15 * r + 0.5); ctx.arc(sp.x, sp.y, r, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0; } // the rim lit white just outside it - no dark band before the halo
   else { ctx.fillStyle = COL.bg; ctx.arc(sp.x, sp.y, Math.max(0, r - 0.5), 0, 6.283); ctx.fill(); } /* r - 0.5: the rim's outer half stays */
 }
 function drawGrvCores(at) {

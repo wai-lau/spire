@@ -96,7 +96,10 @@ const DESCRIBE = {
     return (n ? "A nova implodes, dealing " + pc(GRV_NOVA_K * GRV_NOVA_RATE[n] / U) + " damage" + (a => a !== "0%" ? " and stripping " + a + " of armor" : "")((st => st.strip ? pc(st.strip) : "0%")(descStats("grv", sk))) + "; then a" : "A") +
       " void" + (v >= CAPSTONE_TIER ? ", twice as heavy," : "") + " crushes for " + pc(Math.min(GRV_CRUSH_TD, lo)) + " to " + perSec(Math.min(GRV_CRUSH_TD, lo * GRV_MASS_MAX)) + " as it grows." +
       " Particles radiate as it decays dealing " + pc(GRV_PELLET_K[r] * GRV_NOVA_RATE[n] / U) + " damage each." +
-      (r ? " An aura around it pulls enemies together and slows them" + (r >= CAPSTONE_TIER ? " twice as hard." : ", twice as hard inside the void.") : ""); /* V (owner, 2026-10-26): "An aura... pulls enemies together and slows them twice as hard." */ /* (no "flings its particles farther": owner, 2026-10-26) */
+      (r ? " An aura around it pulls enemies together and slows them" + (r >= CAPSTONE_TIER ? " twice as hard." : ", twice as hard inside the void.") : "") +
+      (n >= CAPSTONE_TIER ? " Every " + ["", "", "second", "third", "fourth"][GRV_SUPER_EVERY] + " nova rings twice, the second ring " + Math.round((GRV_SUPER_R - 1) * 100) + "% wider." : "") + /* Hypernova (owner, 2026-11-06) */
+      (r >= CAPSTONE_TIER ? " Enemies nearer the core than the tower are reeled back to the void, once every " + GRV_REEL_CD + "s." : "") + /* Undertow */
+      (v >= CAPSTONE_TIER ? " Each enemy it crushes dead grows it " + Math.round((GRV_EH_GROW - 1) * 100) + "% (up to " + Math.round((GRV_EH_MAX - 1) * 100) + "%), fading over " + GRV_EH_FADE + "s." : ""); /* Event Horizon */ /* V (owner, 2026-10-26): "An aura... pulls enemies together and slows them twice as hard." */ /* (no "flings its particles farther": owner, 2026-10-26) */
   },
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
   // towers across); Flare the flares - bigger, hotter, longer (its capstone: the flare's circle, IFR_RING_AT)

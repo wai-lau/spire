@@ -328,6 +328,70 @@ check("GRV merge (owner, 2026-10-25): two voids' caps do not add - the mass past
   if (r.cap !== 3 || Math.abs(r.mass - 3) > 1e-9 || Math.abs(r.pel - r.per * 1.5) > 1e-6) return "merge: " + JSON.stringify(r) + " (expected cap 3, mass 3, 1.5 mass of pellets)";
 });
 
+check("GRV Nova V HYPERNOVA (owner, 2026-11-06: \"Nova yes\"): every 4th nova a tower fires rings twice - a second ring at 1.5x the reach, so an enemy only it reaches is hit and one both reach takes both; novas 1-3 ring once; Nova IV never rings twice", () => {
+  const r = run(`(() => { const go = nv => { const out = [], hits = [];
+      for (let i = 1; i <= 4; i++) { const { t, es, st } = tierRig("grv", { supernova: nv }, [[60, 0], [70, 0], [60, 40]]);
+        // (a fresh rig a nova would restart the count: fire the first i-1 on this tower's own counter)
+        t.novaFired = i - 1; const R = st.novaR, B = es[2]; B.x = es[0].x + R * 1.25; B.y = es[0].y;
+        novaAt(t, st, es[0]); const sp = t.spheres[0]; out.push(sp.nN); const h0 = es.map(e => e.hp);
+        for (let k = 0; k < 4000 && sp.age < novaEnd(sp) - 0.003; k++) { t.pellets = []; stepGrv(t, 0.001); } /* (no pellet's hit in the count; to the very end of the sweep: the front reaches the enemy beside its centre last) */
+        hits.push(es.map((e, j) => h0[j] - e.hp)); }
+      return { nN: out, hits }; };
+    return { v: go(5), iv: go(4) }; })()`);
+  if (JSON.stringify(r.v.nN) !== "[1,1,1,2]") return "Nova V rings per nova " + JSON.stringify(r.v.nN) + " (expected 1 1 1 2)";
+  if (r.iv.nN.some(n => n !== 1)) return "Nova IV rings per nova " + JSON.stringify(r.iv.nN);
+  const [a1, , , a4] = r.v.hits;
+  const j = a1[0] > 0 ? 0 : 1; /* (the nova lands on one of the pair; the other sits at its centre) */
+  if (!(a1[j] > 0) || a1[2] !== 0) return "a single nova hit the 1.25x enemy or missed the first: " + JSON.stringify(a1);
+  if (!(a4[2] > 0) || Math.abs(a4[j] / a1[j] - 2) > 0.01) return "the double nova: the enemy beside the centre x" + (a4[j] / a1[j]) + " of one nova (expected 2), the 1.25x enemy " + a4[2];
+});
+check("GRV Gravity Well V UNDERTOW (owner, 2026-11-06: \"enemies closer to the core than GRV are reeled back into the center of void\"): an enemy in the aura NEARER THE CORE than the tower is reeled back along its lane once, not again inside GRV_REEL_CD; one further out is left alone; Well IV reels nothing", () => {
+  const r = run(`(() => { const go = w => { const { t, es, st } = tierRig("grv", { radiation: w, void: 1 }, [[0, 0], [0, 0]]);
+      const dx = CX - t.x, dy = CY - t.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, near = es[0], far = es[1];
+      near.x = t.x + ux * 40; near.y = t.y + uy * 40; far.x = t.x - ux * 40; far.y = t.y - uy * 40; near.s = far.s = 500; near.hp = near.max = far.hp = far.max = 1e12;
+      novaAt(t, st, near); const sp = t.spheres[0]; sp.x = near.x - ux * 30; sp.y = near.y - uy * 30; sp.age = 5; sp.mass = sp.cap; G.clock = 0;
+      const dts = 1 / 60, drops = []; let last = near.s;
+      for (let k = 0; k < 60 * 6; k++) { G.clock += dts; sp.mass = sp.cap; sp.span = 0; stepGrv(t, dts); if (near.reelT > 0) grvReelStep(near, dts); if (near.s < last - 1e-9) { drops.push(+(G.clock).toFixed(2)); last = near.s; } }
+      const ticks = []; for (let k = 0; k < 4; k++) { ticks.push(drops.filter(c => c >= k * 1.5 && c < (k + 1) * 1.5).length); }
+      return { total: 500 - near.s, far: 500 - far.s, first: drops[0], at: drops, back: GRV_REEL_BACK, cd: GRV_REEL_CD }; };
+    return { v: go(5), iv: go(4) }; })()`);
+  const v = r.v;
+  if (!(v.total > 0) || v.far !== 0) return "Undertow V: reeled " + v.total + " back, the enemy further out " + v.far + " (expected the near one only)";
+  if (v.total > 2 * v.back + 1e-6) return "Undertow V reeled " + v.total + " u in 6 s (cap 2 x " + v.back + " at a " + v.cd + " s cooldown)";
+  const first = v.at.filter(c => c < v.first + 0.5).length, again = v.at.filter(c => c > v.first + v.cd).length;
+  if (!(first >= 1) || !(again >= 1) || v.at.some(c => c > v.first + 0.5 && c < v.first + v.cd)) return "Undertow V reel times " + JSON.stringify(v.at) + " (expected one reel, then none inside " + v.cd + " s, then another)";
+  if (r.iv.total !== 0) return "Gravity Well IV reels (" + r.iv.total + ")";
+});
+check("GRV Gravity Well V cannot STUNLOCK a boss (owner, 2026-11-06: \"make sure that it cannot stunlock bosses with 3GRVs\"): three GRVs at Void V / Nova V / Well V on a boss's lane - over 20 s it still covers a clear share of the lane it covers with Well IV and with no GRV", () => {
+  const r = run(`(() => { const go = (w, n3) => { G = newGame(); G.money = 1e9; G.lives = 1e6; G.started = true; G.wave = 35; spawnEnemy("bonus", 36, 0, 0);
+      const e = G.enemies.concat(G.fleetQ).find(x => x.arcana); G.fleetQ = []; G.enemies = [e]; e.fleet = []; e.hp = e.max = 1e15; e.armor = e.armor0 = 0; e.shield = e.shieldMax = 0; e.seen = true;
+      const s0 = PATHS[0].len * 0.55, p0 = pathAt(0, s0, 0); e.s = s0; e.x = p0.x; e.y = p0.y; e.spd = e.baseSpd = e.spd;
+      const open = CELLS.map((c, i) => i).filter(i => cellOpen(i) && canPlace(i)).sort((a, b) => Math.hypot(CELLS[a].x - p0.x, CELLS[a].y - p0.y) - Math.hypot(CELLS[b].x - p0.x, CELLS[b].y - p0.y));
+      for (let i = 0; i < n3; i++) { ui.build = "grv"; placeTower(CELLS[open[i]]); const t = G.towers[G.towers.length - 1]; t.skills = { void: 5, supernova: 5, radiation: w }; t.lvl = 1 + towerLevel(t); }
+      G.spawnQ = []; for (let k = 0; k < 20 * 30; k++) { G.wave = 35; step(1 / 30); } return e.s - s0; };
+    return { none: go(0, 0), iv: go(4, 3), v: go(5, 3) }; })()`);
+  if (!(r.none > 0)) return "the boss never moved with no GRV: " + JSON.stringify(r);
+  if (!(r.v >= 0.5 * r.iv) || !(r.v >= 0.15 * r.none)) return "3 GRVs at Well V held the boss: advanced " + r.v.toFixed(1) + " u in 20 s vs " + r.iv.toFixed(1) + " at Well IV and " + r.none.toFixed(1) + " with none";
+  console.log("  boss no-stunlock: advance in 20 s - none " + r.none.toFixed(1) + " u, Well IV x3 " + r.iv.toFixed(1) + " u, Well V x3 " + r.v.toFixed(1) + " u");
+});
+check("GRV Void V EVENT HORIZON (owner, 2026-11-06: \"yes to GRV void V\"): each enemy the crush kills grows the void x1.1, stacking to x1.5, and it is back at x1 3 s after the last kill; Void IV never grows; the crush stays under the 800% cap", () => {
+  const r = run(`(() => { const go = v => { const { t, es, st } = tierRig("grv", { void: v }, [[60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0]]);
+      novaAt(t, st, es[0]); const sp = t.spheres[0]; sp.age = 5; sp.mass = sp.cap; sp.x = es[0].x; sp.y = es[0].y; sp.apm = grvAuraBase(sp, st) ** 2; sp.auraSnd = true; sp.open = true;
+      const ar0 = grvAuraR(sp, st); for (const e of es) { e.x = sp.x + 1; e.y = sp.y; e.hp = e.max = 1e12; } const out = {};
+      let mx = 1, mr = 1; const run1 = secs => { for (let k = 0; k < secs * 60; k++) { sp.mass = sp.cap; sp.span = 0; t.pellets = []; stepGrv(t, 1 / 60); mx = Math.max(mx, grvEvK(sp)); mr = Math.max(mr, grvAuraR(sp, st) / ar0); } }; /* (no pellet may take the kill from the crush) */
+      es[0].hp = es[0].max = 1; run1(0.3); out.k1 = mx;
+      for (let i = 1; i < 4; i++) es[i].hp = es[i].max = 1; run1(0.3); out.k4 = mx;
+      for (let i = 4; i < 11; i++) es[i].hp = es[i].max = 1; run1(0.3); out.cap = mx; out.grew = mr;
+      for (const e of es) if (!e.dead) e.x = sp.x + 9999; run1(3.2); out.back = grvEvK(sp); out.mass = sp.mass; out.cdmg = st.hdmg * st.innerK; return out; };
+    return { v: go(5), iv: go(4) }; })()`);
+  const v = r.v;
+  if (Math.abs(v.k1 - 1.1) > 0.02) return "one kill grew the void to x" + v.k1 + " (expected 1.1): " + JSON.stringify(v);
+  if (!(v.k4 > 1.1 * 1.1 && v.k4 <= 1.5 + 1e-9)) return "after more kills x" + v.k4 + " (expected stacking, under the cap)";
+  if (Math.abs(v.cap - 1.5) > 1e-9 || Math.abs(v.grew - 1.5) > 0.05) return "the cap: evK x" + v.cap + ", the aura grew x" + v.grew + " (expected 1.5)";
+  if (v.back !== 1) return "3.2 s after the last kill the void is still x" + v.back;
+  if (r.iv.cap !== 1) return "Void IV grows (x" + r.iv.cap + ")";
+});
+
 // ---------- the left-for-later list (owner, 2026-10-25: "zero" / "fix all the left for later things") ----------
 const statsOf = (kind, sk) => run(`(() => { G = newGame(); const sk = ${JSON.stringify(sk)}; const st = towerStats({ id: 99, kind: "${kind}", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "${kind}", skills: sk }), skills: sk }, true);
   return { critMul: st.critMul, scorch: st.dot ? st.dot.n : 0, brittle: st.brittle, fireHK: st.fireHK, hfK: st.hfK }; })()`);

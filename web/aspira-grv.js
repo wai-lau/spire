@@ -48,10 +48,21 @@ const GRV_TICK = 0.25, GRV_FRONT_T = 0.2; // the nova's collapse, s (0.12 outwar
 // Nova V void crushed 2325%td a second at full mass; capped at GRV_CRUSH_TD x td (marks 9 pts 101-119: unchanged)
 const GRV_CRUSH_TD = 8;
 const GRV_NOVA_N = 1, GRV_NOVA_GAP = 0.3, GRV_NOVA_K = 9, GRV_NOVA_T = 0.8; /* ONE NOVA a shot (owner, 2026-11-06: "1. Yes, make this ring move slower too, so that it takes up the time of the three (can only hit an enemy once)"): its hit x3 (K 3 -> 9) and its front sweeps over GRV_NOVA_T s, the old three's span ((3 - 1) x 0.3 + 0.2); was N 3 */ /* THREE novas again, from Nova I only (owner, 2026-10-25: "Nova 1: 3 novas in quick succession before each void"; tier 0 "void only") - each its old x3 hit, at a third the shots */ // ONE nova at THREE times the hit (owner, 2026-10-21: "change the initial ring to 1 ring again, except triple damage"; three since 2026-10-18)
-const novaLocal = sp => { if (!sp.nN) return [-1, Infinity]; const k = Math.min(sp.nN - 1, Math.floor(sp.age / GRV_NOVA_GAP)); return [k, sp.age - k * GRV_NOVA_GAP]; }; // [which nova, its own age]
-const novaEnd = sp => sp.nN ? (sp.nN - 1) * GRV_NOVA_GAP + GRV_NOVA_T : 0; // the nova GONE (collapsed into its centre) - only then the centre and aura (owner: "finish exploding before growing the circle")
+// THE CAPSTONES (owner, 2026-11-06; capstones-2026-11-06.md). NOVA V (Hypernova): every GRV_SUPER_EVERY-th nova a tower fires rings TWICE - a second front right after the
+// first, GRV_SUPER_R x the reach (the same hit rules: an enemy both rings reach takes both). GRAVITY WELL V (Undertow): an enemy in the aura that is NEARER THE CORE than the
+// tower (straight-line distance to the core, CX/CY) is reeled back toward the void's centre - up to GRV_REEL_BACK u back along its lane over GRV_REEL_T s - at most once
+// every GRV_REEL_CD s a enemy (e.reelAt, game time; ALL GRVs share it, so three cannot hold a boss). VOID V (Event Horizon): each enemy the crush KILLS grows the void
+// x GRV_EH_GROW (stacking, to x GRV_EH_MAX), fading back to x1 over GRV_EH_FADE s after the last kill (sp.evK / sp.evAt, on the sphere's own clock)
+const GRV_SUPER_EVERY = 4, GRV_SUPER_R = 1.5, GRV_SUPER_GAP = GRV_NOVA_T;
+const GRV_REEL_CD = 4, GRV_REEL_BACK = 70, GRV_REEL_T = 0.4;
+const GRV_EH_GROW = 1.1, GRV_EH_MAX = 1.5, GRV_EH_FADE = 3;
+const novaGap = sp => sp.nN > 1 ? GRV_SUPER_GAP : GRV_NOVA_GAP; // two fronts run back to back; a lone one has no gap
+const grvEvK = sp => sp.evK > 1 ? 1 + (sp.evK - 1) * Math.max(0, 1 - (sp.age - sp.evAt) / GRV_EH_FADE) : 1; // the void's size now: Event Horizon's growth, fading
+const novaLocal = sp => { if (!sp.nN) return [-1, Infinity]; const g = novaGap(sp), k = Math.min(sp.nN - 1, Math.floor(sp.age / g)); return [k, sp.age - k * g]; }; // [which nova, its own age]
+const novaEnd = sp => sp.nN ? (sp.nN - 1) * novaGap(sp) + GRV_NOVA_T : 0; // the nova GONE (collapsed into its centre) - only then the centre and aura (owner: "finish exploding before growing the circle")
 // the nova's front: from its reach INWARD, ACCELERATING (owner, 2026-10-15: "explode inwards instead of outwards, accelerating")
-const grvNovaR = (sp, st) => st.novaR * (1 - Math.min(1, novaLocal(sp)[1] / GRV_NOVA_T) ** 2); // s: the aura's tick; the yellow front's time to its reach
+const grvNovaReach = (sp, st) => st.novaR * (novaLocal(sp)[0] > 0 ? GRV_SUPER_R : 1); // the second ring of a double nova reaches GRV_SUPER_R x
+const grvNovaR = (sp, st) => grvNovaReach(sp, st) * (1 - Math.min(1, novaLocal(sp)[1] / GRV_NOVA_T) ** 2); // s: the aura's tick; the yellow front's time to its reach
 const GRV_PELLET_REACH = 1.4, GRV_PELLET_V = 320, GRV_PELLET_HIT = 3; // a pellet flies this x the aura's radius, at V a second; touches an enemy within its size + HIT
 const GRV_PEL_ST = { noNum: true }; // a pellet hit: its flash, but its number goes to grvFloat (into the hole)
 const GRV_AURA_ST = { noFx: true, noNum: true }; /* noNum: its number is grvFloat's alone (it showed twice once grvFloat became a plain dmgNumber) */
@@ -77,7 +88,7 @@ function grvSkillStats(t, s, b) {
   // Nova I the slowing aura, Radiation I the pellets - each axis its own part of the sphere (hole / auraOn / pellets). The rate and the
   // hits are the STAT CURVE's (was GRV_RATE_MUL by the deepest axis, half to the rate - rm / rh - and GRV_NOVA_MUL)
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.novaMul = GRV_NOVA_RATE[n]; s.hdmg = s.dmg * s.novaMul; s.evapK = 1; /* one void a shot at the base rate: it burns and radiates x novaMul (hdmg) - the same a second as the faster voids it replaces (2026-11-06) */ s.targets = 1; // (rateCurve: the curve's, before Nova)
-  s.hole = true; s.auraOn = r > 0; s.auraR = GRV_AURA_R[v]; s.accR = GRV_ACC_R[r]; s.slow = GRV_SLOW[r]; s.innerK = GRV_INNER_K[v]; s.horizon = r >= CAPSTONE_TIER;
+  s.hole = true; s.auraOn = r > 0; s.auraR = GRV_AURA_R[v]; s.accR = GRV_ACC_R[r]; s.slow = GRV_SLOW[r]; s.innerK = GRV_INNER_K[v]; s.horizon = r >= CAPSTONE_TIER; s.reel = r >= CAPSTONE_TIER; s.super = n >= CAPSTONE_TIER; s.eh = v >= CAPSTONE_TIER;
   s.novaR = GRV_NOVA_R[Math.max(n, v)]; s.strip = 1 - (1 - GRV_NOVA_STRIP[n]) ** s.novaMul; /* compounded over the novas it replaces: the same strip a second (2026-11-06) */
   s.pellets = GRV_PEL_PER_MASS * GRV_ACC_PEL[r]; /* every void, tier 0 too (owner, 2026-10-25: "Add pellets instead" of a bigger void) */ s.novaN = n > 0 ? GRV_NOVA_N : 0; s.startM = GRV_START_MASS * (v >= CAPSTONE_TIER ? GRV_BIG_MASS : 1); s.pelletK = GRV_PELLET_K[r]; s.pelReach = GRV_PEL_RANGE[r]; s.big = v >= CAPSTONE_TIER; s.skill = true; // pellets from Void I or Gravity Well I (owner, 2026-10-25: Accel alone too - "Yes"), novas from Nova I
 }
@@ -87,7 +98,7 @@ const grvMassK = sp => Math.max(0, Math.min(sp.cap || GRV_MASS_MAX, sp.mass));
 const grvAuraBase = (sp, st) => st.auraR; // the void's size is the Void axis's alone (owner, 2026-10-25: "Void size no longer depends on Nova"; was x the root of the nova's damage, GRV_GROW_MIN .. MAX)
 function grvAuraR(sp, st) {
   if (!sp.apm) return grvAuraBase(sp, st); // (the nova still sweeping: its size is still being decided)
-  const r = Math.min(st.auraR * GRV_R_MAX, Math.sqrt(sp.apm * Math.max(0, sp.mass))); // capped (owner, 2026-10-16: "Perf issues as inversion circle gets very large / Limit size?" - merged areas added without end)
+  const r = grvEvK(sp) * Math.min(st.auraR * GRV_R_MAX, Math.sqrt(sp.apm * Math.max(0, sp.mass))); // x Event Horizon's growth (Void V); capped (owner, 2026-10-16: "Perf issues as inversion circle gets very large / Limit size?" - merged areas added without end)
   return sp.mergeAt != null && sp.age - sp.mergeAt < GRV_MERGE_S ? sp.mergeFrom + (r - sp.mergeFrom) * (sp.age - sp.mergeAt) / GRV_MERGE_S : r; // a MERGE eases out to its summed area
 }
 // the aura's reach right now: nothing until the nova has FULLY exploded (owner, 2026-10-15: "make the nova fully explode before
@@ -114,7 +125,7 @@ function grvNovaSpot(t, st) {
 }
 function novaAt(t, st, e) {
   const p0 = pathAt(e.pi, e.s, e.ang || 0), p1 = pathAt(e.pi, e.s + effSpeed(e) * GRV_LEAD_S, e.ang || 0);
-  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.startM, cap: GRV_MASS_MAX * st.startM, nN: st.novaN, hit: new Set(), tick: 0, pel: 0, hole: true }); // hole: its tower's Void, stamped at birth (grvPull)
+  (t.spheres ||= []).push({ id: G.id++, x: e.x + p1.x - p0.x, y: e.y + p1.y - p0.y, vx: 0, vy: 0, ar: 0, age: 0, mass: st.startM, cap: GRV_MASS_MAX * st.startM, nN: st.novaN ? (st.super && (t.novaFired = (t.novaFired || 0) + 1) % GRV_SUPER_EVERY === 0 ? 2 : 1) : 0, hit: new Set(), tick: 0, pel: 0, hole: true }); // hole: its tower's Void, stamped at birth (grvPull)
   return true;
 }
 // one hit from a sphere: the damage it really dealt feeds its mass
@@ -199,13 +210,13 @@ function stepSphere(sp, t, st, dt) {
   if (!sp.auraSnd && sp.age >= novaEnd(sp)) { sp.auraSnd = true; sp.apm = grvAuraBase(sp, st) ** 2; sfx("grvaura"); } // its AREA per mass, fixed as it opens // the AURA's own sound as it opens (owner, 2026-10-16; the nova is "grv")
   // the NOVA: the yellow front sweeps out; each enemy it reaches takes the hit once
   const [nk, na] = novaLocal(sp);
-  if (nk !== sp.novaK && sp.age < novaEnd(sp)) { sp.novaK = nk; sp.hit.clear(); sp.nova = grvNovaSpot(t, st) || { x: sp.x, y: sp.y }; } // a fresh front hits everyone again, where it catches the most
+  if (nk !== sp.novaK && sp.age < novaEnd(sp)) { sp.novaK = nk; sp.hit.clear(); sp.nova = (nk > 0 && sp.nova) || grvNovaSpot(t, st) || { x: sp.x, y: sp.y }; } // a fresh front hits everyone again, where it catches the most
   if (sp.age < novaEnd(sp) + dt && na <= GRV_NOVA_T + dt) {
     const nx = sp.nova ? sp.nova.x : sp.x, ny = sp.nova ? sp.nova.y : sp.y;
-    const r = grvNovaR(sp, st); // it IMPLODES: an enemy is hit as the front sweeps past it, inward (all within reach by the end)
+    const r = grvNovaR(sp, st), nr = grvNovaReach(sp, st); // it IMPLODES: an enemy is hit as the front sweeps past it, inward (all within reach by the end)
     for (const e of G.enemies) {
       const d2 = (e.x - nx) ** 2 + (e.y - ny) ** 2;
-      if (e.dead || !e.seen || sp.hit.has(e.id) || d2 > st.novaR * st.novaR || d2 < r * r) continue;
+      if (e.dead || !e.seen || sp.hit.has(e.id) || d2 > nr * nr || d2 < r * r) continue;
       sp.hit.add(e.id);
       const amt = st.dmg * GRV_NOVA_K * (st.novaMul || 1), a0 = e.armor;
       if (st.strip) shredPct(e, t, st.strip); // Nova: the implosion strips armor (owner, 2026-10-25; was the aura's)
@@ -226,12 +237,13 @@ function stepSphere(sp, t, st, dt) {
       const d2 = (e.x - sp.x) ** 2 + (e.y - sp.y) ** 2;
       if (e.dead || !e.seen || d2 > reach * reach) continue;
       const inIn = d2 <= inner * inner, slow = inIn ? core : outer;
-      if (st.hole && inIn && sp.age >= novaEnd(sp)) { const d = grvHit(sp, t, st, e, Math.min(st.hdmg * st.innerK * k, GRV_CRUSH_TD * GRV_INNER_K[0] * GRV_START_MASS * tdU("grv") * st.dmg) * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) continue; } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
+      if (st.hole && inIn && sp.age >= novaEnd(sp)) { const d = grvHit(sp, t, st, e, Math.min(st.hdmg * st.innerK * k, GRV_CRUSH_TD * GRV_INNER_K[0] * GRV_START_MASS * tdU("grv") * st.dmg) * GRV_TICK, GRV_INNER_ST); if (d > 0) (sp.burn ||= new Map()).set(e, (sp.burn.get(e) || 0) + grvLastHit); /* its number sums the WHOLE hits */ if (e.dead) { if (st.eh) grvHorizon(sp); continue; } } // it BURNS and FEEDS the hole (grvHit); its number is summed (grvBurnNums)
       // the shielded are never slowed (applySlow refuses them); a fast enemy doubled like every other slow (owner, 2026-10-24 marks target: "Increase slow to make good vs fast")
       if (!st.auraOn) continue; // the slow and the pull are Nova's aura (tier redesign 2026-10-24)
       const lane = grvLane(e, sp), sk = lane.ahead ? GRV_AHEAD_K : 1;
       applySlow(e, slow * sk * grvSizeK(e), GRV_TICK * 1.5, "grv:" + t.id);
       grvPullTo(e, lane);
+      if (st.reel) grvReel(e, t, sp);
     }
   }
   // EVAPORATION, by its circumference - and RADIATION paced by it (owner, 2026-10-16: "make sure the pellet output is the same, just
@@ -260,6 +272,16 @@ function grvLane(e, sp) { // the lane's heading at e: is it past the hole, and h
   const a = pathAtInto(e.pi, e.s, e.ang, GRV_LN), b = pathAtInto(e.pi, e.s + 3, e.ang, GRV_LQ), tx = b.x - a.x, ty = b.y - a.y, L = Math.hypot(tx, ty) || 1;
   const ux = tx / L, uy = ty / L, hx = sp.x - e.x, hy = sp.y - e.y, cx = a.x - e.x, cy = a.y - e.y;
   return { ahead: hx * ux + hy * uy < 0, nx: -uy, ny: ux, across: cx * -uy + cy * ux };
+}
+// EVENT HORIZON: a kill by the crush grows the void x GRV_EH_GROW on top of what it is now (the fade so far kept), to GRV_EH_MAX; the clock restarts
+function grvHorizon(sp) { sp.evK = Math.min(GRV_EH_MAX, grvEvK(sp) * GRV_EH_GROW); sp.evAt = sp.age; sp.evKills = (sp.evKills || 0) + 1; }
+// UNDERTOW: an enemy the aura holds that is nearer the core than its tower is reeled back toward the void - once a GRV_REEL_CD, whichever GRV reels it. (G.clock: game time)
+function grvReel(e, t, sp) {
+  if (e.reelAt > (G.clock || 0) || Math.hypot(e.x - CX, e.y - CY) >= Math.hypot(t.x - CX, t.y - CY)) return;
+  e.reelAt = (G.clock || 0) + GRV_REEL_CD; e.reelLeft = Math.min(GRV_REEL_BACK, Math.hypot(sp.x - e.x, sp.y - e.y)); e.reelT = GRV_REEL_T; e.reelRate = e.reelLeft / GRV_REEL_T;
+}
+function grvReelStep(e, dt) { // from stepEnemies: the lane backward, GRV_REEL_BACK u over GRV_REEL_T s (never before the lane's start)
+  const d = Math.min(e.reelLeft, e.reelRate * dt); e.reelLeft -= d; e.s = Math.max(0, e.s - d); if ((e.reelT -= dt) <= 0 || e.reelLeft <= 0) e.reelT = 0;
 }
 function grvPullTo(e, lane) { // each aura tick: which way, and how far to the hole's line (it GLIDES there - grvPullStep, every step)
   e.pull ||= [0, 0]; const sg = Math.sign(lane.across); e.pullDir = [lane.nx * sg, lane.ny * sg]; e.pullLeft = Math.abs(lane.across); e.pullT = GRV_TICK * 1.5;
