@@ -623,6 +623,9 @@ with a chooser open 1-4 pick the first four of its cards instead (the build choo
 | control | three `[-] pips [+]` steppers (axis name and tier, `0->II` while pulled; pips filled = locked, half = pulled, hollow = to buy, the last orange, red once another axis holds the capstone) beside the chart; the + flashes while the bank covers a buy |
 | confirm | the tower's name and purchases with the cost (`Arc II (-440c)`), bold when affordable, pulsing while a basket waits; sell smaller under it; the targeting slider small |
 | stats | in SECTIONS, one a mechanic (`STAT_SECTIONS`, `aspira-sliders.js`), a row no section names under "Tower" first; each `now -> next`, worse in red (`LOWER_BETTER`); rows the tower lacks left out; kills and damage live |
+| demo | a live scene of the tower at work in the description box (`aspira-demo*.js`; the text behind the i): a layout per tower tier 0 and per axis (`DEMO_LAYOUTS`, shares of the live range); each lane sends rows THREE WIDE, each slot filled at 50% by a seeded hash, rows about the number gap apart (`demoPlace0` / `demoLatStep`; SOL's layouts twice the rows); its own flat 3D camera, the range's far edge as far from the box's right edge as the tower is from its left, but **never zoomed in past the board's own tower size at its default zoom** (`demoBoardK`) |
+| buy-card demo | the same scene for a random 5-point build of a kind, opened by the i on its buy card: one panel, the demo over the triangle, a close button; any click closes (`aspira-demo-buy.js`) |
+| fit | **every section shows at every reasonable size, no scroll** (owner, 2026-11-06): `fitPop` shrinks the chart, then `fitTight` takes in order tight spacing + stats in two columns, the demo shrunk to 72 px, the content zoomed to 0.75, and only then a scroll; pinned over 10 sizes x 7 towers by `tests/test_spire_cardfit_browser.py` in exec-fn's real page shell |
 
 ### 7.4 Wave list, HUD, end screens
 
@@ -684,6 +687,32 @@ type or boss fleet first appears more than a step past the entry.
 spacing still read `ENEMIES[type].size`, `TOWER_K` and `CORE_R`. A swarmer's 50-300% size roll
 draws at 100-240% (`swarmDrawJit`, `e.drawJit`).
 
+**THE TOWER BODIES (owner, 2026-11-06: "every upgrade axis also changes a visible feature")** - look only, drawn on the towers' 3D layer with
+each prism (`drawOrbiters`: what stands behind the tower before its prism, the rest after its top):
+
+| Tower | Axes, as they show (file) |
+|---|---|
+| ARC | Voltage: hex rings round the prism, one more a tier, turning, sized to clear the prism at every turn (`arcRingR`); Conductivity: thicker, glowier rings; Shock: brief arcs between top corners; the bolt leaves the top corner nearest its target (`aspira-arc-body.js`) |
+| FRZ | Permafrost hex crystals and Fracture shards round the base (the ice, below); the moons as ice d12s (`aspira-frz-moons.js`); opaque walls |
+| SOL | Reflection: the prism becomes a 6 / 8 / 9 / 10 / 12 / 14-gon; Scorch: the top outline thicker, whiter, glowier (baked into the tower sprite); Breach: a katana blade on every corner, back ones dimmer (`aspira-sol-body.js`) |
+| ACD | drips down the walls, a moving puddle, bubbles popping on the top (`aspira-acd-body.js`) |
+| GRV | the body and the Gravity Well particles and chains (`aspira-grv-draw.js`) |
+| CRR | interceptors as V=V darts at their own altitudes, their chain trails, tethers and bolts on the same 3D layer (`aspira-crr-draw.js`) |
+| IFR | orbiting meteors at 75% height showing the build: the Hellfire ring, the Flare rays (`aspira-ifrit-draw.js`) |
+
+Every glow is a smooth blur or a GPU falloff, never stacked bands (owner, 2026-11-06: "never use step glow unless huge perf gains"); the one
+exception left is the lit lanes' 2D FALLBACK (no WebGL), where a blur would cost the slow device most - the GPU lanes are a shader bell.
+
+**FRZ'S ICE (owner, 2026-11-06: the Permafrost / Fracture spec; "also ice crystals should be 3d"; "Never redraw the ice")**: `aspira-frz-ice.js`
+GENERATES each tower's pieces once - hexes glued face to face (innermost first), shards in a normal spread leaning 15-30 deg outward and free to
+cross a hex, left / right balanced by volume, the top face never covered, nothing wholly hidden - seeded by the tower's id, in the view the tower
+first has; it runs in a Web Worker (the page's own `?v=` script; a silent worker hands over to the time-sliced maker after 3 s). Every piece is a
+SOLID (floor outline, a height at each corner, its lift, a shard's lean); `aspira-frz-ice3d.js` projects it once through an affine copy of the
+tower's first 3D view and BAKES it with a per-pixel depth test (the tower's prism a depth-only occluder): the colours, then the ridges where
+the depth test shows them, in slices (~2 ms a frame). **Baked once**: growth shows step by step, the full bake swaps in whole, and after that the
+one image only moves and scales with the tower - no rebake on a move, a pan or a zoom; a tier bought later keeps the old image up until the new
+one is whole. SOL's blades follow the same rule.
+
 ### 8.4 Audio
 
 Synthesised WebAudio through a limiter (`aspira-sfx.js`), created on the first gesture:
@@ -691,7 +720,9 @@ voice-limited, per-sound gaps, **at most 3 copies of a tower's sound at once**, 
 at any speed. Mute and volume persist. Optional **Brood War samples** from the owner's own
 install live only in this repo's `data/aspira-sfx/` (gitignored: the repo is public), served to the
 guest tier by `/aspira-sfx/{file}`, replacing the synth sound of the same name. Each boss
-has a voice line.
+has a voice line. **At the voice cap the RARE sound wins** (owner, 2026-11-06: "less frequently played sounds should take priority ... (in terms of SFX
+concurrent limit)"): each name's trigger rate decays over `SFX_RATE_TAU` 2.5 s; a new sound that finds the voices full cuts the live sound whose
+name triggers most often (a 15 ms fade) - only if that one is commoner than it - else it is skipped (`sfxMakeRoom`).
 
 ## 9. Meta
 
@@ -763,9 +794,9 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 |---|---|
 | data and state | `defs` (geometry, tables), `towerstats` (`towerStats`, prices), `drawsize` (how big things are drawn, apart from their game size), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows), `step` (the tick, spawns, enemy movement, game end) |
 | waves | `formations`, `floats` (numbers, coins), `waves`, `wavelanes` (each type's lane and its turn on screen, split 2026-11-05), `bosses`, `bossfleet` (the boss fleets: lattices, scatters, the Devil's host), `bossbar` (the boss's HP along its lane), `positioning` (+ the play box) |
-| towers | `towers` (ARC, SOL, moons), `move` (leash, tower marks), `sol` (SOL), `acid` (ACD) + `acid-draw` (its look, 2026-11-05), `skills` (the charts' shared helpers), `arc` (ARC's chart, split from skills 2026-11-05), `frz`, `grv` (GRV) + `grv-draw` (its look, 2026-11-05), `crr` (CRR), `ifrit` (IFR) + `ifrit-draw` (its look), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card) |
+| towers | `towers` (ARC, SOL, moons), `move` (leash, tower marks), `sol` (SOL), `acid` (ACD) + `acid-draw` (its look, 2026-11-05), `skills` (the charts' shared helpers), `arc` (ARC's chart, split from skills 2026-11-05), `frz`, `grv` (GRV) + `grv-draw` (its look, 2026-11-05), `crr` (CRR), `ifrit` (IFR) + `ifrit-draw` (its look), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card), the LOOKS kept apart from the logic: `crr-draw` (CRR's interceptors, trails, tethers and bolts), `arc-body` (ARC's rings, Shock arcs, the bolt), `acd-body` (ACD's drips, puddle, bubbles) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
-| draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `ranges` (tower ranges, split from draw), `textcache`, `effects`, `enemies`, `lanes`, `lanefade` (the fade-in layer, split from lanes), `camera`, `fling`, `fog` |
+| draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `ranges` (tower ranges, split from draw), `textcache`, `effects`, `enemies`, `lanes`, `lanefade` (the fade-in layer, split from lanes), `camera`, `fling`, `fog`, then the tower looks drawn with the towers (2026-11-06): `solbeam` (SOL's beams and cones), `frz-moons` (FRZ's moons as ice d12s), `frz-ice` (FRZ's ice generator - also run as a Worker) + `frz-ice3d` (its 3D depth-tested bake), `sol-body` (SOL's faces, Scorch outline, Breach blades) |
 | draw (3D) | `lanegl` (the GPU lanes' atlas and GLSL, before `warp` because the shader source splices `LANE_GLSL`), `warp`, `warp-prism`, `warplayers`, `fxgl`, `chains` (ARC's chains and charge glow, render only), `glctx`, `pick`, `solids`, `walls` |
 | UI and tail | `chooser`, `wavelist`, `wavecard`, `cardfit` (where the tower / core card sits, split 2026-11-05; BEFORE `ui`, whose last lines call it at load), `ui` (HUD, input, the frame loop), `perflog`, `warmup` (one hidden draw of every kind a few seconds after load, so V8's first real frames are warm), `changelog`, `changelog-old` (5.8 and older), `changelog-card` (the WHAT'S NEW card), `autosave`, `demo` (the card's private scene: the swap, the 3D camera), `demo-layouts` (the layout registry, `demoShows`), `demo-card` (the box, the i, `demoTick`), `dev` (the `?dev=` scenes) |
 
@@ -838,13 +869,16 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 
 | Area | Trap |
 |---|---|
+| load | **a Worker (or any fetch) of a game file by its BARE URL gets a day-old copy** (7.7.92): `/aspira-*.js` is served `public, max-age=86400`; only the page's script tags carry the server's `?v=` hash. FRZ's ice Worker imported the bare file, a phone ran 7.7.89's copy in it, the worker never answered and the board showed no ice. Import the tag's own `src` (`iceWkSrc`) and give a worker a watchdog; test with a rig that serves an OLD copy to an unversioned request |
+| view | **putImageData on a GPU canvas costs ~110 ms a call in WebKit, whatever its size** (2026-11-07, the 3D ice bake): a canvas you write pixels to is made with `getContext("2d", { willReadFrequently: true })` (a CPU canvas) and filled in bands - FRZ's ice and IFR's flare stamps |
+| view | **a baked look is baked ONCE, then only moved and scaled** (owner, 2026-11-06: "Never redraw the ice"): FRZ's ice, SOL's blades - built in the tower's first view, frozen; never keyed on the view, the zoom or the spot (a key on the view at the CURRENT spot regrew the ice on every move, 7.7.95); a change of tiers swaps a whole new image in |
 | code | **no mid-line `//` comment** in the game JS or in a GLSL expression line; use `/* */` (it swallows the rest of the line; `lint-swallowed.py` flags it) |
 | code | one global scope, ESLint `no-undef` off: a dropped `const` throws at run time; verify placement in a browser or the smoke after touching `placeTower`. A new top-level name must not collide with another file's (GRV's projectile grid is `projGrid` / `enemiesNear` because `aspira-acid.js` owns `enemyGrid`) |
 | code | UI-only code that logic reaches needs a `typeof X === "function"` guard; a new logic script goes in `sim.mjs` `FILES`; a browser global needs a `dom.mjs` stub |
 | code | every per-tier table has exactly 4 entries (written as the old 0 I II III) before `aspira-capstone.js` loads, 6 after (the capstone V pushed, tier I inserted by `tierMid`); tier 0 and tier I are then set by hand in `aspira-tier01.js`. A new table or axis needs a `CAPSTONE_NUM` entry and a `CAPSTONE_TIERS` name; a table whose every tier holds one value is a constant, not a table |
 | board | KNOWN GAP, desktop only (parked 2026-11-03, invisible): an in-frame strip upload can leave a lane RIM CIRCLE's 18x18 strip one state stale - 677 px at one spot over 8 waves in WebKit (`~/.claude/spire-patches/bmp-probe.py`, outside the repo), 0 on the off-frame (iPhone) path. Likely the rim item's key (`laneItem`: position to 0.1 u, alpha to 3 decimals; an idle and a lit circle cross-fading on one slot) missing a change the 150 ms redraw catches. Cheap fix if it ever shows: pad rim strips a few px and key the cross-fade |
 | board | **a boss's KIN that come ahead of a gated boss must not be held for the bar** (7.7.18): `barHold` (aspira-bossbar.js, page only) holds a boss and its kin while the HP bar flies in - the bar flies in for bosses on the board. The Devil's host comes first and she is gated on it (`devilGateShut`): holding the host deadlocked the wave (Wai: "Freezes"). `devilEsc` is exempt; the smoke plays the Devil with `BAR_HOLD` on (waves.mjs). A new kin-first boss needs the same exemption. The simulator never loads the bar, so it can never show such a stall |
-| view | **a 2D flare stamp is not the stroked flare to the pixel** (7.7.14): the faint glow layers accumulate in the stamp's 8-bit premultiplied canvas before they land, not on the scene - 0.53% of a Hellfire V demo frame off by >24/255 (stroke-vs-stroke noise 0.15%), even with exact keys. The stamp carries the view's linear part (the card demo's floor is squeezed, a 1.08 / d 0.92) - a stamp keyed on scale alone falls back to strokes there, silently |
+| view | **a 2D flare stamp is made from the GPU glow's own formula, pixel by pixel** (2026-11-06, `ifrStampPixels`; it was the stroked flare, 0.5% of a frame off): each look once, cached; it carries the view's linear part (the card demo's floor is squeezed) - a stamp keyed on scale alone would be wrong there |
 | view | **a cache on a per-frame object caches nothing** (7.7.x): the prisms' `o.geo` is rebuilt each frame, so its gradients were made ~96 times a late frame; keep a frame-crossing cache keyed by the EXACT numbers a gradient is made from (`prismGrad`) |
 | board | **a strip redraw is clipped to the UPLOADED rects, and the strips are found before the draw** (`warpRender`, 7.6.14): the changed boxes come from the draw itself (`laneItem` -> `laneDirty`, `bossBarMoved`), so a DRY pass runs first - `drawLanes` and/or `warpBossBarBoard` under an empty clip (`rect(0,0,0,0)`), which lays the boxes and moves their history (`laneItemsPrev`, `B.boardHp`) - then the board draws clipped. Four rules: (1) the clip is `stripsMerge(pending strips + new boxes)`, exactly `warp.statRect`, never the boxes before merging - a merged strip's gaps go up too, and from an unredrawn canvas they are stale (14034 px off in the WebKit texture check on a boss + labels event); (2) after a dry pass the real pass's `laneDirty()` / `bossBarMoved()` read nothing (the history already moved): use the dry pass's boxes, and when it could not tell (`null`) send the whole board (`dryMiss`), never the empty strip the second read gives; (3) `warp.cvPart` marks a canvas that holds a clipped redraw: a WHOLE send from it (a new texture) clears `statKey`, so the next render redraws it all; (4) only strip events clip - key, sky, wave and lane events draw everything. Proof for any change here: copy each event's uploaded rects from the clipped canvas and from a full redraw of the same state (clock frozen in the frame) into two emulated textures, compare all S x S at >24/255 |
 | view | **glCtx reuses its path's entries** (`aspira-glctx.js`, 7.6.9): the op entries, transformed points and parts come from pools (`opPool`, `ptPool`, `partPool`) rewound at `beginPath` - a reference to an op, a point or a part is valid only until the next `beginPath`; anything that must outlive the path (a replay, a cached shape) copies the numbers out. `op2` keeps moveTo / lineTo args in the entry's own pair; `g.m` is replaced, never changed in place, so an entry may keep it |
