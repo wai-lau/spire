@@ -231,9 +231,18 @@ function ifrHash(...v) { let h = 0x9e3779b9; for (const x of v) { h = Math.imul(
 // every tick its segment is rebuilt on the fire's CURRENT circle and enemy (ifrChainSync), and it goes the moment the fire stops tracking.
 // It lives as long as the fire's flares do (its window + a flare's burn); it burns as the untaken Flare's flare does, its tick the fire
 // flare's hit x IFR_CHAIN_K (x the fire's share hk). Was (07:00 .. 10:30) a pentagram of chords, the five struck one after another, each a flare's burn long
+// AT LEAST IFR_CHAIN_GAP APART (owner, 2026-11-07: "for IFR hellfire V, keep each chain at least 50 deg apart" - 60 a minute before): the n chains
+// go round the circle in order from a seeded start, each gap IFR_CHAIN_GAP plus a seeded share of what is left of the turn (5 x 50 = 250, 110 to share)
+const IFR_CHAIN_GAP = 50 * Math.PI / 180;
+function ifrChainAngle(seed, k, n) {
+  const w = []; for (let i = 0; i < n; i++) w.push(0.05 + ifrHash(seed, i, 3));
+  const sum = w.reduce((a, b) => a + b, 0), slack = Math.max(0, 2 * Math.PI - n * IFR_CHAIN_GAP);
+  let a = 2 * Math.PI * ifrHash(seed, 0, 1); for (let i = 0; i < k; i++) a += IFR_CHAIN_GAP + slack * w[i] / sum;
+  return a;
+}
 function ifrChain(t, st, fire, k) {
   const ft = ifrFlareTiming(0), life = (fire.win ?? IFR_FIRE_WINDOW_S) + ft.burn;
-  const c = { a0: 2 * Math.PI * ifrHash(fire.seed, k, 1), ph: ifrHash(fire.seed, k, 7), fire, W: IFR_BEAM_W[0], life, left: life, tick: 0, tickS: ft.tick, chain: true, hf: false, edges: false,
+  const c = { a0: ifrChainAngle(fire.seed, k, fire.ch || IFR_CHAINS_N), ph: ifrHash(fire.seed, k, 7), fire, W: IFR_BEAM_W[0], life, left: life, tick: 0, tickS: ft.tick, chain: true, hf: false, edges: false,
     hit: st.dmg * IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K * (fire.hk ?? 1) * IFR_CHAIN_K * ft.k };
   ifrChainSync(c); t.ifrFlares.push(c); return c;
 }
