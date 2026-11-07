@@ -17,34 +17,39 @@
 const SOL_SIDES = [6, 8, 9, 10, 12, 14];
 const solSides = t => (t && t.kind === "sol" ? SOL_SIDES[Math.max(0, Math.min(5, skillOf(t, "refraction")))] : 6);
 // the tower's outline as `solSides` corners at (x, y), scaled like towerPts (g: x TOWER_K); null for a hex (the cell's own points stand)
+// A FLAT FACE DUE SOUTH (owner, 2026-11-07: "for SOL, always rotate the tower so that one of the flat faces faces directly south when reflection level
+// is higher than 0"): with Reflection's faces (n > 6) the first two corners sit half a face either side of straight down-screen (+y), so the face between
+// them points south; a hex keeps its cell's turn. Every outline reads it (the prism, the top sprite, the pick, the blades). Draw only
+const solA0 = (t, n) => { const c = CELLS[t.cell], p = c.pts[0]; return n === 6 ? Math.atan2(p.y - c.y, p.x - c.x) : Math.PI / 2 - Math.PI / n; };
 function solPolyPts(t, x, y, g = 1) {
   const n = solSides(t); if (n === 6) return null;
-  const c = CELLS[t.cell], p = c.pts[0], k = TOWER_K * g, R = Math.hypot(p.x - c.x, p.y - c.y) * k, a0 = Math.atan2(p.y - c.y, p.x - c.x);
+  const c = CELLS[t.cell], p = c.pts[0], k = TOWER_K * g, R = Math.hypot(p.x - c.x, p.y - c.y) * k, a0 = solA0(t, n);
   return Array.from({ length: n }, (_, i) => ({ x: x + R * Math.cos(a0 + 2 * Math.PI * i / n), y: y + R * Math.sin(a0 + 2 * Math.PI * i / n) }));
 }
 // SCORCH on the sprite's outline: its width, colour and glow by tier (towerSprite)
 const solScorch = (t, col) => { const bt = t && t.kind === "sol" ? skillOf(t, "focus") : 0, wh = bt / 5; return { bt, w: 1 + 0.27 * bt, col: bt ? mixRgb(col, COL.white, 0.95 * wh) : col, glow: bt ? mixRgb(col, COL.white, 0.6 * wh) : col, gk: 1 + 0.3 * bt }; };
 
 // ---------- BREACH: the blades ----------
+const SOL_BLADE_VQ = 0.04; // the view-shape key's step (a share of the floor's px a unit)
 const SOL_BLADE_BACK_A = 0.7, SOL_BLADE_OUT = 15 / 40, SOL_BLADE_TH = 0.7 / 40, SOL_BLADE_FADE = [0.08, 0.4], SOL_BLADE_INT = [0, 0.3, 0.45, 0.62, 0.8, 1];
 const solBladeProfile = d => 1.6 + 1.6 * (Math.exp(3 * d) - 1) / (Math.exp(3) - 1); // x the tower's visible height: 160% centre -> 320% sides
 const solBodyOf = new WeakMap();
 let solScratch = null;
 // device px of the world point (px, py) at height z (identity transform)
 const solScr = (px, py, z) => { const F = warpFrame(px, py, z); return [F[0] * px + F[2] * py + F[4], F[1] * px + F[3] * py + F[5]]; };
-function solBladeGeo(t, x, y, top) { // each blade's outline in device px, sorted back to front; -> { list, key }
-  const n = solSides(t), c = CELLS[t.cell], p = c.pts[0], R = Math.hypot(p.x - c.x, p.y - c.y) * TOWER_K * TOWER_DRAW_K, a0 = Math.atan2(p.y - c.y, p.x - c.x);
-  const s = R / 40, R5 = R + SOL_BLADE_OUT * 40 * s, w = 2 * R * Math.sin(Math.PI / n) / 6, th = SOL_BLADE_TH * 40 * s, base = solScr(x, y, 0);
-  const cx = Array.from({ length: n }, (_, k) => solScr(x + R * Math.cos(a0 + 2 * Math.PI * k / n), y + R * Math.sin(a0 + 2 * Math.PI * k / n), 0)[0] - base[0]);
+function solBladeGeo(t, x, y, top) { // each blade's outline in device px, sorted back to front; -> { list, key }. top: the prism's top as drawOrbiters gives it
+  const n = solSides(t), c = CELLS[t.cell], p = c.pts[0], R = Math.hypot(p.x - c.x, p.y - c.y) * TOWER_K * TOWER_DRAW_K, a0 = solA0(t, n), z0 = warpFloor(), vis = top + warpLift; // z0: the REAL floor (the tower is lifted, warpLift); vis: its visible height
+  const s = R / 40, R5 = R + SOL_BLADE_OUT * 40 * s, w = 2 * R * Math.sin(Math.PI / n) / 6, th = SOL_BLADE_TH * 40 * s, base = solScr(x, y, z0);
+  const cx = Array.from({ length: n }, (_, k) => solScr(x + R * Math.cos(a0 + 2 * Math.PI * k / n), y + R * Math.sin(a0 + 2 * Math.PI * k / n), z0)[0] - base[0]);
   const mx = Math.max(1e-6, ...cx.map(Math.abs)), list = [];
   for (let k = 0; k < n; k++) {
-    const a = a0 + 2 * Math.PI * k / n, ca = Math.cos(a), sa = Math.sin(a), bA = a, cb = Math.cos(bA), sb = Math.sin(bA), H = top * solBladeProfile(Math.abs(cx[k]) / mx);
-    const pt = (u, z, off) => { const q = solScr(x + R5 * ca + u * cb - off * sb, y + R5 * sa + u * sb + off * cb, z); return [q[0] - base[0], q[1] - base[1]]; };
+    const a = a0 + 2 * Math.PI * k / n, ca = Math.cos(a), sa = Math.sin(a), bA = a, cb = Math.cos(bA), sb = Math.sin(bA), H = vis * solBladeProfile(Math.abs(cx[k]) / mx);
+    const pt = (u, z, off) => { const q = solScr(x + R5 * ca + u * cb - off * sb, y + R5 * sa + u * sb + off * cb, z0 + z); return [q[0] - base[0], q[1] - base[1]]; };
     const sh = [[0, 0], [w, 0], [0.88 * w, 0.8 * H], [0, H]], plates = [-th, th].map(off => sh.map(q => pt(q[0], q[1], off)));
     const ham = []; for (let z = 0.05 * H, i = 0; z < 0.74 * H; z += H * 0.03, i++) ham.push(pt(w - 0.12 * w * (z / (0.8 * H)) - 0.2 * w + 0.03 * w * Math.sin(i * 1.3), z, 0));
     const d = -sb * -0.8 + cb * 0.6;
     list.push({ plates, edge: [pt(w, 0, 0), pt(0.88 * w, 0.8 * H, 0), pt(0, H, 0)], spine: [pt(0, 0, 0), pt(0, H, 0)], ham, shade: 0.35 + 0.65 * Math.max(0, Math.abs(d)),
-      y0: pt(0, 0, 0)[1], yH: pt(0, H, 0)[1], back: sa * (solScr(x, y + 1, 0)[1] - base[1]) < 0 });
+      y0: pt(0, 0, 0)[1], yH: pt(0, H, 0)[1], back: sa * (solScr(x, y + 1, z0)[1] - base[1]) < 0 });
   }
   list.sort((p, q) => p.y0 - q.y0); // far to near
   // DEPTH OPACITY (owner, 2026-11-06: "blades further back are less opaque, going from 100% at front, to 70% at back"): by its foot's depth on screen in this view
@@ -89,7 +94,12 @@ function solBladeBake(list, tier, k) { // -> { cv, ox, oy } in device px about t
 function drawSolBlades(t, far, x, y, top) { // NEVER REDRAWN on a move, a pan or a zoom (as FRZ's ice - owner, 2026-11-06: "Never redraw the ice"): built
   // in the tower's first view, the image then moves and scales with it; a new Breach or Reflection tier builds it anew, swapped in whole
   const tier = skillOf(t, "breach"); if (!tier || typeof warpFrame !== "function") return;
-  const base = solScr(x, y, 0), e1 = solScr(x + 10, y, 0), k = Math.hypot(e1[0] - base[0], e1[1] - base[1]) / 10, key = tier + "," + solSides(t);
+  const z0 = warpFloor(), base = solScr(x, y, z0), e1 = solScr(x + 10, y, z0), k = Math.hypot(e1[0] - base[0], e1[1] - base[1]) / 10;
+  // REBUILT WHEN THE VIEW'S SHAPE CHANGES (owner, 2026-11-07: "make sure the breach blades are rendered in 3d" - "tower and blade angle mismatch here"): an image
+  // baked in one view and only moved and scaled showed that view's angles anywhere else on the board; the key holds the floor's two axes and the up axis
+  // there (device px a unit / k, in SOL_BLADE_VQ steps), so a tower in a new spot, a new zoom or a changed tilt bakes anew - never per frame while it holds
+  const F = warpFrame(x, y, z0), U = solScr(x, y, z0 + 10), vq = v => Math.round(v / k / SOL_BLADE_VQ);
+  const key = tier + "," + solSides(t) + "," + [F[0], F[1], F[2], F[3], (U[0] - base[0]) / 10, (U[1] - base[1]) / 10].map(vq).join(",") + "," + Math.round(top + warpLift);
   let B = solBodyOf.get(t);
   if (!B || B.key !== key) { const list = solBladeGeo(t, x, y, top); B = { key, k, back: solBladeBake(list.filter(b => b.back), tier, k), front: solBladeBake(list.filter(b => !b.back), tier, k) }; solBodyOf.set(t, B); }
   const S = far ? B.back : B.front; if (!S) return;
