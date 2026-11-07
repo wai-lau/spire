@@ -44,7 +44,7 @@ const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // k base auras' area (radius^2 / area a mass, never under 1) shows as k of them stacked would - CAP (1 - (1 - A / CAP)^k): a merge keeps the look
 const GRV_AURA_A = 0.3, GRV_AURA_CAP = 0.5; // BACK to 0.3 / 0.5 (owner, 2026-10-26: "void still has no aura" - the aura is a ring x1.4-2 the void since 2026-10-25, a third as wide as when 0.1 / 0.17 read fine); were a third of these (owner, 2026-10-24: x0.1 first - 0.03 / 0.05 read as no aura at all, "wait the whole aura is gone")
 const grvAuraAlpha = (sp, ar) => GRV_AURA_CAP * (1 - Math.pow(1 - GRV_AURA_A / GRV_AURA_CAP, Math.max(1, ar * ar / Math.max(1e-6, sp.apm || ar * ar))));
-let grvAuraCv = null;
+const grvAuraCvs = new WeakMap(); // the aura scratch, one a target canvas (grvAurasCapped)
 // THE BANDS RUN OVER THE VISIBLE RING (owner, 2026-10-26: "GRV aura not visible"): from the void's black core (inner) out to the aura's
 // edge - they sat at 15-66% of the whole radius, all under the core since the aura shrank to x1.4-2 the void (2026-10-25)
 function grvAura(x, sp, ar, a, inner = 0) { // one aura's gradient disc on context x at alpha a
@@ -53,7 +53,7 @@ function grvAura(x, sp, ar, a, inner = 0) { // one aura's gradient disc on conte
   x.globalAlpha = a; x.fillStyle = g; x.beginPath(); x.arc(sp.x, sp.y, ar, 0, 6.283); x.fill();
 }
 function grvAurasCapped(list) { // [[sp, ar]] that overlap: through the scratch layer, under the board's own transform
-  const real = ctx.canvas.getContext("2d"), m = real.getTransform(), c = grvAuraCv ||= document.createElement("canvas");
+  const real = ctx.canvas.getContext("2d"), m = real.getTransform(); let c = grvAuraCvs.get(real.canvas); if (!c) grvAuraCvs.set(real.canvas, (c = document.createElement("canvas"))); // ONE SCRATCH A TARGET CANVAS (2026-11-07: one shared by the board and the card demo was resized between the two every frame - WebKit reallocated it twice a frame: the GRV demo's 5 -> 25 ms and its memory sawtooth)
   if (c.width !== real.canvas.width || c.height !== real.canvas.height) { c.width = real.canvas.width; c.height = real.canvas.height; }
   const x = c.getContext("2d"); if (!x) return false;
   x.setTransform(1, 0, 0, 1, 0, 0); x.globalAlpha = 1; x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, c.width, c.height); x.setTransform(m);
