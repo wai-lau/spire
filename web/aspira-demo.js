@@ -77,7 +77,7 @@ const demoSizeK = (type, n) => 1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earl
 // DEMO_HP_START, DEMO_HP_K x a wave body), tuned as walkers resolve - a KILL raises it x F^0.1, a walker that WALKS OUT lowers it x F^-0.9 (F =
 // DEMO_TUNE_K0 for the first DEMO_TUNE_FAST resolutions, then DEMO_TUNE): it settles where 9 in 10 die. Enemy side only - the tower is the board's;
 // the rows' spacing by its kill capacity (demoKillCap, aspira-demo-layouts.js). Deterministic (no Math.random). S.kills / S.exits count them
-const DEMO_HP_START = 1, DEMO_TUNE = 4, DEMO_TUNE_K0 = 8, DEMO_TUNE_FAST = 10, DEMO_KILL_TARGET = 0.9, DEMO_HP_FLOOR = 0.01 / DEMO_HP_K; // (never under a hundredth of a wave body)
+const DEMO_HP_START = 1, DEMO_TUNE = 4, DEMO_TUNE_K0 = 8, DEMO_TUNE_FAST = 10, DEMO_KILL_TARGET = 0.9, DEMO_HP_FLOOR = 0.001 / DEMO_HP_K; // (never under a thousandth of a wave body)
 function demoTune(S, killed) {
   if (killed) S.kills = (S.kills || 0) + 1; else S.exits = (S.exits || 0) + 1;
   const F = (S.kills || 0) + (S.exits || 0) <= DEMO_TUNE_FAST ? DEMO_TUNE_K0 : DEMO_TUNE;
@@ -88,7 +88,7 @@ function demoWalker(S, type, lane, at) {
   const pi = S.pi0 + lane, L = S.lanes[lane], s = Math.max(DEMO_BOX_OVER, L.len * at); // (never out past the box: the lanes' overhang is DEMO_BOX_OVER u)
   const w = demoWave(); spawnEnemy(type, w, pi, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(pi, s, 0);
   e.sizeMul *= demoSizeK(type, 30) / demoSizeK(type, w); // a wave-30 body's SIZE whatever its wave (the box's spacing is set for them; the late ones are ~x2)
-  e.s = s; e.x = p.x; e.y = p.y; e.seen = true; e.hp = e.max = Math.max(1, Math.round(e.max * DEMO_HP_K * (S.hpK ?? DEMO_HP_START)));
+  e.s = s; e.x = p.x; e.y = p.y; e.seen = true; e.hp = e.max = Math.max(1, Math.round(e.max * DEMO_HP_K * (S.hpK ?? DEMO_HP_START))); const wk = DEMO_HP_K * (S.hpK ?? DEMO_HP_START); if (wk < 1 && e.shield > 0) e.shield = e.shieldMax = Math.max(1, Math.round(e.shield * wk)); // (its SHIELD too, below a wave body's health - a shielded walker the tower only pops walked out whole: IFR tier 0, 2026-11-07; at least one charge, so pops still show)
   e.demo = { walk: true, lane, s0: 0, s1: L.len - DEMO_BOX_OVER, armor: e.armor || 0, shield: e.shield || 0 }; // (s1: it turns back short of the lane's end - at the end step() takes it for a leak at the core)
   e.tally = { type, demo: e.demo, dmg: 0, armor: e.armor || 0, shield: e.shield || 0, slow: 0 }; S.T.push(e.tally);
   return e;

@@ -83,9 +83,9 @@ function demoPlace0(kind, st, cell, L) {
   const w = DEMO_LAT_W * r, hasFast = T.includes("fast"), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
   const yc = dy - DEMO_LAT_IN * r, lanes = [c.y - yc, c.y + yc].flatMap(y0 => [-1, 0, 1].map(j => lane(y0 + j * w))); // (the lanes' centres a little in, so the outer slot stays in the box)
   const lt = [0, 1].map(ln => T.filter((type, i) => (hasFast ? (type === "fast") === (ln === 0) : i % 2 === ln)));
-  const len = lanes[0].len, D = Math.max(g, (len - 2 * DEMO_BOX_OVER) / (L.rows || DEMO_LAT_ROWS), demoArriveD(kind, st, T) / (L.arrive || 1)), lead = Math.max(DEMO_BOX_OVER, xr - 0.9 * r); // (the scene OPENS with each lane's lead row at the range's edge)
+  const len = lanes[0].len, Dn = Math.max(g, (len - 2 * DEMO_BOX_OVER) / (L.rows || DEMO_LAT_ROWS)), D = Math.max(Dn, demoArriveD(kind, st, T) / (L.arrive || 1)), D0 = L.arrive ? Dn : D, /* D0: the OPENING rows' spacing - a layout with its own L.arrive opens full (a slow tower still shows its hits at once), then thins; D: the rows that walk in after */ lead = Math.max(DEMO_BOX_OVER, xr - 0.9 * r); // (the scene OPENS with each lane's lead row at the range's edge)
   const seed = demoHash(cell, kind.charCodeAt(0), kind.charCodeAt(1), kind.charCodeAt(2)) * 1e6 | 0, lat = { D, seed, types: lt, row: [0, 0], tk: [0, 0], at: [0, 0] }, list = [];
-  for (let ln = 0; ln < 2; ln++) for (let s0 = lead; s0 >= DEMO_BOX_OVER - 1e-6; s0 -= D) list.push(...demoLatRow(lat, ln, s0 / len));
+  for (let ln = 0; ln < 2; ln++) for (let s0 = lead; s0 >= DEMO_BOX_OVER - 1e-6; s0 -= D0) list.push(...demoLatRow(lat, ln, s0 / len));
   list.lanes = lanes; list.lat = lat; return list;
 }
 // ARRIVALS BY KILL CAPACITY (owner, 2026-11-07: "For all demo try to have ~90% enemies die" / "By adjusting the enemies"; Leader: arrival rate from

@@ -128,9 +128,8 @@ check("demo late builds: at 13 points no scene sends a real wave or holds a non-
 });
 
 // ~90% DIE (owner, 2026-11-07: "For all demo try to have ~90% enemies die"): every layout at tier 0 or 13 points, 10 s in, then 30 s counted -
-// the share of walkers killed (demoTune's S.kills / S.exits) at least DEMO_KILL_PIN. (Measured 2026-11-07: 36 of 49 builds in 0.8-0.97, the sparse
-// tier-0 ones and GRV's void lower - the floor catches a scene that stops killing; the old scenes sat near 0)
-const DEMO_KILL_PIN = 0.25; // (IFR's tier 0, one meteor and no flares, sits at ~0.28: fewer walkers lost its first hit in the 6 s behaviour check)
+// the share of walkers killed (demoTune's S.kills / S.exits) at least DEMO_KILL_PIN - a scene that stops killing (the old scenes sat near 0)
+const DEMO_KILL_PIN = 0.6; // (2026-11-07: 41 of 49 builds in 0.8-0.97, 6 at 1.00 (sparse), the lowest SOL Focus / Breach at 13 points, 0.70 / 0.77 - 7.8.4's splits spread its damage down the line)
 check("demo kills: every layout, at tier 0 or 13 points, kills at least " + DEMO_KILL_PIN + " of the walkers that leave the scene (10 s in, 30 s counted)", () => {
   return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), c = CELLS[cell], rnd0 = Math.random;
     try { for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) {
