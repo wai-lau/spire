@@ -58,9 +58,9 @@ let SOL_PULSE_K = 0.75, SOL_AIM = 0.3; // (marks 9 pts 101-119: x1 76/24/0/21, x
 // SCORCH V's FLARE (owner, 2026-11-06: "SOL, don't require death, just first enemy hit, leave SOL colored IFR flare"): each shot's FIRST
 // enemy hit (the lock, whether it dies or not) leaves an IFR flare there in SOL's colour, burning as IFR's untaken Flare does (its length,
 // width, burn and tick: ifrFlareTiming(0), IFR_BEAM_L/W[0], the mean flare size) and ticking through ifrTickFlare. Its tick = IFR's flare tick
-// (IFR_TICK_K0 x ifrFlareTiming(0).k = ~0.915 x the tower's damage, the SOL tower's own dmg - not the tracking beam's x4.55) x SOL_FLARE_SHARE.
+// (IFR_TICK_K0 x ifrFlareTiming(0).k = ~0.915 x the tower's damage, the SOL tower's own dmg - not the tracking beam's x4.55) x SOL_FLARE_SHARE (1: burns exactly as IFR's flare).
 // At most SOL_FLARE_MAX live a tower (the oldest drops): a pulse is ~1.2 s apart and a flare burns 0.6 s, so it is a safety, not a throttle
-const SOL_FLARE_SHARE = 0.5, SOL_FLARE_MAX = 4, SOL_FLARE_I = 3; // SOL_FLARE_I: the glow's intensity (= IFR_FLARE_I0, the untaken flare's)
+const SOL_FLARE_SHARE = 1, SOL_FLARE_MAX = 4, SOL_FLARE_I = 3; // SOL_FLARE_I: the glow's intensity (= IFR_FLARE_I0, the untaken flare's)
 function solLandFlare(t, st, e) {
   const fl = (t.solFlares ||= []), ft = ifrFlareTiming(0), s = IFR_FLARE_K * IFR_FLARE_MEAN; // (the mean flare, no draw: deterministic)
   while (fl.length >= SOL_FLARE_MAX) fl.shift();

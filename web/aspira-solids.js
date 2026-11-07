@@ -99,7 +99,7 @@ function solidGeom(e) {
   if (e.breachN > 0) {
     const n = Math.min(BREACH_SPOKES, Math.max(1, e.breachN || 1)), H = size * (1.3 + SOLID_BREACH_LEN * n);
     const scr = ([x, y, z]) => [P.x + k * x * size, P.y + k * (p.c * y * size - p.s * z * size)], [x0, y0] = scr([0, 0, -H / size]), [x1, y1] = scr([0, 0, H / size]);
-    spike = { a: { x: x0, y: y0, z: -H }, b: { x: x1, y: y1, z: H }, w: (1.2 + SOLID_BREACH_W * n) * cam.k };
+    spike = { blade: !!e.breachBy && skillOf(e.breachBy, "breach") >= CAPSTONE_TIER /* the BLADE at Breach V only (Leader, 2026-11-06) */, a: { x: x0, y: y0, z: -H }, b: { x: x1, y: y1, z: H }, w: (1.2 + SOLID_BREACH_W * n) * cam.k };
   }
   // FROZEN: its own colour with FRZ's cyan laid over at SOLID_FROZEN_A (owner, 2026-10-09: "FRZ color change should just be
   // 50% opaque, not 100" - it was all cyan)
@@ -234,7 +234,7 @@ function warpSolidWhole(e) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineJoin = "round";
   // the breach spike WHOLE, at full strength, in the pass above the floor: centred on the floor (owner, 2026-10-09: "SOL
   // breach effect should be centered on floor" - its lower half faded with the floor, so it read as rising from the die)
-  if (g.spike && (!band || band.lo === 0)) solBreachBlade(g.spike, fa);
+  if (g.spike && (!band || band.lo === 0)) { if (g.spike.blade) solBreachBlade(g.spike, fa); else { ctx.beginPath(); ctx.moveTo(g.spike.a.x, g.spike.a.y); ctx.lineTo(g.spike.b.x, g.spike.b.y); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9 * fa; ctx.lineWidth = g.spike.w; ctx.stroke(); } }
   // PERF (2026-10-09): each face ONE fill of its layers blended up front (background, colour, frost - source-over
   // is associative, so it is the same colour), and the edges stroked once for the whole die: the outline (an edge of
   // one face) once, the inner edges (shared by two faces) as their two strokes blended
