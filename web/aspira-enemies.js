@@ -157,7 +157,7 @@ function drawStatus(e, d, size, solid) {
     poly(e.x, e.y, size, d.sides, e.rot, d.pointy);
     ctx.fillStyle = COL.tfrz; ctx.globalAlpha = (0.45 * Math.min(1, e.biteT * 2)) * vis; ctx.fill();
   }
-  if (e.brittle > 1 && e.slowT > 0) {
+  if (e.brittle > 1 && e.slowT > 0 && !solid) { /* 2D only: in 3D the crack lay on the FLOOR under the raised die and only a stub peeked out from under it - a white "tail" on every fractured enemy, board and demo (owner, 2026-11-07: "Fix tiny tail on fast") */
     const s = size * 0.7, c = Math.cos(e.rot), n = Math.sin(e.rot);
     const ptx = (u, v) => e.x + c * u - n * v, pty = (u, v) => e.y + n * u + c * v;
     ctx.beginPath(); ctx.moveTo(ptx(-s, -s * 0.2), pty(-s, -s * 0.2)); ctx.lineTo(ptx(-s * 0.3, s * 0.25), pty(-s * 0.3, s * 0.25));

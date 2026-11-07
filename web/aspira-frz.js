@@ -92,7 +92,7 @@ const FRZ_BITE_TD = 8, frzBite = e => Math.min(FRZ_BITE_TD * tdU("frz"), 1 + FRZ
 // MAX RIME (owner, 2026-10-11: "if something reaches max rime, it spreads to the nearest unit that is not yet max
 // rime"): an enemy its rime alone slows FRZ_RIME_FULL (before the slow's shaping) holds no more - a pulse that reaches it
 // passes its rime to the nearest living enemy that can still take it, a frost line between them
-const FRZ_RIME_FULL = 0.7, FRZ_SPREAD_FX = 0.35;
+const FRZ_RIME_FULL = 0.7; // (FRZ_SPREAD_FX, the conduction line's life, gone with the line 2026-11-07)
 // how much frost an enemy holds, 0..1 of FRZ_RIME_FULL - its armor loss and its white outline (rimeK, aspira-enemies.js)
 const frostShare = e => (e.rimeKeep == null ? 0 : Math.min(1, (1 - e.rimeKeep) / FRZ_RIME_FULL));
 const rimeFull = e => 1 - (e.rimeKeep ?? 1) >= FRZ_RIME_FULL;
@@ -156,7 +156,7 @@ function frzStep(t, dt) {
         const to = rimeFull(e) ? rimeSpread(e) : e;
         if (st.deep) deepFreeze(e); // (a full enemy a ring touches, even with no one to pass it to)
         if (!to) continue;
-        if (to !== e) beam(e, to, TOWERS.frz.color, FRZ_SPREAD_FX, 1.5, 0, true);
+        /* (the conduction LINE, a beam from e to `to`, is gone - owner, 2026-11-07: "no need to show conduction lines"; the spread itself is unchanged) */
         if (applySlow(to, p.v, Infinity, p.id, "stack")) { to.rimeKeep = (to.rimeKeep ?? 1) * (1 - p.v); to.frostArmor = Math.max(to.frostArmor || 0, st.rimeCrack); to.frostBy = t.id; }
         if (st.deep) deepFreeze(to); // (...and one this very ring filled)
         if (st.rimeBite > 0) damage(to, st.biteDmg * st.rimeBite, t, !(to.shield > 0)); /* the ring's own bite - quiet, but a shield loses ONE charge to it (owner, 2026-10-25: "Yes"; it bounced off until then) */ // (a shield takes no slow, so no frost)

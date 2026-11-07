@@ -43,7 +43,13 @@ function dmgNumber(e, label, size, color, src, grey = 0) {
   fx[fx.length - 1].grey = grey;
   const f = fx[fx.length - 1], sx = src ? e.x - (src.x ?? e.x) : 0, sy = src ? e.y - (src.y ?? e.y) : 0, sl = Math.hypot(sx, sy);
   if (sl) { f.x = e.x; f.y = e.y; f.vx = fly * sx / sl; f.vy = -fly * sy / sl; } // (vy is UP: y -= vy)
-  f.v = size; dmgLive.push(f);
+  f.v = size; f.eid = e.id;
+  // NO OVERPRINT (owner, 2026-11-07, a card demo: "2.1k" printed on "2:1k"): a slowed or frozen enemy's next window's number spawned where the
+  // last one still sat (it drifts slower than a line a window), and a lattice's neighbours took the same hit side by side - a new number ENDS
+  // any older one of its colour it would overlap
+  const H = f.size, W = H * 0.6 * label.length; // (world units: a number is drawn at f.size under the frame's own scale)
+  for (const o of dmgLive) if (o !== f && o.color === color && o.t < o.life && Math.abs(o.y - f.y) < H && Math.abs(o.x - f.x) < W) o.t = o.life;
+  dmgLive.push(f);
 }
 
 // HALF-SECOND SUMS (owner, 2026-10-21: "for damage numbers, popups should sum to the latest 0.5s of damage regardless of hit speed
