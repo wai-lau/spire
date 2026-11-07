@@ -3,6 +3,9 @@
    screen above the nav; HUD and decks float over it (deck on the right on
    wide screens, a bottom sheet on phones). */
 
+/* NO DOUBLE-TAP ZOOM (owner, 2026-11-07: "Make iOS not zoom on doubleclick"): manipulation keeps pan and pinch where a panel scrolls, drops the double-tap zoom -
+   iOS ignores user-scalable=no; the board canvas keeps its own touch-action: none (#asp-cv) */
+html, body, #asp { touch-action: manipulation; }
 #asp {
   /* ONE BLINK (owner, 2026-10-08: "sync all the blinking rates"): every blinking thing runs on --asp-blink,
      pinned to the same phase (syncBlinks, aspira-ui.js) - the canvas's blinkers read BLINK_S on the same clock */
