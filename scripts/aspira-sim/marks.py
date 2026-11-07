@@ -5,7 +5,8 @@
 # FIVE LEVELS (owner, 2026-11-06: "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target
 # marks"): countermx at POINTS 0 / 3 / 6 / 9 / 13. 9 (spread) writes the card; 13 is read with --focus (no SPREAD_ONLY: each tower's
 # one-axis-maxed rows - V + IV + IV, every axis in turn - averaged into one row, the capstone check); 0 / 3 / 6 with --band: any cell more than
-# BAND off its mark-target.json cell prints RULE FAIL (a balance failure, like the two-checks rule)
+# BAND off its mark-target.json cell prints RULE FAIL (a balance failure, like the two-checks rule); BAND is 1 at 3 and 6 points and 2 at 0 points
+# (owner, 2026-11-07: "1C" - a fresh tower's row is too flat to hold +/-1), read from the run's "(N pts)" header
 import datetime
 import json
 import pathlib
@@ -99,8 +100,10 @@ lone = {k: [t for t in TYPES if m[t] > 0] for k, m in marks.items() if sum(1 for
 for k, ts in lone.items():
     print(f"RULE FAIL: {k.upper()} has checks on {len(ts)} enemy type(s) {ts} - every tower needs at least {MIN_CHECKED}")
 
-# THE BAND (owner, 2026-11-06, above): with --band every cell within BAND of the target
+# THE BAND (owner, 2026-11-06 / 2026-11-07, above): with --band every cell within BAND of the target - 2 for a 0-point run, else 1
 if "--band" in sys.argv[2:]:
+    pts = re.search(r"\((\d+) pts\)", open(sys.argv[1]).read())
+    BAND = 2 if pts and int(pts.group(1)) == 0 else 1
     tgt = json.loads((pathlib.Path(__file__).resolve().parent / "mark-target.json").read_text())
     for k, m in marks.items():
         off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and abs(m[t] - tgt[k][i]) > BAND]

@@ -8,6 +8,9 @@ import { runPool } from "./pool.mjs";
 import { simBanner } from "./simver.mjs";
 
 const K = (process.env.KINDS || "arc,frz,sol,acd,grv,crr,ifr").split(","), LAST = 12;
+// the accepted exceptions (owner, 2026-11-07: "2C" - IFR's tier-0 hit can rise no further on its curve, and its tier-0 rate stays): these two
+// pairs may lose lives; the rule passes when every OTHER pair is clean, and any other pair failing is a break
+const EXEMPT = new Set(["arc+ifr", "frz+ifr"]);
 function game(towers, seed, patch) {
   const g = makeGame(seed, patch);
   g.reset();
@@ -39,6 +42,7 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("duo0.mjs")) {
       return [pair, Math.min(...by.values())]; // the best slot pair's lives lost over every seed
     });
     const fails = rows.filter(r => r[1] > 0).sort((x, y) => y[1] - x[1]);
-    console.log(`${label.padEnd(28)} clean ${rows.length - fails.length}/${rows.length}  ${fails.map(([p, n]) => p + ":" + n).join(" ")}`);
+    const breaks = fails.filter(([p]) => !EXEMPT.has(p));
+    console.log(`${label.padEnd(28)} clean ${rows.length - fails.length}/${rows.length}  ${breaks.length ? "BREAK" : "PASS"}  ${fails.map(([p, n]) => p + ":" + n + (EXEMPT.has(p) ? " (exempt)" : "")).join(" ")}`);
   }
 }
