@@ -41,16 +41,17 @@ function drawIfrRingAt(x, y, r, a, low, wk = 1, cols = null) { // wk: x every la
   ctx.restore();
 }
 // THE METEOR (owner, 2026-10-20): a black disc (fill), the blast's outline glow, and an INNER GLOW - "a radial glow from the outline towards
-// the center (it should start at 30%, then fall off to 0% about 30% of the way towards the center)": IFR_INNER_N rings inside the outline,
-// alpha falling from IFR_INNER_A to 0 over IFR_INNER_DEPTH of the radius (stacked strokes - no gradient on the 3D board context). a: x alpha
-const IFR_INNER_A = 0.3, IFR_INNER_DEPTH = 0.3, IFR_INNER_N = 6;
+// the center (it should start at 30%, then fall off to 0% about 30% of the way towards the center)": one smooth glow inside the outline,
+// alpha falling from IFR_INNER_A to 0 over IFR_INNER_DEPTH of the radius (was IFR_INNER_N stacked rings). a: x alpha
+const IFR_INNER_A = 0.3, IFR_INNER_DEPTH = 0.3;
 function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1, wk = 1, cols = null) { // fill: false, true (the black core) or a colour; inner: x the inner glow's alpha (a fire's rise)
   if (fill) { ctx.fillStyle = fill === true ? COL.bg : fill; ctx.globalAlpha = 0.95 * a; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
-  const n = low ? 2 : IFR_INNER_N, w = r * IFR_INNER_DEPTH / n;
-  ctx.strokeStyle = COL[(cols && cols.glow) || "glow"]; ctx.lineWidth = w; /* ember red-orange inside the rim (the fire colours, 2026-10-20) */
-  for (let k = 0; k < n; k++) {
-    const u = (k + 0.5) / n; ctx.globalAlpha = Math.min(1, IFR_INNER_A * (1 - u) * a * inner);
-    ctx.beginPath(); ctx.arc(x, y, r * (1 - IFR_INNER_DEPTH * u), 0, 6.283); ctx.stroke();
+  // THE INNER GLOW, SMOOTH (owner, 2026-11-06: "never use step glow unless huge perf gains"; was IFR_INNER_N stacked rings): IFR_INNER_A at the rim
+  // falling linearly to clear IFR_INNER_DEPTH of the radius in - on the GPU one inside-only ring glow (shape 9), on a 2D canvas one radial gradient
+  const col = COL[(cols && cols.glow) || "glow"], A = Math.min(1, IFR_INNER_A * a * inner); /* ember red-orange inside the rim (the fire colours, 2026-10-20) */
+  if (A > 0.003) {
+    if (ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlPush === "function") fxGlPush(x, y, x, y, r, r * IFR_INNER_DEPTH, col, A, col, 0, 9, 0, 0, 1, 1);
+    else { ctx.save(); ctx.translate(x, y); ctx.scale(r, r); ctx.globalAlpha = A; ctx.fillStyle = ifrRimGrad(col); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 6.283); ctx.fill(); ctx.restore(); }
   }
   drawIfrRingAt(x, y, r, 0.9 * a, low, wk, cols);
 }
@@ -179,6 +180,12 @@ const ifrLayerK = (key, f) => (f.hf ? (key === "glow" ? IFR_HF_GLOW_K : key === 
 // shorter, under their own scale; Hellfire VI's rays to the box's edge one by one). ACROSS, each IFR_GLOW_GL layer as IFR_GLOW_LV strokes
 // at the widths where its (1 - off)^pw bell crosses those levels - a canvas stroke is flat across, so the bell is three thin steps
 const IFR_GLOW_LV = [0.8, 0.5, 0.2], ifrFade = new Map();
+const ifrRim = new Map();
+function ifrRimGrad(css) { // the unit disc's rim glow: clear at 1 - IFR_INNER_DEPTH, full at 1 (as the ranges' fill: "transparent" to the colour)
+  let g = ifrRim.get(css); if (g) return g;
+  g = ctx.createRadialGradient(0, 0, 1 - IFR_INNER_DEPTH, 0, 0, 1); g.addColorStop(0, "transparent"); g.addColorStop(1, css);
+  ifrRim.set(css, g); return g;
+}
 function ifrFadeGrad(css) {
   let g = ifrFade.get(css); if (g) return g;
   g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1); const m = /rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)/.exec(css), h = /^#([0-9a-f]{6})$/i.exec(css.trim()); // (COL: computed "rgb(r, g, b)")
