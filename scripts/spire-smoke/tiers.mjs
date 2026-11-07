@@ -269,15 +269,15 @@ check("GRV rework (owner, 2026-10-25): tier 0 a tiny void that sheds pellets - n
 
 // ---------- IFR ----------
 towerTierChecks("ifr", ["fan", "flare", "hellfire"]); // ("fire": its wall of fire IS tier 0 - owner, 2026-11-05)
-check("IFR: tier 0 a meteor that hits and bursts into 6 (owner, 2026-10-26) and grows the fire's circle, lighting no flares, out the moment it is full (owner, 2026-11-05); Meteor I stores two in orbit, the burst still 6; Hellfire I one fire riding its enemy; Flare I one flare at the impact", () => {
+check("IFR: tier 0 a meteor that hits and bursts into 9 (owner, 2026-10-26: 6; 2026-11-07 B: 9) and grows the fire's circle, lighting no flares, out the moment it is full (owner, 2026-11-05); Meteor I stores two in orbit, the burst still 9; Hellfire I one fire riding its enemy; Flare I one flare at the impact", () => {
   const go = sk => run(`(() => { const { t, es } = tierLane("ifr", ${JSON.stringify(sk)}, [70]); const e = es[0]; G.started = true;
     let spawned = 0, fires = 0, flares = 0, hf = 0, rides = null, stale = 0; const K = Math.min(45, Math.floor(towerStats(t).chargeS * 60)); for (let k = 0; k < K; k++) { const full = (t.ifrFires || []).filter(f => f.r >= f.R); step(1 / 60); stale += full.filter(f => t.ifrFires.includes(f)).length; // one volley (a faster curve rate would launch the next inside 45 frames)
       spawned = Math.max(spawned, (t.ifrBalls || []).filter(b => b.gen).length); fires = Math.max(fires, (t.ifrFires || []).length); flares = Math.max(flares, (t.ifrFlares || []).filter(f => !f.hf).length); hf = Math.max(hf, (t.ifrFlares || []).filter(f => f.hf).length);
       if (rides == null && (t.ifrFires || []).length) rides = t.ifrFires[0].eid === e.id; if (e.max > e.hp && (t.ifrBalls || []).length === 0 && k > 30) break; }
     return { dealt: e.max - e.hp, spawned, fires, flares, hf, rides, stale }; })()`);
   const z = go({}), m = go({ meteor: 1 }), h = go({ hellfire: 1 }), f = go({ firaga: 1 });
-  if (!(z.dealt > 0) || z.spawned !== 6 || z.fires < 1 || !z.rides /* (>= 1: a half-distance shard may light its own fire inside the window, 2026-11-05) */ || z.flares || z.hf || z.stale) return "tier 0: " + JSON.stringify(z) + " (expected a hit, a burst of 6, one fire riding its enemy that lights no flares and is gone the frame after it is full; no Flare flare)";
-  if (m.spawned !== 6) return "Meteor I burst " + m.spawned + " (expected 6: Meteor never grows the burst below its capstone)";
+  if (!(z.dealt > 0) || z.spawned !== 9 || z.fires < 1 || !z.rides /* (>= 1: a half-distance shard may light its own fire inside the window, 2026-11-05) */ || z.flares || z.hf || z.stale) return "tier 0: " + JSON.stringify(z) + " (expected a hit, a burst of 9, one fire riding its enemy that lights no flares and is gone the frame after it is full; no Flare flare)";
+  if (m.spawned !== 9) return "Meteor I burst " + m.spawned + " (expected 9: Meteor never grows the burst below its capstone)";
   const sto = run(`[towerStats({ kind: "ifr", lvl: 1, skills: {} }).store, towerStats({ kind: "ifr", lvl: 2, skills: { meteor: 1 } }).store]`);
   if (sto[0] !== 1 || sto[1] !== 2) return "IFR stored in orbit " + sto + " (expected 1, 2)";
   if (h.fires < 1 || !h.rides) return "Hellfire I: " + JSON.stringify(h) + " (expected one fire riding the struck enemy)";
@@ -302,7 +302,7 @@ check("review: the card's rows show no mechanic the tower lacks - no Shields row
   const i0 = rows("ifr", {}).rows, ih = rows("ifr", { hellfire: 1 }).rows, ifl = rows("ifr", { firaga: 1 }).rows;
   if (i0.Fire === "—") return "IFR tier 0 Fire row blank (the circle is tier 0, owner 2026-11-05)";
   for (const k of ["Fire flares", "Flare length", "Flare width", "Flare tick", "Flare ticks", "Flare lasts"]) if (i0[k] !== "—") return "IFR tier 0 " + k + " reads " + i0[k];
-  if (i0.Burst !== "6 meteors") return "IFR tier 0 Burst reads " + i0.Burst;
+  if (i0.Burst !== "9 meteors") return "IFR tier 0 Burst reads " + i0.Burst;
   if (ih.Fire === "—" || ifl["Flare length"] === "—") return "IFR Hellfire I / Flare I rows blank";
 });
 check("ARC's card rows follow the redesign (2026-10-29): no charge or burst rows, Shock's slow and strip read from its tables, the fork counted in Hits", () => {
