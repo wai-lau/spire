@@ -153,7 +153,14 @@ function damageCredit(e, t, pre, amt, frost, got) {
   }
   t.dealt = (t.dealt || 0) + mine;
 }
+// CORROSION V, OBLIVION (owner/Wai capstone brief 2026-11-06: "corroded enemies take +X% damage from every tower while corroded"; X is
+// Balance's, start 20%): a corroded enemy takes x(1 + ACD_CORR_TAKE) from EVERY tower for ACD_CORR_TAKE_S after the last acid (jet tick or goo)
+// of a Corrosion-V ACD. One timer on the enemy (corrTakeT), so it never stacks per hit or per ACD; damage() multiplies it in (aspira-game.js),
+// BEFORE Fracture's x, so the two multiply
+let ACD_CORR_TAKE = 0.2, ACD_CORR_TAKE_S = 0.5;
+const corrTakes = t => !!(t && t.skills && skillOf(t, "corrosion") >= CAPSTONE_TIER);
 function corrodeHit(e, p, t, td = 0) {
+  if (corrTakes(t)) e.corrTakeT = ACD_CORR_TAKE_S;
   const cut = shredPct(e, t, p); // a share of the armor a tick (6.18.0; was the tick's damage x ACD_CORRODE over the wave's reference)
   e.corrodeT = 0.4;
   e.dripTd = td; dripAcc(e, DRIP_REAL * cut, t); // eaten armor drips, DRIP_REAL x (owner, 2026-10-13; all of it is real armor since the 2026-10-28 rework - none below zero)
@@ -218,7 +225,7 @@ function stepDrips(dt) {
       const dd = (o.x - d.x) ** 2 + (o.y - d.y) ** 2, rr = DRIP_R + ENEMIES[o.type].size * (o.sizeMul || 1);
       if (dd <= rr * rr) { // picked up
         const by = G.towers.includes(d.by) ? d.by : null;
-        shredPct(o, by, ACD_GOO_STRIP[d.tier] || 0); o.corrodeT = 0.4; // a SHARE of its armor (THE GOO IN PERCENTAGES)
+        shredPct(o, by, ACD_GOO_STRIP[d.tier] || 0); o.corrodeT = 0.4; if (d.tier >= CAPSTONE_TIER) o.corrTakeT = ACD_CORR_TAKE_S; // a SHARE of its armor (THE GOO IN PERCENTAGES)
         fromHit(d, () => damage(o, (ACD_GOO_DMG[d.tier] || 0) * d.td, by)); // and ACD_GOO_DMG x the ACD's td
         d.done = true; near = null; break;
       }
@@ -264,13 +271,20 @@ function acdSkillStats(t, s, b) {
   // fast waves reset it); from Corrosion I, Etch, ALL of it
   const f = skillOf(t, "spray"); // Flow (id kept: saves)
   s.carry = ACD_FLOW_CARRY[f]; s.burnSlow = ACD_POOL_SLOW[skillOf(t, "contagion")]; s.corrode = ACD_CORRODE[c]; s.targets = ACD_LINES[f]; s.contagion = ACD_CONTAGION[skillOf(t, "contagion")];
-  s.contagionHeat = ACD_POOL_HEAT; s.skill = true;
+  s.contagionHeat = ACD_POOL_HEAT; s.lake = skillOf(t, "contagion") >= CAPSTONE_TIER; s.skill = true;
+}
+// SPILL V, ACID LAKE (owner/Wai capstone brief 2026-11-06: "overlapping pools merge, burn +25%; merged pools bubble"): a Spill-V ACD's pools whose
+// circles overlap are one LAKE - each such pool (p.lake, set when a pool drops over another) burns x ACD_LAKE_K. Every pool still ticks on its
+// own, so an enemy in two overlapping pools takes both, each x1.25 (the merge adds heat, it takes no pool's burn away); draw: lake pools bubble more
+let ACD_LAKE_K = 1.25;
+function mergeLake(t, p) {
+  for (const q of t.puddles) if (q !== p && (q.x - p.x) ** 2 + (q.y - p.y) ** 2 < (q.r + p.r) ** 2) q.lake = p.lake = true;
 }
 // every step (stepAcd): each line drips a puddle every seep.every s; each
 // puddle ticks its burn on whatever stands in it, st.rate times a second
 function stepPuddles(t, st, dt) {
   const sp = st.contagion;
-  const drop = l => (t.puddles ||= []).push({ x: l.e.x, y: l.e.y, r: sp.r, life: Math.min(POOL_MAX_S, sp.life), age: 0, tick: 0, dps: st.dmg * Math.min(ACD_PUDDLE_CAP, 2 ** (l.held / st.double)) * st.contagionHeat });
+  const drop = l => { const p = { x: l.e.x, y: l.e.y, r: sp.r, life: Math.min(POOL_MAX_S, sp.life), age: 0, tick: 0, dps: st.dmg * Math.min(ACD_PUDDLE_CAP, 2 ** (l.held / st.double)) * st.contagionHeat }; (t.puddles ||= []).push(p); if (st.lake) mergeLake(t, p); };
   for (const l of t.lines) {
     // a KILL under a jet drops a pool where it fell (owner, 2026-10-12) - with Spill only (owner, 2026-10-22: "at level 0 make kills
     // not leave pools"); an escape drops none
@@ -291,7 +305,7 @@ function stepPuddles(t, st, dt) {
       for (const e of poolNear(grid ||= enemyGrid(), p)) {
         if (e.dead || (e.x - p.x) ** 2 + (e.y - p.y) ** 2 > p.r * p.r) continue;
         const hp0 = e.hp;
-        fromHit(p, () => damage(e, p.dps * every, t, false, false, hit)); e.burnT = 0.4; // away from the pool's centre
+        fromHit(p, () => damage(e, p.dps * (p.lake ? ACD_LAKE_K : 1) * every, t, false, false, hit)); e.burnT = 0.4; // away from the pool's centre
         if (st.burnSlow && !e.dead) applySlow(e, st.burnSlow, 0.5, t.id); // Flow's SLIMY pools slow (owner, 2026-10-22: the jets' slow moved here)
         if (hit && hp0 > e.hp) (t.poolAcc ||= new Map()).set(e, (t.poolAcc.get(e) || 0) + hp0 - e.hp); /* the WHOLE hit, overkill too (owner, 2026-10-17) */ // a real hit: it pops one shield charge
       }

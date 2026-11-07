@@ -174,6 +174,10 @@ function drawStatus(e, d, size, solid) {
   // the upright spike again, warpSolid): acid's [2, 4] dots one by one, each its own flicker (scorchFlick)
   if (e.dots && e.dots.length) { const r = size + (e.corrodeT > 0 ? 7 : 3); drawScorchRing(e, r, vis); if (e.dots.some(d => d.v)) drawScorchRing(e, r + SCORCH_V_GAP, vis, 1); } // SCORCH V: the ring doubled, concentric (owner, 2026-11-04: "scorch visual rings are doubled concentrically"; v - aspira-sol.js)
   /* (ARC's burn sparks, drawBurnSparks: GONE - owner, 2026-11-05: "sparks from ARC look ugly, remove") */
+  if (e.corrTakeT > 0) { // Corrosion V: a soft acid halo outside the dotted ring, fading with the mark (smooth, no dash)
+    ctx.beginPath(); ctx.arc(e.x, e.y, size + 8, 0, 6.283);
+    ctx.strokeStyle = COL.tacd; ctx.globalAlpha = 0.35 * Math.min(1, e.corrTakeT / ACD_CORR_TAKE_S) * vis; ctx.lineWidth = 3; ctx.stroke();
+  }
   if (e.corrodeT > 0) {
     ctx.beginPath(); ctx.arc(e.x, e.y, size + 3, 0, 6.283);
     ctx.setLineDash(ACD_RING_DASH); ctx.strokeStyle = COL.tacd; ctx.globalAlpha = (0.9) * vis; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash(NO_DASH);

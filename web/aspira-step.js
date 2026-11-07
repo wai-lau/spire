@@ -65,6 +65,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       if (e.arcana) bossStep(e, dt); // the bosses' tricks (aspira-bosses.js)
       if (e.biteT > 0) e.biteT -= dt; // Frostbite tint
       if (e.corrodeT > 0) e.corrodeT -= dt; // Corrosion ring
+      if (e.corrTakeT > 0) e.corrTakeT -= dt; // Corrosion V's damage-taken mark
       if (e.burnT > 0) e.burnT -= dt; // under an ACD burn (Fresh targeting)
       if (e.marks) sumMarks(e, dt);
       if (e.dotT > 0) { solScorchTick(e, dt); if (e.dead) continue; } // SOL's scorch stacks, popping shields (aspira-sol.js)

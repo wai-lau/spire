@@ -158,6 +158,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   // x BLEED_CRIT_MUL (SOL rolls the bleed into its own crit, rayHit)
   if (!quiet && !crit && e.bleedCrit > 0 && !(t && t.kind === "sol") && Math.random() < e.bleedCrit) { crit = true; amt *= BLEED_CRIT_MUL; }
   if (e.shredT > 0) amt *= e.shredMul;
+  if (e.corrTakeT > 0) amt *= 1 + ACD_CORR_TAKE; // CORROSION V: x from every tower while corroded - one timer, no stacking (aspira-acid.js); credited to the hitter
   const pre = amt; // before Fracture - damageCredit splits what the debuffs added
   if ((e.slowT > 0 || e.fractT > 0) && e.brittle) amt *= e.brittle; // (fractT: Fracture V's Lingering cold, aspira-frz.js)
   // (SOL Refraction x the FAST here until 2026-10-12 - owner: no extra damage by enemy type)

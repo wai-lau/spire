@@ -58,7 +58,7 @@ function drawPuddles(t) {
   (t.puddles || []).forEach((p, j) => {
     const I = puddleGlow(p), fade = Math.min(1, (1 - p.age / p.life) * I), seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
     ctx.lineWidth = 1.2 * I;
-    const nb = Math.floor(per * (j + 1)) - Math.floor(per * j); // spread evenly: some pools get one, some none
+    const nb = Math.floor(per * (j + 1)) - Math.floor(per * j) + (p.lake && n <= POOL_LOD ? 1 + (seed % 2) : 0); // spread evenly: some pools get one, some none; a LAKE pool (Spill V) bubbles 1-2 more
     for (let i = 0; i < nb; i++) {
       const ph = now / BUBBLE_T + i / PUDDLE_BUBBLES + (seed % 97) / 97, cyc = Math.floor(ph), f = ph - cyc;
       const h = k => fixedRand(cyc * 13 + i * 3 + k, seed); // this bubble's own jitter, fixed for its life

@@ -482,3 +482,47 @@ check("a boss at the core costs its HP% left in lives, a Lover half, a Devil cop
     const a = leak("star", 12), b = leak("lovers", 9), c = leak("devil", 0.5), over = G.over, by = G.breachBy, d = leak("death", 40); return [a, b, c, over, by || null, G.over, G.breachBy]; })()`);
   if (JSON.stringify(r) !== JSON.stringify([12, 5, 1, false, null, true, "death"])) return "lives lost / over / breachBy, then a 40% Death on 12 lives " + JSON.stringify(r) + " (expected [12,5,1,false,null,true,\"death\"])";
 });
+
+// ---------- ACD capstones (Corrosion V, Spill V; Wai's capstone brief 2026-11-06) ----------
+check("ACD Corrosion V: a corroded enemy takes x(1+ACD_CORR_TAKE) from a NON-ACD tower, one ACD or two alike, x1 once the corrosion ends, and it multiplies with Fracture", () => {
+  const r = run(`(() => {
+    const hit = (nAcd, corrosion, wait) => {
+      const { t, es } = tierLane("acd", { corrosion }, [30]); const e = es[0]; e.hp = e.max = 1e9; e.armor = e.armor0 = 0; G.started = true; G.nextIn = 1e9; G.spawns = [];
+      for (let i = 1; i < nAcd; i++) { const t2 = { ...t, id: t.id + 1, lines: [] }; G.towers.push(t2); }
+      for (let k = 0; k < 120; k++) step(1 / 60);
+      const probe = (b) => { const before = e.hp; e.brittle = b || 0; e.slowT = b ? 9 : 0; const o = { id: 777, kind: "sol", x: 0, y: 0 }; const h0 = e.hp; damage(e, 1000, o, true); const d = h0 - e.hp; return d; };
+      const live = e.corrTakeT > 0, d = probe(0), db = probe(2);
+      for (const x of G.towers) x.lines = [], x.cd = 1e9; G.towers.length = 0; e.corrTakeT = 0;
+      for (let k = 0; k < wait; k++) step(1 / 60);
+      return { live, d, db, after: probe(0) };
+    };
+    return { one: hit(1, 5, 0), two: hit(2, 5, 0), none: hit(1, 4, 0) };
+  })()`);
+  const x = 1 + run("ACD_CORR_TAKE");
+  for (const k of ["one", "two"]) {
+    if (!r[k].live) return k + ": no corrTakeT on a corroded enemy";
+    if (Math.abs(r[k].d / r.none.d - x) > 0.02) return k + " ACD: hit x" + (r[k].d / r.none.d).toFixed(3) + " (expected " + x + ")";
+    if (Math.abs(r[k].db / r.none.db - x) > 0.02) return k + " ACD: with Fracture x" + (r[k].db / r.none.db).toFixed(3) + " (expected the two to multiply, " + x + ")";
+  }
+  if (r.none.live || Math.abs(r.one.after / r.none.after - 1) > 0.02) return "after the corrosion ended the hit is still x" + (r.one.after / r.none.after).toFixed(3);
+  if (Math.abs(r.one.d - r.two.d) > 0.02 * r.one.d) return "two ACDs stacked: " + r.one.d + " vs " + r.two.d;
+});
+check("ACD Spill V: overlapping pools are a LAKE and each burns x ACD_LAKE_K; a lone pool and a Spill IV pool burn x1", () => {
+  const r = run(`(() => {
+    const go = (contagion, apart) => {
+      const { t, es } = tierLane("acd", { contagion }, [30]); G.started = true; G.nextIn = 1e9; G.spawns = []; const st = towerStats(t);
+      const e = es[0]; e.hp = e.max = 1e9; e.armor = e.armor0 = 0; e.x = 500; e.y = 500; e.seen = true; e.stunT = 1e9;
+      t.puddles = []; t.lines = []; t.cd = 1e9;
+      const mk = x => ({ x, y: 500, r: 100, life: 9, age: 0, tick: 0, dps: 1000 });
+      const a = mk(500), b = mk(500 + apart); t.puddles.push(a); if (st.lake) {} ; t.puddles.push(b); if (st.lake) { mergeLake(t, b); }
+      return { lake: [!!a.lake, !!b.lake], st };
+    };
+    const burn = (contagion, apart) => { const g = go(contagion, apart); const t = G.towers[0], e = G.enemies[0]; const st = g.st; const h0 = e.hp; t.lines = []; stepPuddles(t, st, 1 / st.rate); return { lake: g.lake, d: h0 - e.hp }; };
+    return { v2: burn(5, 150), v1: burn(5, 500), iv2: burn(4, 150) };
+  })()`);
+  const K = run("ACD_LAKE_K");
+  if (!r.v2.lake[0] || !r.v2.lake[1]) return "Spill V pools overlapping are not a lake: " + JSON.stringify(r.v2.lake);
+  if (r.v1.lake[0] || r.v1.lake[1]) return "pools 500 apart merged";
+  if (r.iv2.lake[0]) return "Spill IV merged";
+  if (Math.abs(r.v2.d / r.iv2.d - K) > 0.05) return "two overlapping V pools burn x" + (r.v2.d / r.iv2.d).toFixed(3) + " of IV's (expected " + K + ")";
+});
