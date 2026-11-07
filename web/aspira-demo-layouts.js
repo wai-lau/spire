@@ -40,7 +40,7 @@ const DEMO_LAYOUTS = {
     base: { place: "walk", types: ["swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits"] }, // (tier 0's void holds one at a time)
     void: { place: "walk", types: ["swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many"] },
     supernova: { place: "walk", dy: 0.2, types: ["armor", "swarm", "armor", "swarm", "shield"], shows: ["hits", "many", "strips"] },
-    radiation: { place: "walk", types: ["fast", "armor"], shows: ["hits", "slows", "fast"] }, // (armor, not swarm: GRV slows small enemies harder)
+    radiation: { place: "walk", types: ["fast", "armor"], shows: ["hits", "slows", "fast"] }, // (armor, not swarm: GRV slows small enemies harder; NO "reels": Undertow cannot fire here - the voids sit on the densest cluster, the one entering upstream of the tower, and it reels only enemies past it; a tower near the entry edge fired 1-3 in 4 s only half outside the box - Leader 2026-11-07: card text, not the demo)
   },
   crr: {
     base: { place: "walk", types: ["swarm", "shield", "armor", "swarm"], shows: ["hits", "pops"] },
