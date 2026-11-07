@@ -29,13 +29,46 @@ function drawPools(t, now) {
   // (always the plain circle: the board is drawn into a texture and warped - the old wobbling 2D rim is gone, 2026-10-18) // 3D: always the plain circle - the board is drawn into a texture and warped, the rim's wobble barely shows and its fills cost (owner, 2026-10-12: pool perf in 3D)
   // a PILE of pools reads as one (owner, 2026-10-14: "late game ACD has too much effects visually" - a Spill's 100+
   // see-through pools stacked 20 deep into one bright green wash): each is drawn at 1 / the pools over its centre
-  const pools = t.puddles || [], deep = poolDepth(pools);
+  const pools = t.puddles || [], deep = poolDepth(pools), lake = pools.filter(p => p.lake);
+  if (lake.length > 1 && lake.length <= POOL_LOD) drawLake(lake); else lake.length = 0;
   pools.forEach((p, i) => {
+    if (lake.length && p.lake) return; // (drawn as one lake: drawLake)
     const crowd = 1 / deep[i], fade = Math.min(1, (1 - p.age / p.life) * puddleGlow(p)) * crowd, seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
     // a pool a KILL left (Spill's spread) is a DASHED ring, no body; the jets' own drips filled: the two read apart (owner, 2026-10-14)
-    { ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 0.9 * (0.8 + 0.2 * (1 - p.age / p.life)), 0, 6.283); if (!p.spread) { ctx.globalAlpha = 0.14 * fade; ctx.fill(); } ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * fade / Math.sqrt(crowd); ctx.stroke(); return; } // (a crowd's rims fade only by the root of it: the rims tell one pool from the next)
+    { ctx.beginPath(); ctx.arc(p.x, p.y, poolDrawR(p), 0, 6.283); if (!p.spread) { ctx.globalAlpha = 0.14 * fade; ctx.fill(); } ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * fade / Math.sqrt(crowd); ctx.stroke(); return; } // (a crowd's rims fade only by the root of it: the rims tell one pool from the next)
   });
   ctx.setLineDash([]);
+}
+// THE ACID LAKE (Spill V, owner 2026-11-06: "overlapping pools merge ... merged pools bubble"): its pools read as ONE body - one fill over their union
+// (a single path, so overlaps do not stack) and ONE outline: each pool's rim only where no other lake pool covers it. Over POOL_LOD lake pools
+// they draw one by one as before (the budget). A pool's drawn radius shrinks as it dries (poolDrawR), the same in the fill and the outline
+const poolDrawR = p => p.r * 0.9 * (0.8 + 0.2 * (1 - p.age / p.life));
+function lakeArcs(L, i) { // [from, to] angles of pool i's rim that no other lake pool covers
+  const p = L[i], r = L[i].dr, cut = [];
+  for (let j = 0; j < L.length; j++) {
+    if (j === i) continue;
+    const q = L[j], dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy);
+    if (d >= r + q.dr || d + q.dr <= r) continue; // apart, or q wholly inside p: p's rim is clear of it
+    if (d + r <= q.dr) return []; // p wholly inside q
+    const a = Math.atan2(dy, dx), w = Math.acos(Math.max(-1, Math.min(1, (r * r + d * d - q.dr * q.dr) / (2 * r * d))));
+    cut.push([a - w, a + w]);
+  }
+  if (!cut.length) return [[0, 6.2832]];
+  const base = cut[0][1], iv = cut.map(([a, b]) => { let s0 = (a - base) % 6.2832; if (s0 < 0) s0 += 6.2832; return [s0, s0 + (b - a)]; }).sort((x, y) => x[0] - y[0]);
+  const out = []; let at = 0; // from the end of the first cut, round to it again
+  for (const [a, b] of iv) { if (a > at) out.push([base + at, base + a]); at = Math.max(at, b); }
+  if (at < 6.2832) out.push([base + at, base + 6.2832]);
+  return out;
+}
+function drawLake(pools) {
+  let fill = 0; const L = pools.map(p => ({ x: p.x, y: p.y, spread: p.spread, dr: poolDrawR(p), fade: Math.min(1, (1 - p.age / p.life) * puddleGlow(p)) })); // (local: the draw writes nothing on the pools)
+  for (const p of L) if (!p.spread) fill = Math.max(fill, p.fade);
+  if (fill > 0) { ctx.beginPath(); for (const p of L) if (!p.spread) { ctx.moveTo(p.x + p.dr, p.y); ctx.arc(p.x, p.y, p.dr, 0, 6.283); } ctx.globalAlpha = 0.14 * fill; ctx.fill(); }
+  L.forEach((p, i) => {
+    const arcs = lakeArcs(L, i); if (!arcs.length) return;
+    ctx.beginPath(); for (const [a, b] of arcs) { ctx.moveTo(p.x + Math.cos(a) * p.dr, p.y + Math.sin(a) * p.dr); ctx.arc(p.x, p.y, p.dr, a, b); }
+    ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * p.fade; ctx.stroke();
+  });
 }
 const POOL_DASH = [18, 12]; // board units: big enough to read as dashes once the 3D view shrinks a pool
 // how many pools cover each pool's centre (itself included), the crowd bucketed by POOL_CELL like the enemies
