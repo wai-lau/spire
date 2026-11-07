@@ -39,8 +39,8 @@ are this repo's gitignored `data/aspira-sfx/`.
   bumps and ships (owner, 2026-11-05: separate copies of the code). ARCHITECTURE.md §9.4.
 - **Every balance patch runs the marks at FIVE point levels** (`VS_MARKS`, owner 2026-10-18; 2026-11-06: "1B, but also add a 0 point and 3 point check",
   "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"): 9 points writes the card
-  (`marks.py --write`), 13 points (each axis maxed, `--focus`) is the second target, 0 / 3 / 6 must stay within 1 of the target (`--band`, RULE FAIL
-  past it). The five commands and their windows: ARCHITECTURE.md §4.6.
+  (`marks.py --write`), 13 points (each axis maxed, `--focus`) is the second target, 3 / 6 must stay within 1 of the target and 0 within 2
+  (owner 2026-11-07 "1C": the 0-point band loosened to +/-2) (`--band`, RULE FAIL past it). The five commands and their windows: ARCHITECTURE.md §4.6.
 - **THE MARK TARGET** (owner, 2026-10-29 15:45: "save super important! priority #1"; 16:05: "let's swap FRZ and GRV"; 16:30: "swap SOL and ACD targets"; 17:35: GRV takes FRZ's row, FRZ ARC's, ARC GRV's; 10-30: the swarmers shuffle, ARC IFR GRV FRZ check swarm; 10-31: "Sol acd swap / No on arc grv"): `scripts/aspira-sim/mark-target.json`, the exact table
   the owner chose - swarm / fast / shield / armor: ARC +2 -2 -2 +2 · FRZ +1 +2 -1 -2 · SOL -3 +1 +1 +1 · ACD -1 -3 +2 +2 · GRV +1 +1 -3 +1 ·
   CRR -2 +2 +1 -1 · IFR +2 -1 +2 -3. Every type column is ✓✓ ✓✓ ✓ ✓ ✗ ✗✗ ✗✗✗ (+2 +2 +1 +1 -1 -2 -3; one of the seven zero-sum shapes that

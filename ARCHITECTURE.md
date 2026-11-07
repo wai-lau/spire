@@ -294,13 +294,14 @@ swarm `[frz, ifr]` / `[acd, grv]`, fast `[frz, crr]` / `[arc, grv]`, armor `[arc
 measures it.
 
 **THE MARKS AT FIVE POINT LEVELS** (owner, 2026-11-06: "1B, but also add a 0 point and 3 point check", then "most important marks are 9 and 13,
-but 0 3 and 6 should never drift more than +/- 1 point away from target marks"). Every balance patch runs all five against the mark target:
+but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 2026-11-07 "1C": the 0-point band loosened to +/-2). Every balance patch runs all five against the mark target:
 
 | points | what it is | marks.py | the bar |
 |---|---|---|---|
 | 9 | the card's marks (spread builds) | `--write` | the first target: written into `VS_MARKS` |
 | 13 | each axis maxed in turn (V + IV + IV), averaged a tower | `--focus` | the second target (the capstone check) |
-| 0, 3, 6 | the early and mid game | `--band` | every cell within 1 of the target, else `RULE FAIL` |
+| 3, 6 | the early and mid game | `--band` | every cell within 1 of the target, else `RULE FAIL` |
+| 0 | the opening (tier 0 towers) | `--band` | every cell within 2 of the target, else `RULE FAIL` (owner, 2026-11-07 "1C") |
 
 The windows follow the good model's tower points by wave (median 3 at wave 60, 5 at 80, 8 at 100-110). From `scripts/aspira-sim`, with
 `KINDS=arc,frz,sol,acd,grv,crr,ifr` and 2 seeds (the 13-point run takes about 4x the 9-point one):
@@ -500,6 +501,11 @@ model (`players3b.mjs`, 8 seeds) wins at least 15%, and no boss ends more than ~
 costs lives without ending the run in 10-30% of them is the target, reported by `bossrep.py`, not a gate. A boss at the core costs
 its HP% left in lives (a Lover half, a Devil copy a sixth, rounded up; owner, 2026-11-03), so with 18 lives a boss with more
 than ~18% left still ends it.
+
+**BOSS DEPTH - REFIT IN PROGRESS** (owner, 2026-11-06: "make sure bosses just get to about 120% of a normal wave"; 2026-11-07 "3D"): a boss's
+HP is refit so it gets about as far toward the core as the normal waves round it, on 100 games. The Star stays at x1.2 a normal wave;
+Strength, Chariot, Lovers and Devil are refit to about x1.0; Temperance, Justice, Empress, Judgement and Death are on the redesign
+list (their mechanics change first). The refit numbers land with Balance's ship (ARCHAEOLOGY §12).
 
 THE BOSS REDESIGN (owner, 2026-11-05: Wai's spec, verbatim in the 7.6.24-7.6.35 commits; "yes the boss mechanics should stay /
 strength only takes 10% of any slow"). "A wave" = `typeWaveCount(type, n)`: a plain wave of that type at the boss's wave number, as
@@ -859,7 +865,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 
 | Balance rule the owner set (keep when changing numbers) | Checked by |
 |---|---|
-| any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22) | `solo` (its duo table) |
+| any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22); 19 of the 21 duos is accepted - ARC+IFR and FRZ+IFR need one upgrade before the Star (owner, 2026-11-07 "2C") | `solo` (its duo table) |
 | an ordinary type's count and HP never drop from one of its waves to the next (owner, 2026-10-22: "types should never get weaker along any axis") | `planCount`, `enemyHp` (aspira-waves.js) |
 | every trio of kinds is winnable except the designed deaths (§4.6d) (no kind required) | `trios`, `tribal` |
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |
