@@ -270,6 +270,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
       const x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2;
       const pt = (x, y) => (map ? map(x, y) : { x, y, s: 1 }), B = pt(x2, y2), ws = map ? cam.k * (pt(x1, y1).s + B.s) / 2 : 1;
       if (map) ctx.setTransform(1, 0, 0, 1, 0, 0); // device px: the ends are already projected
+      if (f.slim && typeof solBeamPush === "function" && !(f.beams > 1)) { const core = (f.bw ??= beamWidth(f.d || 0)) * (f.thin || 1) * ws; solBeamPush(f, pt(x1, y1), B, core, ctx.globalAlpha, map ? ws : 1, map); return; } // SOL: queued - its glows, then its cores, after every beam (aspira-solbeam.js)
       if (f.soft && ARC_CHAINS) { ctx.globalAlpha = Math.min(1, k * 2); drawChain2D(x1, y1, x2, y2, pt, ws, COL[f.color], f.thin, f); } else { // ARC: a chain of links (aspira-chains.js)
       ctx.beginPath();
       if (f.beams > 1) {
@@ -344,6 +345,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
     };
     if (f.k === "beam" || f.k === "text" || !map) one(); else at(f.x ?? CX, f.y ?? CY, one, f);
   }
+  if (typeof solBeamFlush === "function") solBeamFlush(); // SOL's beams: every glow, then every white core (aspira-solbeam.js)
   ctx.globalAlpha = 1;
 }
 

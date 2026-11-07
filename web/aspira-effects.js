@@ -116,8 +116,9 @@ function solTrackBeams() {
     if (!ghost) n = B === t.solB && t.solFl ? n : 0; // (one pool a tower: the ghost's segments first, the live lock's after them)
     // THIN, THICKER WHERE IT PIERCES (owner, 2026-11-05: "sol primary beam way thinner (thicker with pierce)"): a beam that stops at its enemy at SOL_THIN_W,
     // one that pierces on - the main beam at Reflection 0 + Breach (B.pl), a split with Breach (l.L) - at SOL_PIERCE_W, every segment of it
+    let last = null; // (the segment before: a segment that goes on from its end widens from its width - a cone, solBeamFlush)
     const seg = (a, b, k, w) => { const f = pool[n] || (pool[n] = { k: "beam", t: 0, life: 1, m: true, slim: true, color: TOWERS.sol.color }); n++;
-      f.a = a; f.b = b; f.d = d * k; f.bw = undefined; f.thin = w; f.share = Math.sqrt(k); f.alpha = fl; (out ||= []).push(f); };
+      f.a = a; f.b = b; f.d = d * k; f.bw = undefined; f.thin = w; f.share = Math.sqrt(k); f.alpha = fl; f.prev = last && last.b === a ? last : null; f.first = a === t; f.off = !!b && b.hp === undefined && !b.kind; last = f; (out ||= []).push(f); };
     const mainW = B.pl && B.pl.L > 0 ? SOL_PIERCE_W : SOL_THIN_W;
     seg(t, B.e, 1, mainW);
     if (B.pl && B.pl.L > 0) { const ax = t.x, ay = t.y, d0 = Math.hypot(B.e.x - ax, B.e.y - ay) || 1, ux = (B.e.x - ax) / d0, uy = (B.e.y - ay) / d0, L = solShowLen(ax, ay, ux, uy, B.pl.L), end = B.pl.end ||= { x: 0, y: 0 }; end.x = ax + ux * L; end.y = ay + uy * L; seg(B.e, end, st.hop || 1, mainW); } // (the main beam on through, Reflection 0 + Breach)
