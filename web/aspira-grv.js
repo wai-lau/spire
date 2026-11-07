@@ -50,7 +50,7 @@ const GRV_CRUSH_TD = 8;
 const GRV_NOVA_N = 1, GRV_NOVA_GAP = 0.3, GRV_NOVA_K = 9, GRV_NOVA_T = 0.8; /* ONE NOVA a shot (owner, 2026-11-06: "1. Yes, make this ring move slower too, so that it takes up the time of the three (can only hit an enemy once)"): its hit x3 (K 3 -> 9) and its front sweeps over GRV_NOVA_T s, the old three's span ((3 - 1) x 0.3 + 0.2); was N 3 */ /* THREE novas again, from Nova I only (owner, 2026-10-25: "Nova 1: 3 novas in quick succession before each void"; tier 0 "void only") - each its old x3 hit, at a third the shots */ // ONE nova at THREE times the hit (owner, 2026-10-21: "change the initial ring to 1 ring again, except triple damage"; three since 2026-10-18)
 // THE CAPSTONES (owner, 2026-11-06; capstones-2026-11-06.md). NOVA V (Hypernova): every GRV_SUPER_EVERY-th nova a tower fires rings TWICE - a second front right after the
 // first, GRV_SUPER_R x the reach (the same hit rules: an enemy both rings reach takes both). GRAVITY WELL V (Undertow): an enemy in the aura that is NEARER THE CORE than the
-// tower (straight-line distance to the core, CX/CY) is reeled back toward the void's centre - back along its lane the whole way to the void's centre over GRV_REEL_T s - at most once
+// tower (straight-line distance to the core, coreXY: CX/CY, a demo's exit edge) is reeled back toward the void's centre - back along its lane the whole way to the void's centre over GRV_REEL_T s - at most once
 // every GRV_REEL_CD s a enemy (e.reelAt, game time; ALL GRVs share it, so three cannot hold a boss). VOID V (Event Horizon): each enemy the crush KILLS grows the void
 // x GRV_EH_GROW (stacking, to x GRV_EH_MAX), fading back to x1 over GRV_EH_FADE s after the last kill (sp.evK / sp.evAt, on the sphere's own clock)
 const GRV_SUPER_EVERY = 4, GRV_SUPER_R = 1.5, GRV_SUPER_GAP = GRV_NOVA_T;
@@ -277,7 +277,7 @@ function grvLane(e, sp) { // the lane's heading at e: is it past the hole, and h
 function grvHorizon(sp) { sp.evK = Math.min(GRV_EH_MAX, grvEvK(sp) * GRV_EH_GROW); sp.evAt = sp.age; sp.evKills = (sp.evKills || 0) + 1; }
 // UNDERTOW: an enemy the aura holds that is nearer the core than its tower is reeled back toward the void - once a GRV_REEL_CD, whichever GRV reels it. (G.clock: game time)
 function grvReel(e, t, sp) {
-  if (e.reelAt > (G.clock || 0) || Math.hypot(e.x - CX, e.y - CY) >= Math.hypot(t.x - CX, t.y - CY)) return;
+  const [cx, cy] = coreXY(); if (e.reelAt > (G.clock || 0) || Math.hypot(e.x - cx, e.y - cy) >= Math.hypot(t.x - cx, t.y - cy)) return;
   e.reelAt = (G.clock || 0) + GRV_REEL_CD; e.reelLeft = Math.hypot(sp.x - e.x, sp.y - e.y); e.reelT = GRV_REEL_T; e.reelRate = e.reelLeft / GRV_REEL_T;
 }
 function grvReelStep(e, dt) { // from stepEnemies: the lane backward, the whole distance to the void over GRV_REEL_T s (never before the lane's start)

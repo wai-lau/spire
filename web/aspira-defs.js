@@ -5,6 +5,9 @@
 // World is a fixed 1000x1000 chart; the camera (aspira-draw.js) fits it into
 // whatever part of the full-screen canvas the decks leave open.
 const W = 1000, CX = 500, CY = 500, CORE_R = 25; // bigger to press (owner, 2026-10-11: "make towers and core larger and easier to click and drag"; was 22) // 25% smaller (owner, 2026-10-06; was 29 - itself 25% smaller than 34, then a little bigger)
+// THE CORE POINT a rule measures to (coreXY): the board's centre - or, in a card demo scene (whose walkers leave at the box's left edge, not a core), the scene's
+// own exit (G.core, set by demoScene). Rules that ask "nearer the core" read this, never raw CX/CY, so they show in the demo too (GRV Undertow)
+const CORE_XY = [CX, CY], coreXY = () => (typeof G !== "undefined" && G && G.core) || CORE_XY;
 const CANVAS_FONT = "'Iosevka Mayukai Monolite', monospace";
 
 // Twelve spirals, one entering every 30 degrees around the rim. A FIXED
