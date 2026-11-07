@@ -128,3 +128,19 @@ check("FRZ: its ice is grown ONCE - a move never regrows it (owner, 2026-11-06: 
   if (!r.same) return "a new view (a move) made the tower's ice again";
   if (!r.stillDone || !r.pieces) return "after a move the pieces changed or growth restarted";
 });
+
+// HYPERNOVA IN THE CARD BOX (Leader, 2026-11-07; 67540a6): in a demo scene (demoDrawing) a nova's rings scale by one factor so its widest - the
+// x GRV_SUPER_R second ring of a double - stays inside the canvas from the nova's centre; a ring that fits is left alone; the board never scales
+check("pin: Hypernova's rings stay inside the card demo's canvas (grvNovaFit: one factor, the widest ring fits; 1 on the board and when it fits)", () => {
+  const r = run(`(() => { const ctx0 = ctx, d0 = demoDrawing, W = 400, H = 200;
+    ctx = { canvas: { width: W, height: H }, getTransform: () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }) };
+    try { const sp = (x, y, nN) => ({ x, y, nN }), st = { novaR: 230 }, out = {};
+      demoDrawing = false; out.board = grvNovaFit(sp(200, 100, 2), st);
+      demoDrawing = true; const f = grvNovaFit(sp(200, 100, 2), st); out.widest = 230 * GRV_SUPER_R * GRV_FIT_PAD * f; out.room = 100;
+      out.edge = grvNovaFit(sp(30, 100, 2), st) * 230 * GRV_SUPER_R * GRV_FIT_PAD; out.small = grvNovaFit(sp(200, 100, 1), { novaR: 50 });
+      return out; } finally { ctx = ctx0; demoDrawing = d0; } })()`);
+  if (r.board !== 1) return "the board scaled a nova (x" + r.board + ")";
+  if (!(Math.abs(r.widest - r.room) < 1e-6)) return "the widest ring with its pad reaches " + r.widest + " u from the centre, the canvas edge is " + r.room;
+  if (!(r.edge <= 30 + 1e-6)) return "a nova 30 from the left edge reaches " + r.edge;
+  if (r.small !== 1) return "a ring that fits was scaled (x" + r.small + ")";
+});
