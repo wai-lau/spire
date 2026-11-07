@@ -90,7 +90,10 @@ async def aspira_sfx(filename: str):
     # sibling like aspira-sfx-x/ must not pass)
     if not path.is_relative_to(SFX_DIR) or not path.is_file():
         raise HTTPException(status_code=404)
-    return FileResponse(str(path), headers={"Cache-Control": "private, max-age=86400"})
+    # the INDEX is never cached (it names the clips: a stale one hid a new sample for a day - the bare-URL trap of 7.7.92's FRZ worker);
+    # the clips themselves keep the day
+    cc = "no-cache" if filename == "index.json" else "private, max-age=86400"
+    return FileResponse(str(path), headers={"Cache-Control": cc})
 
 
 # ---------- THE ASCENDANTS: the shared board of winners (spire_board.py) ----------
