@@ -238,7 +238,7 @@ function skillHopTo(c, node, nxt, depth) {
   const raw = c.st.dmg * c.st.arcFall ** depth, d = shotDamage(c.t, c.st, nxt, raw);
   node.kids.add(nxt.id); c.seen.add(nxt.id); c.hits.set(nxt.id, (c.hits.get(nxt.id) || 0) + 1);
   beam(node.e, nxt, c.col, arcBeamLife(c.st), 1.5, d);
-  Object.assign(fx[fx.length - 1], { soft: true, alpha: Math.min(1, ARC_A * (raw / c.st.dmg) ** ARC_CORR) }); // brighter as its share of the strike grows (ARC_A)
+  Object.assign(fx[fx.length - 1], { soft: true, alpha: Math.min(1, ARC_A * (raw / c.st.dmg) ** ARC_CORR), share: raw / c.st.dmg }); // brighter as its share of the strike grows (ARC_A); share: its width too (arcInt, aspira-arc-body.js)
   if (skillOf(c.t, "voltage")) fx[fx.length - 1].pierce = true; // Voltage's white-hot core
   const child = { e: nxt, fx: fx[fx.length - 1], up: node, kids: new Set(), d };
   keepLit(node, arcBeamLife(c.st));

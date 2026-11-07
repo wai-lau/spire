@@ -88,10 +88,10 @@ function drawArcBolts3d(t, far, top) {
   for (const f of fx) {
     if (!f.soft || f.a !== t) continue;
     const x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2; if ((y2 < t.y) !== far) continue;
-    const al = arcBoltFade(f); if (al <= 0) continue;
+    const [ik, ia] = arcInt(f), al = arcBoltFade(f) * ia; if (al <= 0) continue;
     if (!saved) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineJoin = "round"; saved = true; }
     const o = arcBoltFrom(f, t.x, t.y, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], F0 = warpFrame(o[0], o[1], top);
-    const n = pts.length / 2 - 1, w = (f.thin || 1) * ARC_BOLT_S * 1.5 * Math.hypot(F0[0], F0[1]), hAt = q => top * (1 - q / n), path = new Path2D(), fk = new Path2D();
+    const n = pts.length / 2 - 1, w = ik * (f.thin || 1) * ARC_BOLT_S * 1.5 * Math.hypot(F0[0], F0[1]), hAt = q => top * (1 - q / n), path = new Path2D(), fk = new Path2D();
     for (let q = 0; q <= n; q++) { const P = scr(pts[q * 2], pts[q * 2 + 1], hAt(q)); q ? path.lineTo(P[0], P[1]) : path.moveTo(P[0], P[1]); }
     const m = n >> 1; for (let q = 0; q * 2 + 1 < fork.length; q++) { const P = scr(fork[q * 2], fork[q * 2 + 1], hAt(m)); q ? fk.lineTo(P[0], P[1]) : fk.moveTo(P[0], P[1]); }
     ctx.shadowColor = css; ctx.shadowBlur = 3.2 * w; ctx.strokeStyle = arcMix(css, 0.7); ctx.globalAlpha = al;
@@ -116,18 +116,28 @@ function arcBoltPts(f, ax, ay, bx, by) { // the jagged polyline [x, y, ...] (and
   const fork = [pts[m], pts[m + 1], pts[m] + Math.cos(ang) * 6 * S + (r() - 0.5) * 3 * S, pts[m + 1] + Math.sin(ang) * 6 * S, pts[m] + Math.cos(ang) * 12 * S, pts[m + 1] + Math.sin(ang) * 12 * S + (r() - 0.5) * 4 * S];
   return { pts, fork };
 }
+// INTENSITY BY THE DAMAGE CARRIED (owner, 2026-11-07: "Arc beams should increase in intensity depending on the damage it carries"): each strike and
+// hop's width (its glow with it) and alpha from the damage it carries (f.d), on the damage numbers' own band (dmgNumber: rel = (hit / the damage a
+// second / DMG_DPS_K)^DMG_SIZE_EXP, 14 -> 30 px) - x ARC_INT_W[0] the width at the weakest to x ARC_INT_W[1] at the strongest, alpha x ARC_INT_A[0]..1:
+// a beam reads as hard as its number (relative to all the damage a second, as the numbers are), each hop also by its share of the strike
+// (f.share, aspira-arc.js) on the same exponent; the weakest hop still plain, the strongest no white-out (the core stays the same mix)
+const ARC_INT_W = [0.6, 2.2], ARC_INT_A = [0.6, 1];
+function arcInt(f) {
+  const dps = typeof G !== "undefined" && G ? G.dps || 0 : 0, rel = (f.d > 0 ? Math.min(1, f.d / Math.max(1, dps) / DMG_DPS_K) ** DMG_SIZE_EXP : 0) * Math.min(1, f.share ?? 1) ** DMG_SIZE_EXP; // (x the hop's share of its strike, same exponent: a falling chain thins hop by hop)
+  return [ARC_INT_W[0] + (ARC_INT_W[1] - ARC_INT_W[0]) * rel, ARC_INT_A[0] + (1 - ARC_INT_A[0]) * rel];
+}
 const arcBoltFade = f => { const k = Math.max(0, 1 - ARC_BOLT_LIFE * f.t / f.life); return Math.min(1, k * 2); }; // twice the old speed
 function fxGlArcBolt(f) { // 3D: a glow capsule and a thin bright core a jag
   if (arcIn3d(f.a)) return; // (drawn from its prism's top: drawArcBolts3d)
-  const x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, al = arcBoltFade(f); if (al <= 0) return;
-  const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), col = COL[f.color], core = arcMix(col, 0.7), S = ARC_BOLT_S, w = f.thin || 1;
+  const [ik, ia] = arcInt(f), x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, al = arcBoltFade(f) * ia; if (al <= 0) return;
+  const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), col = COL[f.color], core = arcMix(col, 0.7), S = ARC_BOLT_S, w = (f.thin || 1) * ik;
   const run = (p, k) => { for (let i = 0; i + 3 < p.length; i += 2) { fxGlGlowLine(p[i], p[i + 1], p[i + 2], p[i + 3], 2.6 * S * k * w, col, al * 0.8); fxGlPush(p[i], p[i + 1], p[i + 2], p[i + 3], 0.75 * S * k * w, 0, core, al, core, 0); } };
   run(pts, 1); run(fork, 0.6);
 }
 function drawArcBolt2D(f, x1, y1, x2, y2, pt, ws) { // 2D: pt projects a world point to device px (the canvas is in device px here)
   if (arcIn3d(f.a)) return; // (drawn from its prism's top: drawArcBolts3d)
-  const al = arcBoltFade(f); if (al <= 0) return;
-  const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], core = arcMix(css, 0.7), w = (f.thin || 1) * ARC_BOLT_S * 1.5 * ws;
+  const [ik, ia] = arcInt(f), al = arcBoltFade(f) * ia; if (al <= 0) return;
+  const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], core = arcMix(css, 0.7), w = ik * (f.thin || 1) * ARC_BOLT_S * 1.5 * ws;
   const path = (p) => { const q = new Path2D(); for (let i = 0; i + 1 < p.length; i += 2) { const P = pt(p[i], p[i + 1]); i ? q.lineTo(P.x, P.y) : q.moveTo(P.x, P.y); } return q; };
   ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.shadowColor = css; ctx.shadowBlur = 3.2 * w; ctx.strokeStyle = core; ctx.globalAlpha = al;
   ctx.lineWidth = w; ctx.stroke(path(pts)); ctx.lineWidth = w * 0.6; ctx.stroke(path(fork)); ctx.restore();
