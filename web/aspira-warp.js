@@ -318,7 +318,7 @@ function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid 
     const solids = G.towers.map(t => {
       const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
       const h = towerH(t);
-      return { x, y, h, col: COL[TOWERS[t.kind].color], opaque: t.kind === "frz", pts: c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })),
+      return { x, y, h, col: COL[TOWERS[t.kind].color], opaque: t.kind === "frz", pts: (typeof solPolyPts === "function" && solPolyPts(t, x, y, TOWER_DRAW_K)) || c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })),
         under: () => ownColours(() => drawOrbiters(t, true, up, x, y, h)), top: () => ownColours(() => { up(x, y, () => drawTower(t), h / 2); if (t.kind === "grv" && typeof drawGrvBody === "function") { ctx.save(); try { drawGrvBody(t, x, y, h / 2, Math.hypot(c0.pts[0].x - c0.x, c0.pts[0].y - c0.y) * TOWER_K * TOWER_DRAW_K); } finally { ctx.restore(); } } drawOrbiters(t, false, up, x, y, h); }), own: true }; /* drawOrbiters: what circles it, far side under the prism, near side over (aspira-warp-prism.js); drawGrvBody: GRV's orb over its top (aspira-grv-draw.js) */
     });
     CELLS.forEach((c, ci) => {

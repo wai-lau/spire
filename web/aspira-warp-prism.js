@@ -122,6 +122,7 @@ function drawOrbiters(t, far, up, x, y, h) { // h: the prism's height (towerH); 
   if (t.kind === "ifr" && typeof drawIfrTop === "function") up(x, y, () => drawIfrTop(t, far), IFR_ORB_ALT * h / 2);
   if (t.kind === "acd" && typeof drawAcdBody === "function") drawAcdBody(t, far, x, y, h / 2); // ACD: the puddle before the prism (far), the drips and bubbles after it (aspira-acd-body.js)
   if (t.kind === "arc" && typeof drawArcBody === "function") drawArcBody(t, far, up, x, y, h);
+  if (t.kind === "sol" && typeof drawSolBlades === "function") drawSolBlades(t, far, x, y, h / 2); // SOL: Breach's blades, behind the prism (far) and in front (aspira-sol-body.js)
   if (t.kind === "frz" && typeof drawFrzIce === "function") { const c0 = CELLS[t.cell]; drawFrzIce(t, far, x, y, h / 2, Math.hypot(c0.pts[0].x - c0.x, c0.pts[0].y - c0.y) * TOWER_K * TOWER_DRAW_K); } // FRZ: Permafrost and Fracture crystals (aspira-frz-ice.js)
   if (t.kind === "frz" && typeof drawFrzMoons === "function") drawFrzMoons(t, far); // FRZ: the moons as ice d12s over their spots (aspira-frz-moons.js)
   if (t.kind === "crr" && t.icp && typeof drawCarBodies === "function") { ctx.save(); try { drawCarBodies(t, far, h / 2); } finally { ctx.restore(); } }

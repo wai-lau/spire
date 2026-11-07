@@ -151,7 +151,7 @@ function drawTower(t, ghost) {
   // stroked once per level, and at max level that was by far the costliest
   // draw of a late-game frame (profiled 2026-10-05). Stamped here 1:1 with the
   // canvas's pixels, then the label on top.
-  const sp = towerSprite(t.kind, shownLvl(t), c0), w = sp.width / cam.k; // a chart tower's 9 points drawn as 4 glows
+  const sp = towerSprite(t.kind, shownLvl(t), c0, t), w = sp.width / cam.k; // a chart tower's 9 points drawn as 4 glows
   // AN OPAQUE TOP (owner, 2026-11-06: "increase tower top face opacity to hide stuff behind it"): the hex filled in the background colour, then the
   // tower's tint (TOP_TINT), under its sprite - what is behind the tower no longer shows through its top. (Not for a ghost.)
   if (!ghost) { ctx.beginPath(); towerPts({ ...t, x, y }, TOWER_DRAW_K).forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y))); ctx.closePath(); ctx.globalAlpha = 1; ctx.fillStyle = COL.bg; ctx.fill(); ctx.globalAlpha = TOP_TINT; ctx.fillStyle = COL[b.color]; ctx.fill(); ctx.globalAlpha = 1; }
@@ -180,27 +180,28 @@ function drawPickOutline(t, x, y, color) {
 // one sprite per kind + level + colours + zoom + the hex's turn (Horizon orbits
 // the slots), drawn exactly as the tower used to be drawn each frame
 const SOL_BEAM_W = 0.9, SOL_GLOW_A = 0.45 /* (bolder 1.2 / 0.7 tried 2026-10-07 and reverted - owner: "SOL was OK before") */, TOWER_LINE = 2.6, towerSprites = new Map(), TOWER_LABEL_PX = 23;
-function towerSprite(kind, lvl, c0) {
+function towerSprite(kind, lvl, c0, t = null) { // t: SOL's Reflection sides and Scorch outline (aspira-sol-body.js)
   const b = TOWERS[kind], turn = Math.round(Math.atan2(c0.pts[0].y - c0.y, c0.pts[0].x - c0.x) * 90 / Math.PI); // 2-degree steps
-  const key = [kind, lvl, COL[b.color], COL.bg, cam.k.toFixed(4), turn].join("|");
+  const sol = t && t.kind === "sol" && typeof solScorch === "function", sc = sol ? solScorch(t, COL[b.color]) : null, poly = sol ? solPolyPts(t, 0, 0, 1) : null;
+  const key = [kind, lvl, COL[b.color], COL.bg, cam.k.toFixed(4), turn, sol ? solSides(t) + "/" + sc.bt : ""].join("|");
   let sp = towerSprites.get(key);
   if (sp) return sp;
   if (towerSprites.size > 300) towerSprites.clear();
   // ONE hex, no level rings and no max-level spokes (owner, 2026-10-07): the level
   // shows only in the glow, the build in the chart drawn on it (boardChart)
-  const reach = CELL_S * TOWER_K + 4 + TOWER_GLOW[lvl - 1] * 1.6;
+  const reach = CELL_S * TOWER_K + 4 + TOWER_GLOW[lvl - 1] * 1.6 * (sc ? sc.gk : 1);
   sp = document.createElement("canvas");
   sp.width = sp.height = Math.ceil(2 * reach * cam.k);
   const sx = sp.getContext("2d"), main = ctx;
   sx.setTransform(cam.k, 0, 0, cam.k, sp.width / 2, sp.height / 2);
-  const c = { x: 0, y: 0, pts: c0.pts.map(p => ({ x: p.x - c0.x, y: p.y - c0.y })) };
+  const c = { x: 0, y: 0, pts: poly ? poly.map(p => ({ x: p.x / TOWER_K, y: p.y / TOWER_K })) : c0.pts.map(p => ({ x: p.x - c0.x, y: p.y - c0.y })) }; // (SOL's polygon: back to cell units)
   ctx = sx;
   try {
     ctx.fillStyle = COL.bg; ctx.strokeStyle = COL[b.color]; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
     towerHex(c, TOWER_K); ctx.fill(); // the background colour under the tower (owner)
-    ctx.shadowColor = COL[b.color]; ctx.shadowBlur = TOWER_GLOW[lvl - 1] * cam.k;
+    ctx.shadowColor = sc ? sc.glow : COL[b.color]; ctx.shadowBlur = TOWER_GLOW[lvl - 1] * cam.k * (sc ? sc.gk : 1);
     // the glow stacks one pass per level, since a lone wide shadow thins out
-    ctx.globalAlpha = 1; ctx.lineWidth = TOWER_LINE; // thinner (owner, 2026-10-06; was 4.5)
+    ctx.globalAlpha = 1; ctx.lineWidth = TOWER_LINE * (sc ? sc.w : 1); if (sc) ctx.strokeStyle = sc.col; // thinner (owner, 2026-10-06; was 4.5); SOL's Scorch: thicker, whiter, glowier
     towerHex(c, TOWER_K);
     for (let i = 0; i < lvl; i++) ctx.stroke();
   } finally { ctx = main; }
