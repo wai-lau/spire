@@ -91,7 +91,7 @@ function drawSolBlades(t, far, x, y, top) {
   const base = solScr(x, y, 0), e1 = solScr(x + 10, y, 0), e2 = solScr(x, y + 10, 0), e3 = solScr(x, y, top), r = v => Math.round(v * 2) / 2;
   const key = [tier, solSides(t), r(e1[0] - base[0]), r(e1[1] - base[1]), r(e2[0] - base[0]), r(e2[1] - base[1]), r(e3[0] - base[0]), r(e3[1] - base[1])].join(",");
   let B = solBodyOf.get(t);
-  if (!B || B.key !== key) {
+  if (!B || (B.key !== key && (typeof towerStill !== "function" || towerStill(t)))) { // (moving: the last bake carried along - re-built once it holds still)
     const list = solBladeGeo(t, x, y, top), k = Math.hypot(e1[0] - base[0], e1[1] - base[1]) / 10;
     B = { key, back: solBladeBake(list.filter(b => b.back), tier, k), front: solBladeBake(list.filter(b => !b.back), tier, k) }; solBodyOf.set(t, B);
   }

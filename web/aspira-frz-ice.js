@@ -283,6 +283,9 @@ function frzIceView(t, x, y, top, Rw) {
   const rot = ((Math.atan2(syy / sq, sx) * 180 / Math.PI + 90) % 60 + 60) % 60;
   return { T, m, sq, Hs: Math.max(4, (by - T.y) / m), rot };
 }
+// a tower that has not moved for TOWER_STILL_MS (a drag, a fling, a slide): the baked looks re-bake for its new spot only then (FRZ's ice, SOL's blades)
+const TOWER_STILL_MS = 300, towerStillAt = new WeakMap();
+function towerStill(t) { const now = performance.now(), p = towerStillAt.get(t); if (!p || p.x !== t.x || p.y !== t.y) { towerStillAt.set(t, { x: t.x, y: t.y, at: p ? now : -1e9 }); return !p; } return now - p.at >= TOWER_STILL_MS; }
 let iceFrameAt = -1, iceBudget = 0; const iceOf = new WeakMap(); // (per tower, off the tower: the autosave's structuredClone takes no generator or canvas)
 // OFF THE MAIN THREAD (WebKit, 2026-11-06: one generator step reached 116 ms in the rig - a candidate check cannot be split finer): a WORKER (this very
 // file, importScripts) builds each tower's ice and posts its scene - the pieces for the asked tiers, back and front, plain data - a few times a second as
@@ -313,12 +316,16 @@ if (typeof importScripts === "function" && typeof window === "undefined") { // T
   };
   onmessage = e => { const m = e.data, k = m.id + "|" + m.key; let M = makers.get(k); if (!M) makers.set(k, M = frzIceMaker(m.sp, m.sf, m.G, m.rot)); jobs.set(m.id, { M, msg: m }); if (!busy) { busy = true; setTimeout(round, 0); } };
 }
-function frzIceGet(t, v, np, nf) { // the tower's ice: its scene for these tiers (from the worker, or grown here a few ms a frame)
-  const key = [Math.round(v.sq * 50), Math.round(v.Hs), Math.round(v.rot / 3)].join(","), want = key + "|" + np + "," + nf;
-  let I = iceOf.get(t); if (!I || I.key !== key) iceOf.set(t, I = { key, M: null, bake: null, scene: null, want: "" });
-  const sp = 40117 + 7919 * (t.cell | 0), sf = 90211 + 104729 * (t.cell | 0), Gm = { cx: 0, cy: 0, R: 40, sq: v.sq, Hs: v.Hs }, wk = iceWorker();
+// MADE ONCE A TOWER (owner, 2026-11-06: "FRZ perm and frac get regenerated every time frz moves / it should only be generated once, and follow
+// movement of tower"): the ice is grown in the view the tower FIRST has (its squash, height and hex turn then - frozen in I.view) from a seed of
+// its id; a move never makes it again (the key was the view at its current spot: every move grew it anew). A tier bought only shows more of
+// the same pieces (first-n). The bake follows the tower (drawFrzIce)
+function frzIceGet(t, v0, np, nf) { // the tower's ice: its scene for these tiers (from the worker, or grown here a few ms a frame)
+  let I = iceOf.get(t); if (!I) iceOf.set(t, I = { view: { sq: v0.sq, Hs: v0.Hs, rot: v0.rot }, M: null, bake: null, scene: null, want: "" });
+  const v = I.view, key = [Math.round(v.sq * 50), Math.round(v.Hs), Math.round(v.rot / 3)].join(","), want = key + "|" + np + "," + nf;
+  const id = t.id | 0, sp = 40117 + 7919 * id, sf = 90211 + 104729 * id, Gm = { cx: 0, cy: 0, R: 40, sq: v.sq, Hs: v.Hs }, wk = iceWorker();
   if (wk && I.want === want && !I.scene && performance.now() - I.postAt > ICE_WK_WAIT_MS) { iceWk = false; wk.terminate(); } // (silent: build here instead)
-  else if (wk) { if (I.want !== want) { I.want = want; I.postAt = performance.now(); const seq = ++iceWkSeq, id = I.wid ||= ++iceWkIds; iceWkWait.set(id, { I, seq }); wk.postMessage({ id, seq, key, sp, sf, G: Gm, rot: v.rot, np, nf }); } return I; }
+  else if (wk) { if (I.want !== want) { I.want = want; I.postAt = performance.now(); const seq = ++iceWkSeq, wid = I.wid ||= ++iceWkIds; iceWkWait.set(wid, { I, seq }); wk.postMessage({ id: wid, seq, key, sp, sf, G: Gm, rot: v.rot, np, nf }); } return I; }
   I.M ||= frzIceMaker(sp, sf, Gm, v.rot);
   const now = performance.now(); if (now - iceFrameAt > 8) { iceFrameAt = now; iceBudget = ICE_SLICE_MS; }
   if (!I.M.done && iceBudget > 0) { const a = performance.now(); I.M.step(iceBudget); iceBudget -= performance.now() - a; }
@@ -358,11 +365,12 @@ function frzIceBake(list, m, ice, frz, glow = true) { const J = frzIceBakeBegin(
 function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters: the pieces behind the tower (far) before its prism, the rest after its top face
   const np = skillOf(t, "rime"), nf = skillOf(t, "temp"); if (!np && !nf) return;
   const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v, np, nf); if (!I.scene) return;
-  const bk = [I.sceneAt, Math.round(v.m * 50)].join(",");
+  const bk = [I.sceneAt, Math.round(v.m * 50)].join(","), still = towerStill(t);
   const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white;
-  if (!I.bake || I.bake.key !== bk) { I.bake = { key: bk, back: frzIceBake(sc.back, v.m, ice, frz, false), front: frzIceBake(sc.front, v.m, ice, frz, false) }; I.glow = sc.done ? { key: bk, back: frzIceBakeBegin(sc.back, v.m, ice, frz, true), front: frzIceBakeBegin(sc.front, v.m, ice, frz, true) } : null; }
+  if (!I.bake || (I.bake.key !== bk && still)) { I.bake = { key: bk, m: v.m, back: frzIceBake(sc.back, v.m, ice, frz, false), front: frzIceBake(sc.front, v.m, ice, frz, false) }; I.glow = sc.done ? { key: bk, back: frzIceBakeBegin(sc.back, v.m, ice, frz, true), front: frzIceBakeBegin(sc.front, v.m, ice, frz, true) } : null; }
   // THE GLOW BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"): the full bake, a few pieces a frame (ICE_GLOW_MS), the quick one shown till it is done
-  if (I.glow && I.glow.key === bk && far) { const G2 = I.glow, d1 = !G2.back || frzIceBakeRun(G2.back, ICE_GLOW_MS), d2 = d1 && (!G2.front || frzIceBakeRun(G2.front, ICE_GLOW_MS)); if (d1 && d2) { I.bake = { key: bk, back: G2.back, front: G2.front }; I.glow = null; } }
+  if (I.glow && I.glow.key === bk && far) { const G2 = I.glow, d1 = !G2.back || frzIceBakeRun(G2.back, ICE_GLOW_MS), d2 = d1 && (!G2.front || frzIceBakeRun(G2.front, ICE_GLOW_MS)); if (d1 && d2) { I.bake = { key: bk, m: v.m, back: G2.back, front: G2.front }; I.glow = null; } }
   const B = far ? I.bake.back : I.bake.front; if (!B) return;
-  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(B.cv, v.T.x + B.ox, v.T.y + B.oy); ctx.restore();
+  const k = v.m / (I.bake.m || v.m); // (moving: the last bake carried along and scaled to this spot's zoom; re-baked once the tower holds still)
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; if (k > 0.999 && k < 1.001) ctx.drawImage(B.cv, v.T.x + B.ox, v.T.y + B.oy); else ctx.drawImage(B.cv, v.T.x + B.ox * k, v.T.y + B.oy * k, B.cv.width * k, B.cv.height * k); ctx.restore();
 }

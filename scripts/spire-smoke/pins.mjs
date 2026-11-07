@@ -114,3 +114,17 @@ check("ARC: the Voltage rings never touch the prism at any turn (owner, 2026-11-
   const bad = r.filter(x => !(x.worst >= 3 - 1e-6));
   if (bad.length) return "a ring's line comes within " + bad.map(x => x.worst + " u (Conductivity " + x.ct + ")").join(", ") + " of the prism's corners; ARC_RING_GAP is 3";
 });
+
+check("FRZ: its ice is grown ONCE - a move never regrows it (owner, 2026-11-06: \"FRZ perm and frac get regenerated every time frz moves / it should only be generated once, and follow movement of tower\"; the key was the view at its current spot)", () => {
+  const r = JSON.parse(run(`(() => { G = newGame(); G.money = 1e9; ui.build = "frz"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); ui.build = null;
+    const t = G.towers[0]; for (let i = 0; i < 3; i++) upgradeTower(t, "rime", true); for (let i = 0; i < 2; i++) upgradeTower(t, "temp", true);
+    const np = skillOf(t, "rime"), nf = skillOf(t, "temp"), vA = { sq: 0.55, Hs: 30, rot: 10 }, vB = { sq: 0.62, Hs: 36, rot: 22 };
+    let I = frzIceGet(t, vA, np, nf); for (let k = 0; k < 4000 && !(I.scene && I.scene.done); k++) { iceFrameAt = -1; I = frzIceGet(t, vA, np, nf); }
+    const sig = I => JSON.stringify(I.scene.back.concat(I.scene.front).map(P => P.topPts));
+    const before = { done: !!(I.scene && I.scene.done), n: I.scene ? I.scene.back.length + I.scene.front.length : 0, s: sig(I), M: I.M };
+    iceFrameAt = -1; const J = frzIceGet(t, vB, np, nf);
+    return JSON.stringify({ done: before.done, n: before.n, same: J === I && J.M === before.M, stillDone: !!(J.scene && J.scene.done), pieces: sig(J) === before.s }); })()`));
+  if (!r.done || !r.n) return "the ice never finished growing in the rig (" + r.n + " pieces)";
+  if (!r.same) return "a new view (a move) made the tower's ice again";
+  if (!r.stillDone || !r.pieces) return "after a move the pieces changed or growth restarted";
+});
