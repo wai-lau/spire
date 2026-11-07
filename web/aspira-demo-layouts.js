@@ -76,8 +76,8 @@ function demoPlace0(kind, st, cell, L) {
   const span = DEMO_BOX_AR - 2 * DEMO_TOWER_X, xr = r * (DEMO_BOX_AR - DEMO_TOWER_X) / span + DEMO_BOX_OVER, xl = r * DEMO_TOWER_X / span + DEMO_BOX_OVER, /* the box in world u under demoView3d's zoom (the range's far edge DEMO_TOWER_X box heights from the right edge) */ dy = DEMO_LANE_DY * r, /* (60 u past each edge) */ pace = PATHS.slice(0, N_PATHS).reduce((a, P) => a + P.pace, 0) / N_PATHS;
   const lane = y => { const pts = []; for (let x = c.x + xr, s = 0; x >= c.x - xl - 1e-6; x -= 8, s += 8) pts.push({ x, y, s }); return { pts, len: pts[pts.length - 1].s, pace, rim: pts[pts.length - 1], demo: true }; };
   // THE LATTICE (owner, 2026-11-06: "each lane in demo should send units in a 3-wide lattice with random 50% empty"): each of the two lanes
-  // is THREE parallel paths DEMO_LAT_W x the range apart (its slots: left / centre / right across it); rows come in along it DEMO_LAT_D
-  // apart (at least the number gap), each slot filled or empty at 50% by a seeded hash (row, slot, lane, the scene's seed - no Math.random);
+  // is THREE parallel paths DEMO_LAT_W x the range apart (its slots: left / centre / right across it); rows come in along it D (the lane over
+  // L.rows or DEMO_LAT_ROWS rows) apart (at least the number gap), each slot filled or empty at 50% by a seeded hash (row, slot, lane, the scene's seed - no Math.random);
   // a lane's types cycle the layout's (a fast scene: the fast on the upper lane, the rest below). It replaces the layouts' walker counts:
   // L.types is the MIX now, not the number. Rows enter at the right edge as the last moved D on (demoLatStep, aspira-demo.js)
   const w = DEMO_LAT_W * r, hasFast = T.includes("fast"), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
