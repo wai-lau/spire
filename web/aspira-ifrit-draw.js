@@ -235,6 +235,28 @@ function ifrFlareStrokes(c, f, low) {
 // set dropped whole past it (a palette flip - the boss sky - or a zoom makes new ones). Built once each, never a canvas a frame
 const IFR_STAMP_F = 16, IFR_STAMP_MAX = 400, ifrStamps = new Map();
 let IFR_STAMP_ON = true; // (let: a test draws the strokes to compare)
+// A STAMP'S PIXELS, AS THE BOARD DRAWS THEM (owner, 2026-11-06: "never use step glow unless huge perf gains" - the 2D strokes were three steps a layer):
+// every pixel from the GPU glow line's own formula (aspira-fxgl.js shape 7) - each IFR_GLOW_GL layer (1 - off / w)^pw across a spoke, (1 - t)^3 along
+// it, the layers and spokes laid over each other in order - once a look (the stamps are cached), through the view's linear part m
+const ifrRgb = css => { const m = /(\d+(?:\.\d+)?)[ ,]+(\d+(?:\.\d+)?)[ ,]+(\d+(?:\.\d+)?)/.exec(css || ""); return m ? [+m[1], +m[2], +m[3]] : [0, 0, 0]; };
+function ifrStampPixels(g, q, f, low, m, R) {
+  if (typeof g.createImageData !== "function" || typeof g.putImageData !== "function") return false;
+  const N = 2 * R, img = g.createImageData(N, N), D = img.data; if (!D || !D.length) return false;
+  const det = m.a * m.d - m.b * m.c; if (Math.abs(det) < 1e-12) return false;
+  const rays = Array.from({ length: IFR_BEAMS }, (_, k) => { const a = k * Math.PI / 4; return [Math.cos(a), Math.sin(a), k % 2 ? q.L * (q.xk ?? IFR_X_K) : q.L]; });
+  const L = []; for (let g2 = low ? IFR_GLOW_GL.length - 2 : 0; g2 < IFR_GLOW_GL.length; g2++) { const k = IFR_GLOW_GL[g2]; L.push({ c: ifrRgb(ifrFlareCol(k[2], q)), A: Math.min(1, k[1] * f * IFR_GLOW_A * ifrFlareI(q) * ifrLayerK(k[2], q)), w: q.W * k[0], pw: k[3] }); }
+  for (let py = 0, o = 0; py < N; py++) for (let px = 0; px < N; px++, o += 4) {
+    const dx = px + 0.5 - (R + 0.5), dy = py + 0.5 - (R + 0.5), wx = (m.d * dx - m.c * dy) / det, wy = (-m.b * dx + m.a * dy) / det;
+    let r = 0, gg = 0, b = 0, al = 0; // premultiplied
+    for (const [cx, sx, Lr] of rays) {
+      const sa = wx * cx + wy * sx; if (sa < 0 || sa > Lr) continue;
+      const off = Math.abs(wx * sx - wy * cx), along = (1 - sa / Lr) ** 3;
+      for (const l of L) { if (off >= l.w) continue; const a = l.A * (1 - off / l.w) ** l.pw * along; if (a <= 0) continue; r = l.c[0] * a + r * (1 - a); gg = l.c[1] * a + gg * (1 - a); b = l.c[2] * a + b * (1 - a); al = a + al * (1 - a); }
+    }
+    if (al > 0) { D[o] = r / al; D[o + 1] = gg / al; D[o + 2] = b / al; D[o + 3] = al * 255; }
+  }
+  g.putImageData(img, 0, 0); return true;
+}
 function ifrSpriteDraw(c, f, low) {
   if (typeof document === "undefined") return false;
   const m = ctx.getTransform(), px = m.a * c.x + m.c * c.y + m.e, py = m.b * c.x + m.d * c.y + m.f, k = Math.max(Math.hypot(m.a, m.b), Math.hypot(m.c, m.d)); // (the view's linear part goes INTO the stamp: the card demo's floor is squeezed)
@@ -244,8 +266,8 @@ function ifrSpriteDraw(c, f, low) {
   if (!sp) {
     if (ifrStamps.size >= IFR_STAMP_MAX) ifrStamps.clear();
     const R = Math.ceil((L + W) * k) + 3, cv = document.createElement("canvas"); cv.width = cv.height = 2 * R;
-    const g = cv.getContext("2d"), c0 = ctx, q = Object.assign({}, c, { L, W, hitI: I }); ctx = g; // (q: the key's look - its rounded size and intensity)
-    try { g.setTransform(m.a, m.b, m.c, m.d, R + 0.5 - (m.a * c.x + m.c * c.y), R + 0.5 - (m.b * c.x + m.d * c.y)); g.lineCap = "butt"; ifrFlareStrokes(q, fq, low); } finally { ctx = c0; }
+    const g = cv.getContext("2d", { willReadFrequently: true }), c0 = ctx, q = Object.assign({}, c, { L, W, hitI: I }); ctx = g; // (q: the key's look - its rounded size and intensity)
+    try { if (!ifrStampPixels(g, q, fq, low, m, R)) { g.setTransform(m.a, m.b, m.c, m.d, R + 0.5 - (m.a * c.x + m.c * c.y), R + 0.5 - (m.b * c.x + m.d * c.y)); g.lineCap = "butt"; ifrFlareStrokes(q, fq, low); } } finally { ctx = c0; }
     sp = { cv, R }; ifrStamps.set(key, sp);
   }
   const a0 = ctx.globalAlpha; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
