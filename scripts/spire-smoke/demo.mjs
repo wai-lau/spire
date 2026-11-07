@@ -120,6 +120,8 @@ check("demo late builds: at 13 points no scene sends a real wave or holds a non-
       for (let f = 0; f < 7 * 60; f++) { demoFrame(S); if (f >= 120 && f % 30 === 0 && kind === "acd" && key === "contagion" && !(S.G.towers[0].puddles || []).length) dry++; }
       if (S.G.wave !== 1) bad.push(kind + "." + key + ": the scene sent wave " + S.G.wave);
       const odd = S.G.enemies.filter(e => !e.dead && !e.demo).length; if (odd) bad.push(kind + "." + key + ": " + odd + " non-demo enemies");
+      { const done = S.G.enemies.length >= 0 ? S.T.filter(x => !S.G.enemies.some(e => !e.dead && e.tally === x)) : [], hurt = done.filter(x => x.dmg > 0).length; /* THE TOWER REACHES THEM (Leader, 2026-11-07: 7.8.4's SOL aimed its beam off the demo's lanes - "hits" passed on one walker): at least half the walkers that left the scene took damage */
+        if (done.length >= 4 && hurt < done.length / 2) bad.push(kind + "." + key + ": only " + hurt + " of " + done.length + " walkers that left took any damage"); }
       if (dry > 2) bad.push(kind + "." + key + ": no pools at " + dry + " of 10 checks from 2 s"); /* (at most 2 dry: since ~90% of walkers die (demoTune, 2026-11-07) the box can clear for a moment) */
     } } finally { Math.random = rnd0; }
     return bad.join("; "); })()`);
