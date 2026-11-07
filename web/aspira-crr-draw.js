@@ -5,7 +5,7 @@ const CRR_DART = 33, CRR_DART_W = 7.8, /* x3 (owner, 2026-10-16: "make the inter
 // its SIZE grows with Armament (owner, 2026-10-16: "halve interceptor size (grow this as armament increases)"): half the dart
 // above, untaken, + CRR_DART_GROW a tier - the full dart at VI
 const CRR_DART_K0 = 0.5, CRR_DART_GROW = 0.1;
-const CRR_DART_DRAW = 0.25; // every interceptor DRAWN at a quarter (owner, 2026-11-06: "halve all interceptor sizes"; 2026-11-05: "Halve interceptor sizes", 0.5) - its outline too; its jitter and its hold radius as they were (the draw only)
+const CRR_DART_DRAW = 0.375; // x1.5 (owner, 2026-11-06: "1,5x all interceptor sizes"; was 0.25) - every interceptor DRAWN x0.375 (a quarter before; owner, 2026-11-06: "halve all interceptor sizes"; 2026-11-05: "Halve interceptor sizes", 0.5) - its outline too; its jitter and its hold radius as they were (the draw only)
 // V=V (owner, 2026-11-06: "change the interceptors for it to look like V=V (V = current triangle, this is interceptor facing down, bolts fire out of
 // tip of Vs alternating between) / tether should be connected to the = part"): two of the old darts side by side, noses (the V tips) forward,
 // joined by two bars (the "="); the tether leaves the middle of the "=" (carBar). One path a carrier still: one fill, one stroke
@@ -73,7 +73,7 @@ function carParts3d(t, far, top, z, k) {
   }
   if (any) ctx.stroke();
 }
-const CRR_EDGE_W = 0.3; // the lighter edge, world u (0.5 at the old double size)
+const CRR_EDGE_W = 0.45; // x1.5 with the darts (was 0.3) - the lighter edge, world u (0.5 at the old double size)
 const carBar = (i, z) => { const a = i.fa ?? i.ang, u = (CRR_VV_BARS[0] + CRR_VV_BARS[1]) / 2 * CRR_DART * z; return { x: i.x + Math.cos(a) * u, y: i.y + Math.sin(a) * u }; }; // the "=" middle
 const carTip = (i, z, k) => { const a = i.fa ?? i.ang, L = CRR_DART * z * 0.5, o = carVVOff(CRR_DART_W * z) * k, c = Math.cos(a), s = Math.sin(a); return [i.x - s * o + c * L, i.y + c * o + s * L]; }; // k -1 / +1
 // darts: the INTERCEPTORS alone, drawn in skyKeep - their colour is not inverted by a boss sky (owner, 2026-10-16: "Interceptor color
@@ -155,7 +155,7 @@ function carBoltTip(b, t, fl) {
   i.tk = i.tk === 1 ? -1 : 1; const ux = b.vx / CRR_BOLT_V, uy = b.vy / CRR_BOLT_V, [tx, ty] = carTip(i, carZ(t) * (1 + CRR_SIZE_JIT * (i.oj || 0)), i.tk);
   return (b.tp = [tx - (b.x - ux * fl), ty - (b.y - uy * fl)]);
 }
-const CRR_TETHER_A0 = 0.7, CRR_TETHER_W = 0.6; // the tether chain: its least alpha (x CHAIN_A on top, as ARC's), its links x ARC's size
+const CRR_TETHER_A0 = 0.7, CRR_TETHER_W = 0.4; // the tether chain: its least alpha (x CHAIN_A on top, as ARC's), its links x ARC's size
 function drawCar(darts) {
   for (const t of G.towers) {
     if (t.kind !== "crr" || !t.icp) continue;
