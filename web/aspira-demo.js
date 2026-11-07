@@ -119,7 +119,7 @@ function demoDraw3d(S) {
   if (t) {
     const c0 = CELLS[t.cell], h = towerH(t), col = COL[TOWERS[t.kind].color];
     drawOrbiters(t, true, up, t.x, t.y, h); // (what circles it: far side under the prism, near side over - aspira-warp-prism.js)
-    warpPrism({ x: t.x, y: t.y, h, col, pts: c0.pts.map(p => ({ x: t.x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: t.y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })) });
+    warpPrism({ x: t.x, y: t.y, h, col, opaque: t.kind === "frz", pts: c0.pts.map(p => ({ x: t.x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: t.y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })) });
     up(t.x, t.y, () => drawTower(t), h / 2);
     drawOrbiters(t, false, up, t.x, t.y, h);
   }

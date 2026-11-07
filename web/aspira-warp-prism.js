@@ -67,6 +67,7 @@ function warpPrism(o) {
   for (const w of walls) {
     const quad = [B[w.i], B[w.j], T[w.j], T[w.i]];
     if (warpPath(quad)) {
+      if (o.opaque) { ctx.globalAlpha = 1; ctx.fillStyle = COL.bg; ctx.fill(); } // OPAQUE WALLS (owner, 2026-11-06: "make FRZ tower side faces opaque also"): the floor colour under the fade, so the crystals behind never show through
       ctx.globalAlpha = 1; ctx.fillStyle = grads[w.i] ||= (() => {
         const P = T[w.i], E = at(P, B[w.i]), dx = T[w.j].x - P.x, dy = T[w.j].y - P.y, nn = dx * dx + dy * dy;
         const k = nn > 1e-6 ? ((E.x - P.x) * -dy + (E.y - P.y) * dx) / nn : 0, gx = k ? P.x - dy * k : E.x, gy = k ? P.y + dx * k : E.y, l = 0.12 + 0.28 * w.lit; // lit from the CORE (owner: "the light source should come from the core")
@@ -121,6 +122,7 @@ function drawOrbiters(t, far, up, x, y, h) { // h: the prism's height (towerH); 
   if (t.kind === "ifr" && typeof drawIfrTop === "function") up(x, y, () => drawIfrTop(t, far), IFR_ORB_ALT * h / 2);
   if (t.kind === "acd" && typeof drawAcdBody === "function") drawAcdBody(t, far, x, y, h / 2); // ACD: the puddle before the prism (far), the drips and bubbles after it (aspira-acd-body.js)
   if (t.kind === "arc" && typeof drawArcBody === "function") drawArcBody(t, far, up, x, y, h);
+  if (t.kind === "frz" && typeof drawFrzIce === "function") { const c0 = CELLS[t.cell]; drawFrzIce(t, far, x, y, h / 2, Math.hypot(c0.pts[0].x - c0.x, c0.pts[0].y - c0.y) * TOWER_K * TOWER_DRAW_K); } // FRZ: Permafrost and Fracture crystals (aspira-frz-ice.js)
   if (t.kind === "frz" && typeof drawFrzMoons === "function") drawFrzMoons(t, far); // FRZ: the moons as ice d12s over their spots (aspira-frz-moons.js)
   if (t.kind === "crr" && t.icp && typeof drawCarBodies === "function") { ctx.save(); try { drawCarBodies(t, far, h / 2); } finally { ctx.restore(); } }
 }
