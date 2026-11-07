@@ -47,7 +47,7 @@ function buyDemoOpen(card, kind, ci) {
   (document.getElementById("asp") || document.body).appendChild(box);
   const bh = box.getBoundingClientRect().height, vh = window.innerHeight; // centred over the cards, kept on screen
   box.style.left = Math.max(BUY_PAD, rr.left + rr.width / 2 - pw / 2) + "px"; box.style.top = Math.max(BUY_PAD, Math.min(vh - BUY_PAD - bh, rr.top + rr.height / 2 - bh / 2)) + "px";
-  buyDemo.S = demoScene(kind, sk, ci, demoPlace(kind, towerStats(t), ci, L)); buyDemo.cv = cv; buyDemo.c2 = cv.getContext("2d"); buyDemo.view = demoView3d(buyDemo.S, cv.width, cv.height); buyDemo.box = box;
+  buyDemo.S = demoScene(kind, sk, ci, demoPlace(kind, towerStats(t), ci, L)); buyDemo.cv = cv; buyDemo.c2 = cv.getContext("2d"); buyDemo.S.kMax = demoBoardK(dpr); buyDemo.view = demoView3d(buyDemo.S, cv.width, cv.height); buyDemo.box = box;
   setTimeout(() => { document.addEventListener("pointerdown", buyDemoSwallow, true); document.addEventListener("click", buyDemoSwallow, true); }, 0); // (not the tap that opened it)
   buyDemo.last = performance.now(); buyDemo.raf = requestAnimationFrame(buyDemoTick);
 }

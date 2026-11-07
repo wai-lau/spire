@@ -23,7 +23,7 @@ function demoMount(t, pv) {
     const L = DEMO_LAYOUTS[t.kind] && (DEMO_LAYOUTS[t.kind][lay] || DEMO_LAYOUTS[t.kind].base); if (!L) return;
     demoCard.S = demoScene(t.kind, tw.skills || {}, t.cell, demoPlace(t.kind, towerStats(tw), t.cell, L)); demoCard.S.sound = true; demoCard.key = key;
   }
-  demoCard.cv = cv; demoCard.tid = t.id; demoCard.c2 = cv.getContext("2d"); demoCard.view = demoView3d(demoCard.S, cv.width, cv.height);
+  demoCard.cv = cv; demoCard.tid = t.id; demoCard.c2 = cv.getContext("2d"); demoCard.S.kMax = demoBoardK(dpr); demoCard.view = demoView3d(demoCard.S, cv.width, cv.height);
 }
 // every frame (aspira-ui.js frame, its real `dt`, already capped at 0.05 s so a stalled tab takes no huge step): the scene at 1x play
 function demoTick(dt = DEMO_DT) {

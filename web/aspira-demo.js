@@ -101,9 +101,18 @@ const DEMO_LENS = 24; // the lens: focal length x the canvas's size (a long one:
 // point half the box's height from its top, bottom AND left edges, the scale fitting its range ellipse (2 r cos(tilt) tall) in the box's height with
 // DEMO_FIT to spare - so the ring sits with equal room above and below at every tier; the box's width (DEMO_BOX_AR) is the walkers' run
 const DEMO_FIT = 1.12, DEMO_BOX_AR = 372 / 180, DEMO_TOWER_X = 0.62; // X: the tower's floor point that many box heights from the left (owner, 2026-11-03: "move demo tower slightly right"; 0.5 before)
+// NEVER BIGGER THAN ON THE BOARD (owner, 2026-11-06: "for all demos, never zoom in more than in game tower size"): the demo's scale is capped at the
+// board's own at its DEFAULT zoom - the biggest a cell is drawn there (its 3D frame, nearest the camera), per CSS px, x the demo canvas's dpr. Read once a demo
+function demoBoardK(dpr) {
+  try {
+    const bd = typeof canvasDpr === "function" ? canvasDpr() : 1, z0 = typeof ZOOM_WHEEL !== "undefined" && ZOOM_WHEEL ? ZOOM_DEFAULT / (viewZoom || ZOOM_DEFAULT) : 1;
+    let m = 0; if (typeof warpFrame === "function" && typeof warp !== "undefined" && warp.p) for (const c of CELLS) { const F = warpFrame(c.x, c.y, 0); m = Math.max(m, Math.hypot(F[0], F[1])); }
+    return (m || cam.k) * z0 / bd * dpr;
+  } catch (e) { return Infinity; }
+}
 function demoView3d(S, w, h) {
   const t = S.G.towers[0], r = demoRun(S, () => towerStats(t).range) || 120, tilt = warpTilt(), c = Math.cos(tilt), s = Math.sin(tilt);
-  const d = Math.min(w, h) * DEMO_TOWER_X, k = w - 2 * d > 0 ? (w - 2 * d) / r : h / (2 * r * c * DEMO_FIT) /* THE RANGE'S FAR EDGE as far from the right edge as the tower is from the left (owner, 2026-11-06: "zoom out enough so that the edge of the tower range is the same distance from the edge of the demo as the distance from the other edge to the tower"; was: the whole range ellipse fitted in the height) */, ox = d - t.x * k, /* LEFT (owner, 2026-11-03: "move tower to the left so that the distance from top and bottom of box is equal to distance from left of box") */ oy = h / 2 - CY * k - c * (t.y - CY) * k, f = DEMO_LENS * Math.max(w, h);
+  const d = Math.min(w, h) * DEMO_TOWER_X, k = Math.min(S.kMax || Infinity, w - 2 * d > 0 ? (w - 2 * d) / r : h / (2 * r * c * DEMO_FIT)) /* THE RANGE'S FAR EDGE as far from the right edge as the tower is from the left (owner, 2026-11-06: "zoom out enough so that the edge of the tower range is the same distance from the edge of the demo as the distance from the other edge to the tower"; was: the whole range ellipse fitted in the height) */, ox = d - t.x * k, /* LEFT (owner, 2026-11-03: "move tower to the left so that the distance from top and bottom of box is equal to distance from left of box") */ oy = h / 2 - CY * k - c * (t.y - CY) * k, f = DEMO_LENS * Math.max(w, h);
   S.mid = [t.x, t.y];
   return { k, ox, oy, p: { core: [ox + CX * k, oy + CY * k], D: 0, L: Infinity, T: Infinity, hc: 1, e: 1, P: 1, c, s, f, k, z: 1, oy: 0 } };
 }
