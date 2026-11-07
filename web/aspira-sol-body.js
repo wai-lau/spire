@@ -7,8 +7,8 @@
 //               the tower's sprite (towerSprite, aspira-draw.js), so it costs nothing a frame
 //   BREACH      Senbonzakura (owner: "make each edge like the senbonsakura bankai with edges facing outward"): a straight katana blade
 //               up out of the floor on EVERY corner, its spine SOL_BLADE_OUT (the mockup's 15 at a hex radius of 40) out from the
-//               corner, the cutting edge outward, a sharp angled tip, a faint hamon; each blade turned about its spine by 180/n deg, all
-//               the same way ("rotate swords such that they are still symmetrical, but there is no exact overlap"); its height by its
+//               corner, the cutting edge outward, a sharp angled tip, a faint hamon; each blade's plane radial, aligned with the tower's
+//               edges ("blades should be aligned with tower edges (undo the slight rotations)" - was turned 180/n); its height by its
 //               corner's distance left or right of the centre ON SCREEN, 160% of the tower at the centremost to 320% at the sides along an
 //               exponential ("double heights of breach swords"); the tier only ramps the intensity (dim steel at I, a white-hot edge
 //               in a pink glow at V); each fades out toward the floor, transparent at 8% of its height, full from 40% ("every sword
@@ -26,7 +26,7 @@ function solPolyPts(t, x, y, g = 1) {
 const solScorch = (t, col) => { const bt = t && t.kind === "sol" ? skillOf(t, "focus") : 0, wh = bt / 5; return { bt, w: 1 + 0.27 * bt, col: bt ? mixRgb(col, COL.white, 0.95 * wh) : col, glow: bt ? mixRgb(col, COL.white, 0.6 * wh) : col, gk: 1 + 0.3 * bt }; };
 
 // ---------- BREACH: the blades ----------
-const SOL_BLADE_OUT = 15 / 40, SOL_BLADE_TH = 0.7 / 40, SOL_BLADE_FADE = [0.08, 0.4], SOL_BLADE_INT = [0, 0.3, 0.45, 0.62, 0.8, 1];
+const SOL_BLADE_BACK_A = 0.7, SOL_BLADE_OUT = 15 / 40, SOL_BLADE_TH = 0.7 / 40, SOL_BLADE_FADE = [0.08, 0.4], SOL_BLADE_INT = [0, 0.3, 0.45, 0.62, 0.8, 1];
 const solBladeProfile = d => 1.6 + 1.6 * (Math.exp(3 * d) - 1) / (Math.exp(3) - 1); // x the tower's visible height: 160% centre -> 320% sides
 const solBodyOf = new WeakMap();
 let solScratch = null;
@@ -38,7 +38,7 @@ function solBladeGeo(t, x, y, top) { // each blade's outline in device px, sorte
   const cx = Array.from({ length: n }, (_, k) => solScr(x + R * Math.cos(a0 + 2 * Math.PI * k / n), y + R * Math.sin(a0 + 2 * Math.PI * k / n), 0)[0] - base[0]);
   const mx = Math.max(1e-6, ...cx.map(Math.abs)), list = [];
   for (let k = 0; k < n; k++) {
-    const a = a0 + 2 * Math.PI * k / n, ca = Math.cos(a), sa = Math.sin(a), bA = a + Math.PI / n, cb = Math.cos(bA), sb = Math.sin(bA), H = top * solBladeProfile(Math.abs(cx[k]) / mx);
+    const a = a0 + 2 * Math.PI * k / n, ca = Math.cos(a), sa = Math.sin(a), bA = a, cb = Math.cos(bA), sb = Math.sin(bA), H = top * solBladeProfile(Math.abs(cx[k]) / mx);
     const pt = (u, z, off) => { const q = solScr(x + R5 * ca + u * cb - off * sb, y + R5 * sa + u * sb + off * cb, z); return [q[0] - base[0], q[1] - base[1]]; };
     const sh = [[0, 0], [w, 0], [0.88 * w, 0.8 * H], [0, H]], plates = [-th, th].map(off => sh.map(q => pt(q[0], q[1], off)));
     const ham = []; for (let z = 0.05 * H, i = 0; z < 0.74 * H; z += H * 0.03, i++) ham.push(pt(w - 0.12 * w * (z / (0.8 * H)) - 0.2 * w + 0.03 * w * Math.sin(i * 1.3), z, 0));
@@ -46,7 +46,10 @@ function solBladeGeo(t, x, y, top) { // each blade's outline in device px, sorte
     list.push({ plates, edge: [pt(w, 0, 0), pt(0.88 * w, 0.8 * H, 0), pt(0, H, 0)], spine: [pt(0, 0, 0), pt(0, H, 0)], ham, shade: 0.35 + 0.65 * Math.max(0, Math.abs(d)),
       y0: pt(0, 0, 0)[1], yH: pt(0, H, 0)[1], back: sa * (solScr(x, y + 1, 0)[1] - base[1]) < 0 });
   }
-  return list.sort((p, q) => p.y0 - q.y0); // far to near
+  list.sort((p, q) => p.y0 - q.y0); // far to near
+  // DEPTH OPACITY (owner, 2026-11-06: "blades further back are less opaque, going from 100% at front, to 70% at back"): by its foot's depth on screen in this view
+  const y0s = list.map(b => b.y0), lo = Math.min(...y0s), hi = Math.max(...y0s); for (const b of list) b.op = SOL_BLADE_BACK_A + (1 - SOL_BLADE_BACK_A) * (hi > lo ? (b.y0 - lo) / (hi - lo) : 1);
+  return list;
 }
 function solPath(g, P, close) { g.beginPath(); P.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); if (close) g.closePath(); }
 function solBladePaint(g, b, tier, col, core, k) { // one blade, opaque under its steel, its glows smooth (shadowBlur)
@@ -79,7 +82,7 @@ function solBladeBake(list, tier, k) { // -> { cv, ox, oy } in device px about t
   solScratch ||= document.createElement("canvas"); const S = solScratch; S.width = W; S.height = Hh; const sg = S.getContext("2d");
   for (const b of list) { // each blade alone (its fade must not cut the ones behind it), then laid on
     sg.setTransform(1, 0, 0, 1, 0, 0); sg.clearRect(0, 0, W, Hh); sg.setTransform(1, 0, 0, 1, -ox, -oy); solBladePaint(sg, b, tier, col, core, k);
-    sg.setTransform(1, 0, 0, 1, 0, 0); solBladeFade(sg, b, W, Hh, ox, oy); g.drawImage(S, 0, 0);
+    sg.setTransform(1, 0, 0, 1, 0, 0); solBladeFade(sg, b, W, Hh, ox, oy); g.globalAlpha = b.op ?? 1; g.drawImage(S, 0, 0); g.globalAlpha = 1;
   }
   return { cv, ox, oy };
 }
