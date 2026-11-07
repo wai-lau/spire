@@ -32,7 +32,7 @@ function mixRgb(a, b, f) {
   const p = s => (String(s).match(/\d+(\.\d+)?/g) || [0, 0, 0]).map(Number), A = p(a), B = p(b);
   return "rgb(" + [0, 1, 2].map(i => Math.round(A[i] + (B[i] - A[i]) * f)).join(", ") + ")";
 }
-const GRV_SUPER_W = 1.8, GRV_SUPER_WHITE = 0.3, GRV_SUPER_GLOW = 26; // Nova V's double ring (Hypernova): thicker, whiter, a bigger glow than a single nova's
+const GRV_SUPER_W = 1.8, GRV_SUPER_WHITE = 0.3, GRV_SUPER_GLOW = 26, GRV_SUPER_FLASH = 40; // Nova V's double ring (Hypernova): thicker, whiter, a bigger glow than a single nova's
 const GRV_REEL_Q = 1.5, GRV_EH_RING = [1.35, 0.35, 0.65]; // Undertow: a reeling enemy's chain x thicker; Event Horizon: the accretion ring's radius (x the core), its alpha floor, its alpha gain per kill share
 const GRV_RING_S = 1.2; // s between the aura's range rings (drawSphere)
 // a sphere's numbers are ORDINARY damage numbers, FLYING OFF THE ENEMY hit, away from the hole (owner, 2026-10-16: "damage
@@ -99,6 +99,18 @@ function drawGrv() {
   drawGrvPellets();
   ctx.globalAlpha = 1;
 }
+// HYPERNOVA'S SECOND RING, a white FLASH (Wai 2026-11-07: "bigger whiter flash"; Leader: it read as a thick grey band): pure white at full alpha from its start,
+// a GRV_SUPER_FLASH white glow (at least half of it from the start); the first ring keeps the double nova's look (GRV_SUPER_*).
+// IN THE CARD BOX (Leader, 2026-11-07): a demo scene (demoDrawing) scales a nova's drawn rings so its widest one (x GRV_SUPER_R on a double) stays inside the
+// canvas from its centre - both rings by one factor, so the second still reads 1.5x the first. Draw only; the board never scales
+const GRV_FIT_PAD = 1.1; // room for the ring's half width and glow, x the reach
+function grvNovaFit(sp, st) {
+  if (typeof demoDrawing === "undefined" || !demoDrawing) return 1;
+  const m = ctx.getTransform(), cx = sp.nova ? sp.nova.x : sp.x, cy = sp.nova ? sp.nova.y : sp.y, px = m.a * cx + m.c * cy + m.e, py = m.b * cx + m.d * cy + m.f;
+  const sx = Math.hypot(m.a, m.b), sy = Math.hypot(m.c, m.d), W = ctx.canvas.width, H = ctx.canvas.height;
+  const room = Math.max(0, Math.min(px / sx, (W - px) / sx, py / sy, (H - py) / sy)), reach = st.novaR * (sp.nN > 1 ? GRV_SUPER_R : 1) * GRV_FIT_PAD;
+  return reach > room ? room / reach : 1;
+}
 function drawSphere(sp, st, auraOwn = true) {
   const k = grvMassK(sp), ar = grvCoreR(grvAuraNow(sp, st)) * st.accR; // the AURA's reach (Gravity Well): x the void's own radius, x2 at most
   if (ar > 1 && st.auraOn) { // the aura: clear at the sphere, its alpha (grvAuraAlpha) at mid-radius, clear at the edge (auraOwn false: drawn capped with its overlaps - drawGrv)
@@ -112,12 +124,12 @@ function drawSphere(sp, st, auraOwn = true) {
     ctx.globalAlpha = 0.45 * (1 - f) ** 2; ctx.beginPath(); ctx.arc(sp.x, sp.y, ar * GRV_RING_OUT * f, 0, 6.283); ctx.stroke(); ctx.shadowBlur = 0;
   }
   if (sp.age < novaEnd(sp)) { // the NOVA: a thick ring collapsing INWARD, accelerating, GRV purple slowly turning white (owner)
-    const p = Math.min(1, novaLocal(sp)[1] / GRV_NOVA_T), r = grvNovaR(sp, st), dbl = sp.nN > 1, w = Math.min(r, grvNovaReach(sp, st) * GRV_NOVA_W * (dbl ? GRV_SUPER_W : 1));
+    const fit = grvNovaFit(sp, st), p = Math.min(1, novaLocal(sp)[1] / GRV_NOVA_T), r = grvNovaR(sp, st) * fit, dbl = sp.nN > 1, two = dbl && novaLocal(sp)[0] > 0, w = Math.min(r, grvNovaReach(sp, st) * fit * GRV_NOVA_W * (dbl ? GRV_SUPER_W : 1));
     if (r > 0.5) {
       // BRIGHTER as it closes on the centre (owner, 2026-10-17: "make GRV nova rings much thinner, however, they should get brighter as
       // they approach the center"): fainter far out, whiter and glowing as it collapses
-      ctx.globalAlpha = GRV_NOVA_LOOK_A * Math.min(1, GRV_NOVA_A * (0.45 + 0.65 * p)); /* GRV_NOVA_LOOK_A: the whole nova, its glow too (glcStroke reads this alpha) */ ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, Math.min(1, GRV_NOVA_WHITE + 0.6 * p ** 2 + (dbl ? GRV_SUPER_WHITE : 0))); ctx.lineWidth = Math.max(1, w); // (a solid stroke: the 3D board takes no gradient stroke)
-      ctx.shadowColor = dbl ? COL.white : COL.violet; ctx.shadowBlur = (dbl ? GRV_SUPER_GLOW : 14) * cam.k * p;
+      ctx.globalAlpha = GRV_NOVA_LOOK_A * Math.min(1, GRV_NOVA_A * (two ? 1 : 0.45 + 0.65 * p)); /* GRV_NOVA_LOOK_A: the whole nova, its glow too (glcStroke reads this alpha) */ ctx.strokeStyle = mixRgb(COL.violet, COL.bhwhite, two ? 1 : Math.min(1, GRV_NOVA_WHITE + 0.6 * p ** 2 + (dbl ? GRV_SUPER_WHITE : 0))); ctx.lineWidth = Math.max(1, w); // (a solid stroke: the 3D board takes no gradient stroke)
+      ctx.shadowColor = dbl ? COL.white : COL.violet; ctx.shadowBlur = (two ? GRV_SUPER_FLASH : dbl ? GRV_SUPER_GLOW : 14) * cam.k * (two ? Math.max(0.5, p) : p);
       const ring = () => { ctx.beginPath(); ctx.arc(sp.nova ? sp.nova.x : sp.x, sp.nova ? sp.nova.y : sp.y, r - w / 2, 0, 6.283); ctx.stroke(); };
       const ringK = () => { if (typeof GLC_GLOW_K === "undefined") return ring(); GLC_GLOW_K = GRV_NOVA_GLOW; try { ring(); } finally { GLC_GLOW_K = null; } }; // its glow's middle ring x0.5, outer x0.25 (GRV_NOVA_GLOW)
       if (typeof fxGlSkyOff === "function") fxGlSkyOff(ringK); else ringK(); ctx.shadowBlur = 0; // (always inverted on the boss sky: it whitens as it closes - aspira-fxgl.js)

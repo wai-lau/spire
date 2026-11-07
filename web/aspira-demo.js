@@ -16,6 +16,7 @@ const DEMO_HP_K = 50; // a walker's health x its wave-30 HP - rarely killed (a k
 const DEMO_DT = 1 / 60, DEMO_STEP = 0.02, DEMO_VOL = 0.35; // DT: a bare demoFrame's real seconds; STEP: the longest one step (the game's, aspira-ui.js frame); // VOL: the scene's sounds x this
 // the real game's state, kept while the scene runs (one scene at a time)
 let demoHeld = null;
+let demoDrawing = false; // true while a demo scene draws into its card canvas (demoFrame): draws that must fit the box read it (grvNovaFit, aspira-grv-draw.js)
 function demoIn(S) {
   if (demoHeld) throw new Error("demo scene: nested demoIn");
   if (S.lanes) { S.pi0 = PATHS.length; PATHS.push(...S.lanes); } // (a walker scene's own two lanes: on PATHS only while it runs)
@@ -95,9 +96,9 @@ function demoFrame(S, c2d, view, draw, rdt = DEMO_DT, gk = 1) {
     }
     if (!draw || !c2d) return;
     const ctx0 = ctx, cam0 = { ...cam }, p0 = typeof warp !== "undefined" ? warp.p : null, band0 = warpBand, fade0 = warpFade;
-    ctx = c2d; Object.assign(cam, { k: view.k, ox: view.ox, oy: view.oy }); if (view.p) warp.p = view.p; warpBand = null; warpFade = 1;
+    ctx = c2d; Object.assign(cam, { k: view.k, ox: view.ox, oy: view.oy }); if (view.p) warp.p = view.p; warpBand = null; warpFade = 1; demoDrawing = true;
     try { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, c2d.canvas.width, c2d.canvas.height); ctx.setTransform(cam.k, 0, 0, cam.k, cam.ox, cam.oy); draw(S); }
-    finally { ctx = ctx0; Object.assign(cam, cam0); if (view.p) warp.p = p0; warpBand = band0; warpFade = fade0; }
+    finally { demoDrawing = false; ctx = ctx0; Object.assign(cam, cam0); if (view.p) warp.p = p0; warpBand = band0; warpFade = fade0; }
   });
 }
 // THE 3D LOOK, SMALL (owner, 2026-11-03: "3D, but make the towers and enemies smaller so it all fits clearly in the box"): the scene's own
