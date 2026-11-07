@@ -29,12 +29,16 @@ function ifrBodyMarks(x, y, r, h, fl, f) {
   }
   ctx.globalAlpha = 1;
 }
-// the ring's glow at radius r, alpha a (0.9 = full): IFR_RING_GLOW's layers, the blast's and the ball's alike
+// the ring's glow at radius r, alpha a (0.9 = full): ONE SMOOTH GLOW (owner, 2026-11-06: "never use step glow unless huge perf gains"; it was IFR_RING_GLOW's
+// four flat bands stacked) - the orange core with a shadowBlur halo in the outer layer's colour reaching the old widest band, the thin yellow core on
+// top; on the 3D board's context the halo is one GPU ring glow (aspira-glctx.js, shape 9). The blast's ring and the ball's alike
 function drawIfrRingAt(x, y, r, a, low, wk = 1, cols = null) { // wk: x every layer's width (the fire's ring: IFR_FIRE_W); cols: a layer colour map (the fire's: IFR_HF_COL)
-  for (let g = low ? IFR_RING_GLOW.length - 2 : 0; g < IFR_RING_GLOW.length; g++) { /* lowQ: the orange core + the white */
-    ctx.strokeStyle = COL[(cols && cols[IFR_RING_GLOW[g][2]]) || IFR_RING_GLOW[g][2]]; ctx.lineWidth = IFR_RING_THIN * IFR_RING_GLOW[g][0] * wk; ctx.globalAlpha = IFR_RING_GLOW[g][1] * a / 0.9;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
-  }
+  const L = IFR_RING_GLOW, col = k => COL[(cols && cols[k]) || k], m = ctx.getTransform(), sc = Math.hypot(m.a, m.b);
+  ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283);
+  if (!low) { ctx.shadowColor = col(L[0][2]); ctx.shadowBlur = IFR_RING_THIN * (L[0][0] - L[2][0]) / 2 * wk * sc; }
+  ctx.strokeStyle = col(L[2][2]); ctx.lineWidth = IFR_RING_THIN * L[2][0] * wk; ctx.globalAlpha = Math.min(1, L[2][1] * a / 0.9); ctx.stroke();
+  ctx.shadowBlur = 0; ctx.strokeStyle = col(L[3][2]); ctx.lineWidth = IFR_RING_THIN * L[3][0] * wk; ctx.globalAlpha = Math.min(1, L[3][1] * a / 0.9); ctx.stroke();
+  ctx.restore();
 }
 // THE METEOR (owner, 2026-10-20): a black disc (fill), the blast's outline glow, and an INNER GLOW - "a radial glow from the outline towards
 // the center (it should start at 30%, then fall off to 0% about 30% of the way towards the center)": IFR_INNER_N rings inside the outline,
@@ -125,9 +129,14 @@ function ifrGlowFlat(x0, y0, x1, y1, c, f, low) {
   const s = trimToTowers(x0, y0, x1, y1); if (!s) return;
   for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), 0, 0, q[3]); }
 }
-// FLARE V's CIRCLE (3D): the ring at c.circ as IFR_RING_SEGS glow segments, in the flare's own glow
+// FLARE V's CIRCLE, STYLED LIKE A FLARE (owner, 2026-11-06: "ifr flare V should be styled like the flare, i.e. white core with glow"): the flare's own
+// layers (IFR_GLOW_GL in its colours - a meteor's: white core, orange round it, red glow out) as smooth ring glows at c.circ. 3D: GPU rings (shape 9
+// the glows, an outline the core); 2D: shadowBlur halos round the strokes
+const IFR_CIRC_CORE = 0.12; // the white core line, x the flare's width
 function ifrRingGl(c, f, low) {
-  for (let k = 0; k < IFR_RING_SEGS; k++) { const a0 = 2 * Math.PI * k / IFR_RING_SEGS, a1 = 2 * Math.PI * (k + 1) / IFR_RING_SEGS; ifrGlowFlat(c.x + Math.cos(a0) * c.circ, c.y + Math.sin(a0) * c.circ, c.x + Math.cos(a1) * c.circ, c.y + Math.sin(a1) * c.circ, c, f, low); }
+  const I = f * IFR_GLOW_A * ifrFlareI(c), R = c.circ;
+  for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length - 1; g++) { const q = IFR_GLOW_GL[g], cl = ifrFlareCol(q[2], c); fxGlPush(c.x, c.y, c.x, c.y, R, 2 * c.W * q[0] / Math.sqrt(q[3] / 2), cl, Math.min(1, q[1] * I * ifrLayerK(q[2], c)), cl, 0, 9); }
+  const q = IFR_GLOW_GL[IFR_GLOW_GL.length - 1], core = ifrFlareCol(q[2], c); fxGlPush(c.x, c.y, c.x, c.y, R, c.W * IFR_CIRC_CORE, core, 0, core, Math.min(1, q[1] * I * 2));
 }
 // HELLFIRE V's CHAIN: a glow along its segment, the chain's links on it (aspira-chains.js; 3D one GPU capsule a link, 2D drawChain2D)
 function ifrChainDraw(c, f, low) {
@@ -139,12 +148,12 @@ function ifrChainDraw(c, f, low) {
   if (typeof drawChain2D === "function") drawChain2D(x0, y0, x1, y1, (x, y) => ({ x, y }), 1, COL.orange, IFR_CHAIN_LINK);
   ctx.restore();
 }
-// FLARE V's CIRCLE (2D): a ring with a blurred glow (shadowBlur - a smooth halo, not bands) round a bright thin core
-function ifrRing2D(c, f) {
-  const a = Math.min(1, IFR_GLOW_A * ifrFlareI(c) * f * 4), m = ctx.getTransform(), k = Math.hypot(m.a, m.b);
-  ctx.save(); ctx.lineCap = "butt";
-  ctx.strokeStyle = COL.orange; ctx.shadowColor = COL.threat; ctx.shadowBlur = c.W * k * 0.8; ctx.globalAlpha = a; ctx.lineWidth = c.W * 0.3;
-  ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); ctx.stroke(); ctx.restore();
+function ifrRing2D(c, f) { // FLARE V's CIRCLE in 2D: the same look - an orange stroke in a red halo, the white core in an orange one
+  const I = Math.min(1, IFR_GLOW_A * ifrFlareI(c) * f * 4), m = ctx.getTransform(), k = Math.hypot(m.a, m.b);
+  ctx.save(); ctx.lineCap = "butt"; ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI);
+  ctx.strokeStyle = ifrFlareCol("orange", c); ctx.shadowColor = ifrFlareCol("glow", c); ctx.shadowBlur = c.W * k * 0.8; ctx.globalAlpha = I * 0.7; ctx.lineWidth = c.W * 0.3; ctx.stroke();
+  ctx.strokeStyle = ifrFlareCol("yellow", c); ctx.shadowColor = ifrFlareCol("orange", c); ctx.shadowBlur = c.W * k * 0.3; ctx.globalAlpha = I; ctx.lineWidth = c.W * IFR_CIRC_CORE; ctx.stroke();
+  ctx.restore();
 }
 function drawIfrFlaresGl(t, low, hf) {
   for (const c of t.ifrFlares) {
