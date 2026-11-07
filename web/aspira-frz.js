@@ -35,7 +35,7 @@ const FRZ_TEMP_TICK = [0.21, 0.19, 0.17, 0.15, 0.125, 0.1] /* even, never under 
 // THE NIP (owner, 2026-10-25, the tier redesign's duo rule: "FRZ chill nips"): tier 0's chill hurts a little - FRZ_NIP x a tier 0 tick,
 // enough to finish a 1-HP swarmer and pop an eased early shield; Fracture I still makes it hurt in full (FRZ+SOL and FRZ+CRR lost
 // 5-8 / 2-4 lives on waves 1-12 with a chill that only slowed - scripts/aspira-sim/duo0.mjs). let: the battery's sims set it
-let FRZ_NIP = 0.15; // x1.5 (2026-10-26: FRZ+IFR let the wave-12 Star through with a third of its HP, every other pair clean; was 0.1)
+let FRZ_NIP = 0.5; /* 0.15 -> 0.5 (2026-11-07, the duo rule: frz+sol leaked w11 shields, arc+frz and frz+ifr the Star; and tier 0 -> Fracture I was a 6.7x step, over "no damage steps above 2x" - now 2x) */ // x1.5 (2026-10-26: FRZ+IFR let the wave-12 Star through with a third of its HP, every other pair clean; was 0.1)
 const FRZ_TICK = 0.3 /* x0.6 with FRZ_TEMP_TICK x0.6 (2026-10-24 marks target; was 0.5) - the bare L1 FRZ (b.dmg, b.rate) untouched */, FRZ_RIME_GROW = 2.4; // a Rime ring takes FRZ_RIME_GROW game s to reach the edge (owner: much slower; was 0.6)
 const FRZ_AURA_HOLD = 0.06, FRZ_RIM_W = 16; // the frosted rim's width per unit of slow (owner: thicker the colder) // an aura slow outlasts one step only: it is gone the moment the enemy leaves
 // FEWER, HARDER AURA TICKS (2026-11-05, the marks gap: FRZ fast +1 / shield 0 vs its +2 / -1 targets): the aura ticks x FRZ_TICK_RATE_K as
