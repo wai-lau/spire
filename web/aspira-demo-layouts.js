@@ -24,10 +24,10 @@ const DEMO_LAYOUTS = {
     moons: { place: "walk", types: ["fast", "swarm", "swarm"], shows: ["hits", "slows", "fast"] },
   },
   sol: {
-    base: { place: "walk", types: ["swarm", "swarm", "swarm", "swarm"], shows: ["hits"] }, // (a plain line: the beam holds one walker till it dies - Leader, 2026-11-04)
-    focus: { place: "walk", types: ["shield", "armor", "shield"], shows: ["hits", "slows", "pops"] }, // (shields: Scorch V's ticks pop them - owner, 2026-11-04 "more ticks vs shield"; "pops" since the tracking beam, 7.6.0 - the old shot left a tier-I shield whole)
-    refraction: { place: "walk", types: ["fast", "swarm", "fast", "swarm", "fast"], shows: ["hits", "many"] }, // (spread fast: the splits reach what the first beam cannot - Leader, 2026-11-04)
-    breach: { place: "walk", types: ["armor", "armor", "armor", "armor"], shows: ["hits", "strips"] },
+    base: { place: "walk", types: ["swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm"], shows: ["hits"] }, // (MORE ENEMIES, twice the count: owner, 2026-11-06 "also SOL demo needs more enemies") (a plain line: the beam holds one walker till it dies - Leader, 2026-11-04)
+    focus: { place: "walk", types: ["shield", "armor", "shield", "shield", "armor", "shield"], shows: ["hits", "slows", "pops"] }, // (shields: Scorch V's ticks pop them - owner, 2026-11-04 "more ticks vs shield"; "pops" since the tracking beam, 7.6.0 - the old shot left a tier-I shield whole)
+    refraction: { place: "walk", types: ["fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm"], shows: ["hits", "many"] }, // (TEN: Reflection V splits to 8 others - with 5 it showed 4 at most, and its pulse cleared them between flashes: owner, 2026-11-06 "in demo SOL reflected beam is not visible at refl 5") (spread fast: the splits reach what the first beam cannot - Leader, 2026-11-04)
+    breach: { place: "walk", types: ["armor", "armor", "armor", "armor", "armor", "armor", "armor", "armor"], shows: ["hits", "strips"] },
   },
   acd: {
     base: { place: "walk", types: ["swarm", "armor", "swarm"], shows: ["hits"] },
