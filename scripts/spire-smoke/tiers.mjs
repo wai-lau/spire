@@ -345,6 +345,22 @@ check("GRV Nova V HYPERNOVA (owner, 2026-11-06: \"Nova yes\"): every 4th nova a 
   if (!(a1[j] > 0) || a1[2] !== 0) return "a single nova hit the 1.25x enemy or missed the first: " + JSON.stringify(a1);
   if (!(a4[2] > 0) || Math.abs(a4[j] / a1[j] - 2) > 0.01) return "the double nova: the enemy beside the centre x" + (a4[j] / a1[j]) + " of one nova (expected 2), the 1.25x enemy " + a4[2];
 });
+// G.core IS THE BOARD'S POWER STATE (coreState, aspira-core.js), set once a boss hands out a power - 7.7.111's coreXY read it as the core's
+// point, so every Well V reel after the first power threw "coreXY is not a function or its return value is not iterable" in the step (Balance, 2026-11-07)
+check("GRV Undertow with a core power held (G.core = coreState()): the reel still measures to the board's core and never throws (7.7.111 hotfix)", () => {
+  const r = run(`(() => { try { const { t, es, st } = tierRig("grv", { radiation: 5, void: 1 }, [[0, 0]]); coreState().picks = 1;
+      const dx = CX - t.x, dy = CY - t.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, near = es[0];
+      near.x = t.x + ux * 40; near.y = t.y + uy * 40; near.s = 500; near.hp = near.max = 1e12;
+      novaAt(t, st, near); const sp = t.spheres[0]; sp.x = near.x - ux * 30; sp.y = near.y - uy * 30; sp.age = 5; sp.mass = sp.cap; G.clock = 0;
+      for (let k = 0; k < 120; k++) { G.clock += 1 / 60; sp.mass = sp.cap; sp.span = 0; stepGrv(t, 1 / 60); if (near.reelT > 0) grvReelStep(near, 1 / 60); }
+      const c = coreXY(); return { reeled: 500 - near.s, core: [c[0], c[1]], isObj: !Array.isArray(G.core) };
+    } catch (err) { return { err: String(err) }; } })()`);
+  if (r.err) return "threw: " + r.err;
+  if (!r.isObj) return "the rig's G.core is not the power state (the check proves nothing)";
+  if (r.core[0] !== 500 || r.core[1] !== 500) return "coreXY() on the board = " + JSON.stringify(r.core) + " (expected the centre, CX/CY)";
+  if (!(r.reeled > 0)) return "no reel with a power held (" + r.reeled + ")";
+});
+
 check("GRV Gravity Well V UNDERTOW (owner, 2026-11-06: \"enemies closer to the core than GRV are reeled back into the center of void\"): an enemy in the aura NEARER THE CORE than the tower is reeled back along its lane once, not again inside GRV_REEL_CD; one further out is left alone; Well IV reels nothing", () => {
   const r = run(`(() => { const go = w => { const { t, es, st } = tierRig("grv", { radiation: w, void: 1 }, [[0, 0], [0, 0]]);
       const dx = CX - t.x, dy = CY - t.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, near = es[0], far = es[1];

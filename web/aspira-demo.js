@@ -54,7 +54,7 @@ function demoScene(kind, skills, cell, list) {
     const c = CELLS[cell], t = { id: G.id++, kind, cell, x: c.x, y: c.y, lvl: 1, cd: 0, mode: DEFAULT_MODE[kind], spent: 0 };
     if (hasSkills(t)) { t.skills = { ...skills }; t.lvl = 1 + towerLevel(t); }
     G.towers.push(t);
-    G.core = [list.lanes[0].rim.x, c.y]; // the scene's CORE: the box's exit edge level with the tower (coreXY, aspira-defs.js) - Undertow's "nearer the core" test reads it
+    G.demoCore = [list.lanes[0].rim.x, c.y]; // the scene's CORE: the box's exit edge level with the tower (coreXY, aspira-defs.js) - Undertow's "nearer the core" test reads it
     for (const d of list) demoWalker(S, d.type, d.lane, d.at || 0);
   });
   return S;
