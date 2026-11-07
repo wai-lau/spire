@@ -154,7 +154,7 @@ function glcStroke(g, parts, st, dash, scale, glow) {
   for (const p of parts) {
     if (p.circle) {
       const [x, y] = g.w2(p.circle[0], p.circle[1]), r = p.circle[2] / g.w2.k;
-      if (glow) { const b = real.shadowBlur / g.w2.k, gk = GLC_GLOW_K; fxGlPush(x, y, x, y, r, lw + b, glow, 0, glow, A * 0.18 * (gk ? gk[0] : 1)); fxGlPush(x, y, x, y, r, lw + b * 0.45, glow, 0, glow, A * 0.3 * (gk ? gk[1] : 1)); } // a canvas glow, as two soft rings
+      if (glow) { const b = real.shadowBlur / g.w2.k, gk = GLC_GLOW_K; fxGlPush(x, y, x, y, r, 2 * (lw / 2 + b), glow, Math.min(1, A * GLC_GLOW_A * (gk ? (gk[0] + gk[1]) / 2 : 1)), glow, 0, 9); } // a canvas glow: ONE smooth ring glow (shape 9; was two soft rings, 0.18 and 0.3)
       fxGlPush(x, y, x, y, r, lw, st, 0, st, A, 0, 0, 0, 0, 0, dOn, dOff, dAt0);
       continue;
     }
