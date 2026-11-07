@@ -105,6 +105,26 @@ check("demo isolation: a scene left running (60 s of fast laps) never ends a gam
     } finally { for (const [n, f] of keep) window[n] = f; sfx = sfx0; } })()`);
 });
 
+// LATE BUILDS (2026-11-07, Leader: "a demo that shows no pools for 5 of 7 s misreads ACD"): every axis's layout at 13 points (that axis V, the
+// others IV), 7 s. No scene may send a real wave (a gap between lattice rows read as a clear field: step sent one onto the board's lanes), every
+// enemy is a demo walker, and ACD's Spill V keeps pools from 2 s on (its goo one-shot wave-30 walkers before a jet held one - walkers now take
+// the health of the wave the tower's points reach, demoWave)
+check("demo late builds: at 13 points no scene sends a real wave or holds a non-demo enemy, and ACD Spill V keeps pools all the way (7 s, every axis)", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), c = CELLS[cell], rnd0 = Math.random;
+    try { for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) {
+      if (key === "base") continue;
+      let sd = 777; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      const skills = {}; for (const ax of SKILL_TREES[kind]) skills[ax.id] = ax.id === key ? SKILL_TIERS : SKILL_TIERS - 1;
+      const t = { kind, cell, x: c.x, y: c.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
+      const S = demoScene(kind, skills, cell, demoPlace(kind, towerStats(t), cell, L)); let dry = 0;
+      for (let f = 0; f < 7 * 60; f++) { demoFrame(S); if (f >= 120 && f % 30 === 0 && kind === "acd" && key === "contagion" && !(S.G.towers[0].puddles || []).length) dry++; }
+      if (S.G.wave !== 1) bad.push(kind + "." + key + ": the scene sent wave " + S.G.wave);
+      const odd = S.G.enemies.filter(e => !e.dead && !e.demo).length; if (odd) bad.push(kind + "." + key + ": " + odd + " non-demo enemies");
+      if (dry) bad.push(kind + "." + key + ": no pools at " + dry + " of 10 checks from 2 s");
+    } } finally { Math.random = rnd0; }
+    return bad.join("; "); })()`);
+});
+
 // THE SIGNATURE (owner, 2026-11-03: "grv demo is not showing voids" - the scene never ran the pass that draws them): every tower's scene,
 // drawn in 3D, must DRAW its main effect - canvas calls made inside that effect's own draw function (GRV the void core, ACD the jets,
 // IFR the meteors and fires, CRR the interceptors, FRZ the aura), or ARC's chain / SOL's beam in the shared effects in the tower's colour
