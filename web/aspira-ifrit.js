@@ -382,10 +382,11 @@ function ifrTickFlare(t, st, f, k = 1) { // k: x the flare's hit (a burning fire
       const px = x0 + dx * u, py = y0 + dy * u;
       const qx = e.x - px, qy = e.y - py; if (qx * qx + qy * qy <= r * r) { hit = true; break; }
     }
-    if (!hit && f.circ) { const d = Math.sqrt(ex * ex + ey * ey); hit = Math.abs(d - f.circ) <= r; } /* Flare V's circle: a ring of the flare's width */
+    let ring = false; if (f.circ) { const d = Math.sqrt(ex * ex + ey * ey); ring = Math.abs(d - f.circ) <= r; } /* Flare V's circle: a ring of the flare's width, its OWN hit (owner: the circle has "the same effect as a flare") - an enemy on a spoke and the ring takes both */
+    const nh = (hit ? 1 : 0) + (ring ? 1 : 0); hit = nh > 0;
     if (!hit) continue;
     if (!ifrCatch(was, now, e.id)) continue; /* it burns only if it was on a spoke at the last tick too: a fast enemy crosses between ticks */
-    damage(e, amt, t, false, false, IFR_BURN_ST); onHit(e, t, st, amt); /* not quiet=true: damage() lets a shield bounce a quiet hit unpopped; IFR_BURN_ST's noFx + noNum keep it silent (ACD's pools, the same way) */
+    damage(e, amt * nh, t, false, false, IFR_BURN_ST); onHit(e, t, st, amt * nh); /* not quiet=true: damage() lets a shield bounce a quiet hit unpopped; IFR_BURN_ST's noFx + noNum keep it silent (ACD's pools, the same way) */
   }
 }
 function stepIfrFlares(t, st, dt) {
