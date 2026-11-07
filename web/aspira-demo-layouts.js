@@ -83,24 +83,25 @@ function demoPlace0(kind, st, cell, L) {
   const w = DEMO_LAT_W * r, hasFast = T.includes("fast"), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
   const yc = dy - DEMO_LAT_IN * r, lanes = [c.y - yc, c.y + yc].flatMap(y0 => [-1, 0, 1].map(j => lane(y0 + j * w))); // (the lanes' centres a little in, so the outer slot stays in the box)
   const lt = [0, 1].map(ln => T.filter((type, i) => (hasFast ? (type === "fast") === (ln === 0) : i % 2 === ln)));
-  const len = lanes[0].len, D = Math.max(g, (len - 2 * DEMO_BOX_OVER) / (L.rows || DEMO_LAT_ROWS), demoArriveD(kind, st, T)), lead = Math.max(DEMO_BOX_OVER, xr - 0.9 * r); // (the scene OPENS with each lane's lead row at the range's edge)
+  const len = lanes[0].len, D = Math.max(g, (len - 2 * DEMO_BOX_OVER) / (L.rows || DEMO_LAT_ROWS), demoArriveD(kind, st, T) / (L.arrive || 1)), lead = Math.max(DEMO_BOX_OVER, xr - 0.9 * r); // (the scene OPENS with each lane's lead row at the range's edge)
   const seed = demoHash(cell, kind.charCodeAt(0), kind.charCodeAt(1), kind.charCodeAt(2)) * 1e6 | 0, lat = { D, seed, types: lt, row: [0, 0], tk: [0, 0], at: [0, 0] }, list = [];
   for (let ln = 0; ln < 2; ln++) for (let s0 = lead; s0 >= DEMO_BOX_OVER - 1e-6; s0 -= D) list.push(...demoLatRow(lat, ln, s0 / len));
   list.lanes = lanes; list.lat = lat; return list;
 }
 // ARRIVALS BY KILL CAPACITY (owner, 2026-11-07: "For all demo try to have ~90% enemies die" / "By adjusting the enemies"; Leader: arrival rate from
 // the tower's kill capacity, static): a rough kills a second for the build (demoKillCap - shots a second x what a shot can kill; FRZ's aura takes
-// all), and the rows spaced so walkers arrive at DEMO_ARRIVE_K of it (both lanes, a row's 3 slots half full); health tunes on top (demoTune)
+// all), and the rows spaced so walkers arrive at DEMO_ARRIVE_K of it (both lanes, a row's 3 slots half full) x a layout's own L.arrive; health tunes on top (demoTune)
 const DEMO_ARRIVE_K = 0.7;
 function demoKillCap(kind, st) {
   switch (kind) {
-    case "sol": return st.rate * (1 + (st.split || 0));
+    case "sol": return st.rate * 0.6 * (1 + 0.2 * (st.split || 0)); // (a split seldom kills: the held beam does)
     case "acd": return st.targets || 1;
-    // (GRV: not thinned - its rows spaced out lost the void and radiation layouts' "many" and "fast"; health tuning alone)
+    case "grv": return st.rate * 0.8; // (mild: thinner rows lost the void and radiation layouts' "many" and "fast")
     case "ifr": return st.rate * (1 + (st.fan || 0)) / 8;
-    case "crr": return (st.wing || 10) * 0.15;
+    case "crr": return (st.wing || 10) * 0.08;
     case "arc": return st.rate * 3;
-    default: return Infinity; // (FRZ: the aura takes every walker in it)
+    case "frz": return st.rate * 1.5; // (its aura takes every walker in it; at tier 0 too slowly)
+    default: return Infinity;
   }
 }
 function demoArriveD(kind, st, T) { // the row spacing (u) for that arrival rate

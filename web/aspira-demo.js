@@ -73,16 +73,15 @@ function demoLatStep(S, dt) {
 // reach in play (demoWave: wave 30 at 0 points, + DEMO_WAVE_PT a point, to 119 - the good model's points by wave, ARCHITECTURE 4.6); was wave 30 at
 // every build, which a 13-point ACD's goo one-shot (16k a hit on ~300 HP) before its jets could hold one, so the demo dropped no pools after its opening
 const demoSizeK = (type, n) => 1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earlyHpX(type, n) / (enemyHp(type, 1) / earlyHpX(type, 1))); // spawnEnemy's size by wave
-// ~90% DIE (owner, 2026-11-07: "For all demo try to have ~90% enemies die" / "By adjusting the enemies"): a scene's walker health is x S.hpK
-// (from DEMO_HP_START: DEMO_HP_K x a wave body, coming DOWN to it - a first walker lives long enough to show its slows), tuned as walkers resolve - a KILL raises it x DEMO_TUNE^0.1 (x DEMO_TUNE_K0^0.1
-// for the first DEMO_TUNE_FAST), a walker that WALKS OUT sets it to DEMO_EXIT_K x the share of its health it lost (the next ones die where it
-// lived). Enemy side only - the tower is the board's. Deterministic (no Math.random). S.kills / S.exits count them (the smoke's kill share)
-const DEMO_HP_START = 1, DEMO_TUNE = 2, DEMO_TUNE_K0 = 8, DEMO_TUNE_FAST = 10, DEMO_KILL_TARGET = 0.9, DEMO_EXIT_K = 0.8;
-function demoTune(S, killed, e) {
+// ~90% DIE (owner, 2026-11-07: "For all demo try to have ~90% enemies die" / "By adjusting the enemies"): a scene's walker health is x S.hpK (from
+// DEMO_HP_START, DEMO_HP_K x a wave body), tuned as walkers resolve - a KILL raises it x F^0.1, a walker that WALKS OUT lowers it x F^-0.9 (F =
+// DEMO_TUNE_K0 for the first DEMO_TUNE_FAST resolutions, then DEMO_TUNE): it settles where 9 in 10 die. Enemy side only - the tower is the board's;
+// the rows' spacing by its kill capacity (demoKillCap, aspira-demo-layouts.js). Deterministic (no Math.random). S.kills / S.exits count them
+const DEMO_HP_START = 1, DEMO_TUNE = 4, DEMO_TUNE_K0 = 8, DEMO_TUNE_FAST = 10, DEMO_KILL_TARGET = 0.9, DEMO_HP_FLOOR = 0.01 / DEMO_HP_K; // (never under a hundredth of a wave body)
+function demoTune(S, killed) {
   if (killed) S.kills = (S.kills || 0) + 1; else S.exits = (S.exits || 0) + 1;
-  const k0 = S.hpK ?? DEMO_HP_START;
-  if (killed) S.hpK = k0 * ((S.kills + (S.exits || 0)) <= DEMO_TUNE_FAST ? DEMO_TUNE_K0 : DEMO_TUNE) ** (1 - DEMO_KILL_TARGET);
-  else { const took = e && e.tally && e.max ? e.tally.dmg / e.max : 0; S.hpK = took > 0 ? k0 * Math.min(1, Math.max(0.02, DEMO_EXIT_K * took)) : k0; }
+  const F = (S.kills || 0) + (S.exits || 0) <= DEMO_TUNE_FAST ? DEMO_TUNE_K0 : DEMO_TUNE;
+  S.hpK = Math.max(DEMO_HP_FLOOR, (S.hpK ?? DEMO_HP_START) * F ** (killed ? 1 - DEMO_KILL_TARGET : -DEMO_KILL_TARGET)); // (9 kills x F^0.1 = 1 exit x F^0.9: it settles at 90%)
 }
 const DEMO_WAVE_PT = 7, demoWave = () => { const t = G.towers[0], w = Math.min(119, 30 + DEMO_WAVE_PT * (t ? Math.max(0, (t.lvl || 1) - 1) : 0)); return w % STAR_EVERY ? w : w + 1; }; // (never a boss's wave number)
 function demoWalker(S, type, lane, at) {
@@ -110,7 +109,7 @@ function demoFrame(S, c2d, view, draw, rdt = DEMO_DT, gk = 1) {
       T.dmg += Math.max(0, hp - Math.max(0, e.hp)); T.armor = Math.min(T.armor, e.armor || 0); T.shield = Math.min(T.shield, e.shield || 0);
       T.slow = Math.max(T.slow, e.stunT > 0 ? 1 : e.slowT > 0 ? e.slowF || 0 : 0); // (the share of its pace it lost: what effSpeed takes off)
       if (e.dead) { demoTune(S, true); if (!S.lat) demoWalker(S, e.type, h.lane, 0); continue; } // killed: a fresh one at the right edge (the dead one is the game's) - in a LATTICE, the rows bring them
-      if (e.s >= h.s1) { demoTune(S, false, e); e.dead = e.gone = true; const k = G.enemies.indexOf(e); if (k >= 0) G.enemies.splice(k, 1); if (!S.lat) demoWalker(S, e.type, h.lane, 0); } // out at the left: TAKEN OUT quietly (no death, no leak - dead, so every chain, interceptor or void holding it lets go) and a fresh one enters at the right (owner, 2026-11-03: "ARC chaining across the demo, despawn and respawn, dont just reposition?") // out at the left: again at the right, whole (the ease from its start: coreEase, aspira-step.js)
+      if (e.s >= h.s1) { demoTune(S, false); e.dead = e.gone = true; const k = G.enemies.indexOf(e); if (k >= 0) G.enemies.splice(k, 1); if (!S.lat) demoWalker(S, e.type, h.lane, 0); } // out at the left: TAKEN OUT quietly (no death, no leak - dead, so every chain, interceptor or void holding it lets go) and a fresh one enters at the right (owner, 2026-11-03: "ARC chaining across the demo, despawn and respawn, dont just reposition?") // out at the left: again at the right, whole (the ease from its start: coreEase, aspira-step.js)
     }
     if (!draw || !c2d) return;
     const ctx0 = ctx, cam0 = { ...cam }, p0 = typeof warp !== "undefined" ? warp.p : null, band0 = warpBand, fade0 = warpFade;

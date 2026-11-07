@@ -127,6 +127,24 @@ check("demo late builds: at 13 points no scene sends a real wave or holds a non-
     return bad.join("; "); })()`);
 });
 
+// ~90% DIE (owner, 2026-11-07: "For all demo try to have ~90% enemies die"): every layout at tier 0 or 13 points, 10 s in, then 30 s counted -
+// the share of walkers killed (demoTune's S.kills / S.exits) at least DEMO_KILL_PIN. (Measured 2026-11-07: 36 of 49 builds in 0.8-0.97, the sparse
+// tier-0 ones and GRV's void lower - the floor catches a scene that stops killing; the old scenes sat near 0)
+const DEMO_KILL_PIN = 0.25; // (IFR's tier 0, one meteor and no flares, sits at ~0.28: fewer walkers lost its first hit in the 6 s behaviour check)
+check("demo kills: every layout, at tier 0 or 13 points, kills at least " + DEMO_KILL_PIN + " of the walkers that leave the scene (10 s in, 30 s counted)", () => {
+  return run(`(() => { const bad = [], cell = CELLS.findIndex((c, i) => cellOpen(i)), c = CELLS[cell], rnd0 = Math.random;
+    try { for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) {
+      let sd = 777; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+      const sk = {}; if (key !== "base") for (const ax of SKILL_TREES[kind]) sk[ax.id] = ax.id === key ? SKILL_TIERS : SKILL_TIERS - 1;
+      const t = { kind, cell, x: c.x, y: c.y, lvl: 1, skills: sk }; t.lvl = 1 + towerLevel(t);
+      const S = demoScene(kind, sk, cell, demoPlace(kind, towerStats(t), cell, L));
+      for (let f = 0; f < 600; f++) demoFrame(S); const k0 = S.kills || 0, e0 = S.exits || 0;
+      for (let f = 0; f < 1800; f++) demoFrame(S); const k = (S.kills || 0) - k0, e = (S.exits || 0) - e0;
+      if (k + e && k / (k + e) < ${DEMO_KILL_PIN}) bad.push(kind + "." + key + ": " + k + " killed, " + e + " left");
+    } } finally { Math.random = rnd0; }
+    return bad.join("; "); })()`);
+});
+
 // THE SIGNATURE (owner, 2026-11-03: "grv demo is not showing voids" - the scene never ran the pass that draws them): every tower's scene,
 // drawn in 3D, must DRAW its main effect - canvas calls made inside that effect's own draw function (GRV the void core, ACD the jets,
 // IFR the meteors and fires, CRR the interceptors, FRZ the aura), or ARC's chain / SOL's beam in the shared effects in the tower's colour
