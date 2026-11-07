@@ -47,6 +47,31 @@ function drawCarBodies(t, far, top) { // top: the prism's top height (warpFrame 
     t.icp.forEach((i, n) => { if (!(i.state !== "home" || i.hold) || (i.y < t.y) !== far) return; carM = warpFrame(i.x, i.y, top * carAlt(t, i, n)); carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); any = true; });
   } finally { carM = null; }
   if (any) { ctx.fill(); ctx.stroke(); }
+  carParts3d(t, far, top, z, k);
+}
+// THE CHAINS AND BOLTS WITH THEM, AT HEIGHT (owner, 2026-11-06: "draw interceptor chains on same layer so that they can be attached correctly to interceptor /
+// chains should also occlude things"): on the towers' layer with the bodies - each trail through its interceptor's own frame at its height, each tether from the
+// "=" at that height down to its enemy's spot, each bolt from the tip it left, sinking to its target's height as it closes; device px (identity transform)
+const carBoltD0 = new WeakMap(); // a bolt's distance to its target at release (draw only: off the game object)
+function carParts3d(t, far, top, z, k) {
+  car3dAt.set(t, performance.now());
+  carChainTrails(t, t.icpOut || 0, { far, top, k });
+  const st = towerStats(t), alt = new Map(); t.icp.forEach((i, n) => alt.set(i, top * carAlt(t, i, n)));
+  const scr = (x, y, h) => { const F = warpFrame(x, y, h); return { x: F[0] * x + F[2] * y + F[4], y: F[1] * x + F[3] * y + F[5] }; };
+  if (skillOf(t, "launch") > 0 && typeof drawChain2D === "function") for (const i of t.icp) {
+    if (!carTethered(t, i, st) || (i.y < t.y) !== far) continue;
+    const a = CRR_TETHER_A0 + (1 - CRR_TETHER_A0) * (i.tf || 0), w = CRR_TETHER_W * (1 + 0.6 * (i.tf || 0)), b0 = carBar(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))), A = scr(b0.x, b0.y, alt.get(i)), B = scr(i.ve.x, i.ve.y, 0);
+    ctx.globalAlpha = a; drawChain2D(A.x / k, A.y / k, B.x / k, B.y / k, (x, y) => ({ x: x * k, y: y * k }), k, COL.ltblue, w); // (laid in px / k: the links keep their world size)
+    if (i.tc && !i.tc.dead) { const C = scr(i.tc.x, i.tc.y, 0); drawChain2D(B.x / k, B.y / k, C.x / k, C.y / k, (x, y) => ({ x: x * k, y: y * k }), k, COL.ltblue, w); }
+  }
+  ctx.globalAlpha = 1; ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CRR_PELLET_PX * k; ctx.beginPath(); let any = false;
+  for (const b of t.carBolts || []) {
+    const i = b.icp; if (!i || !alt.has(i) || (i.y < t.y) !== far) continue;
+    const fl = (CRR_BOLT_REACH / CRR_BOLT_V - b.left) * CRR_BOLT_V, tp = carBoltTip(b, t, fl), f = Math.max(0, 1 - fl / CRR_TIP_IN), kk = Math.min(CRR_BOLT_TAIL, (CRR_BOLT_REACH / CRR_BOLT_V - b.left) * CRR_BOLT_GROW), v = carBoltV(b), x = b.x + v[0] + tp[0] * f, y = b.y + v[1] + tp[1] * f;
+    const tx = b.e ? b.e.x : x, ty = b.e ? b.e.y : y, d = Math.hypot(tx - x, ty - y); let d0 = carBoltD0.get(b); if (!d0) carBoltD0.set(b, d0 = Math.max(1, d)); const h = alt.get(i) * Math.max(0, Math.min(1, d / d0)); // its height: the interceptor's at the release, the target's (the floor) on arrival
+    const P = scr(x - b.vx * kk, y - b.vy * kk, h), Q = scr(x, y, h); ctx.moveTo(P.x, P.y); ctx.lineTo(Q.x, Q.y); any = true;
+  }
+  if (any) ctx.stroke();
 }
 const CRR_EDGE_W = 0.3; // the lighter edge, world u (0.5 at the old double size)
 const carBar = (i, z) => { const a = i.fa ?? i.ang, u = (CRR_VV_BARS[0] + CRR_VV_BARS[1]) / 2 * CRR_DART * z; return { x: i.x + Math.cos(a) * u, y: i.y + Math.sin(a) * u }; }; // the "=" middle
@@ -73,8 +98,9 @@ function carTrails(t) {
     const tr = i.trail ||= [i.x, i.y], n = tr.length;
     if ((tr[n - 2] - i.x) ** 2 + (tr[n - 1] - i.y) ** 2 >= CRR_TRAIL_STEP * CRR_TRAIL_STEP) { tr.push(i.x, i.y); } if (tr.length > nMax * 2) { const cut = tr.length - nMax * 2; tr.copyWithin(0, cut); tr.length -= cut; } /* in place: splice(0, 2) made a garbage array every push, ~170 a frame at 3 x 40 (2026-11-05) */
   }
-  carChainTrails(t, out);
+  t.icpOut = out; if (!carIn3d(t)) carChainTrails(t, out); // (in 3D: drawCarBodies draws them, at height)
 }
+const car3dAt = new WeakMap(), carIn3d = t => performance.now() - (car3dAt.get(t) || -1e9) < 250; // the 3D pass drew this carrier lately: the floor layer leaves its chains and bolts to it
 // THE TRAIL IS THE CHAIN (owner, 2026-11-06: "Tether: change interceptor tracer to be the chain (that fades out at tail), higher level = bigger/longer,
 // when tethered, attach the same chain to the enemy instead as current"): the tether's links (chainLinks' step and length, aspira-chains.js) laid back
 // along the path it flew from the "=" (carBar), fading to nothing at the tail; CRR_CHAIN_L0 + CRR_CHAIN_LK a Tether tier long, its links
@@ -88,33 +114,34 @@ function carAlong(P, n, cur, s) { // the point s along the polyline P (n points,
   carPt.x = x0 + (x1 - x0) * f; carPt.y = y0 + (y1 - y0) * f; return carPt;
 }
 const carPoly = [];
-function carChainTrails(t, out) {
+function carChainTrails(t, out, side = null) { // side: { far, top, k } - IN 3D, the interceptors on that side of their carrier, each trail through its own frame at its height (drawCarBodies)
   const tier = skillOf(t, "launch"), q = CRR_CHAIN_Q0 + CRR_CHAIN_QK * tier, st = towerStats(t), z = carZ(t);
   const Lc = (CRR_CHAIN_L0 + CRR_CHAIN_LK * tier) * Math.max(CRR_TRAIL_MIN / CRR_TRAIL_N, Math.min(1, CRR_TRAIL_REF / Math.max(1, out)));
-  const gl3 = !!(ctx && ctx.real && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlPush === "function"), col = COL.ltblue;
+  const gl3 = !side && !!(ctx && ctx.real && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlPush === "function"), col = COL.ltblue, kq = side ? side.k : 1;
   const ev = gl3 ? null : Array.from({ length: CRR_TRAIL_BANDS }, () => new Path2D()), od = gl3 ? null : Array.from({ length: CRR_TRAIL_BANDS }, () => new Path2D());
-  for (const i of t.icp) {
-    const tr = i.trail; if (!tr || tr.length < 4 || carTethered(t, i, st)) continue;
+  t.icp.forEach((i, ni) => {
+    const tr = i.trail; if (!tr || tr.length < 4 || carTethered(t, i, st) || (side && (i.y < t.y) !== side.far)) return;
+    const F = side ? warpFrame(i.x, i.y, side.top * carAlt(t, i, ni)) : null, X = (x, y) => (F ? F[0] * x + F[2] * y + F[4] : x), Y = (x, y) => (F ? F[1] * x + F[3] * y + F[5] : y);
     const b0 = carBar(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); carPoly.length = 0; carPoly.push(b0.x, b0.y);
     for (let k = tr.length - 2; k >= 0; k -= 2) carPoly.push(tr[k], tr[k + 1]);
     const n = carPoly.length / 2; let tot = 0; for (let k = 0; k < n - 1; k++) tot += Math.hypot(carPoly[k * 2 + 2] - carPoly[k * 2], carPoly[k * 2 + 3] - carPoly[k * 2 + 1]);
-    const L = Math.min(Lc, tot); if (L < 2) continue;
+    const L = Math.min(Lc, tot); if (L < 2) return;
     carCur[0].k = carCur[1].k = 0; carCur[0].s0 = carCur[1].s0 = 0;
     for (let j = 0, c = 0; c < L; j++, c = j * CHAIN_STEP) {
       const A = carAlong(carPoly, n, carCur[0], Math.max(0, c - CHAIN_LEN / 2)), ax = A.x, ay = A.y, B = carAlong(carPoly, n, carCur[1], Math.min(L, c + CHAIN_LEN / 2)), bx = B.x, by = B.y;
       const odd = j & 1, r = (odd ? CHAIN_ODD_R : CHAIN_R) * q, d = Math.hypot(bx - ax, by - ay) || 1, ix = (bx - ax) / d * Math.min(r, d / 2), iy = (by - ay) / d * Math.min(r, d / 2);
       if (gl3) { const al = Math.min(1, CRR_CHAIN_A * CHAIN_A * (1 - c / L) ** 1.5); if (odd) fxGlPush(ax + ix, ay + iy, bx - ix, by - iy, r, 0, col, al, col, 0); else fxGlPush(ax + ix, ay + iy, bx - ix, by - iy, r, CHAIN_LW * q, col, 0, col, al); continue; }
-      const band = Math.min(CRR_TRAIL_BANDS - 1, Math.floor(c / L * CRR_TRAIL_BANDS)), Px = ax + ix, Py = ay + iy, Qx = bx - ix, Qy = by - iy;
+      const band = Math.min(CRR_TRAIL_BANDS - 1, Math.floor(c / L * CRR_TRAIL_BANDS)), Px = X(ax + ix, ay + iy), Py = Y(ax + ix, ay + iy), Qx = X(bx - ix, by - iy), Qy = Y(bx - ix, by - iy), rr = r * kq;
       if (odd) { od[band].moveTo(Px, Py); od[band].lineTo(Qx, Qy); continue; }
-      const th = Math.atan2(by - ay, bx - ax); ev[band].moveTo(Qx + Math.cos(th - Math.PI / 2) * r, Qy + Math.sin(th - Math.PI / 2) * r);
-      ev[band].arc(Qx, Qy, r, th - Math.PI / 2, th + Math.PI / 2); ev[band].arc(Px, Py, r, th + Math.PI / 2, th + 3 * Math.PI / 2); ev[band].closePath();
+      const th = Math.atan2(Qy - Py, Qx - Px); ev[band].moveTo(Qx + Math.cos(th - Math.PI / 2) * rr, Qy + Math.sin(th - Math.PI / 2) * rr);
+      ev[band].arc(Qx, Qy, rr, th - Math.PI / 2, th + Math.PI / 2); ev[band].arc(Px, Py, rr, th + Math.PI / 2, th + 3 * Math.PI / 2); ev[band].closePath();
     }
-  }
+  });
   if (gl3) return;
   ctx.strokeStyle = col; ctx.lineCap = "round";
   for (let b = 0; b < CRR_TRAIL_BANDS; b++) { // band b: the b-th quarter from the interceptor back, each fainter
     ctx.globalAlpha = Math.min(1, CRR_CHAIN_A * CHAIN_A * (1 - (b + 0.5) / CRR_TRAIL_BANDS) ** 1.5);
-    ctx.lineWidth = CHAIN_LW * q; ctx.stroke(ev[b]); ctx.lineWidth = 2 * CHAIN_ODD_R * q; ctx.stroke(od[b]);
+    ctx.lineWidth = CHAIN_LW * q * kq; ctx.stroke(ev[b]); ctx.lineWidth = 2 * CHAIN_ODD_R * q * kq; ctx.stroke(od[b]);
   }
   ctx.globalAlpha = 1;
 }
@@ -134,7 +161,7 @@ function drawCar(darts) {
     if (t.kind !== "crr" || !t.icp) continue;
     if (darts) {
       carTrails(t);
-      if (skillOf(t, "launch") > 0) { // the TETHER beams: interceptor -> target (-> the chained one), brighter on a pulse
+      if (skillOf(t, "launch") > 0 && !carIn3d(t)) { // the TETHER beams: interceptor -> target (-> the chained one), brighter on a pulse
         ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round";
         const st = towerStats(t);
         // an ARC-style CHAIN, thinner, in CRR's blue (owner, 2026-11-05: "replace the beam with a thinner arc chain (still blue)"), never under 70% (owner: "tether
@@ -151,7 +178,7 @@ function drawCar(darts) {
     }
     ctx.strokeStyle = COL.ltblue; ctx.lineCap = "round"; ctx.lineWidth = CRR_PELLET_PX; ctx.globalAlpha = 1;
     ctx.beginPath(); // bolts and pellets: ONE path, one stroke (perf)
-    for (const b of t.carBolts || []) { // UNDER the darts: they leave from beneath. A DOT at the interceptor, stretching out as it flies (owner, 2026-10-16)
+    for (const b of carIn3d(t) ? [] : t.carBolts || []) { // UNDER the darts: they leave from beneath. A DOT at the interceptor, stretching out as it flies (owner, 2026-10-16)
       const fl = (CRR_BOLT_REACH / CRR_BOLT_V - b.left) * CRR_BOLT_V, tp = carBoltTip(b, t, fl), f = Math.max(0, 1 - fl / CRR_TIP_IN);
       const k = Math.min(CRR_BOLT_TAIL, (CRR_BOLT_REACH / CRR_BOLT_V - b.left) * CRR_BOLT_GROW), v = carBoltV(b), x = b.x + v[0] + tp[0] * f, y = b.y + v[1] + tp[1] * f; // (in its V; from its tip)
       ctx.moveTo(x - b.vx * k, y - b.vy * k); ctx.lineTo(x, y);
