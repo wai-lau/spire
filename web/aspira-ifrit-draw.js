@@ -234,7 +234,12 @@ function ifrFlareStrokes(c, f, low) {
 // kind, its size in px, its intensity and its life's fade, so each look is drawn ONCE (ifrFlareStrokes, onto a small canvas, at the screen's scale
 // and the same sub-pixel phase) and stamped. Keys round the life fade to 1/IFR_STAMP_F and the size to whole px; at most IFR_STAMP_MAX looks, the
 // set dropped whole past it (a palette flip - the boss sky - or a zoom makes new ones). Built once each, never a canvas a frame
-const IFR_STAMP_F = 16, IFR_STAMP_MAX = 400, ifrStamps = new Map();
+// BOUNDED (2026-11-07: the 13-point Meteor V card demo built 5.3 stamps a frame - the life fade was in the key, ~50 flares x 16 fade steps
+// overran the 400 looks and the set was dropped whole, again and again: 150-370 ms a frame, 243 stamps = 46 Mpx = ~180 MB of canvas held, and a
+// test WebKit grew to 6.6 GB): the FADE is no longer a look - a stamp is built at full strength and drawn at the fade's alpha; the set is an LRU
+// held under IFR_STAMP_PX pixels (and IFR_STAMP_MAX looks), each evicted canvas freed at once (width 0)
+const IFR_STAMP_F = 16, IFR_STAMP_MAX = 400, IFR_STAMP_PX = 8e6, IFR_STAMP_R = 96, ifrStamps = new Map(); let ifrStampPx = 0;
+function ifrStampEvict() { const [k, sp] = ifrStamps.entries().next().value; ifrStamps.delete(k); ifrStampPx -= sp.cv.width * sp.cv.height; sp.cv.width = sp.cv.height = 0; }
 let IFR_STAMP_ON = true; // (let: a test draws the strokes to compare)
 // A STAMP'S PIXELS, AS THE BOARD DRAWS THEM (owner, 2026-11-06: "never use step glow unless huge perf gains" - the 2D strokes were three steps a layer):
 // every pixel from the GPU glow line's own formula (aspira-fxgl.js shape 7) - each IFR_GLOW_GL layer (1 - off / w)^pw across a spoke, (1 - t)^3 along
@@ -262,17 +267,19 @@ function ifrSpriteDraw(c, f, low) {
   if (typeof document === "undefined") return false;
   const m = ctx.getTransform(), px = m.a * c.x + m.c * c.y + m.e, py = m.b * c.x + m.d * c.y + m.f, k = Math.max(Math.hypot(m.a, m.b), Math.hypot(m.c, m.d)); // (the view's linear part goes INTO the stamp: the card demo's floor is squeezed)
   const fq = Math.round(f * IFR_STAMP_F) / IFR_STAMP_F, I = Math.round(ifrFlareI(c) * 4) / 4, L = Math.round(c.L * k) / k, W = Math.round(c.W * k * 2) / (2 * k);
-  const key = (c.hf ? 1 : 0) + "|" + (low ? 1 : 0) + "|" + L.toFixed(3) + "|" + W.toFixed(3) + "|" + (c.xk ?? IFR_X_K) + "|" + I + "|" + fq + "|" + [m.a, m.b, m.c, m.d].map(v => v.toFixed(3)).join() + "|" + COL.orange + COL.threat + (c.sol ? "S" + COL.solar : "");
+  const key = (c.hf ? 1 : 0) + "|" + (low ? 1 : 0) + "|" + L.toFixed(3) + "|" + W.toFixed(3) + "|" + (c.xk ?? IFR_X_K) + "|" + I + "|" + [m.a, m.b, m.c, m.d].map(v => v.toFixed(3)).join() + "|" + COL.orange + COL.threat + (c.sol ? "S" + COL.solar : "");
   let sp = ifrStamps.get(key);
-  if (!sp) {
-    if (ifrStamps.size >= IFR_STAMP_MAX) ifrStamps.clear();
-    const R = Math.ceil((L + W) * k) + 3, cv = document.createElement("canvas"); cv.width = cv.height = 2 * R;
+  if (sp) { ifrStamps.delete(key); ifrStamps.set(key, sp); } // (the LRU: a hit moves to the newest end)
+  else {
+    const R0 = Math.ceil((L + W) * k) + 3, sc = Math.min(1, IFR_STAMP_R / R0), R = Math.ceil(R0 * sc); // a BIG flare (Meteor V's at the card's 3x: ~300k px) is BUILT at sc of the screen's size (at most IFR_STAMP_R px out) and drawn scaled up - the glow is smooth; the build and its memory x sc^2
+    const cv = document.createElement("canvas"); cv.width = cv.height = 2 * R; const ms = sc < 1 ? { a: m.a * sc, b: m.b * sc, c: m.c * sc, d: m.d * sc } : m;
+    while (ifrStamps.size && (ifrStamps.size >= IFR_STAMP_MAX || ifrStampPx + cv.width * cv.height > IFR_STAMP_PX)) ifrStampEvict();
     const g = cv.getContext("2d", { willReadFrequently: true }), c0 = ctx, q = Object.assign({}, c, { L, W, hitI: I }); ctx = g; // (q: the key's look - its rounded size and intensity)
-    try { if (!ifrStampPixels(g, q, fq, low, m, R)) { g.setTransform(m.a, m.b, m.c, m.d, R + 0.5 - (m.a * c.x + m.c * c.y), R + 0.5 - (m.b * c.x + m.d * c.y)); g.lineCap = "butt"; ifrFlareStrokes(q, fq, low); } } finally { ctx = c0; }
-    sp = { cv, R }; ifrStamps.set(key, sp);
+    try { if (!ifrStampPixels(g, q, 1, low, ms, R)) { g.setTransform(ms.a, ms.b, ms.c, ms.d, R + 0.5 - (ms.a * c.x + ms.c * c.y), R + 0.5 - (ms.b * c.x + ms.d * c.y)); g.lineCap = "butt"; ifrFlareStrokes(q, 1, low); } } finally { ctx = c0; }
+    sp = { cv, R, sc }; ifrStamps.set(key, sp); ifrStampPx += cv.width * cv.height;
   }
-  const a0 = ctx.globalAlpha; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1;
-  ctx.drawImage(sp.cv, px - 0.5 - sp.R, py - 0.5 - sp.R); ctx.restore(); ctx.globalAlpha = a0; // (at its exact spot: the stamp's centre is px (R + 0.5))
+  const a0 = ctx.globalAlpha; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = Math.min(1, fq); // (the fade: the stamp's alpha, not a look)
+  if (sp.sc < 1) { const D = 2 * sp.R / sp.sc; ctx.drawImage(sp.cv, px - D / 2, py - D / 2, D, D); } else ctx.drawImage(sp.cv, px - 0.5 - sp.R, py - 0.5 - sp.R); ctx.restore(); ctx.globalAlpha = a0; // (at its exact spot: the stamp's centre is px (R + 0.5))
   return true;
 }
 /* balls true (drawn in skyKeep, aspira-draw.js): the balls in flight (the charge balls: drawIfrTop, on the prism's top), which keep their orange on a
