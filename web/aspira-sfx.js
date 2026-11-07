@@ -178,10 +178,15 @@ let sampleMap = null, sampleGain = 0.5;
 // (chain / slower / reaper / acid, build.reaper, powerfortify ...): read them as the new ones
 const LEGACY_SFX = {"chain": "arc", "slower": "frz", "reaper": "sol", "acid": "acd", "powerfortify": "powerrelay", "powerempower": "powerrelay", "powerovercharge": "powerrelay", "powertime": "powertemporal", "car": "crr" /* the carrier's id since 2026-10-29: its launch, build and upgrade samples (car, build.car, up.car) played the synth or the generic sound till 2026-11-03 */};
 const sfxKey = k => k.split(".").map(p => LEGACY_SFX[p] || p).join(".");
+// SAMPLES TRADED BETWEEN EVENTS (owner, 2026-11-07: "Swap sound effect of shield pop/death and arc attack"): each pair's FILES trade places as the map
+// loads; the events keep their own names - so their volume, gap, voice cap and rarity (sfxBump) are theirs as before. A shield pop has no sound of
+// its own (shieldBreak); the shield enemy's death is "kill.shield"
+const SFX_SAMPLE_SWAP = [["arc", "kill.shield"]];
+const swapSfxSamples = m => { for (const [a, b] of SFX_SAMPLE_SWAP) { const A = m[a], B = m[b]; if (B === undefined) delete m[a]; else m[a] = B; if (A === undefined) delete m[b]; else m[b] = A; } return m; };
 const migrateSfx = m => Object.fromEntries(Object.entries(m).map(([k, v]) => [sfxKey(k), v]));
 fetch(SAMPLE_DIR + "index.json").then(r => (r.ok ? r.json() : null)).then(m => {
   if (!m) return;
-  sampleMap = migrateSfx(m);
+  sampleMap = swapSfxSamples(migrateSfx(m));
   if (typeof m._gain === "number") sampleGain = m._gain;
   loadSamples();
 }).catch(() => {});
