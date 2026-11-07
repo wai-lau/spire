@@ -10,6 +10,7 @@
 //   slows    a walker loses 10%+ of its pace         fast    the fast walker loses a bigger share of its pace than the non-fast one (FAST_SLOW_MUL)
 // Places: `clump` - a loose knot at `at` x range out; `fan` - spread across the range; `line` - a file away from the tower; `walk` -
 // walkers along the lane stretch inside the range, staggered, looping
+const DEMO_SOL_ROWS = 14; // SOL's rows a lane: twice the rest (owner, 2026-11-06: "also SOL demo needs more enemies" - Reflection V splits to 8)
 const DEMO_LAYOUTS = {
   arc: {
     base: { place: "walk", types: ["swarm", "swarm", "armor", "swarm", "swarm", "swarm"], shows: ["hits", "many"] },
@@ -24,10 +25,10 @@ const DEMO_LAYOUTS = {
     moons: { place: "walk", types: ["fast", "swarm", "swarm"], shows: ["hits", "slows", "fast"] },
   },
   sol: {
-    base: { place: "walk", types: ["swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm"], shows: ["hits"] }, // (MORE ENEMIES, twice the count: owner, 2026-11-06 "also SOL demo needs more enemies") (a plain line: the beam holds one walker till it dies - Leader, 2026-11-04)
-    focus: { place: "walk", types: ["shield", "armor", "shield", "shield", "armor", "shield"], shows: ["hits", "slows", "pops"] }, // (shields: Scorch V's ticks pop them - owner, 2026-11-04 "more ticks vs shield"; "pops" since the tracking beam, 7.6.0 - the old shot left a tier-I shield whole)
-    refraction: { place: "walk", types: ["fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm"], shows: ["hits", "many"] }, // (TEN: Reflection V splits to 8 others - with 5 it showed 4 at most, and its pulse cleared them between flashes: owner, 2026-11-06 "in demo SOL reflected beam is not visible at refl 5") (spread fast: the splits reach what the first beam cannot - Leader, 2026-11-04)
-    breach: { place: "walk", types: ["armor", "armor", "armor", "armor", "armor", "armor", "armor", "armor"], shows: ["hits", "strips"] },
+    base: { place: "walk", rows: DEMO_SOL_ROWS, types: ["swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm"], shows: ["hits"] }, // (MORE ENEMIES, twice the count: owner, 2026-11-06 "also SOL demo needs more enemies") (a plain line: the beam holds one walker till it dies - Leader, 2026-11-04)
+    focus: { place: "walk", rows: DEMO_SOL_ROWS, types: ["shield", "armor", "shield", "shield", "armor", "shield"], shows: ["hits", "slows", "pops"] }, // (shields: Scorch V's ticks pop them - owner, 2026-11-04 "more ticks vs shield"; "pops" since the tracking beam, 7.6.0 - the old shot left a tier-I shield whole)
+    refraction: { place: "walk", rows: DEMO_SOL_ROWS, types: ["fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm"], shows: ["hits", "many"] }, // (TEN: Reflection V splits to 8 others - with 5 it showed 4 at most, and its pulse cleared them between flashes: owner, 2026-11-06 "in demo SOL reflected beam is not visible at refl 5") (spread fast: the splits reach what the first beam cannot - Leader, 2026-11-04)
+    breach: { place: "walk", rows: DEMO_SOL_ROWS, types: ["armor", "armor", "armor", "armor", "armor", "armor", "armor", "armor"], shows: ["hits", "strips"] },
   },
   acd: {
     base: { place: "walk", types: ["swarm", "armor", "swarm"], shows: ["hits"] },
@@ -82,7 +83,7 @@ function demoPlace0(kind, st, cell, L) {
   const w = DEMO_LAT_W * r, hasFast = T.includes("fast"), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
   const yc = dy - DEMO_LAT_IN * r, lanes = [c.y - yc, c.y + yc].flatMap(y0 => [-1, 0, 1].map(j => lane(y0 + j * w))); // (the lanes' centres a little in, so the outer slot stays in the box)
   const lt = [0, 1].map(ln => T.filter((type, i) => (hasFast ? (type === "fast") === (ln === 0) : i % 2 === ln)));
-  const len = lanes[0].len, D = Math.max(g, (len - 2 * DEMO_BOX_OVER) / DEMO_LAT_ROWS), lead = Math.max(DEMO_BOX_OVER, xr - 0.9 * r); // (the scene OPENS with each lane's lead row at the range's edge)
+  const len = lanes[0].len, D = Math.max(g, (len - 2 * DEMO_BOX_OVER) / (L.rows || DEMO_LAT_ROWS)), lead = Math.max(DEMO_BOX_OVER, xr - 0.9 * r); // (the scene OPENS with each lane's lead row at the range's edge)
   const seed = demoHash(cell, kind.charCodeAt(0), kind.charCodeAt(1), kind.charCodeAt(2)) * 1e6 | 0, lat = { D, seed, types: lt, row: [0, 0], tk: [0, 0], at: [0, 0] }, list = [];
   for (let ln = 0; ln < 2; ln++) for (let s0 = lead; s0 >= DEMO_BOX_OVER - 1e-6; s0 -= D) list.push(...demoLatRow(lat, ln, s0 / len));
   list.lanes = lanes; list.lat = lat; return list;
