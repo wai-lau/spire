@@ -16,23 +16,42 @@ const LGL_T = 512, LGL_RT = R0 + 6, LGL_DMAX = 66, LGL_LMAX = 16, LGL_N = 16; //
 const lgl = { tex: null, gl: null, built: 0, ready: false, buf: null };
 // the profiles as GLSL: each level's alpha onto the layer (premultiplied), its coverage from the distance - one board pixel of antialiasing
 const lglLevels = (prof, wk, aSrc, d, dst) => prof.map(([w, la]) => `{ float a = min(1.0, ${aSrc} * ${la.toFixed(4)}) * clamp((${(w / 2).toFixed(4)} * ${wk} - ${d}) * laneK + 0.5, 0.0, 1.0); ${dst} = ${dst} * (1.0 - a) + vec4(col, 1.0) * a; }`).join("\n    ");
+const AUR_GLOW = 2.2, AUR_WIDE = 0.8, AUR_CURTAIN = 0.35; // the aurora: its glow's alpha x, its distance x (under 1: wider)
 const LANE_GLSL = `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 #define LHP highp
 #else
 #define LHP mediump
 #endif
-uniform LHP vec4 laneA[${LGL_N}]; uniform vec4 laneB[${LGL_N}], laneC[${LGL_N}]; uniform float laneN, laneK; uniform LHP vec2 laneSh; uniform sampler2D laneT;
+uniform LHP vec4 laneA[${LGL_N}]; uniform vec4 laneB[${LGL_N}], laneC[${LGL_N}]; uniform float laneN, laneK; uniform LHP float laneTime; uniform LHP vec2 laneSh; uniform sampler2D laneT;
 varying LHP vec2 lw;
 vec4 laneG, laneL;
-void laneFlush(float dG, float dL, vec4 b, vec4 c) { // one group: b = colour + group, c = glow alpha, line alpha, boss
+void laneFlush(float dG, float dL, vec4 b, vec4 c, LHP vec2 p) { // one group: b = colour + group, c = glow alpha, line alpha, boss; p: the pixel (world, round the core)
   vec3 col = b.rgb;
+  if (c.z < 0.5 && (dL < ${(LGL_LMAX - 1).toFixed(1)} || dG < ${(LGL_DMAX - 1).toFixed(1)})) { // AN AURORA (its maths only near a lit lane) (owner, 2026-11-06: "how hard would it be to just visually make the non boss lanes look like auroras?" - "1", on the floor):
+    // shimmer bands drifting along the spiral (radius + angle), the glow's edge waving (its distance offset by slow waves), a gentle pulse, a faint
+    // ray texture across - all smooth, in the lane's own colour (lightness only, a touch toward white at the bright bands; no hue shift)
+    LHP float ang = atan(p.y, p.x), rr = length(p), t = laneTime;
+    float sh = 0.5 + 0.5 * sin(rr * 0.045 - t * 0.7 + 1.7 * sin(ang * 2.0 + t * 0.25));
+    float wob = 6.0 * sin(rr * 0.031 + t * 0.9 + ang * 3.0) + 3.0 * sin(rr * 0.077 - t * 1.3 + ang);
+    float ray = 0.9 + 0.1 * sin(ang * 90.0 + rr * 0.02 + t * 0.4);
+    col = mix(col * (0.78 + 0.44 * sh), vec3(1.0), 0.12 * sh);
+    dG = max(0.0, dG * ${AUR_WIDE.toFixed(2)} + wob * (0.4 + 0.6 * sh)); // (the curtain a little wider: its distance x AUR_WIDE)
+    c.x = min(1.0, c.x * ${AUR_GLOW.toFixed(2)} * (0.85 + 0.15 * sin(t * 1.1 + b.w * 1.7)) * (0.6 + 0.8 * sh) * ray); c.y *= 0.75 + 0.35 * sh; // (the glow brighter than a plain lit lane's: AUR_GLOW)
+  }
   if (c.z > 0.5) {
     ${lglLevels(LIT_GLOW_SOFT, BOSS_LANE_W.toFixed(4), "c.x", "dG", "laneG")}
     ${lglLevels(BOSS_LINE_SOFT, "1.0", "c.y", "dL", "laneL")}
   } else {
     ${lglLevels(LIT_GLOW_SOFT, "1.0", "c.x", "dG", "laneG")}
     ${lglLevels(LIT_LINE_SOFT, "1.0", "c.y", "dL", "laneL")}
+    if (dL < ${(LGL_LMAX - 1).toFixed(1)}) { // THE CURTAIN along the whole lane: the line's own distance field (LGL_LMAX u either side), a smooth (1 - d)^2 fade across, waving and
+      // shimmering like the glow above - on the line's layer, which runs the lane's length (the glow's is masked to the core's surround)
+      LHP float ang = atan(p.y, p.x), rr = length(p), t = laneTime;
+      float sh = 0.5 + 0.5 * sin(rr * 0.045 - t * 0.7 + 1.7 * sin(ang * 2.0 + t * 0.25)), wob = 3.0 * sin(rr * 0.031 + t * 0.9 + ang * 3.0);
+      float a = c.y * ${AUR_CURTAIN.toFixed(2)} * (0.35 + 0.9 * sh) * pow(max(0.0, 1.0 - max(0.0, dL + wob) / ${(LGL_LMAX - 2).toFixed(1)}), 2.0);
+      laneL = laneL * (1.0 - a) + vec4(col, 1.0) * a;
+    }
   }
 }
 void lanes() { // laneG, laneL: the lit lanes' glow and line, premultiplied, masked
@@ -43,13 +62,13 @@ void lanes() { // laneG, laneL: the lit lanes' glow and line, premultiplied, mas
   float dG = 1e3, dL = 1e3, grp = -1.0; vec4 b = vec4(0.0), c = vec4(0.0);
   for (int i = 0; i < ${LGL_N}; i++) {
     if (float(i) >= laneN) break;
-    if (laneB[i].w != grp) { if (grp >= 0.0) laneFlush(dG, dL, b, c); grp = laneB[i].w; dG = 1e3; dL = 1e3; b = laneB[i]; c = laneC[i]; }
+    if (laneB[i].w != grp) { if (grp >= 0.0) laneFlush(dG, dL, b, c, p); grp = laneB[i].w; dG = 1e3; dL = 1e3; b = laneB[i]; c = laneC[i]; }
     LHP vec4 A = laneA[i]; LHP vec2 q = vec2(A.x * p.x + A.y * p.y, A.x * p.y - A.y * p.x); // turned back by the lane's angle
     LHP vec2 t = clamp(q / ${(2 * LGL_RT).toFixed(1)} + 0.5, ${(0.5 / LGL_T).toFixed(6)}, ${(1 - 0.5 / LGL_T).toFixed(6)});
     vec4 s = texture2D(laneT, A.zw + t * vec2(0.25, ${(1 / 3).toFixed(6)}));
     dL = min(dL, max(abs(s.r * 2.0 - 1.0) * ${LGL_LMAX.toFixed(1)}, s.g * ${LGL_LMAX.toFixed(1)} - ${(0.75 * 2 * LGL_RT / LGL_T).toFixed(4)})); dG = min(dG, s.b * ${LGL_DMAX.toFixed(1)});
   }
-  if (grp >= 0.0) laneFlush(dG, dL, b, c);
+  if (grp >= 0.0) laneFlush(dG, dL, b, c, p);
   float gm = pow(max(0.0, 1.0 - r / ${GLOW_FADE_R.toFixed(1)}), ${GLOW_FALLOFF.toFixed(1)}), ce = ${(LANE_END_IN * CORE_R).toFixed(3)}, co = ${(LANE_END_OUT * CORE_R).toFixed(3)};
   gm *= clamp((r - ce) / (co - ce), 0.0, 1.0); // laneCoreFade: gone inside LANE_END_IN core radii, whole from LANE_END_OUT
   laneG *= gm; laneL *= clamp((${R0.toFixed(1)} - r) / ${(R0 * (1 - LANE_FULL)).toFixed(3)}, 0.0, 1.0); // the line's mask: full to LANE_FULL of R0, nothing at R0
@@ -121,7 +140,7 @@ function laneGlBind(gl, u) {
     }
     if (n) { gl.uniform4fv(u("laneA"), lglA); gl.uniform4fv(u("laneB"), lglB); gl.uniform4fv(u("laneC"), lglC); }
     const tc = warp.texCam || cam, [shx, shy] = warp.shake || [0, 0];
-    gl.uniform1f(u("laneK"), tc.k); gl.uniform2f(u("laneSh"), shx / tc.k, shy / tc.k); // (the board's px per world unit: one of them of antialiasing; the shake, as the board's)
+    gl.uniform1f(u("laneTime"), (performance.now() / 1000) % 1000); gl.uniform1f(u("laneK"), tc.k); gl.uniform2f(u("laneSh"), shx / tc.k, shy / tc.k); // (the board's px per world unit: one of them of antialiasing; the shake, as the board's)
   }
   gl.uniform1f(u("laneN"), n);
 }
