@@ -148,6 +148,11 @@ check("targeting STRENGTHS (owner, 2026-11-06: \"replace Biggest with Strengths,
       out.push({ kind, first: order[0].type, fm: m(order[0]), best, hp: order[0].hp, last: m(order[order.length - 1]), worst, sorted: order.every((e, i) => !i || m(order[i - 1]) >= m(e)), alias: old === order[0] }); } return out; })()`);
   const bad = r.filter(x => x.fm !== x.best || x.last !== x.worst || !x.sorted || x.hp !== 150 || !x.alias);
   if (bad.length) return JSON.stringify(bad);
+  const boss = run(`(() => { const { t, st } = tierRig("arc", {}, []); t.mode = "strengths"; const best = ["swarm", "fast", "shield", "armor"].sort((a, b) => ((VS_MARKS.arc || {})[b] || 0) - ((VS_MARKS.arc || {})[a] || 0))[0];
+    spawnEnemy(best, 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.x = t.x + 20; e.y = t.y; e.seen = true; e.hp = e.max = 1e6;
+    spawnEnemy("armor", 30, 0, 0); const b = G.enemies[G.enemies.length - 1]; b.x = t.x + 24; b.y = t.y; b.seen = true; b.hp = b.max = 10; b.arcana = "star";
+    return pickTargets(t, { ...st, range: 1e4 }, 1)[0] === b; })()`);
+  if (!boss) return "a boss is not first under Strengths (owner, 2026-11-06: \"boss always top prio under strengths\")";
 });
 
 check("ARC: no enemy is struck twice by the bolts of one attack (owner, 2026-10-28: \"reduce the number of arc hits\" - one hit set an attack); Capacitance's bursts may re-hit", () => {

@@ -117,7 +117,7 @@ const MODE_KEY = {
   // STRENGTHS (owner, 2026-11-06: "replace Biggest with Strengths, order enemies by mark tier (try to kill enemies for which the tower's tier
   // with most checks first, and most X last)"): the enemy whose TYPE this tower's build card marks highest (VS_MARKS, read live), then
   // within a mark the old Biggest - a boss first, then the most HP left. Was Biggest (the most HP left, a boss always first; owner 2026-10-12)
-  strengths: (a, t) => -strengthMark(t, a.e) * 1e16 + (a.e.arcana ? -1e15 : 0) - a.e.hp,
+  strengths: (a, t) => (a.e.arcana ? -1e18 : 0) - strengthMark(t, a.e) * 1e16 - a.e.hp, // a BOSS first, always (owner, 2026-11-06: "boss always top prio under strengths"), then the mark, then the most HP
 };
 MODE_KEY.biggest = MODE_KEY.strengths; // a save or a sim from before 2026-11-06 says "biggest"
 const strengthMark = (t, e) => (typeof VS_MARKS === "object" && t && VS_MARKS[t.kind] && VS_MARKS[t.kind][e.type]) || 0;
