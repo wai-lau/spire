@@ -68,6 +68,31 @@ function drawArcShock(t) { // in the frame of the prism's top; x, y the tower's 
 function drawArcBody(t, far, up, x, y, h) {
   drawArcRings(t, far, up, x, y, h);
   if (!far) up(x, y, () => drawArcShock(t), h / 2);
+  drawArcBolts3d(t, far, h / 2);
+}
+// THE FIRST BOLT FROM THE PRISM'S TOP (owner, 2026-11-06: ARC's first bolt leaves the top-face corner, on the 3D layer): in 3D, a strike that leaves
+// this tower is drawn here, on the towers' layer - from the top-face corner nearest its target at the prism's top, sinking to the floor at the target,
+// each jag projected at its own height; behind the prism when the target is behind the tower, else in front. The floor pass leaves these to it
+// (arcIn3d: drawn here in the last 250 ms); a hop (from an enemy) stays on the floor. Device px (identity transform), one smooth glow stroke a bolt
+const arc3dAt = new WeakMap(), arcIn3d = t => !!t && t.kind === "arc" && performance.now() - (arc3dAt.get(t) || -1e9) < 250;
+function drawArcBolts3d(t, far, top) {
+  arc3dAt.set(t, performance.now());
+  if (typeof fx === "undefined" || !fx.length) return;
+  const scr = (px, py, hh) => { const F = warpFrame(px, py, hh); return [F[0] * px + F[2] * py + F[4], F[1] * px + F[3] * py + F[5]]; };
+  let saved = false;
+  for (const f of fx) {
+    if (!f.soft || f.a !== t) continue;
+    const x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2; if ((y2 < t.y) !== far) continue;
+    const al = arcBoltFade(f); if (al <= 0) continue;
+    if (!saved) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineJoin = "round"; saved = true; }
+    const o = arcBoltFrom(f, t.x, t.y, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], F0 = warpFrame(o[0], o[1], top);
+    const n = pts.length / 2 - 1, w = (f.thin || 1) * ARC_BOLT_S * 1.5 * Math.hypot(F0[0], F0[1]), hAt = q => top * (1 - q / n), path = new Path2D(), fk = new Path2D();
+    for (let q = 0; q <= n; q++) { const P = scr(pts[q * 2], pts[q * 2 + 1], hAt(q)); q ? path.lineTo(P[0], P[1]) : path.moveTo(P[0], P[1]); }
+    const m = n >> 1; for (let q = 0; q * 2 + 1 < fork.length; q++) { const P = scr(fork[q * 2], fork[q * 2 + 1], hAt(m)); q ? fk.lineTo(P[0], P[1]) : fk.moveTo(P[0], P[1]); }
+    ctx.shadowColor = css; ctx.shadowBlur = 3.2 * w; ctx.strokeStyle = arcMix(css, 0.7); ctx.globalAlpha = al;
+    ctx.lineWidth = w; ctx.stroke(path); ctx.lineWidth = w * 0.6; ctx.stroke(fk);
+  }
+  if (saved) ctx.restore();
 }
 // ---------- THE BOLT ----------
 function arcBoltFrom(f, x1, y1, x2, y2) { // the strike leaves the top-face corner of its tower nearest the target (the footprint corner: a beam lies on the floor); a hop starts on its enemy
@@ -88,12 +113,14 @@ function arcBoltPts(f, ax, ay, bx, by) { // the jagged polyline [x, y, ...] (and
 }
 const arcBoltFade = f => { const k = Math.max(0, 1 - ARC_BOLT_LIFE * f.t / f.life); return Math.min(1, k * 2); }; // twice the old speed
 function fxGlArcBolt(f) { // 3D: a glow capsule and a thin bright core a jag
+  if (arcIn3d(f.a)) return; // (drawn from its prism's top: drawArcBolts3d)
   const x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, al = arcBoltFade(f); if (al <= 0) return;
   const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), col = COL[f.color], core = arcMix(col, 0.7), S = ARC_BOLT_S, w = f.thin || 1;
   const run = (p, k) => { for (let i = 0; i + 3 < p.length; i += 2) { fxGlGlowLine(p[i], p[i + 1], p[i + 2], p[i + 3], 2.6 * S * k * w, col, al * 0.8); fxGlPush(p[i], p[i + 1], p[i + 2], p[i + 3], 0.75 * S * k * w, 0, core, al, core, 0); } };
   run(pts, 1); run(fork, 0.6);
 }
 function drawArcBolt2D(f, x1, y1, x2, y2, pt, ws) { // 2D: pt projects a world point to device px (the canvas is in device px here)
+  if (arcIn3d(f.a)) return; // (drawn from its prism's top: drawArcBolts3d)
   const al = arcBoltFade(f); if (al <= 0) return;
   const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], core = arcMix(css, 0.7), w = (f.thin || 1) * ARC_BOLT_S * 1.5 * ws;
   const path = (p) => { const q = new Path2D(); for (let i = 0; i + 1 < p.length; i += 2) { const P = pt(p[i], p[i + 1]); i ? q.lineTo(P.x, P.y) : q.moveTo(P.x, P.y); } return q; };
