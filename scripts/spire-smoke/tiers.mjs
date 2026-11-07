@@ -353,13 +353,13 @@ check("GRV Gravity Well V UNDERTOW (owner, 2026-11-06: \"enemies closer to the c
       const dts = 1 / 60, drops = []; let last = near.s;
       for (let k = 0; k < 60 * 6; k++) { G.clock += dts; sp.mass = sp.cap; sp.span = 0; stepGrv(t, dts); if (near.reelT > 0) grvReelStep(near, dts); if (near.s < last - 1e-9) { drops.push(+(G.clock).toFixed(2)); last = near.s; } }
       const ticks = []; for (let k = 0; k < 4; k++) { ticks.push(drops.filter(c => c >= k * 1.5 && c < (k + 1) * 1.5).length); }
-      return { total: 500 - near.s, far: 500 - far.s, first: drops[0], at: drops, back: GRV_REEL_BACK, cd: GRV_REEL_CD }; };
+      return { total: 500 - near.s, far: 500 - far.s, first: drops[0], at: drops, cd: GRV_REEL_CD }; };
     return { v: go(5), iv: go(4) }; })()`);
   const v = r.v;
   if (!(v.total > 0) || v.far !== 0) return "Undertow V: reeled " + v.total + " back, the enemy further out " + v.far + " (expected the near one only)";
-  if (v.total > 2 * v.back + 1e-6) return "Undertow V reeled " + v.total + " u in 6 s (cap 2 x " + v.back + " at a " + v.cd + " s cooldown)";
-  const first = v.at.filter(c => c < v.first + 0.5).length, again = v.at.filter(c => c > v.first + v.cd).length;
-  if (!(first >= 1) || !(again >= 1) || v.at.some(c => c > v.first + 0.5 && c < v.first + v.cd)) return "Undertow V reel times " + JSON.stringify(v.at) + " (expected one reel, then none inside " + v.cd + " s, then another)";
+  if (Math.abs(v.total - 2 * 30) > 8) return "Undertow V reeled " + v.total + " u in 6 s (expected two full reels of the 30 u to the void's centre)";
+  const first = v.at.filter(c => c < v.first + 0.7).length, again = v.at.filter(c => c > v.first + v.cd).length;
+  if (!(first >= 1) || !(again >= 1) || v.at.some(c => c > v.first + 0.7 && c < v.first + v.cd)) return "Undertow V reel times " + JSON.stringify(v.at) + " (expected one reel, then none inside " + v.cd + " s, then another)";
   if (r.iv.total !== 0) return "Gravity Well IV reels (" + r.iv.total + ")";
 });
 check("GRV Gravity Well V cannot STUNLOCK a boss (owner, 2026-11-06: \"make sure that it cannot stunlock bosses with 3GRVs\"): three GRVs at Void V / Nova V / Well V on a boss's lane - over 20 s it still covers a clear share of the lane it covers with Well IV and with no GRV", () => {
@@ -368,11 +368,12 @@ check("GRV Gravity Well V cannot STUNLOCK a boss (owner, 2026-11-06: \"make sure
       const s0 = PATHS[0].len * 0.55, p0 = pathAt(0, s0, 0); e.s = s0; e.x = p0.x; e.y = p0.y; e.spd = e.baseSpd = e.spd;
       const open = CELLS.map((c, i) => i).filter(i => cellOpen(i) && canPlace(i)).sort((a, b) => Math.hypot(CELLS[a].x - p0.x, CELLS[a].y - p0.y) - Math.hypot(CELLS[b].x - p0.x, CELLS[b].y - p0.y));
       for (let i = 0; i < n3; i++) { ui.build = "grv"; placeTower(CELLS[open[i]]); const t = G.towers[G.towers.length - 1]; t.skills = { void: 5, supernova: 5, radiation: w }; t.lvl = 1 + towerLevel(t); }
-      G.spawnQ = []; for (let k = 0; k < 20 * 30; k++) { G.wave = 35; step(1 / 30); } return e.s - s0; };
+      G.spawnQ = []; let reels = 0; const _r = grvReel; grvReel = (...a) => { const b = a[0].reelAt; _r(...a); if (a[0].reelAt !== b) reels++; }; try { for (let k = 0; k < 20 * 30; k++) { G.wave = 35; step(1 / 30); } } finally { grvReel = _r; } return { d: e.s - s0, reels }; };
     return { none: go(0, 0), iv: go(4, 3), v: go(5, 3) }; })()`);
-  if (!(r.none > 0)) return "the boss never moved with no GRV: " + JSON.stringify(r);
-  if (!(r.v >= 0.5 * r.iv) || !(r.v >= 0.15 * r.none)) return "3 GRVs at Well V held the boss: advanced " + r.v.toFixed(1) + " u in 20 s vs " + r.iv.toFixed(1) + " at Well IV and " + r.none.toFixed(1) + " with none";
-  console.log("  boss no-stunlock: advance in 20 s - none " + r.none.toFixed(1) + " u, Well IV x3 " + r.iv.toFixed(1) + " u, Well V x3 " + r.v.toFixed(1) + " u");
+  if (!(r.none.d > 0)) return "the boss never moved with no GRV: " + JSON.stringify(r);
+  if (!(r.v.reels >= 1)) return "the boss was never reeled by 3 GRVs at Well V (the check proves nothing): " + JSON.stringify(r);
+  if (!(r.v.d >= 0.5 * r.iv.d) || !(r.v.d >= 0.15 * r.none.d)) return "3 GRVs at Well V held the boss: advanced " + r.v.d.toFixed(1) + " u in 20 s vs " + r.iv.d.toFixed(1) + " at Well IV and " + r.none.d.toFixed(1) + " with none (" + r.v.reels + " reels)";
+  console.log("  boss no-stunlock: advance in 20 s - none " + r.none.d.toFixed(1) + " u, Well IV x3 " + r.iv.d.toFixed(1) + " u, Well V x3 " + r.v.d.toFixed(1) + " u (" + r.v.reels + " reels)");
 });
 check("GRV Void V EVENT HORIZON (owner, 2026-11-06: \"yes to GRV void V\"): each enemy the crush kills grows the void x1.1, stacking to x1.5, and it is back at x1 3 s after the last kill; Void IV never grows; the crush stays under the 800% cap", () => {
   const r = run(`(() => { const go = v => { const { t, es, st } = tierRig("grv", { void: v }, [[60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0], [60, 0]]);
