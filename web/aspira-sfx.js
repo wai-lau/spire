@@ -15,6 +15,30 @@ try {
 } catch (_e) {}
 const lastAt = {};
 const MAX_VOICES = 24;
+// RARE SOUNDS FIRST AT THE CAP (owner, 2026-11-06: "less frequently played sounds should take priority over more frequently played sounds (in terms
+// of SFX concurrent limit)"): each name's TRIGGER RATE, a count decaying with SFX_RATE_TAU; when a new sound finds the voices full, the live sound whose
+// name triggers most often goes (a 15 ms fade, then stopped) to make room - but only for a sound rarer than it; else the new one is skipped. Nothing
+// else changes: no extra voices, no gain or mix change below the cap
+const SFX_RATE_TAU = 2.5, SFX_KILL_FADE = 0.015;
+const sfxRate = {}, sfxRateAt = {}, sfxLive = new Set(); // sfxLive: { name, nodes: [[source, gain]], left }
+let voicesDying = 0;
+const sfxStat = { played: {}, skipped: {}, cut: {} }; // per name, since load (a test reads them)
+function sfxBump(name, now) { const r = (sfxRate[name] || 0) * Math.exp(-(now - (sfxRateAt[name] ?? now)) / SFX_RATE_TAU); sfxRateAt[name] = now; return (sfxRate[name] = r + 1); }
+const sfxRateNow = (name, now) => (sfxRate[name] || 0) * Math.exp(-(now - (sfxRateAt[name] ?? now)) / SFX_RATE_TAU);
+function sfxEnd(node) { voices--; if (node.__dy) voicesDying--; }
+function sfxMakeRoom(name, now) { // -> true when there is a voice for `name` (a commoner cut if need be)
+  if (voices - voicesDying <= MAX_VOICES) return true;
+  const mine = sfxRateNow(name, now);
+  while (voices - voicesDying > MAX_VOICES) {
+    let worst = null, wr = mine;
+    for (const L of sfxLive) { if (L.cut) continue; const r = sfxRateNow(L.name, now); if (r > wr) { wr = r; worst = L; } }
+    if (!worst) return false;
+    worst.cut = true; sfxLive.delete(worst); sfxStat.cut[worst.name] = (sfxStat.cut[worst.name] || 0) + 1;
+    for (const [src, g] of worst.nodes) { if (src.__dy) continue; src.__dy = true; voicesDying++;
+      try { g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), now); g.gain.exponentialRampToValueAtTime(0.0001, now + SFX_KILL_FADE); src.stop(now + SFX_KILL_FADE); } catch (_e) { /* (already ended) */ } }
+  }
+  return true;
+}
 
 function audioUnlock() {
   if (AC) { if (AC.state === "suspended" && !muted && !document.hidden) { AC.resume(); audioSlept = false; } return; }
@@ -69,8 +93,8 @@ function envelope(node, t0, dur, vol) {
   voices++;
   // a synth sound is several nodes: it counts as one copy until its last ends
   const inst = curSound;
-  if (inst) inst.nodes++;
-  node.onended = () => { voices--; if (inst && --inst.nodes === 0) playing[inst.name]--; };
+  if (inst) { inst.nodes++; inst.live.nodes.push([node, g]); }
+  node.onended = () => { sfxEnd(node); if (inst && --inst.nodes === 0) { playing[inst.name]--; sfxLive.delete(inst.live); } };
 }
 
 function tone({ type = "sine", f0, f1 = f0, dur = 0.1, vol = 0.3, delay = 0 }) {
@@ -205,8 +229,8 @@ function playSample(name, at = 0) {
   src.buffer = clip.buf;
   g.gain.value = sfxScale * sampleGain * (clip.norm || 1) * gainFor(name) / (SOUND_MAX[name] ? 1 + n : 1);
   src.connect(g).connect(master);
-  voices++; playing[name] = n + 1;
-  src.onended = () => { voices--; playing[name]--; };
+  voices++; playing[name] = n + 1; const L = { name, nodes: [[src, g]] }; sfxLive.add(L);
+  src.onended = () => { sfxEnd(src); playing[name]--; sfxLive.delete(L); };
   src.start(AC.currentTime + at, clip.start, clip.end - clip.start);
   return src;
 }
@@ -235,8 +259,8 @@ const soundCredit = {};
 const gameSpeedX = () => (typeof ui !== "undefined" && typeof SPEED_MULT !== "undefined" && typeof speedX === "function" ? speedX() : 1);
 function sfx(name, ...args) {
   const sample = SAMPLES[name] && SAMPLES[name].length;
-  if (muted || !AC || AC.state !== "running" || voices > MAX_VOICES || !(SFX[name] || sample)) return null;
-  const now = AC.currentTime;
+  if (muted || !AC || AC.state !== "running" || !(SFX[name] || sample)) return null;
+  const now = AC.currentTime; sfxBump(name, now);
   if (now - (lastAt[name] ?? -1) < (GAP[name] ?? GAP[name.split(".")[0]] ?? 0.03)) return null;
   if (SOUND_MAX[name] && (playing[name] || 0) >= SOUND_MAX[name]) return null;
   // sounds keep their 1x DENSITY whatever the game speed (owner): at k x only
@@ -245,12 +269,13 @@ function sfx(name, ...args) {
     const k = gameSpeedX();
     if (k > 1) { soundCredit[name] = (soundCredit[name] || 0) + 1 / k; if (soundCredit[name] < 1) return null; soundCredit[name] -= 1; }
   }
-  lastAt[name] = now;
+  if (!sfxMakeRoom(name, now)) { sfxStat.skipped[name] = (sfxStat.skipped[name] || 0) + 1; return null; }
+  lastAt[name] = now; sfxStat.played[name] = (sfxStat.played[name] || 0) + 1;
   if (sample) return playSample(name);
-  const inst = { name, nodes: 0 };
+  const inst = { name, nodes: 0, live: { name, nodes: [] } }; sfxLive.add(inst.live);
   curSound = inst;
   let h;
   try { h = SFX[name](...args); } finally { curSound = null; }
-  if (inst.nodes) playing[name] = (playing[name] || 0) + 1;
+  if (inst.nodes) playing[name] = (playing[name] || 0) + 1; else sfxLive.delete(inst.live);
   return h || null;
 }
