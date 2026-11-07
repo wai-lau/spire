@@ -288,27 +288,37 @@ let iceFrameAt = -1, iceBudget = 0; const iceOf = new WeakMap(); // (per tower, 
 // file, importScripts) builds each tower's ice and posts its scene - the pieces for the asked tiers, back and front, plain data - a few times a second as
 // it grows and once done; the frame only bakes what arrives. No Worker (the smoke's stand-in): the time-sliced maker on the main thread, as before
 const ICE_POST_MS = 250, ICE_GLOW_MS = 2;
-let iceWk = null, iceWkSeq = 0; const iceWkWait = new Map();
+let iceWk = null, iceWkSeq = 0, iceWkIds = 0; const iceWkWait = new Map();
+const ICE_WK_WAIT_MS = 3000; // no word from the worker this long after a post: the main-thread maker takes over (a worker that loads but never answers)
+// THE WORKER'S SCRIPT IS THE PAGE'S OWN, ?v= AND ALL (live bug, 7.7.92 - owner: "FRZ perm and frac not appearing in game"): the bare
+// /aspira-frz-ice.js is served cacheable for a day, so a browser that had 7.7.89's copy (no worker half) loaded THAT into the worker, which
+// never answered - and the board waited on it for ever. The script tag's src carries the content hash the server stamps on every page
+const iceWkSrc = () => { const el = typeof document !== "undefined" && document.querySelector('script[src*="aspira-frz-ice.js"]'); return el && el.src ? el.src : location.origin + "/aspira-frz-ice.js"; };
 const icePlain = L => L.map(P => ({ walls: P.walls.map(w => ({ lit: w.lit, pts: w.pts })), topPts: P.topPts, topVis: P.topVis, y0: P.y0, y1: P.y1 }));
 function iceWorker() {
   if (iceWk !== null) return iceWk || null;
-  try { iceWk = new Worker(URL.createObjectURL(new Blob(["importScripts(" + JSON.stringify(location.origin + "/aspira-frz-ice.js") + ");"], { type: "text/javascript" })));
-    iceWk.onmessage = e => { const w = iceWkWait.get(e.data.id); if (w && e.data.seq === w.seq) { w.I.scene = e.data.scene; w.I.sceneAt = (w.I.sceneAt || 0) + 1; } };
+  try { iceWk = new Worker(URL.createObjectURL(new Blob(["importScripts(" + JSON.stringify(iceWkSrc()) + ");"], { type: "text/javascript" })));
+    iceWk.onmessage = e => { const w = iceWkWait.get(e.data.id); if (w && e.data.seq === w.seq) { w.I.scene = e.data.scene; w.I.sceneAt = (w.I.sceneAt || 0) + 1; if (e.data.scene.done) iceWkWait.delete(e.data.id); } };
     iceWk.onerror = () => { iceWk = false; };
   } catch (e) { iceWk = false; }
   return iceWk || null;
 }
-if (typeof importScripts === "function" && typeof window === "undefined") { // THE WORKER: one maker per tower and view, grown to the end, a scene posted every ICE_POST_MS
-  const makers = new Map(); let job = null;
-  const run = () => { if (!job) return; const { M, msg } = job, t0 = performance.now(); while (!M.done && performance.now() - t0 < ICE_POST_MS) M.step(ICE_POST_MS);
-    const sc = M.scene(msg.np, msg.nf); postMessage({ id: msg.id, seq: msg.seq, scene: { back: icePlain(sc.back), front: icePlain(sc.front), done: M.done } }); if (!M.done) setTimeout(run, 0); else job = null; };
-  onmessage = e => { const m = e.data, k = m.id + "|" + m.key; let M = makers.get(k); if (!M) makers.set(k, M = frzIceMaker(m.sp, m.sf, m.G, m.rot)); job = { M, msg: m }; run(); };
+if (typeof importScripts === "function" && typeof window === "undefined") { // THE WORKER: EVERY tower's job grown in turn (one at a time dropped the rest), a scene posted for each every round
+  const makers = new Map(), jobs = new Map(); let busy = false;
+  const round = () => {
+    const per = Math.max(30, ICE_POST_MS / Math.max(1, jobs.size));
+    for (const [id, { M, msg }] of jobs) { const t0 = performance.now(); while (!M.done && performance.now() - t0 < per) M.step(per);
+      const sc = M.scene(msg.np, msg.nf); postMessage({ id, seq: msg.seq, scene: { back: icePlain(sc.back), front: icePlain(sc.front), done: M.done } }); if (M.done) jobs.delete(id); }
+    busy = jobs.size > 0; if (busy) setTimeout(round, 0);
+  };
+  onmessage = e => { const m = e.data, k = m.id + "|" + m.key; let M = makers.get(k); if (!M) makers.set(k, M = frzIceMaker(m.sp, m.sf, m.G, m.rot)); jobs.set(m.id, { M, msg: m }); if (!busy) { busy = true; setTimeout(round, 0); } };
 }
 function frzIceGet(t, v, np, nf) { // the tower's ice: its scene for these tiers (from the worker, or grown here a few ms a frame)
   const key = [Math.round(v.sq * 50), Math.round(v.Hs), Math.round(v.rot / 3)].join(","), want = key + "|" + np + "," + nf;
   let I = iceOf.get(t); if (!I || I.key !== key) iceOf.set(t, I = { key, M: null, bake: null, scene: null, want: "" });
   const sp = 40117 + 7919 * (t.cell | 0), sf = 90211 + 104729 * (t.cell | 0), Gm = { cx: 0, cy: 0, R: 40, sq: v.sq, Hs: v.Hs }, wk = iceWorker();
-  if (wk) { if (I.want !== want) { I.want = want; const seq = ++iceWkSeq, id = t.id ?? t.cell; iceWkWait.set(id, { I, seq }); wk.postMessage({ id, seq, key, sp, sf, G: Gm, rot: v.rot, np, nf }); } return I; }
+  if (wk && I.want === want && !I.scene && performance.now() - I.postAt > ICE_WK_WAIT_MS) { iceWk = false; wk.terminate(); } // (silent: build here instead)
+  else if (wk) { if (I.want !== want) { I.want = want; I.postAt = performance.now(); const seq = ++iceWkSeq, id = I.wid ||= ++iceWkIds; iceWkWait.set(id, { I, seq }); wk.postMessage({ id, seq, key, sp, sf, G: Gm, rot: v.rot, np, nf }); } return I; }
   I.M ||= frzIceMaker(sp, sf, Gm, v.rot);
   const now = performance.now(); if (now - iceFrameAt > 8) { iceFrameAt = now; iceBudget = ICE_SLICE_MS; }
   if (!I.M.done && iceBudget > 0) { const a = performance.now(); I.M.step(iceBudget); iceBudget -= performance.now() - a; }
