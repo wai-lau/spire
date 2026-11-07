@@ -169,7 +169,8 @@ function drawIfrFlaresGl(t, low, hf) {
 // cores", then "this red should be the outer color, and the orange the inner color") - and a METEOR's burn WHITE-hot at the core, yellow round
 // it ("make non-hellfire flares more white" - the one place IFR draws white since "no white", 2026-10-20)
 const IFR_HF_COL = { glow: "threat", tifr: "threat", orange: "threat", yellow: "orange" } /* RED through the core, only the thinnest line orange (owner, 2026-10-21: "make sure it's red") */, IFR_MAIN_COL = { yellow: "white", orange: "orange", glow: "threat" }; /* LIKE FIRE (owner, 2026-11-05: "flares should glow like fire"): white-hot core, orange round it, an ember-red halo at the edge (was white / yellow / the orange glow) */
-const ifrFlareCol = (key, f) => COL[((f.hf || f.chain) ? IFR_HF_COL[key] : IFR_MAIN_COL[key]) || key];
+const SOL_FLARE_COL = { glow: "solar", tifr: "solar", orange: "solar", yellow: "white" }; // SCORCH V's flare (SOL colour, a white-hot core)
+const ifrFlareCol = (key, f) => COL[(f.sol ? SOL_FLARE_COL[key] : (f.hf || f.chain) ? IFR_HF_COL[key] : IFR_MAIN_COL[key]) || key];
 // a FIRE flare's layers: its outer glow IFR_HF_GLOW_K as strong, the rest IFR_HF_OPAQ x (owner, 2026-10-21: "reduce the amount of glow on the
 // hellfire stars but increase the opacity") - the look only: sizes stay (owner-locked, 2026-10-20)
 // then (same day) "much less glow, double core opacity": the glow 0.4 -> 0.1, the core (orange and yellow) 1.6 -> 3.2; the mid layer 1.6
@@ -261,7 +262,7 @@ function ifrSpriteDraw(c, f, low) {
   if (typeof document === "undefined") return false;
   const m = ctx.getTransform(), px = m.a * c.x + m.c * c.y + m.e, py = m.b * c.x + m.d * c.y + m.f, k = Math.max(Math.hypot(m.a, m.b), Math.hypot(m.c, m.d)); // (the view's linear part goes INTO the stamp: the card demo's floor is squeezed)
   const fq = Math.round(f * IFR_STAMP_F) / IFR_STAMP_F, I = Math.round(ifrFlareI(c) * 4) / 4, L = Math.round(c.L * k) / k, W = Math.round(c.W * k * 2) / (2 * k);
-  const key = (c.hf ? 1 : 0) + "|" + (low ? 1 : 0) + "|" + L.toFixed(3) + "|" + W.toFixed(3) + "|" + (c.xk ?? IFR_X_K) + "|" + I + "|" + fq + "|" + [m.a, m.b, m.c, m.d].map(v => v.toFixed(3)).join() + "|" + COL.orange + COL.threat;
+  const key = (c.hf ? 1 : 0) + "|" + (low ? 1 : 0) + "|" + L.toFixed(3) + "|" + W.toFixed(3) + "|" + (c.xk ?? IFR_X_K) + "|" + I + "|" + fq + "|" + [m.a, m.b, m.c, m.d].map(v => v.toFixed(3)).join() + "|" + COL.orange + COL.threat + (c.sol ? "S" + COL.solar : "");
   let sp = ifrStamps.get(key);
   if (!sp) {
     if (ifrStamps.size >= IFR_STAMP_MAX) ifrStamps.clear();
@@ -283,7 +284,7 @@ function drawIfr(balls) {
   const ifrs = G.towers.filter(t => t.kind === "ifr" && t.ifrInit0);
   ctx.lineCap = "butt"; ctx.lineJoin = "round";
   if (balls) { for (const t of ifrs) drawIfrBalls(t, low); }
-  else { for (const t of ifrs) drawIfrFlares(t, false); for (const t of ifrs) { drawIfrFlares(t, true); drawIfrFires(t, low); } } // (the circle over its own flares, as before)
+  else { for (const t of ifrs) drawIfrFlares(t, false); for (const t of ifrs) { drawIfrFlares(t, true); drawIfrFires(t, low); } for (const t of G.towers) if (t.kind === "sol" && t.solFlares && t.solFlares.length) drawIfrFlares({ ifrFlares: t.solFlares }, false); } // (the circle over its own flares, as before; SCORCH V's SOL flares last)
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
 // the CHARGE BALLS UNDER THE PRISM (owner, 2026-10-20: "centered on the corner of the hexagon where it meets the floor ... always tower

@@ -55,12 +55,43 @@ const SOL_SCORCH_M = 3;
 // SOL_PULSE_K stacks a shot (the stacks a second held: "scorch is what pops shields"); a NEW lock aims SOL_AIM s before it may fire
 const SOL_FL_KEEP = 0.15; // s a pulse's flash shows (aspira-effects.js SOL_PULSE_FLASH: the same) - kept past the lock a killing pulse ends
 let SOL_PULSE_K = 0.75, SOL_AIM = 0.3; // (marks 9 pts 101-119: x1 76/24/0/21, x0.75 80/30/0/23, x0.5 83/34/0/26 - all swarm -3, distance 20; x0.75 shipped: "reduce fire rate of SOL then")
+// SCORCH V's FLARE (owner, 2026-11-06: "SOL, don't require death, just first enemy hit, leave SOL colored IFR flare"): each shot's FIRST
+// enemy hit (the lock, whether it dies or not) leaves an IFR flare there in SOL's colour, burning as IFR's untaken Flare does (its length,
+// width, burn and tick: ifrFlareTiming(0), IFR_BEAM_L/W[0], the mean flare size) and ticking through ifrTickFlare. Its tick = IFR's flare tick
+// (IFR_TICK_K0 x ifrFlareTiming(0).k = ~0.915 x the tower's damage, the SOL tower's own dmg - not the tracking beam's x4.55) x SOL_FLARE_SHARE.
+// At most SOL_FLARE_MAX live a tower (the oldest drops): a pulse is ~1.2 s apart and a flare burns 0.6 s, so it is a safety, not a throttle
+const SOL_FLARE_SHARE = 0.5, SOL_FLARE_MAX = 4, SOL_FLARE_I = 3; // SOL_FLARE_I: the glow's intensity (= IFR_FLARE_I0, the untaken flare's)
+function solLandFlare(t, st, e) {
+  const fl = (t.solFlares ||= []), ft = ifrFlareTiming(0), s = IFR_FLARE_K * IFR_FLARE_MEAN; // (the mean flare, no draw: deterministic)
+  while (fl.length >= SOL_FLARE_MAX) fl.shift();
+  fl.push({ x: e.x, y: e.y, L: IFR_BEAM_L[0] * s, W: IFR_BEAM_W[0] * IFR_FLARE_K * (s / IFR_FLARE_K) ** IFR_FLARE_WS, life: ft.burn, left: ft.burn, tick: 0, tickS: ft.tick,
+    hit: st.d0 * IFR_TICK_K0 * ft.k * SOL_FLARE_SHARE, xk: IFR_X_K, edges: false, sol: true, hitI: SOL_FLARE_I });
+}
+function stepSolFlares(t, st, dt) {
+  const fl = t.solFlares; if (!fl || !fl.length) return;
+  for (const f of fl) { f.left -= dt; f.tick += dt; if (f.tick >= f.tickS) { f.tick -= f.tickS; ifrTickFlare(t, st.tickSt, f); } }
+  keepLive(fl);
+}
+// REFLECTION V (owner, 2026-11-06: "Reflection V, yes, so each beam splits into 2, off to the edge of the screen, no need for white flashes"):
+// each split beam splits again at ITS enemy into SOL_SUB_SPLIT more, to that enemy's nearest others (not the first target, not itself), each
+// running on to the edge as a split does (Breach's carry: the parent's share at its enemy, x st.hop a pass). Was: the split count's last step only
+const SOL_SUB_SPLIT = 2;
+function solNearest(from, n, skip) {
+  const out = [];
+  for (const o of G.enemies) {
+    if (o.dead || !o.seen || skip.includes(o)) continue;
+    const d = (o.x - from.x) ** 2 + (o.y - from.y) ** 2; let i = out.length;
+    while (i > 0 && out[i - 1][0] > d) i--;
+    if (i < n) { out.splice(i, 0, [d, o]); if (out.length > n) out.pop(); }
+  }
+  return out.map(q => q[1]);
+}
 function solTrackSt(t, st) {
   if (st.trk) return st.trk;
-  const bk = skillOf(t, "breach"), sc = skillOf(t, "focus"), V = sc >= 5;
+  const bk = skillOf(t, "breach"), sc = skillOf(t, "focus"), V = sc >= 5, RV = skillOf(t, "refraction") >= 5;
   const dot = st.dot ? { k: st.dot.k / (V ? 2 : 1), n: st.dot.n * (V ? 2 : 1), t: st.dot.t * (V ? 2 : 1), v: V } : null;
   const dmg = st.dmg * SOL_TRACK_DMG;
-  return (st.trk = Object.assign({}, st, { bk, dmg, hop: SOL_TRACK_HOP[bk], par: 0, dot, tickSt: Object.assign({}, st, { dmg, dot: null }) }));
+  return (st.trk = Object.assign({}, st, { bk, dmg, d0: st.dmg, flare: V, sub: RV ? SOL_SUB_SPLIT : 0, hop: SOL_TRACK_HOP[bk], par: 0, dot, tickSt: Object.assign({}, st, { dmg, dot: null }) }));
 }
 function solTickHit(t, st, e, d, from, pulse = false) {
   if (e.dead || !e.seen) return;
@@ -79,32 +110,34 @@ function solTrackStart(t, st, e) {
   const near = G.enemies.filter(o => o !== e && !o.dead && o.seen)
     .sort((p, q) => ((p.x - e.x) ** 2 + (p.y - e.y) ** 2) - ((q.x - e.x) ** 2 + (q.y - e.y) ** 2));
   for (let i = 0; i < (st.split || 0) && i < near.length; i++) B.links.push({ e: near[i], from: e, hits: [] });
+  if (st.sub) for (const p of B.links.slice()) for (const o of solNearest(p.e, st.sub, [e, p.e])) B.links.push({ e: o, from: p.e, par: p, hits: [] }); // (REFLECTION V: after its parent, so the parent's hits are read first)
   return B;
 }
 // the enemies a split's line crosses, in order from the first target, THROUGH its own enemy and on to the play box's edge (owner,
 // 2026-11-04: "SOL should not bounce off the prism shape / all secondary beams fly off to edge of screen"; solOutLen, the same in the sim),
 // each with the share left (x st.hop a pass); it still ends when its own enemy dies (stepSolTrack). l.L: the drawn line's length from e
 function solLinkHits(B, l, st) {
-  const ax = B.e.x, ay = B.e.y, d0 = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / d0, uy = (l.e.y - ay) / d0, L = solOutLen(ax, ay, ux, uy), on = [];
+  const org = l.from || B.e, k0 = l.par ? (l.par.hits.find(h => h.e === l.par.e) || { k: 1 }).k : 1; // (a sub-split starts at its parent's share at the parent's enemy)
+  const ax = org.x, ay = org.y, d0 = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / d0, uy = (l.e.y - ay) / d0, L = solOutLen(ax, ay, ux, uy), on = [];
   l.L = L;
   // NO PIERCE WITHOUT BREACH (owner, 2026-11-05: "SOL reflections shouldn't pierce without breach"): at Breach 0 a split hits its own enemy
   // and ends there - no line on to the edge (l.L 0: the draw stops at it), no enemy on the way
-  if (!st.bk) { l.L = 0; return [{ e: l.e, k: st.hop || 1 }]; }
+  if (!st.bk) { l.L = 0; return [{ e: l.e, k: k0 * (st.hop || 1) }]; }
   for (const o of G.enemies) {
-    if (o === B.e || o.dead || !o.seen) continue;
+    if (o === org || o.dead || !o.seen) continue;
     const dx = o.x - ax, dy = o.y - ay, along = dx * ux + dy * uy;
     if (o === l.e || (along >= 0 && along <= L && Math.abs(dx * uy - dy * ux) <= ENEMIES[o.type].size * (o.sizeMul || 1))) on.push([o === l.e ? d0 : along, o]);
   }
   on.sort((p, q) => p[0] - q[0]);
-  let k = st.hop || 1; return on.map(([, o]) => { const h = { e: o, k }; k *= st.hop || 1; return h; });
+  let k = k0 * (st.hop || 1); return on.map(([, o]) => { const h = { e: o, k }; k *= st.hop || 1; return h; });
 }
 function stepSolTrack(t, st0, dt) {
   const st = solTrackSt(t, st0);
-  let B = t.solB;
+  let B = t.solB; if (t.solFlares) stepSolFlares(t, st, dt);
   if (t.solFl) { t.solFl.fl += dt; if (!(t.solFl.fl < SOL_FL_KEEP)) t.solFl = null; } // (a dropped lock's last flash, drawn out - solTrackBeams)
   if (B && (B.e.dead || (B.e.x - t.x) ** 2 + (B.e.y - t.y) ** 2 > st.range * st.range)) { if ((B.fl ?? 1e9) < SOL_FL_KEEP) t.solFl = B; B = t.solB = null; } // (a pulse that killed: its flash still shows)
   if (!B) { const e = pickTargets(t, st, 1)[0]; if (!e) return false; B = t.solB = solTrackStart(t, st, e); t.solCd = Math.max(t.solCd || 0, SOL_AIM); B.aim = SOL_AIM; } // (B.aim: the aim line's draw)
-  B.links = B.links.filter(l => !l.e.dead);
+  B.links = B.links.filter(l => !l.e.dead && !(l.par && l.par.e.dead));
   for (const l of B.links) l.hits = solLinkHits(B, l, st);
   // THE PULSE (owner, 2026-11-05: "Wait, SOL should still have it's old big hit fire rate / like, fire, pause, fire, pause"): the lock and
   // the splits as before, but the beam FIRES once a shot at SOL's fire rate - one hit of the shot's damage (st.dmg: the same damage a
@@ -120,6 +153,7 @@ function stepSolTrack(t, st0, dt) {
     t.solCd += gap; B.fl = 0; const d = st.dmg / SOL_PULSE_K, hit = new Set([B.e]);
     B.links = solTrackStart(t, st, B.e).links; for (const l of B.links) l.hits = solLinkHits(B, l, st); // (each shot splits to the nearest others NOW - those of the lock walk off or die)
     solTickHit(t, st, B.e, d, t, true);
+    if (st.flare) solLandFlare(t, st, B.e); // (SCORCH V: the shot's first hit, dead or not)
     // NO ENEMY TWICE A SHOT (owner, 2026-11-05: "Make it so that SOL reflect cannot reflect to the same enemy"): an enemy on two splits'
     // lines, or a split's line back across the first target, takes the shot once (the first split to reach it)
     for (const l of B.links) for (const h of l.hits) if (!hit.has(h.e)) { hit.add(h.e); solTickHit(t, st, h.e, d * h.k, B.e, true); }

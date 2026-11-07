@@ -125,9 +125,9 @@ function solTrackBeams() {
     // a split from the first target THROUGH each enemy it crosses, dimming by its carry at each, and on past the last to the play box's edge
     // as drawn (solShowLen of l.L, the line's length the game uses - owner, 2026-11-04: "all secondary beams fly off to edge of screen")
     for (const l of B.links) {
-      const lw = l.L > 0 ? SOL_PIERCE_W : SOL_THIN_W; let from = B.e, k = 1, cut = false; for (const h of l.hits) { if (h.e.dead && !ghost) { cut = true; break; } seg(from, h.e, h.k, lw); from = h.e; k = h.k; }
+      const lw = l.L > 0 ? SOL_PIERCE_W : SOL_THIN_W; let from = l.from || B.e, k = 1, cut = false; for (const h of l.hits) { if (h.e.dead && !ghost) { cut = true; break; } seg(from, h.e, h.k, lw); from = h.e; k = h.k; }
       if (cut || !(l.L > 0)) continue;
-      const ax = B.e.x, ay = B.e.y, d0 = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / d0, uy = (l.e.y - ay) / d0, L = solShowLen(ax, ay, ux, uy, l.L);
+      const org = l.from || B.e, ax = org.x, ay = org.y, d0 = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / d0, uy = (l.e.y - ay) / d0, L = solShowLen(ax, ay, ux, uy, l.L);
       const end = l.end ||= { x: 0, y: 0 }; end.x = ax + ux * L; end.y = ay + uy * L;
       if ((end.x - from.x) * ux + (end.y - from.y) * uy > 0) seg(from, end, k * (st.hop || 1), lw);
     }

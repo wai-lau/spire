@@ -131,6 +131,17 @@ function warpSolidBelow(g) {
     warpEdges(F.poly3); ctx.strokeStyle = blendFill3(colR, 0.9 * fa, cyR, 0.9 * fa * frz, whR, 0.9 * fa * g.rime); ctx.stroke();
   }
 }
+// BREACH V's BLADE (owner, 2026-11-06: "Breach V, keep original mechanic, except visually change vertical breach spoke to breach blade"): the upright
+// spike through an enemy is a double-pointed blade - widest SOLID_BLADE_W x the spike's width, flat between SOLID_BLADE_SH and 1 - SOLID_BLADE_SH of
+// its length, a point at each end - with a pale ridge down the middle. SOL's colour, the white of the palette for the ridge; smooth, no glow bands
+const SOLID_BLADE_W = 2.2, SOLID_BLADE_SH = 0.2, SOLID_BLADE_RIDGE = 0.35;
+function solBreachBlade(sp, fa) {
+  const ax = sp.a.x, ay = sp.a.y, dx = sp.b.x - ax, dy = sp.b.y - ay, L = Math.hypot(dx, dy) || 1, nx = -dy / L * sp.w * SOLID_BLADE_W / 2, ny = dx / L * sp.w * SOLID_BLADE_W / 2, u = SOLID_BLADE_SH, v = 1 - SOLID_BLADE_SH;
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax + dx * u + nx, ay + dy * u + ny); ctx.lineTo(ax + dx * v + nx, ay + dy * v + ny); ctx.lineTo(sp.b.x, sp.b.y);
+  ctx.lineTo(ax + dx * v - nx, ay + dy * v - ny); ctx.lineTo(ax + dx * u - nx, ay + dy * u - ny); ctx.closePath();
+  ctx.fillStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9 * fa; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(sp.b.x, sp.b.y); ctx.strokeStyle = COL.white; ctx.globalAlpha = SOLID_BLADE_RIDGE * fa; ctx.lineWidth = Math.max(1, sp.w * 0.5); ctx.stroke();
+}
 // a die kind's edges, once: [corner i, corner j, face a, face b] (every edge of these closed solids has two faces)
 const solidEdgeCache = {};
 function solidEdges(type) {
@@ -223,7 +234,7 @@ function warpSolidWhole(e) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineJoin = "round";
   // the breach spike WHOLE, at full strength, in the pass above the floor: centred on the floor (owner, 2026-10-09: "SOL
   // breach effect should be centered on floor" - its lower half faded with the floor, so it read as rising from the die)
-  if (g.spike && (!band || band.lo === 0)) { ctx.beginPath(); ctx.moveTo(g.spike.a.x, g.spike.a.y); ctx.lineTo(g.spike.b.x, g.spike.b.y); ctx.strokeStyle = COL[TOWERS.sol.color]; ctx.globalAlpha = 0.9 * fa; ctx.lineWidth = g.spike.w; ctx.stroke(); }
+  if (g.spike && (!band || band.lo === 0)) solBreachBlade(g.spike, fa);
   // PERF (2026-10-09): each face ONE fill of its layers blended up front (background, colour, frost - source-over
   // is associative, so it is the same colour), and the edges stroked once for the whole die: the outline (an edge of
   // one face) once, the inner edges (shared by two faces) as their two strokes blended

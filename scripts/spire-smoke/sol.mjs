@@ -80,3 +80,31 @@ check("SOL Scorch: the beam lays TWO burn stacks a second on what it holds (a st
   const v = r.find(w => w.f === 5);
   if (!v.v || v.n < v.base * 2 - 1) return "Scorch V's stack: v " + v.v + ", " + v.n + " ticks left (expected v and about " + 2 * v.base + ")";
 });
+
+check("SOL Scorch V: a shot's FIRST hit leaves ONE SOL flare that burns what it touches, at most SOL_FLARE_MAX live (owner, 2026-11-06: \"don't require death, just first enemy hit, leave SOL colored IFR flare\")", () => {
+  const r = run(`(() => { const { t, es } = solRig({ focus: 5 }, [[60, 0], [95, 0], [400, 400]]); es[2].x = t.x + 1e4; es[2].y = t.y; /* (far: nothing held but the first two) */
+    solRun(t, 0.4); const early = (t.solFlares || []).length, held = t.solB && es.indexOf(t.solB.e), other = held === 0 ? 1 : 0; let peak = 0;
+    let f = null; for (let i = 0; i < 600; i++) { solRun(t, 1 / 60); peak = Math.max(peak, (t.solFlares || []).length); if (!f && t.solFlares && t.solFlares[0]) f = { sol: t.solFlares[0].sol, hit: t.solFlares[0].hit }; }
+    const s0 = solRig({ focus: 4 }, [[60, 0]]); solRun(s0.t, 3);
+    return { early, peak, max: SOL_FLARE_MAX, sol: f ? f.sol : null, hit: f ? f.hit : 0, held, otherHurt: es[other].hp < es[other].max, ivi: (s0.t.solFlares || []).length, shots: 600 / 60 / (1 / (towerStats(t).rate * SOL_PULSE_K)) }; })()`);
+  if (r.held == null || r.held < 0) return "nothing held";
+  if (r.peak < 1) return "no flare ever left (Scorch V)";
+  if (r.peak > r.max) return r.peak + " flares live (cap " + r.max + ")";
+  if (!r.sol || !(r.hit > 0)) return "the flare is not a SOL flare with a hit";
+  if (r.ivi) return "Scorch IV left a flare (only the capstone does)";
+  if (!r.otherHurt) return "the flare burned nothing on its spokes";
+});
+
+check("SOL Reflection V: each split splits again into 2, both running to the play box's edge, carrying the parent's share (owner, 2026-11-06: \"each beam splits into 2, off to the edge of the screen\")", () => {
+  const r = run(`(() => { const spots = []; for (let i = 0; i < 14; i++) spots.push([40 + (i % 5) * 25, -80 + i * 14]); const { t, es, st } = solRig({ refraction: 5, breach: 2 }, spots);
+    t.solB = solTrackStart(t, solTrackSt(t, st), es[0]); solRun(t, 0.05); const B = t.solB; if (!B) return { bad: "no lock" }; const subs = B.links.filter(l => l.par), tr = solTrackSt(t, st);
+    const v = solRig({ refraction: 4, breach: 2 }, spots); v.t.solB = solTrackStart(v.t, solTrackSt(v.t, v.st), v.es[0]); solRun(v.t, 0.05);
+    return { split: tr.split, subs: subs.length, per: B.links.filter(l => !l.par).map(p => subs.filter(s => s.par === p).length), from: subs.every(s => s.from === s.par.e), edge: subs.every(s => { const d = Math.hypot(s.e.x - s.from.x, s.e.y - s.from.y) || 1; return Math.abs(s.L - solOutLen(s.from.x, s.from.y, (s.e.x - s.from.x) / d, (s.e.y - s.from.y) / d)) < 1e-6 && s.L > 0; }),
+      carry: subs.every(s => s.hits.length && s.hits[0].k <= s.par.hits.find(h => h.e === s.par.e).k * tr.hop + 1e-9), ivSubs: v.t.solB ? v.t.solB.links.filter(l => l.par).length : -1 }; })()`);
+  if (r.bad) return r.bad;
+  if (r.subs !== r.split * 2) return r.subs + " sub-splits for " + r.split + " splits (expected 2 each: " + JSON.stringify(r.per) + ")";
+  if (!r.from) return "a sub-split does not start at its parent's enemy";
+  if (!r.edge) return "a sub-split does not run to the play box's edge";
+  if (!r.carry) return "a sub-split's carry is above its parent's share x the hop";
+  if (r.ivSubs) return "Reflection IV made sub-splits (only the capstone does)";
+});
