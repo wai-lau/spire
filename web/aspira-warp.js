@@ -318,7 +318,7 @@ function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid 
     const solids = G.towers.map(t => {
       const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y;
       const h = towerH(t);
-      return { x, y, h, col: COL[TOWERS[t.kind].color], opaque: t.kind === "frz", pts: (typeof solPolyPts === "function" && solPolyPts(t, x, y, TOWER_DRAW_K)) || c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })),
+      return { x, y, h, lift: h / 2 /* nothing underground: warpLift (aspira-warp-prism.js) */, col: COL[TOWERS[t.kind].color], opaque: t.kind === "frz", pts: (typeof solPolyPts === "function" && solPolyPts(t, x, y, TOWER_DRAW_K)) || c0.pts.map(p => ({ x: x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })),
         under: () => ownColours(() => drawOrbiters(t, true, up, x, y, h)), top: () => ownColours(() => { up(x, y, () => drawTower(t), h / 2); if (t.kind === "grv" && typeof drawGrvBody === "function") { ctx.save(); try { drawGrvBody(t, x, y, h / 2, Math.hypot(c0.pts[0].x - c0.x, c0.pts[0].y - c0.y) * TOWER_K * TOWER_DRAW_K); } finally { ctx.restore(); } } drawOrbiters(t, false, up, x, y, h); }), own: true }; /* drawOrbiters: what circles it, far side under the prism, near side over (aspira-warp-prism.js); drawGrvBody: GRV's orb over its top (aspira-grv-draw.js) */
     });
     CELLS.forEach((c, ci) => {
@@ -338,7 +338,7 @@ function warpEntities() { skyLayout(); // (first: the boss sky's triangle, laid 
       post: () => { if (warpBand && warpBand.lo === 0) warpShieldLines(warp.coreWalls.filter(coreFront), COL.white, 1, [CX, CY]); },
       top: () => { up(CX, CY, () => { poly(CX, CY, CORE_R * CORE_DRAW_K, 6, Math.PI / 6, false); ctx.fillStyle = COL.white; ctx.globalAlpha = 1; ctx.fill(); drawCredits("count"); }, coreH / 2); up(CX, CY, drawCoreHud, coreH / 2); } });
     solids.sort((a, b) => warpProject(a.x, a.y).y - warpProject(b.x, b.y).y);
-    const drawSolid = (o, tops) => { if (o.pre) o.pre(); if (tops && o.under) o.under(); warpPrism(o); /* under: drawn with the tops, before the prism - so it covers it */ if (tops) o.top(); if (o.post) o.post(); };
+    const drawSolid = (o, tops) => { warpLift = o.lift || 0; try { if (o.pre) o.pre(); if (tops && o.under) o.under(); warpPrism(o); /* under: drawn with the tops, before the prism - so it covers it */ if (tops) o.top(); if (o.post) o.post(); } finally { warpLift = 0; } };
     // a TOWER under the boss sky keeps its own colours, as in 2D (owner, 2026-10-09: "colors also buggy on boss spawn" - the
     // top layer's difference flipped them): drawn in the INVERTED palette, so that flip turns it back
     const inSky = o => inSkyPt(o.x, o.y); // (under the sky's triangle - aspira-bosses.js)

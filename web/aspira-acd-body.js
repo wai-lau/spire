@@ -39,7 +39,7 @@ function drawAcdBody(t, far, x, y, top) { // top: the prism top's height (warpFr
 }
 // SPILL: a translucent puddle on the floor round the base, drifting edge and ripples going out (the tower's own colour)
 function acdSpill(tier, x, y, R, t) {
-  const F = warpFrame(x, y, 0), rx = ACD_SPILL_RX[tier] * R / 40;
+  const F = warpFrame(x, y, warpFloor()), rx = ACD_SPILL_RX[tier] * R / 40; // (on the REAL floor, round the lifted tower's foot)
   ctx.setTransform(F[0], F[1], F[2], F[3], F[4], F[5]);
   const blob = k => { // the edge wobble drifts round the puddle with time
     const p = new Path2D();

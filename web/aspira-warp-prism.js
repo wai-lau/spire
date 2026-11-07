@@ -18,8 +18,13 @@ function coreH3d() {
 }
 // the canvas transform that lays world (x, y) on the level plane h world units up, as seen at (x, y): its
 // projection there and one world unit along x and along y
+// NOTHING UNDERGROUND (owner, 2026-11-07: "for each tower raise the visual height of the tower so that none of it is underground"): while a TOWER's
+// solid draws (its prism, its under pass, its top - drawSolid), warpLift (world units) = half its height lifts everything placed through warpFrame,
+// so the prism stands from the floor to its full height and every part on it rises with it; parts that belong on the real floor read warpFloor()
+let warpLift = 0;
+const warpFloor = () => -warpLift;
 function warpFrame(x, y, h) {
-  const H = h * cam.k, P = warpProject(x, y, H), X = warpProject(x + 1, y, H), Y = warpProject(x, y + 1, H);
+  const H = (h + warpLift) * cam.k, P = warpProject(x, y, H), X = warpProject(x + 1, y, H), Y = warpProject(x, y + 1, H);
   const a = X.x - P.x, b = X.y - P.y, c = Y.x - P.x, d = Y.y - P.y;
   return [a, b, c, d, P.x - a * x - c * y, P.y - b * x - d * y];
 }
@@ -42,7 +47,7 @@ function warpPrism(o) {
   // (a POINTED bottom was tried and dropped: "change the towers and core back to prisms instead of pointy")
   // (perf: built once a frame - the object is this frame's - though it is drawn in two passes, below and above the floor)
   if (!o.geo) o.geo = (() => {
-  const ft = frame(H), fb = frame(-H * WARP.prism.below), B = o.pts.map(p => ({ ...fb(p), z: -o.h / 2 * WARP.prism.below })), T = o.pts.map(p => ({ ...ft(p), z: o.h / 2 })); // z in world units (aspira-fog.js) // below: x the half height under the floor (owner: "3x the distance below plane")
+  const ft = frame(H), fb = frame(-H * WARP.prism.below), B = o.pts.map(p => ({ ...fb(p), z: -o.h / 2 * WARP.prism.below + warpLift })), T = o.pts.map(p => ({ ...ft(p), z: o.h / 2 + warpLift })); // z in world units (aspira-fog.js) // below: x the half height under the floor (owner: "3x the distance below plane")
   return { B, T, grads: {}, walls: o.pts.map((p, i) => { const q = o.pts[(i + 1) % n], mx = (p.x + q.x) / 2 - o.x, my = (p.y + q.y) / 2 - o.y; const ml = Math.hypot(mx, my) || 1, lx = CX - o.x, ly = CY - o.y, ll = Math.hypot(lx, ly); return { i, j: (i + 1) % n, face: my / ml, lit: ll < 1 ? 1 : Math.max(0, (mx * lx + my * ly) / (ml * ll)) }; }).sort((a, b) => a.face - b.face) }; // lit: the wall faces the core (the core's own: all lit); +y faces the camera
   })();
   const { B, T, walls, grads } = o.geo;
@@ -61,7 +66,7 @@ function warpPrism(o) {
   let band = warpBand || { lo: -Infinity, hi: Infinity };
   if (band.hi < 0) return; // a deeper floor slice: drawn with the one at the floor (whose hi is -0)
   if (band.hi === 0) { band = { lo: -Infinity, hi: 0 }; warpBand = band; }
-  const top = o.h / 2, end = top - WARP_PRISM_GONE * (o.h / 2 + o.h / 2 * WARP.prism.below);
+  const top = o.h / 2 + warpLift, end = top - WARP_PRISM_GONE * (o.h / 2 + o.h / 2 * WARP.prism.below);
   // the point of an upright P -> Q at height `end`
   const at = (P, Q) => { const t = (top - end) / (P.z - Q.z); return { x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t }; };
   for (const w of walls) {
@@ -119,11 +124,11 @@ function unwarp(sx, sy) {
 // interceptors each at its own (drawCarBodies). The board (warpEntities) and the card's demo (demoDraw3d) both call it. up: their frame helper
 const IFR_ORB_ALT = 0.75;
 function drawOrbiters(t, far, up, x, y, h) { // h: the prism's height (towerH); its top at h / 2
-  if (t.kind === "ifr" && typeof drawIfrTop === "function") up(x, y, () => drawIfrTop(t, far), IFR_ORB_ALT * h / 2);
+  if (t.kind === "ifr" && typeof drawIfrTop === "function") up(x, y, () => drawIfrTop(t, far), IFR_ORB_ALT * h * (warpLift ? 1 : 0.5) - warpLift); // (at IFR_ORB_ALT of the tower's VISIBLE height: all of it once lifted)
   if (t.kind === "acd" && typeof drawAcdBody === "function") drawAcdBody(t, far, x, y, h / 2); // ACD: the puddle before the prism (far), the drips and bubbles after it (aspira-acd-body.js)
   if (t.kind === "arc" && typeof drawArcBody === "function") drawArcBody(t, far, up, x, y, h);
   if (t.kind === "sol" && typeof drawSolBlades === "function") drawSolBlades(t, far, x, y, h / 2); // SOL: Breach's blades, behind the prism (far) and in front (aspira-sol-body.js)
   if (t.kind === "frz" && typeof drawFrzIce === "function") { const c0 = CELLS[t.cell]; drawFrzIce(t, far, x, y, h / 2, Math.hypot(c0.pts[0].x - c0.x, c0.pts[0].y - c0.y) * TOWER_K * TOWER_DRAW_K); } // FRZ: Permafrost and Fracture crystals (aspira-frz-ice.js)
   if (t.kind === "frz" && typeof drawFrzMoons === "function") drawFrzMoons(t, far); // FRZ: the moons as ice d12s over their spots (aspira-frz-moons.js)
-  if (t.kind === "crr" && t.icp && typeof drawCarBodies === "function") { ctx.save(); try { drawCarBodies(t, far, h / 2); } finally { ctx.restore(); } }
+  if (t.kind === "crr" && t.icp && typeof drawCarBodies === "function") { const L = warpLift; warpLift = 0; ctx.save(); try { drawCarBodies(t, far, h / 2); } finally { ctx.restore(); warpLift = L; } } // (NOT lifted: the interceptors fly, tether and fire from where they always did - owner, 2026-11-06: "leave the attacks starting where they start")
 }

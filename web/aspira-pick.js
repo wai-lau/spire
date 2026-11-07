@@ -17,8 +17,8 @@ function inPoly(pts, x, y) {
   return inside;
 }
 // a prism standing h world units on floor hex pts, centred on the floor (warpPrism): its top, its bottom, its walls
-function inPrism(pts, h, x, y) {
-  const H = h * cam.k / 2, up = pts.map(p => warpProject(p.x, p.y, H)), dn = pts.map(p => warpProject(p.x, p.y, -H));
+function inPrism(pts, h, x, y, lifted = false) { // lifted: a tower's prism stands from the floor to h (warpLift, aspira-warp-prism.js); the core's is centred on it
+  const H = h * cam.k / 2, up = pts.map(p => warpProject(p.x, p.y, lifted ? 2 * H : H)), dn = pts.map(p => warpProject(p.x, p.y, lifted ? 0 : -H));
   if (inPoly(up, x, y) || inPoly(dn, x, y)) return true;
   return pts.some((_, i) => { const j = (i + 1) % pts.length; return inPoly([up[i], up[j], dn[j], dn[i]], x, y); });
 }
@@ -36,7 +36,7 @@ function pick3d(ev) {
   const c0 = { k: cam.k, ox: cam.ox, oy: cam.oy };
   cam.k *= warpRes(); cam.ox *= warpRes(); cam.oy *= warpRes();
   try {
-    const solids = G.towers.map(t => ({ t, at: warpProject(t.x, t.y, 0).s, hit: () => inPrism(towerPts(t, PICK_GROW), towerH(t), x, y) }));
+    const solids = G.towers.map(t => ({ t, at: warpProject(t.x, t.y, 0).s, hit: () => inPrism(towerPts(t, PICK_GROW), towerH(t), x, y, true) }));
     solids.push({ core: true, at: warpProject(CX, CY, 0).s, hit: () => inPrism(hexPts(CX, CY, CORE_R), coreH3d(), x, y) || inPoly(hexPts(CX, CY, coreOuterR()).map(p => warpProject(p.x, p.y, 0)), x, y) });
     solids.sort((a, b) => b.at - a.at); // nearer the eye = drawn bigger
     // a TOWER before the core whenever both are under the press (owner, 2026-10-13: "unable to click upgrade on phone when core

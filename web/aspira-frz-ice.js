@@ -268,7 +268,7 @@ function frzIceMaker(sp, sf, Gm, rot) {
 // THE TOWER'S VIEW, in the mockup's units: m px a unit (its hex radius is 40), its screen squash (sq), its prism's visible height (Hs) and its hex's turn
 // (rot, degrees from the mockup's corner-up) - read off its 3D frame at its top and its floor; T: the top face's centre on screen (device px)
 function frzIceView(t, x, y, top, Rw) {
-  const Ft = warpFrame(x, y, top), Fb = warpFrame(x, y, 0), k = Math.hypot(Ft[0], Ft[1]), sq = Math.hypot(Ft[2], Ft[3]) / k, m = Rw * k / 40;
+  const Ft = warpFrame(x, y, top), Fb = warpFrame(x, y, warpFloor()), /* (the real floor: the crystals grow from it; the lifted prism's visible height is floor to top) */ k = Math.hypot(Ft[0], Ft[1]), sq = Math.hypot(Ft[2], Ft[3]) / k, m = Rw * k / 40;
   const T = { x: Ft[0] * x + Ft[2] * y + Ft[4], y: Ft[1] * x + Ft[3] * y + Ft[5] }, by = Fb[1] * x + Fb[3] * y + Fb[5];
   const c0 = CELLS[t.cell], p = c0.pts[0], dx = p.x - c0.x, dy = p.y - c0.y, sx = Ft[0] * dx + Ft[2] * dy, syy = Ft[1] * dx + Ft[3] * dy;
   const rot = ((Math.atan2(syy / sq, sx) * 180 / Math.PI + 90) % 60 + 60) % 60;
@@ -339,6 +339,6 @@ function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters, after the tow
   // THE FULL BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"), swapped in whole once done
   if (I.glow) { if (!I.glow.J || ice3dRun(I.glow.J, ICE_GLOW_MS)) { I.bake = { want: I.glow.want, J: I.glow.J }; I.glow = null; } }
   const J = I.bake && I.bake.J; if (!J) return;
-  const F = warpFrame(x, y, 0), bx = F[0] * x + F[2] * y + F[4], by = F[1] * x + F[3] * y + F[5], z = v.m / I.m0 / J.k; // (the one image, at this spot's scale, on its floor point)
+  const F = warpFrame(x, y, warpFloor()), bx = F[0] * x + F[2] * y + F[4], by = F[1] * x + F[3] * y + F[5], z = v.m / I.m0 / J.k; // (the one image, at this spot's scale, on its floor point)
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(J.cv, bx + J.ox * z, by + J.oy * z, J.W * z, J.H * z); ctx.restore();
 }
