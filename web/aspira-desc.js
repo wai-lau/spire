@@ -116,7 +116,7 @@ const DESCRIBE = {
     return "A meteor strikes the target for " + pc(1) + " damage and bursts into " + NUM_WORD[n] + " more." +
       (m >= CAPSTONE_TIER ? " One meteor in " + NUM_WORD[IFR_BIG_EVERY] + " is twice the size and strikes for " + pc(IFR_BIG_HIT_K) + "." : "") +
       (st > 1 ? " " + cap(NUM_WORD[st]) + " meteors can be stored in orbit." : "") +
-      " A wall of fire expands from the enemy, dealing " + pc(hf * IFR_RING_HIT_K) + " damage" + (h ? " and lights " + nf + " flares that singe for " + pc(hf * n0 / nf) + " damage each." : ".") + (h >= CAPSTONE_TIER ? " " + NUM_WORD[IFR_CHAINS_N][0].toUpperCase() + NUM_WORD[IFR_CHAINS_N].slice(1) + " glowing chains form a pentagram across the circle and burn like flares." : "") + // (every tier: owner, 2026-11-05, the circle at Hellfire 0, no flares)
+      " A wall of fire expands from the enemy, dealing " + pc(hf * IFR_RING_HIT_K) + " damage" + (h ? " and lights " + nf + " flares that singe for " + pc(hf * n0 / nf) + " damage each." : ".") + (h >= CAPSTONE_TIER ? " While the fire follows an enemy, " + NUM_WORD[IFR_CHAINS_N] + " glowing chains shoot from its circle to that enemy and burn like flares." : "") + // (every tier: owner, 2026-11-05, the circle at Hellfire 0, no flares)
       (f ? " The first impact lights " + (f >= CAPSTONE_TIER ? "a bright flare and a circle partway up its spokes that burn" : "a bright flare that burns") + " for " + pc(IFR_MAIN_FLARE_K * IFR_TICK_K0 * ft.k / IFR_ROUTE_K0) + " damage a tick for " + secs(burn) + "." : ""); /* a tick at a time: x3 the main flare (IFR_MAIN_FLARE_K, 2026-11-05) put the per-second total over 800% ("Nothing should ever be above like 800%") */
   },
 };

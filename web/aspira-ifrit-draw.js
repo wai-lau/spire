@@ -121,8 +121,8 @@ const IFR_GLOW_GL = [[0.5, 0.5, "glow", 2], [0.5, 0.95, "orange", 9], [0.5, 0.95
 // ALIVE, LIKE FIRE (owner, 2026-11-05: "flares should glow like fire"): every flare flickers on its own - its brightness by up to ~IFR_FLICK_B either
 // way, its size by ~IFR_FLICK_S - two waves each at a phase hashed from its spot (nothing stored, no Math.random); real time, so it burns on paused
 const IFR_FLICK_B = 0.22, IFR_FLICK_S = 0.06, IFR_FLICK_HZ = [1.9, 4.3, 2.6];
-function ifrFlick(c, now) { // [brightness x, size x]
-  const ph = Math.sin(c.x * 12.9898 + c.y * 78.233) * 43758.5453, h = (ph - Math.floor(ph)) * 6.283, w = 6.283 * now;
+function ifrFlick(c, now) { // [brightness x, size x]; c.ph: a chain's own seeded phase (it moves with its fire: a phase from its spot would jitter)
+  const ph = c.ph != null ? c.ph * 43758.5453 : Math.sin(c.x * 12.9898 + c.y * 78.233) * 43758.5453, h = (ph - Math.floor(ph)) * 6.283, w = 6.283 * now;
   return [1 + IFR_FLICK_B * (0.65 * Math.sin(w * IFR_FLICK_HZ[0] + h) + 0.35 * Math.sin(w * IFR_FLICK_HZ[1] + 2.7 * h)), 1 + IFR_FLICK_S * Math.sin(w * IFR_FLICK_HZ[2] + 1.9 * h)];
 }
 // A FLAT glow line (no fade along it: t0 = t1 = 0): each IFR_GLOW_GL layer across, smooth (shape 7)
@@ -144,10 +144,26 @@ function ifrSpoke2D(c, f, low, path) { // the 2D spoke's strokes along `path` (w
   ifrSpokeLayers(c, f, low, 1, (w, col, a, pw) => { ctx.strokeStyle = col; ctx.globalAlpha = a / IFR_GLOW_LV.length * 1.6; for (const lv of IFR_GLOW_LV) { ctx.lineWidth = Math.max(0.05, 2 * w * (1 - lv ** (1 / pw))); path(); ctx.stroke(); } });
   ctx.restore();
 }
+// HELLFIRE V's CHAIN (owner, 2026-11-07: "The lines should be chains / ... flicker and burn like a flare"): ONE body a chain for its whole life -
+// the flare's glow along it (ifrSpokeLayers / ifrSpoke2D, as before) and over it real LINKS (aspira-chains.js, ARC's and CRR's): a red-orange
+// body IFR_CHAIN_BODY x the link size, a white-hot core at IFR_CHAIN_LINK; its brightness flickers like a flare's on the chain's own seeded
+// phase (c.ph, ifrFlick), fading with its life
+const IFR_CHAIN_BODY = 1.7, IFR_CHAIN_LINK_A = 0.9;
 function ifrChainDraw(c, f, low, fs = 1) {
   const [x0, y0, x1, y1] = c.seg, gl3 = !!(ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlGlowLine === "function");
-  if (gl3) { const s = trimToTowers(x0, y0, x1, y1); if (s) ifrSpokeLayers(c, f, low, fs, (w, col, a, pw) => fxGlGlowLine(s[0], s[1], s[2], s[3], w, col, a, 0, 0, pw)); return; }
+  const a = Math.min(1, IFR_CHAIN_LINK_A * f);
+  if (gl3) {
+    const s = trimToTowers(x0, y0, x1, y1); if (!s) return;
+    ifrSpokeLayers(c, f, low, fs, (w, col, al, pw) => fxGlGlowLine(s[0], s[1], s[2], s[3], w, col, al, 0, 0, pw));
+    if (typeof fxGlChain === "function") { fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: IFR_HF_COL.orange, thin: IFR_CHAIN_LINK * IFR_CHAIN_BODY }, a); fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: "white", thin: IFR_CHAIN_LINK }, a); }
+    return;
+  }
   ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); });
+  if (typeof drawChain2D === "function") {
+    const pt = (x, y) => ({ x, y }), g0 = ctx.globalAlpha;
+    ctx.globalAlpha = a; drawChain2D(x0, y0, x1, y1, pt, 1, COL[IFR_HF_COL.orange], IFR_CHAIN_LINK * IFR_CHAIN_BODY);
+    ctx.globalAlpha = a; drawChain2D(x0, y0, x1, y1, pt, 1, COL.white, IFR_CHAIN_LINK); ctx.globalAlpha = g0;
+  }
 }
 function ifrRing2D(c, f, low) { ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); }); }
 function drawIfrFlaresGl(t, low, hf) {
