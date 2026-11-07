@@ -44,11 +44,12 @@ const I_lerp = (a, b, f) => a + (b - a) * f;
 // above the floor (a shard standing on a hex starts at that hex's top). Only the faces that FACE THE VIEWER are kept, as for any convex solid: the walls whose
 // normal points toward the viewer and the top only when its real 3D normal does (a slanted top can face away). `key` is the depth the piece is sorted by.
 function I_buildPrism(base, hg, lift = 0, key) {
-  const g = I_G, S = (p, h) => [g.cx + p[0], g.cy + p[1] * g.sq + g.Hs - lift - h], n = base.length;
+  const g = I_G, tv = base.tv || [0, 0], S = (p, h) => [g.cx + p[0] + tv[0] * h, g.cy + (p[1] + tv[1] * h) * g.sq + g.Hs - lift - h], n = base.length; // tv: a shard's lean, floor units a unit up
+
   const cen = [base.reduce((s, p) => s + p[0], 0) / n, base.reduce((s, p) => s + p[1], 0) / n];
   let topVis = true;
   if (n === 3) { // the view direction toward the viewer is (0, 1, sq) in (u, v, up); a slanted top is visible only if its 3D normal has a positive component along it
-    const e1 = [base[1][0] - base[0][0], base[1][1] - base[0][1], hg[1] - hg[0]], e2 = [base[2][0] - base[0][0], base[2][1] - base[0][1], hg[2] - hg[0]];
+    const T3 = base.map((p, i) => [p[0] + tv[0] * hg[i], p[1] + tv[1] * hg[i], hg[i]]), e1 = [T3[1][0] - T3[0][0], T3[1][1] - T3[0][1], T3[1][2] - T3[0][2]], e2 = [T3[2][0] - T3[0][0], T3[2][1] - T3[0][1], T3[2][2] - T3[0][2]];
     let nm = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]]; if (nm[2] < 0) nm = nm.map(q => -q);
     topVis = nm[1] + g.sq * nm[2] > 0.02 * Math.hypot(nm[0], nm[1], nm[2]) * Math.hypot(1, g.sq);
   }
@@ -68,7 +69,7 @@ function I_buildPrism(base, hg, lift = 0, key) {
     y1 = Math.max(y1, p0[1], p1[1]);
   }
   if (topVis) ridge.addPath(I_poly(topPts, true));
-  return { walls, top: I_poly(topPts, true), topPts, topVis, ridge, floor, y0, y1: Math.max(y1, y0 + 1), v: cen[1], key: key === undefined ? cen[1] : key, foot: base };
+  return { walls, top: I_poly(topPts, true), topPts, topVis, ridge, floor, y0, y1: Math.max(y1, y0 + 1), v: cen[1], key: key === undefined ? cen[1] : key, foot: base, hg, lift, tv }; // (foot, hg, lift, tv: the solid itself - the 3D bake)
 }
 // NEVER OCCLUDE THE TOP FACE (Wai 11-06): a piece in front of the tower (centre v >= 0) whose silhouette (visible walls + top polygon, in screen space) would
 // overlap the tower's top-face hex has its heights scaled down (slant kept) by the largest factor that clears it with 3 units to spare (stroke + glow). Done once, at generation.
@@ -182,17 +183,13 @@ function* I_genFrac(N, hexes) {
     if (!spot(tri0, rs)) return null;
     const th = (50 + 20 * r()) * Math.PI / 180; let ga; do { ga = r() * I_TAU; } while (Math.tan(th) * Math.sin(ga) > 0.45); // ga: the direction the top RISES toward; not strongly toward the viewer, or the top face would face away
     const gd = [Math.cos(ga), Math.sin(ga)], pr = tri0.map(q => q[0] * gd[0] + q[1] * gd[1]), pm = Math.max(...pr), hg = pr.map(x => I_clamp(hmax - Math.tan(th) * (pm - x), 0.15 * hmax, hmax));
-    let tri = tri0, host = -1, how = 'free';
-    const over = hexP.map((h, i) => i).filter(i => I_polyHit(tri0, hexP[i]));
-    if (over.length) {
-      const whole = over.find(i => tri0.every(q => I_inPoly(hexP[i], q)));
-      if (whole !== undefined) { host = whole; how = 'in'; } // already wholly inside one hex
-      else {
-        let A = null; for (const i of over) { const m = I_shiftInside(tri0, hexP[i]); if (m && spot(m.tri, rs) && (!A || m.dist < A.dist)) A = Object.assign(m, { host: i }); }
-        const B = I_shiftOutside(tri0, hexP, t => spot(t, rs), r() * I_TAU), pickA = A && (!B || A.dist < B.dist || (A.dist === B.dist && r() < 0.5));
-        if (pickA) { tri = A.tri; host = A.host; how = 'moveIn'; } else if (B) { tri = B.tri; how = 'moveOut'; } else return null;
-      }
-    }
+    // POKING THROUGH IS FINE (owner, 2026-11-06: "Allow poking in and out of perms" - the old rule moved a shard wholly inside a hex or wholly out): a shard
+    // stands on the floor wherever it falls, a crossing drawn right by the bake's depth test (frzIce3dBake). LEANING OUT (owner: "Tilt fracs away from centre of
+    // tower, random amounts between 15 and 30 deg"): its axis tilts away from the tower's centre by a seeded 15-30 deg from upright, the base on the floor
+    // (tv: floor units a unit up, in the mockup's units - g.K3 turns a real angle into them); its tips stay inside the canvas (and so inside the moons' orbit)
+    const tri = tri0, host = -1, how = 'free', ct = I_centroid3(tri0), cl = Math.hypot(ct[0], ct[1]) || 1, lean = Math.tan((15 + 15 * r()) * Math.PI / 180) * (g.K3 || 1);
+    tri.tv = [ct[0] / cl * lean, ct[1] / cl * lean];
+    if (!tri.every((q, i) => { const x = q[0] + tri.tv[0] * hg[i], y = q[1] + tri.tv[1] * hg[i]; return Math.abs(x) <= 86 && y <= 100 && y >= -105; })) return null;
     const c2 = I_centroid3(tri), f = I_heightFall(c2), hgS = hg.map(h => h * f), spec = { tri, hg: hgS, host, hostH: host >= 0 ? hexes[host].hgt : 0, v: c2[1], u: c2[0] };
     let fit = null; // it must work in every scene it can appear in: on its hex (hex shown) and on the floor (hex not shown)
     for (const lift of host >= 0 ? [0, spec.hostH] : [0]) { fit = I_fitShard(spec, lift, host >= 0 ? hexes[host].c[1] : 0); if (!fit || I_hiddenByTower(fit.pr)) { I_ICE_STATS.hidden++; return null; } }
@@ -200,20 +197,14 @@ function* I_genFrac(N, hexes) {
     spec.hRaw = (hg[0] + hg[1] + hg[2]) / 3; spec.hDrawn = spec.vol / (1.299 * rs * rs); spec.d = I_edgeDist(c2);
     return { spec, how, fit };
   };
-  const hexPr = hexes.map(h => h.prism), pr5 = [], pr0 = []; // the accepted shards' prisms with every hex shown, and with none
-  const acyclic = cnd => { // the painter order must stay free of cycles in both extremes (a pinwheel of overlapping prisms cannot be drawn right)
-    const s = cnd.spec, p5 = cnd.fit.pr, p0 = s.host >= 0 ? I_fitShard(s, 0, 0).pr : p5; p5.hostPr = s.host >= 0 ? hexes[s.host].prism : null;
-    return I_paintOrder(hexPr.concat(pr5, [p5])).bad === 0 && I_paintOrder(pr0.concat([p0])).bad === 0 ? { p5, p0 } : null;
-  };
   while (out.length < N) {
     const want = I_ICE_N.frac.includes(out.length + 1) ? 200 : 24; // a tier boundary gets a bigger pool, so the ratio there is tight
     const pool = []; for (let tr = 0; tr < 6000 && pool.length < want; tr++) { const cnd = make(); if (cnd) pool.push(cnd); if ((tr & 15) === 15) yield -1; } // (yield: slices end inside the pool)
     if (!pool.length) break;
-    let pick = null, prs = null;
-    for (const [, cnd] of pool.map(q => [I_balScore(vol, q.spec.vol, q.spec.u), q]).sort((x, y) => x[0] - y[0])) { prs = acyclic(cnd); if (prs) { pick = cnd; break; } yield -1; }
-    if (!pick) { pick = pool[0]; prs = { p5: pick.fit.pr, p0: pick.fit.pr }; I_ICE_STATS.cycles = (I_ICE_STATS.cycles || 0) + 1; } // no acyclic candidate in the pool: take the first anyway and count it
-    yield out.length; pr5.push(prs.p5); pr0.push(prs.p0);
-    vol[pick.spec.u < 0 ? 0 : 1] += pick.spec.vol; I_ICE_STATS.frac[1] += pick.fit.cut; I_ICE_STATS.shards[pick.how]++; out.push(pick.spec);
+    let pick = null;
+    pick = pool.map(q => [I_balScore(vol, q.spec.vol, q.spec.u), q]).sort((x, y) => x[0] - y[0])[0][1]; // (no painter-order test: the 3D bake's depth test draws any crossing right)
+    yield out.length;
+    vol[pick.spec.u < 0 ? 0 : 1] += pick.spec.vol; I_ICE_STATS.frac[1] += pick.fit.cut; I_ICE_STATS.shards[pick.how] = (I_ICE_STATS.shards[pick.how] || 0) + 1; out.push(pick.spec);
   }
   return out;
 }
@@ -281,7 +272,8 @@ function frzIceView(t, x, y, top, Rw) {
   const T = { x: Ft[0] * x + Ft[2] * y + Ft[4], y: Ft[1] * x + Ft[3] * y + Ft[5] }, by = Fb[1] * x + Fb[3] * y + Fb[5];
   const c0 = CELLS[t.cell], p = c0.pts[0], dx = p.x - c0.x, dy = p.y - c0.y, sx = Ft[0] * dx + Ft[2] * dy, syy = Ft[1] * dx + Ft[3] * dy;
   const rot = ((Math.atan2(syy / sq, sx) * 180 / Math.PI + 90) % 60 + 60) % 60;
-  return { T, m, sq, Hs: Math.max(4, (by - T.y) / m), rot };
+  const Hs = Math.max(4, (by - T.y) / m);
+  return { T, m, sq, Hs, rot, K3: (top * 40) / (Hs * Rw) }; // K3: the mockup's floor units a height unit, for a real angle (top / Hs world a height unit, Rw / 40 a floor unit)
 }
 let iceFrameAt = -1, iceBudget = 0; const iceOf = new WeakMap(); // (per tower, off the tower: the autosave's structuredClone takes no generator or canvas)
 // OFF THE MAIN THREAD (WebKit, 2026-11-06: one generator step reached 116 ms in the rig - a candidate check cannot be split finer): a WORKER (this very
@@ -294,7 +286,7 @@ const ICE_WK_WAIT_MS = 3000; // no word from the worker this long after a post: 
 // /aspira-frz-ice.js is served cacheable for a day, so a browser that had 7.7.89's copy (no worker half) loaded THAT into the worker, which
 // never answered - and the board waited on it for ever. The script tag's src carries the content hash the server stamps on every page
 const iceWkSrc = () => { const el = typeof document !== "undefined" && document.querySelector('script[src*="aspira-frz-ice.js"]'); return el && el.src ? el.src : location.origin + "/aspira-frz-ice.js"; };
-const icePlain = L => L.map(P => ({ walls: P.walls.map(w => ({ lit: w.lit, pts: w.pts })), topPts: P.topPts, topVis: P.topVis, y0: P.y0, y1: P.y1 }));
+const icePlain = L => L.map(P => ({ walls: P.walls.map(w => ({ lit: w.lit, pts: w.pts })), topPts: P.topPts, topVis: P.topVis, y0: P.y0, y1: P.y1, foot: P.foot.map(q => [q[0], q[1]]), hg: P.hg, lift: P.lift, tv: P.tv, v: P.v }));
 function iceWorker() {
   if (iceWk !== null) return iceWk || null;
   try { iceWk = new Worker(URL.createObjectURL(new Blob(["importScripts(" + JSON.stringify(iceWkSrc()) + ");"], { type: "text/javascript" })));
@@ -318,9 +310,9 @@ if (typeof importScripts === "function" && typeof window === "undefined") { // T
 // its id; a move never makes it again (the key was the view at its current spot: every move grew it anew). A tier bought only shows more of
 // the same pieces (first-n). The bake follows the tower (drawFrzIce)
 function frzIceGet(t, v0, np, nf) { // the tower's ice: its scene for these tiers (from the worker, or grown here a few ms a frame)
-  let I = iceOf.get(t); if (!I) iceOf.set(t, I = { view: { sq: v0.sq, Hs: v0.Hs, rot: v0.rot }, M: null, bake: null, scene: null, want: "" });
+  let I = iceOf.get(t); if (!I) iceOf.set(t, I = { view: { sq: v0.sq, Hs: v0.Hs, rot: v0.rot, K3: v0.K3 }, M: null, bake: null, scene: null, want: "" });
   const v = I.view, key = [Math.round(v.sq * 50), Math.round(v.Hs), Math.round(v.rot / 3)].join(","), want = key + "|" + np + "," + nf;
-  const id = t.id | 0, sp = 40117 + 7919 * id, sf = 90211 + 104729 * id, Gm = { cx: 0, cy: 0, R: 40, sq: v.sq, Hs: v.Hs }, wk = iceWorker();
+  const id = t.id | 0, sp = 40117 + 7919 * id, sf = 90211 + 104729 * id, Gm = { cx: 0, cy: 0, R: 40, sq: v.sq, Hs: v.Hs, K3: v.K3 }, wk = iceWorker();
   if (wk && I.want === want && !I.scene && performance.now() - I.postAt > ICE_WK_WAIT_MS) { iceWk = false; wk.terminate(); } // (silent: build here instead)
   else if (wk) { if (I.want !== want) { I.want = want; I.postAt = performance.now(); const seq = ++iceWkSeq, wid = I.wid ||= ++iceWkIds; iceWkWait.set(wid, { I, seq }); wk.postMessage({ id: wid, seq, key, sp, sf, G: Gm, rot: v.rot, np, nf }); } return I; }
   I.M ||= frzIceMaker(sp, sf, Gm, v.rot);
@@ -329,52 +321,24 @@ function frzIceGet(t, v0, np, nf) { // the tower's ice: its scene for these tier
   const c = I.M.count(); if (I.c !== c || I.want !== want) { I.c = c; I.want = want; const sc = I.M.scene(np, nf); I.scene = { back: sc.back, front: sc.front, done: I.M.done }; I.sceneAt = (I.sceneAt || 0) + 1; }
   return I;
 }
-// the pieces of one list onto a canvas of their own, m px a unit (opaque base, the ice tint fading down each wall, the top's tint, the floor edges, the
-// ridges' smooth glow); -> { cv, ox, oy } (its top-left from T)
-function frzIceBakeBegin(list, m, ice, frz, glow) { // a bake job: its canvas, set up; frzIceBakeRun paints its pieces in order
-  if (!list.length) return null;
-  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const P of list) for (const q of P.walls.flatMap(w => w.pts).concat(P.topPts)) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
-  const pad = 6, cv = document.createElement("canvas"); cv.width = Math.ceil((x1 - x0) * m + 2 * pad); cv.height = Math.ceil((y1 - y0) * m + 2 * pad);
-  const g = cv.getContext("2d"); if (!g) return null;
-  g.setTransform(m, 0, 0, m, pad - x0 * m, pad - y0 * m); g.lineJoin = "round";
-  const path = pts => { g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.closePath(); };
-  const ramp = typeof solRamp === "function" && typeof DOMMatrix === "function" ? solRamp(ice) : null, pat = ramp && (ramp.pat || (ramp.pat = g.createPattern(ramp.c, "repeat-y")));
-  return { cv, g, ox: x0 * m - pad, oy: y0 * m - pad, list, i: 0, m, ice, frz, glow, path, pat };
-}
-function frzIceBakeRun(J, ms) { // paints its pieces for up to ms; -> done
-  const t0 = performance.now(), { g, m, ice, frz, glow, path, pat } = J;
-  for (; J.i < J.list.length && performance.now() - t0 < ms; J.i++) {
-    const P = J.list[J.i];
-    g.globalAlpha = 1; g.fillStyle = COL.bg; for (const w of P.walls) { path(w.pts); g.fill(); } if (P.topVis) { path(P.topPts); g.fill(); } // OPAQUE (owner, 2026-11-06: "fracture and perma should both have opaque faces")
-    const h = Math.max(1, P.y1 - P.y0);
-    if (pat && pat.setTransform) { pat.setTransform(new DOMMatrix([0, -h / 230.4, 1, 0, 0, P.y0 + 256 * h / 230.4])); g.fillStyle = pat; } else g.fillStyle = ice; // 0.4 at the top to 0.04 at the floor (the ramp from 1 to 0.1, x 0.4)
-    for (const w of P.walls) { g.globalAlpha = (pat ? 0.4 : 0.22) * w.lit; path(w.pts); g.fill(); }
-    if (P.topVis) { g.globalAlpha = 0.17; g.fillStyle = ice; path(P.topPts); g.fill(); }
-    g.globalAlpha = 0.35; g.strokeStyle = ice; g.lineWidth = 0.8; g.beginPath(); for (const w of P.walls) { g.moveTo(w.pts[0][0], w.pts[0][1]); g.lineTo(w.pts[1][0], w.pts[1][1]); } g.stroke(); // the floor edges
-    g.beginPath(); for (const w of P.walls) { g.moveTo(w.pts[0][0], w.pts[0][1]); g.lineTo(w.pts[3][0], w.pts[3][1]); g.moveTo(w.pts[1][0], w.pts[1][1]); g.lineTo(w.pts[2][0], w.pts[2][1]); if (!P.topVis) { g.moveTo(w.pts[3][0], w.pts[3][1]); g.lineTo(w.pts[2][0], w.pts[2][1]); } }
-    if (P.topVis) P.topPts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))), g.closePath();
-    g.globalAlpha = 0.95; g.strokeStyle = ice; g.lineWidth = 0.9; g.shadowColor = frz; g.shadowBlur = glow ? 3.2 * 0.9 * m : 0; g.stroke(); g.shadowBlur = 0; // the ridges: a thin line in a smooth glow
-  }
-  return J.i >= J.list.length;
-}
-// the pieces of one list onto a canvas of their own at once (glow false: a quick bake while the ice still grows - the blur is most of a bake)
-function frzIceBake(list, m, ice, frz, glow = true) { const J = frzIceBakeBegin(list, m, ice, frz, glow); if (!J) return null; frzIceBakeRun(J, Infinity); return J; }
 // NEVER REDRAWN (owner, 2026-11-06: "Never redraw the ice"): the pieces are baked ONCE, at I.mB px a unit - the first view's scale with room for
 // the closest zoom (ICE_ZOOM_ROOM, capped) - and the image then only moves and scales with the tower: no re-bake on a move, a pan or a zoom. While
 // it first grows, each grown step shows (a quick bake, no ridge glow) and the full bake lands once grown; a tier bought later keeps the old image up
 // while the new one bakes (in slices) and swaps in whole, so what is already shown never changes
 const ICE_ZOOM_ROOM = 2;
-function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters: the pieces behind the tower (far) before its prism, the rest after its top face
+function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters, after the tower's top (far: nothing - the 3D bake hides what the prism covers)
   const np = skillOf(t, "rime"), nf = skillOf(t, "temp"); if (!np && !nf) return;
-  const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v, np, nf); if (!I.scene) return;
-  const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white;
-  const mB = I.mB ||= v.m * (typeof ZOOM_MAX === "number" && typeof viewZoom === "number" && viewZoom > 0 ? Math.min(ICE_ZOOM_ROOM, Math.max(1, ZOOM_MAX / viewZoom)) : 1);
-  if (!I.bake || (I.bake.at !== I.sceneAt && !sc.done)) { I.bake = { at: I.sceneAt, m: v.m, back: frzIceBake(sc.back, v.m, ice, frz, false), front: frzIceBake(sc.front, v.m, ice, frz, false) }; I.glow = null; } // (growing: quick bakes at this view's own scale)
-  if (sc.done && I.bake.at !== I.sceneAt && (!I.glow || I.glow.at !== I.sceneAt)) I.glow = { at: I.sceneAt, back: frzIceBakeBegin(sc.back, mB, ice, frz, true), front: frzIceBakeBegin(sc.front, mB, ice, frz, true) };
-  if (sc.done && !I.bake.full && !I.glow) I.glow = { at: I.sceneAt, back: frzIceBakeBegin(sc.back, mB, ice, frz, true), front: frzIceBakeBegin(sc.front, mB, ice, frz, true) };
+  const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v, np, nf); if (!I.scene || far || typeof ice3dBegin !== "function") return;
+  const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white, list = sc.back.concat(sc.front);
+  I.proj ||= ice3dProj(x, y, top, Rw, I.view.Hs); I.m0 ||= v.m; // (the camera of its first view, frozen)
+  const kB = I.kB ||= (typeof ZOOM_MAX === "number" && typeof viewZoom === "number" && viewZoom > 0 ? Math.min(ICE_ZOOM_ROOM, Math.max(1, ZOOM_MAX / viewZoom)) : 1);
+  // growing: QUICK bakes (no ridge glow, the first view's own scale) of the latest grown step, each in slices - the last one stays up meanwhile;
+  // grown: the FULL bake, the same way. The image on screen changes only when a bake is whole
+  const want = sc.done ? "f" + I.sceneAt : "q" + I.sceneAt;
+  if ((!I.bake || I.bake.want !== want) && (!I.glow || I.glow.want !== want)) I.glow = { at: I.sceneAt, want, J: sc.done ? ice3dBegin(list, I.proj, I.view.rot, kB, ice, frz, true) : ice3dBegin(list, I.proj, I.view.rot, 1, ice, frz, false) };
   // THE FULL BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"), swapped in whole once done
-  if (I.glow && far) { const G2 = I.glow, d1 = !G2.back || frzIceBakeRun(G2.back, ICE_GLOW_MS), d2 = d1 && (!G2.front || frzIceBakeRun(G2.front, ICE_GLOW_MS)); if (d1 && d2) { I.bake = { at: G2.at, m: mB, full: true, back: G2.back, front: G2.front }; I.glow = null; } }
-  const B = far ? I.bake.back : I.bake.front; if (!B) return;
-  const k = v.m / I.bake.m; // (the one image, at this spot's scale)
-  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(B.cv, v.T.x + B.ox * k, v.T.y + B.oy * k, B.cv.width * k, B.cv.height * k); ctx.restore();
+  if (I.glow) { if (!I.glow.J || ice3dRun(I.glow.J, ICE_GLOW_MS)) { I.bake = { want: I.glow.want, J: I.glow.J }; I.glow = null; } }
+  const J = I.bake && I.bake.J; if (!J) return;
+  const F = warpFrame(x, y, 0), bx = F[0] * x + F[2] * y + F[4], by = F[1] * x + F[3] * y + F[5], z = v.m / I.m0 / J.k; // (the one image, at this spot's scale, on its floor point)
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(J.cv, bx + J.ox * z, by + J.oy * z, J.W * z, J.H * z); ctx.restore();
 }
