@@ -33,9 +33,9 @@ function fitPop(pop, room, winRoom) {
   pop.style.maxHeight = room + "px";
   const chart = pop.querySelector(".asp-chart");
   pop.style.minHeight = ""; // (a forced TOWER_CARD_H left empty bands - owner)
+  fitReset(pop);
   if (!chart) return;
   chart.style.width = "";
-  if (towerWide()) return;
   // narrowing the chart by the overflow does not cut the card by as much (labels, gaps): iterate
   const shrink = floor => {
     for (let i = 0; i < 6; i++) {
@@ -47,11 +47,32 @@ function fitPop(pop, room, winRoom) {
     }
     return pop.scrollHeight <= pop.clientHeight;
   };
-  if (shrink(CHART_MIN)) return;
+  if (!towerWide() && shrink(CHART_MIN)) return;
+  if (towerWide() && pop.scrollHeight <= pop.clientHeight) return;
   // at the chart's floor and still over the room: the card runs past the bar rather than
   // clip, but never past the WINDOW - against the window the chart may go down to CHART_FLOOR
   pop.style.maxHeight = Math.max(room, winRoom) + "px";
-  shrink(CHART_FLOOR);
+  if (!towerWide() && shrink(CHART_FLOOR)) return;
+  fitTight(pop);
+}
+// EVERY SECTION FITS (owner, 2026-11-06: "ensure all tower sections fit on tower upgrade card at any reasonable resolution"): past the chart, in
+// order, each only while the card is still over - (1) tight: the buttons' breathing room, the steppers' gaps, the stats in two columns (aspira.css
+// .asp-tight); (2) the demo shrinks, centred, to FIT_DEMO_MIN tall; (3) the whole card's content zooms down to FIT_ZOOM_MIN; (4) last resort, the
+// card scrolls inside (pinned by tests/test_spire_cardfit_browser.py over phone, tablet and desktop sizes x every tower)
+const FIT_DEMO_MIN = 72, FIT_ZOOM_MIN = 0.75;
+const fitOver = pop => pop.scrollHeight - pop.clientHeight;
+function fitReset(pop) {
+  pop.classList.remove("asp-tight", "asp-fit-scroll");
+  const g = pop.querySelector(".asp-tower-grid"); if (g) g.style.zoom = "";
+  const d = pop.querySelector(".asp-demo"); if (d) d.style.width = "";
+}
+function fitTight(pop) {
+  pop.classList.add("asp-tight"); if (fitOver(pop) <= 0) return;
+  const d = pop.querySelector(".asp-demo"), cvd = d && d.querySelector("canvas");
+  if (cvd) for (let i = 0; i < 4 && fitOver(pop) > 0; i++) { const r = cvd.getBoundingClientRect(), nh = Math.max(FIT_DEMO_MIN, r.height - fitOver(pop)); if (nh >= r.height - 0.5) break; d.style.width = (r.width * nh / r.height) + "px"; }
+  const g = pop.querySelector(".asp-tower-grid");
+  if (g) for (let i = 0; i < 6 && fitOver(pop) > 0; i++) { const z = parseFloat(g.style.zoom) || 1, nz = Math.max(FIT_ZOOM_MIN, z * pop.clientHeight / pop.scrollHeight - 0.01); if (nz >= z) break; g.style.zoom = String(nz); }
+  if (fitOver(pop) > 0) pop.classList.add("asp-fit-scroll");
 }
 function placePop() {
   const pop = $("asp-pop");

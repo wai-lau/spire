@@ -917,6 +917,13 @@
 .asp-desc ins { color: hsl(var(--asp-good-hsl)); text-decoration: underline; }
 /* THE DEMO SCENE where the sentence was (owner, 2026-11-03; aspira-demo-card.js): the canvas at the box's width; its "i" bottom right, inside it, flips to the sentence */
 .asp-demo { position: relative; }
+/* EVERY SECTION FITS (aspira-cardfit.js fitTight): a short screen first loses the breathing room, then the stats go two columns */
+.asp-pop.asp-tight #asp-upline { padding-top: var(--space-2); margin-bottom: var(--space-1); }
+.asp-pop.asp-tight .asp-axes { gap: var(--space-1); }
+.asp-pop.asp-tight .asp-tower-grid { gap: var(--space-1) var(--space-4); }
+.asp-pop.asp-tight .asp-cols.asp-secs { columns: 2; }
+.asp-pop.asp-tight .asp-demo { margin-inline: auto; }
+.asp-pop.asp-fit-scroll { overflow-y: auto; } /* the last resort: nothing clipped, the rest a scroll away */
 .asp-demo-cv { display: block; width: 100%; height: auto; aspect-ratio: 372 / 180; background: hsl(var(--bg-hsl)); border-radius: var(--radius-3); } /* black, rounded (owner, 2026-11-06: "ensure all demos have a black background", "all demos should have rounded corners") */
 .asp-demo-txt { display: none; }
 .asp-demo.is-text .asp-demo-cv { visibility: hidden; }
