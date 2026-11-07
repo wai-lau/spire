@@ -645,7 +645,8 @@
 
 .asp-goodvs { font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); display: flex; flex-wrap: nowrap; white-space: nowrap; gap: 0 0.9em; align-items: center; overflow: hidden; } /* ONE line, shrunk to fit by fitOneLine (owner, 2026-10-17); em gap so it shrinks with it */
 .asp-goodvs .asp-vs { display: inline-flex; align-items: center; gap: var(--space-0-5); white-space: nowrap; } /* an enemy's symbol and its marks (aspira-chooser.js vsMarks) */
-.asp-panel-vs { margin-top: var(--space-1); justify-content: center; } /* centred (owner, 2026-11-06: "center the marks you just added") */ /* a placed tower's marks, under its targeting priority (aspira-sliders.js) */
+.asp-panel-vs { margin-top: auto; padding-top: var(--space-4); justify-content: center; } /* (2026-11-07: ABOVE the targeting priority - the foot's anchor, margin-top auto, moved here) */
+.asp-panel-vs + .asp-prio-box { margin-top: 0; padding-top: var(--space-2); } /* centred (owner, 2026-11-06: "center the marks you just added") */ /* a placed tower's marks, under its targeting priority (aspira-sliders.js) */
 #asp { --asp-ui-green-hsl: var(--green-hsl); } /* the UI green fixed at the page (cancel's): a card retints --green-hsl to its tower */
 .asp-goodvs .asp-vs-y { color: hsl(var(--asp-ui-green-hsl)) /* the cancel button's green (owner, 2026-10-19; was --cat-social) */; font-weight: var(--fw-bold); } /* the SAME green and orange on every card (owner, 2026-10-16: "always show the checks and x in the same color") - not --asp-good/bad, which ARC and ACD retint */
 .asp-goodvs .asp-vs-n { color: hsl(var(--asp-threat-hsl)) /* the gap box's red (owner, 2026-10-19; was --orange-glow) */; font-weight: var(--fw-bold); }
