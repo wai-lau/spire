@@ -1331,3 +1331,27 @@ Draw and card-demo values only - none touches the board's balance (fp IDENTICAL 
 | Undertow in the demo | not shown (the layout declares no reels) | `DEMO_LAYOUTS.grv.radiation` | the voids sit on the entering cluster, upstream; a tower 0.15 box heights from the entry edge fired 1-3 reels in 4 s, 0.2-0.5 none |
 | the acid lake | one fill over the lake pools' union, one outline (uncovered arcs only); per pool over `POOL_LOD` | `drawLake`, `lakeArcs` | Wai: "overlapping pools merge" (21c2591) |
 | pool bubbles' seed | `fixedRand` of the pool's x/y x8 rounded | `poolSeed` | no Math.random in draw (eadf950) |
+
+### 12.q The capstone mechanics' numbers (2026-11-07, live 7.7.121; Wai's picks 2026-11-06)
+
+The mechanic knobs only (the tier tables' V leaps are `CAPSTONE_NUM`, aspira-capstone.js). What each does: ARCHITECTURE §4.5b.
+
+| capstone | knobs, as live | history |
+|---|---|---|
+| ARC Grounding | `ARC_GROUND_R` 40 u | |
+| ARC Storm | `ARC_STORM_EVERY` 5, `ARC_STORM_FORK` 3 | |
+| ARC Superstorm (Shock V) | `ARC_SHOCK_PASS_R` 80 u, `ARC_PASS_DEPTH` 3 | the radius was Balance's call |
+| FRZ Zero Point (Fracture V) | `FRZ_LINGER_S` 2 s | |
+| FRZ Ice Age (Permafrost V) | `FRZ_DEEP_S` 0.5 s, `FRZ_DEEP_CD` 6 s | bosses cut by `bossSlowMul` (Leader) |
+| SOL Solar Flare (Scorch V) | `SOL_FLARE_SHARE` 1, `SOL_FLARE_MAX` 4, `SOL_FLARE_I` 3 | share 1 = IFR's flare (7.7.109) |
+| SOL Corona (Reflection V) | `SOL_SUB_SPLIT` 2 (8 x 2 = 24 beams) | |
+| ACD Oblivion (Corrosion V) | `ACD_CORR_TAKE` 0.2, `ACD_CORR_TAKE_S` 0.5 s | Wai: "start ~20%" |
+| ACD Extinction (Spill V) | `ACD_LAKE_K` 1.25, `ACD_LAKE_R` 149 u | lake capped under 150 u with the pool shrink (7.7.112: `ACD_POOL_R` 100 115 130 140 149, `ACD_POOL_MORE` 4, `ACD_POOL_LIFE` 0.3) |
+| GRV Event Horizon (Void V) | `GRV_EH_GROW` 1.1, `GRV_EH_MAX` 1.5, `GRV_EH_FADE` 3 s | |
+| GRV Hypernova (Nova V) | `GRV_SUPER_EVERY` 4, `GRV_SUPER_R` 1.5, `GRV_SUPER_GAP` = `GRV_NOVA_T` 0.8 s | |
+| GRV Undertow (Gravity Well V) | `GRV_REEL_T` 0.6 s, `GRV_REEL_CD` 4 s | full reel to the void's centre (Leader) |
+| CRR Full Wing (Hangar V) | `CRR_RETARGETS` 2, `CRR_RETARGET_R` 300 u | |
+| CRR Autopilot (Armament V) | `CRR_BURST_N` 10, `CRR_BURST_K` 1.125 td | bursts on every return, lost target too |
+| IFR Impact (Meteor V) | `IFR_BIG_EVERY` 3, `IFR_BIG_HIT_K` 4, `IFR_BIG_DRAW_K` 2 | every 3rd = a fixed stand-in for Wai's 1/3 chance |
+| IFR Hellfire (Hellfire V) | `IFR_CHAINS_N` 5 (the pentagram), `IFR_CHAIN_K` 1 | 3 random chords 60-180 deg until 2026-11-07; IV's flare count kept (33) |
+| IFR Mega Firaga (Flare V) | `IFR_V_SPAN` 300 u; the ring 0.6 up the spokes, its own hit | two flares 2026-10-31 .. 11-06 |

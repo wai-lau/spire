@@ -266,6 +266,38 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`, the look `aspi
 | Flow (id `spray`) | more jets (`ACD_LINES`); a jet keeps part of its ramp when its enemy dies **or escapes** (`ACD_FLOW_CARRY`, the fast answer); range |
 | Spill | the jets drip slimy acid pools that burn and do NOT slow (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught, no slows"; `ACD_POOL_SLOW` 0) - bigger and more often by tier; a kill leaves no pool; slide |
 
+### 4.5b The capstones (tier V, one axis a tower)
+
+Wai's picks of 2026-11-06 (memory `capstones-2026-11-06`), built and screened tower by tower by Balance, shipped 7.7.88 .. 7.7.112; the card
+lines are `aspira-desc.js` (audited against the code 2026-11-07). A capstone is a MECHANIC on top of the tier table's leap (`CAPSTONE_NUM`,
+aspira-capstone.js); its knobs:
+
+| tower | axis -> capstone | what it does | knobs | file |
+|---|---|---|---|---|
+| ARC | Conductivity -> Grounding | each chain's last jump bursts on every enemy within 40 u, at that jump's hit; a white ring | `ARC_GROUND_R` | aspira-arc.js |
+| ARC | Voltage -> Storm | every 5th strike forks 3 ways; the rings spin up and flash | `ARC_STORM_EVERY`, `ARC_STORM_FORK` | aspira-arc.js |
+| ARC | Shock -> Superstorm | a Shocked enemy that dies passes its Shock (time refreshed) to every enemy within 80 u, a zap to each | `ARC_SHOCK_PASS_R`, `ARC_PASS_DEPTH` | aspira-arc.js |
+| FRZ | Fracture -> Zero Point | the fracture lingers 2 s after an enemy leaves the aura | `FRZ_LINGER_S` | aspira-frz.js |
+| FRZ | Permafrost -> Ice Age | a fully frosted enemy is frozen solid 0.5 s, once per 6 s each (bosses cut like slows, `bossSlowMul`) | `FRZ_DEEP_S`, `FRZ_DEEP_CD` | aspira-frz.js |
+| FRZ | Moons -> Constellation | no mechanic (Wai: keep the moons) | - | - |
+| SOL | Scorch -> Solar Flare | each shot's first enemy hit leaves an IFR flare in SOL's colour, burning as IFR's untaken flare; at most 4 live a tower | `SOL_FLARE_SHARE`, `SOL_FLARE_MAX` | aspira-sol.js |
+| SOL | Reflection -> Corona | each of the 8 splits splits again into 2, to the screen edge (24 beams) | `SOL_SUB_SPLIT` | aspira-sol.js |
+| SOL | Breach -> Starfire | look only: the Breach marker drawn as a blade | - | aspira-solids.js, aspira-sol-body.js |
+| ACD | Corrosion -> Oblivion | a corroded enemy takes x1.2 from EVERY tower for 0.5 s after its last acid (one timer, never stacking) | `ACD_CORR_TAKE`, `ACD_CORR_TAKE_S` | aspira-acid.js |
+| ACD | Flow -> Monsoon | no mechanic (the table's leap: 11 jets) | - | - |
+| ACD | Spill -> Extinction | a pool that drops over another joins its LAKE: x1.25 burn within 149 u of the lake's first pool; drawn as one body (`drawLake`) | `ACD_LAKE_K`, `ACD_LAKE_R` | aspira-acid.js, aspira-acid-draw.js |
+| GRV | Void -> Event Horizon | each crush kill grows the void x1.1, to x1.5, fading back over 3 s | `GRV_EH_GROW`, `GRV_EH_MAX`, `GRV_EH_FADE` | aspira-grv.js |
+| GRV | Nova -> Hypernova | every 4th nova rings twice, the 2nd ring x1.5 the reach (same hit rules); a white flash | `GRV_SUPER_EVERY`, `GRV_SUPER_R` | aspira-grv.js, aspira-grv-draw.js |
+| GRV | Gravity Well -> Undertow | an enemy in the aura nearer the core (`coreXY`) than the tower is reeled back along its lane to the void's centre over 0.6 s; each enemy at most once every 4 s, whichever GRV reels it | `GRV_REEL_T`, `GRV_REEL_CD` | aspira-grv.js |
+| CRR | Hangar -> Full Wing | an interceptor whose target dies with ammo left retargets within 300 u, up to 2 times a sortie | `CRR_RETARGETS`, `CRR_RETARGET_R` | aspira-crr.js |
+| CRR | Tether -> Anchor | no new mechanic: the tether runs on to one more enemy (as before) | - | aspira-crr.js |
+| CRR | Armament -> Autopilot | bursts into 10 pellets (x1.125 td) whenever it heads home | `CRR_BURST_N`, `CRR_BURST_K` | aspira-crr.js |
+| IFR | Meteor -> Impact | every 3rd charged meteor is big (drawn x2, hitbox unchanged), its first hit x4 | `IFR_BIG_EVERY`, `IFR_BIG_HIT_K` | aspira-ifrit.js |
+| IFR | Hellfire -> Hellfire | each fire strikes a pentagram's 5 chords across its circle, each a chain burning like a flare | `IFR_CHAINS_N`, `IFR_CHAIN_K` | aspira-ifrit.js |
+| IFR | Flare -> Mega Firaga | one flare a landing plus a flare ring 60% up its spokes (its own hit); flares at most 300 across | `IFR_V_SPAN` | aspira-ifrit.js |
+
+The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with every core power; the numbers' dated snapshot is ARCHAEOLOGY §12.q.
+
 ### 4.5 Rules every axis obeys
 
 | Rule | |
@@ -333,9 +365,9 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
 | axis | buys | capstone |
 |---|---|---|
-| **Void** | a bigger void, a harder crush, more pellets | **Singularity**: a void twice as heavy |
-| **Nova** (id `supernova`) | the novas before each void, faster by tier, their armor strip (`GRV_NOVA_STRIP`) | **Hypernova**: the most strip |
-| **Gravity Well** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Event Horizon**: the whole aura slows as hard as its inside |
+| **Void** | a bigger void, a harder crush, more pellets | **Event Horizon**: a void twice as heavy; each enemy its crush kills grows it x1.1, to x1.5, fading over 3 s (§4.5b) |
+| **Nova** (id `supernova`) | the novas before each void, faster by tier, their armor strip (`GRV_NOVA_STRIP`) | **Hypernova**: the most strip; every 4th nova rings twice, the 2nd ring x1.5 the reach (§4.5b) |
+| **Gravity Well** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Undertow**: an enemy in the aura nearer the core than the tower is reeled back to the void, each at most once every 4 s (§4.5b) |
 
 ### 4.6c CRR (id `crr`), the carrier (`web/aspira-crr.js`)
 
@@ -358,9 +390,9 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 
 | Axis | Buys | Capstone (V) |
 |---|---|---|
-| Hangar | WIDTH: more interceptors (`CRR_HANGAR`), all waiting in orbit | **Full Wing**: the biggest wing |
+| Hangar | WIDTH: more interceptors (`CRR_HANGAR`), all waiting in orbit | **Full Wing**: the biggest wing (41); an interceptor whose target dies with ammo left retargets within 300 u, up to 2 times a sortie (§4.5b) |
 | Tether (id `launch`) | the tether: more interceptors tethering, a harder slow, more damage per tether | **Anchor**: the hardest slow and most damage per tether |
-| Armament | DEPTH: a harder bolt (`CRR_BOLTS_BY`), more volleys a sortie | **Autopilot**: out of volleys, an interceptor bursts into pellets that hit the first enemy they touch or miss, and is rebuilt at home after the normal reload |
+| Armament | DEPTH: a harder bolt (`CRR_BOLTS_BY`), more volleys a sortie | **Autopilot**: an interceptor bursts into 10 pellets (x1.125 td each) WHENEVER it heads home - out of volleys or target lost - and is rebuilt at home after the normal reload (§4.5b) |
 
 The Orbital Relay multiplies the wing by `RELAY_MUL` (`relayStats`).
 
@@ -385,9 +417,9 @@ build card's marks (`VS_MARKS`, §4.6). **Each axis owns one part of the meteor'
 
 | axis | buys | good against (owner) | capstone (V) |
 |---|---|---|---|
-| Meteor | charge time, speed, the meteor's hit; meteors stored in orbit | all-rounder | **Impact**: a bigger fan (`IFR_FAN_CAP`) |
-| Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across |
-| Flare (id `firaga`) | the flares: size, damage, burn time (`IFR_BURN_S`; a flare's ticks never step over 2x a tier); the flare tick (`IFR_TICK_K0`) carries most of IFR's damage, the meteor's hit (`IFR_ROUTE_K0`, IFR's td) the rest | shield and swarm | two flares a landing (`IFR_CAP_FLARES`; owner, 2026-10-31) |
+| Meteor | charge time, speed, the meteor's hit; meteors stored in orbit | all-rounder | **Impact**: a bigger fan (`IFR_FAN_CAP`); every 3rd charged meteor is big (drawn x2), its first hit x4 (§4.5b) |
+| Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across with IV's flare count; each fire strikes a pentagram of 5 chains across its circle, each burning like a flare (§4.5b) |
+| Flare (id `firaga`) | the flares: size, damage, burn time (`IFR_BURN_S`; a flare's ticks never step over 2x a tier); the flare tick (`IFR_TICK_K0`) carries most of IFR's damage, the meteor's hit (`IFR_ROUTE_K0`, IFR's td) the rest | shield and swarm | ONE flare a landing plus a flare ring 60% up its spokes, the ring its own hit; flares at most 300 across (§4.5b; two flares 2026-10-31 .. 11-06) |
 
 ### 4.6d Trio scale and the designed deaths
 
