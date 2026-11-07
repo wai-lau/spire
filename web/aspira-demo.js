@@ -46,7 +46,7 @@ const demoRun = (S, fn) => { demoIn(S); try { return fn(); } finally { demoOut(S
 // - damage, the least armor and shield, the most pace lost - for the smoke (demoShows)
 function demoScene(kind, skills, cell, list) {
   const S = { G: freshG(), fx: [], dmgLive: [], dmgHold: null, hitFrom: null, coins: [], grvAll: [], carObs: [], sparkN: 0, grvLastHit: 0, bannerText: "", bannerT: 0, bannerCol: "orange", shakeUntil: 0, t: 0, T: [] };
-  S.lanes = list.lanes;
+  S.lanes = list.lanes; S.lat = list.lat || null; // (the lattice: rows still to come - demoLatStep)
   demoRun(S, () => {
     G.started = true; G.wave = 1; G.nextIn = Infinity; G.money = 0; G.waveIn = { 30: 1 }; G.lives = 1e9; // (in reach: no off-screen x3; lives no walker can use up - a game over froze the scene)
     const c = CELLS[cell], t = { id: G.id++, kind, cell, x: c.x, y: c.y, lvl: 1, cd: 0, mode: DEFAULT_MODE[kind], spent: 0 };
@@ -55,6 +55,16 @@ function demoScene(kind, skills, cell, list) {
     for (const d of list) demoWalker(S, d.type, d.lane, d.at || 0);
   });
   return S;
+}
+// THE LATTICE'S ROWS (aspira-demo-layouts.js demoPlace0): a lane's next row enters at the right edge once the last has walked D on - at the
+// pace of the lane's slowest type unslowed, so the rows stay D apart while nothing slows them
+function demoLatStep(S, dt) {
+  const L = S.lat; if (!L) return;
+  for (let ln = 0; ln < 2; ln++) {
+    const T = L.types[ln]; if (!T.length) continue;
+    L.at[ln] += Math.min(...T.map(type => ENEMIES[type].speed)) * ENEMY_SPEED * S.lanes[ln * 3].pace * dt;
+    while (L.at[ln] >= L.D) { L.at[ln] -= L.D; for (const d of demoLatRow(L, ln, 0)) demoWalker(S, d.type, d.lane, d.at); }
+  }
 }
 // one walker on lane `lane`, `at` of the way along it (0: the right edge), at DEMO_HP_K x a wave-30 body's health
 function demoWalker(S, type, lane, at) {
@@ -74,14 +84,14 @@ function demoWalker(S, type, lane, at) {
 function demoFrame(S, c2d, view, draw, rdt = DEMO_DT, gk = 1) {
   demoRun(S, () => {
     const before = G.enemies.filter(e => e.demo && !e.dead).map(e => [e, e.hp]);
-    for (let left = rdt * gk; left > 1e-9;) { const h = Math.min(DEMO_STEP, left); step(h); stepFx(h); S.t += h; left -= h; }
+    for (let left = rdt * gk; left > 1e-9;) { const h = Math.min(DEMO_STEP, left); step(h); stepFx(h); S.t += h; left -= h; demoLatStep(S, h); }
     coins.length = 0; G.money = 0; /* NO CREDITS (Leader, 2026-11-03): a kill's coins and their "+Nc" pop would mislead - none change hands */ stepFloats(rdt); // (the effects and the numbers AGE outside step, as in the frame loop - the numbers in REAL time: without stepFx and stepFloats they never left the scene - owner, 2026-11-03: "carrier demo bug, numbers stuck")
     for (const [e, hp] of before) {
       const h = e.demo, T = e.tally;
       T.dmg += Math.max(0, hp - Math.max(0, e.hp)); T.armor = Math.min(T.armor, e.armor || 0); T.shield = Math.min(T.shield, e.shield || 0);
       T.slow = Math.max(T.slow, e.stunT > 0 ? 1 : e.slowT > 0 ? e.slowF || 0 : 0); // (the share of its pace it lost: what effSpeed takes off)
-      if (e.dead) { demoWalker(S, e.type, h.lane, 0); continue; } // killed: a fresh one at the right edge (the dead one is the game's)
-      if (e.s >= h.s1) { e.dead = e.gone = true; const k = G.enemies.indexOf(e); if (k >= 0) G.enemies.splice(k, 1); demoWalker(S, e.type, h.lane, 0); } // out at the left: TAKEN OUT quietly (no death, no leak - dead, so every chain, interceptor or void holding it lets go) and a fresh one enters at the right (owner, 2026-11-03: "ARC chaining across the demo, despawn and respawn, dont just reposition?") // out at the left: again at the right, whole (the ease from its start: coreEase, aspira-step.js)
+      if (e.dead) { if (!S.lat) demoWalker(S, e.type, h.lane, 0); continue; } // killed: a fresh one at the right edge (the dead one is the game's) - in a LATTICE, the rows bring them
+      if (e.s >= h.s1) { e.dead = e.gone = true; const k = G.enemies.indexOf(e); if (k >= 0) G.enemies.splice(k, 1); if (!S.lat) demoWalker(S, e.type, h.lane, 0); } // out at the left: TAKEN OUT quietly (no death, no leak - dead, so every chain, interceptor or void holding it lets go) and a fresh one enters at the right (owner, 2026-11-03: "ARC chaining across the demo, despawn and respawn, dont just reposition?") // out at the left: again at the right, whole (the ease from its start: coreEase, aspira-step.js)
     }
     if (!draw || !c2d) return;
     const ctx0 = ctx, cam0 = { ...cam }, p0 = typeof warp !== "undefined" ? warp.p : null, band0 = warpBand, fade0 = warpFade;

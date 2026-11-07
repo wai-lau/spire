@@ -74,10 +74,25 @@ function demoPlace0(kind, st, cell, L) {
   const c = CELLS[cell], r = st.range || 120, T = L.types, n = T.length;
   const span = DEMO_BOX_AR - 2 * DEMO_TOWER_X, xr = r * (DEMO_BOX_AR - DEMO_TOWER_X) / span + DEMO_BOX_OVER, xl = r * DEMO_TOWER_X / span + DEMO_BOX_OVER, /* the box in world u under demoView3d's zoom (the range's far edge DEMO_TOWER_X box heights from the right edge) */ dy = DEMO_LANE_DY * r, /* (60 u past each edge) */ pace = PATHS.slice(0, N_PATHS).reduce((a, P) => a + P.pace, 0) / N_PATHS;
   const lane = y => { const pts = []; for (let x = c.x + xr, s = 0; x >= c.x - xl - 1e-6; x -= 8, s += 8) pts.push({ x, y, s }); return { pts, len: pts[pts.length - 1].s, pace, rim: pts[pts.length - 1], demo: true }; };
-  const lanes = [lane(c.y - dy), lane(c.y + dy)], hasFast = T.includes("fast"), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN), k = [0, 0];
-  const at0 = Math.max(0, xr - 0.9 * r) / lanes[0].len; // (the scene OPENS with each pack's lead at the range's edge; respawns come from the right)
-  const list = T.map((type, i) => { const ln = hasFast ? (type === "fast" ? 0 : 1) : i % 2; return { type, lane: ln, at: Math.max(0, at0 - (k[ln]++ * g) / lanes[ln].len) }; });
-  list.lanes = lanes; return list;
+  // THE LATTICE (owner, 2026-11-06: "each lane in demo should send units in a 3-wide lattice with random 50% empty"): each of the two lanes
+  // is THREE parallel paths DEMO_LAT_W x the range apart (its slots: left / centre / right across it); rows come in along it DEMO_LAT_D
+  // apart (at least the number gap), each slot filled or empty at 50% by a seeded hash (row, slot, lane, the scene's seed - no Math.random);
+  // a lane's types cycle the layout's (a fast scene: the fast on the upper lane, the rest below). It replaces the layouts' walker counts:
+  // L.types is the MIX now, not the number. Rows enter at the right edge as the last moved D on (demoLatStep, aspira-demo.js)
+  const w = DEMO_LAT_W * r, hasFast = T.includes("fast"), g = DEMO_NUM_GAP * (DMG_PX_MIN + DMG_PX_SPAN);
+  const yc = dy - DEMO_LAT_IN * r, lanes = [c.y - yc, c.y + yc].flatMap(y0 => [-1, 0, 1].map(j => lane(y0 + j * w))); // (the lanes' centres a little in, so the outer slot stays in the box)
+  const lt = [0, 1].map(ln => T.filter((type, i) => (hasFast ? (type === "fast") === (ln === 0) : i % 2 === ln)));
+  const len = lanes[0].len, D = Math.max(g, (len - 2 * DEMO_BOX_OVER) / DEMO_LAT_ROWS), lead = Math.max(DEMO_BOX_OVER, xr - 0.9 * r); // (the scene OPENS with each lane's lead row at the range's edge)
+  const seed = demoHash(cell, kind.charCodeAt(0), kind.charCodeAt(1), kind.charCodeAt(2)) * 1e6 | 0, lat = { D, seed, types: lt, row: [0, 0], tk: [0, 0], at: [0, 0] }, list = [];
+  for (let ln = 0; ln < 2; ln++) for (let s0 = lead; s0 >= DEMO_BOX_OVER - 1e-6; s0 -= D) list.push(...demoLatRow(lat, ln, s0 / len));
+  list.lanes = lanes; list.lat = lat; return list;
+}
+const DEMO_LAT_W = 0.08, DEMO_LAT_IN = 0.04, DEMO_LAT_ROWS = 7; // the slots' spacing across a lane (x the range); about this many rows along a lane at once
+const demoHash = (a, b, c, d) => { let h = Math.imul(a | 0, 0x9E3779B1) ^ Math.imul((b | 0) + 0x7F4A7C15, 0x85EBCA6B) ^ Math.imul((c | 0) + 0x165667B1, 0xC2B2AE35) ^ Math.imul((d | 0) + 0x27D4EB2F, 0x27D4EB2F); h ^= h >>> 15; h = Math.imul(h, 0x2C1B3C6D); h ^= h >>> 12; return (h >>> 0) / 4294967296; };
+function demoLatRow(lat, ln, at) { // one row on lane ln, `at` of the way along it: each of its 3 slots filled at 50%
+  const T = lat.types[ln], out = [], row = lat.row[ln]++; if (!T.length) return out;
+  for (let j = 0; j < 3; j++) if (demoHash(row, j, ln, lat.seed) < 0.5) out.push({ type: T[lat.tk[ln]++ % T.length], lane: ln * 3 + j, at });
+  return out;
 }
 const DEMO_LANE_DY = 0.45;
 function demoPlace(kind, st, cell, L) { return demoPlace0(kind, st, cell, L); }

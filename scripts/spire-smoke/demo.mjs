@@ -87,7 +87,7 @@ check("demo layouts: walkers in packs the number gap apart, both lanes and every
     for (const kind of Object.keys(DEMO_LAYOUTS)) for (const [key, L] of Object.entries(DEMO_LAYOUTS[kind])) for (let tier = key === "base" ? 0 : 1; tier <= (key === "base" ? 0 : SKILL_TIERS); tier++) {
       const t = { kind, cell, x: C.x, y: C.y, lvl: 1, skills: key === "base" ? {} : { [key]: tier } }; t.lvl = 1 + towerLevel(t);
       const r = towerStats(t).range, { c, hh } = demoSpan(r), P = demoPlace(kind, towerStats(t), cell, L);
-      for (let ln = 0; ln < 2; ln++) { const on = P.filter(d => d.lane === ln && d.at > 0).map(d => d.at * P.lanes[ln].len).sort((a, b) => a - b);
+      for (let ln = 0; ln < P.lanes.length; ln++) { const on = P.filter(d => d.lane === ln && d.at > 0).map(d => d.at * P.lanes[ln].len).sort((a, b) => a - b);
         for (let i = 1; i < on.length; i++) if (on[i] - on[i - 1] < g * 0.9) { bad.push(kind + "." + key + " " + tier + " lane " + ln + ": " + Math.round(on[i] - on[i - 1]) + " u apart"); break; }
         const Y = c * (P.lanes[ln].pts[0].y - C.y);
         for (const d of P.filter(d => d.lane === ln)) { const sz = demoReach(d.type); if (Y + sz * c > hh + 0.5 || Y - sz - demoNumRoom() < -hh - 0.5) { bad.push(kind + "." + key + " " + tier + " lane " + ln + " " + d.type + " outside the box"); break; } } } }
