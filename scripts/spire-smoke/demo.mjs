@@ -120,7 +120,7 @@ check("demo late builds: at 13 points no scene sends a real wave or holds a non-
       for (let f = 0; f < 7 * 60; f++) { demoFrame(S); if (f >= 120 && f % 30 === 0 && kind === "acd" && key === "contagion" && !(S.G.towers[0].puddles || []).length) dry++; }
       if (S.G.wave !== 1) bad.push(kind + "." + key + ": the scene sent wave " + S.G.wave);
       const odd = S.G.enemies.filter(e => !e.dead && !e.demo).length; if (odd) bad.push(kind + "." + key + ": " + odd + " non-demo enemies");
-      if (dry) bad.push(kind + "." + key + ": no pools at " + dry + " of 10 checks from 2 s");
+      if (dry > 2) bad.push(kind + "." + key + ": no pools at " + dry + " of 10 checks from 2 s"); /* (at most 2 dry: since ~90% of walkers die (demoTune, 2026-11-07) the box can clear for a moment) */
     } } finally { Math.random = rnd0; }
     return bad.join("; "); })()`);
 });
