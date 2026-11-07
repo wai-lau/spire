@@ -1,7 +1,11 @@
 # check / x marks per tower from a countermx run (SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69): leak % per type -> checks on the types it
 # beats, x's on the ones it leaks, each row and each column summing to 0 (see PER_MARK)
-# usage: python3 marks.py <countermx.out> [--write]   --write puts the result into VS_MARKS (web/aspira-chooser.js) - run it after
+# usage: python3 marks.py <countermx.out> [--write] [--focus] [--band]   --write puts the result into VS_MARKS (web/aspira-chooser.js) - run it after
 # EVERY balance patch (owner, 2026-10-18: "update the checks and xs here whenever you make a balance patch")
+# FIVE LEVELS (owner, 2026-11-06: "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target
+# marks"): countermx at POINTS 0 / 3 / 6 / 9 / 13. 9 (spread) writes the card; 13 is read with --focus (no SPREAD_ONLY: each tower's
+# one-axis-maxed rows - V + IV + IV, every axis in turn - averaged into one row, the capstone check); 0 / 3 / 6 with --band: any cell more than
+# BAND off its mark-target.json cell prints RULE FAIL (a balance failure, like the two-checks rule)
 import datetime
 import json
 import pathlib
@@ -12,14 +16,18 @@ TYPES = ["swarm", "fast", "shield", "armor"]
 # THE FOUR CHAPTERS (owner, 2026-10-25: "make countermx consistent at the 4 different game chapters" - ARCHITECTURE.md 5.6's
 # sections): a countermx run may hold one window a chapter (WINDOWS=13-19:p,41-49:p,71-79:p,101-109:p). Each window's marks print
 # on their own, then whether every chapter agrees; the build card's marks (--write) come from the leaks POOLED over the windows
+FOCUS, BAND = "--focus" in sys.argv[2:], 1
 by_win, win = {}, None
 for line in open(sys.argv[1]):
     h = re.match(r"\s*waves (\d+)-(\d+)", line)
     if h:
         win = f"{h.group(1)}-{h.group(2)}"
-    m = re.match(r"\s+([A-Z]+) spread\s+(\d+)%\s+(\d+)%\s+(\d+)%\s+(\d+)%", line)
-    if m:
-        by_win.setdefault(win, {})[m.group(1).lower()] = dict(zip(TYPES, map(int, m.groups()[1:])))
+    m = re.match(r"\s+([A-Z]+) ([a-z]+)\s+(\d+)%\s+(\d+)%\s+(\d+)%\s+(\d+)%", line)
+    if m and (m.group(2) == "spread") != FOCUS:
+        rows = by_win.setdefault(win, {}).setdefault(m.group(1).lower(), [])
+        rows.append(dict(zip(TYPES, map(int, m.groups()[2:]))))
+for w in by_win:  # a tower's row: its spread build, or (--focus) the mean of its focused builds
+    by_win[w] = {k: {t: sum(r[t] for r in rs) / len(rs) for t in TYPES} for k, rs in by_win[w].items()}
 
 
 def split(n, w):
@@ -91,7 +99,16 @@ lone = {k: [t for t in TYPES if m[t] > 0] for k, m in marks.items() if sum(1 for
 for k, ts in lone.items():
     print(f"RULE FAIL: {k.upper()} has checks on {len(ts)} enemy type(s) {ts} - every tower needs at least {MIN_CHECKED}")
 
+# THE BAND (owner, 2026-11-06, above): with --band every cell within BAND of the target
+if "--band" in sys.argv[2:]:
+    tgt = json.loads((pathlib.Path(__file__).resolve().parent / "mark-target.json").read_text())
+    for k, m in marks.items():
+        off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and abs(m[t] - tgt[k][i]) > BAND]
+        if off:
+            print(f"RULE FAIL: {k.upper()} outside the +/-{BAND} band: " + ", ".join(off))
+
 if "--write" in sys.argv[2:]:
+    assert not FOCUS, "the card's marks come from the spread rows (9 points), never --focus"
     web = pathlib.Path(__file__).resolve().parents[2] / "web"
     chooser, ver = web / "aspira-chooser.js", (web / "aspira-version.txt").read_text().strip()
     order = ["arc", "frz", "sol", "acd", "grv", "crr", "ifr"]
