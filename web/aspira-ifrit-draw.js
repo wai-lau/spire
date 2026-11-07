@@ -129,38 +129,32 @@ function ifrGlowFlat(x0, y0, x1, y1, c, f, low) {
   const s = trimToTowers(x0, y0, x1, y1); if (!s) return;
   for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), 0, 0, q[3]); }
 }
-// FLARE V's CIRCLE, STYLED LIKE A FLARE (owner, 2026-11-06: "ifr flare V should be styled like the flare, i.e. white core with glow"): the flare's own
-// layers (IFR_GLOW_GL in its colours - a meteor's: white core, orange round it, red glow out) as smooth ring glows at c.circ. 3D: GPU rings (shape 9
-// the glows, an outline the core); 2D: shadowBlur halos round the strokes
-const IFR_CIRC_CORE = 0.12; // the white core line, x the flare's width
-function ifrRingGl(c, f, low) {
-  const I = f * IFR_GLOW_A * ifrFlareI(c), R = c.circ;
-  for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length - 1; g++) { const q = IFR_GLOW_GL[g], cl = ifrFlareCol(q[2], c); fxGlPush(c.x, c.y, c.x, c.y, R, 2 * c.W * q[0] / Math.sqrt(q[3] / 2), cl, Math.min(1, q[1] * I * ifrLayerK(q[2], c)), cl, 0, 9); }
-  const q = IFR_GLOW_GL[IFR_GLOW_GL.length - 1], core = ifrFlareCol(q[2], c); fxGlPush(c.x, c.y, c.x, c.y, R, c.W * IFR_CIRC_CORE, core, 0, core, Math.min(1, q[1] * I * 2));
+// FLARE V's CIRCLE AND HELLFIRE V's CHAINS, DRAWN AS THE SPOKES ARE (owner, 2026-11-06: "ifr flare V should be styled like the flare, i.e. white
+// core with glow", then "IFR flare v ring should have same thicknmess and glow as main spokes"; "hellfire V chains should be styled like hellfire
+// flares"): every IFR_GLOW_GL layer at the spoke's own half-width (c.W x the size flicker x q[0]), falloff (q[3]), colour and alpha at the same
+// moment of the flare's life - only flat along (a ring and a chain have no tip to fade to). 3D: a GPU ring glow (shape 9, the spoke's falloff) a
+// layer for the circle, a glow line (shape 7) a layer for a chain; 2D: each layer as the spoke's IFR_GLOW_LV strokes (ifrFlareStrokes' widths)
+function ifrSpokeLayers(c, f, low, fs, each) {
+  for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { const q = IFR_GLOW_GL[g]; each(c.W * fs * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), q[3]); }
 }
-// HELLFIRE V's CHAIN: a glow along its segment, the chain's links on it (aspira-chains.js; 3D one GPU capsule a link, 2D drawChain2D)
-function ifrChainDraw(c, f, low) {
+function ifrRingGl(c, f, low, fs = 1) { ifrSpokeLayers(c, f, low, fs, (w, col, a, pw) => fxGlPush(c.x, c.y, c.x, c.y, c.circ, w, col, a, col, 0, 9, 0, 0, pw)); }
+function ifrSpoke2D(c, f, low, path) { // the 2D spoke's strokes along `path` (world units): solid colour, no fade along
+  ctx.save(); ctx.lineCap = "round";
+  ifrSpokeLayers(c, f, low, 1, (w, col, a, pw) => { ctx.strokeStyle = col; ctx.globalAlpha = a / IFR_GLOW_LV.length * 1.6; for (const lv of IFR_GLOW_LV) { ctx.lineWidth = Math.max(0.05, 2 * w * (1 - lv ** (1 / pw))); path(); ctx.stroke(); } });
+  ctx.restore();
+}
+function ifrChainDraw(c, f, low, fs = 1) {
   const [x0, y0, x1, y1] = c.seg, gl3 = !!(ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlGlowLine === "function");
-  if (gl3) { ifrGlowFlat(x0, y0, x1, y1, c, f, low); fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: "orange", thin: IFR_CHAIN_LINK }, Math.min(1, IFR_CHAIN_GLOW_A * f)); return; }
-  ctx.save(); const a = Math.min(1, IFR_CHAIN_GLOW_A * f), m = ctx.getTransform(), k = Math.hypot(m.a, m.b);
-  ctx.lineCap = "round"; ctx.strokeStyle = COL.threat; ctx.shadowColor = COL.threat; ctx.shadowBlur = c.W * k * 0.7; ctx.globalAlpha = a * 0.6; ctx.lineWidth = c.W * 0.5;
-  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.shadowBlur = 0; ctx.globalAlpha = a;
-  if (typeof drawChain2D === "function") drawChain2D(x0, y0, x1, y1, (x, y) => ({ x, y }), 1, COL.orange, IFR_CHAIN_LINK);
-  ctx.restore();
+  if (gl3) { const s = trimToTowers(x0, y0, x1, y1); if (s) ifrSpokeLayers(c, f, low, fs, (w, col, a, pw) => fxGlGlowLine(s[0], s[1], s[2], s[3], w, col, a, 0, 0, pw)); return; }
+  ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); });
 }
-function ifrRing2D(c, f) { // FLARE V's CIRCLE in 2D: the same look - an orange stroke in a red halo, the white core in an orange one
-  const I = Math.min(1, IFR_GLOW_A * ifrFlareI(c) * f * 4), m = ctx.getTransform(), k = Math.hypot(m.a, m.b);
-  ctx.save(); ctx.lineCap = "butt"; ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI);
-  ctx.strokeStyle = ifrFlareCol("orange", c); ctx.shadowColor = ifrFlareCol("glow", c); ctx.shadowBlur = c.W * k * 0.8; ctx.globalAlpha = I * 0.7; ctx.lineWidth = c.W * 0.3; ctx.stroke();
-  ctx.strokeStyle = ifrFlareCol("yellow", c); ctx.shadowColor = ifrFlareCol("orange", c); ctx.shadowBlur = c.W * k * 0.3; ctx.globalAlpha = I; ctx.lineWidth = c.W * IFR_CIRC_CORE; ctx.stroke();
-  ctx.restore();
-}
+function ifrRing2D(c, f, low) { ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); }); }
 function drawIfrFlaresGl(t, low, hf) {
   for (const c of t.ifrFlares) {
     if (!(c.hf || c.chain) !== !hf) continue; /* Hellfire V's chains are drawn with the fire */
     const [fb, fs] = ifrFlick(c, performance.now() / 1000), f = Math.max(0, c.left / c.life) * fb;
-    if (c.chain) { ifrChainDraw(c, f, low); continue; }
-    if (c.circ) ifrRingGl(c, f, low);
+    if (c.chain) { ifrChainDraw(c, f, low, fs); continue; }
+    if (c.circ) ifrRingGl(c, f, low, fs);
     for (const [x0, y0, xe, ye] of ifrBeamEnds(c)) {
       const x1 = x0 + (xe - x0) * fs, y1 = y0 + (ye - y0) * fs, s = trimToTowers(x0, y0, x1, y1); if (!s) continue; /* (the ray x its size flicker - the look only) */
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
@@ -204,7 +198,7 @@ function drawIfrFlares(t, hf) { // hf: the fire's flares only, else the meteors'
     if (!(c.hf || c.chain) !== !hf) continue;
     const f = Math.max(0, c.left / c.life) * ifrFlick(c, performance.now() / 1000)[0]; // (2D: the brightness flicker only - a stamp's fade step, no new strokes)
     if (c.chain) { ifrChainDraw(c, f, low); continue; }
-    if (c.circ) ifrRing2D(c, f);
+    if (c.circ) ifrRing2D(c, f, low);
     if (IFR_STAMP_ON && !c.edges && ifrSpriteDraw(c, f, low)) continue; // one stamp, not ~18 strokes (perf, below)
     ifrFlareStrokes(c, f, low);
   }

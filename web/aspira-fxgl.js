@@ -120,7 +120,7 @@ void main() {
     float t = clamp(loc.x / max(2.0 * v.w, 0.001) + 0.5, 0.0, 1.0), pr = t < cb.x ? t / max(cb.x, 0.0001) : t < cb.y ? 1.0 : max(0.0, 1.0 - (t - cb.y) / max(cb.z - cb.y, 0.0001));
     fa = pr * (1.0 - smoothstep(v.x - 0.5, v.x + 0.5, abs(loc.y))) * (1.0 - smoothstep(v.w - 0.5, v.w + 0.5, abs(loc.x))); sa = 0.0; }
   if (sh == 9.0) { /* a RING GLOW (owner, 2026-11-06: "never use step glow unless huge perf gains"): brightest on the circle of radius r, clear h off it either side, (1 - off)^2 - one instance for a canvas circle's shadowBlur (glcStroke; was two soft rings) */
-    float off = clamp(abs(length(loc) - v.x) / max(v.y, 0.001), 0.0, 1.0); fa = (1.0 - off) * (1.0 - off); sa = 0.0; }
+    float off = clamp(abs(length(loc) - v.x) / max(v.y, 0.001), 0.0, 1.0); fa = pow(1.0 - off, cb.z > 0.0 ? cb.z : 2.0); sa = 0.0; } /* cb.z: its falloff (IFR's Flare V circle: the spoke's own) */
   /* a canvas gradient to "transparent" (black at alpha 0) runs through the dark between: colour x g x g, alpha x g */
   if (sh < 5.5 && dsh.x > 0.0) { /* a dash: along the circle from its east point, or the segment from p0 (px) */
     float at = v.w > 0.0 ? loc.x + v.w : mod(atan(loc.y, loc.x), 6.2831853) * v.x, ph = mod(at + dsh.z, dsh.x + dsh.y);
