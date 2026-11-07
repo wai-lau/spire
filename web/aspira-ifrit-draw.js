@@ -255,6 +255,8 @@ function ifrFlareStrokes(c, f, low) {
 // test WebKit grew to 6.6 GB): the FADE is no longer a look - a stamp is built at full strength and drawn at the fade's alpha; the set is an LRU
 // held under IFR_STAMP_PX pixels (and IFR_STAMP_MAX looks), each evicted canvas freed at once (width 0)
 const IFR_STAMP_F = 16, IFR_STAMP_MAX = 400, IFR_STAMP_PX = 8e6, IFR_STAMP_R = 96, ifrStamps = new Map(); let ifrStampPx = 0;
+let ifrScratchCv = null;
+function ifrStampScratch(n) { const c = (ifrScratchCv ||= document.createElement("canvas")); if (c.width < n || c.height < n) { c.width = Math.max(c.width, n); c.height = Math.max(c.height, n); } return c; }
 function ifrStampEvict() { const [k, sp] = ifrStamps.entries().next().value; ifrStamps.delete(k); ifrStampPx -= sp.cv.width * sp.cv.height; sp.cv.width = sp.cv.height = 0; }
 let IFR_STAMP_ON = true; // (let: a test draws the strokes to compare)
 // A STAMP'S PIXELS, AS THE BOARD DRAWS THEM (owner, 2026-11-06: "never use step glow unless huge perf gains" - the 2D strokes were three steps a layer):
@@ -290,8 +292,11 @@ function ifrSpriteDraw(c, f, low) {
     const R0 = Math.ceil((L + W) * k) + 3, sc = Math.min(1, IFR_STAMP_R / R0), R = Math.ceil(R0 * sc); // a BIG flare (Meteor V's at the card's 3x: ~300k px) is BUILT at sc of the screen's size (at most IFR_STAMP_R px out) and drawn scaled up - the glow is smooth; the build and its memory x sc^2
     const cv = document.createElement("canvas"); cv.width = cv.height = 2 * R; const ms = sc < 1 ? { a: m.a * sc, b: m.b * sc, c: m.c * sc, d: m.d * sc } : m;
     while (ifrStamps.size && (ifrStamps.size >= IFR_STAMP_MAX || ifrStampPx + cv.width * cv.height > IFR_STAMP_PX)) ifrStampEvict();
-    const g = cv.getContext("2d", { willReadFrequently: true }), c0 = ctx, q = Object.assign({}, c, { L, W, hitI: I }); ctx = g; // (q: the key's look - its rounded size and intensity)
+    // BUILT ON ONE SHARED CPU CANVAS (willReadFrequently: putImageData on a GPU one is the WebKit trap), then COPIED ONCE into the stamp's own plain
+    // canvas - drawing a CPU canvas into the frame made WebKit copy it on every drawImage (the demo's 0.7-2.5 GB memory sawtooth, 2026-11-07)
+    const sc0 = ifrStampScratch(2 * R), g = sc0.getContext("2d", { willReadFrequently: true }), c0 = ctx, q = Object.assign({}, c, { L, W, hitI: I }); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 2 * R, 2 * R); ctx = g; // (q: the key's look - its rounded size and intensity)
     try { if (!ifrStampPixels(g, q, 1, low, ms, R)) { g.setTransform(ms.a, ms.b, ms.c, ms.d, R + 0.5 - (ms.a * c.x + ms.c * c.y), R + 0.5 - (ms.b * c.x + ms.d * c.y)); g.lineCap = "butt"; ifrFlareStrokes(q, 1, low); } } finally { ctx = c0; }
+    cv.getContext("2d").drawImage(sc0, 0, 0, 2 * R, 2 * R, 0, 0, 2 * R, 2 * R);
     sp = { cv, R, sc }; ifrStamps.set(key, sp); ifrStampPx += cv.width * cv.height;
   }
   const a0 = ctx.globalAlpha; ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = Math.min(1, fq); // (the fade: the stamp's alpha, not a look)
