@@ -287,7 +287,7 @@ let iceFrameAt = -1, iceBudget = 0; const iceOf = new WeakMap(); // (per tower, 
 // OFF THE MAIN THREAD (WebKit, 2026-11-06: one generator step reached 116 ms in the rig - a candidate check cannot be split finer): a WORKER (this very
 // file, importScripts) builds each tower's ice and posts its scene - the pieces for the asked tiers, back and front, plain data - a few times a second as
 // it grows and once done; the frame only bakes what arrives. No Worker (the smoke's stand-in): the time-sliced maker on the main thread, as before
-const ICE_POST_MS = 250;
+const ICE_POST_MS = 250, ICE_GLOW_MS = 2;
 let iceWk = null, iceWkSeq = 0; const iceWkWait = new Map();
 const icePlain = L => L.map(P => ({ walls: P.walls.map(w => ({ lit: w.lit, pts: w.pts })), topPts: P.topPts, topVis: P.topVis, y0: P.y0, y1: P.y1 }));
 function iceWorker() {
@@ -317,7 +317,7 @@ function frzIceGet(t, v, np, nf) { // the tower's ice: its scene for these tiers
 }
 // the pieces of one list onto a canvas of their own, m px a unit (opaque base, the ice tint fading down each wall, the top's tint, the floor edges, the
 // ridges' smooth glow); -> { cv, ox, oy } (its top-left from T)
-function frzIceBake(list, m, ice, frz, glow = true) { // glow false: a quick bake while the ice still grows (the blur is most of a bake)
+function frzIceBakeBegin(list, m, ice, frz, glow) { // a bake job: its canvas, set up; frzIceBakeRun paints its pieces in order
   if (!list.length) return null;
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const P of list) for (const q of P.walls.flatMap(w => w.pts).concat(P.topPts)) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
   const pad = 6, cv = document.createElement("canvas"); cv.width = Math.ceil((x1 - x0) * m + 2 * pad); cv.height = Math.ceil((y1 - y0) * m + 2 * pad);
@@ -325,7 +325,12 @@ function frzIceBake(list, m, ice, frz, glow = true) { // glow false: a quick bak
   g.setTransform(m, 0, 0, m, pad - x0 * m, pad - y0 * m); g.lineJoin = "round";
   const path = pts => { g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.closePath(); };
   const ramp = typeof solRamp === "function" && typeof DOMMatrix === "function" ? solRamp(ice) : null, pat = ramp && (ramp.pat || (ramp.pat = g.createPattern(ramp.c, "repeat-y")));
-  for (const P of list) {
+  return { cv, g, ox: x0 * m - pad, oy: y0 * m - pad, list, i: 0, m, ice, frz, glow, path, pat };
+}
+function frzIceBakeRun(J, ms) { // paints its pieces for up to ms; -> done
+  const t0 = performance.now(), { g, m, ice, frz, glow, path, pat } = J;
+  for (; J.i < J.list.length && performance.now() - t0 < ms; J.i++) {
+    const P = J.list[J.i];
     g.globalAlpha = 1; g.fillStyle = COL.bg; for (const w of P.walls) { path(w.pts); g.fill(); } if (P.topVis) { path(P.topPts); g.fill(); } // OPAQUE (owner, 2026-11-06: "fracture and perma should both have opaque faces")
     const h = Math.max(1, P.y1 - P.y0);
     if (pat && pat.setTransform) { pat.setTransform(new DOMMatrix([0, -h / 230.4, 1, 0, 0, P.y0 + 256 * h / 230.4])); g.fillStyle = pat; } else g.fillStyle = ice; // 0.4 at the top to 0.04 at the floor (the ramp from 1 to 0.1, x 0.4)
@@ -336,13 +341,18 @@ function frzIceBake(list, m, ice, frz, glow = true) { // glow false: a quick bak
     if (P.topVis) P.topPts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))), g.closePath();
     g.globalAlpha = 0.95; g.strokeStyle = ice; g.lineWidth = 0.9; g.shadowColor = frz; g.shadowBlur = glow ? 3.2 * 0.9 * m : 0; g.stroke(); g.shadowBlur = 0; // the ridges: a thin line in a smooth glow
   }
-  return { cv, ox: x0 * m - pad, oy: y0 * m - pad };
+  return J.i >= J.list.length;
 }
+// the pieces of one list onto a canvas of their own at once (glow false: a quick bake while the ice still grows - the blur is most of a bake)
+function frzIceBake(list, m, ice, frz, glow = true) { const J = frzIceBakeBegin(list, m, ice, frz, glow); if (!J) return null; frzIceBakeRun(J, Infinity); return J; }
 function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters: the pieces behind the tower (far) before its prism, the rest after its top face
   const np = skillOf(t, "rime"), nf = skillOf(t, "temp"); if (!np && !nf) return;
   const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v, np, nf); if (!I.scene) return;
   const bk = [I.sceneAt, Math.round(v.m * 50)].join(",");
-  if (!I.bake || I.bake.key !== bk) { const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white; I.bake = { key: bk, back: frzIceBake(sc.back, v.m, ice, frz, sc.done), front: frzIceBake(sc.front, v.m, ice, frz, sc.done) }; }
+  const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white;
+  if (!I.bake || I.bake.key !== bk) { I.bake = { key: bk, back: frzIceBake(sc.back, v.m, ice, frz, false), front: frzIceBake(sc.front, v.m, ice, frz, false) }; I.glow = sc.done ? { key: bk, back: frzIceBakeBegin(sc.back, v.m, ice, frz, true), front: frzIceBakeBegin(sc.front, v.m, ice, frz, true) } : null; }
+  // THE GLOW BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"): the full bake, a few pieces a frame (ICE_GLOW_MS), the quick one shown till it is done
+  if (I.glow && I.glow.key === bk && far) { const G2 = I.glow, d1 = !G2.back || frzIceBakeRun(G2.back, ICE_GLOW_MS), d2 = d1 && (!G2.front || frzIceBakeRun(G2.front, ICE_GLOW_MS)); if (d1 && d2) { I.bake = { key: bk, back: G2.back, front: G2.front }; I.glow = null; } }
   const B = far ? I.bake.back : I.bake.front; if (!B) return;
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(B.cv, v.T.x + B.ox, v.T.y + B.oy); ctx.restore();
 }
