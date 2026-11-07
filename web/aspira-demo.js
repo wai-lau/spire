@@ -50,6 +50,7 @@ function demoScene(kind, skills, cell, list) {
   S.lanes = list.lanes; S.lat = list.lat || null; // (the lattice: rows still to come - demoLatStep)
   demoRun(S, () => {
     G.started = true; G.wave = 1; G.nextIn = Infinity; G.money = 0; G.waveIn = { 30: 1 }; G.lives = 1e9; // (in reach: no off-screen x3; lives no walker can use up - a game over froze the scene)
+    G.spawns.push({ n: 1, list: ["swarm"], lanes: {}, ang: 0, idx: 0, timer: Infinity }); // NO WAVES: an inert spawn that never releases, so the field never reads clear - else a gap between lattice rows sent a real wave (step's waveClear -> sendWave) onto the board's lanes, outside the box, and the demo's pools (ACD) went missing for seconds
     const c = CELLS[cell], t = { id: G.id++, kind, cell, x: c.x, y: c.y, lvl: 1, cd: 0, mode: DEFAULT_MODE[kind], spent: 0 };
     if (hasSkills(t)) { t.skills = { ...skills }; t.lvl = 1 + towerLevel(t); }
     G.towers.push(t);
@@ -68,10 +69,15 @@ function demoLatStep(S, dt) {
     while (L.at[ln] >= L.D) { L.at[ln] -= L.D; for (const d of demoLatRow(L, ln, 0)) demoWalker(S, d.type, d.lane, d.at); }
   }
 }
-// one walker on lane `lane`, `at` of the way along it (0: the right edge), at DEMO_HP_K x a wave-30 body's health
+// one walker on lane `lane`, `at` of the way along it (0: the right edge), at DEMO_HP_K x the health of a body of the wave the tower's points
+// reach in play (demoWave: wave 30 at 0 points, + DEMO_WAVE_PT a point, to 119 - the good model's points by wave, ARCHITECTURE 4.6); was wave 30 at
+// every build, which a 13-point ACD's goo one-shot (16k a hit on ~300 HP) before its jets could hold one, so the demo dropped no pools after its opening
+const demoSizeK = (type, n) => 1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earlyHpX(type, n) / (enemyHp(type, 1) / earlyHpX(type, 1))); // spawnEnemy's size by wave
+const DEMO_WAVE_PT = 7, demoWave = () => { const t = G.towers[0], w = Math.min(119, 30 + DEMO_WAVE_PT * (t ? Math.max(0, (t.lvl || 1) - 1) : 0)); return w % STAR_EVERY ? w : w + 1; }; // (never a boss's wave number)
 function demoWalker(S, type, lane, at) {
   const pi = S.pi0 + lane, L = S.lanes[lane], s = Math.max(DEMO_BOX_OVER, L.len * at); // (never out past the box: the lanes' overhang is DEMO_BOX_OVER u)
-  spawnEnemy(type, 30, pi, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(pi, s, 0);
+  const w = demoWave(); spawnEnemy(type, w, pi, 0); const e = G.enemies[G.enemies.length - 1], p = pathAt(pi, s, 0);
+  e.sizeMul *= demoSizeK(type, 30) / demoSizeK(type, w); // a wave-30 body's SIZE whatever its wave (the box's spacing is set for them; the late ones are ~x2)
   e.s = s; e.x = p.x; e.y = p.y; e.seen = true; e.hp = e.max = e.max * DEMO_HP_K;
   e.demo = { walk: true, lane, s0: 0, s1: L.len - DEMO_BOX_OVER, armor: e.armor || 0, shield: e.shield || 0 }; // (s1: it turns back short of the lane's end - at the end step() takes it for a leak at the core)
   e.tally = { type, demo: e.demo, dmg: 0, armor: e.armor || 0, shield: e.shield || 0, slow: 0 }; S.T.push(e.tally);
