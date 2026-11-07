@@ -171,7 +171,7 @@ function drawFrzSkill(t, st) {
     ctx.beginPath(); ctx.arc(s.x, s.y, st.range * s.k, 0, 6.283); ctx.moveTo(s.x + st.range * s.k - rw, s.y); ctx.arc(s.x, s.y, Math.max(1, st.range * s.k - rw), 0, 6.283); ctx.stroke();
     // a MOON (every source after the tower; Moons III's are full strength, so
     // not "k < 1" - owner: they went missing) is a TRIANGLE pointing at the tower
-    if (i) { ctx.fillStyle = col; ctx.globalAlpha = 0.95 * MOON_FX; poly(s.x, s.y, s.small ? MOON_TRI * 0.55 : MOON_TRI, 3, Math.atan2(t.y - s.y, t.x - s.x), false); ctx.fill(); }
+    if (i && !(typeof drawFrzMoons === "function" && typeof warp !== "undefined" && warp.p)) { ctx.fillStyle = col; ctx.globalAlpha = 0.95 * MOON_FX; poly(s.x, s.y, s.small ? MOON_TRI * 0.55 : MOON_TRI, 3, Math.atan2(t.y - s.y, t.x - s.x), false); ctx.fill(); }
   });
   // Rime (owner): a THIN expanding ring with a GLOW
   ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowColor = col; ctx.shadowBlur = 12 * cam.k;
