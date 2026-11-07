@@ -86,15 +86,13 @@ function solBladeBake(list, tier, k) { // -> { cv, ox, oy } in device px about t
   }
   return { cv, ox, oy };
 }
-function drawSolBlades(t, far, x, y, top) {
+function drawSolBlades(t, far, x, y, top) { // NEVER REDRAWN on a move, a pan or a zoom (as FRZ's ice - owner, 2026-11-06: "Never redraw the ice"): built
+  // in the tower's first view, the image then moves and scales with it; a new Breach or Reflection tier builds it anew, swapped in whole
   const tier = skillOf(t, "breach"); if (!tier || typeof warpFrame !== "function") return;
-  const base = solScr(x, y, 0), e1 = solScr(x + 10, y, 0), e2 = solScr(x, y + 10, 0), e3 = solScr(x, y, top), r = v => Math.round(v * 2) / 2;
-  const key = [tier, solSides(t), r(e1[0] - base[0]), r(e1[1] - base[1]), r(e2[0] - base[0]), r(e2[1] - base[1]), r(e3[0] - base[0]), r(e3[1] - base[1])].join(",");
+  const base = solScr(x, y, 0), e1 = solScr(x + 10, y, 0), k = Math.hypot(e1[0] - base[0], e1[1] - base[1]) / 10, key = tier + "," + solSides(t);
   let B = solBodyOf.get(t);
-  if (!B || (B.key !== key && (typeof towerStill !== "function" || towerStill(t)))) { // (moving: the last bake carried along - re-built once it holds still)
-    const list = solBladeGeo(t, x, y, top), k = Math.hypot(e1[0] - base[0], e1[1] - base[1]) / 10;
-    B = { key, back: solBladeBake(list.filter(b => b.back), tier, k), front: solBladeBake(list.filter(b => !b.back), tier, k) }; solBodyOf.set(t, B);
-  }
+  if (!B || B.key !== key) { const list = solBladeGeo(t, x, y, top); B = { key, k, back: solBladeBake(list.filter(b => b.back), tier, k), front: solBladeBake(list.filter(b => !b.back), tier, k) }; solBodyOf.set(t, B); }
   const S = far ? B.back : B.front; if (!S) return;
-  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(S.cv, base[0] + S.ox, base[1] + S.oy); ctx.restore();
+  const z = k / B.k;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(S.cv, base[0] + S.ox * z, base[1] + S.oy * z, S.cv.width * z, S.cv.height * z); ctx.restore();
 }

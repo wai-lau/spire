@@ -283,9 +283,6 @@ function frzIceView(t, x, y, top, Rw) {
   const rot = ((Math.atan2(syy / sq, sx) * 180 / Math.PI + 90) % 60 + 60) % 60;
   return { T, m, sq, Hs: Math.max(4, (by - T.y) / m), rot };
 }
-// a tower that has not moved for TOWER_STILL_MS (a drag, a fling, a slide): the baked looks re-bake for its new spot only then (FRZ's ice, SOL's blades)
-const TOWER_STILL_MS = 300, towerStillAt = new WeakMap();
-function towerStill(t) { const now = performance.now(), p = towerStillAt.get(t); if (!p || p.x !== t.x || p.y !== t.y) { towerStillAt.set(t, { x: t.x, y: t.y, at: p ? now : -1e9 }); return !p; } return now - p.at >= TOWER_STILL_MS; }
 let iceFrameAt = -1, iceBudget = 0; const iceOf = new WeakMap(); // (per tower, off the tower: the autosave's structuredClone takes no generator or canvas)
 // OFF THE MAIN THREAD (WebKit, 2026-11-06: one generator step reached 116 ms in the rig - a candidate check cannot be split finer): a WORKER (this very
 // file, importScripts) builds each tower's ice and posts its scene - the pieces for the asked tiers, back and front, plain data - a few times a second as
@@ -362,15 +359,22 @@ function frzIceBakeRun(J, ms) { // paints its pieces for up to ms; -> done
 }
 // the pieces of one list onto a canvas of their own at once (glow false: a quick bake while the ice still grows - the blur is most of a bake)
 function frzIceBake(list, m, ice, frz, glow = true) { const J = frzIceBakeBegin(list, m, ice, frz, glow); if (!J) return null; frzIceBakeRun(J, Infinity); return J; }
+// NEVER REDRAWN (owner, 2026-11-06: "Never redraw the ice"): the pieces are baked ONCE, at I.mB px a unit - the first view's scale with room for
+// the closest zoom (ICE_ZOOM_ROOM, capped) - and the image then only moves and scales with the tower: no re-bake on a move, a pan or a zoom. While
+// it first grows, each grown step shows (a quick bake, no ridge glow) and the full bake lands once grown; a tier bought later keeps the old image up
+// while the new one bakes (in slices) and swaps in whole, so what is already shown never changes
+const ICE_ZOOM_ROOM = 2;
 function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters: the pieces behind the tower (far) before its prism, the rest after its top face
   const np = skillOf(t, "rime"), nf = skillOf(t, "temp"); if (!np && !nf) return;
   const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v, np, nf); if (!I.scene) return;
-  const bk = [I.sceneAt, Math.round(v.m * 50)].join(","), still = towerStill(t);
   const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white;
-  if (!I.bake || (I.bake.key !== bk && still)) { I.bake = { key: bk, m: v.m, back: frzIceBake(sc.back, v.m, ice, frz, false), front: frzIceBake(sc.front, v.m, ice, frz, false) }; I.glow = sc.done ? { key: bk, back: frzIceBakeBegin(sc.back, v.m, ice, frz, true), front: frzIceBakeBegin(sc.front, v.m, ice, frz, true) } : null; }
-  // THE GLOW BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"): the full bake, a few pieces a frame (ICE_GLOW_MS), the quick one shown till it is done
-  if (I.glow && I.glow.key === bk && far) { const G2 = I.glow, d1 = !G2.back || frzIceBakeRun(G2.back, ICE_GLOW_MS), d2 = d1 && (!G2.front || frzIceBakeRun(G2.front, ICE_GLOW_MS)); if (d1 && d2) { I.bake = { key: bk, m: v.m, back: G2.back, front: G2.front }; I.glow = null; } }
+  const mB = I.mB ||= v.m * (typeof ZOOM_MAX === "number" && typeof viewZoom === "number" && viewZoom > 0 ? Math.min(ICE_ZOOM_ROOM, Math.max(1, ZOOM_MAX / viewZoom)) : 1);
+  if (!I.bake || (I.bake.at !== I.sceneAt && !sc.done)) { I.bake = { at: I.sceneAt, m: v.m, back: frzIceBake(sc.back, v.m, ice, frz, false), front: frzIceBake(sc.front, v.m, ice, frz, false) }; I.glow = null; } // (growing: quick bakes at this view's own scale)
+  if (sc.done && I.bake.at !== I.sceneAt && (!I.glow || I.glow.at !== I.sceneAt)) I.glow = { at: I.sceneAt, back: frzIceBakeBegin(sc.back, mB, ice, frz, true), front: frzIceBakeBegin(sc.front, mB, ice, frz, true) };
+  if (sc.done && !I.bake.full && !I.glow) I.glow = { at: I.sceneAt, back: frzIceBakeBegin(sc.back, mB, ice, frz, true), front: frzIceBakeBegin(sc.front, mB, ice, frz, true) };
+  // THE FULL BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"), swapped in whole once done
+  if (I.glow && far) { const G2 = I.glow, d1 = !G2.back || frzIceBakeRun(G2.back, ICE_GLOW_MS), d2 = d1 && (!G2.front || frzIceBakeRun(G2.front, ICE_GLOW_MS)); if (d1 && d2) { I.bake = { at: G2.at, m: mB, full: true, back: G2.back, front: G2.front }; I.glow = null; } }
   const B = far ? I.bake.back : I.bake.front; if (!B) return;
-  const k = v.m / (I.bake.m || v.m); // (moving: the last bake carried along and scaled to this spot's zoom; re-baked once the tower holds still)
-  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; if (k > 0.999 && k < 1.001) ctx.drawImage(B.cv, v.T.x + B.ox, v.T.y + B.oy); else ctx.drawImage(B.cv, v.T.x + B.ox * k, v.T.y + B.oy * k, B.cv.width * k, B.cv.height * k); ctx.restore();
+  const k = v.m / I.bake.m; // (the one image, at this spot's scale)
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(B.cv, v.T.x + B.ox * k, v.T.y + B.oy * k, B.cv.width * k, B.cv.height * k); ctx.restore();
 }
