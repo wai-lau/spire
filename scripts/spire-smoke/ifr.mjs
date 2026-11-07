@@ -190,7 +190,7 @@ check("IFR Meteor V: every third CHARGED meteor is big and its first hit does 4x
   for (let i = 0; i < 6; i++) { const q = r.v.hits[i] / r.v.unit, want = r.v.bigs[i] ? r.k : 1; if (Math.abs(q - want) > 0.01) return "launch " + i + " hit x" + q.toFixed(3) + " (expected x" + want + ")"; }
   return "";
 });
-check("IFR Hellfire V: a fire strikes IFR_CHAINS_N seeded chains between two points of its circle (chord >= the circle's radius) that burn what they touch; IV's flare count held; none below V", () => {
+check("IFR Hellfire V: a fire strikes the five seeded chords of a pentagram on its circle (owner, 2026-11-07: \"pick 5 points forming a perfect pentagon, the chains should spawn between non-adjacent points\"), riding the circle as the fire moves (\"the chain points should track the hellfire circle\"), that burn what they touch; IV's flare count held; none below V", () => {
   const r = run(`(() => { ${capFresh}
     const go = k => { const t = fresh("hellfire", k), st = towerStats(t); ifrImpact(t, st, { ax: CX + 40, ay: CY + 40, r: st.ballR, flown: 7 }); const f = t.ifrFires[0], chains = [];
       for (let i = 0; i < 360; i++) { const was = t.ifrFlares.filter(c => c.chain).length; stepIfrFires(t, st, 1 / 60); stepIfrFlares(t, st, 1 / 60); for (const c of t.ifrFlares.filter(c => c.chain).slice(was)) chains.push({ seg: c.seg.slice(), r: f.r, cx: f.x, cy: f.y, c }); }
@@ -198,14 +198,15 @@ check("IFR Hellfire V: a fire strikes IFR_CHAINS_N seeded chains between two poi
     const a = go(6), b = go(6), iv = go(4), o = {};
     o.n = a.chains.length; o.ivN = iv.chains.length; o.same = JSON.stringify(a.chains.map(c => c.seg)) === JSON.stringify(b.chains.map(c => c.seg));
     const rad = (c, i) => Math.hypot(c.seg[i] - c.cx, c.seg[i + 1] - c.cy); /* the circle's radius when it struck: both ends are on it */
-    o.chord = a.chains.map(c => Math.hypot(c.seg[2] - c.seg[0], c.seg[3] - c.seg[1]) - rad(c, 0)); o.onCircle = a.chains.map(c => Math.abs(rad(c, 0) - rad(c, 2)));
+    o.chord = a.chains.map(c => Math.hypot(c.seg[2] - c.seg[0], c.seg[3] - c.seg[1]) / rad(c, 0) - 2 * Math.sin(2 * Math.PI / 5)); { const c = a.chains[0].c, F = c.fire, before = c.seg.slice(); F.x += 50; F.y -= 30; ifrChainSync(c); o.rides = Math.abs(c.seg[0] - before[0] - 50) < 1e-6 && Math.abs(c.seg[1] - before[1] + 30) < 1e-6; F.x -= 50; F.y += 30; ifrChainSync(c); } o.onCircle = a.chains.map(c => Math.abs(rad(c, 0) - rad(c, 2)));
     const c0 = a.chains[0].c; const near = still("swarm", c0.x, c0.y), far = still("swarm", c0.x + 900, c0.y); const t = a.t; c0.left = c0.life; ifrTickFlare(t, a.st, c0); o.near = near.max - near.hp; o.far = far.max - far.hp;
     const cnt = st => Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2); o.dV = cnt(a.st); o.dIV = cnt(iv.st); o.R = [a.st.fireR, iv.st.fireR]; o.dens = [a.st.fireDens, iv.st.fireDens];
     return o; })()`);
-  if (r.n !== 3) return "Hellfire V struck " + r.n + " chains (expected IFR_CHAINS_N 3)";
+  if (r.n !== 5) return "Hellfire V struck " + r.n + " chains (expected the pentagram's 5)";
+  if (!r.rides) return "a chain does not ride its fire's circle when the fire moves";
   if (r.ivN) return "Hellfire IV struck " + r.ivN + " chains";
   if (!r.same) return "the chains' points are not the same on a replay (a seeded draw)";
-  if (r.chord.some(d => d < -1e-6)) return "a chain shorter than the circle's radius: " + r.chord;
+  if (r.chord.some(d => Math.abs(d) > 1e-6)) return "a chain is not a pentagram chord (2 R sin 72): " + r.chord;
   if (r.onCircle.some(d => d > 1e-6)) return "a chain end off the circle: " + r.onCircle;
   if (!(r.near > 0) || r.far) return "a chain burns what touches it (" + r.near + ") and nothing else (" + r.far + ")";
   if (Math.abs(r.dV - r.dIV) > 1 || !(r.dens[0] < r.dens[1])) return "Hellfire V lights " + r.dV + " flares (density " + r.dens[0] + "), IV " + r.dIV + " (density " + r.dens[1] + "): expected IV's count over the wider fire (owner, 2026-11-06)";
