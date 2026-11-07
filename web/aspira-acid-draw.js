@@ -21,6 +21,8 @@ function drawDrips() {
 // once, each at a jittered spot within it, growing to its own jittered max
 // size over BUBBLE_T real seconds, then POPPING (a brief widening ring) and
 // starting again elsewhere; the whole cluster fades as the puddle dries
+// a pool's bubble SEED from its own spot (no Math.random in draw: the game's Math.random is the run's own stream): 1 .. 1e6, fixed for its life
+const poolSeed = p => 1 + Math.floor(fixedRand(Math.round(p.x * 8) * 4099 + Math.round(p.y * 8), 0x5eed) * 1e6);
 const PUDDLE_BUBBLES = 5, BUBBLE_T = 0.6, BUBBLE_POP = 0.15;
 // a puddle's bubbles are as INTENSE as its damage (owner, 2026-10-07): brighter and
 // bolder the more it burns, 0.6x for a faint puddle up to 1.8x for a deadly one
@@ -33,7 +35,7 @@ function drawPools(t, now) {
   if (lake.length > 1 && lake.length <= POOL_LOD) drawLake(lake); else lake.length = 0;
   pools.forEach((p, i) => {
     if (lake.length && p.lake) return; // (drawn as one lake: drawLake)
-    const crowd = 1 / deep[i], fade = Math.min(1, (1 - p.age / p.life) * puddleGlow(p)) * crowd, seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
+    const crowd = 1 / deep[i], fade = Math.min(1, (1 - p.age / p.life) * puddleGlow(p)) * crowd, seed = p.seed ||= poolSeed(p);
     // a pool a KILL left (Spill's spread) is a DASHED ring, no body; the jets' own drips filled: the two read apart (owner, 2026-10-14)
     { ctx.beginPath(); ctx.arc(p.x, p.y, poolDrawR(p), 0, 6.283); if (!p.spread) { ctx.globalAlpha = 0.14 * fade; ctx.fill(); } ctx.setLineDash(p.spread ? POOL_DASH : []); ctx.globalAlpha = (p.spread ? 0.7 : 0.4) * fade / Math.sqrt(crowd); ctx.stroke(); return; } // (a crowd's rims fade only by the root of it: the rims tell one pool from the next)
   });
@@ -89,7 +91,7 @@ function drawPuddles(t) {
   drawPools(t, now);
   const n = (t.puddles || []).length, per = Math.min(2, n > POOL_LOD ? POOL_LOD * PUDDLE_BUBBLES / n : PUDDLE_BUBBLES); // bubbles a pool, on average (3D: 2 at most)
   (t.puddles || []).forEach((p, j) => {
-    const I = puddleGlow(p), fade = Math.min(1, (1 - p.age / p.life) * I), seed = p.seed ||= 1 + Math.floor(Math.random() * 1e6);
+    const I = puddleGlow(p), fade = Math.min(1, (1 - p.age / p.life) * I), seed = p.seed ||= poolSeed(p);
     ctx.lineWidth = 1.2 * I;
     const nb = Math.floor(per * (j + 1)) - Math.floor(per * j) + (p.lake && n <= POOL_LOD ? 1 + (seed % 2) : 0); // spread evenly: some pools get one, some none; a LAKE pool (Spill V) bubbles 1-2 more
     for (let i = 0; i < nb; i++) {
