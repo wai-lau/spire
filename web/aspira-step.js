@@ -32,7 +32,7 @@ function stepSpawns(dt) {
 // they hit the core"): from the moment its wave clock drops to x1 (waveClock, aspira-formations.js; at once for a wave already in
 // reach) an enemy remembers the lane left to the core, and its base speed eases linearly with the distance it covers, 1 -> CORE_EASE
 // at the core - before slows and stuns (effSpeed). Every enemy, bosses too. The sim runs this same step.
-const CORE_EASE = 0.8;
+const CORE_EASE = 0.6; // 0.6 at the core (owner, 2026-11-07 18:10: "perfect, increase the ease to 60%"; was 0.8)
 function coreEase(e) {
   if (waveClock(e.n) !== 1) return 1;
   const left = Math.max(0, PATHS[e.pi].len - e.s); if (e.ease0 == null) e.ease0 = Math.max(1, left);
