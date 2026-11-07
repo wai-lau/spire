@@ -319,6 +319,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     S.lastWave = g.G.wave; S.waveNear = Infinity;
   };
   const CORE_XY = { x: g.run("CX"), y: g.run("CY") }, BOSS_DIV = g.run("BOSS_LEAK_DIV"), STAR_T = Object.fromEntries(Object.entries(g.run("ENEMIES")).map(([k, v]) => [k, !!v.star])), ENEMY_LEAK = Object.fromEntries(Object.entries(g.run("ENEMIES")).map(([k, v]) => [k, v.leak ?? 1]));
+  const LANE = g.run("PATHS.map((P, i) => [entryS(i), P.len])"); // PATH DEPTH (2026-11-07, the boss 120% fit): how far along its lane, entry 0 .. core 1 (w.prog, w.progB the boss)
   // one record per wave an enemy came from: { types: {type: n}, lost, near } (S.waveStats, in the result)
   const waveStat = e => { const w = (S.waveStats ||= {})[e.wave] ||= { types: {}, lost: 0, near: Infinity, boss: false }; if (!e.__seen) { e.__seen = 1; w.types[e.type] = (w.types[e.type] || 0) + 1; if (e.type === "bonus" || e.bossKin) w.boss = true; } return w; };
   const tick = () => {
@@ -331,7 +332,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
       waveStat(e).lost += STAR_T[e.type] ? Math.max(1, Math.ceil(Math.max(0, e.hp) / (e.max || 1) * 100 / (BOSS_DIV[e.arcana] || 1) - 1e-9)) : ENEMY_LEAK[e.type] ?? 1; // the lives this wave's enemies cost (a boss: its HP% left, bossLeakLives)
     }
     // per ORIGIN wave (each enemy knows its own, e.wave): its types and how close it came (waverep.mjs)
-    if (Math.round(S.time / dt) % 10 === 0) for (const e of alive) if (!e.dead) { const w = waveStat(e); w.near = Math.min(w.near, Math.hypot(e.x - CORE_XY.x, e.y - CORE_XY.y)); if (e.arcana) w.nearB = Math.min(w.nearB ?? Infinity, Math.hypot(e.x - CORE_XY.x, e.y - CORE_XY.y)); }
+    if (Math.round(S.time / dt) % 10 === 0) for (const e of alive) if (!e.dead) { const w = waveStat(e); w.near = Math.min(w.near, Math.hypot(e.x - CORE_XY.x, e.y - CORE_XY.y)); if (e.arcana) w.nearB = Math.min(w.nearB ?? Infinity, Math.hypot(e.x - CORE_XY.x, e.y - CORE_XY.y)); const L = LANE[e.pi]; if (L && e.s != null) { const f = Math.max(0, Math.min(1, (e.s - L[0]) / (L[1] - L[0]))); w.prog = Math.max(w.prog ?? 0, f); if (e.arcana) w.progB = Math.max(w.progB ?? 0, f); } }
     const n = Math.round(S.time / dt);
     if (strategy.core && n % 25 === 0) pickNext(g, strategy.core); // a boss's pick costs nothing: take it at once
     if (strategy.useCore && n % 25 === 0 && (strategy.econ !== "smart" || S.powersOk)) usePowers(g, S.coreMem, strategy.relayKind); // the smart saver holds its powers for a replay (smartWave)

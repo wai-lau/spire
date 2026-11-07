@@ -30,7 +30,7 @@ export default async function task({ trio, seed, model, to }) {
   p.runTo(to + 1); const r = p.result();
   // LEAK RECORD (2026-10-28, the wave-84 diagnosis): each origin wave from 40 on - its types, lives lost, closest approach (u)
   const late = {};
-  for (const [n, w] of Object.entries(r.waveStats || {})) if (+n >= 40) late[n] = { t: Object.keys(w.types).filter(x => x !== "bonus").join("+") || "boss", lost: w.lost, near: Number.isFinite(w.near) ? Math.round(w.near) : null, nearB: Number.isFinite(w.nearB) ? Math.round(w.nearB) : null };
+  for (const [n, w] of Object.entries(r.waveStats || {})) if (+n >= (Number(process.env.LATE_FROM) || 40)) late[n] = { t: Object.keys(w.types).filter(x => x !== "bonus").join("+") || "boss", lost: w.lost, near: Number.isFinite(w.near) ? Math.round(w.near) : null, nearB: Number.isFinite(w.nearB) ? Math.round(w.nearB) : null, prog: w.prog != null ? Math.round(w.prog * 1000) / 1000 : null, progB: w.progB != null ? Math.round(w.progB * 1000) / 1000 : null };
   return { trio: trio.join("+"), seed, model, wave: r.wave, won: r.won, lives: r.lives, late, kill: r.won ? null : (late[r.wave] || {}).t || null, buys: (r.buys || []).map(b => [b.w, b.k, b.id, b.a, b.to]), early: Object.fromEntries(Object.entries(r.waveStats || {}).filter(([n]) => +n < 41).map(([n, w]) => [n, w.lost])), trace: (r.trace || []).filter(t => t.wave <= 41), peak: r.peak || {} }; // buys: [wave, kind, tower id, axis, tier] (the build-convergence check, 2026-10-28)
 }
 if (isMainThread && process.argv[1].endsWith("players3b.mjs")) {
