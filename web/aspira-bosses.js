@@ -71,7 +71,7 @@ const BOSS_INTRO = 2; /* 20% shorter (owner, 2026-10-12; was 2.5) */ // s betwee
 const EMPRESS_STEP = 1 / 3, EMPRESS_GAP = 6; // HP share a brood; u between swarmers as they pour out
 // a plain wave of `type` at wave n, as wavePlan would send it (the count taper, never under the wave before): the boss redesign's "a wave"
 const typeWaveCount = (type, n) => Math.max(1, Math.round(countK(n) * Math.max(waveCount(type, n), planCount(type, n))));
-const CHARIOT_EVERY = 4, CHARIOT_T = 1, CHARIOT_SPD = 3, LOVERS_SPD = 1.5;
+const CHARIOT_EVERY = 1, CHARIOT_T = 0.5, CHARIOT_SPD = 2, LOVERS_SPD = 1.5; // THE GALLOP (owner, 2026-11-06: "make chariot speed gallop instead, like 0.5s sprint ever second"): 0.5 s at x2 every second - the same x1.5 average as the old 1 s at x3 every 4 s (was 4, 1, 3)
 const DEVIL_TRAIL = 540; // world units between the two Devils on a lane, ~1.5 s at its pace (aspira-step.js stepSpawns)
 const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, DEVIL_LANES = 3, JUSTICE_CAP = 0.02; /* (JUDGEMENT_REVIVE 0.3 GONE 2026-11-05: she rises at full HP at her lane's start - bossRise) */ /* 0.5 -> 0.3 (2026-11-03): its second life was what reached the core (survivors lost ~10 lives each); HP x0.85 moved it 23% -> 22% ended, the revive at 30% (HP x1) 22% -> 13%, with 19% surviving a leak (the felt-threat band) */
 
