@@ -144,3 +144,34 @@ check("pin: Hypernova's rings stay inside the card demo's canvas (grvNovaFit: on
   if (!(r.edge <= 30 + 1e-6)) return "a nova 30 from the left edge reaches " + r.edge;
   if (r.small !== 1) return "a ring that fits was scaled (x" + r.small + ")";
 });
+
+// THE CAPSTONE CRASH SWEEP (Leader, 2026-11-07, after 7.7.111's coreXY crash: fp and the smoke never ran a late board with core powers AND every
+// capstone - G.core, the power state, was set only after a boss). Every tower x every axis at V (the others IV), ON THE BOARD, every core power
+// granted, a mixed late wave (four types at wave 100 + one boss) held round the tower, CAPSWEEP_N steps: no throw, and no NaN / undefined in the
+// enemies' x, y, hp or the tower's numbers
+const CAPSWEEP_N = 300;
+check("capstone crash sweep: 7 towers x 3 axes at V on the board, every core power held, a mixed wave-100 field + a boss, " + CAPSWEEP_N + " steps - no throw, no NaN", () => {
+  const r = run(`(() => { const bad = [], rnd0 = Math.random; let sd = 4242; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+    try { for (const kind of Object.keys(SKILL_TREES)) for (const top of SKILL_TREES[kind]) {
+      const tag = kind + " " + top.id + " V";
+      try {
+        G = newGame(); G.money = 1e9; ui.build = kind; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); ui.build = null;
+        const t = G.towers[0], sk = {}; for (const ax of SKILL_TREES[kind]) sk[ax.id] = ax.id === top.id ? SKILL_TIERS : SKILL_TIERS - 1; t.skills = sk; t.lvl = 1 + towerLevel(t);
+        for (const [w] of CORE_GRANTS) grantPowers(w); coreState();
+        G.started = true; G.wave = 100; G.nextIn = 1e9; G.spawns = [];
+        const R = towerStats(t).range || 150, put = (type, n, dist) => { spawnEnemy(type, n, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
+          for (let s = entryS(0); s < PATHS[0].len; s += 6) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
+          const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.seen = true; return e; };
+        ["swarm", "fast", "shield", "armor"].forEach((type, i) => { for (let k = 0; k < 4; k++) put(type, 100, R * (0.2 + 0.25 * k) + 9 * i); });
+        put("bonus", 96, R * 0.6);
+        for (let k = 0; k < ${CAPSWEEP_N}; k++) step(1 / 30);
+        const nan = v => typeof v !== "number" || !Number.isFinite(v);
+        const eb = G.enemies.filter(e => !e.dead && (nan(e.x) || nan(e.y) || nan(e.hp))).map(e => e.type + " " + [e.x, e.y, e.hp].join("/"));
+        const tb = G.towers.flatMap(o => Object.entries(o).filter(([k, v]) => typeof v === "number" && !Number.isFinite(v) && v !== Infinity && v !== -Infinity || v === undefined).map(([k, v]) => k + "=" + v));
+        if (eb.length) bad.push(tag + ": enemies " + eb.slice(0, 3).join(", "));
+        if (tb.length) bad.push(tag + ": tower " + tb.slice(0, 4).join(", "));
+      } catch (err) { bad.push(tag + ": threw " + String(err).slice(0, 160)); }
+    } } finally { Math.random = rnd0; }
+    return bad.join("; "); })()`);
+  return r;
+});
