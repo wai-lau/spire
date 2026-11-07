@@ -86,6 +86,25 @@ function solNearest(from, n, skip) {
   }
   return out.map(q => q[1]);
 }
+// THE BEST LINE (owner, 2026-11-07: "when breach and reflection, all reflections should pick lines that hit the most number of enemies
+// ignoring targeting mechanism. Initial beam still abides by targetting choices"): with Breach (a split pierces), each split - Reflection V's
+// sub-splits too - aims at the enemy whose line from its origin, on to the edge, crosses the most enemies (solLinkHits's width test), of
+// the origin's SOL_LINE_K nearest (the cost bound); distinct, ties to the nearest. Without Breach a split hits its own enemy alone: nearest
+const SOL_LINE_K = 24;
+function solLineCount(org, c) {
+  const ax = org.x, ay = org.y, d0 = Math.hypot(c.x - ax, c.y - ay) || 1, ux = (c.x - ax) / d0, uy = (c.y - ay) / d0, L = solOutLen(ax, ay, ux, uy);
+  let n = 0;
+  for (const o of G.enemies) {
+    if (o === org || o.dead || !o.seen) continue;
+    const dx = o.x - ax, dy = o.y - ay, along = dx * ux + dy * uy;
+    if (o === c || (along >= 0 && along <= L && Math.abs(dx * uy - dy * ux) <= ENEMIES[o.type].size * (o.sizeMul || 1))) n++;
+  }
+  return n;
+}
+function solBestLines(org, n, skip) {
+  if (!n) return [];
+  return solNearest(org, SOL_LINE_K, skip).map((o, i) => [solLineCount(org, o), i, o]).sort((p, q) => q[0] - p[0] || p[1] - q[1]).slice(0, n).map(r => r[2]);
+}
 function solTrackSt(t, st) {
   if (st.trk) return st.trk;
   const bk = skillOf(t, "breach"), sc = skillOf(t, "focus"), V = sc >= 5, RV = skillOf(t, "refraction") >= 5;
@@ -109,8 +128,9 @@ function solTrackStart(t, st, e) {
   // board (was within st.range of the first target, owner 2026-11-04); the first target itself is still held in SOL's own range
   const near = G.enemies.filter(o => o !== e && !o.dead && o.seen)
     .sort((p, q) => ((p.x - e.x) ** 2 + (p.y - e.y) ** 2) - ((q.x - e.x) ** 2 + (q.y - e.y) ** 2));
-  for (let i = 0; i < (st.split || 0) && i < near.length; i++) B.links.push({ e: near[i], from: e, hits: [] });
-  if (st.sub) for (const p of B.links.slice()) for (const o of solNearest(p.e, st.sub, [e, p.e])) B.links.push({ e: o, from: p.e, par: p, hits: [] }); // (REFLECTION V: after its parent, so the parent's hits are read first)
+  const first = st.bk ? solBestLines(e, st.split || 0, [e]) : near.slice(0, st.split || 0); // (THE BEST LINE with Breach - solBestLines)
+  for (const o of first) B.links.push({ e: o, from: e, hits: [] });
+  if (st.sub) for (const p of B.links.slice()) for (const o of (st.bk ? solBestLines : solNearest)(p.e, st.sub, [e, p.e])) B.links.push({ e: o, from: p.e, par: p, hits: [] }); // (REFLECTION V: after its parent, so the parent's hits are read first)
   return B;
 }
 // the enemies a split's line crosses, in order from the first target, THROUGH its own enemy and on to the play box's edge (owner,
