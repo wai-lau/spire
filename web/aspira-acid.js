@@ -270,16 +270,25 @@ function acdSkillStats(t, s, b) {
   // every ACD hands 40% of a dead line's ramp on (early-game balance 2026-10-06;
   // fast waves reset it); from Corrosion I, Etch, ALL of it
   const f = skillOf(t, "spray"); // Flow (id kept: saves)
-  s.carry = ACD_FLOW_CARRY[f]; s.burnSlow = ACD_POOL_SLOW[skillOf(t, "contagion")]; s.corrode = ACD_CORRODE[c]; s.targets = ACD_LINES[f]; s.contagion = ACD_CONTAGION[skillOf(t, "contagion")];
+  s.carry = ACD_FLOW_CARRY[f]; s.burnSlow = ACD_POOL_SLOW[skillOf(t, "contagion")]; s.corrode = ACD_CORRODE[c]; s.targets = ACD_LINES[f]; s.contagion = acdPools(skillOf(t, "contagion"));
   s.contagionHeat = ACD_POOL_HEAT; s.lake = skillOf(t, "contagion") >= CAPSTONE_TIER; s.skill = true;
 }
 // SPILL V, ACID LAKE (owner/Wai capstone brief 2026-11-06: "overlapping pools merge, burn +25%; merged pools bubble"): a Spill-V ACD's pools whose
 // circles overlap are one LAKE - each such pool (p.lake, set when a pool drops over another) burns x ACD_LAKE_K. Every pool still ticks on its
 // own, so an enemy in two overlapping pools takes both, each x1.25 (the merge adds heat, it takes no pool's burn away); draw: lake pools bubble more
 let ACD_LAKE_K = 1.25;
+// MORE, SMALLER POOLS (owner, 2026-11-06: "ACD pool radii are way too high max pool radius of combined pools should be <150u", then "more
+// pools"): every pool under 150 u (ACD_POOL_R by Spill tier, was 155 .. 412.5), dropped ACD_POOL_MORE x as often, each lasting ACD_POOL_LIFE x
+// as long - marks (9 pts, w101-119, 2 seeds) back on ACD's target -1 -3 +2 +2 (leak 48/84/14/10 -> 24/76/8/6), distance 8
+const ACD_POOL_R = [0, 100, 115, 130, 140, 149], ACD_POOL_MORE = 4, ACD_POOL_LIFE = 0.3;
+const acdPools = c => ACD_CONTAGION[c] && { ...ACD_CONTAGION[c], r: ACD_POOL_R[c], every: ACD_CONTAGION[c].every / ACD_POOL_MORE, life: ACD_CONTAGION[c].life * ACD_POOL_LIFE };
+// the LAKE stays under 150 u too: a pool that drops over another joins that pool's lake (its anchor, p.lakeAt), and the lake's x ACD_LAKE_K
+// burns only within ACD_LAKE_R of the anchor - the combined pool never reaches 150 u
+const ACD_LAKE_R = 149;
 function mergeLake(t, p) {
-  for (const q of t.puddles) if (q !== p && (q.x - p.x) ** 2 + (q.y - p.y) ** 2 < (q.r + p.r) ** 2) q.lake = p.lake = true;
+  for (const q of t.puddles) if (q !== p && (q.x - p.x) ** 2 + (q.y - p.y) ** 2 < (q.r + p.r) ** 2) { const at = q.lakeAt || q; q.lake = p.lake = true; q.lakeAt = at; p.lakeAt = at; break; }
 }
+const inLake = (p, e) => p.lake && (!p.lakeAt || (e.x - p.lakeAt.x) ** 2 + (e.y - p.lakeAt.y) ** 2 <= ACD_LAKE_R * ACD_LAKE_R);
 // every step (stepAcd): each line drips a puddle every seep.every s; each
 // puddle ticks its burn on whatever stands in it, st.rate times a second
 function stepPuddles(t, st, dt) {
@@ -305,7 +314,7 @@ function stepPuddles(t, st, dt) {
       for (const e of poolNear(grid ||= enemyGrid(), p)) {
         if (e.dead || (e.x - p.x) ** 2 + (e.y - p.y) ** 2 > p.r * p.r) continue;
         const hp0 = e.hp;
-        fromHit(p, () => damage(e, p.dps * (p.lake ? ACD_LAKE_K : 1) * every, t, false, false, hit)); e.burnT = 0.4; // away from the pool's centre
+        fromHit(p, () => damage(e, p.dps * (inLake(p, e) ? ACD_LAKE_K : 1) * every, t, false, false, hit)); e.burnT = 0.4; // away from the pool's centre
         if (st.burnSlow && !e.dead) applySlow(e, st.burnSlow, 0.5, t.id); // Flow's SLIMY pools slow (owner, 2026-10-22: the jets' slow moved here)
         if (hit && hp0 > e.hp) (t.poolAcc ||= new Map()).set(e, (t.poolAcc.get(e) || 0) + hp0 - e.hp); /* the WHOLE hit, overkill too (owner, 2026-10-17) */ // a real hit: it pops one shield charge
       }
