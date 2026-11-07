@@ -284,16 +284,40 @@ function frzIceView(t, x, y, top, Rw) {
   return { T, m, sq, Hs: Math.max(4, (by - T.y) / m), rot };
 }
 let iceFrameAt = -1, iceBudget = 0; const iceOf = new WeakMap(); // (per tower, off the tower: the autosave's structuredClone takes no generator or canvas)
-function frzIceGet(t, v) { // the tower's maker, (re)made when its view's shape changes; a few ms of growth a frame, shared by every FRZ
-  const key = [Math.round(v.sq * 50), Math.round(v.Hs), Math.round(v.rot / 3)].join(",");
-  let I = iceOf.get(t); if (!I || I.key !== key) iceOf.set(t, I = { key, M: frzIceMaker(40117 + 7919 * (t.cell | 0), 90211 + 104729 * (t.cell | 0), { cx: 0, cy: 0, R: 40, sq: v.sq, Hs: v.Hs }, v.rot), bake: null });
+// OFF THE MAIN THREAD (WebKit, 2026-11-06: one generator step reached 116 ms in the rig - a candidate check cannot be split finer): a WORKER (this very
+// file, importScripts) builds each tower's ice and posts its scene - the pieces for the asked tiers, back and front, plain data - a few times a second as
+// it grows and once done; the frame only bakes what arrives. No Worker (the smoke's stand-in): the time-sliced maker on the main thread, as before
+const ICE_POST_MS = 250;
+let iceWk = null, iceWkSeq = 0; const iceWkWait = new Map();
+const icePlain = L => L.map(P => ({ walls: P.walls.map(w => ({ lit: w.lit, pts: w.pts })), topPts: P.topPts, topVis: P.topVis, y0: P.y0, y1: P.y1 }));
+function iceWorker() {
+  if (iceWk !== null) return iceWk || null;
+  try { iceWk = new Worker(URL.createObjectURL(new Blob(["importScripts(" + JSON.stringify(location.origin + "/aspira-frz-ice.js") + ");"], { type: "text/javascript" })));
+    iceWk.onmessage = e => { const w = iceWkWait.get(e.data.id); if (w && e.data.seq === w.seq) { w.I.scene = e.data.scene; w.I.sceneAt = (w.I.sceneAt || 0) + 1; } };
+    iceWk.onerror = () => { iceWk = false; };
+  } catch (e) { iceWk = false; }
+  return iceWk || null;
+}
+if (typeof importScripts === "function" && typeof window === "undefined") { // THE WORKER: one maker per tower and view, grown to the end, a scene posted every ICE_POST_MS
+  const makers = new Map(); let job = null;
+  const run = () => { if (!job) return; const { M, msg } = job, t0 = performance.now(); while (!M.done && performance.now() - t0 < ICE_POST_MS) M.step(ICE_POST_MS);
+    const sc = M.scene(msg.np, msg.nf); postMessage({ id: msg.id, seq: msg.seq, scene: { back: icePlain(sc.back), front: icePlain(sc.front), done: M.done } }); if (!M.done) setTimeout(run, 0); else job = null; };
+  onmessage = e => { const m = e.data, k = m.id + "|" + m.key; let M = makers.get(k); if (!M) makers.set(k, M = frzIceMaker(m.sp, m.sf, m.G, m.rot)); job = { M, msg: m }; run(); };
+}
+function frzIceGet(t, v, np, nf) { // the tower's ice: its scene for these tiers (from the worker, or grown here a few ms a frame)
+  const key = [Math.round(v.sq * 50), Math.round(v.Hs), Math.round(v.rot / 3)].join(","), want = key + "|" + np + "," + nf;
+  let I = iceOf.get(t); if (!I || I.key !== key) iceOf.set(t, I = { key, M: null, bake: null, scene: null, want: "" });
+  const sp = 40117 + 7919 * (t.cell | 0), sf = 90211 + 104729 * (t.cell | 0), Gm = { cx: 0, cy: 0, R: 40, sq: v.sq, Hs: v.Hs }, wk = iceWorker();
+  if (wk) { if (I.want !== want) { I.want = want; const seq = ++iceWkSeq, id = t.id ?? t.cell; iceWkWait.set(id, { I, seq }); wk.postMessage({ id, seq, key, sp, sf, G: Gm, rot: v.rot, np, nf }); } return I; }
+  I.M ||= frzIceMaker(sp, sf, Gm, v.rot);
   const now = performance.now(); if (now - iceFrameAt > 8) { iceFrameAt = now; iceBudget = ICE_SLICE_MS; }
   if (!I.M.done && iceBudget > 0) { const a = performance.now(); I.M.step(iceBudget); iceBudget -= performance.now() - a; }
+  const c = I.M.count(); if (I.c !== c || I.want !== want) { I.c = c; I.want = want; const sc = I.M.scene(np, nf); I.scene = { back: sc.back, front: sc.front, done: I.M.done }; I.sceneAt = (I.sceneAt || 0) + 1; }
   return I;
 }
 // the pieces of one list onto a canvas of their own, m px a unit (opaque base, the ice tint fading down each wall, the top's tint, the floor edges, the
 // ridges' smooth glow); -> { cv, ox, oy } (its top-left from T)
-function frzIceBake(list, m, ice, frz) {
+function frzIceBake(list, m, ice, frz, glow = true) { // glow false: a quick bake while the ice still grows (the blur is most of a bake)
   if (!list.length) return null;
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; for (const P of list) for (const q of P.walls.flatMap(w => w.pts).concat(P.topPts)) { x0 = Math.min(x0, q[0]); x1 = Math.max(x1, q[0]); y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
   const pad = 6, cv = document.createElement("canvas"); cv.width = Math.ceil((x1 - x0) * m + 2 * pad); cv.height = Math.ceil((y1 - y0) * m + 2 * pad);
@@ -310,14 +334,15 @@ function frzIceBake(list, m, ice, frz) {
     g.globalAlpha = 0.35; g.strokeStyle = ice; g.lineWidth = 0.8; g.beginPath(); for (const w of P.walls) { g.moveTo(w.pts[0][0], w.pts[0][1]); g.lineTo(w.pts[1][0], w.pts[1][1]); } g.stroke(); // the floor edges
     g.beginPath(); for (const w of P.walls) { g.moveTo(w.pts[0][0], w.pts[0][1]); g.lineTo(w.pts[3][0], w.pts[3][1]); g.moveTo(w.pts[1][0], w.pts[1][1]); g.lineTo(w.pts[2][0], w.pts[2][1]); if (!P.topVis) { g.moveTo(w.pts[3][0], w.pts[3][1]); g.lineTo(w.pts[2][0], w.pts[2][1]); } }
     if (P.topVis) P.topPts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))), g.closePath();
-    g.globalAlpha = 0.95; g.strokeStyle = ice; g.lineWidth = 0.9; g.shadowColor = frz; g.shadowBlur = 3.2 * 0.9 * m; g.stroke(); g.shadowBlur = 0; // the ridges: a thin line in a smooth glow
+    g.globalAlpha = 0.95; g.strokeStyle = ice; g.lineWidth = 0.9; g.shadowColor = frz; g.shadowBlur = glow ? 3.2 * 0.9 * m : 0; g.stroke(); g.shadowBlur = 0; // the ridges: a thin line in a smooth glow
   }
   return { cv, ox: x0 * m - pad, oy: y0 * m - pad };
 }
 function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters: the pieces behind the tower (far) before its prism, the rest after its top face
   const np = skillOf(t, "rime"), nf = skillOf(t, "temp"); if (!np && !nf) return;
-  const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v), bk = [np, nf, I.M.count(), Math.round(v.m * 50)].join(",");
-  if (!I.bake || I.bake.key !== bk) { const sc = I.M.scene(np, nf), frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white; I.bake = { key: bk, back: frzIceBake(sc.back, v.m, ice, frz), front: frzIceBake(sc.front, v.m, ice, frz) }; }
+  const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v, np, nf); if (!I.scene) return;
+  const bk = [I.sceneAt, Math.round(v.m * 50)].join(",");
+  if (!I.bake || I.bake.key !== bk) { const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white; I.bake = { key: bk, back: frzIceBake(sc.back, v.m, ice, frz, sc.done), front: frzIceBake(sc.front, v.m, ice, frz, sc.done) }; }
   const B = far ? I.bake.back : I.bake.front; if (!B) return;
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(B.cv, v.T.x + B.ox, v.T.y + B.oy); ctx.restore();
 }
