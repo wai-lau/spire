@@ -11,7 +11,7 @@
 // box's edges (aspira-demo-layouts.js); a walker now walks in AT the right edge and is taken out AT the left one, so nothing a hop, a split or an
 // interceptor can reach stands outside the box (was: in from 60 u out, back 40 u short of the lane's end - 20 u out)
 const DEMO_BOX_OVER = 60;
-const DEMO_HP_K = 50; // a walker's health x its wave-30 HP - rarely killed (a killing hit strips no armor), still finite for CRR's carTarget; // a dummy back to full health under this share (a kill in the private game is revived the same frame); its own wave-30 HP, so a
+const DEMO_HP_K = 50; // a walker's health x the HP of its wave (demoWave: the wave the tower's points reach) - rarely killed (a killing hit strips no armor), still finite for CRR's carTarget; // a dummy back to full health under this share (a kill in the private game is revived the same frame); its own wave-30 HP, so a
 // tower that commits shots by HP (CRR's carTarget) spreads them as in a game
 const DEMO_DT = 1 / 60, DEMO_STEP = 0.02, DEMO_VOL = 0.35; // DT: a bare demoFrame's real seconds; STEP: the longest one step (the game's, aspira-ui.js frame); // VOL: the scene's sounds x this
 // the real game's state, kept while the scene runs (one scene at a time)
