@@ -85,7 +85,7 @@ const DESCRIBE = {
       (many ? " Each" : " It") + " circles its enemy and fires " + vo + " volleys" + " once round it" /* one bolt a volley since 2026-11-05 (its damage the volley's) */ +
       (l ? (tn === 1 && many ? " (the first one out tethering its target)" : ", tethering its target") : "") +
       ", then " + (a >= CAPSTONE_TIER ? "bursts into " + NUM_WORD[CRR_BURST_N] + " pellets of " + pc(CRR_BURST_K) + " damage whenever it flies home, for any reason." : "flies home to reload what it used.") /* PARTIAL RELOAD (aspira-crr.js carHome) */ +
-      " It stays on its target until it dies or the ammo runs out." + (h >= CAPSTONE_TIER ? " If its target dies with ammo left it picks another near it, up to " + NUM_WORD[CRR_RETARGETS] + " times a sortie." : "") /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage." /* td = one bolt; no slow since 2026-11-04 */ +
+      " It stays on its target until it dies or the ammo runs out." + (h >= CAPSTONE_TIER ? " If its target dies with ammo left it picks another within " + CRR_RETARGET_R + " u of it, up to " + NUM_WORD[CRR_RETARGETS] + " times a sortie." : "") /* no leash (the CRR rework, 2026-11-02) */ + " Each bolt deals " + pc(1) + " damage." /* td = one bolt; no slow since 2026-11-04 */ +
       (l ? " Each tether slows its target " + pc(crrTetherSlow(l)) + " and adds " + pc(CRR_TETHER_AMP[l]) + " to the damage it takes, tethers stacking" + (l >= CRR_CHAIN_FROM ? "; tethers run on to one more enemy nearby" : "") + " (shields block the slow)." : "");
   },
   // GRV (rework, owner 2026-10-25): tier 0 a tiny void a shot; Nova one nova before it (three until 2026-11-06), harder by tier, stripping armor (Hypernova: the most);
@@ -100,7 +100,7 @@ const DESCRIBE = {
       " Particles radiate as it decays dealing " + pc(GRV_PELLET_K[r] * GRV_NOVA_RATE[n] / U) + " damage each." +
       (r ? " An aura around it pulls enemies together and slows them" + (r >= CAPSTONE_TIER ? " twice as hard." : ", twice as hard inside the void.") : "") +
       (n >= CAPSTONE_TIER ? " Every " + ["", "", "second", "third", "fourth"][GRV_SUPER_EVERY] + " nova rings twice, the second ring " + Math.round((GRV_SUPER_R - 1) * 100) + "% wider." : "") + /* Hypernova (owner, 2026-11-06) */
-      (r >= CAPSTONE_TIER ? " Enemies nearer the core than the tower are reeled back to the void, once every " + GRV_REEL_CD + "s." : "") + /* Undertow */
+      (r >= CAPSTONE_TIER ? " Enemies nearer the core than the tower are reeled back to the void, each at most once every " + GRV_REEL_CD + "s." : "") + /* Undertow */
       (v >= CAPSTONE_TIER ? " Each enemy it crushes dead grows it " + Math.round((GRV_EH_GROW - 1) * 100) + "% (up to " + Math.round((GRV_EH_MAX - 1) * 100) + "%), fading over " + GRV_EH_FADE + "s." : ""); /* Event Horizon */ /* V (owner, 2026-10-26): "An aura... pulls enemies together and slows them twice as hard." */ /* (no "flings its particles farther": owner, 2026-10-26) */
   },
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
@@ -116,7 +116,7 @@ const DESCRIBE = {
     return "A meteor strikes the target for " + pc(1) + " damage and bursts into " + NUM_WORD[n] + " more." +
       (m >= CAPSTONE_TIER ? " One meteor in " + NUM_WORD[IFR_BIG_EVERY] + " is twice the size and strikes for " + pc(IFR_BIG_HIT_K) + "." : "") +
       (st > 1 ? " " + cap(NUM_WORD[st]) + " meteors can be stored in orbit." : "") +
-      " A wall of fire expands from the enemy, dealing " + pc(hf * IFR_RING_HIT_K) + " damage" + (h ? " and lights " + nf + " flares that singe for " + pc(hf * n0 / nf) + " damage each." : ".") + (h >= CAPSTONE_TIER ? " Glowing chains between points on the circle burn like flares." : "") + // (every tier: owner, 2026-11-05, the circle at Hellfire 0, no flares)
+      " A wall of fire expands from the enemy, dealing " + pc(hf * IFR_RING_HIT_K) + " damage" + (h ? " and lights " + nf + " flares that singe for " + pc(hf * n0 / nf) + " damage each." : ".") + (h >= CAPSTONE_TIER ? " " + NUM_WORD[IFR_CHAINS_N][0].toUpperCase() + NUM_WORD[IFR_CHAINS_N].slice(1) + " glowing chains form a pentagram across the circle and burn like flares." : "") + // (every tier: owner, 2026-11-05, the circle at Hellfire 0, no flares)
       (f ? " The first impact lights " + (f >= CAPSTONE_TIER ? "a bright flare and a circle partway up its spokes that burn" : "a bright flare that burns") + " for " + pc(IFR_MAIN_FLARE_K * IFR_TICK_K0 * ft.k / IFR_ROUTE_K0) + " damage a tick for " + secs(burn) + "." : ""); /* a tick at a time: x3 the main flare (IFR_MAIN_FLARE_K, 2026-11-05) put the per-second total over 800% ("Nothing should ever be above like 800%") */
   },
 };

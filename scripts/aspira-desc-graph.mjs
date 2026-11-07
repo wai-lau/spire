@@ -40,7 +40,7 @@ const MECH = {
   acd: {
     corrosion: k => (V("ACD_CORRODE")[k] ? `a tick strips ${pct(V("ACD_CORRODE")[k])} of its damage from armor (a share of what is left); eaten armor drops goo (pull ${V("ACD_DRIP_PULL")[k]})` : "no armor strip"),
     spray: k => `${V("ACD_LINES")[k]} jet${V("ACD_LINES")[k] > 1 ? "s" : ""}, a jet carries ${pct(V("ACD_FLOW_CARRY")[k])} of its ramp to the next enemy`,
-    contagion: k => { const c = V("ACD_CONTAGION")[k]; return c ? `a pool every ${c.every}s per jet, lasting ${c.life}s, radius ${c.r}, at ${pct(V("ACD_POOL_HEAT"))} of the jet, slowing ${pct(V("ACD_POOL_SLOW")[k])}` : "no pools"; },
+    contagion: k => { const c = V("acdPools")(k); /* the LIVE pools (radius ACD_POOL_R, ACD_POOL_MORE x as often, ACD_POOL_LIFE x as long), not the raw table */ return c ? `a pool every ${c.every}s per jet, lasting ${c.life}s, radius ${c.r}, at ${pct(V("ACD_POOL_HEAT"))} of the jet, slowing ${pct(V("ACD_POOL_SLOW")[k])}` : "no pools"; },
   },
   // (GRV, CRR, IFR: read off the tower's stats at that tier - towerStats, one axis raised)
   grv: {
