@@ -69,4 +69,23 @@ function report() {
   console.log(bad.length ? `\nspire smoke: ${bad.length} of ${results.length} FAILED` : `\nspire smoke: all ${results.length} passed`);
   process.exit(bad.length ? 1 : 0);
 }
-export { ROOT, TEMPLATE, SCRIPTS, boot, results, check, drawn, calls, frames, report, ifrHelpers, perfMin };
+// a tower at the first open slot with `skills` and still enemies at tower-relative spots (tierRig), or held ON LANE 0 at about each distance (tierLane)
+// - the tier and capstone checks' rigs (tiers.mjs, caps.mjs)
+function tierHelpers(run) {
+  run(`function tierRig(kind, skills, spots = []) {
+    G = newGame(); G.money = 1e9; ui.build = kind; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0]; t.skills = { ...skills }; t.lvl = 1 + towerLevel(t);
+    const es = spots.map(([dx, dy]) => { spawnEnemy("armor", 30, 0, 0); const e = G.enemies[G.enemies.length - 1];
+      e.x = t.x + dx; e.y = t.y + dy; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e9; e.armor = e.armor0 = 0; e.shield = e.shieldMax = 0; return e; });
+    return { t, es, st: towerStats(t) };
+  }`);
+  // ...and held ON LANE 0 at about each distance from the tower (a stepped game re-reads an enemy's spot from its lane), like smoke's ifrNear
+  run(`function tierLane(kind, skills, dists) {
+    const r = tierRig(kind, skills), t = r.t;
+    r.es = dists.map(dist => { spawnEnemy("armor", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; let bs = entryS(0), bd = Infinity;
+      for (let s = entryS(0); s < PATHS[0].len; s += 4) { const p = pathAt(0, s, 0), d = Math.abs(Math.hypot(p.x - t.x, p.y - t.y) - dist); if (d < bd) { bd = d; bs = s; } }
+      const p = pathAt(0, bs, 0); e.s = bs; e.x = p.x; e.y = p.y; e.stunT = 1e9; e.seen = true; e.hp = e.max = 1e9; e.armor = e.armor0 = 0; e.shield = e.shieldMax = 0; return e; });
+    return r;
+  }`);
+}
+export { ROOT, TEMPLATE, SCRIPTS, boot, results, check, drawn, calls, frames, report, ifrHelpers, tierHelpers, perfMin };

@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ROOT, TEMPLATE, SCRIPTS, boot, results, check, drawn, calls, frames, report, ifrHelpers } from "./harness.mjs";
 import "./tiers.mjs"; // the tier redesign's tower checks (2026-10-24)
+import "./caps.mjs"; // the capstone and mechanic checks (split from tiers.mjs, 2026-11-08)
 import "./ifr.mjs"; // the IFR checks (split out 2026-10-28): registered first, reported with the rest
 import "./waves.mjs"; // the play box, lane, formation and spawning checks (split out 2026-10-30)
 import "./demo.mjs"; // the card's demo scene (2026-11-03)
