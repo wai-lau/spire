@@ -1,7 +1,7 @@
 // /spire - ARC's BODY and BOLT LOOK (owner, 2026-11-06, ported from the approved mockup). Draw only - the simulator never loads it, nothing
 // here touches the game, and no Math.random (a seeded hash keyed by tower and time slot picks every jag and flash).
-//   VOLTAGE   hexagonal rings round the prism, 1 + tier of them (1 at tier 0 .. 6 at V), corner radius R + 10 mockup units, close together
-//             (ARC_RING_PITCH) round the prism's middle, each turning about the vertical axis at 1 turn / ARC_RING_T s, ring i lagging i/(n-1) of a turn
+//   VOLTAGE   hexagonal rings round the prism, 1 + tier of them (1 at tier 0 .. 6 at V), corner radius R + 10 mockup units, spanning
+//             ARC_RING_SPAN of the prism's height round its middle, each turning about the vertical axis at 1 turn / ARC_RING_T s, ring i lagging i/(n-1) of a turn
 //             (the first and last line up), always already mid-spin; the back edges before the prism, the front after (drawOrbiters)
 //   CONDUCTIVITY  those rings thicker and glowier (V about 2x I)
 //   SHOCK     ~70 ms jagged arcs between random ADJACENT top-face corners, 4 / 8 / 12 / 20 / 28 flashes a second for I-V
@@ -51,16 +51,16 @@ function arcRing(g, rr, th, back, mt, cx, cy) { // one ring's back or front edge
   for (const q of arcRingSegs(g, rr, th, back, mt, cx, cy)) { path.moveTo(q[0], q[1]); path.lineTo(q[2], q[3]); }
   return path;
 }
-// THE RINGS CLOSE TOGETHER, THE GROUP CENTRED (owner, 2026-11-07: "push the rings closer together (vertically center the group)"): ring to ring
-// ARC_RING_PITCH x a Conductivity V ring's thickness (so the thickest rings still read apart), the group's middle at the prism's middle (z 0 in the
-// lifted frame drawOrbiters gives); was spread over the middle 60% of the prism
-const ARC_RING_PITCH = 3;
+// THE RING GROUP: ARC_RING_SPAN OF THE TOWER'S HEIGHT, CENTRED (owner, 2026-11-07: "push the rings closer together (vertically center the group)";
+// 2026-11-08: "they should take up 40% of the tower's height"): top ring to bottom ring 40% of the visible prism, evenly spaced, the group's middle at
+// the prism's middle (z 0 in the lifted frame drawOrbiters gives = h / 2 above the floor); one ring sits at the middle. Was 60%, then a fixed pitch
+const ARC_RING_SPAN = 0.4;
 function drawArcRings(t, far, up, x, y, h) {
   const n = 1 + skillOf(t, "voltage"), ct = skillOf(t, "conductivity"), g = arcGeom(t), s = g.R / 40, now = performance.now() / 1000;
   const sk = t.stormT > 0 ? t.stormT / ARC_STORM_LIVE : 0, ph = t.stormPh || 0; // a Storm strike spins the rings up (stormPh turns, banked in arcBurnStep) and flashes them
   const css = arcMix(COL[TOWERS.arc.color], Math.min(1, 0.6 + 0.08 * ct + ARC_STORM_WHITE * sk)), gl = arcRingGlow(ct, s) * (1 + ARC_STORM_GLOW * sk);
   for (let i = 0; i < n; i++) {
-    const z = ARC_RING_PITCH * ARC_RING_W[5] * s * ((n - 1) / 2 - i), ti = n > 1 ? i * ARC_RING_T / (n - 1) : 0, th = arcTAU * ((now + ARC_RING_T - ti) / ARC_RING_T + ph); // ring 0 is the lowest
+    const z = n > 1 ? h * ARC_RING_SPAN * (0.5 - i / (n - 1)) : 0, ti = n > 1 ? i * ARC_RING_T / (n - 1) : 0, th = arcTAU * ((now + ARC_RING_T - ti) / ARC_RING_T + ph); // ring 0 is the lowest
     up(x, y, () => { const mt = ctx.getTransform(); arcStroke(arcRing(g, arcRingR(g, ct, s), th, far, mt, x, y), css, css, ARC_RING_W[ct] * s, gl, 0.8 + 0.04 * ct); }, z);
   }
 }
