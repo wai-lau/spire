@@ -226,7 +226,11 @@ let curSound = null; // the synth sound being built, so envelope() can count it
 const TOWER_GAIN = 0.6, LOUD_GAIN = 1; /* 2 -> 1 (owner, 2026-10-16: "some audio (like the boss intro sounds and the carrier sounds) sound much louder than others"): the voice lines and build / upgrade / boss cues sat 10-15 dB over the towers' shots (measured: -11..-15 vs -23 dB), now 4-8 */
 const LOUD = /^(bosswarn|bossvoice|coreup|up|build|thud)/; // (thud: in the LOUD class for the game-speed exemption - every landing sounds)
 // per-sound trims (owner): the ship explosion on every kill was too loud
-const SOUND_GAIN = { kill: 0.4 };
+// SOL x2 (owner, 2026-11-07: "play SOL sound effect much louder so it matches the others"): measured, ONE clip is already level - after the
+// loudness normalization every tower attack's loudest 150 ms sits at -20 dBFS (SOL's shot -20.2, the others' median -20.0); what is quieter
+// is the DENSITY: SOL fires one voice a tower every 1.58 s, the others stack up to SOUND_MAX copies (1 + 1/2 + 1/3 = 1.83x, +5 dB). x2 =
+// +6 dB, its peak -11.7 -> -5.7 dBFS on one voice: no clipping, no limiter needed (a GainNode above 1 is fine)
+const SOUND_GAIN = { kill: 0.4, sol: 2 };
 const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? SOUND_GAIN[name.split(".")[0]] ?? 1); // ("kill.fast" trimmed as "kill")
 function playSample(name, at = 0, off = 0) { // off: s into the clip to start from (SOL's shot, solSfx)
   const list = SAMPLES[name], n = playing[name] || 0;
