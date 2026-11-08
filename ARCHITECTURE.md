@@ -540,27 +540,30 @@ costs lives without ending the run in 10-30% of them is the target, reported by 
 its HP% left in lives (a Lover half, a Devil copy a sixth, rounded up; owner, 2026-11-03), so with 18 lives a boss with more
 than ~18% left still ends it.
 
-**BOSS DEPTH - REFIT IN PROGRESS** (owner, 2026-11-06: "make sure bosses just get to about 120% of a normal wave"; 2026-11-07 "3D"): a boss's
-HP is refit so it gets about as far toward the core as the normal waves round it, on 100 games. The Star stays at x1.2 a normal wave;
-Strength, Chariot, Lovers and Devil are refit to about x1.0; Temperance, Justice, Empress, Judgement and Death are on the redesign
-list (their mechanics change first). The refit numbers land with Balance's ship (ARCHAEOLOGY §12).
+**BOSS DEPTH** (owner, 2026-11-06: "make sure bosses just get to about 120% of a normal wave"; 2026-11-07 "3D"): each boss's HP (`BOSS_HP`)
+is fitted on 100 bosses-on games so it gets about as far toward the core as the normal waves round it (the Star x1.2, the Chariot held at
+x1.2 by the owner's "A"); the dated passes: ARCHAEOLOGY §5.
 
-THE BOSS REDESIGN (owner, 2026-11-05: Wai's spec, verbatim in the 7.6.24-7.6.35 commits; "yes the boss mechanics should stay /
-strength only takes 10% of any slow"). "A wave" = `typeWaveCount(type, n)`: a plain wave of that type at the boss's wave number, as
-`wavePlan` sends it (the count taper included). The fleet code lives in `aspira-bossfleet.js` (loaded right after aspira-bosses.js).
+THE BOSSES (the order: owner, 2026-11-07 22:15 / 22:40; the tricks: 2026-11-05 redesign and 2026-11-07 22:30). "A wave" = `typeWaveCount(type, n)`:
+a plain wave of that type at the boss's wave number, as `wavePlan` sends it (the count taper included). The fleet code lives in
+`aspira-bossfleet.js` (loaded right after aspira-bosses.js). THE table: wave = its place in `ARCANA` x `STAR_EVERY`.
 
-| wave | boss | trick | fleet |
-|---|---|---|---|
-| 12 | Star | none (needs two towers or an upgrade) | a 3 x 10 lattice of fast BEHIND her (`FLEET_LATTICE`, `latticeSlots` "behind") |
-| 24 | Empress | a whole swarm wave pours out of her past 2/3 and past 1/3 of her HP (`EMPRESS_STEP`, `EMPRESS_GAP`) | none |
-| 36 | Strength | takes 10% of any slow (`BOSS_SLOW_K`); Temporal Drive still stops her | the centre of a 3 x 12 armor lattice (six rows of three ahead, six behind) |
-| 48 | Chariot | sprints x3 for 1 s every 4 s, fleet with her | fast + armor (unchanged: not in the redesign) |
-| 60 | Lovers | a pair on opposite lanes, no trick (the heal-and-run went) | one armor wave scattered like a swarm, half each (`FLEET_SCATTER`, `bossScatter`) |
-| 72 | Temperance | regenerates 6% HP a second | the centre of a 3 x 12 shield lattice |
-| 84 | Devil | six full bosses, two a lane on three lane copies (the second `DEVIL_TRAIL` 540 u behind); the reward paid once by the last | her HOST first: half a fast + half a swarm wave, loose on her three lanes like a swarm wave; the six are held (`devilGateShut`) till half the host has been on screen or died (`devilCount`) |
-| 96 | Justice | no hit takes more than 2% of her HP; slowed | the crossing of a cross 7 across x 13 along: 18 armor escorts, each with a shield escort's charges too (`latticeSlots` "cross") |
-| 108 | Judgement | killed, she rises ONCE at her lane's start at full HP and shields, with 1.2 swarm waves strewn behind her (`bossRise`, `JUDGEMENT_SWARM`); her second death is her last | none until she rises |
-| 120 | Death | none: a juiced-up Star (half slows, x1.1 speed) | half a wave of each of the four types round her at once, packed ~3x tighter (`SCATTER_UK`) |
+| wave | boss | trick | fleet | `BOSS_HP` | die (`BOSS_DIE`) |
+|---|---|---|---|---|---|
+| 12 | Star | none (needs two towers or an upgrade) | a 3 x 10 lattice of fast BEHIND her (`FLEET_LATTICE`, `latticeSlots` "behind") | 14.4 | d20 |
+| 24 | Chariot | a smooth gallop, x(1.5 + 0.5 sin) over 1 s (`chariotPace`; a step until 2026-11-07) | fast + armor | 31.82 | fast's d4 |
+| 36 | Strength | takes 10% of any slow (`BOSS_SLOW_K`); Temporal Drive still stops her; exempt from "no insane numbers" | the centre of a 3 x 12 armor lattice | 39 | shield's d8 |
+| 48 | Lovers | a pair on opposite lanes; the core's ease does not slow them | one armor wave scattered like a swarm, half each (`FLEET_SCATTER`, `bossScatter`) | 21.4 | armor's d10 |
+| 60 | Empress | a brood of `EMPRESS_BROOD_K` (2/3) of a swarm wave at 90 / 70 / 50% of her HP (`EMPRESS_AT`); VEILED while any of a brood lives | none | 5.5 | d20 |
+| 72 | Judgement | killed, she rises ONCE at her lane's start at full HP with 1.2 swarm waves (`bossRise`, `JUDGEMENT_SWARM`), VEILED while they live; her second death is her last | none until she rises | 5.7 | cube |
+| 84 | Justice | no hit takes more than 2% of her HP (`JUSTICE_CAP`); slowed | the crossing of a cross 7 across x 13 along, laid straight off the lane (each escort at most 40 u from its lane spot): 18 armor escorts with a shield escort's charges too | 14 | shield's d8 |
+| 96 | Temperance | regenerates 6% HP a second (`TEMPERANCE_REGEN`) | the centre of a 3 x 12 shield lattice | 2.43 | armor's d10 |
+| 108 | Death | none: a juiced-up Star (half slows, x1.1 speed) | half a wave of each of the four types round her at once, packed ~3x tighter (`SCATTER_UK`) | 1.79 | d20 |
+| 120 | Devil (the final boss) | six full bosses, two a lane on three lane copies (the second `DEVIL_TRAIL` 540 u behind); the reward paid once by the last | her HOST first: half a fast + half a swarm wave; the six are held (`devilGateShut`) till half the host has been on screen or died (`devilCount`) | 1.43 each | fast's d4 |
+
+**The veil** (owner, 2026-11-07 22:30: "empress visually reduced in opacity, untargettable and invuln while swarm is up yes" / "judgement invuln and
+untargettable while swarm is up"; `bossVeil`, `e.veiled`): the boss takes no damage and no tower targets her; she walks on, slower (`VEIL_SPD`: Empress
+x0.75, Judgement x0.2), drawn at `ENEMY_VEIL_A` 0.35 with her HP number at the same fade; at the core she still costs her lives.
 
 **Fleets**: at plain HP x `BOSS_HEFT` and plain bounty, at the boss's pace; **20% of every escort's HP moves onto its boss**
 (`FLEET_TO_BOSS`; not Temperance, not Judgement's risen swarm); the fleet enters one unit at a time (`G.fleetQ`) and the
@@ -569,9 +572,9 @@ of the sims (owner, 2026-11-05: "ignore bosses for sims for now / want to redesi
 
 **A boss at the core** (owner, 2026-11-03: "lets make bosses make you lose lives equal to the percentage of life left on the boss instead
 of rhe losing the game instantly"): it costs its HP% left in lives, a Lover half, a Devil copy a sixth, rounded up, at least one
-(`bossLeakLives`, `BOSS_LEAK_DIV`), and the game goes on. **Its HP shown** (owner: "once a boss enters the threat zone, start showing the
-hp% without the % on top of the boss"): every boss body within `THREAT_FROM` 4 s of the core shows ceil(HP% left), 0-100, white and
-outlined over it (`drawBossHp`, aspira-threat.js) - each Lover and Devil copy its own. Its ETA (`etaToCore`) counts the wave's clock
+(`bossLeakLives`, `BOSS_LEAK_DIV`), and the game goes on. **Its HP shown** (owner, 2026-11-03: "start showing the hp% without the % on top of the boss"; 2026-11-07: "Lives lost, keep on the boss always"):
+every boss body on the board shows ceil(HP% left), 0-100, white and outlined over it, faded while veiled (`drawBossHp`, aspira-threat.js) - each Lover
+and Devil copy its own. Its ETA (`etaToCore`) counts the wave's clock
 (`waveClock`: x3 till a tower reaches the wave) and what is left of its HP-bar hold, so the number and the threat marks come on time.
 
 ### 5.5 The boss sky
@@ -813,20 +816,13 @@ do the diag things"); the `?diag=` switches are for the dev box.
 
 ### 9.4 Version and changelog
 
-`web/aspira-version.txt` is hand-kept semver `major.minor.patch` (owner, 2026-10-19: "patch", never "tiny"). **The next minor** = a balance
-battery's changes (the group of changes one battery run - every trio in `scripts/aspira-sim/` -
-produced), and ONLY that: a new day is not a minor (owner 2026-10-19; 5.1 became 5.1-5.8 by
-that rule, ARCHAEOLOGY §9); every other SHIP bumps patch - once a ship, not once a commit (owner, 2026-11-05: separate copies of the code):
-the peer sessions commit on their own branches in their own worktrees (`peer-balance`, `peer-visual` at `.wt/balance`, `.wt/visual`, gitignored
-inside the shared tree) and never touch `aspira-version.txt`; `~/.claude/spire-ship2.sh [--minor] "<subject>" [branch ...]` cherry-picks their
-unshipped commits onto `tier-redesign` (a conflict names the commit and stops), bumps the version once (`--minor` for a battery's ship), then
-smokes, runs the spire pytest, pushes, moves exec-fn's pointer and deploys; each peer then `git rebase tier-redesign`; **a new tower is a new major** (GRV
-and ATC made 4.5 into 5.0 and 4.6 into 5.1). `spire_build()` stamps the newest file mtime; both go into
-the template and every slow log. The changelog card (`aspira-changelog.js`, tap the version)
-lists each minor's player-visible changes as facts, grouped by SUBJECT (`logSubject`: a tower, an enemy type, the core ... read from a leading "Subject:" or the first one a line names; Buffs and Nerfs are no longer headed, the lines keep their three kinds underneath, Perf/UI smaller):
-add a line with every change a player would notice.
-
-**7.0.0 (2026-10-30, 409accb)**: the tier redesign and the tower redesigns shipped as a MAJOR (owner: "can you also release what you have as 7.0 even if it's not completely ready?"); 7.0.x patches since. Known open at release: ARC measures 0 +1 -3 +2 against its target +2 -2 -2 +2 (swarm fast shield armor; the charge-up strike follows in a 7.0.x patch).
+`web/aspira-version.txt` is hand-kept semver `major.minor.patch` (owner, 2026-10-19: "patch", never "tiny"): **the next minor** is a balance
+battery's changes and only that (a new day is not a minor); every other ship is a patch, once a ship, not once a commit; **a new tower is a new
+major** (GRV and ATC made 4.5 into 5.0 and 4.6 into 5.1). The workflow that bumps it: CLAUDE.md "Shipping". `spire_build()` stamps the newest
+file mtime; both go into the template and every slow log. The changelog card (`aspira-changelog.js`, tap the version) lists each minor's
+player-visible changes as facts, grouped by SUBJECT (`logSubject`: a tower, an enemy type, the core ... read from a leading "Subject:" or the
+first one a line names; Buffs and Nerfs are no longer headed, the lines keep their three kinds underneath, Perf/UI smaller): add a line with every
+change a player would notice. The 7.0.0 release note and how 5.1 became 5.1-5.8: ARCHAEOLOGY §9.
 
 ## 10. Tech
 

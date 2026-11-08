@@ -563,6 +563,35 @@ instead of contagion"); kills leave pools only with Contagion, and then every AC
   from the core; it collapsed onto the last boss, then the core. The game holds while it turns (10-12) and the next
   wave waits for it (10-09). Flushed timing at 3x: full sky 482 ms vs 387 without (overlay 1038 vs 620).
 
+### 5.x The boss order and table before the 2026-11-07 reorder, and the refit in progress (moved from ARCHITECTURE §5.4, 2026-11-08)
+
+**BOSS DEPTH - REFIT IN PROGRESS** (as ARCHITECTURE carried it until the reorder refit shipped) (owner, 2026-11-06: "make sure bosses just get to about 120% of a normal wave"; 2026-11-07 "3D"): a boss's
+HP is refit so it gets about as far toward the core as the normal waves round it, on 100 games. The Star stays at x1.2 a normal wave;
+Strength, Chariot, Lovers and Devil are refit to about x1.0; Temperance, Justice, Empress, Judgement and Death are on the redesign
+list (their mechanics change first). The refit numbers land with Balance's ship (ARCHAEOLOGY §12).
+
+THE BOSS REDESIGN (owner, 2026-11-05: Wai's spec, verbatim in the 7.6.24-7.6.35 commits; "yes the boss mechanics should stay /
+strength only takes 10% of any slow"). "A wave" = `typeWaveCount(type, n)`: a plain wave of that type at the boss's wave number, as
+`wavePlan` sends it (the count taper included). The fleet code lives in `aspira-bossfleet.js` (loaded right after aspira-bosses.js).
+
+| wave | boss | trick | fleet |
+|---|---|---|---|
+| 12 | Star | none (needs two towers or an upgrade) | a 3 x 10 lattice of fast BEHIND her (`FLEET_LATTICE`, `latticeSlots` "behind") |
+| 24 | Empress | a whole swarm wave pours out of her past 2/3 and past 1/3 of her HP (`EMPRESS_STEP`, `EMPRESS_GAP`) | none |
+| 36 | Strength | takes 10% of any slow (`BOSS_SLOW_K`); Temporal Drive still stops her | the centre of a 3 x 12 armor lattice (six rows of three ahead, six behind) |
+| 48 | Chariot | sprints x3 for 1 s every 4 s, fleet with her | fast + armor (unchanged: not in the redesign) |
+| 60 | Lovers | a pair on opposite lanes, no trick (the heal-and-run went) | one armor wave scattered like a swarm, half each (`FLEET_SCATTER`, `bossScatter`) |
+| 72 | Temperance | regenerates 6% HP a second | the centre of a 3 x 12 shield lattice |
+| 84 | Devil | six full bosses, two a lane on three lane copies (the second `DEVIL_TRAIL` 540 u behind); the reward paid once by the last | her HOST first: half a fast + half a swarm wave, loose on her three lanes like a swarm wave; the six are held (`devilGateShut`) till half the host has been on screen or died (`devilCount`) |
+| 96 | Justice | no hit takes more than 2% of her HP; slowed | the crossing of a cross 7 across x 13 along: 18 armor escorts, each with a shield escort's charges too (`latticeSlots` "cross") |
+| 108 | Judgement | killed, she rises ONCE at her lane's start at full HP and shields, with 1.2 swarm waves strewn behind her (`bossRise`, `JUDGEMENT_SWARM`); her second death is her last | none until she rises |
+| 120 | Death | none: a juiced-up Star (half slows, x1.1 speed) | half a wave of each of the four types round her at once, packed ~3x tighter (`SCATTER_UK`) |
+
+The reorder refit that replaced it (2026-11-08, bosses-on 100 games; the code comment at `BOSS_HP`): strength 6.44 -> 39, lovers 35.7 -> 21.4,
+empress 11.02 -> 5.5, judgement 1.904 -> 5.7, justice 3.2 -> 14, temperance 4.76 -> 2.43, death 0.72 -> 1.79, devil 1.277 -> 1.43; chariot held
+at 31.82 (x1.2, owner's "A"). Depth ratios: Strength 0.92, Lovers 1.13, Empress 1.03, Justice 1.06, Temperance 0.85, Judgement 0.28, Death 0.79,
+Devil 0.77.
+
 ## 6. Damage model history
 
 **Armor, until 2026-10-28:** a flat bite off every hit (`trunc(armor - frost)`), never below 10% of the hit; strips subtracted, past
@@ -733,6 +762,10 @@ focus loss.
 
 - **Guest tier (10-02):** first owner-only and a nav entry, then guest ("aspira should be public, behind cloudflare"),
   landing-wheel section; the page moved to `/spire` 10-04 with `/aspira` a 301.
+
+### 9.x The 7.0.0 release note (moved from ARCHITECTURE §9.4, 2026-11-08)
+
+**7.0.0 (2026-10-30, 409accb)**: the tier redesign and the tower redesigns shipped as a MAJOR (owner: "can you also release what you have as 7.0 even if it's not completely ready?"); 7.0.x patches since. Known open at release: ARC measures 0 +1 -3 +2 against its target +2 -2 -2 +2 (swarm fast shield armor; the charge-up strike follows in a 7.0.x patch).
 
 ## 10. Tech history
 

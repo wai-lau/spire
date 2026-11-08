@@ -32,11 +32,12 @@ are this repo's gitignored `data/aspira-sfx/`.
   push hook pushes it, then bumps + pushes exec-fn's pointer. Never edit the
   files through exec-fn's index.
 - **Lints, hooks and checks are exec-fn's, not this repo's.** `scripts/pre-commit` here is a SHIM (verbatim copy of exec-fn's `scripts/subrepo-pre-commit`; git runs it via `core.hooksPath=scripts`, which exec-fn's session hook sets). Inside exec-fn it runs exec-fn's `scripts/pre-commit`; cloned on its own it sparse-pulls ONLY the lint files (exec-fn `scripts/tooling-paths.txt`) into the gitignored `.exec-fn/` and runs that (lints only; tests need exec-fn). Never edit the shim here — change checks in exec-fn. A standalone clone: `git config core.hooksPath scripts` once. exec-fn ARCHITECTURE.md §1e. The game smoke (`node scripts/spire-smoke/smoke.mjs`, this repo's) is run by exec-fn's hook when a game file is staged.
-- **A balance battery's changes is the next MINOR, and only that** (owner 2026-10-19: "every group of changes that is the
-  result of a balance battery run should result in a new minor version"; a new day is NOT one: "stop doing the new day new
-  minor thing"); anything else bumps PATCH (semver major.minor.patch; the third number is "patch", never "tiny") - ONCE A SHIP, not a commit: peers commit on
-  their own worktree branches (`.wt/balance`, `.wt/visual`) without touching `web/aspira-version.txt`, and `~/.claude/spire-ship2.sh` picks,
-  bumps and ships (owner, 2026-11-05: separate copies of the code). ARCHITECTURE.md §9.4.
+- **Shipping** (owner, 2026-10-19: "every group of changes that is the result of a balance battery run should result in a new minor version"; "stop
+  doing the new day new minor thing"; 2026-11-05: separate copies of the code): a battery's changes = the next MINOR, anything else a PATCH, ONCE A
+  SHIP, not a commit. The peers commit on their own branches in their own worktrees (`peer-balance` / `peer-visual` at `.wt/balance` / `.wt/visual`)
+  and never touch `web/aspira-version.txt`; `~/.claude/spire-ship2.sh [--minor] "<subject>" [branch ...]` cherry-picks their unshipped commits onto
+  `tier-redesign`, bumps the version once, smokes, runs the spire pytest, pushes, moves exec-fn's pointer and deploys; each peer then `git rebase
+  tier-redesign`. A new tower is a new major. ARCHITECTURE.md §9.4.
 - **Every balance patch runs the marks at FIVE point levels** (`VS_MARKS`, owner 2026-10-18; 2026-11-06: "1B, but also add a 0 point and 3 point check",
   "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"): 9 points writes the card
   (`marks.py --write`), 13 points (each axis maxed, `--focus`) is the second target, 3 / 6 must stay within 1 of the target and 0 within 2
