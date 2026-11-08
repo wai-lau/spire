@@ -74,7 +74,7 @@ function drawThreat() {
 }
 // A BOSS'S HEALTH OVER IT, ALL ITS RUN (2026-11-07; in the threat zone only since owner, 2026-11-03: "once a boss enters the threat zone, start showing the hp% without the % on top
 // of the boss ... numbers on the dice still show out of 100"): with a boss at the core costing its HP% left in lives (bossLeakLives,
-// aspira-bosses.js), every boss body within THREAT_FROM s of the core - each Lover and each Devil copy its own - shows ceil(HP% left), 0..100,
+// aspira-bosses.js), every boss body on the board (within THREAT_FROM s of the core until 2026-11-07) - each Lover and each Devil copy its own - shows ceil(HP% left), 0..100,
 // above it: white, outlined, an atlas stamp (text -> textSprite), facing the camera, the board's plain scale. No THREAT_N cap: a boss is
 // never one of many
 const BOSS_HP_PX = 26, BOSS_HP_UP = 12; // world units: its size; how far above the body's top

@@ -78,7 +78,7 @@ function drawIfrFires(t, low) {
 }
 const IFR_FADE_IN_U = 8; // a burst meteor is full within 8 u of flight (owner, 2026-10-26: "IFR should fade in faster"; was 25)
 const IFR_BIG_DRAW_K = 2; // Meteor V: a big meteor (b.big, aspira-ifrit.js) is drawn this x - its tracer too; the hitbox is unchanged
-const IFR_CHAIN_I = 3, IFR_CHAIN_LINK = 1.1, IFR_CHAIN_GLOW_A = 0.8, IFR_RING_SEGS = 28; // Hellfire V's chains: glow intensity (as a flare's, IFR_FLARE_I0), the chain links' size (x ARC's) and alpha; Flare V's circle: drawn as this many glow segments
+const IFR_CHAIN_I = 3; // Hellfire V's rings as flares: their glow intensity (as a flare's, IFR_FLARE_I0) where a flare path reads it (ifrFlareI); the chain links' own look: ifrChainDraw
 const IFR_SHARD_DRAW = 1 / 3 * 2; /* x2 again on 7.14.1's x2 (owner, 2026-11-10: "visual, double size of ifr secondary and tertiary meteors") - the burst shards drawn at 2/3 of their radius x IFR_METEOR_SIZE_K */ // (IFR_TRACER_U: aspira-ifrit.js - the sim loads no draw file)
 // THE LAUNCHED METEOR'S TRACER, like an enemy's (owner, 2026-10-26: "meteor tracer should depend on movement and fade out like enemies"):
 // the path it FLEW (b.trail, the last IFR_TRACER_U of it - stepIfrBalls), not a line along its heading, as one tapered shape fading
@@ -197,7 +197,7 @@ function ifrChainDraw(c, f, low, fs = 1) {
 function ifrRing2D(c, f, low) { ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); }); }
 function drawIfrFlaresGl(t, low, hf) {
   for (const c of t.ifrFlares) {
-    if (!(c.hf || c.chain) !== !hf) continue; /* Hellfire V's chains are drawn with the fire */
+    if (!(c.hf || c.chain) !== !hf) continue; /* Hellfire V's rings are drawn with the fire */
     const [fb, fs] = ifrFlick(c, performance.now() / 1000), f = Math.max(0, c.left / c.life) * fb;
     if (c.chain) { ifrChainDraw(c, f, low, fs); continue; }
     if (c.circ) ifrRingGl(c, f, low, fs);

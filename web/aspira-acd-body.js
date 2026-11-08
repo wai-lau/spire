@@ -1,4 +1,4 @@
-// /spire - ACD's BODY LOOK (owner, 2026-11-06, the ACD pass): Flow = drips running down the prism's front faces, Spill = a puddle that is
+// /spire - ACD's BODY LOOK (owner, 2026-11-06, the ACD pass): Flow = drips running down every prism face turned to the camera, Spill = a puddle that is
 // always alive under the tower at its tier's size, Corrosion = bubbles rising inside the prism that pop on its top face. Look only: the game never
 // reads any of it, the simulator never loads it. Drawn with the tower by drawOrbiters (aspira-warp-prism.js): the puddle FIRST (far pass, before
 // the prism), the drips and bubbles AFTER it and its top (near pass); the card's demo calls the same. Loaded after aspira-ifrit-draw.js.
@@ -60,7 +60,7 @@ function acdSpill(tier, x, y, R, t) {
   }
   ctx.globalAlpha = 1;
 }
-// FLOW: drips down the two front faces. A pair is long + short, a three has the long one in the middle; groups nearer the tower's middle run
+// FLOW: drips down the faces turned to the camera (all of them since 2026-11-08, below). A pair is long + short, a three has the long one in the middle; groups nearer the tower's middle run
 // longer (x1.45) than the side ones (x0.65); lengths jittered hard and oozing. The drop latches at the line's bottom when it forms, fades in
 // there, falls while fading and never rides upward
 // DRIPS GROW WITH THE TOWER (owner, 2026-11-06: "ACD drip length should correlate to tower height at each level"): every length and the cap
