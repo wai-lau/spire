@@ -215,6 +215,7 @@ check("a boss's ETA to the core matches when it gets there, in reach (1x), not (
 });
 
 // THE BOSS REDESIGN (owner, 2026-11-05): each boss's fleet as the owner set it - the Star "3 x 10 fast in a lattice as fleet"
+// BOSS WAVES follow THE ORDER (aspira-bosses.js ARCANA, owner 2026-11-07 22:15): Star 12, Chariot 24, Strength 36, Lovers 48, Empress 60, Justice 72, Judgement 84, Temperance 96, Death 108, the Devil 120
 const bossRig = n => run(`(() => { G = newGame(); G.wave = ${n} - 1; spawnEnemy("bonus", ${n}, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana);
   const f = e.fleet || [], ty = {}; for (const m of f) ty[m.type] = (ty[m.type] || 0) + 1;
   return { arc: e.arcana, n: f.length, ty, lats: [...new Set(f.map(m => Math.round(m.lat)))].length, ahead: f.filter(m => m.ahead > 0).length, behind: f.filter(m => m.ahead < 0).length,
@@ -229,46 +230,46 @@ check("bosses (owner, 2026-11-05): Strength at the centre of a 3 x 12 armor latt
   if (k !== 0.1) return "Strength takes " + k + " of a slow (expected 0.1)";
 });
 check("bosses (owner, 2026-11-05): Temperance at the centre of a 3 x 12 shield lattice, her regen kept", () => {
-  const s = bossRig(72);
+  const s = bossRig(96);
   if (s.arc !== "temperance" || s.n !== 36 || s.ty.shield !== 36 || s.lats !== 3 || s.ahead !== 18 || s.behind !== 18 || !s.shield.every(x => x > 0)) return "Temperance fleet " + JSON.stringify(s).slice(0, 300);
   if (!(run("TEMPERANCE_REGEN") > 0)) return "Temperance lost her regen";
 });
 check("bosses (owner, 2026-11-05): Justice at the crossing of a 7-across, 13-along cross of armored, shielded escorts", () => {
-  const s = bossRig(96);
+  const s = bossRig(72);
   if (s.arc !== "justice" || s.n !== 18 || s.ty.armor !== 18 || s.lats !== 7 || s.ahead !== 6 || s.behind !== 6 || !s.shield.every(x => x > 0) || !s.armor.every(x => x > 0)) return "Justice fleet " + JSON.stringify(s).slice(0, 300);
 });
 check("bosses (owner, 2026-11-05): the Empress comes alone and pours out a whole swarm wave past 2/3 and past 1/3 of her HP", () => {
-  const r = run(`(() => { G = newGame(); G.wave = 23; spawnEnemy("bonus", 24, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana); if (!G.enemies.includes(e)) G.enemies.push(e);
+  const r = run(`(() => { G = newGame(); G.wave = 59; spawnEnemy("bonus", 60, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana); if (!G.enemies.includes(e)) G.enemies.push(e);
     const kin = () => G.enemies.filter(m => m.bossKin && m.type === "swarm").length, out = [e.fleet.length];
-    for (const f of [0.9, 0.6, 0.5, 0.3, 0.05]) { e.hp = e.max * f; bossStep(e, 0.01); out.push(kin()); } return { out, want: typeWaveCount("swarm", 24) }; })()`);
+    for (const f of [0.9, 0.6, 0.5, 0.3, 0.05]) { e.hp = e.max * f; bossStep(e, 0.01); out.push(kin()); } return { out, want: typeWaveCount("swarm", 60) }; })()`);
   const [fl, a, b, c, d, z] = r.out, w = r.want;
   if (fl || a || b !== w || c !== w || d !== 2 * w || z !== 2 * w || !(w >= 12)) return "Empress fleet, brood after 0.9/0.6/0.5/0.3/0.05: " + r.out + " (a wave = " + w + ")";
 });
 check("bosses (owner, 2026-11-05): the Lovers bring one armor wave scattered like a swarm (half each), and the one left alone neither heals nor runs", () => {
-  const s = bossRig(60), r = run(`(() => { G = newGame(); G.wave = 59; spawnEnemy("bonus", 60, 0, 0); spawnEnemy("bonus", 60, 1, Math.PI);
+  const s = bossRig(48), r = run(`(() => { G = newGame(); G.wave = 47; spawnEnemy("bonus", 48, 0, 0); spawnEnemy("bonus", 48, 1, Math.PI);
     const [a, b] = G.enemies.concat(G.fleetQ).filter(x => x.arcana); const jit = a.fleet.every(m => m.jit > 0); b.hp = b.max * 0.4; const hp = b.hp, sp = b.spd;
-    a.hp = 0; kill(a); return { jit, mated: a.mate === b, healed: b.hp !== hp, ran: b.spd !== sp, want: typeWaveCount("armor", 60) }; })()`);
+    a.hp = 0; kill(a); return { jit, mated: a.mate === b, healed: b.hp !== hp, ran: b.spd !== sp, want: typeWaveCount("armor", 48) }; })()`);
   if (s.arc !== "lovers" || s.ty.armor !== Math.round(r.want / 2) || s.n !== s.ty.armor || !r.jit) return "Lovers fleet " + JSON.stringify(s).slice(0, 200) + " jit " + r.jit + " (a wave " + r.want + ")";
   if (r.healed || r.ran) return "Lovers pair " + JSON.stringify(r);
 });
 check("bosses (owner, 2026-11-05): Judgement comes alone; killed, she rises once at her lane's start at full HP with 1.2 swarm waves behind her, and her second death is her last", () => {
-  const r = run(`(() => { G = newGame(); G.wave = 107; spawnEnemy("bonus", 108, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana);
+  const r = run(`(() => { G = newGame(); G.wave = 83; spawnEnemy("bonus", 84, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana);
     if (!G.enemies.includes(e)) { G.fleetQ.splice(G.fleetQ.indexOf(e), 1); G.enemies.push(e); } const f0 = e.fleet.length; e.s = PATHS[0].len * 0.7; e.hp = 0; kill(e);
-    const a = { f0, dead: e.dead, hp: e.hp / e.max, at: e.s - entryS(0), kin: G.fleetQ.concat(G.enemies).filter(m => m.type === "swarm" && m.bossKin).length, want: Math.round(1.2 * typeWaveCount("swarm", 108)) };
+    const a = { f0, dead: e.dead, hp: e.hp / e.max, at: e.s - entryS(0), kin: G.fleetQ.concat(G.enemies).filter(m => m.type === "swarm" && m.bossKin).length, want: Math.round(1.2 * typeWaveCount("swarm", 84)) };
     e.hp = 0; kill(e); a.dead2 = e.dead; return a; })()`);
   if (r.f0 || r.dead || r.hp !== 1 || Math.abs(r.at) > 0.01 || r.kin !== r.want || !r.dead2) return "Judgement " + JSON.stringify(r);
 });
 check("bosses (owner, 2026-11-05): the Devil's host (half a fast + half a swarm wave, loose like swarm) comes first; her six come once half of it has been on screen", () => {
-  const r = run(`(() => { const bh = BAR_HOLD; BAR_HOLD = false; try { G = newGame(); G.lives = 1e6; G.started = true; G.wave = 83; sendWave(); let at = null, most = 0, preSeen = -1;
+  const r = run(`(() => { const bh = BAR_HOLD; BAR_HOLD = false; try { G = newGame(); G.lives = 1e6; G.started = true; G.wave = 119; sendWave(); let at = null, most = 0, preSeen = -1;
     for (let i = 0; i < 60 * 12; i++) { if (G.enemies.concat(G.fleetQ).every(e => e.arcana !== "devil")) preSeen = G.devilEsc.seen; step(1 / 60);
       const dv = G.enemies.concat(G.fleetQ).filter(e => e.arcana === "devil").length; most = Math.max(most, dv); if (dv && at == null) at = preSeen; }
-    const host = G.enemies.filter(e => e.devilEsc); return { at, most, tot: G.devilEsc.total, want: Math.round(typeWaveCount("fast", 84) / 2) + Math.round(typeWaveCount("swarm", 84) / 2),
+    const host = G.enemies.filter(e => e.devilEsc); return { at, most, tot: G.devilEsc.total, want: Math.round(typeWaveCount("fast", 120) / 2) + Math.round(typeWaveCount("swarm", 120) / 2),
       kin: host.every(e => e.bossKin && !e.form), wander: host.filter(e => e.type === "fast").every(e => e.jit > 0) }; } finally { BAR_HOLD = bh; } })()`);
   if (r.tot !== r.want || !r.kin || !r.wander) return "Devil host " + JSON.stringify(r);
   if (r.at == null || r.at < r.tot / 2 || r.most !== 6) return "Devil gate: first devil after " + r.at + " of " + r.tot + " seen, " + r.most + " devils at once";
 });
 check("bosses (owner, 2026-11-05): Death comes with half a plain wave of each of the four types, all at once round her", () => {
-  const s = bossRig(120), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.round(typeWaveCount(k, 120) / 2))`);
+  const s = bossRig(108), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.round(typeWaveCount(k, 108) / 2))`);
   if (s.arc !== "death" || ["fast", "swarm", "armor", "shield"].some((k, i) => s.ty[k] !== want[i]) || !s.ahead || !s.behind) return "Death fleet " + JSON.stringify(s.ty) + " (want " + want + ")";
 });
 

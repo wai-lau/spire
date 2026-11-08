@@ -19,16 +19,19 @@
 // sideways, never spelled out - as a HAIKU (owner, 2026-10-05): three lines,
 // 5-7-5 syllables, drawn one under another
 const ARCANA = [
+  // THE ORDER (owner, 2026-11-07 22:15: "chariot goes after star / empress goes after lovers / devil after death / temperence moves after judgement /
+  // refit hps and stuff"): 12 Star, 24 Chariot, 36 Strength, 48 Lovers, 60 Empress, 72 Justice, 84 Judgement, 96 Temperance, 108 Death, 120 the Devil
+  // (was Star, Empress, Strength, Chariot, Lovers, Temperance, Devil, Justice, Judgement, Death)
   { id: "star", name: "The Star", hint: ["One light in the dark", "crossing the long silent sky", "asks only to meet."] },
-  { id: "empress", name: "The Empress", hint: ["Strike the mother once", "and the field fills with her young:", "her children answer."] },
-  { id: "strength", name: "Strength", hint: ["No frost can bind her,", "no chain will shorten her stride.", "She walks through the cold."] },
   { id: "chariot", name: "The Chariot", hint: ["The reins slip loose now", "and the horses break and run,", "faster than your aim."] },
+  { id: "strength", name: "Strength", hint: ["No frost can bind her,", "no chain will shorten her stride.", "She walks through the cold."] },
   { id: "lovers", name: "The Lovers", hint: ["Apart, they still come", "the same hour from either side,", "armored in their vow."] /* new poem (owner, 2026-11-05: "new poem" - two bosses on opposite lanes, an armor wave round them, no trick; was "Two walk as one heart. / Part them, and the one who stays / will never forgive.", the heal-and-run) */ },
-  { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "the wound fills, and heals."] },
-  { id: "devil", name: "The Devil", hint: ["Six faces, one want,", "six roads leading to your door.", "Let not one get through."] },
+  { id: "empress", name: "The Empress", hint: ["Strike the mother once", "and the field fills with her young:", "her children answer."] },
   { id: "justice", name: "Justice", hint: ["The scales hold steady.", "No blow, however heavy,", "outweighs the balance."] },
   { id: "judgement", name: "Judgement", hint: ["The trumpet sounds once;", "what has fallen hears its name", "and rises again."] },
+  { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "the wound fills, and heals."] },
   { id: "death", name: "Death", hint: ["No riddle, no trick,", "only the long road to dark,", "only, now, the end."] },
+  { id: "devil", name: "The Devil", hint: ["Six faces, one want,", "six roads leading to your door.", "Let not one get through."] },
 ];
 // EACH BOSS ITS OWN DIE (owner, 2026-11-07: "visually update dice shapes, (keep boss sizes): chariot should use the fast dice shape / strength
 // should use the shield shape / lovers armor / empress d20 / ... judgement cube / justice shield / ... temperence armor / death d20 / devil fast"):
