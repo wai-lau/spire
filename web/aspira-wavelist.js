@@ -218,6 +218,7 @@ function fitWaveList() {
   if (!waveGapPx) { const t = document.createElement("div"); t.style.cssText = "position:absolute;visibility:hidden;width:var(--space-2)"; document.body.appendChild(t); waveGapPx = t.getBoundingClientRect().width; t.remove(); }
   const spots = [[CX, CY, CORE_R], ...CELLS.filter(c => OPEN_SLOTS.includes(c.ang)).map(c => [c.x, c.y, CELL_S])].map(([x, y, r]) => boardScreenRect(x, y, r));
   const chal = $("asp-challenge"); if (chal && !chal.hidden) spots.push(chal.getBoundingClientRect()); // (the Challenge button too)
+  const ac = $("asp-autochal"); if (ac && !ac.hidden && !ac.classList.contains("asp-autochal-on")) spots.push(ac.getBoundingClientRect()); // (and the auto-challenge box under it)
   const g = waveGapPx, hits = () => { const L = box.getBoundingClientRect(); return spots.some(b => L.left < b.right + g && b.left - g < L.right && L.top < b.bottom + g && b.top - g < L.bottom); };
   for (let n = Math.ceil(cells.length / 5); n > Math.max(waveLiveRows, 1) && hits(); n--)
     for (const c of cells.slice((n - 1) * 5)) c.style.display = "none";
@@ -229,10 +230,32 @@ const CHALLENGE_BELOW = 16; // world units under the life rings / the lowest slo
 // it shows CHALLENGE_DELAY s after the sky has turned back (owner, 2026-10-13: "challenge the X should only appear 2 seconds after
 // the inversion effect finishes"; bossInv.offAt, aspira-bosses.js)
 const CHALLENGE_DELAY = 1; /* 1 s sooner (owner, 2026-10-17: "the initial fade in should happen 1s faster"; was 2) */
+// AUTO-CHALLENGE (owner, 2026-11-08: "under \"challenge the X\" / add a checkbox for auto-challenge"; "move auto-challenge checkbox below wave
+// indicator when checked"): a box under the Challenge button; ticked, the game calls challengeNext() itself the moment the button would show
+// (CHALLENGE_DELAY after the sky turns back), after every boss, and the box moves under the wave list's heading (#asp-wavelabel), always there to
+// untick. Per viewer (localStorage, default off). A resumed run lands on the Challenge screen as before; ticked, it challenges once the resume
+// card is gone and the game runs (never while paused). The simulator has no page, so it plays straight on (afterBoss) as ever
+const AUTOCHAL_KEY = "aspira.autochal";
+let autoChal = false; try { autoChal = localStorage.getItem(AUTOCHAL_KEY) === "1"; } catch (e) { /* no storage: off */ }
+function autoChalBox(chalUp, ready) { // place the box; -> true when the game should challenge now
+  const box = $("asp-autochal"), cb = $("asp-autochal-cb"), btn = $("asp-challenge"), left = document.querySelector(".asp-left"), lab = $("asp-wavelabel");
+  if (!box || !cb || !left || !lab) return false;
+  if (!cb.dataset.on) { cb.dataset.on = "1"; cb.checked = autoChal; cb.onchange = () => { autoChal = cb.checked; try { localStorage.setItem(AUTOCHAL_KEY, autoChal ? "1" : "0"); } catch (e) { /* not kept */ } }; }
+  if (autoChal) {
+    if (box.parentNode !== left) { lab.after(box); box.classList.add("asp-autochal-on"); box.style.left = box.style.top = ""; fitWaveList(); }
+    box.hidden = !(typeof G === "object" && G.started && !G.over);
+    return chalUp && ready && !ui.paused && !document.getElementById("asp-resume");
+  }
+  if (box.parentNode === left) { btn.after(box); box.classList.remove("asp-autochal-on"); fitWaveList(); }
+  box.hidden = !(chalUp && ready);
+  if (!box.hidden) { const r = btn.getBoundingClientRect(), root = $("asp").getBoundingClientRect(); box.style.left = (r.left + r.width / 2 - root.left) + "px"; box.style.top = (r.bottom - root.top + (waveGapPx || 8) / 2) + "px"; }
+  return false;
+}
 function placeChallenge() {
   const btn = $("asp-challenge");
-  if (btn.hidden) return;
   const ready = bossInv.phase === "off" && performance.now() / 1000 - (bossInv.offAt || 0) >= CHALLENGE_DELAY;
+  if (autoChalBox(!btn.hidden, ready)) { challengeNext(); return; }
+  if (btn.hidden) return;
   btn.style.visibility = ready ? "" : "hidden";
   if (!ready) return;
   // under the core AND clear of the build slots round it (a slot under the button could not be tapped)
