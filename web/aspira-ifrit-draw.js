@@ -156,7 +156,7 @@ function ifrSpoke2D(c, f, low, path) { // the 2D spoke's strokes along `path` (w
 // alpha) with LINKS over it in the ring's colours - long ovals along the ring (IFR_HFL_LEN x IFR_HFL_W u), each other link a bar seen edge-on,
 // a red body and the orange core line on top. The links turn once each IFR_HF_RING_TURN_S on the ring's own direction (c.dir), on the game's
 // clock (its age: still when paused). The tracked fire draws no plain ring of its own (drawIfrFires): the outer chain ring is it
-const IFR_HF_RING_TURN_S = 7, IFR_HFL_LEN = 18, IFR_HFL_W = 7, IFR_HFL_LW = [2.2, 0.8], IFR_HFL_A = 0.95;
+const IFR_HF_RING_TURN_S = 7, IFR_HFL_LEN = 18, IFR_HFL_W = 7, IFR_HFL_LW = [2.2, 0.8], IFR_HFL_A = 0.95, IFR_HFL_GLOW = [1.3, 0.35];
 function ifrRingLinks(c, each) { // each(ax, ay, bx, by, odd): a link's axis ends, tangent to the ring
   const r = c.circ, pitch = IFR_HFL_LEN * 0.78, n = Math.max(8, 2 * Math.round(Math.PI * r / pitch)), a0 = c.dir * 2 * Math.PI * (c.life - c.left) / IFR_HF_RING_TURN_S;
   const h = (IFR_HFL_LEN - IFR_HFL_W) / 2;
@@ -167,11 +167,15 @@ function ifrRingLinks(c, each) { // each(ax, ay, bx, by, odd): a link's axis end
 }
 function ifrChainDraw(c, f, low, fs = 1) {
   if (!(c.circ > 1)) return;
-  const F = c.fire || {}, ringA = Math.min(1, IFR_FIRE_A * IFR_FIRE_TRACK_K) * Math.min(1, f);
-  drawIfrRingAt(c.x, c.y, c.circ, 0.9 * ringA, low, IFR_FIRE_W, IFR_HF_COL);
+  /* NO RING LINE UNDER THE LINKS (owner, 21:40: "the centers of the ovals laying flat are struck through"): the links carry the ring's glow
+     themselves - a soft halo in the ring's outer colour round each one (IFR_HFL_GLOW: x the link's width, alpha) - so a flat link's hole stays open */
   const gl3 = !!(ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlPush === "function");
   const a = Math.min(1, IFR_HFL_A * f), cols = [COL[IFR_HF_COL.orange], COL[IFR_HF_COL.yellow]], R = IFR_HFL_W / 2;
+  const glowCol = COL[IFR_HF_COL.glow], ga = Math.min(1, IFR_HFL_GLOW[1] * f);
   if (gl3) {
+    if (!low) ifrRingLinks(c, (ax, ay, bx, by, odd) => { /* the halo along each long side of a flat link (never down its middle, the hole) and along a bar */
+      const d = Math.hypot(bx - ax, by - ay) || 1, nx = -(by - ay) / d * R, ny = (bx - ax) / d * R, gw = IFR_HFL_W * IFR_HFL_GLOW[0] / 2;
+      if (odd) fxGlGlowLine(ax, ay, bx, by, gw, glowCol, ga, 0, 0, 2); else for (const sg of [1, -1]) fxGlGlowLine(ax + nx * sg, ay + ny * sg, bx + nx * sg, by + ny * sg, gw, glowCol, ga, 0, 0, 2); });
     for (let k = 0; k < 2; k++) ifrRingLinks(c, (ax, ay, bx, by, odd) => {
       if (odd) fxGlPush(ax, ay, bx, by, IFR_HFL_LW[k] / 2, 0, cols[k], a, cols[k], 0);
       else fxGlPush(ax, ay, bx, by, R, IFR_HFL_LW[k], cols[k], 0, cols[k], a);
@@ -186,7 +190,8 @@ function ifrChainDraw(c, f, low, fs = 1) {
     ev.arc(bx, by, R, th - Math.PI / 2, th + Math.PI / 2); ev.arc(ax, ay, R, th + Math.PI / 2, th + 3 * Math.PI / 2); ev.closePath();
   });
   ctx.save(); ctx.lineCap = "round"; ctx.globalAlpha = a;
-  for (let k = 0; k < 2; k++) { ctx.strokeStyle = cols[k]; ctx.lineWidth = IFR_HFL_LW[k]; ctx.stroke(ev); ctx.stroke(od); }
+  if (!low) { const m = ctx.getTransform(); ctx.shadowColor = glowCol; ctx.shadowBlur = IFR_HFL_W * IFR_HFL_GLOW[0] * Math.hypot(m.a, m.b); } /* the halo on the body pass only */
+  for (let k = 0; k < 2; k++) { ctx.strokeStyle = cols[k]; ctx.lineWidth = IFR_HFL_LW[k]; ctx.stroke(ev); ctx.stroke(od); ctx.shadowBlur = 0; }
   ctx.restore();
 }
 function ifrRing2D(c, f, low) { ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); }); }
