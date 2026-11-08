@@ -217,7 +217,7 @@ ARCHAEOLOGY §4.
 |---|---|
 | Conductivity (id `conductivity`) | the carry: what each jump keeps of the hit before it (`ARC_AMP_FALL`, above 1 from tier III: jumps out-hit the strike) |
 | Voltage | the chain: more jumps (`ARC_VOLT_JUMPS`) and a farther reach a jump (`ARC_VOLT_REACH`); the one fork from `ARC_FORK_FROM` |
-| Shock (id `capacitance`) | never slows (`ARC_RES_SLOW` all 0: the owner's ARC brief, ARCHAEOLOGY §12.t); every hit strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); **Shocked** (owner, 2026-11-01, "1": "Shock makes shocked enemies take more damage from ARC"): each hit marks its target for `STAT_SLOW_T` (0.6 s; `shockT`, refreshed on hit), and a marked enemy takes x(1 + `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2) from ARC's hits (not the burn); the mark shows as a thin triangle in ARC's colour round the die (aspira-enemies.js), the card says "Shocked enemies take X% more damage from ARC."; no area zap |
+| Shock (id `capacitance`) | never slows (`ARC_RES_SLOW` all 0: the owner's ARC brief, ARCHAEOLOGY §13.7); every hit strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); **Shocked** (owner, 2026-11-01, "1": "Shock makes shocked enemies take more damage from ARC"): each hit marks its target for `STAT_SLOW_T` (0.6 s; `shockT`, refreshed on hit), and a marked enemy takes x(1 + `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2) from ARC's hits (not the burn); the mark shows as a thin triangle in ARC's colour round the die (aspira-enemies.js), the card says "Shocked enemies take X% more damage from ARC."; no area zap |
 
 **FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the speed the slow takes (`frzBite`: `FRZ_CHILL_K` x slow x the enemy's own speed / `ENEMY_BASE_SPEED`, owner
@@ -293,7 +293,7 @@ aspira-capstone.js); its knobs:
 | IFR | Hellfire -> Hellfire | each fire strikes a pentagram's 5 chords across its circle, each a chain burning like a flare | `IFR_CHAINS_N`, `IFR_CHAIN_K` | aspira-ifrit.js |
 | IFR | Flare -> Mega Firaga | one flare a landing plus a flare ring 60% up its spokes (its own hit); flares at most 300 across | `IFR_V_SPAN` | aspira-ifrit.js |
 
-The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with every core power; the numbers' dated snapshot is ARCHAEOLOGY §12.q.
+The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with every core power; the numbers' dated snapshot is ARCHAEOLOGY §13.10.
 
 ### 4.5 Rules every axis obeys
 
@@ -897,6 +897,11 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | the core | `corevalue`, `corepower` |
 | gliding players never stuck | `stuck` |
 | a worker pool (resumable `out.jsonl`) | `pool`, `playjob` |
+
+**Levers already measured and dropped** (do not re-run without a new reason; the numbers: ARCHAEOLOGY §13.8, 2026-11-05): a higher
+`SLOW_CAP` (0.85-0.95), `ARMOR_ALL` 0 / 5, `ARMOR_K` 4 / 8, every other tower's fire rate x0.85 / x0.70 for ARC's swarm cell, ARC's burn
+(A0), damage and chain carry (A1-A3, damage x0.5 .. x0.1), GRV's void tick and tier I-II Gravity Well (G0-G2T: tiers I-II are never in
+the marks build), ACD's Flow carry and ramp (Q0-Q3), IFR's 8/12 shards and shard speed (I1-I3), CRR's reload / hangar / ammo (E0-E5).
 
 | Balance rule the owner set (keep when changing numbers) | Checked by |
 |---|---|

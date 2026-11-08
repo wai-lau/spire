@@ -3,7 +3,7 @@
 Incidents, superseded designs, balance measurements and perf history: the "why it's like
 this". The current design is in [ARCHITECTURE.md](ARCHITECTURE.md); **the top-level sections
 below mirror its numbering** (§2 here = history of ARCHITECTURE §2, and so on; §0 is the
-timeline; §12 the dated value snapshot; sub-numbers are local to this file). Created 2026-10-14 when /spire became its own repo (`wai-lau/spire`,
+timeline; §12 the value snapshot at 4.4.2; §13 the battery log by date; sub-numbers are local to this file). Created 2026-10-14 when /spire became its own repo (`wai-lau/spire`,
 submodule `apps/spire`); rewritten the same day when ARCHITECTURE.md became a current-state
 design document, and condensed to tables on 2026-10-15 (the dated notes it carried moved here).
 exec-fn's own ARCHAEOLOGY.md holds no /aspira history. Sources: this repo's
@@ -798,7 +798,7 @@ Corrosion "eats armor again" (`b196869`); 10-13 goo strips 2x its drop (late arm
 tier (-> 1-6%); the cap on interest removed; the speed S-curve and HP hump (10-14); 10-14 ordinary enemies +0.3% faster a wave with HP
 divided by the same, swarm bodies halved on the same lanes (x1.15 HP, x2 bounty, x2 leak).
 
-## 12. Snapshot: the tuned numbers at 4.4.2 (2026-10-15)
+## 12. Snapshot: the tuned numbers at 4.4.2 (2026-10-15; 12.1-12.13)
 
 Every value ARCHITECTURE.md stopped carrying when it became a principles-only design doc (2026-10-15),
 as they stood at 4.4.2. **Superseded the moment a balance commit lands - the code is the truth**; this
@@ -1082,7 +1082,12 @@ triangle clip, both on the batch since 6.15.45 / 6.15.46; GRV's overlapping-aura
 
 TOP PLAYERS: `ASC_MAX` 6 posts an IP an hour, `SHOW_MAX` 500, a win `1 <= lives <= 100000`, wave 11..1000, a team of 1-5 kinds, `OWNER_SHOWN_FROM` 2026-10-14 00:00 ET. Slow logs every 180 s, 30 posts an IP an hour, 16 KB, 400 files kept. Smoke: 22 checks.
 
-### 12.x OLD marks targets (2026-10-23 and the 2026-10-29 morning) - superseded
+## 13. Battery log (by date)
+
+The dated balance batteries, passes and measured lever lists, oldest first (they sat under §12 as 12.x .. 12.q, newest first,
+until 2026-11-07; the old letter is kept in each heading).
+
+### 13.1 OLD marks targets (2026-10-23 and the 2026-10-29 morning) - superseded (was 12.x)
 
 **OLD.** The live target is `scripts/aspira-sim/mark-target.json`, the owner's table of 2026-10-29 15:45 (CLAUDE.md "THE MARK TARGET":
 ARC -2 +1 -1 +2, FRZ +2 +2 -2 -2, SOL -1 -2 +1 +2, ACD +1 -3 +1 +1, GRV +1 +1 -3 +1, CRR -3 +2 +2 -1, IFR +2 -1 +2 -3, the FRZ and GRV rows swapped at 16:05, SOL and ACD at 16:30, then GRV/FRZ/ARC rotated at 17:35 (GRV took FRZ's row, FRZ ARC's, ARC GRV's); every column
@@ -1115,7 +1120,7 @@ The sim's smart saver (REWIND on) reads an easier wave as harder (2026-10-23): i
 reaches wave 97 underbuilt - late shield counts x1.0 / x0.75 fell 31 -> 27 -> 22/70 with it, rose 13 -> 17 -> 28/70 with REWIND=0.
 Size type levers with REWIND=0.
 
-### 12.y The 6.16.0 battery (2026-10-28; a6bc1c9, cc67188, 4e3461c)
+### 13.2 The 6.16.0 battery (2026-10-28; a6bc1c9, cc67188, 4e3461c) (was 12.y)
 
 Marks measured at 9 points, waves 101-109 and 111-119 (was 6 points at 61-69); every tower checks two types or more, no two alike.
 
@@ -1142,7 +1147,7 @@ Marks measured at 9 points, waves 101-109 and 111-119 (was 6 points at 61-69); e
 Measured (players3, bosses skipped, snapshot a6bc1c9): perfect + rewind 29/35 (19/22 winnable), good + rewind 86/105 (53/66
 winnable), random median death wave 91. Duo rule clean 21/21.
 
-### 12.z The 6.17.0 boss pass (2026-10-28; 909491b)
+### 13.3 The 6.17.0 boss pass (2026-10-28; 909491b) (was 12.z)
 
 The rule (owner, 2026-10-28): "balance the boss to the towers, balance the towers to the waves, waves not incl bosses".
 
@@ -1153,7 +1158,7 @@ The rule (owner, 2026-10-28): "balance the boss to the towers, balance the tower
 Points the strongest and weakest winnable trios need to beat Death (`trioplan`, beam 3, seed 1): frz+grv+ifr 18 -> 35 (it held 26
 before the 6.16.0 battery); acd+grv+crr 34 -> 34 (it wins at x1, x3 and x4). Death's HP at wave 120 at x1: 0.90M.
 
-### 12.w Difficulty by player, measured (2026-10-28; snapshot 909491b)
+### 13.4 Difficulty by player, measured (2026-10-28; snapshot 909491b) (was 12.w)
 
 All `players3`, bosses skipped (`BOSS_SKIP`), 35 trios x 1 seed unless noted. The three players: **random** (spends as it goes, a
 random open axis but never the right one, no rewind), **good** (smart saver, the planner's axes, human hands), **perfect** (smart
@@ -1202,7 +1207,7 @@ the boss to the towers, balance the towers to the waves, waves not incl bosses".
 "because you need to buy upgrades" (an economy pass), a cadence sweep, and every armor strip a % of the current armor, not a flat
 amount.
 
-### 12.v Dated notes moved out of ARCHITECTURE.md (2026-10-30, 6.18.37)
+### 13.5 Dated notes moved out of ARCHITECTURE.md (2026-10-30, 6.18.37) (was 12.v)
 
 ARCHITECTURE.md keeps principles and tables; these dated notes left it, each under the section it came from:
 
@@ -1213,7 +1218,7 @@ ARCHITECTURE.md keeps principles and tables; these dated notes left it, each und
 - §10.4 balance rules: the duo rule (2026-10-22) replaced "a lone L1 tower clears 1-11, losing at most 3" (2026-10-20).
 - §9.1 corrections: the first ones, JUU 84 -> 78 and SMD 49 -> 43 (2026-10-16) - before 4.4.14 the Lovers' pair paid wave 50's +6 lives once a body.
 
-### 12.u Waves 1-12 and the ARC/CRR tier-0 cut (2026-10-30, 6.18.43; d83b9aa)
+### 13.6 Waves 1-12 and the ARC/CRR tier-0 cut (2026-10-30, 6.18.43; d83b9aa) (was 12.u)
 
 Owner, 2026-10-30: "no tower (other than SOL) 1-shots anything from wave 1-12"; the first levels "look way too easy"; "excellent excellent" to the package.
 
@@ -1231,7 +1236,7 @@ Bodies in waves 1-12: 45 -> 64; HP a body 45-87 (was 1-68). One tier-0 tower alo
 - The curve: lowering `lo` weakened every level, not only tier 0. The curve is back as before (`dmg` [88.2] ARC, [1.58473, 1.8] CRR) and a `dmg0` factor scales the tier-0 hit alone (ARC 1/70.6, CRR 1/4.6: both 30). Owner picked option 1: the hit jumps back to the curve at the first purchase.
 - Both together: 103 of 200, inside the +-10 noise of 112.
 
-### 12.t The 7.1 pass (2026-11-01 .. 11-03; 012f378 .. 5b28eac)
+### 13.7 The 7.1 pass (2026-11-01 .. 11-03; 012f378 .. 5b28eac) (was 12.t)
 Owner, 2026-10-31 / 11-01: "Nothing should ever be above like 800%", "no level damage steps above 2x", "Right now ARC is so insanely steep
 it doesnt make sense".
 - 7.1.0 (`012f378`): ARC's damage on its own geometric curve, `geo` [0.73912, 1.9]. Hit by level 0/1/2/3/9/13: 18/34/64/122/5724/74597
@@ -1310,7 +1315,7 @@ it doesnt make sense".
   slows" dropped; armor strips read "of the armor left" (shredPct); CRR's sentence says its partial reload, no leash, every bolt's
   CRR_SLOW and shields blocking the tether's slow; Ifrit's two 7.1 lines merged (meteor x0.75 then x0.6: 55% softer net).
 
-### 12.s Levers measured and DROPPED, 2026-11-05 - do not re-run
+### 13.8 Levers measured and DROPPED, 2026-11-05 - do not re-run (was 12.s)
 
 Wai's lever table of 11-05 (per tower x enemy type), measured by Balance/Sims with countermx at 9 points, late windows 101-109 / 111-119
 (the marks run), on 7.6.0 unless noted. Leak % is swarm / fast / shield / armor; "distance" is the marks' distance to the target (24 live).
@@ -1337,7 +1342,7 @@ changes only tiers I-II is unmeasurable by marks (GRV G1 / G2 / G2T below).
 | IFR I2 / I3 | I1 + shards 0.5 speed / 0.5 speed only | I2 1/32/6/84; I3 no change; distance 24 | dropped |
 | CRR E0-E5 (old SOL, `492f6b7`; each on top of 1-2 bolts a volley at the same damage per volley) | E0 same reload; E1 reload x1.5; E2 x2; E3 hangar x0.75; E4 reload x1.5 + ammo x1.5; E5 ammo x0.5 | leaks (baseline 7.5.0 9/10/0/61): E0 8/8/0/52, E1 10/12/0/55, E2 14/16/0/60, E3 15/18/0/60, E4 8/6/0/44, E5 12/24/0/70 - all six RULE FAIL; fewer bolts reaches armor -1, swarm never passes 15% (a minus needs ~20%), fast and shield trade the one check. E2 / E3 rerun on 7.6.0: the same | dropped |
 
-### 12.r Look and demo numbers, 2026-11-07 (7.7.111 .. 7.7.115; Visual)
+### 13.9 Look and demo numbers, 2026-11-07 (7.7.111 .. 7.7.115; Visual) (was 12.r)
 
 Draw and card-demo values only - none touches the board's balance (fp IDENTICAL on each).
 
@@ -1352,7 +1357,7 @@ Draw and card-demo values only - none touches the board's balance (fp IDENTICAL 
 | the acid lake | one fill over the lake pools' union, one outline (uncovered arcs only); per pool over `POOL_LOD` | `drawLake`, `lakeArcs` | Wai: "overlapping pools merge" (21c2591) |
 | pool bubbles' seed | `fixedRand` of the pool's x/y x8 rounded | `poolSeed` | no Math.random in draw (eadf950) |
 
-### 12.q The capstone mechanics' numbers (2026-11-07, live 7.7.121; Wai's picks 2026-11-06)
+### 13.10 The capstone mechanics' numbers (2026-11-07, live 7.7.121; Wai's picks 2026-11-06) (was 12.q)
 
 The mechanic knobs only (the tier tables' V leaps are `CAPSTONE_NUM`, aspira-capstone.js). What each does: ARCHITECTURE §4.5b.
 
