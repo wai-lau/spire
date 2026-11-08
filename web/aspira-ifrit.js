@@ -53,7 +53,10 @@ const IFR_FAN_V = 1 /* the burst flies as fast as the meteor (owner, 2026-10-26:
 // "HELL, instead of more flares, connect glowing chains between random points on the circle with min distance the circle's radius, they have the same effect as a flare, so
 // have HELL IV flares + chains" / "Flare, instead of two flares, add a flare styled circle at 60% the way up the flare spokes, circle has same effect as flare"). All tunable here:
 const IFR_BIG_EVERY = 3, IFR_BIG_HIT_K = 4; // Meteor V: every IFR_BIG_EVERY-th launched (charged) meteor is BIG (drawn IFR_BIG_DRAW_K x, aspira-ifrit-draw.js; its hitbox unchanged) and its FIRST hit does IFR_BIG_HIT_K x - 4 x 1/3 + 1 x 2/3 = 2 x on average
-const IFR_CHAINS_N = 5 /* (owner, 2026-11-07: five, from random points to the enemy since 10:30; a pentagram's chords 07:00-10:30; 3 random chords before) */, IFR_CHAIN_K = 1; // Hellfire V: a tracking fire's five chains, circle to enemy (ifrChain); a chain burns like an untaken-Flare flare, its tick x IFR_CHAIN_K (1: the same as a fire flare - owner, "they have the same effect as a flare")
+// HELLFIRE V's TWO CHAIN RINGS (owner, 2026-11-07 20:55: "get rid of the 5 chains, it doesn't look good / instead just make the ring a thick chain";
+// "for the tracking hf only"; 21:00: "make it 2 rings, one inside and the other outside, have them both rotating in opposite directions slowly"):
+// [radius x the fire's circle, turn direction]; each ring burns what it touches like a flare, its own hit IFR_CHAIN_K x the old chain's
+const IFR_HF_RINGS = [[0.85, 1], [1.15, -1]], IFR_CHAIN_K = 0.5; /* (was five chains to the enemy at x1 each, 10:30-20:55) */
 const IFR_RING_AT = 0.6; // Flare V: the landing flare's circle sits this share of the way up its spokes (the long + ones); it burns exactly as the flare does
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
 // more likely closer to center"; "when hellfire levels up, increase flare count to preserve flare density"): IFR_FIRE_FLARES in a fire of radius
@@ -100,7 +103,7 @@ function ifrSkillStats(t, s, b) {
   s.fire = true; s.fireFlares = h > 0; s.flares = f > 0; // the flares are Flare's (tier redesign 2026-10-24)
   s.fireR = Math.max(s.ballR * IFR_FIRE_FLOOR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireDens = IFR_FIRE_DENS[h]; s.fireHK = IFR_FIRE_HK; 
   s.triple = f >= CAPSTONE_TIER /* Flare V (the name is the old three-flares capstone's): ONE flare a landing + its circle (IFR_RING_AT) */; s.hfK = f ? IFR_HF_FK : 1;
-  s.bigMeteor = m >= CAPSTONE_TIER; s.chains = h >= CAPSTONE_TIER ? IFR_CHAINS_N : 0; // Meteor V: every IFR_BIG_EVERY-th launch is big; Hellfire V: a fire's chains
+  s.bigMeteor = m >= CAPSTONE_TIER; s.chains = h >= CAPSTONE_TIER ? IFR_HF_RINGS.length : 0; // Meteor V: every IFR_BIG_EVERY-th launch is big; Hellfire V: a fire's chains
   s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; const ft = ifrFlareTiming(f); s.burnS = ft.burn; s.tickS = ft.tick; s.flareK = IFR_TICK_K0 * ft.k; // (a third as long, the same per flare - ifrFlareTiming)
   // every hit is st.dmg x its axis's K AT THE HIT, so what towerStats does to dmg after this (the DAM core power, an aura) reaches all of them
   const c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.range = b.range * RANGE_BONUS * c.range; // the STAT CURVE (tier redesign 2026-10-24)
@@ -224,32 +227,19 @@ function ifrLandFlares(t, st, x, y) {
 }
 // a seeded draw in [0, 1) from numbers (no Math.random: a chain's points are the same on a replay and in the draw)
 function ifrHash(...v) { let h = 0x9e3779b9; for (const x of v) { h = Math.imul(h ^ (Math.floor(x * 64) | 0), 0x85ebca6b); h ^= h >>> 13; h = Math.imul(h, 0xc2b2ae35); h ^= h >>> 16; } return (h >>> 0) / 4294967296; }
-// HELLFIRE V's CHAINS, TO THE ENEMY (owner, 2026-11-07 10:30: "The lines should be chains / Make them last longer and flicker and burn like a
-// flare instead of having many flashing copies / Instead of the pentagram shape / Have chains shoot out from random point on the circle to the
-// enemy being tracked"; 10:32: "Only hellfires tracking an enemy should emit chains"): a fire that rides its enemy (f.eid) strikes all
-// IFR_CHAINS_N chains at once, each from a seeded random ANGLE of its circle to the enemy at its centre. A chain keeps its angle and its fire:
-// every tick its segment is rebuilt on the fire's CURRENT circle and enemy (ifrChainSync), and it goes the moment the fire stops tracking.
-// It lives as long as the fire's flares do (its window + a flare's burn); it burns as the untaken Flare's flare does, its tick the fire
-// flare's hit x IFR_CHAIN_K (x the fire's share hk). Was (07:00 .. 10:30) a pentagram of chords, the five struck one after another, each a flare's burn long
-// AT LEAST IFR_CHAIN_GAP APART (owner, 2026-11-07: "for IFR hellfire V, keep each chain at least 50 deg apart" - 60 a minute before): the n chains
-// go round the circle in order from a seeded start, each gap IFR_CHAIN_GAP plus a seeded share of what is left of the turn (5 x 50 = 250, 110 to share)
-const IFR_CHAIN_GAP = 50 * Math.PI / 180;
-function ifrChainAngle(seed, k, n) {
-  const w = []; for (let i = 0; i < n; i++) w.push(0.05 + ifrHash(seed, i, 3));
-  const sum = w.reduce((a, b) => a + b, 0), slack = Math.max(0, 2 * Math.PI - n * IFR_CHAIN_GAP);
-  let a = 2 * Math.PI * ifrHash(seed, 0, 1); for (let i = 0; i < k; i++) a += IFR_CHAIN_GAP + slack * w[i] / sum;
-  return a;
-}
+// HELLFIRE V's RINGS (see IFR_HF_RINGS): a fire that rides its enemy (f.eid) lights both at once; each rides the fire's CURRENT circle at its
+// own radius (ifrChainSync) and goes the moment the fire stops tracking. It lives as long as the fire's flares do (its window + a flare's burn)
+// and burns as the untaken Flare's flare does - what its band (the flare's width) touches, a tick each tickS - its tick the fire flare's hit
+// x IFR_CHAIN_K (x the fire's share hk). The turn is the look's alone (aspira-ifrit-draw.js); the hit is the same all round the ring
 function ifrChain(t, st, fire, k) {
-  const ft = ifrFlareTiming(0), life = (fire.win ?? IFR_FIRE_WINDOW_S) + ft.burn;
-  const c = { a0: ifrChainAngle(fire.seed, k, fire.ch || IFR_CHAINS_N), ph: ifrHash(fire.seed, k, 7), fire, W: IFR_BEAM_W[0], life, left: life, tick: 0, tickS: ft.tick, chain: true, hf: false, edges: false,
+  const ft = ifrFlareTiming(0), life = (fire.win ?? IFR_FIRE_WINDOW_S) + ft.burn, [rk, dir] = IFR_HF_RINGS[k];
+  const c = { rk, dir, ph: ifrHash(fire.seed, k, 7), fire, W: IFR_BEAM_W[0], life, left: life, tick: 0, tickS: ft.tick, chain: true, hf: false, edges: false,
     hit: st.dmg * IFR_TICK_K[0] * st.hfK * st.fireHK * IFR_HF_HIT_K * (fire.hk ?? 1) * IFR_CHAIN_K * ft.k };
   ifrChainSync(c); t.ifrFlares.push(c); return c;
 }
-function ifrChainSync(c) { // the chain's segment as it is NOW: from its point on the fire's circle to the enemy the fire rides (gone when it rides none)
+function ifrChainSync(c) { // the ring as it is NOW: round the fire's centre at rk x its circle (gone when the fire rides none)
   const F = c.fire; if (F.eid == null) { c.left = 0; return; }
-  const x0 = F.x + Math.cos(c.a0) * F.r, y0 = F.y + Math.sin(c.a0) * F.r;
-  c.seg = [x0, y0, F.x, F.y]; c.x = (x0 + F.x) / 2; c.y = (y0 + F.y) / 2; c.L = F.r / 2;
+  c.x = F.x; c.y = F.y; c.circ = F.r * c.rk; c.L = c.circ;
 }
 // the launched meteor's TRACER record: the last IFR_TRACER_U of the path it flew (drawn by drawMeteorTrail, aspira-ifrit-draw.js)
 const IFR_TRACER_U = 60; // u (owner, 2026-10-26)
@@ -332,7 +322,7 @@ function stepIfrFires(t, st, dt) {
     if (!f.flq) { const n0 = Math.max(1, Math.round(IFR_FIRE_FLARES * (f.dens || 1) * (f.R / IFR_FIRE_FLARE_R0) ** 2)), n = Math.max(IFR_FIRE_MIN, n0); f.split = n0 / n; f.flq = []; f.age0 = 0; /* AT LEAST IFR_FIRE_MIN, the fire's hits SPLIT among them (owner, 2026-10-21: "can't see the hellfire flares from IFR at 0 upgrades" - an untaken fire lit one) */ /* its flares' times, a bell round IFR_FIRE_FLARE_T */
       const w = f.win ?? IFR_FIRE_WINDOW_S; for (let i = 0; i < n; i++) f.flq.push(Math.min(w, Math.max(0, w / 2 + w / 4 * ifrNormal()))); f.flq.sort((a, b) => b - a); } /* ALL within its meteor's flare's life (f.win), a bell round its middle */
     f.age0 += dt;
-    if (f.ch && !f.chq && f.eid != null) { f.chq = []; for (let k = 0; k < f.ch; k++) { const c = ifrChain(t, st, f, k); f.until = Math.max(f.until || 0, f.age0 + c.life); } } /* Hellfire V: all its chains at once, only while it rides an enemy */
+    if (f.ch && !f.chq && f.eid != null) { f.chq = []; for (let k = 0; k < f.ch; k++) { const c = ifrChain(t, st, f, k); f.until = Math.max(f.until || 0, f.age0 + c.life); } } /* Hellfire V: both its rings at once, only while it rides an enemy */
     if (f.eid != null) { const e = G.enemies.find(o => o.id === f.eid); if (e && !e.dead) { f.x = e.x; f.y = e.y; } else f.eid = null; } /* A FIRE RIDES ITS ENEMY (owner, 2026-10-24: "make hellfires track enemies (keep them in the center of the hellfire) / they fall off on enemy death"): the meteor's hit, kept dead centre; its death drops the fire where it fell. Flares already lit stay put */
     if (f.r < f.R) { f.r = Math.min(f.R, f.r + f.v * dt); ifrRingHit(t, st, f); }
     while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.sqrt(Math.random()); /* EVEN over the fire's area (owner, 2026-10-21: "change the positional randomness to not prefer the center"; was u^IFR_LAND_POW) */ const fl = ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true, (f.hk ?? 1) * (f.split ?? 1)); if (fl) fl.split = f.split; f.until = Math.max(f.until || 0, f.age0 + ((fl && fl.life) || 0)); /* (fl: a stand-in may return nothing) */
@@ -373,7 +363,7 @@ function ifrBeamEnd(x, y, a, len, edges) {
   }
   return [x, y, x + c * len, y + s * len];
 }
-function ifrBeamEnds(f) { if (f.seg) return [f.seg]; /* (a chain's seg is rebuilt each tick: ifrChainSync in stepIfrFlares) */ /* a Hellfire V chain: its one segment */ const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 4, k % 2 ? f.L * (f.xk ?? IFR_X_K) : f.L, f.edges)); return out; } // (even k: the +, odd: the x)
+function ifrBeamEnds(f) { if (f.seg) return [f.seg]; if (f.chain) return IFR_NO_ENDS; /* a Hellfire V ring: no spokes, its band alone (f.circ, ifrTickFlare) */ const out = []; for (let k = 0; k < IFR_BEAMS; k++) out.push(ifrBeamEnd(f.x, f.y, k * Math.PI / 4, k % 2 ? f.L * (f.xk ?? IFR_X_K) : f.L, f.edges)); return out; } // (even k: the +, odd: the x)
 // a flare's tick: every live on-screen enemy whose body touches ANY of its beams takes one quiet tick (one hit a flare a tick, on
 // two beams too). Exact, not sampled: a cheap radius reject (a flare that cannot reach the enemy), then point-to-segment on its
 // beams. 40 Hellfire-VI flares x 200 enemies x 6 beams is ~50k dot products, under the smoke's budget (2026-10-19; the grid
@@ -382,7 +372,7 @@ function ifrBeamEnds(f) { if (f.seg) return [f.seg]; /* (a chain's seg is rebuil
 // before - what stands in the fire burns, what runs through it does not. Long flares blanket the lanes; without this the fast
 // weakness (owner's design) was gone (countermx 61-69: fast 30% leaked, armor 77%). let: the simulator can switch it off
 let IFR_CATCH = false; // OFF (owner, 2026-10-20: "just don't require lit for either flares"): every tick burns what touches a spoke
-const IFR_NONE = {};
+const IFR_NONE = {}, IFR_NO_ENDS = [];
 function ifrTickFlare(t, st, f, k = 1) { // k: x the flare's hit (a burning fire flare's step share of its tick)
   const ends = ifrBeamEnds(f), half = f.W / 2, amt = (f.hit ?? st.dmg * st.flareK) * k, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
   const all = G.enemies, defs = ENEMIES; /* (locals: a global read in this loop costs more than the arithmetic) */
@@ -409,7 +399,7 @@ function ifrTickFlare(t, st, f, k = 1) { // k: x the flare's hit (a burning fire
 function stepIfrFlares(t, st, dt) {
   if (!t.ifrFlares.length) return;
   for (const f of t.ifrFlares) {
-    f.left -= dt; f.tick += dt; if (f.fire) { ifrChainSync(f); if (f.left <= 0) continue; } // a Hellfire V chain rides its fire (and goes, unticked, when the fire stops tracking)
+    f.left -= dt; f.tick += dt; if (f.fire) { ifrChainSync(f); if (f.left <= 0) continue; } // a Hellfire V ring rides its fire (and goes, unticked, when the fire stops tracking)
     if (f.hf) continue; /* a fire flare struck as it appeared - it only shows now */
     const ts = f.tickS || st.tickS; if (f.tick < ts) continue;
     f.tick -= ts; ifrTickFlare(t, st, f);

@@ -190,32 +190,31 @@ check("IFR Meteor V: every third CHARGED meteor is big and its first hit does 4x
   for (let i = 0; i < 6; i++) { const q = r.v.hits[i] / r.v.unit, want = r.v.bigs[i] ? r.k : 1; if (Math.abs(q - want) > 0.01) return "launch " + i + " hit x" + q.toFixed(3) + " (expected x" + want + ")"; }
   return "";
 });
-check("IFR Hellfire V: a fire that follows an enemy strikes five chains, each from a seeded random point of its circle to that enemy (owner, 2026-11-07 10:30: \"Have chains shoot out from random point on the circle to the enemy being tracked\"), lasting the fire's flare window + a flare's burn, riding the fire, burning what they touch; none on a fire that tracks nothing (10:32), gone when it stops tracking; IV's flare count held; none below V", () => {
+check("IFR Hellfire V: a fire that follows an enemy lights TWO chain rings, one inside its circle and one outside, turning opposite ways (owner, 2026-11-07: \"make it 2 rings, one inside and the other outside, have them both rotating in opposite directions slowly\"), lasting the fire's flare window + a flare's burn, riding the fire, burning what touches the ring and nothing inside or out; none on a fire that tracks nothing (\"for the tracking hf only\"), gone when it stops tracking; IV's flare count held; none below V", () => {
   const r = run(`(() => { ${capFresh}
     const go = (k, track = true) => { const t = fresh("hellfire", k), st = towerStats(t), e = still("armor", CX + 40, CY + 40); e.hp = e.max = 1e12;
-      ifrImpact(t, st, { ax: CX + 40, ay: CY + 40, r: st.ballR, flown: 7, hitId: track ? e.id : null }); const f = t.ifrFires[0], chains = [];
-      for (let i = 0; i < 30; i++) { const was = t.ifrFlares.filter(c => c.chain).length; stepIfrFires(t, st, 1 / 60); stepIfrFlares(t, st, 1 / 60); for (const c of t.ifrFlares.filter(c => c.chain).slice(was)) chains.push({ seg: c.seg.slice(), r: f.r, cx: f.x, cy: f.y, c }); }
-      return { chains, st, f, t, e }; };
-    const o = {}; { const d = go(6); d.e.dead = true; stepIfrFires(d.t, d.st, 1 / 60); stepIfrFlares(d.t, d.st, 1 / 60); o.after = d.t.ifrFlares.filter(c => c.chain).length; } /* (in its own game: a later go() replaces G) */
-    const b = go(6), iv = go(4), un = go(6, false), a = go(6);
-    o.n = a.chains.length; o.ivN = iv.chains.length; o.unN = un.chains.length; o.same = JSON.stringify(a.chains.map(c => c.seg)) === JSON.stringify(b.chains.map(c => c.seg));
-    o.toEnemy = a.chains.map(c => Math.hypot(c.seg[2] - a.e.x, c.seg[3] - a.e.y)); o.onCircle = a.chains.map(c => Math.abs(Math.hypot(c.seg[0] - c.cx, c.seg[1] - c.cy) - c.r));
-    o.angles = new Set(a.chains.map(c => c.c.a0.toFixed(3))).size; const ft = ifrFlareTiming(0); o.life = a.chains.map(c => c.c.life - ((a.f.win ?? IFR_FIRE_WINDOW_S) + ft.burn));
-    { const c = a.chains[0].c, F = c.fire, before = c.seg.slice(); F.x += 50; F.y -= 30; ifrChainSync(c); o.rides = Math.abs(c.seg[0] - before[0] - 50) < 1e-6 && Math.abs(c.seg[2] - before[2] - 50) < 1e-6; F.x -= 50; F.y += 30; ifrChainSync(c); }
-    const c0 = a.chains[0].c; const near = still("swarm", c0.x, c0.y), far = still("swarm", c0.x + 900, c0.y); c0.left = c0.life; ifrTickFlare(a.t, a.st, c0); o.near = near.max - near.hp; o.far = far.max - far.hp;
+      ifrImpact(t, st, { ax: CX + 40, ay: CY + 40, r: st.ballR, flown: 7, hitId: track ? e.id : null }); const f = t.ifrFires[0];
+      for (let i = 0; i < 30; i++) { stepIfrFires(t, st, 1 / 60); stepIfrFlares(t, st, 1 / 60); }
+      return { rings: t.ifrFlares.filter(c => c.chain), st, f, t, e }; };
+    const o = {}; { const d = go(6); d.e.dead = true; stepIfrFires(d.t, d.st, 1 / 60); stepIfrFlares(d.t, d.st, 1 / 60); o.after = d.t.ifrFlares.filter(c => c.chain).length; }
+    const iv = go(4), un = go(6, false), a = go(6);
+    o.n = a.rings.length; o.ivN = iv.rings.length; o.unN = un.rings.length;
+    o.rk = a.rings.map(c => c.circ / a.f.r); o.dirs = a.rings.map(c => c.dir); o.centred = a.rings.every(c => c.x === a.f.x && c.y === a.f.y);
+    const ft = ifrFlareTiming(0); o.life = a.rings.map(c => c.life - ((a.f.win ?? IFR_FIRE_WINDOW_S) + ft.burn));
+    { const c = a.rings[0], F = c.fire; F.x += 50; F.y -= 30; ifrChainSync(c); o.rides = c.x === F.x && c.y === F.y; F.x -= 50; F.y += 30; ifrChainSync(c); }
+    const c0 = a.rings[1]; const on = still("swarm", c0.x + c0.circ, c0.y), mid = still("swarm", c0.x, c0.y + c0.circ * 0.5), far = still("swarm", c0.x + 900, c0.y);
+    c0.left = c0.life; ifrTickFlare(a.t, a.st, c0); o.on = on.max - on.hp; o.mid = mid.max - mid.hp; o.far = far.max - far.hp;
     const cnt = st => Math.round(IFR_FIRE_FLARES * st.fireDens * (st.fireR / IFR_FIRE_FLARE_R0) ** 2); o.dV = cnt(a.st); o.dIV = cnt(iv.st); o.dens = [a.st.fireDens, iv.st.fireDens];
     return o; })()`);
-  if (r.n !== 5) return "Hellfire V struck " + r.n + " chains (expected 5)";
-  if (r.unN) return "a fire that tracks nothing struck " + r.unN + " chains";
-  if (r.ivN) return "Hellfire IV struck " + r.ivN + " chains";
-  if (!r.same) return "the chains' points are not the same on a replay (a seeded draw)";
-  if (r.angles < 5) return "chains share a point (" + r.angles + " distinct angles of 5)";
-  if (r.toEnemy.some(d => d > 1e-6)) return "a chain does not end at the tracked enemy: " + r.toEnemy;
-  if (r.onCircle.some(d => d > 1e-6)) return "a chain does not start on the circle: " + r.onCircle;
-  if (r.life.some(d => Math.abs(d) > 1e-9)) return "a chain's life is not the fire's window + a flare's burn: " + r.life;
-  if (!r.rides) return "a chain does not ride its fire when the fire moves";
-  if (!(r.near > 0) || r.far) return "a chain burns what touches it (" + r.near + ") and nothing else (" + r.far + ")";
-  if (r.after) return r.after + " chains left after the fire's enemy died (expected none)";
+  if (r.n !== 2) return "Hellfire V lit " + r.n + " rings (expected 2)";
+  if (r.unN) return "a fire that tracks nothing lit " + r.unN + " rings";
+  if (r.ivN) return "Hellfire IV lit " + r.ivN + " rings";
+  if (!(r.rk[0] < 1 && r.rk[1] > 1)) return "ring radii x the circle " + r.rk + " (expected one inside, one outside)";
+  if (r.dirs[0] * r.dirs[1] !== -1) return "rings turn " + r.dirs + " (expected opposite ways)";
+  if (!r.centred || !r.rides) return "a ring is not centred on its fire / does not ride it";
+  if (r.life.some(d => Math.abs(d) > 1e-9)) return "a ring's life is not the fire's window + a flare's burn: " + r.life;
+  if (!(r.on > 0) || r.mid || r.far) return "a ring burns what touches it (" + r.on + ") and nothing inside (" + r.mid + ") or far (" + r.far + ")";
+  if (r.after) return r.after + " rings left after the fire's enemy died (expected none)";
   if (Math.abs(r.dV - r.dIV) > 1 || !(r.dens[0] < r.dens[1])) return "Hellfire V lights " + r.dV + " flares (density " + r.dens[0] + "), IV " + r.dIV + " (density " + r.dens[1] + "): expected IV's count over the wider fire (owner, 2026-11-06)";
   return "";
 });

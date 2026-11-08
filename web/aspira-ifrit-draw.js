@@ -149,25 +149,31 @@ function ifrSpoke2D(c, f, low, path) { // the 2D spoke's strokes along `path` (w
   ifrSpokeLayers(c, f, low, 1, (w, col, a, pw) => { ctx.strokeStyle = col; ctx.globalAlpha = a / IFR_GLOW_LV.length * 1.6; for (const lv of IFR_GLOW_LV) { ctx.lineWidth = Math.max(0.05, 2 * w * (1 - lv ** (1 / pw))); path(); ctx.stroke(); } });
   ctx.restore();
 }
-// HELLFIRE V's CHAIN (owner, 2026-11-07: "The lines should be chains / ... flicker and burn like a flare"): ONE body a chain for its whole life -
-// the flare's glow along it (ifrSpokeLayers / ifrSpoke2D, as before) and over it real LINKS (aspira-chains.js, ARC's and CRR's): a red-orange
-// body IFR_CHAIN_BODY x the link size, a white-hot core at IFR_CHAIN_LINK; its brightness flickers like a flare's on the chain's own seeded
-// phase (c.ph, ifrFlick), fading with its life
-const IFR_CHAIN_BODY = 1.7, IFR_CHAIN_LINK_A = 0.9;
+// HELLFIRE V's RINGS (owner, 2026-11-07: "make the ring a thick chain" .. "2 rings, one inside and the other outside, have them both rotating
+// in opposite directions slowly"): each ring the flare's glow round its circle (ifrRingGl / ifrRing2D, as Flare V's circle) and over it real
+// LINKS (aspira-chains.js, ARC's and CRR's) on IFR_HF_RING_SEGS chords: a red-orange body IFR_CHAIN_BODY x the link size, a white-hot core at
+// IFR_CHAIN_LINK, both x IFR_HF_RING_THICK; the chords' start turns once each IFR_HF_RING_TURN_S on the ring's own direction (c.dir), on the
+// game's clock (its age: still when paused); its brightness flickers like a flare's on the ring's seeded phase (c.ph, ifrFlick)
+const IFR_CHAIN_BODY = 1.7, IFR_CHAIN_LINK_A = 0.9, IFR_HF_RING_SEGS = 20, IFR_HF_RING_TURN_S = 7, IFR_HF_RING_THICK = 1.5;
+function ifrRingChords(c, each) {
+  const a0 = c.dir * 2 * Math.PI * (c.life - c.left) / IFR_HF_RING_TURN_S, n = IFR_HF_RING_SEGS, r = c.circ;
+  let px = c.x + Math.cos(a0) * r, py = c.y + Math.sin(a0) * r;
+  for (let i = 1; i <= n; i++) { const a = a0 + i * 2 * Math.PI / n, x = c.x + Math.cos(a) * r, y = c.y + Math.sin(a) * r; each(px, py, x, y); px = x; py = y; }
+}
 function ifrChainDraw(c, f, low, fs = 1) {
-  const [x0, y0, x1, y1] = c.seg, gl3 = !!(ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlGlowLine === "function");
-  const a = Math.min(1, IFR_CHAIN_LINK_A * f);
+  if (!(c.circ > 1)) return;
+  const gl3 = !!(ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlGlowLine === "function");
+  const a = Math.min(1, IFR_CHAIN_LINK_A * f), body = IFR_CHAIN_LINK * IFR_CHAIN_BODY * IFR_HF_RING_THICK, core = IFR_CHAIN_LINK * IFR_HF_RING_THICK;
   if (gl3) {
-    const s = trimToTowers(x0, y0, x1, y1); if (!s) return;
-    ifrSpokeLayers(c, f, low, fs, (w, col, al, pw) => fxGlGlowLine(s[0], s[1], s[2], s[3], w, col, al, 0, 0, pw));
-    if (typeof fxGlChain === "function") { fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: IFR_HF_COL.orange, thin: IFR_CHAIN_LINK * IFR_CHAIN_BODY }, a); fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: "white", thin: IFR_CHAIN_LINK }, a); }
+    ifrRingGl(c, f, low, fs);
+    if (typeof fxGlChain === "function") ifrRingChords(c, (x0, y0, x1, y1) => { fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: IFR_HF_COL.orange, thin: body }, a); fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: "white", thin: core }, a); });
     return;
   }
-  ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); });
+  ifrRing2D(c, f, low);
   if (typeof drawChain2D === "function") {
     const pt = (x, y) => ({ x, y }), g0 = ctx.globalAlpha;
-    ctx.globalAlpha = a; drawChain2D(x0, y0, x1, y1, pt, 1, COL[IFR_HF_COL.orange], IFR_CHAIN_LINK * IFR_CHAIN_BODY);
-    ctx.globalAlpha = a; drawChain2D(x0, y0, x1, y1, pt, 1, COL.white, IFR_CHAIN_LINK); ctx.globalAlpha = g0;
+    ifrRingChords(c, (x0, y0, x1, y1) => { ctx.globalAlpha = a; drawChain2D(x0, y0, x1, y1, pt, 1, COL[IFR_HF_COL.orange], body); ctx.globalAlpha = a; drawChain2D(x0, y0, x1, y1, pt, 1, COL.white, core); });
+    ctx.globalAlpha = g0;
   }
 }
 function ifrRing2D(c, f, low) { ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); }); }
