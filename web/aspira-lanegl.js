@@ -8,7 +8,7 @@
 // and laneCoreFade mask them. Every frame, from litLanes(): a lane lights the frame its wave is sent and goes out the frame its last
 // enemy dies, and fades in smoothly - no board redraw, no fade layer, no upload. The 2D view keeps the 2D lanes. LANE_GL false: the old way
 let LANE_GL = true;
-const LGL_T = 512, LGL_RT = R0 + 6, LGL_DMAX = 66, LGL_LMAX = 16, LGL_N = 16; // T: a path's tile, texels a side, over +-RT world units round the core; DMAX: the glow's farthest distance kept (a boss glow's half width + AA), LMAX the line's (a boss line's); N: lanes a frame
+const LGL_T = 512, LGL_RT = R0 + 6, LGL_DMAX = 76, LGL_LMAX = 26 /* 66 / 16 until LANE_PLAIN_W 4 (2026-11-07): a non-boss glow's half width 72, its line's 24 */, LGL_N = 16; // T: a path's tile, texels a side, over +-RT world units round the core; DMAX: the glow's farthest distance kept (a boss glow's half width + AA), LMAX the line's (a boss line's); N: lanes a frame
 // A TILE A PATH, 4 x 3 in the atlas: R the line's SIGNED distance (+-LMAX: which side of its nearest segment), G its plain distance (0..LMAX), B the glow's
 // (0..DMAX). A plain distance read between texels is too far by up to half a texel at the line itself (its V does not interpolate) - the line came out
 // beaded (WebKit, 2026-10-31); the signed one interpolates straight through 0 there, but jumps where two turns of the spiral are as near - so the line's
@@ -44,7 +44,7 @@ void laneFlush(float dG, float dL, vec4 b, vec4 c, LHP vec2 p) { // one group: b
     ${lglLevels(BOSS_LINE_SOFT, "1.0", "c.y", "dL", "laneL")}
   } else {
     ${lglLevels(LIT_GLOW_SOFT, LANE_PLAIN_W.toFixed(4), "c.x", "dG", "laneG")}
-    ${lglLevels(LIT_LINE_SOFT, LANE_PLAIN_W.toFixed(4), "c.y", "dL", "laneL")} /* x LANE_PLAIN_W (2026-11-07): the glow's 72 u still inside LGL_DMAX, the line's 24 inside LGL_LMAX */
+    ${lglLevels(LIT_LINE_SOFT, LANE_PLAIN_W.toFixed(4), "c.y", "dL", "laneL")} /* x LANE_PLAIN_W (4 since 2026-11-07): the glow's 72 u half width inside LGL_DMAX, the line's 24 inside LGL_LMAX */
     if (dL < ${(LGL_LMAX - 1).toFixed(1)}) { // THE CURTAIN along the whole lane: the line's own distance field (LGL_LMAX u either side), a smooth (1 - d)^2 fade across, waving and
       // shimmering like the glow above - on the line's layer, which runs the lane's length (the glow's is masked to the core's surround)
       LHP float ang = atan(p.y, p.x), rr = length(p), t = laneTime;
