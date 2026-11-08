@@ -38,6 +38,9 @@ def guest_page(browser, base_url):
     ctx = browser.new_context(viewport={"width": 1280, "height": 800})
     ctx.add_cookies([{"name": "guest_session", "value": token, "url": base_url}])
     page = ctx.new_page()
+    # 90 s for every action (clicks, waits): the real mouse path stays tested, but a headless page at 3-6 fps under a running balance sim
+    # (load 17-27) once waited out Playwright's 30 s default on a click whose handler takes 26 ms (Leader, 2026-11-08: the 7.11.7 ship flake)
+    page.set_default_timeout(90_000)
     page.goto(f"{base_url}/spire", wait_until="networkidle")
     page.wait_for_function("typeof G !== 'undefined' && typeof placeTower === 'function'")
     yield page
