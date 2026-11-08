@@ -30,6 +30,12 @@ const ARCANA = [
   { id: "judgement", name: "Judgement", hint: ["The trumpet sounds once;", "what has fallen hears its name", "and rises again."] },
   { id: "death", name: "Death", hint: ["No riddle, no trick,", "only the long road to dark,", "only, now, the end."] },
 ];
+// EACH BOSS ITS OWN DIE (owner, 2026-11-07: "visually update dice shapes, (keep boss sizes): chariot should use the fast dice shape / strength
+// should use the shield shape / lovers armor / empress d20 / ... judgement cube / justice shield / ... temperence armor / death d20 / devil fast"):
+// the die a boss is DRAWN as (the 3D solid, its 2D outline, its wave-list icon) - an enemy type's shape, "bonus" the d20; the Star keeps
+// its own (the d20). The look only: its type stays "bonus" (size, HP, everything else)
+const BOSS_DIE = { chariot: "fast", strength: "shield", lovers: "armor", empress: "bonus", judgement: "swarm", justice: "shield", temperance: "armor", death: "bonus", devil: "fast" };
+const dieOf = e => (e.arcana && BOSS_DIE[e.arcana]) || e.type, bossDieAt = n => BOSS_DIE[arcanaOf(n).id] || "bonus";
 // fitted 2026-10-05 (scripts/aspira-sim/bossbal.mjs): each boss comes 0.9x as
 // near the core as the four waves around it (owner: "just a little closer"),
 // on closest approach, against every open slot filled. Was star 4, strength 2,

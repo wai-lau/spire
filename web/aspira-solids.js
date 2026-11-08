@@ -70,7 +70,7 @@ function solidGeom(e) {
   // roll about the nose (+x), then turn the nose to the heading (no arrays or closures per corner: a late wave builds ~100 of these a frame)
   // (perf, 2026-10-28: the corners, faces and edges live in buffers kept on the enemy and refilled every frame - they were ~120 KB of a late
   // frame's garbage; a geom is read only in the frame it was built, so refilling in place is safe)
-  const S = SOLIDS[e.type], V = S.V, nv = V.length, B = e.geomBuf && e.geomBuf.type === e.type ? e.geomBuf : (e.geomBuf = { type: e.type, R: [], Q: [], faces: [], edges: [], slot: [], fPool: [], ePool: [] }), R = B.R;
+  const die = dieOf(e), S = SOLIDS[die], V = S.V, nv = V.length, B = e.geomBuf && e.geomBuf.type === die ? e.geomBuf : (e.geomBuf = { type: die, R: [], Q: [], faces: [], edges: [], slot: [], fPool: [], ePool: [] }), R = B.R;
   for (let i = 0; i < nv; i++) { const v = V[i], x = v[0], y1 = v[1] * ct - v[2] * st, r = R[i] || (R[i] = [0, 0, 0]); r[0] = x * ch - y1 * sh; r[1] = x * sh + y1 * ch; r[2] = v[1] * st + v[2] * ct; }
   // LIT FROM THE CORE (owner: "the light source should come from the core"): toward the core's top from this die
   const lx = CX - e.x, ly = CY - e.y, lz = warp.lightZ || 1, ll = Math.hypot(lx, ly, lz), L0 = lx / ll, L1 = ly / ll, L2 = lz / ll;
@@ -106,7 +106,7 @@ function solidGeom(e) {
   // its EDGES once: each with how many visible faces share it (1: the outline, 2: an inner edge)
   // (the die's edge TOPOLOGY is fixed per kind - solidEdges - so only which faces show changes)
   const edges = B.edges; let ne = 0;
-  const se = solidEdges(e.type);
+  const se = solidEdges(die); /* a boss: its own die (BOSS_DIE, aspira-bosses.js) */
   for (let i = 0; i < se.length; i++) {
     const E = se[i], sa = slot[E[2]], sb = slot[E[3]];
     if (sa < 0 && sb < 0) continue;

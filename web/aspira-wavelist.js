@@ -110,7 +110,7 @@ function bossBrings(n) {
 const WAVE_BOSS_SHARE = 0.36; // at most this share of the row for the boss icons
 function bossRowIcons(n, w, span, escPx) {
   const esc = bossBrings(n), H = waveRowH(), nb = w.count, bpx = Math.min(WAVE_BOSS_PX, H, (span * WAVE_BOSS_SHARE) / nb - 1);
-  const mid = enemyIcon(w.type, bpx, 1).repeat(nb - 1) + enemyIcon(w.type, bpx, 0), midW = nb * (bpx + 1), side = Math.max(0, (span - midW) / 2 - 2);
+  const die = bossDieAt(n), mid = enemyIcon(die, bpx, 1).repeat(nb - 1) + enemyIcon(die, bpx, 0), /* its own die's icon (BOSS_DIE, aspira-bosses.js) */ midW = nb * (bpx + 1), side = Math.max(0, (span - midW) / 2 - 2);
   const tot = esc.reduce((a, [, c]) => a + c, 0) || 1;
   const half = right => esc.map(([k, c]) => { const m = right ? Math.floor(c / 2) : Math.ceil(c / 2), sw = Math.max(4, side * c / tot); return m ? '<span class="asp-besc e-' + ENEMIES[k].color + '">' + waveBand(k, m, Math.min(escPx(k), H), sw) + "</span>" : ""; }).join("");
   return '<span class="asp-bside">' + half(false) + '</span><span class="asp-bmid">' + mid + '</span><span class="asp-bside">' + half(true) + "</span>";

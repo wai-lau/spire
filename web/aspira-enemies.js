@@ -154,7 +154,7 @@ const slowsChill = sl => { for (const k in sl) if (k.endsWith(":chill")) return 
 function drawStatus(e, d, size, solid) {
   const vis = enemyVis(e); // (off the board: as faint as the body - owner, 2026-10-26)
   if (e.biteT > 0) {
-    poly(e.x, e.y, size, d.sides, e.rot, d.pointy);
+    { const sd = ENEMIES[dieOf(e)]; poly(e.x, e.y, size, sd.sides, e.rot, sd.pointy); } /* a boss: its die's outline (BOSS_DIE) */
     ctx.fillStyle = COL.tfrz; ctx.globalAlpha = (0.45 * Math.min(1, e.biteT * 2)) * vis; ctx.fill();
   }
   if (e.brittle > 1 && e.slowT > 0 && !solid) { /* 2D only: in 3D the crack lay on the FLOOR under the raised die and only a stub peeked out from under it - a white "tail" on every fractured enemy, board and demo (owner, 2026-11-07: "Fix tiny tail on fast") */
