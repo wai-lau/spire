@@ -81,7 +81,11 @@ const BOSS_INTRO = 2; /* 20% shorter (owner, 2026-10-12; was 2.5) */ // s betwee
 const EMPRESS_GAP = 6; // u between swarmers as they pour out (EMPRESS_STEP 1/3 gone with the 90/70/50 broods)
 // AT 90 / 70 / 50% (owner, 2026-11-07 22:30: "release swarm at 90% 70% 50% hp"; was past 2/3 and 1/3) - and VEILED while any of them lives:
 // "empress visually reduced in opacity, untargettable and invuln while swarm is up" (e.veiled, bossVeil below)
-const EMPRESS_AT = [0.9, 0.7, 0.5]; // HP share a brood; u between swarmers as they pour out
+const EMPRESS_AT = [0.9, 0.7, 0.5];
+// HALF A AND HALF C (owner, 2026-11-08: "half A and half C", after the reorder's first pass - Empress 3.5x a wave's depth, Judgement 8.9x): each brood
+// EMPRESS_BROOD_K (2/3) of a swarm wave and the veiled Empress walks at 0.75x; Judgement (owner, 2026-11-08: "wait, for judgement, keep 1.2x wave, walk at
+// 0.2 speed when veiled") keeps her 1.2 swarm waves and walks at 0.2x while veiled - VEIL_SPD by boss, read by effSpeed (aspira-game.js)
+const EMPRESS_BROOD_K = 2 / 3, VEIL_SPD = { empress: 0.75, judgement: 0.2 }; // HP share a brood; u between swarmers as they pour out
 // a plain wave of `type` at wave n, as wavePlan would send it (the count taper, never under the wave before): the boss redesign's "a wave"
 const typeWaveCount = (type, n) => Math.max(1, Math.round(countK(n) * Math.max(waveCount(type, n), planCount(type, n))));
 // A SMOOTH GALLOP (owner, 2026-11-07 22:30: "chariot, change speed from step fn to sinusoidal"): x(1.5 + 0.5 sin) over a CHARIOT_EVERY (1 s) period -
@@ -257,7 +261,7 @@ function bossStep(e, dt) {
   if (regen && e.shield < e.shieldMax) { e.shieldBuf += regen * dt; const n = Math.floor(e.shieldBuf); if (n) { e.shieldBuf -= n; e.shield = Math.min(e.shieldMax, e.shield + n); } }
   if (isA(e, "empress") && e.broodI < EMPRESS_AT.length && e.hp / e.max <= EMPRESS_AT[e.broodI]) {
     e.broodI++;
-    for (let i = 0, N = typeWaveCount("swarm", e.n); i < N; i++) {
+    for (let i = 0, N = Math.max(1, Math.round(typeWaveCount("swarm", e.n) * EMPRESS_BROOD_K)); i < N; i++) {
       spawnEnemy("swarm", e.n, e.pi, e.ang || 0);
       const m = G.enemies[G.enemies.length - 1]; m.s = Math.max(0, e.s - EMPRESS_GAP * i);
       m.bossKin = true; // the boss's own: the inverted sky holds till these die too

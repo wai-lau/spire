@@ -238,16 +238,16 @@ check("bosses (owner, 2026-11-05): Justice at the crossing of a 7-across, 13-alo
   const s = bossRig(84);
   if (s.arc !== "justice" || s.n !== 18 || s.ty.armor !== 18 || s.lats !== 7 || s.ahead !== 6 || s.behind !== 6 || !s.shield.every(x => x > 0) || !s.armor.every(x => x > 0)) return "Justice fleet " + JSON.stringify(s).slice(0, 300);
 });
-check("bosses (owner, 2026-11-07): the Empress comes alone and pours out a whole swarm wave at 90, 70 and 50% of her HP, veiled (no damage, no target) while any of it lives", () => {
+check("bosses (owner, 2026-11-07): the Empress comes alone and pours out 2/3 of a swarm wave at 90, 70 and 50% of her HP, veiled (no damage, no target) while any of it lives", () => {
   const r = run(`(() => { G = newGame(); G.wave = 59; spawnEnemy("bonus", 60, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana); if (!G.enemies.includes(e)) G.enemies.push(e); e.seen = true;
     const kin = () => G.enemies.filter(m => m.bossKin && m.type === "swarm").length, out = [e.fleet.length];
     for (const f of [0.95, 0.9, 0.6, 0.5, 0.3]) { e.hp = e.max * f; bossStep(e, 0.01); out.push(kin()); }
-    const veiled = e.veiled && !e.seen, hp = e.hp; damage(e, 1e9, null); const hit = e.hp !== hp;
+    const veiled = e.veiled && !e.seen, hp = e.hp; damage(e, 1e9, null); const hit = e.hp !== hp, v0 = effSpeed(e);
     for (const m of G.enemies) if (m.bossKin) { m.dead = true; } bossStep(e, 0.01);
-    return { out, want: typeWaveCount("swarm", 60), veiled, hit, after: e.veiled }; })()`);
+    return { out, want: Math.max(1, Math.round(typeWaveCount("swarm", 60) * EMPRESS_BROOD_K)), veiled, hit, after: e.veiled, slow: v0 / effSpeed(e) }; })()`);
   const [fl, a, b, c, d, z] = r.out, w = r.want;
   if (fl || a || b !== w || c !== 2 * w || d !== 3 * w || z !== 3 * w || !(w >= 12)) return "Empress fleet, brood after 0.95/0.9/0.6/0.5/0.3: " + r.out + " (a wave = " + w + ")";
-  if (!r.veiled || r.hit || r.after) return "Empress veil: veiled " + r.veiled + ", took damage " + r.hit + ", still veiled after her brood died " + r.after;
+  if (!r.veiled || r.hit || r.after || Math.abs(r.slow - 0.75) > 1e-9) return "Empress veil: veiled " + r.veiled + ", took damage " + r.hit + ", still veiled after her brood died " + r.after + ", veiled speed x" + r.slow + " (expected 0.75, owner 2026-11-08 \"half A and half C\")";
 });
 check("bosses (owner, 2026-11-05): the Lovers bring one armor wave scattered like a swarm (half each), and the one left alone neither heals nor runs", () => {
   const s = bossRig(48), r = run(`(() => { G = newGame(); G.wave = 47; spawnEnemy("bonus", 48, 0, 0); spawnEnemy("bonus", 48, 1, Math.PI);
@@ -259,10 +259,10 @@ check("bosses (owner, 2026-11-05): the Lovers bring one armor wave scattered lik
 check("bosses (owner, 2026-11-05; veil 2026-11-07): Judgement comes alone; killed, she rises once at her lane's start at full HP with 1.2 swarm waves behind her, and her second death is her last", () => {
   const r = run(`(() => { G = newGame(); G.wave = 71; spawnEnemy("bonus", 72, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana);
     if (!G.enemies.includes(e)) { G.fleetQ.splice(G.fleetQ.indexOf(e), 1); G.enemies.push(e); } const f0 = e.fleet.length; e.s = PATHS[0].len * 0.7; e.hp = 0; kill(e);
-    const a = { f0, dead: e.dead, hp: e.hp / e.max, at: e.s - entryS(0), kin: G.fleetQ.concat(G.enemies).filter(m => m.type === "swarm" && m.bossKin).length, want: Math.round(1.2 * typeWaveCount("swarm", 72)), veiled: !!e.veiled, veilN: (e.veilKin || []).length };
+    const a = { f0, vs: effSpeed(e) / (effSpeed({ ...e, veiled: false }) || 1), dead: e.dead, hp: e.hp / e.max, at: e.s - entryS(0), kin: G.fleetQ.concat(G.enemies).filter(m => m.type === "swarm" && m.bossKin).length, want: Math.round(JUDGEMENT_SWARM * typeWaveCount("swarm", 72)), veiled: !!e.veiled, veilN: (e.veilKin || []).length };
     for (const m of e.veilKin || []) m.dead = true; e.seen = true; bossStep(e, 0.01); a.unveiled = !e.veiled;
     e.hp = 0; kill(e); a.dead2 = e.dead; return a; })()`);
-  if (r.f0 || r.dead || r.hp !== 1 || Math.abs(r.at) > 0.01 || r.kin !== r.want || !r.dead2 || !r.veiled || r.veilN !== r.want || !r.unveiled) return "Judgement (veiled while her rise swarm lives, owner 2026-11-07) " + JSON.stringify(r);
+  if (r.f0 || r.dead || r.hp !== 1 || Math.abs(r.at) > 0.01 || r.kin !== r.want || !r.dead2 || !r.veiled || r.veilN !== r.want || !r.unveiled || Math.abs(r.vs - 0.2) > 1e-9) return "Judgement (veiled while her rise swarm lives at 0.2x speed, owner 2026-11-07/08) " + JSON.stringify(r);
 });
 check("bosses (owner, 2026-11-05): the Devil's host (half a fast + half a swarm wave, loose like swarm) comes first; her six come once half of it has been on screen", () => {
   const r = run(`(() => { const bh = BAR_HOLD; BAR_HOLD = false; try { G = newGame(); G.lives = 1e6; G.started = true; G.wave = 119; sendWave(); let at = null, most = 0, preSeen = -1;

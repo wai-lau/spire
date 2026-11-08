@@ -102,7 +102,7 @@ function spawnEnemy(type, n, pi, ang = 0) {
 // Global enemy pace (owner: everything at half speed). Spawn gaps are divided
 // by it too, so enemies stay the same DISTANCE apart on the lane — that
 // spacing is a balance lever for chain reach.
-const OFF_SCREEN_SPEED = 3, effSpeed = e => ENEMIES[e.type].speed * ENEMY_SPEED * (e.spd || 1) * PATHS[e.pi].pace * (e.stunT > 0 ? 0 : 1 - (e.slowT > 0 ? e.slowF : 0));
+const OFF_SCREEN_SPEED = 3, effSpeed = e => ENEMIES[e.type].speed * ENEMY_SPEED * (e.spd || 1) * PATHS[e.pi].pace * (e.stunT > 0 ? 0 : 1 - (e.slowT > 0 ? e.slowF : 0)) * (e.veiled ? VEIL_SPD[e.arcana] ?? 1 : 1); // (VEIL_SPD: a veiled boss walks slower, by boss - aspira-bosses.js)
 
 // FRESH (owner): an enemy carrying NO debuff - slowed, stunned, bleeding,
 // burning, corroded, frostbitten, shredded, poisoned or charged

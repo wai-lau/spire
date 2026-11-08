@@ -101,7 +101,7 @@ function bossBrings(n) {
   else if (lat) per(lat.k, Math.round(lat.n / bodies));
   else if (FLEET[id]) for (const k of FLEET[id]) per(k, Math.max(1, Math.round(waveCount(k, n) * (FLEET_MUL[id] ?? 1) / FLEET[id].length / bodies)));
   if (id === "devil") for (const [k, mul] of DEVIL_ESC) out.push([k, Math.max(1, Math.round(typeWaveCount(k, n) * mul))]);
-  if (id === "empress") out.push(["swarm", EMPRESS_AT.length * typeWaveCount("swarm", n)]); // a brood at each step bossStep fires (90 / 70 / 50%, 2026-11-07)
+  if (id === "empress") out.push(["swarm", EMPRESS_AT.length * Math.max(1, Math.round(typeWaveCount("swarm", n) * EMPRESS_BROOD_K))]); // a brood at each step bossStep fires (90 / 70 / 50%, 2026-11-07)
   if (id === "judgement") out.push(["swarm", Math.max(1, Math.round(typeWaveCount("swarm", n) * JUDGEMENT_SWARM))]);
   return out.filter(([, c]) => c > 0);
 }
