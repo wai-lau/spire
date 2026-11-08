@@ -32,13 +32,16 @@ const solScorch = (t, col) => { const bt = t && t.kind === "sol" ? skillOf(t, "f
 // ---------- BREACH: the blades ----------
 const SOL_BLADE_VQ = 0.04; // the view-shape key's step (a share of the floor's px a unit)
 const SOL_BLADE_BACK_A = 0.7, SOL_BLADE_OUT = 15 / 40, SOL_BLADE_TH = 0.7 / 40, SOL_BLADE_FADE = [0.08, 0.4], SOL_BLADE_INT = [0, 0.3, 0.45, 0.62, 0.8, 1];
-const solBladeProfile = d => 1.6 + 1.6 * (Math.exp(3 * d) - 1) / (Math.exp(3) - 1); // x the tower's visible height: 160% centre -> 320% sides
+const solBladeProfile = d => 1.6 + 1.6 * (Math.exp(3 * d) - 1) / (Math.exp(3) - 1); // x a LEVEL-4 tower's visible height (SOL_BLADE_LVL): 160% centre -> 320% sides
+// ONE BLADE HEIGHT AT EVERY LEVEL (owner, 2026-11-07: "breach blades, always use the level 4 tower height for the blade height, instead of the
+// current tower height"): the profile runs on a level-SOL_BLADE_LVL tower's visible height, whatever this tower's level
+const SOL_BLADE_LVL = 4;
 const solBodyOf = new WeakMap();
 let solScratch = null;
 // device px of the world point (px, py) at height z (identity transform)
 const solScr = (px, py, z) => { const F = warpFrame(px, py, z); return [F[0] * px + F[2] * py + F[4], F[1] * px + F[3] * py + F[5]]; };
 function solBladeGeo(t, x, y, top) { // each blade's outline in device px, sorted back to front; -> { list, key }. top: the prism's top as drawOrbiters gives it
-  const n = solSides(t), c = CELLS[t.cell], p = c.pts[0], R = Math.hypot(p.x - c.x, p.y - c.y) * TOWER_K * TOWER_DRAW_K, a0 = solA0(t, n), z0 = warpFloor(), vis = top + warpLift; // z0: the REAL floor (the tower is lifted, warpLift); vis: its visible height
+  const n = solSides(t), c = CELLS[t.cell], p = c.pts[0], R = Math.hypot(p.x - c.x, p.y - c.y) * TOWER_K * TOWER_DRAW_K, a0 = solA0(t, n), z0 = warpFloor(), vis = (top + warpLift) * towerH({ lvl: SOL_BLADE_LVL }) / towerH(t); // z0: the REAL floor (the tower is lifted, warpLift); vis: its visible height
   const s = R / 40, R5 = R + SOL_BLADE_OUT * 40 * s, w = 2 * R * Math.sin(Math.PI / n) / 6, th = SOL_BLADE_TH * 40 * s, base = solScr(x, y, z0);
   const cx = Array.from({ length: n }, (_, k) => solScr(x + R * Math.cos(a0 + 2 * Math.PI * k / n), y + R * Math.sin(a0 + 2 * Math.PI * k / n), z0)[0] - base[0]);
   const mx = Math.max(1e-6, ...cx.map(Math.abs)), list = [];
