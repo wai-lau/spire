@@ -35,7 +35,7 @@ const I_poly = () => null; // (the mockup's Path2D: the game draws from the poin
 // Wai 11-06 FRZ pass. PERMAFROST = ice hex prisms glued face to face (same orientation as the tower's hex); FRACTURE = triangular ice shards with a steep slanted
 // top, scattered round the tower. Each feature's geometry is built ONCE from one seeded sequence (a tier takes the first n, so earlier pieces stay), the prism
 // paths are cached per tier pair, and a cell only paints them back to front: pieces behind the tower first, then the tower, then the pieces in front.
-const I_ICE_N = { perma: [0, 8, 16, 24, 36, 48], frac: [0, 9, 15, 24, 33, 45] };
+const I_ICE_N = { perma: [0, 4, 8, 12, 18, 24], frac: [0, 9, 15, 24, 33, 45] }; // perma HALVED (owner, 2026-11-08: "halve count and double radius of perma sheets"; was 8 .. 48)
 const I_ICE_STATS = { perma: [0, 0], frac: [0, 0], hidden: 0, shards: { free: 0, in: 0, moveIn: 0, moveOut: 0 } }; // [placed at V, shortened to clear the tower's top face]
 const I_COS30 = Math.cos(Math.PI / 6);
 const I_hexHit = (c1, a1, c2, a2) => I_HAX.every(n => Math.abs((c1[0] - c2[0]) * n[0] + (c1[1] - c2[1]) * n[1]) < a1 + a2 - 0.4); // same-orientation hexes overlap (SAT)
@@ -117,13 +117,13 @@ const I_edgeDist = c => Math.max(0, Math.max(...I_HAX.map(n => Math.abs(c[0] * n
 const I_heightFall = c => 1 - 0.75 * Math.pow(I_clamp(I_edgeDist(c) / I_FALL_DMAX, 0, 1), 1.5);
 const I_balScore = (vol, v, u) => { const l = vol[0] + (u < 0 ? v : 0), r = vol[1] + (u < 0 ? 0 : v); return Math.abs(l - r) / (l + r); };
 function* I_genPerma(N) {
-  const g = I_G, r = I_rng(I_SEED_P), aT = g.R * I_COS30, nodes = [{ c: [0, 0], a: aT, side: g.R, ring: 0, used: new Set() }], out = I_ST.hexes, vol = [0, 0], rMin = g.R * 2 / 9; // radius 2R/9 .. 2R/3: a third of the largest to the largest (owner, 2026-11-07: "change perma size to range from 1/3-1, I know this will take up a lot more space, this is fine"; was R/9, a sixth)
+  const g = I_G, r = I_rng(I_SEED_P), aT = g.R * I_COS30, nodes = [{ c: [0, 0], a: aT, side: g.R, ring: 0, used: new Set() }], out = I_ST.hexes, vol = [0, 0], rMin = g.R * 4 / 9; // radius 4R/9 .. 4R/3 (x2, owner, 2026-11-08: "halve count and double radius of perma sheets"; was 2R/9 .. 2R/3): a third of the largest to the largest (owner, 2026-11-07: "change perma size to range from 1/3-1, I know this will take up a lot more space, this is fine"; was R/9, a sixth)
   let k = 1; // when it runs out of room the outer pieces shrink (k) toward the smallest allowed size
   const candidates = (nd, ring) => { // every feasible crystal glued to a free face of nd (the shorter face inside the longer)
     const pool = [];
     for (let f = 0; f < 6; f++) { if (nd.used.has(f)) continue;
       for (let tr = 0; tr < 8; tr++) {
-        const rad = Math.max(rMin, I_lerp(rMin, g.R * 2 / 3, Math.pow(r(), 0.55 + 0.4 * (ring - 1))) * k), a = rad * I_COS30, hgt0 = g.Hs * (0.1 + 0.3 * Math.pow(r(), 0.6 + 0.35 * (ring - 1))); // height 10-40% of the tower's, then the falloff below
+        const rad = Math.max(rMin, I_lerp(rMin, g.R * 4 / 3, Math.pow(r(), 0.55 + 0.4 * (ring - 1))) * k), a = rad * I_COS30, hgt0 = g.Hs * (0.1 + 0.3 * Math.pow(r(), 0.6 + 0.35 * (ring - 1))); // height 10-40% of the tower's, then the falloff below
         const ph = (-60 + I_HEX_ROT + 60 * f) * Math.PI / 180, n = [Math.cos(ph), Math.sin(ph)], s = (r() * 2 - 1) * Math.abs(nd.side - rad) / 2;
         const c = [nd.c[0] + n[0] * (nd.a + a) - n[1] * s, nd.c[1] + n[1] * (nd.a + a) + n[0] * s];
         if (Math.abs(c[0]) + a > 86 || c[1] + rad > 100 || c[1] - rad < -105) continue;

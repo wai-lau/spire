@@ -13,7 +13,7 @@ function ice3dProj(x, y, top, Rw, Hs) {
   const B = P(x, y, 0), X = P(x + 1, y, 0), Y = P(x, y + 1, 0), Z = P(x, y, 1), ex = [X[0] - B[0], X[1] - B[1]], ey = [Y[0] - B[0], Y[1] - B[1]], ez = [Z[0] - B[0], Z[1] - B[1]];
   let n = [ey[0] * ez[1] - ez[0] * ey[1], ez[0] * ex[1] - ex[0] * ez[1], ex[0] * ey[1] - ey[0] * ex[1]]; if (n[2] < 0) n = n.map(q => -q); // (up is nearer the camera)
   const l = Math.hypot(...n) || 1;
-  return { ex, ey, ez, n: n.map(q => q / l), s: Rw / 40, sh: top / Hs, Hs };
+  return { ex, ey, ez, n: n.map(q => q / l), s: Rw / 40, sh: (top + (typeof warpLift === "number" ? warpLift : 0)) / Hs, Hs }; // sh: world units a mockup height unit - the FULL visible height (floor to top) over Hs; it was top alone, half the lifted prism (7.8.11), so the bake's prism occluder stood half as tall and the ice behind its upper half drew over it (owner, 2026-11-08: "frz tower needs to occlude")
 }
 // a mockup point (u, v on the floor, h up) -> [px x, px y, depth] at `k` x the first view's scale, about the tower's floor point
 function ice3dPt(J, u, v, h) {
