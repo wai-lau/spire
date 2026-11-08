@@ -105,14 +105,15 @@ function drawArcBolts3d(t, far, top) {
   for (const f of fx) {
     if (!f.soft || f.a !== t) continue;
     const x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2; if ((y2 < t.y) !== far) continue;
-    const [ik, ia] = arcInt(f), al = arcBoltFade(f) * ia; if (al <= 0) continue;
+    const fa = arcBoltFade(f); if (fa <= 0) continue;
     if (!saved) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineJoin = "round"; saved = true; }
     const o = arcBoltFrom(f, t.x, t.y, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], F0 = warpFrame(o[0], o[1], top);
-    const n = pts.length / 2 - 1, w = ik * (f.thin || 1) * ARC_BOLT_S * 1.5 * Math.hypot(F0[0], F0[1]), L = typeof warpLift === "number" ? warpLift : 0, hAt = q => (top + L) * (1 - q / n) - L, path = new Path2D(), fk = new Path2D(); /* ON THE REAL FLOOR at the target: drawOrbiters runs inside the tower's lift (warpLift, 7.8.11), which warpFrame adds - the end at 0 hung half a tower above the enemy (owner, 2026-11-07: "ARC initial beam does not go to the enemy") */
-    for (let q = 0; q <= n; q++) { const P = scr(pts[q * 2], pts[q * 2 + 1], hAt(q)); q ? path.lineTo(P[0], P[1]) : path.moveTo(P[0], P[1]); }
+    const n = pts.length / 2 - 1, w0 = (f.thin || 1) * ARC_BOLT_S * 1.5 * Math.hypot(F0[0], F0[1]), L = typeof warpLift === "number" ? warpLift : 0, hAt = q => (top + L) * (1 - q / n) - L, path = new Path2D(), fk = new Path2D(); /* ON THE REAL FLOOR at the target: drawOrbiters runs inside the tower's lift (warpLift, 7.8.11), which warpFrame adds - the end at 0 hung half a tower above the enemy (owner, 2026-11-07: "ARC initial beam does not go to the enemy") */
+    const S3 = []; for (let q = 0; q <= n; q++) S3.push(scr(pts[q * 2], pts[q * 2 + 1], hAt(q))); void path;
     const m = n >> 1; for (let q = 0; q * 2 + 1 < fork.length; q++) { const P = scr(fork[q * 2], fork[q * 2 + 1], hAt(m)); q ? fk.lineTo(P[0], P[1]) : fk.moveTo(P[0], P[1]); }
-    ctx.shadowColor = css; ctx.shadowBlur = 3.2 * w; ctx.strokeStyle = arcMix(css, 0.7); ctx.globalAlpha = al;
-    ctx.lineWidth = w; ctx.stroke(path); ctx.lineWidth = w * 0.6; ctx.stroke(fk);
+    ctx.shadowColor = css; ctx.strokeStyle = arcMix(css, 0.7);
+    arcPieces(pts, (a, b, u) => { const [ik, ia] = arcIntAt(f, u), w = ik * w0, pp = new Path2D(); for (let q = a; q <= b; q++) q > a ? pp.lineTo(S3[q][0], S3[q][1]) : pp.moveTo(S3[q][0], S3[q][1]); ctx.shadowBlur = 3.2 * w; ctx.globalAlpha = fa * ia; ctx.lineWidth = w; ctx.stroke(pp); });
+    { const [ik, ia] = arcIntAt(f, 0.5), w = ik * w0; ctx.shadowBlur = 3.2 * w; ctx.globalAlpha = fa * ia; ctx.lineWidth = w * 0.6; ctx.stroke(fk); }
   }
   if (saved) ctx.restore();
 }
@@ -140,23 +141,32 @@ function arcBoltPts(f, ax, ay, bx, by) { // the jagged polyline [x, y, ...] (and
 // of the strike (f.share, aspira-arc.js) on DMG_SIZE_EXP, down to ARC_INT_W[0] at the weakest, and fades to ARC_INT_A[0]. The core's colour mix
 // (arcMix 0.7) never changes - no white-out at V: the width and the glow carry it. f.vt: the tower's Voltage tier (0 when none is known)
 const ARC_INT_W = [0.6, 2.2], ARC_INT_A = [0.6, 1], ARC_VOLT_W = [1, 1.25, 1.5, 1.75, 2, 2.25];
-function arcInt(f) {
-  const sh = Math.min(1, f.share ?? 1) ** DMG_SIZE_EXP, top = ARC_INT_W[1] * ARC_VOLT_W[Math.min(5, f.vt || 0)];
+// A GRADIENT ALONG THE CHAIN, NO STEP AT AN ENEMY (owner, 2026-11-08: "arc beam intensity should be a gradient not a step from one beam to another"):
+// u, 0 .. 1 along a bolt, takes its share from its own to the next hop's (x f.fall, the strike's ARC_AMP_FALL), so each hop ends where the next
+// begins; the last fades to what a next hop would carry. GPU: a value a jag; 2D: ARC_GRAD_N pieces
+const ARC_GRAD_N = 4;
+const arcInt = f => arcIntAt(f, 0);
+function arcIntAt(f, u) {
+  const sh = Math.min(1, (f.share ?? 1) * (f.fall ?? 1) ** u) ** DMG_SIZE_EXP, top = ARC_INT_W[1] * ARC_VOLT_W[Math.min(5, f.vt || 0)];
   return [ARC_INT_W[0] + (top - ARC_INT_W[0]) * sh, ARC_INT_A[0] + (1 - ARC_INT_A[0]) * sh];
 }
 const arcBoltFade = f => { const k = Math.max(0, 1 - ARC_BOLT_LIFE * f.t / f.life); return Math.min(1, k * 2); }; // twice the old speed
 function fxGlArcBolt(f) { // 3D: a glow capsule and a thin bright core a jag
   if (arcIn3d(f.a)) return; // (drawn from its prism's top: drawArcBolts3d)
-  const [ik, ia] = arcInt(f), x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, al = arcBoltFade(f) * ia; if (al <= 0) return;
-  const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), col = COL[f.color], core = arcMix(col, 0.7), S = ARC_BOLT_S, w = (f.thin || 1) * ik;
-  const run = (p, k) => { for (let i = 0; i + 3 < p.length; i += 2) { fxGlGlowLine(p[i], p[i + 1], p[i + 2], p[i + 3], 2.6 * S * k * w, col, al * 0.8); fxGlPush(p[i], p[i + 1], p[i + 2], p[i + 3], 0.75 * S * k * w, 0, core, al, core, 0); } };
-  run(pts, 1); run(fork, 0.6);
+  const x2 = f.b ? f.b.x : f.x2, y2 = f.b ? f.b.y : f.y2, x1 = f.a ? f.a.x : f.x1, y1 = f.a ? f.a.y : f.y1, fa = arcBoltFade(f); if (fa <= 0) return;
+  const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), col = COL[f.color], core = arcMix(col, 0.7), S = ARC_BOLT_S, th = f.thin || 1;
+  const run = (p, k, u0, u1) => { const n = Math.max(1, p.length / 2 - 1); for (let i = 0; i + 3 < p.length; i += 2) { const [ik, ia] = arcIntAt(f, u0 + (u1 - u0) * (i / 2 + 0.5) / n), w = th * ik, al = fa * ia; fxGlGlowLine(p[i], p[i + 1], p[i + 2], p[i + 3], 2.6 * S * k * w, col, al * 0.8); fxGlPush(p[i], p[i + 1], p[i + 2], p[i + 3], 0.75 * S * k * w, 0, core, al, core, 0); } };
+  run(pts, 1, 0, 1); run(fork, 0.6, 0.5, 0.5);
 }
+// a polyline's ARC_GRAD_N pieces: each(first point, last point, its middle u along) - the pieces share their end points (no gap)
+function arcPieces(pts, each) { const n = pts.length / 2 - 1, m = Math.min(ARC_GRAD_N, n); for (let k = 0; k < m; k++) { const a = Math.round(n * k / m), b = Math.round(n * (k + 1) / m); each(a, b, (a + b) / 2 / n); } }
 function drawArcBolt2D(f, x1, y1, x2, y2, pt, ws) { // 2D: pt projects a world point to device px (the canvas is in device px here)
   if (arcIn3d(f.a)) return; // (drawn from its prism's top: drawArcBolts3d)
-  const [ik, ia] = arcInt(f), al = arcBoltFade(f) * ia; if (al <= 0) return;
-  const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], core = arcMix(css, 0.7), w = ik * (f.thin || 1) * ARC_BOLT_S * 1.5 * ws;
-  const path = (p) => { const q = new Path2D(); for (let i = 0; i + 1 < p.length; i += 2) { const P = pt(p[i], p[i + 1]); i ? q.lineTo(P.x, P.y) : q.moveTo(P.x, P.y); } return q; };
-  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.shadowColor = css; ctx.shadowBlur = 3.2 * w; ctx.strokeStyle = core; ctx.globalAlpha = al;
-  ctx.lineWidth = w; ctx.stroke(path(pts)); ctx.lineWidth = w * 0.6; ctx.stroke(path(fork)); ctx.restore();
+  const fa = arcBoltFade(f); if (fa <= 0) return;
+  const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], core = arcMix(css, 0.7), w0 = (f.thin || 1) * ARC_BOLT_S * 1.5 * ws;
+  const path = (p, a = 0, b = p.length / 2 - 1) => { const q = new Path2D(); for (let j = a; j <= b; j++) { const P = pt(p[j * 2], p[j * 2 + 1]); j > a ? q.lineTo(P.x, P.y) : q.moveTo(P.x, P.y); } return q; };
+  ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.shadowColor = css; ctx.strokeStyle = core;
+  arcPieces(pts, (a, b, u) => { const [ik, ia] = arcIntAt(f, u), w = ik * w0; ctx.shadowBlur = 3.2 * w; ctx.globalAlpha = fa * ia; ctx.lineWidth = w; ctx.stroke(path(pts, a, b)); });
+  { const [ik, ia] = arcIntAt(f, 0.5), w = ik * w0; ctx.shadowBlur = 3.2 * w; ctx.globalAlpha = fa * ia; ctx.lineWidth = w * 0.6; ctx.stroke(path(fork)); }
+  ctx.restore();
 }
