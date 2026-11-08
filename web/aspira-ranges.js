@@ -44,8 +44,7 @@ function drawTowerRange(t, dim, colKey, proj) {
   // Moons / Desolation: each moon's slowing circle INSTEAD of the tower's range (owner)
   if (st.moons) { for (const m of moonSpots(t, st)) drawRange(m.x, m.y, r, col, dim, proj); return; }
   drawRange(t.x, t.y, r, col, dim, proj);
-  // a chart FRZ's moon ORBIT, drawn like its range (owner, 2026-10-08): faint always, bright when selected
-  if (st.moonN) { const o = moonOrbit(t, st.moonN), k = rangePath(th => { const c = Math.cos(th) * o.a, s = Math.sin(th) * o.b; return [o.x + c * Math.cos(o.phi) - s * Math.sin(o.phi), o.y + c * Math.sin(o.phi) + s * Math.cos(o.phi)]; }, proj); ctx.strokeStyle = COL[col]; ctx.globalAlpha = (dim ? 0.35 : 0.75) * MOON_FX; ctx.lineWidth = (dim ? 2 : 3.5) * k; ctx.stroke(); ctx.globalAlpha = 1; }
+  // a chart FRZ's moon ORBIT - NOT DRAWN (owner, 2026-11-08: "the moon orbits do not need a circle (their range keeps indicator)"; drawn like its range since 2026-10-08)
   if (t.kind !== "arc") return;
   if (st.skill) return; // a chart ARC has no reach from the tower: each jump reaches from its own enemy (owner)
   const rr = chainReach(st), k = rangePath(th => [t.x + Math.cos(th) * rr, t.y + Math.sin(th) * rr], proj);

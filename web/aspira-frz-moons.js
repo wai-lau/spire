@@ -10,7 +10,7 @@ const D12 = (() => { // the dodecahedron: 20 corners, 12 pentagons (each round o
   for (const a of [-1, 1]) for (const b of [-1, 1]) for (const c of [-1, 1]) V.push([a, b, c]);
   for (const a of [-1, 1]) for (const b of [-1, 1]) V.push([0, a * q, b * p], [a * q, b * p, 0], [a * p, 0, b * q]);
   const r = Math.hypot(p, 0, q), U = V.map(v => v.map(c => c / r)), N = [];
-  for (const a of [-1, 1]) for (const b of [-p, p]) N.push([0, a, b], [a, b, 0], [b, 0, a]);
+  for (const a of [-1, 1]) for (const b of [-p, p]) N.push([0, b, a], [b, a, 0], [a, 0, b]); // the face normals in THESE corners' orientation (2026-11-08, owner: "also moons are still fucked up?"): the old (0, 1, p) set was the icosahedron turned 90 degrees, so no face's five corners were coplanar - each "face" was five corners at different depths, drawn as a crumpled knot with holes
   const F = N.map(n => {
     const nl = Math.hypot(...n), m = n.map(c => c / nl), five = U.map((v, i) => [v[0] * m[0] + v[1] * m[1] + v[2] * m[2], i]).sort((x, y) => y[0] - x[0]).slice(0, 5).map(x => x[1]);
     const ax = Math.abs(m[0]) < 0.9 ? [1, 0, 0] : [0, 1, 0], e1 = [m[1] * ax[2] - m[2] * ax[1], m[2] * ax[0] - m[0] * ax[2], m[0] * ax[1] - m[1] * ax[0]], e2 = [m[1] * e1[2] - m[2] * e1[1], m[2] * e1[0] - m[0] * e1[2], m[0] * e1[1] - m[1] * e1[0]];
