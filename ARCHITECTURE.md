@@ -351,7 +351,7 @@ The windows follow the good model's tower points by wave (median 3 at wave 60, 5
 
 ### 4.6b GRV, the gravity tower (`web/aspira-grv.js`, the look `aspira-grv-draw.js`)
 
-Its target (the mark target, §7.2): a help against swarm, fast and armor, weak to shields; mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
+Its target (the mark target, §4.6): a help against swarm, fast and armor, weak to shields; mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
 §4.6). Palette: a violet aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*`). There is no projectile: everything
 happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
@@ -374,7 +374,7 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
 ### 4.6c CRR (id `crr`), the carrier (`web/aspira-crr.js`)
 
-The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), its target (the mark target, §7.2) checks on fast and shield; its measured checks and weak
+The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), its target (the mark target, §4.6) checks on fast and shield; its measured checks and weak
 spots are the build card's marks (`VS_MARKS`, §4.6). It never fires itself; its **interceptors** do. The constants (wing sizes,
 speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY §4.6c.
 
@@ -889,7 +889,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 | the curve; real trio games per type and boss | `waverep`, `curve`, `rand`, `late` |
 | every trio / combo / solo kind | `trios` (three scripted styles; walks only the first four kinds), `combos`, `solo`, `wave1`, `swap`, `eval`, `style` |
 | the trio scale (§4.6d): all 35 trios of the seven kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
-| the economy check behind the step price (§4.2) and the build card marks (§7.2) | `eco`, `marks.py` (from a `countermx` run) |
+| the economy check behind the step price (§4.2) and the build card marks (§4.6) | `eco`, `marks.py` (from a `countermx` run) |
 | the counter matrix | `countermx` |
 | an axis tier's value; a buy's payoff | `isolation`, `chartvalue`, `payoff` (each buy alone: gain, price, gain a credit), `buildlog` (purchases by wave) |
 | bosses and fleets | `bossbal`, `bossfleet`, `bossvs` |
