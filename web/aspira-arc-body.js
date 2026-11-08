@@ -91,7 +91,7 @@ function drawArcBolts3d(t, far, top) {
     const [ik, ia] = arcInt(f), al = arcBoltFade(f) * ia; if (al <= 0) continue;
     if (!saved) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineJoin = "round"; saved = true; }
     const o = arcBoltFrom(f, t.x, t.y, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], F0 = warpFrame(o[0], o[1], top);
-    const n = pts.length / 2 - 1, w = ik * (f.thin || 1) * ARC_BOLT_S * 1.5 * Math.hypot(F0[0], F0[1]), hAt = q => top * (1 - q / n), path = new Path2D(), fk = new Path2D();
+    const n = pts.length / 2 - 1, w = ik * (f.thin || 1) * ARC_BOLT_S * 1.5 * Math.hypot(F0[0], F0[1]), L = typeof warpLift === "number" ? warpLift : 0, hAt = q => (top + L) * (1 - q / n) - L, path = new Path2D(), fk = new Path2D(); /* ON THE REAL FLOOR at the target: drawOrbiters runs inside the tower's lift (warpLift, 7.8.11), which warpFrame adds - the end at 0 hung half a tower above the enemy (owner, 2026-11-07: "ARC initial beam does not go to the enemy") */
     for (let q = 0; q <= n; q++) { const P = scr(pts[q * 2], pts[q * 2 + 1], hAt(q)); q ? path.lineTo(P[0], P[1]) : path.moveTo(P[0], P[1]); }
     const m = n >> 1; for (let q = 0; q * 2 + 1 < fork.length; q++) { const P = scr(fork[q * 2], fork[q * 2 + 1], hAt(m)); q ? fk.lineTo(P[0], P[1]) : fk.moveTo(P[0], P[1]); }
     ctx.shadowColor = css; ctx.shadowBlur = 3.2 * w; ctx.strokeStyle = arcMix(css, 0.7); ctx.globalAlpha = al;
