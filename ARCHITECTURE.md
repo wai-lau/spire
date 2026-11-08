@@ -914,6 +914,47 @@ the marks build), ACD's Flow carry and ramp (Q0-Q3), IFR's 8/12 shards and shard
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |
 | players held to `MAX_TOWERS` (`strategy.towerCap` lifts it for test teams) | the simulator |
 
+### 10.5 Standing owner rules
+
+The rules that stand until the owner changes them (owner, 2026-11-07: "write it down, always write it down"). Quotes are verbatim; a row
+says so where none is on file. Every new owner rule gets its row in the same commit as the change. Balance rules with their checks: §10.4.
+
+| rule | the owner's words | date | enforced by |
+|---|---|---|---|
+| The mark target is frozen and is the goal | "woah, yknow what, this looks good ... save super important! priority #1"; "target already frozen"; "counter table is archaeology, target marks is the goal" | 2026-10-29, 10-31, 11-07 | `mark-target.json` + `marks.py` RULE FAIL; VS_MARKS never by hand: review (§4.6) |
+| ARC is +2 vs armor (the target, not the old design) | "go by the target marks, ARC wasn't designed to be good against armor, but got here balancing the target marks. so ARC should +2 armor now" | 2026-11-07 | the target table (§4.6) |
+| Every tower checks two enemy types or more | (CLAUDE.md's wording: "Every tower beats or at least helps against two or more enemy types"; no raw quote on file) | 2026-10-19 | `marks.py` RULE FAIL (`MIN_CHECKED`) |
+| Marks at five point levels, 9 and 13 the targets, 0/3/6 in bands | "1B, but also add a 0 point and 3 point check"; "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; "1C" (0 points: +/-2) | 2026-11-06, 11-07 | `marks.py --band` RULE FAIL (§4.6) |
+| Tiers are purchases: 0, I .. V, nothing between | "drop all the god damn levels between that can not be bought, stop listing them everywhere" | 2026-10-23 | smoke: "tiers are purchases ..." (tiers.mjs) |
+| No damage step above 2x a level, each part on its own; the curve rises | "Hard rule, no level damage steps above 2x"; "just keep it below 2x for any level"; "B" (each part counts on its own) | 2026-11-01, 11-05 | smoke: "curve: by total level alone, rising, each level's hit BELOW 2x ..." (tiers.mjs) |
+| Nothing shown above 800% (8x the tower's damage) | "Nothing should ever be above like 800%"; "Maybe do like 1/8xtd to 8x or something" | 2026-10-31 | smoke: "no card sentence names a number over 800% ..." (tiers.mjs) |
+| No insane numbers | "Try to get this game in shape with minimal lag and no insane numbers over the next 12h" (Strength's boss HP exempt: Leader's reading 2026-11-07, no quote on file) | 2026-10-31 | review |
+| Armor is a curve: a hit loses R/(R+hit), at most 90% | "armor is a percentage / applied non-linearly"; "wait armor doesn't take flat amount off every hit anymore, update that" | 2026-10-28, 11-04 | `armorTake` (`ARMOR_CAP` 0.9, `ARMOR_K`); review |
+| Armor strips are a share of the armor left | "all strip should be changed to a % not a flat number" | 2026-10-28 | `shredPct` tables, `SHRED_MAX` |
+| No pierce (nothing ignores armor) | "Wait SoL has armour pierce? It should not / Nothing should have pierce" | 2026-10-30 | `SOL_ARMOR_PIERCE` gone; review |
+| No tower damage keyed to enemy type (FRZ chill by speed and fast's double slow are the named exceptions) | "No, don't have type specific damage"; "1 yes" (FRZ chill x speed); "C it's a fast specialty" | 2026-11-06 | review |
+| Fire-rate raises need the owner's pick | "but I want _you_ to avoid raising fire rate autonomously" | 2026-11-01 | smoke pins SOL's flat rate (tiers.mjs); others: review |
+| No ammo cap on CRR | "Ok no ammo limit" | 2026-11-07 | review (the 30-volley smoke pin, tiers.mjs, predates it) |
+| Every trio of kinds is winnable but the designed deaths | "for every combination of 3 towers, it is possible to win" | (pillar 2) | sim `trios`, `tribal` (§10.4) |
+| Any two fresh towers beat the Star (ARC+IFR, FRZ+IFR exempt) | "2C" (2026-11-07: those two pairs need one upgrade before the Star); the base rule: §10.4's balance table | 2026-10-22, 11-07 | sim `duo0`, `solo` (§10.4) |
+| A type never gets weaker from one of its waves to the next | "types should never get weaker along any axis" | 2026-10-22 | `planCount`, `enemyHp` |
+| A boss at the core costs its HP% left in lives (Lovers /2, Devil /6, rounded up) | "lets make bosses make you lose lives equal to the percentage of life left on the boss instead of rhe losing the game instantly. ... (Lovers gets /2, devil gets /6 lives lost rounded up, but numbers on the dice still show put of 100)" | 2026-11-03 | `bossLeakLives`; review |
+| Bosses about one normal wave deep | "make sure bosses just get to about 120% of a normal wave" (the 11-07 "3D" refit to 1.0x: Leader's reading) | 2026-11-06, 11-07 | sim, 100 games |
+| Enemies ease to 0.6x speed at the core (FRZ's bonus ignores it) | "gradually slow down the enemies from the moment they are no longer 3x speed to 0.8x when they hit the core"; "perfect, increase the ease to 60%" | 2026-11-03, 11-07 | `CORE_EASE`; smoke: boss ETA with the core ease (waves.mjs) |
+| Fun is the tiebreak when rules conflict | "The answer to this is whatever makes the game more fun and engaging" | 2026-11-03 | review (Leader) |
+| A balance battery's changes ship as the next MINOR, and only that | "every group of changes that is the result of a balance battery run should result in a new minor version"; "stop doing the new day new minor thing" | 2026-10-19 | the ship script; review |
+| A mechanic change keeps its demo scene passing | "Add a mechanism to ensure demo scenes are always up to date" | 2026-11-03 | smoke: demo coverage + behaviour (demo.mjs) |
+| Demo scenes: about 90% of enemies die, tuned on the enemies only | "For all demo try to have ~90% enemies die"; "By adjusting the enemies" | 2026-11-07 | smoke: "demo kills ..." (demo.mjs) |
+| The tower card fits every reasonable screen | "ensure all tower sections fit on tower upgrade card at any reasonable resolution" | 2026-11-06 | `tests/test_spire_cardfit_browser.py` |
+| Every upgrade axis changes a visible tower-body feature | "every upgrade axis also changes a visible feature" | 2026-11-06 | review |
+| Smooth glows, never stepped, unless a huge perf gain | "never use step glow unless huge perf gains" | 2026-11-06 | review |
+| Lit lanes cover nothing (drawn under labels, rims, grid) | (no verbatim quote on file; the memory note: lit lanes should cover nothing) | 2026-11-01 | review |
+| Rarer sounds win at the voice cap | "less frequently played sounds should take priority over more frequently played sounds" (in terms of SFX concurrent limit) | 2026-11-06 | `sfxMakeRoom` (aspira-sfx.js) |
+| Perf: faster consistently, not fewer spikes | "No bursts, just faster consistently" | 2026-11-05 | slow-log averages; review |
+| No diag runs: perf comes from normal-play slow logs | "Use slow logs? I dont want to do the diag things" | 2026-10-31 | review |
+| iOS never zooms on a double tap | "Make iOS not zoom on doubleclick" | 2026-11-07 | CSS `touch-action: manipulation` (aspira.css) |
+| Score is gone | "remove anything based around score" | 2026-10-29 | code (§3) |
+
 ## 11. Traps (every one load-bearing; the stories: ARCHAEOLOGY §11)
 
 | Area | Trap |
