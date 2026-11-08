@@ -143,7 +143,7 @@ function step(dt) {
     let fired = false;
     for (let i = 0, n = t.kind === "arc" ? relayMul(t) : 1; i < n; i++) fired = fire(t, st) || fired; // the Orbital Relay: an ARC attacks three times (aspira-core.js)
     if (fired) sfx(t.kind);
-    t.cd = fired ? 1 / st.rate : 0.05; if (fired && t.kind === "arc") { t.echo = ARC_ECHO_S; t.burst = ARC_BURST_N - 1; }
+    t.cd = fired ? 1 / st.rate : 0.05; if (fired && t.kind === "arc" && ARC_BURST_N > 1) { t.echo = ARC_ECHO_S; t.burst = ARC_BURST_N - 1; } /* (the guard: at ARC_BURST_N 1 the echo used to fire anyway - 2026-11-07) */
   }
   G.enemies = G.enemies.filter(e => !e.gone);
 }
