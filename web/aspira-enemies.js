@@ -125,7 +125,7 @@ function drawEnemy(e, solid) {
     for (let k = 0; k < n; k++) { poly(e.x, e.y, 2 * (size + 4 + 3 * k), 3, -Math.PI / 2, false); ctx.stroke(); }
     ctx.globalAlpha = 1;
   }
-  if (e.shockT > 0) { // SHOCKED (Shock, owner 2026-11-01: option 1 - "Shocked enemies take X% more damage from ARC"; a visible rule, Leader 2026-11-01): ARC's
+  if (e.shockT > 0) { // SHOCKED (Shock, owner 2026-11-01: option 1 - "Shocked enemies take X% more damage from ARC"; from EVERY tower since 7.11.0; a visible rule, Leader 2026-11-01): ARC's
     // upward triangle round it in ARC's colour, fading as the mark runs out (one stroke: an instance on the GPU batch, aspira-glctx.js)
     ctx.strokeStyle = COL[TOWERS.arc.color]; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.7 * Math.min(1, e.shockT / STAT_SLOW_T) * enemyVis(e);
     poly(e.x, e.y, 2 * (size + 4), 3, -Math.PI / 2, false); ctx.stroke(); ctx.globalAlpha = 1;
