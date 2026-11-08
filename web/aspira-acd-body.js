@@ -77,13 +77,18 @@ function acdDown(f, px, py, S) {
 function acdFlow(tier, off, S, f, now, id, dp, hk = 1) {
   const lay = ACD_FLOW[tier]; if (!lay) return;
   const pt = off.map(o => [o[0] / S, o[1] / S * f.sq]), faces = [];
-  for (let i = 0; i < 6; i++) { const a = off[i], b = off[(i + 1) % 6]; if ((a[1] + b[1]) / 2 > 0.3 * 40 * S) faces.push([pt[i], pt[(i + 1) % 6]]); } // the faces turned toward the camera
+  for (let i = 0; i < 6; i++) { const a = off[i], b = off[(i + 1) % 6]; if ((a[1] + b[1]) / 2 > 0.02 * 40 * S) faces.push([pt[i], pt[(i + 1) % 6]]); } // EVERY face turned toward the camera, the side ones at the left and right edges too
   faces.sort((p, q) => p[0][0] + p[1][0] - q[0][0] - q[1][0]);
-  const front = faces.length > 2 ? [faces[0], faces[faces.length - 1]] : faces, base = ACD_BASE[tier] * hk, maxLen = ACD_SIDE * hk - 3;
+  // ON EVERY SIDE FACE (owner, 2026-11-08: "ACD drips should be on side faces too, not just front two faces"): the tier's groups (ACD_FLOW, the same
+  // count) spread over the visible faces left to right, one a face at its middle while there are enough faces; more groups than faces keeps the old
+  // two-face layout (left-most / right-most). The near pass draws them after the prism, so a hidden face never gets one
+  const groups = [...(lay[0] || []).map(g => [0, g]), ...(lay[1] || []).map(g => [1, g])], spread = faces.length >= groups.length && groups.length > 0;
+  const front = spread ? faces : faces.length > 2 ? [faces[0], faces[faces.length - 1]] : faces, base = ACD_BASE[tier] * hk, maxLen = ACD_SIDE * hk - 3;
+  const layOf = face => spread ? groups.map((g, j) => [j, g]).filter(([j]) => Math.round(groups.length > 1 ? j * (faces.length - 1) / (groups.length - 1) : (faces.length - 1) / 2) === face).map(([, g]) => [0.5, g[1][1]]) : lay[face] || [];
   const lines = new Path2D(), drops = [];
   front.forEach(([a, b], face) => {
     const W = Math.abs(b[0] - a[0]) || 1;
-    (lay[face] || []).forEach(([fc, cnt], gi) => {
+    layOf(face).forEach(([fc, cnt], gi) => {
       const r = acdRng(face * 977 + gi * 131 + 7 + id * 7919);
       const offs = cnt === 2 ? [-1, 1].map(s => s * (2 + 3 * r()) / 2) : [-(2 + 3 * r()), 0, 2 + 3 * r()]; // 2-5 u between neighbours
       const kinds = cnt === 2 ? (r() < 0.5 ? ["L", "S"] : ["S", "L"]) : (r() < 0.5 ? ["S", "L", "M"] : ["M", "L", "S"]);
