@@ -266,6 +266,16 @@ perfect play and interest; `eco.mjs` found ARC+FRZ+ACD owning 109-287% of a max 
   (2026-10-22). The tier redesign (2026-10-24) moved all of it: tier 0 one jet, no pools; the pools and their slow are Contagion's
   (Contagion I "Ray leaves slowing pool"); kill pools gone ("get rid of kill pools"). The doc had kept the older version until 6.17.4.
 
+
+HOW THE TABLES ARE BUILT AND OLD SAVES READ (as ARCHITECTURE §4.2 carried it until 2026-11-08):
+
+- Tables are written 0 + the old I..III; `aspira-capstone.js` appends V (`CAPSTONE_NUM`) and
+  inserts tier I (`tierMid`); `aspira-tier01.js` then writes each tower's real tier 0 and tier I.
+- An old save is read once one tier up (`SKILL_SCALE` 3; `skillScaleFix`, `OLD_TIER` for older).
+
+THE §4 RENUMBERING (2026-11-08; an old cite reads as the new): 4.2b -> 4.3, 4.3 -> 4.4, 4.4 -> 4.5, 4.5b -> 4.6, 4.5 -> 4.7, 4.6 (the mark target) -> 4.8,
+4.6b (GRV) -> 4.9, 4.6c (CRR) -> 4.10, 4.6e (IFR) -> 4.11, 4.6d (trio scale) -> 4.12, 4.7 (core) -> 4.13, 4.8 (dormant) -> 4.14. This file's own sub-numbers are local and unchanged.
+
 ### 4.4-ter SOL's prism (2026-10-26 .. 2026-11-04)
 
 The band's PRISM (`t.prism`, `drawBand` from drawAims): it widened from 0 as a new lock's first charge filled, a re-used one SWUNG to the

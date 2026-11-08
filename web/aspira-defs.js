@@ -369,7 +369,7 @@ const TOWERS = {
 };
 const KINDS = Object.keys(TOWERS);
 // THE COUNTER MATRIX (owner, 2026-10-08: each enemy type has ONE main counter and two helpers;
-// ARCHITECTURE.md §4.6; scripts/aspira-sim/countermx.mjs measures it). The build card's "good vs"
+// ARCHITECTURE.md §4.8; scripts/aspira-sim/countermx.mjs measures it). The build card's "good vs"
 // is DERIVED from it (owner, 2026-10-15: "show good_vs but make it correlate to the counter
 // matrix") so the two can never drift: GOOD_VS = the types a kind is the MAIN counter of (plus
 // bosses for the two single-target kinds), HELPS_VS = the types it is a helper against. The card

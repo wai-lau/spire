@@ -41,16 +41,16 @@ are this repo's gitignored `data/aspira-sfx/`.
 - **Every balance patch runs the marks at FIVE point levels** (`VS_MARKS`, owner 2026-10-18; 2026-11-06: "1B, but also add a 0 point and 3 point check",
   "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"): 9 points writes the card
   (`marks.py --write`), 13 points (each axis maxed, `--focus`) is the second target, 3 / 6 must stay within 1 of the target and 0 within 2
-  (owner 2026-11-07 "1C": the 0-point band loosened to +/-2) (`--band`, RULE FAIL past it). The five commands and their windows: ARCHITECTURE.md §4.6.
+  (owner 2026-11-07 "1C": the 0-point band loosened to +/-2) (`--band`, RULE FAIL past it). The five commands and their windows: ARCHITECTURE.md §4.8.
 - **THE MARK TARGET** (owner, 2026-10-29: "save super important! priority #1"): `scripts/aspira-sim/mark-target.json` is the table the towers
   are balanced TO; never edit `VS_MARKS` by hand; `marktarget.py` (the fitter) runs again only on the owner's word; any other mark table in docs
-  or plans is OLD. The table and its rules: ARCHITECTURE.md §4.6; its history and every owner quote: ARCHAEOLOGY.md §4.6.
+  or plans is OLD. The table and its rules: ARCHITECTURE.md §4.8; its history and every owner quote: ARCHAEOLOGY.md §4.6.
 - **Every tower beats or at least helps against two or more enemy types** (owner, 2026-10-19; a check of any size counts): `marks.py` prints `RULE FAIL` for a tower with checks on one
   type alone - fix it with balance, never by editing the marks.
 - **Tiers are purchases** (owner, 2026-10-23: "drop all the god damn levels between that can not be bought"; tier redesign 2026-10-24): an axis
   is 0, I, II, III, IV or V (`SKILL_TIERS`; V the capstone, one a tower; 13 purchases a tower) and every per-tier table has those six values;
   damage, rate and range come from the tower's total level on one stat curve (`aspira-curve.js`). A script that sets skills by hand spends
-  points through `scripts/aspira-sim/stops.mjs`. ARCHITECTURE.md §4.2, §4.2b.
+  points through `scripts/aspira-sim/stops.mjs`. ARCHITECTURE.md §4.2, §4.3.
 - **Tests:** from exec-fn, `.venv/bin/pytest apps/spire/tests` (the shared
   fixtures live in exec-fn's root `conftest.py`).
 - **A mechanic change must keep its demo passing** (owner, 2026-11-03: "Add a mechanism to ensure demo scenes are always up to date"): the tower card's

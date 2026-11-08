@@ -1,7 +1,7 @@
 # THE SPIRE - game design
 
 Spiral tower defence at `wai-lau.net/spire`, phone first. The CURRENT design. Written against the code at 5.1.32 (2026-10-16);
-the header, the pillars, §2.1, §4.1, §4.2 and the named constants re-checked at 6.18.36 (2026-10-30); §4.1 and §4.6 (the mark target,
+the header, the pillars, §2.1, §4.1, §4.2 and the named constants re-checked at 6.18.36 (2026-10-30); §4.1 and §4.8 (the mark target,
 COUNTERS) re-checked at 7.10.1 (2026-11-07). Other sections may lag the code: **the code holds the numbers.** The tuned values at
 4.4.2 (its §12, with the later changes noted there), every superseded one, the measurements and the incidents behind the
 traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
@@ -22,11 +22,11 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | # | Pillar (an owner rule) | What it fixes | Where |
 |---|---|---|---|
 | 1 | **Phone first** | one fixed play box every standard phone shares; no pan, and no zoom but a desktop wheel's (the view only, §2.2); verify at 430x932 and 382x700 | §2.2, §7.1 |
-| 2 | **Three towers, seven kinds** | `MAX_TOWERS` 3 on three open slots; every trio of kinds must be winnable except the designed deaths (§4.6d) ("for every combination of 3 towers, it is possible to win"), so no kind is required | §4, §10.4 |
-| 3 | **Towers move by hand** | drag any tower any time inside its leash, firing all the while; nothing moves itself except Auto-move (a win unlocks it; it disqualifies the game) | §4.3 |
+| 2 | **Three towers, seven kinds** | `MAX_TOWERS` 3 on three open slots; every trio of kinds must be winnable except the designed deaths (§4.12) ("for every combination of 3 towers, it is possible to win"), so no kind is required | §4, §10.4 |
+| 3 | **Towers move by hand** | drag any tower any time inside its leash, firing all the while; nothing moves itself except Auto-move (a win unlocks it; it disqualifies the game) | §4.4 |
 | 4 | **Every upgrade is a choice** | three axes a tower, five buys an axis (tiers I-V), 13 buys a tower, ONE capstone (V) a tower; no tier lowers a stat | §4.2 |
 | 5 | **Only behaviour is told** | card words change only when behaviour changes; a number moving changes the stat row | §7.3 |
-| 6 | **Counters, not a best tower** | each enemy type has two main counters and two helpers | §4.6 |
+| 6 | **Counters, not a best tower** | each enemy type has two main counters and two helpers | §4.8 |
 | 7 | **3D is a view, never a rule** | ranges, hits and timing are 2D; 3D only draws the same game | §8.1 |
 | 8 | **Waves are fixed** | type, lane split and drops hash from the wave number; what stays random is crits, stun chance, swarm jitter (size, speed, wander) and the visuals (sparks, spin, number scatter) | §5 |
 | 9 | **Honour-system leaderboard** | a browser game proves nothing; TOP PLAYERS guards shape and rate only | §9.1 |
@@ -44,7 +44,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | winding | pitch-driven (`TANGENT_Q`, `LANE_SOFT_R`): no hook off the lead-in, a gentle coil at the core; plus the CORE TWIST (owner, 2026-10-22, in place of auto-wait): extra winding at rate `(1 - r/TWIST_R)^TWIST_P / r` inside `TWIST_R` 420 (softened at the core by `TWIST_SOFT`), tightest at the core, each lane `TWIST_S` 3.5 s x its rider's speed longer (`PAIR_RIDER`, `PAIR_V`; solved by bisection), sampled `TWIST_SUB` x finer there; the per-section twist sets the difficulty curve (§5.6); the drawn lane runs on under the core, the walked path ends at `CORE_R` |
 | copies | a wave rides rotated copies of its lane: swarm 20/24, fast 3/5, shield 2/3, armor 2, boss 1 (Lovers 2 opposite, Devil 6 on 3, her host on the same 3), **never exactly four** (`NO_LANES`); the set is turned by `laneBestTurn` (rule in §2.2: most even copies, then most total lane, then nearest the usual turn; turned 90 degrees in landscape) |
 | lit | a lane lights only with live enemies (`alive / sent`, `LANE_FADE_IN_MS`); a boss lane is wider, haloed, and waits for the sky (§5.5); Roman numerals on `LABEL_R` 430 never overlap (`placeLabels`); lit layers rebuild at most every `LIT_MIN_MS`; in 3D the lit lanes are drawn by the bell shader (§8.2), the 2D layers only off it; a finished wave's lanes go dark the frame its last enemy dies, whatever wave is up next (`laneHold` keeps a lane only while a live lane of its wave `u.n` runs) |
-| footprint | a tower is a hex of `TOWER_K` cells, `towerGap()` from another, blocked by the core only where outlines touch (`coreKeep`); building on a lane is allowed (towers and enemies never collide); `CORNER_SLOTS` is empty (dormant, §4.8) |
+| footprint | a tower is a hex of `TOWER_K` cells, `towerGap()` from another, blocked by the core only where outlines touch (`coreKeep`); building on a lane is allowed (towers and enemies never collide); `CORNER_SLOTS` is empty (dormant, §4.14) |
 
 ### 2.2 The play box (pillar 1)
 
@@ -105,12 +105,12 @@ too. The lanes' CORE TWIST (§2.1) gives the same time to the core instead. The 
 
 | | ARC | FRZ | SOL | ACD | GRV | CRR | IFR |
 |---|---|---|---|---|---|---|---|
-| design | hit-scan chain lightning | an aura, no shots | a ray that splits from enemy to enemy | continuous jets and pools | a void a shot, with novas and an aura (§4.6b) | a carrier launching interceptors (§4.6c) | a homing meteor bursting into a fan of straight shards, fires and eight-beamed flares (§4.6e) |
+| design | hit-scan chain lightning | an aura, no shots | a ray that splits from enemy to enemy | continuous jets and pools | a void a shot, with novas and an aura (§4.9) | a carrier launching interceptors (§4.10) | a homing meteor bursting into a fan of straight shards, fires and eight-beamed flares (§4.11) |
 | colour | yellow | cyan | pink | green | violet | blue | orange |
 | default targeting | Near | Near | Near | Near | Near | Near | Near |
 | leash (`MOVE_BASE`) | medium (200) | long (240) | medium (222) | longest (280) | medium (200) | long (240) | short (120) |
 
-What each kind beats and is weak to: the mark target, §4.6 (the one table). Ids `arc frz sol acd grv crr ifr` (`KINDS`; `crr` was `car` until 6.18.4, renamed 2026-10-29). The seven hues sit 360/7 OKLCH degrees apart (§10.1); range x `RANGE_BONUS`. The legacy path/form tree
+What each kind beats and is weak to: the mark target, §4.8 (the one table). Ids `arc frz sol acd grv crr ifr` (`KINDS`; `crr` was `car` until 6.18.4, renamed 2026-10-29). The seven hues sit 360/7 OKLCH degrees apart (§10.1); range x `RANGE_BONUS`. The legacy path/form tree
 (`aspira-upgrades.js`) is dormant: every kind `hasSkills`.
 
 ### 4.2 The chart (pillar 4)
@@ -121,13 +121,12 @@ shown, and every per-tier table holds exactly those six values:
 
 | shown on card, board, title = table index | 0 | I | II | III | IV | V = capstone (`CAPSTONE_TIER`) |
 |---|---|---|---|---|---|---|
-| what it is | the plain tower | the axis's first hint | the old I | the old II | the old III | the old IV |
+| what it is | the plain tower | the axis's first hint | its growth | its growth | its growth | the axis's one big mechanic, one a tower |
 
 - A tower's `lvl` is 1 + its purchases: **13 a tower** (`SKILL_POINTS`: one axis to V, two to
   IV), one step of `SKILL_STEP_COST` each (13 steps, a placeholder until the balance battery).
-- Tables are written 0 + the old I..III; `aspira-capstone.js` appends V (`CAPSTONE_NUM`) and
-  inserts tier I (`tierMid`); `aspira-tier01.js` then writes each tower's real tier 0 and tier I.
-- An old save is read once one tier up (`SKILL_SCALE` 3; `skillScaleFix`, `OLD_TIER` for older).
+- How the tables are built (0 .. IV written, V appended by `aspira-capstone.js`, tier 0 and I set by `aspira-tier01.js`) and how saves
+  from before the redesign are read: ARCHAEOLOGY §4.4.
 - **One capstone a tower** (`axisCap`, `capstoneHolder`; the card says "One capstone per
   tower · X V holds it"). A tower's shown level is its purchases (`shownLevel`).
 - **The basket**: a tap pulls an axis to its next (or last) tier, the card previews the
@@ -135,7 +134,7 @@ shown, and every per-tier table holds exactly those six values:
   bank never limits a pull (unaffordable = red cost, disabled button); a card closed
   unbought drops its pull.
 
-### 4.2b The stat curve, tier 0 and tier I (`web/aspira-curve.js`, `web/aspira-tier01.js`)
+### 4.3 The stat curve, tier 0 and tier I (`web/aspira-curve.js`, `web/aspira-tier01.js`)
 
 A tower's damage, rate and range come from its **total level** (every purchase, any axis) on
 one geometric curve per kind (`STAT_CURVE`, `curveAt`, `curveBase`): `lo` at 0 (below the old
@@ -180,7 +179,7 @@ number over 800%, every axis of every tower at tiers 0-V, and every axis MIX 0-V
 
 Tier I names: `TIER_I_NAMES` (`aspira-capstone.js`). Checks: `scripts/spire-smoke/tiers.mjs`.
 
-### 4.3 Moving (pillar 3)
+### 4.4 Moving (pillar 3)
 
 | Rule | Design |
 |---|---|
@@ -204,7 +203,7 @@ x7 at the core) and the tower's targeting; move only for a spot 10% better.
 **Look**: the level is the hex's glow and rings; the stat triangle on the hex grows a ring a
 purchase; an affordable buy flashes an up-chevron; labels are three letters.
 
-### 4.4 What each axis buys
+### 4.5 What each axis buys
 
 **ARC** - THE ARC REDESIGN (owner, 2026-10-29: "Hits hard, big chain, forks are limited to 1 fork per node, doesn't refork after 1
 fork, cannot hit same target twice"): ONE hard strike a shot, then a chain of jumps, each leaping from the enemy it hit to the next
@@ -233,7 +232,7 @@ a tick on it pops one charge.
 
 **SOL** - one TRACKING BEAM, held on its first target while that target lives and stays in range (owner, 2026-11-04: "SOL 0: fire a
 single tracking beam at a target ... It lasts as long as the first target is alive, the first target must be in range"). Armor cuts it like any
-other tower. Its checks and weak spots are measured, not designed: the build card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-sol.js`
+other tower. Its checks and weak spots are measured, not designed: the build card's marks (`VS_MARKS`, §4.8). The code: `web/aspira-sol.js`
 (`stepSolTrack`); the look: `solTrackBeams` (aspira-effects.js); how it got here: ARCHAEOLOGY §4 (the band model it replaced).
 
 | part | principle |
@@ -255,7 +254,7 @@ other tower. Its checks and weak spots are measured, not designed: the build car
 
 **ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; jets never share an enemy; a jet resets
 when its enemy dies or leaves, unless Flow carries its ramp on. Tier 0 is one jet and no pools. Its checks and weak spots: the build
-card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`, the look `aspira-acid-draw.js`; how it got here: ARCHAEOLOGY §4.
+card's marks (`VS_MARKS`, §4.8). The code: `web/aspira-acid.js`, the look `aspira-acid-draw.js`; how it got here: ARCHAEOLOGY §4.
 
 | axis | buys |
 |---|---|
@@ -263,7 +262,7 @@ card's marks (`VS_MARKS`, §4.6). The code: `web/aspira-acid.js`, the look `aspi
 | Flow (id `spray`) | more jets (`ACD_LINES`); a jet keeps part of its ramp when its enemy dies **or escapes** (`ACD_FLOW_CARRY`, the fast answer); range |
 | Spill | the jets drip slimy acid pools that burn and do NOT slow (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught, no slows"; `ACD_POOL_SLOW` 0) - bigger and more often by tier; a kill leaves no pool; slide |
 
-### 4.5b The capstones (tier V, one axis a tower)
+### 4.6 The capstones (tier V, one axis a tower)
 
 Wai's picks of 2026-11-06 (memory `capstones-2026-11-06`), built and screened tower by tower by Balance, shipped 7.7.88 .. 7.7.112; the card
 lines are `aspira-desc.js` (audited against the code 2026-11-07). A capstone is a MECHANIC on top of the tier table's leap (`CAPSTONE_NUM`,
@@ -295,7 +294,7 @@ aspira-capstone.js); its knobs:
 
 The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with every core power; the numbers' dated snapshot is ARCHAEOLOGY §13.10.
 
-### 4.5 Rules every axis obeys
+### 4.7 Rules every axis obeys
 
 | Rule | |
 |---|---|
@@ -306,7 +305,7 @@ The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with ever
 | 10 s at most | no effect on the board outlives `EFFECT_MAX_S` 10 s - GRV holes, the Orbital Relay; ACD pools `POOL_MAX_S` 5 s, goo `GOO_MAX_S` 30 s (owner, 2026-10-18). Debuffs ON an enemy (Breach, Corrosion's strip) are outside the rule |
 | tier names | one a tier (Transfer .. Hyperstorm, Chill .. Zero Point, ...), used on the end screen, never on the card; ARCHAEOLOGY §12 |
 
-### 4.6 The mark target (pillar 6)
+### 4.8 The mark target (pillar 6)
 
 THE MARK TARGET (owner, 2026-10-29 15:45: "save super important! priority #1"; its history and every owner quote: ARCHAEOLOGY §4.6) is
 `scripts/aspira-sim/mark-target.json`; the towers are balanced TO it, never the other way (`VS_MARKS` is never edited by hand;
@@ -352,10 +351,10 @@ The windows follow the good model's tower points by wave (median 3 at wave 60, 5
 | 9 | `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
 | 13 | `POINTS=13 WINDOWS=101-109,111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus` |
 
-### 4.6b GRV, the gravity tower (`web/aspira-grv.js`, the look `aspira-grv-draw.js`)
+### 4.9 GRV, the gravity tower (`web/aspira-grv.js`, the look `aspira-grv-draw.js`)
 
-Its target (the mark target, §4.6): a help against swarm, fast and armor, weak to shields; mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
-§4.6). Palette: a violet aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*`). There is no projectile: everything
+Its target (the mark target, §4.8): a help against swarm, fast and armor, weak to shields; mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
+§4.8). Palette: a violet aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*`). There is no projectile: everything
 happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
 | part | principle |
@@ -371,14 +370,14 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
 | axis | buys | capstone |
 |---|---|---|
-| **Void** | a bigger void, a harder crush, more pellets | **Event Horizon**: a void twice as heavy; each enemy its crush kills grows it x1.1, to x1.5, fading over 3 s (§4.5b) |
-| **Nova** (id `supernova`) | the novas before each void, faster by tier, their armor strip (`GRV_NOVA_STRIP`) | **Hypernova**: the most strip; every 4th nova rings twice, the 2nd ring x1.5 the reach (§4.5b) |
-| **Gravity Well** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Undertow**: an enemy in the aura nearer the core than the tower is reeled back to the void, each at most once every 4 s (§4.5b) |
+| **Void** | a bigger void, a harder crush, more pellets | **Event Horizon**: a void twice as heavy; each enemy its crush kills grows it x1.1, to x1.5, fading over 3 s (§4.6) |
+| **Nova** (id `supernova`) | the novas before each void, faster by tier, their armor strip (`GRV_NOVA_STRIP`) | **Hypernova**: the most strip; every 4th nova rings twice, the 2nd ring x1.5 the reach (§4.6) |
+| **Gravity Well** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Undertow**: an enemy in the aura nearer the core than the tower is reeled back to the void, each at most once every 4 s (§4.6) |
 
-### 4.6c CRR (id `crr`), the carrier (`web/aspira-crr.js`)
+### 4.10 CRR (id `crr`), the carrier (`web/aspira-crr.js`)
 
-The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), its target (the mark target, §4.6) checks on fast and shield; its measured checks and weak
-spots are the build card's marks (`VS_MARKS`, §4.6). It never fires itself; its **interceptors** do. The constants (wing sizes,
+The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), its target (the mark target, §4.8) checks on fast and shield; its measured checks and weak
+spots are the build card's marks (`VS_MARKS`, §4.8). It never fires itself; its **interceptors** do. The constants (wing sizes,
 speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY §4.6c.
 
 | Part | Rule |
@@ -396,16 +395,16 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 
 | Axis | Buys | Capstone (V) |
 |---|---|---|
-| Hangar | WIDTH: more interceptors (`CRR_HANGAR`), all waiting in orbit | **Full Wing**: the biggest wing (41); an interceptor whose target dies with ammo left retargets within 300 u, up to 2 times a sortie (§4.5b) |
+| Hangar | WIDTH: more interceptors (`CRR_HANGAR`), all waiting in orbit | **Full Wing**: the biggest wing (41); an interceptor whose target dies with ammo left retargets within 300 u, up to 2 times a sortie (§4.6) |
 | Tether (id `launch`) | the tether: more interceptors tethering, a harder slow, more damage per tether | **Anchor**: the hardest slow and most damage per tether |
-| Armament | DEPTH: a harder bolt (`CRR_BOLTS_BY`), more volleys a sortie | **Autopilot**: an interceptor bursts into 10 pellets (x1.125 td each) WHENEVER it heads home - out of volleys or target lost - and is rebuilt at home after the normal reload (§4.5b) |
+| Armament | DEPTH: a harder bolt (`CRR_BOLTS_BY`), more volleys a sortie | **Autopilot**: an interceptor bursts into 10 pellets (x1.125 td each) WHENEVER it heads home - out of volleys or target lost - and is rebuilt at home after the normal reload (§4.6) |
 
 The Orbital Relay multiplies the wing by `RELAY_MUL` (`relayStats`).
 
-### 4.6e IFR, Ifrit (`web/aspira-ifrit.js`, the look `aspira-ifrit-draw.js`)
+### 4.11 IFR, Ifrit (`web/aspira-ifrit.js`, the look `aspira-ifrit-draw.js`)
 
 The fire aeon of FFX (the owner's design), orange, designed for **swarm + shield**; its measured checks and weak spots are the
-build card's marks (`VS_MARKS`, §4.6). **Each axis owns one part of the meteor's life and its own damage** - every hit is
+build card's marks (`VS_MARKS`, §4.8). **Each axis owns one part of the meteor's life and its own damage** - every hit is
 `TOWERS.ifr.dmg` x that axis's table, none multiplies another's. Design and reasons:
 `docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md` (on the 2026-10-19 spec); the numbers: the code.
 
@@ -423,11 +422,11 @@ build card's marks (`VS_MARKS`, §4.6). **Each axis owns one part of the meteor'
 
 | axis | buys | good against (owner) | capstone (V) |
 |---|---|---|---|
-| Meteor | charge time, speed, the meteor's hit; meteors stored in orbit | all-rounder | **Impact**: a bigger fan (`IFR_FAN_CAP`); every 3rd charged meteor is big (drawn x2), its first hit x4 (§4.5b) |
-| Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across with IV's flare count; each fire strikes a pentagram of 5 chains across its circle, each burning like a flare (§4.5b) |
-| Flare (id `firaga`) | the flares: size, damage, burn time (`IFR_BURN_S`; a flare's ticks never step over 2x a tier); the flare tick (`IFR_TICK_K0`) carries most of IFR's damage, the meteor's hit (`IFR_ROUTE_K0`, IFR's td) the rest | shield and swarm | ONE flare a landing plus a flare ring 60% up its spokes, the ring its own hit; flares at most 300 across (§4.5b; two flares 2026-10-31 .. 11-06) |
+| Meteor | charge time, speed, the meteor's hit; meteors stored in orbit | all-rounder | **Impact**: a bigger fan (`IFR_FAN_CAP`); every 3rd charged meteor is big (drawn x2), its first hit x4 (§4.6) |
+| Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across with IV's flare count; each fire strikes a pentagram of 5 chains across its circle, each burning like a flare (§4.6) |
+| Flare (id `firaga`) | the flares: size, damage, burn time (`IFR_BURN_S`; a flare's ticks never step over 2x a tier); the flare tick (`IFR_TICK_K0`) carries most of IFR's damage, the meteor's hit (`IFR_ROUTE_K0`, IFR's td) the rest | shield and swarm | ONE flare a landing plus a flare ring 60% up its spokes, the ring its own hit; flares at most 300 across (§4.6; two flares 2026-10-31 .. 11-06) |
 
-### 4.6d Trio scale and the designed deaths
+### 4.12 Trio scale and the designed deaths
 
 Every trio is played to wave 120 by the smart saver (perfect play, both powers, a few seeds: `tribal.mjs`); a trio's score = 120 +
 lives left on a win, else the wave reached. A **designed death** is a trio MISSING A COUNTER: no tower in it has a check (a
@@ -446,7 +445,7 @@ The list, read off the marks (`VS_MARKS`, `aspira-chooser.js`) as they stand aft
 | swarm | SOL+ACD+CRR |
 | armor | FRZ+CRR+IFR |
 
-### 4.7 The core and its two powers
+### 4.13 The core and its two powers
 
 The core is **free**: no price, no tiers. Bosses hand its powers out outright at full
 strength (`CORE_GRANTS`); the pick flow is dormant. Buttons bottom-left above the speed bar, in their own
@@ -458,7 +457,7 @@ inverts with the boss sky, lifts the tower card and passes a press on a tower th
 | **Temporal Drive** | 2nd boss (wave 24) | hold the core, or the button | every enemy stops dead (a 100% slow, `core:time`) for 6 game s; cooldown 3 waves | holds the wave clock and spawns; needs a live board and ends when it empties; Strength ignores it; stacks with the Relay (either fires while the other runs) |
 | **Orbital Relay** | 4th boss (wave 48) | the button then a tower, or drag the core onto one | that tower acts as five (`RELAY_MUL`, `relayStats`: x`RELAY_MUL` each: ARC its attacks, SOL its targets, ACD its jets, FRZ its moons, targets and tick, GRV its rate, CRR its wing, IFR its charge and rate) for 10 s (`EFFECT_MAX_S`); cooldown 4 waves | **stays on that tower**; arming pauses the game |
 
-### 4.8 Dormant code (kept on purpose; nothing reaches it)
+### 4.14 Dormant code (kept on purpose; nothing reaches it)
 
 | What | Where |
 |---|---|
@@ -653,9 +652,9 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 
 | Gesture | Result |
 |---|---|
-| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel; building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 - CLAUDE.md has the command), so they follow the matrix (§4.6): each type's leak is taken against the SEVEN-TOWER mean for that type, then against the tower's own mean - a table whose every row AND column sums to 0 - scaled to one mark per 20 points and rounded so the sums stay 0 (owner, 2026-10-23: "Col and row need to sum to 0"; dashes fine, no fixed count); two towers with the same marks are flagged (`marks.py`). THE BALANCE TARGET is `scripts/aspira-sim/mark-target.json` (owner, 2026-10-29: "save super important! priority #1"; the file is the truth and CLAUDE.md quotes it - no copy here, a copy here went stale): every type column +2 +2 +1 +1 -1 -2 -3, rows and columns sum to 0, every tower two checked types or more; `marktarget.py` finds the nearest such table to the measured marks, and balance moves the towers to it |
+| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel; building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 - CLAUDE.md has the command), so they follow the matrix (§4.8): each type's leak is taken against the SEVEN-TOWER mean for that type, then against the tower's own mean - a table whose every row AND column sums to 0 - scaled to one mark per 20 points and rounded so the sums stay 0 (owner, 2026-10-23: "Col and row need to sum to 0"; dashes fine, no fixed count); two towers with the same marks are flagged (`marks.py`). THE BALANCE TARGET is `scripts/aspira-sim/mark-target.json` (owner, 2026-10-29: "save super important! priority #1"; the file is the truth and CLAUDE.md quotes it - no copy here, a copy here went stale): every type column +2 +2 +1 +1 -1 -2 -3, rows and columns sum to 0, every tower two checked types or more; `marktarget.py` finds the nearest such table to the measured marks, and balance moves the towers to it |
 | tap a tower, its home slot, or the core | its card |
-| a press moving under `DRAG_PX` | a tap; more on a tower = a move (§4.3) |
+| a press moving under `DRAG_PX` | a tap; more on a tower = a move (§4.4) |
 | unaffordable | tappable but dimmed (`.poor`): a tap shakes it and says "need Nc more" |
 | before the first tower | the free slots flash, a white triangle bobs over the top-left one |
 
@@ -888,8 +887,8 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 |---|---|
 | the curve; real trio games per type and boss | `waverep`, `curve`, `rand`, `late` |
 | every trio / combo / solo kind | `trios` (three scripted styles; walks only the first four kinds), `combos`, `solo`, `wave1`, `swap`, `eval`, `style` |
-| the trio scale (§4.6d): all 35 trios of the seven kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
-| the economy check behind the step price (§4.2) and the build card marks (§4.6) | `eco`, `marks.py` (from a `countermx` run) |
+| the trio scale (§4.12): all 35 trios of the seven kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
+| the economy check behind the step price (§4.2) and the build card marks (§4.8) | `eco`, `marks.py` (from a `countermx` run) |
 | the counter matrix | `countermx` |
 | an axis tier's value; a buy's payoff | `isolation`, `chartvalue`, `payoff` (each buy alone: gain, price, gain a credit), `buildlog` (purchases by wave) |
 | bosses and fleets | `bossbal`, `bossfleet`, `bossvs` |
@@ -907,7 +906,7 @@ the marks build), ACD's Flow carry and ramp (Q0-Q3), IFR's 8/12 shards and shard
 |---|---|
 | any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22); 19 of the 21 duos is accepted - ARC+IFR and FRZ+IFR need one upgrade before the Star (owner, 2026-11-07 "2C") | `solo` (its duo table) |
 | an ordinary type's count and HP never drop from one of its waves to the next (owner, 2026-10-22: "types should never get weaker along any axis") | `planCount`, `enemyHp` (aspira-waves.js) |
-| every trio of kinds is winnable except the designed deaths (§4.6d) (no kind required) | `trios`, `tribal` |
+| every trio of kinds is winnable except the designed deaths (§4.12) (no kind required) | `trios`, `tribal` |
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |
 | players held to `MAX_TOWERS` (`strategy.towerCap` lifts it for test teams) | the simulator |
 
@@ -918,10 +917,10 @@ says so where none is on file. Every new owner rule gets its row in the same com
 
 | rule | the owner's words | date | enforced by |
 |---|---|---|---|
-| The mark target is frozen and is the goal | "woah, yknow what, this looks good ... save super important! priority #1"; "target already frozen"; "counter table is archaeology, target marks is the goal" | 2026-10-29, 10-31, 11-07 | `mark-target.json` + `marks.py` RULE FAIL; VS_MARKS never by hand: review (§4.6) |
-| ARC is +2 vs armor (the target, not the old design) | "go by the target marks, ARC wasn't designed to be good against armor, but got here balancing the target marks. so ARC should +2 armor now" | 2026-11-07 | the target table (§4.6) |
+| The mark target is frozen and is the goal | "woah, yknow what, this looks good ... save super important! priority #1"; "target already frozen"; "counter table is archaeology, target marks is the goal" | 2026-10-29, 10-31, 11-07 | `mark-target.json` + `marks.py` RULE FAIL; VS_MARKS never by hand: review (§4.8) |
+| ARC is +2 vs armor (the target, not the old design) | "go by the target marks, ARC wasn't designed to be good against armor, but got here balancing the target marks. so ARC should +2 armor now" | 2026-11-07 | the target table (§4.8) |
 | Every tower checks two enemy types or more | quote not on file (CLAUDE.md's wording: "Every tower beats or at least helps against two or more enemy types") | 2026-10-19 | `marks.py` RULE FAIL (`MIN_CHECKED`) |
-| Marks at five point levels, 9 and 13 the targets, 0/3/6 in bands | "1B, but also add a 0 point and 3 point check"; "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; "1C" (0 points: +/-2) | 2026-11-06, 11-07 | `marks.py --band` RULE FAIL (§4.6) |
+| Marks at five point levels, 9 and 13 the targets, 0/3/6 in bands | "1B, but also add a 0 point and 3 point check"; "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; "1C" (0 points: +/-2) | 2026-11-06, 11-07 | `marks.py --band` RULE FAIL (§4.8) |
 | Tiers are purchases: 0, I .. V, nothing between | "drop all the god damn levels between that can not be bought, stop listing them everywhere" | 2026-10-23 | smoke: "tiers are purchases ..." (tiers.mjs) |
 | No damage step above 2x a level, each part on its own; the curve rises | "Hard rule, no level damage steps above 2x"; "just keep it below 2x for any level"; "B" (each part counts on its own) | 2026-11-01, 11-05 | smoke: "curve: by total level alone, rising, each level's hit BELOW 2x ..." (tiers.mjs) |
 | Nothing shown above 800% (8x the tower's damage) | "Nothing should ever be above like 800%"; "Maybe do like 1/8xtd to 8x or something" | 2026-10-31 | smoke: "no card sentence names a number over 800% ..." (tiers.mjs) |
