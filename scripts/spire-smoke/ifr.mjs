@@ -190,7 +190,7 @@ check("IFR Meteor V: every third CHARGED meteor is big and its first hit does 4x
   for (let i = 0; i < 6; i++) { const q = r.v.hits[i] / r.v.unit, want = r.v.bigs[i] ? r.k : 1; if (Math.abs(q - want) > 0.01) return "launch " + i + " hit x" + q.toFixed(3) + " (expected x" + want + ")"; }
   return "";
 });
-check("IFR Hellfire V: a fire that follows an enemy lights TWO chain rings, one inside its circle and one outside, turning opposite ways (owner, 2026-11-07: \"make it 2 rings, one inside and the other outside, have them both rotating in opposite directions slowly\"), lasting the fire's flare window + a flare's burn, riding the fire, burning what touches the ring and nothing inside or out; none on a fire that tracks nothing (\"for the tracking hf only\"), gone when it stops tracking; IV's flare count held; none below V", () => {
+check("IFR Hellfire V: a fire that follows an enemy lights TWO chain rings, one inside its circle and one on it (in the plain ring's place), turning opposite ways (owner, 2026-11-07: \"make it 2 rings, one inside and the other outside, have them both rotating in opposite directions slowly\"), lasting the fire's flare window + a flare's burn, riding the fire, burning what touches the ring and nothing inside or out; none on a fire that tracks nothing (\"for the tracking hf only\"), gone when it stops tracking; IV's flare count held; none below V", () => {
   const r = run(`(() => { ${capFresh}
     const go = (k, track = true) => { const t = fresh("hellfire", k), st = towerStats(t), e = still("armor", CX + 40, CY + 40); e.hp = e.max = 1e12;
       ifrImpact(t, st, { ax: CX + 40, ay: CY + 40, r: st.ballR, flown: 7, hitId: track ? e.id : null }); const f = t.ifrFires[0];
@@ -209,7 +209,7 @@ check("IFR Hellfire V: a fire that follows an enemy lights TWO chain rings, one 
   if (r.n !== 2) return "Hellfire V lit " + r.n + " rings (expected 2)";
   if (r.unN) return "a fire that tracks nothing lit " + r.unN + " rings";
   if (r.ivN) return "Hellfire IV lit " + r.ivN + " rings";
-  if (!(r.rk[0] < 1 && r.rk[1] > 1)) return "ring radii x the circle " + r.rk + " (expected one inside, one outside)";
+  if (!(r.rk[0] < 1 && Math.abs(r.rk[1] - 1) < 1e-9)) return "ring radii x the circle " + r.rk + " (expected one inside, the outer ON the circle - owner, 21:20: \"replace the ring with the outside ring\")";
   if (r.dirs[0] * r.dirs[1] !== -1) return "rings turn " + r.dirs + " (expected opposite ways)";
   if (!r.centred || !r.rides) return "a ring is not centred on its fire / does not ride it";
   if (r.life.some(d => Math.abs(d) > 1e-9)) return "a ring's life is not the fire's window + a flare's burn: " + r.life;

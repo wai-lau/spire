@@ -56,7 +56,7 @@ const IFR_BIG_EVERY = 3, IFR_BIG_HIT_K = 4; // Meteor V: every IFR_BIG_EVERY-th 
 // HELLFIRE V's TWO CHAIN RINGS (owner, 2026-11-07 20:55: "get rid of the 5 chains, it doesn't look good / instead just make the ring a thick chain";
 // "for the tracking hf only"; 21:00: "make it 2 rings, one inside and the other outside, have them both rotating in opposite directions slowly"):
 // [radius x the fire's circle, turn direction]; each ring burns what it touches like a flare, its own hit IFR_CHAIN_K x the old chain's
-const IFR_HF_RINGS = [[0.85, 1], [1.15, -1]], IFR_CHAIN_K = 0.5; /* (was five chains to the enemy at x1 each, 10:30-20:55) */
+const IFR_HF_RINGS = [[0.85, 1], [1, -1]] /* the outer one ON the circle, in its place (owner, 21:20: "replace the ring with the outside ring"; was 1.15) */, IFR_CHAIN_K = 0.5; /* (was five chains to the enemy at x1 each, 10:30-20:55) */
 const IFR_RING_AT = 0.6; // Flare V: the landing flare's circle sits this share of the way up its spokes (the long + ones); it burns exactly as the flare does
 // THE FIRE'S FLARES (owner, 2026-10-20: "after hellfire expands fully, spawn X (start with 6) flares, each 0.1s apart within hellfire radius ...
 // more likely closer to center"; "when hellfire levels up, increase flare count to preserve flare density"): IFR_FIRE_FLARES in a fire of radius

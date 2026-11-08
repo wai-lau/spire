@@ -48,7 +48,7 @@ function drawIfrRingAt(x, y, r, a, low, wk = 1, cols = null) { // wk: x every la
 // the center (it should start at 30%, then fall off to 0% about 30% of the way towards the center)": one smooth glow inside the outline,
 // alpha falling from IFR_INNER_A to 0 over IFR_INNER_DEPTH of the radius (was IFR_INNER_N stacked rings). a: x alpha
 const IFR_INNER_A = 0.3, IFR_INNER_DEPTH = 0.3;
-function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1, wk = 1, cols = null) { // fill: false, true (the black core) or a colour; inner: x the inner glow's alpha (a fire's rise)
+function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1, wk = 1, cols = null, noRing = false) { // noRing: the inner glow alone (a Hellfire V ring draws the ring) // fill: false, true (the black core) or a colour; inner: x the inner glow's alpha (a fire's rise)
   if (fill) { ctx.fillStyle = fill === true ? COL.bg : fill; ctx.globalAlpha = 0.95 * a; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); }
   // THE INNER GLOW, SMOOTH (owner, 2026-11-06: "never use step glow unless huge perf gains"; was IFR_INNER_N stacked rings): IFR_INNER_A at the rim
   // falling linearly to clear IFR_INNER_DEPTH of the radius in - on the GPU one inside-only ring glow (shape 9), on a 2D canvas one radial gradient
@@ -57,7 +57,7 @@ function drawIfrMeteor(x, y, r, fill, low, a = 1, inner = 1, wk = 1, cols = null
     if (ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlPush === "function") fxGlPush(x, y, x, y, r, r * IFR_INNER_DEPTH, col, A, col, 0, 9, 0, 0, 1, 1);
     else { ctx.save(); ctx.translate(x, y); ctx.scale(r, r); ctx.globalAlpha = A; ctx.fillStyle = ifrRimGrad(col); ctx.beginPath(); ctx.arc(0, 0, 1, 0, 6.283); ctx.fill(); ctx.restore(); }
   }
-  drawIfrRingAt(x, y, r, 0.9 * a, low, wk, cols);
+  if (!noRing) drawIfrRingAt(x, y, r, 0.9 * a, low, wk, cols);
 }
 // THE FIRE'S CIRCLE, back at IFR_FIRE_A (owner, 2026-10-21: "visually restore the hellfire circle at 20% opacity"; gone 2026-10-20):
 // the meteor without its black fill at the fire's radius, as it grows - the look only (stepIfrFires still draws and burns nothing)
@@ -72,6 +72,7 @@ function drawIfrFires(t, low) {
     let a = f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2;
     if (f.eid != null) a = Math.min(1, a * IFR_FIRE_TRACK_K);
     else if (f.r >= f.R) { if (f.fadeAt == null) f.fadeAt = f.age0 || 0; a *= Math.max(0, 1 - ((f.age0 || 0) - f.fadeAt) / IFR_FIRE_FADE_S); if (a <= 0) continue; }
+    if (f.chq && f.eid != null) { drawIfrMeteor(f.x, f.y, f.r, false, low, a, 1, IFR_FIRE_W, IFR_HF_COL, true); continue; } /* Hellfire V tracking: its outer chain ring is the ring (ifrChainDraw) - only the inner glow here */
     drawIfrMeteor(f.x, f.y, f.r, false, low, a, 1, IFR_FIRE_W, IFR_HF_COL); /* RED, its flares' colours (owner, 2026-10-22: "hellfire's fire ring should be red") */
   }
 }
@@ -150,31 +151,43 @@ function ifrSpoke2D(c, f, low, path) { // the 2D spoke's strokes along `path` (w
   ctx.restore();
 }
 // HELLFIRE V's RINGS (owner, 2026-11-07: "make the ring a thick chain" .. "2 rings, one inside and the other outside, have them both rotating
-// in opposite directions slowly"): each ring the flare's glow round its circle (ifrRingGl / ifrRing2D, as Flare V's circle) and over it real
-// LINKS (aspira-chains.js, ARC's and CRR's) on IFR_HF_RING_SEGS chords: a red-orange body IFR_CHAIN_BODY x the link size, a white-hot core at
-// IFR_CHAIN_LINK, both x IFR_HF_RING_THICK; the chords' start turns once each IFR_HF_RING_TURN_S on the ring's own direction (c.dir), on the
-// game's clock (its age: still when paused); its brightness flickers like a flare's on the ring's seeded phase (c.ph, ifrFlick)
-const IFR_CHAIN_BODY = 1.7, IFR_CHAIN_LINK_A = 0.9, IFR_HF_RING_SEGS = 20, IFR_HF_RING_TURN_S = 7, IFR_HF_RING_THICK = 1.5;
-function ifrRingChords(c, each) {
-  const a0 = c.dir * 2 * Math.PI * (c.life - c.left) / IFR_HF_RING_TURN_S, n = IFR_HF_RING_SEGS, r = c.circ;
-  let px = c.x + Math.cos(a0) * r, py = c.y + Math.sin(a0) * r;
-  for (let i = 1; i <= n; i++) { const a = a0 + i * 2 * Math.PI / n, x = c.x + Math.cos(a) * r, y = c.y + Math.sin(a) * r; each(px, py, x, y); px = x; py = y; }
+// in opposite directions slowly"; 21:20: "they need to use the same palette and glow as the ring / the links need to be longer, like an 0 not
+// an O / replace the ring with the outside ring"): each ring is the fire's OWN ring (drawIfrRingAt, IFR_HF_COL, IFR_FIRE_W, a tracked fire's
+// alpha) with LINKS over it in the ring's colours - long ovals along the ring (IFR_HFL_LEN x IFR_HFL_W u), each other link a bar seen edge-on,
+// a red body and the orange core line on top. The links turn once each IFR_HF_RING_TURN_S on the ring's own direction (c.dir), on the game's
+// clock (its age: still when paused). The tracked fire draws no plain ring of its own (drawIfrFires): the outer chain ring is it
+const IFR_HF_RING_TURN_S = 7, IFR_HFL_LEN = 18, IFR_HFL_W = 7, IFR_HFL_LW = [2.2, 0.8], IFR_HFL_A = 0.95;
+function ifrRingLinks(c, each) { // each(ax, ay, bx, by, odd): a link's axis ends, tangent to the ring
+  const r = c.circ, pitch = IFR_HFL_LEN * 0.78, n = Math.max(8, 2 * Math.round(Math.PI * r / pitch)), a0 = c.dir * 2 * Math.PI * (c.life - c.left) / IFR_HF_RING_TURN_S;
+  const h = (IFR_HFL_LEN - IFR_HFL_W) / 2;
+  for (let i = 0; i < n; i++) {
+    const a = a0 + i * 2 * Math.PI / n, cx = c.x + Math.cos(a) * r, cy = c.y + Math.sin(a) * r, tx = -Math.sin(a), ty = Math.cos(a), hh = i & 1 ? h + IFR_HFL_W * 0.3 : h;
+    each(cx - tx * hh, cy - ty * hh, cx + tx * hh, cy + ty * hh, i & 1);
+  }
 }
 function ifrChainDraw(c, f, low, fs = 1) {
   if (!(c.circ > 1)) return;
-  const gl3 = !!(ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlGlowLine === "function");
-  const a = Math.min(1, IFR_CHAIN_LINK_A * f), body = IFR_CHAIN_LINK * IFR_CHAIN_BODY * IFR_HF_RING_THICK, core = IFR_CHAIN_LINK * IFR_HF_RING_THICK;
+  const F = c.fire || {}, ringA = Math.min(1, IFR_FIRE_A * IFR_FIRE_TRACK_K) * Math.min(1, f);
+  drawIfrRingAt(c.x, c.y, c.circ, 0.9 * ringA, low, IFR_FIRE_W, IFR_HF_COL);
+  const gl3 = !!(ctx && ctx.real && ctx.real.__glc === ctx && typeof fxGl !== "undefined" && fxGl.on && typeof fxGlPush === "function");
+  const a = Math.min(1, IFR_HFL_A * f), cols = [COL[IFR_HF_COL.orange], COL[IFR_HF_COL.yellow]], R = IFR_HFL_W / 2;
   if (gl3) {
-    ifrRingGl(c, f, low, fs);
-    if (typeof fxGlChain === "function") ifrRingChords(c, (x0, y0, x1, y1) => { fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: IFR_HF_COL.orange, thin: body }, a); fxGlChain({ x1: x0, y1: y0, x2: x1, y2: y1, color: "white", thin: core }, a); });
+    for (let k = 0; k < 2; k++) ifrRingLinks(c, (ax, ay, bx, by, odd) => {
+      if (odd) fxGlPush(ax, ay, bx, by, IFR_HFL_LW[k] / 2, 0, cols[k], a, cols[k], 0);
+      else fxGlPush(ax, ay, bx, by, R, IFR_HFL_LW[k], cols[k], 0, cols[k], a);
+    });
     return;
   }
-  ifrRing2D(c, f, low);
-  if (typeof drawChain2D === "function") {
-    const pt = (x, y) => ({ x, y }), g0 = ctx.globalAlpha;
-    ifrRingChords(c, (x0, y0, x1, y1) => { ctx.globalAlpha = a; drawChain2D(x0, y0, x1, y1, pt, 1, COL[IFR_HF_COL.orange], body); ctx.globalAlpha = a; drawChain2D(x0, y0, x1, y1, pt, 1, COL.white, core); });
-    ctx.globalAlpha = g0;
-  }
+  const ev = new Path2D(), od = new Path2D();
+  ifrRingLinks(c, (ax, ay, bx, by, odd) => {
+    if (odd) { od.moveTo(ax, ay); od.lineTo(bx, by); return; }
+    const th = Math.atan2(by - ay, bx - ax);
+    ev.moveTo(bx + Math.cos(th - Math.PI / 2) * R, by + Math.sin(th - Math.PI / 2) * R);
+    ev.arc(bx, by, R, th - Math.PI / 2, th + Math.PI / 2); ev.arc(ax, ay, R, th + Math.PI / 2, th + 3 * Math.PI / 2); ev.closePath();
+  });
+  ctx.save(); ctx.lineCap = "round"; ctx.globalAlpha = a;
+  for (let k = 0; k < 2; k++) { ctx.strokeStyle = cols[k]; ctx.lineWidth = IFR_HFL_LW[k]; ctx.stroke(ev); ctx.stroke(od); }
+  ctx.restore();
 }
 function ifrRing2D(c, f, low) { ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); }); }
 function drawIfrFlaresGl(t, low, hf) {
