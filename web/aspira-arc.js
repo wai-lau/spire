@@ -61,7 +61,7 @@ let ARC_RES_SLOW = [0, 0, 0, 0, 0, 0] /* Shock no longer slows, the brief - wors
 // ARC_DMG_K (battery 7.7.0, 2026-11-05): every ARC hit x0.3 with the jumps x1.5 - its overkill on light types (0% leak late) traded for reach
 const ARC_DMG_K = 0.3; // (x1.15 = 0.345 for 7.7.25 only: a patch for the halved reach, reverted with it)
 const ARC_RES_DMG = [1, 1, 1.05, 1.1, 1.15, 1.2]; // Shock's hit factor 0..V
-// SHOCKED (owner, 2026-11-01, picked "1": Shock makes shocked enemies take more damage from ARC): each Shock hit marks its target for
+// SHOCKED (owner, 2026-11-01, picked "1"; 2026-11-07: from EVERY tower, not just ARC - damage(), aspira-game.js): each Shock hit marks its target for
 // the slow's time (STAT_SLOW_T, refreshed on hit); a marked enemy takes x(1 + ARC_SHOCK_AMP) from ARC's hits (damage(), not the burn)
 let ARC_SHOCK_AMP = [0, 0.3, 0.7, 1.6, 1.8, 2]; // +% from ARC on a shocked enemy 0..V (front-loaded at III: band 2026-11-01)
 function arcSkillStats(t, s, b) {

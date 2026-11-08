@@ -142,7 +142,7 @@ const BLEED_CRIT_MUL = 2;
 function damage(e, amt, t, quiet = false, crit = false, st = null) {
   if (e.dead || !e.seen) return; // OFF-SCREEN: untouchable (enemySeen)
   amt *= escale(e); // the LATE SCALE: a raw tower hit, x its target's wave scale (aspira-waves.js)
-  if (e.shockT > 0 && !quiet && t && t.kind === "arc") amt *= 1 + e.shockAmp; // SHOCKED: ARC's bolts hit it harder (aspira-arc.js ARC_SHOCK_AMP)
+  if (e.shockT > 0 && !quiet && t) amt *= 1 + e.shockAmp; // SHOCKED: EVERY tower's hits land harder, not the burns/ticks (quiet) (owner, 2026-11-07: "that ARC debuff, it should increase all damage not just ARC"; was ARC's bolts only) - x Corrosion V's +20% (one multiply each: at most 3 x 1.2 = 3.6)
   if (e.charge && !staticQuiet && t) dischargeStatic(e); // ARC Static: ANY tower's hit sets the charges off, the charging ARC's too (aspira-arc.js)
   // a shield eats one whole HIT, whatever its size - ANY damage pops ONE charge, quiet hits too, never more
   // (owner, 2026-10-26: "anything that deals damage should pop a shield charge"; splash/poison once bounced, Ion pierced, shieldPop took more)

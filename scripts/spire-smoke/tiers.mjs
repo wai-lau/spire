@@ -488,7 +488,7 @@ check("no card sentence names a number over 800% (owner, 2026-10-31: \"Nothing s
   if (r[0] !== "A bolt of lightning that chains twice for 20% less damage every chain. Each jump goes further out from ARC.") return "tier 0: " + r[0]; // (the radial jumps, owner 2026-11-06)
   if (!/^A bolt of lightning that forks once and chains \w+ times for \d+% less damage every chain\. Each jump goes further out from ARC\.$/.test(r[1])) return "Voltage II: " + r[1];
   if (!/that chains twice for full damage every chain\. Each jump goes further out from ARC\.$/.test(r[2])) return "Conductivity II: " + r[2];
-  if (!/ Hits (slow by \d+% and )?break \d+% of the armor left\.( Shocked enemies take \d+% more damage from ARC\.)?$/.test(r[3])) return "Shock I: " + r[3]; // no slow since the ARC brief (Wai, 2026-11-01, the ARC brief: "ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm")
+  if (!/ Hits (slow by \d+% and )?break \d+% of the armor left\.( Shocked enemies take \d+% more damage\.)?$/.test(r[3])) return "Shock I: " + r[3]; // no slow since the ARC brief (Wai, 2026-11-01, the ARC brief: "ARC remove slow to make worse vs fast / Increase chaining/forking to make good vs swarm")
   if (!r[4].includes("slows enemies by") || !r[4].includes(" and deals " + r[5] + "%td a second")) return "FRZ tier 0: " + r[4];
 });
 

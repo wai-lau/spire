@@ -41,7 +41,7 @@ const DESCRIBE = {
       (c >= CAPSTONE_TIER ? " The last jump of each chain bursts, hitting every enemy within " + ARC_GROUND_R + " u." : "") + /* Grounding (owner, 2026-11-06) */
       (v >= CAPSTONE_TIER ? " Every " + ["", "", "second", "third", "fourth", "fifth"][ARC_STORM_EVERY] + " strike forks " + NUM_WORD[ARC_STORM_FORK] + " ways." : "") + /* Storm */
       (z >= CAPSTONE_TIER ? " A shocked enemy that dies passes its shock to every enemy within " + ARC_SHOCK_PASS_R + " u." : "") + /* Shock V */
-      (typeof ARC_SHOCK_AMP !== "undefined" && ARC_SHOCK_AMP[z] > 0 ? " Shocked enemies take " + Math.round(ARC_SHOCK_AMP[z] * 100) + "% more damage from ARC." : ""); /* Shock option 1 (Wai, 2026-11-01): its mark, e.shockT */ /* (and its hit factor, Wai approved 2026-11-01) */
+      (typeof ARC_SHOCK_AMP !== "undefined" && ARC_SHOCK_AMP[z] > 0 ? " Shocked enemies take " + Math.round(ARC_SHOCK_AMP[z] * 100) + "% more damage." : ""); /* Shock option 1 (Wai, 2026-11-01): its mark, e.shockT */ /* (and its hit factor, Wai approved 2026-11-01) */
   },
 
   // FRZ (owner, 2026-10-22, shorter): "Emits an aura that slows enemies by 67% and hurts more the slower they are. Enemies in the aura take
