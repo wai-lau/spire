@@ -285,12 +285,12 @@ const ICE_WK_WAIT_MS = 3000; // no word from the worker this long after a post: 
 // THE WORKER'S SCRIPT IS THE PAGE'S OWN, ?v= AND ALL (live bug, 7.7.92 - owner: "FRZ perm and frac not appearing in game"): the bare
 // /aspira-frz-ice.js is served cacheable for a day, so a browser that had 7.7.89's copy (no worker half) loaded THAT into the worker, which
 // never answered - and the board waited on it for ever. The script tag's src carries the content hash the server stamps on every page
-const iceWkSrc = () => { const el = typeof document !== "undefined" && document.querySelector('script[src*="aspira-frz-ice.js"]'); return el && el.src ? el.src : location.origin + "/aspira-frz-ice.js"; };
+const iceWkSrc = (f = "aspira-frz-ice.js") => { const el = typeof document !== "undefined" && document.querySelector('script[src*="' + f + '"]'); return el && el.src ? el.src : location.origin + "/" + f; };
 const icePlain = L => L.map(P => ({ walls: P.walls.map(w => ({ lit: w.lit, pts: w.pts })), topPts: P.topPts, topVis: P.topVis, y0: P.y0, y1: P.y1, foot: P.foot.map(q => [q[0], q[1]]), hg: P.hg, lift: P.lift, tv: P.tv, v: P.v }));
 function iceWorker() {
   if (iceWk !== null) return iceWk || null;
-  try { iceWk = new Worker(URL.createObjectURL(new Blob(["importScripts(" + JSON.stringify(iceWkSrc()) + ");"], { type: "text/javascript" })));
-    iceWk.onmessage = e => { const w = iceWkWait.get(e.data.id); if (w && e.data.seq === w.seq) { w.I.scene = e.data.scene; w.I.sceneAt = (w.I.sceneAt || 0) + 1; if (e.data.scene.done) iceWkWait.delete(e.data.id); } };
+  try { iceWk = new Worker(URL.createObjectURL(new Blob(["importScripts(" + JSON.stringify(iceWkSrc()) + "," + JSON.stringify(iceWkSrc("aspira-frz-ice3d.js")) + ");"], { type: "text/javascript" })));
+    iceWk.onmessage = e => { if (e.data.bake) { iceBakeDone(e.data); return; } const w = iceWkWait.get(e.data.id); if (w && e.data.seq === w.seq) { w.I.scene = e.data.scene; w.I.sceneAt = (w.I.sceneAt || 0) + 1; if (e.data.scene.done) iceWkWait.delete(e.data.id); } };
     iceWk.onerror = () => { iceWk = false; };
   } catch (e) { iceWk = false; }
   return iceWk || null;
@@ -303,8 +303,25 @@ if (typeof importScripts === "function" && typeof window === "undefined") { // T
       const sc = M.scene(msg.np, msg.nf); postMessage({ id, seq: msg.seq, scene: { back: icePlain(sc.back), front: icePlain(sc.front), done: M.done } }); if (M.done) jobs.delete(id); }
     busy = jobs.size > 0; if (busy) setTimeout(round, 0);
   };
-  onmessage = e => { const m = e.data, k = m.id + "|" + m.key; let M = makers.get(k); if (!M) makers.set(k, M = frzIceMaker(m.sp, m.sf, m.G, m.rot)); jobs.set(m.id, { M, msg: m }); if (!busy) { busy = true; setTimeout(round, 0); } };
+  onmessage = e => { const m = e.data; if (m.bake) { iceBakeHere(m, makers); return; } const k = m.id + "|" + m.key; let M = makers.get(k); if (!M) makers.set(k, M = frzIceMaker(m.sp, m.sf, m.G, m.rot)); jobs.set(m.id, { M, msg: m }); if (!busy) { busy = true; setTimeout(round, 0); } };
 }
+// THE BAKE OFF THE MAIN THREAD TOO (Leader, 2026-11-08 - the owner's "No bursts, just faster consistently": a 379 ms bake sliced on the main thread
+// cost 2 ms of every frame for ~3 s of a pan): the worker projects and paints a job on an OffscreenCanvas in one go and transfers the ImageBitmap
+// back; the frame only draws it. No OffscreenCanvas (or Path2D) in the worker, a failure, or no answer in ICE_BAKE_WAIT_MS: the sliced main-thread
+// bake (ice3dRun, 2 ms a frame) as before, for good
+const ICE_BAKE_WAIT_MS = 5000, iceBakeWait = new Map(); let iceBakeOK = null, iceBakeIds = 0;
+function iceBakeHere(m, makers) { // (in the worker) -> postMessage({ bake, bm, ox, oy, W, H, k } | { bake, fail })
+  try { if (typeof OffscreenCanvas !== "function" || typeof Path2D !== "function") throw new Error("no OffscreenCanvas");
+    let list = m.list; if (!list) { const M = makers.get(m.id + "|" + m.key); if (!M) throw new Error("no maker"); const sc = M.scene(m.np, m.nf); list = sc.back.concat(sc.front); } // (its own grown crystals: nothing to copy over)
+    const J = ice3dBegin(list, m.proj, m.rot, m.k, m.ice, m.frz, m.glow); if (!J) { postMessage({ bake: m.bake, none: true }); return; }
+    J.bgCss = m.bg; ice3dRun(J, 1e9); const bm = J.cv.transferToImageBitmap(); postMessage({ bake: m.bake, bm, ox: J.ox, oy: J.oy, W: J.W, H: J.H, k: J.k }, [bm]);
+  } catch (err) { postMessage({ bake: m.bake, fail: String(err && err.message || err) }); }
+}
+function iceBakeDone(d) { // (on the page) a worker bake arrived: the waiting job gets its image
+  const w = iceBakeWait.get(d.bake); iceBakeWait.delete(d.bake); if (d.fail) { iceBakeOK = false; return; } iceBakeOK = true;
+  if (w && w.G) { w.G.J = d.none ? null : { cv: d.bm, ox: d.ox, oy: d.oy, W: d.W, H: d.H, k: d.k }; w.G.ready = true; }
+}
+const iceBakeWk = () => (iceBakeOK !== false && typeof OffscreenCanvas === "function" && iceWorker()) || null;
 // MADE ONCE A TOWER (owner, 2026-11-06: "FRZ perm and frac get regenerated every time frz moves / it should only be generated once, and follow
 // movement of tower"): the ice is grown in the view the tower FIRST has (its squash, height and hex turn then - frozen in I.view) from a seed of
 // its id; a move never makes it again (the key was the view at its current spot: every move grew it anew). A tier bought only shows more of
@@ -314,7 +331,7 @@ function frzIceGet(t, v0, np, nf) { // the tower's ice: its scene for these tier
   const v = I.view, key = [Math.round(v.sq * 50), Math.round(v.Hs), Math.round(v.rot / 3)].join(","), want = key + "|" + np + "," + nf;
   const id = t.id | 0, sp = 40117 + 7919 * id, sf = 90211 + 104729 * id, Gm = { cx: 0, cy: 0, R: 40, sq: v.sq, Hs: v.Hs, K3: v.K3 }, wk = iceWorker();
   if (wk && I.want === want && !I.scene && performance.now() - I.postAt > ICE_WK_WAIT_MS) { iceWk = false; wk.terminate(); } // (silent: build here instead)
-  else if (wk) { if (I.want !== want) { I.want = want; I.postAt = performance.now(); const seq = ++iceWkSeq, wid = I.wid ||= ++iceWkIds; iceWkWait.set(wid, { I, seq }); wk.postMessage({ id: wid, seq, key, sp, sf, G: Gm, rot: v.rot, np, nf }); } return I; }
+  else if (wk) { if (I.want !== want) { I.want = want; I.postAt = performance.now(); const seq = ++iceWkSeq, wid = I.wid ||= ++iceWkIds; iceWkWait.set(wid, { I, seq }); I.wkKey = key; wk.postMessage({ id: wid, seq, key, sp, sf, G: Gm, rot: v.rot, np, nf }); } return I; }
   I.M ||= frzIceMaker(sp, sf, Gm, v.rot);
   const now = performance.now(); if (now - iceFrameAt > 8) { iceFrameAt = now; iceBudget = ICE_SLICE_MS; }
   if (!I.M.done && iceBudget > 0) { const a = performance.now(); I.M.step(iceBudget); iceBudget -= performance.now() - a; }
@@ -340,9 +357,14 @@ function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters, after the tow
   // grown: the FULL bake, the same way. The image on screen changes only when a bake is whole
   const want = (sc.done ? "f" + I.sceneAt : "q" + I.sceneAt) + "|" + vk, kept = (I.kept ||= new Map());
   if ((!I.bake || I.bake.want !== want) && kept.has(want)) { I.bake = kept.get(want); kept.delete(want); kept.set(want, I.bake); I.glow = null; } // (a view seen lately: no bake)
-  if ((!I.bake || I.bake.want !== want) && (!I.glow || I.glow.want !== want)) { const a0 = performance.now(); I.glow = { at: I.sceneAt, want, vk, proj, m0: v.m, ms: 0, J: sc.done ? ice3dBegin(list, proj, I.view.rot, kB, ice, frz, true) : ice3dBegin(list, proj, I.view.rot, 1, ice, frz, false) }; I.glow.ms += performance.now() - a0; }
+  if ((!I.bake || I.bake.want !== want) && (!I.glow || (I.glow.want !== want && !(I.glow.wk && !I.glow.ready)))) { const a0 = performance.now(), wk = iceBakeWk(), kk = sc.done ? kB : 1; /* (one worker bake a tower in flight: a pan asks for the newest view once it lands) */
+    I.glow = { at: I.sceneAt, want, vk, proj, m0: v.m, ms: 0, t0: a0, wk: !!wk };
+    if (wk) { const id = ++iceBakeIds; iceBakeWait.set(id, { G: I.glow }); wk.postMessage(I.wkKey ? { bake: id, id: I.wid, key: I.wkKey, np, nf, proj, rot: I.view.rot, k: kk, ice, frz, glow: sc.done, bg: COL.bg } : { bake: id, list: icePlain(list), proj, rot: I.view.rot, k: kk, ice, frz, glow: sc.done, bg: COL.bg }); }
+    else I.glow.J = ice3dBegin(list, proj, I.view.rot, kk, ice, frz, sc.done);
+    I.glow.ms += performance.now() - a0; }
+  if (I.glow && I.glow.wk && !I.glow.ready && performance.now() - I.glow.t0 > ICE_BAKE_WAIT_MS) { iceBakeOK = false; I.glow = null; return; } // (no answer: the sliced bake from the next frame on)
   // THE BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"), swapped in whole once done
-  if (I.glow) { const a0 = performance.now(), done = !I.glow.J || ice3dRun(I.glow.J, ICE_GLOW_MS); I.glow.ms += performance.now() - a0;
+  if (I.glow && (!I.glow.wk || I.glow.ready)) { const a0 = performance.now(), done = I.glow.wk || !I.glow.J || ice3dRun(I.glow.J, ICE_GLOW_MS); I.glow.ms += performance.now() - a0;
     if (done) { I.bake = { want: I.glow.want, vk: I.glow.vk, proj: I.glow.proj, m0: I.glow.m0, ms: I.glow.ms, J: I.glow.J }; I.bakes = (I.bakes || 0) + 1; const Jd = I.glow.J; if (Jd) { Jd.z = Jd.id = Jd.hf = Jd.tris = Jd.img = null; } /* (the bake's buffers, 3x the image: not kept) */
     if (sc.done) { kept.set(want, I.bake); const bytes = () => [...kept.values()].reduce((a, b) => a + (b.J ? b.J.W * b.J.H * 4 : 0), 0); while (kept.size > 1 && bytes() > ICE_KEEP_BYTES) kept.delete(kept.keys().next().value); } I.glow = null; } }
   const J = I.bake && I.bake.J; if (!J) return;

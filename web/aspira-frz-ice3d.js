@@ -47,7 +47,7 @@ function ice3dBegin(list, proj, rot, k, ice, frz, glow) {
   const pad = Math.ceil(6 * k * proj.s), W = Math.ceil(x1 - x0) + 2 * pad, H = Math.ceil(y1 - y0) + 2 * pad;
   if (!(W > 0 && H > 0) || W * H > 6e6) return null;
   J.ox = x0 - pad; J.oy = y0 - pad; J.W = W; J.H = H; J.z = new Float32Array(W * H).fill(-1e9); J.id = new Int32Array(W * H).fill(-1); J.hf = new Float32Array(W * H);
-  J.cv = document.createElement("canvas"); J.cv.width = W; J.cv.height = H; J.g = J.cv.getContext("2d", { willReadFrequently: true }); // (a CPU canvas: putImageData on a GPU one cost ~110 ms a call in WebKit, whatever the size)
+  J.cv = typeof document !== "undefined" ? document.createElement("canvas") : new OffscreenCanvas(1, 1); J.cv.width = W; J.cv.height = H; /* (in the ice worker an OffscreenCanvas: aspira-frz-ice.js iceBakeHere) */ J.g = J.cv.getContext("2d", { willReadFrequently: true }); // (a CPU canvas: putImageData on a GPU one cost ~110 ms a call in WebKit, whatever the size)
   return J;
 }
 // one triangle into the depth buffer, rows Y..: per pixel centre, the nearest face wins; -> the next row to do (past Y1: done)
@@ -79,7 +79,7 @@ function ice3dRun(J, ms) { // its phases for up to ms: 0 the depth buffer, rows 
   while (performance.now() - t0 < ms) {
     if (J.phase === 0) { // a row of a triangle at a time (a tall shard at the bake's scale is a lot of pixels)
       if (!J.tris) { J.tris = []; F.forEach((f, fi) => { const p = f.pts; for (let q = 1; q + 1 < p.length; q++) { const T = ice3dSetup(J, fi, p[0], p[q], p[q + 1]); if (T) J.tris.push(T); } }); }
-      if (J.i >= J.tris.length) { J.phase = 1; J.i = 0; J.img = J.g.createImageData(J.W, J.H); J.bg = ice3dRgb(COL.bg); J.ic = ice3dRgb(J.ice); continue; }
+      if (J.i >= J.tris.length) { J.phase = 1; J.i = 0; J.img = J.g.createImageData(J.W, J.H); J.bg = ice3dRgb(J.bgCss || COL.bg); J.ic = ice3dRgb(J.ice); continue; }
       const T = J.tris[J.i]; for (let r = 0; r < 8; r++) if (!ice3dRow(J, T)) { J.i++; break; } continue; }
     if (J.phase === 1) { if (J.i >= J.H) { J.phase = 3; J.i = 0; continue; }
       const D = J.img.data; for (let x = 0, o = J.i * J.W; x < J.W; x++, o++) { const fi = J.id[o]; if (fi < 0) continue; const f = F[fi]; if (f.kind === 2) continue;
