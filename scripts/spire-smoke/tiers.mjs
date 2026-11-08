@@ -187,6 +187,17 @@ check("SOL's burns tick IN THE GAME LOOP (a stack once sat untouched: dotT lost,
 
 // ---------- CRR ----------
 towerTierChecks("crr", ["tether", "circling", "wingmate"]);
+check("CRR: an enemy counts as covered only by the damage its interceptors can land before it reaches the core (owner, 2026-11-08: \"CRR should release more available interceptors if it can prevent a leak\")", () => {
+  const r = run(`(() => { const { t, es } = tierLane("crr", {}, [100]), e = es[0], st = towerStats(t); e.stunT = 0; e.seen = true;
+    e.spd = 1; const v0 = effSpeed(e), left = PATHS[e.pi].len - e.s; e.spd = left / (1.2 * v0); /* about 1.2 s to the core */
+    carWing(t, st); const i = t.icp[0]; i.state = "out"; i.e = e; i.ammo = st.ammo; i.x = e.x; i.y = e.y;
+    const old = i.ammo * st.dmg * st.bolts; e.hp = e.max = Math.floor(old * 0.9); /* the old rule: covered (ammo x hit >= HP) */
+    const near = carTarget(t, st) === e; /* the new rule: 1.2 s holds too few volleys - send more */
+    e.spd = left / (1e4 * v0); const far = carTarget(t, st) === e; /* far from the core (10^4 s): the whole sortie counts - covered, the overkill guard */
+    return { near, far, eta: coreEaseTime(e, effSpeed(e)) }; })()`);
+  if (!r.near) return "a tough enemy 1.2 s from the core with one interceptor on it (ammo x hit covers its HP) drew no more: " + JSON.stringify(r);
+  if (r.far) return "the same enemy far from the core drew more though its interceptor's whole sortie covers it (the overkill guard): " + JSON.stringify(r);
+});
 check("CRR: tier 0 ten interceptors, all held in orbit when ready (owner, 2026-11-04: \"needing more interceptors\", x2; \"make CRR ready interceptors wait in orbit around the tower\"; five from 2026-11-04: \"b\" - x0.6 with the stuck-interceptor fix; eight from 2026-11-01: \"Add more interceptors to compensate\" for the slower flight; three before), no tether, one bolt a volley, six volleys a sortie (owner, 2026-10-28); Hangar I seven, some held; Tether I one tether at most; Armament I two bolts, same volley (tier redesign 2026-10-24)", () => {
   const st = sk => run(`(() => { const s = towerStats({ id: 99, kind: "crr", x: CX, y: CY, lvl: 1 + towerLevel({ kind: "crr", skills: ${JSON.stringify(sk)} }), skills: ${JSON.stringify(sk)} }, true); return { wing: s.wing, hold: s.hold, tSlow: s.tSlow, tetherN: s.tetherN, bolts: s.bolts, ammo: s.ammo, dmg: s.dmg / s.dmgCurve }; })()`);
   const z = st({}), h = st({ hangar: 1 }), a = st({ armament: 1 });

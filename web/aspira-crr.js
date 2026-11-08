@@ -103,12 +103,19 @@ function carTarget(t, st, from) { // from: an interceptor retargeting (Hangar V)
   const sent = new Map(); let cand = pickTargets(t, st, st.wing);
   if (from) cand = cand.filter(e => carDist2(e, from) < CRR_RETARGET_R * CRR_RETARGET_R).sort((a, b) => carDist2(a, from) - carDist2(b, from));
   if (!cand.length) return null;
-  for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") sent.set(i.e.id, (sent.get(i.e.id) || 0) + i.ammo * st.dmg * st.bolts); /* a bolt is td */ /* a volley is CRR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
+  // ENOUGH IN TIME (owner, 2026-11-08: "CRR should release more available interceptors if it can prevent a leak / right now, it seems like it stops
+  // once it thinks it's lethal damage, but it would take longer to kill than the time it would take for it to reach the core"): an enemy is covered
+  // only by what its interceptors can land BEFORE it reaches the core - each one's volleys left (its ammo) capped by the volleys that fit in the
+  // enemy's time to the core (coreEaseTime, the ease in) less its flight to it, each volley at the hit after the late scale and armor (as damage()
+  // lands it). Far from the core the cap is its whole ammo - the old overkill guard. (Was: ammo x hit, raw - no time, no scale, no armor)
+  const vps = st.rate / CRR_VOLLEY_K, per = st.dmg * st.bolts, land = e => { const h = st.dmg * escale(e); return h > 0 ? armorTake(h, e.armor || 0) / st.dmg : 0; };
+  const eta = new Map(), etaOf = e => eta.get(e.id) ?? eta.set(e.id, (v => (v > 0 ? coreEaseTime(e, v) : Infinity))(effSpeed(e))).get(e.id); // (coreEaseTime: the ease, aspira-step.js - the sim has no aspira-ui.js etaToCore)
+  for (const i of t.icp) if (i.e && !i.e.dead && i.state === "out") { const e = i.e, fly = Math.hypot(e.x - i.x, e.y - i.y) / Math.max(1, st.speed), n = Math.min(i.ammo, 1 + Math.floor(Math.max(0, etaOf(e) - fly) * vps)); sent.set(e.id, (sent.get(e.id) || 0) + n * per * land(e)); } /* a bolt is td */ /* a volley is CRR_VOLLEY_K hits (it was counted as one since the volleys came in: an enemy looked half-covered and drew more interceptors than it needed) */
   // NO LOST SORTIE: never an enemy that reaches the core before the interceptor could reach it (its lane left / its pace, vs the flight
   // from the carrier at st.speed) - CRR's core-first order sent wings at enemies already slamming in (a picked-never-shot leaker was
   // picked with 0.02 s to go; Leader's call, 2026-11-04)
   const inTime = e => (PATHS[e.pi].len - e.s) / Math.max(1, effSpeed(e) * waveClock(e.n)) > Math.hypot(e.x - (from || t).x, e.y - (from || t).y) / Math.max(1, st.speed);
-  return cand.find(e => inTime(e) && e.hp + (e.shield || 0) * st.dmg > (sent.get(e.id) || 0)) || null;
+  return cand.find(e => inTime(e) && e.hp + (e.shield || 0) * st.dmg * land(e) > (sent.get(e.id) || 0)) || null;
 }
 // A WAIT CUT SHORT (owner, 2026-10-16: "if a wave is spawned from the previous wave being completely cleared, ATC should spawn
 // interceptors (rounded down) based on the time that was cut short"): the cut seconds / the reload, rounded down, of the
