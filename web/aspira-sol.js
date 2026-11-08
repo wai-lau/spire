@@ -156,7 +156,7 @@ function stepSolTrack(t, st0, dt) {
   let B = t.solB; if (t.solFlares) stepSolFlares(t, st, dt);
   if (t.solFl) { t.solFl.fl += dt; if (!(t.solFl.fl < SOL_FL_KEEP)) t.solFl = null; } // (a dropped lock's last flash, drawn out - solTrackBeams)
   if (B && (B.e.dead || (B.e.x - t.x) ** 2 + (B.e.y - t.y) ** 2 > st.range * st.range)) { if ((B.fl ?? 1e9) < SOL_FL_KEEP) t.solFl = B; B = t.solB = null; } // (a pulse that killed: its flash still shows)
-  if (!B) { const e = pickTargets(t, st, 1)[0]; if (!e) return false; B = t.solB = solTrackStart(t, st, e); t.solCd = Math.max(t.solCd || 0, SOL_AIM); B.aim = SOL_AIM; } // (B.aim: the aim line's draw)
+  if (!B) { const e = pickTargets(t, st, 1)[0]; if (!e) { if (typeof solSfx === "function") solSfx(t, null, 0); return false; } B = t.solB = solTrackStart(t, st, e); t.solCd = Math.max(t.solCd || 0, SOL_AIM); B.aim = SOL_AIM; } // (B.aim: the aim line's draw)
   B.links = B.links.filter(l => !l.e.dead && !(l.par && l.par.e.dead));
   for (const l of B.links) l.hits = solLinkHits(B, l, st);
   // THE PULSE (owner, 2026-11-05: "Wait, SOL should still have it's old big hit fire rate / like, fire, pause, fire, pause"): the lock and
@@ -179,5 +179,6 @@ function stepSolTrack(t, st0, dt) {
     for (const l of B.links) for (const h of l.hits) if (!hit.has(h.e)) { hit.add(h.e); solTickHit(t, st, h.e, d * h.k, B.e, true); }
     if (B.pl) for (const h of B.pl.hits) if (!hit.has(h.e)) { hit.add(h.e); solTickHit(t, st, h.e, d * h.k, B.e, true); }
   }
+  if (typeof solSfx === "function") solSfx(t, B.e.dead ? null : B.e, t.solCd); // the shot's sound, lined up on the next pulse (aspira-sfx.js; the page only)
   return true;
 }

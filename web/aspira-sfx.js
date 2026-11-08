@@ -228,7 +228,7 @@ const LOUD = /^(bosswarn|bossvoice|coreup|up|build|thud)/; // (thud: in the LOUD
 // per-sound trims (owner): the ship explosion on every kill was too loud
 const SOUND_GAIN = { kill: 0.4 };
 const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? SOUND_GAIN[name.split(".")[0]] ?? 1); // ("kill.fast" trimmed as "kill")
-function playSample(name, at = 0) {
+function playSample(name, at = 0, off = 0) { // off: s into the clip to start from (SOL's shot, solSfx)
   const list = SAMPLES[name], n = playing[name] || 0;
   const src = AC.createBufferSource(), g = AC.createGain(), clip = list[Math.floor(Math.random() * list.length)];
   src.buffer = clip.buf;
@@ -236,7 +236,7 @@ function playSample(name, at = 0) {
   src.connect(g).connect(master);
   voices++; playing[name] = n + 1; const L = { name, nodes: [[src, g]] }; sfxLive.add(L);
   src.onended = () => { sfxEnd(src); playing[name]--; sfxLive.delete(L); };
-  src.start(AC.currentTime + at, clip.start, clip.end - clip.start);
+  src.start(AC.currentTime + at, clip.start + off, Math.max(0.01, clip.end - clip.start - off)); src.__g = g;
   return src;
 }
 // samples played back to back (owner: the boss warning - a double beep, then
@@ -258,6 +258,30 @@ function sfxSeq(names) {
 function sfxFor(name, kind) {
   const k = name + "." + kind;
   return SAMPLES[k] && SAMPLES[k].length ? sfx(k) : sfx(name);
+}
+// SOL's SHOT (owner, 2026-11-07: "use this sound for the SOL attacks, line up the shooting part with the beam, and the buildup to the charging";
+// "if it loses the target stop the sound instead of playing the whole sound"): the "sol" sample's build-up plays while SOL charges its next pulse
+// and its shot lands on the pulse - the clip starts SOL_SHOT_AT (its shot's onset, measured on PabCag00.wav) of real time before it, partway in
+// when less is left (a new lock's SOL_AIM, a fast fire rate, a fast game). ONE voice a tower (solVoice): the next charge cuts the last one's
+// tail; a lock lost or switched before its shot stops it at once over SOL_SHOT_FADE. Called from stepSolTrack (none in the simulator: no AC)
+const SOL_SHOT_AT = 0.62, SOL_SHOT_FADE = 0.025, solVoice = new WeakMap();
+function solVoiceStop(t, v) {
+  solVoice.delete(t); if (!v || !AC) return;
+  const n = AC.currentTime, g = v.src.__g.gain;
+  try { g.cancelScheduledValues(n); g.setValueAtTime(g.value, n); g.linearRampToValueAtTime(0, n + SOL_SHOT_FADE); v.src.stop(n + SOL_SHOT_FADE + 0.01); } catch (err) { /* already stopped */ }
+}
+function solSfx(t, e, cd) { // each SOL step: e its lock (null: none), cd the game s to its next pulse
+  if (!AC) return;
+  const v = solVoice.get(t), now = AC.currentTime, pre = v && now < v.shot;
+  if (v && pre && v.e !== e) { solVoiceStop(t, v); return; } // lost or switched before the shot: stop, never play out
+  if (!e || (v && pre) || muted || AC.state !== "running" || !(SAMPLES.sol && SAMPLES.sol.length)) return;
+  const real = Math.max(0, cd) / gameSpeedX();
+  if (real > SOL_SHOT_AT || (v && now < v.shot + 0.05)) return; // not yet in reach of the shot / the last shot just landed
+  if (v) solVoiceStop(t, v);
+  if ((playing.sol || 0) >= SOUND_MAX.sol) return;
+  sfxBump("sol", now); if (!sfxMakeRoom("sol", now)) return;
+  const src = playSample("sol", 0, SOL_SHOT_AT - real);
+  solVoice.set(t, { src, e, shot: now + real });
 }
 // how many times faster than 1x the game runs now (aspira-ui.js's speed; 1 in the simulator)
 const soundCredit = {};
