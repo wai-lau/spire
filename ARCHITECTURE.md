@@ -22,7 +22,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | # | Pillar (an owner rule) | What it fixes | Where |
 |---|---|---|---|
 | 1 | **Phone first** | one fixed play box every standard phone shares; no pan, and no zoom but a desktop wheel's (the view only, §2.2); verify at 430x932 and 382x700 | §2.2, §7.1 |
-| 2 | **Three towers, seven kinds** | `MAX_TOWERS` 3 on three open slots; every trio of kinds must be winnable except the designed deaths (§4.12) ("for every combination of 3 towers, it is possible to win"), so no kind is required | §4, §10.4 |
+| 2 | **Three towers, seven kinds** | `MAX_TOWERS` 3 on three open slots; every trio of kinds must be winnable except the designed deaths (§4.9) ("for every combination of 3 towers, it is possible to win"), so no kind is required | §4, §10.4 |
 | 3 | **Towers move by hand** | drag any tower any time inside its leash, firing all the while; nothing moves itself except Auto-move (a win unlocks it; it disqualifies the game) | §4.4 |
 | 4 | **Every upgrade is a choice** | three axes a tower, five buys an axis (tiers I-V), 13 buys a tower, ONE capstone (V) a tower; no tier lowers a stat | §4.2 |
 | 5 | **Only behaviour is told** | card words change only when behaviour changes; a number moving changes the stat row | §7.3 |
@@ -44,7 +44,7 @@ traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 | winding | pitch-driven (`TANGENT_Q`, `LANE_SOFT_R`): no hook off the lead-in, a gentle coil at the core; plus the CORE TWIST (owner, 2026-10-22, in place of auto-wait): extra winding at rate `(1 - r/TWIST_R)^TWIST_P / r` inside `TWIST_R` 420 (softened at the core by `TWIST_SOFT`), tightest at the core, each lane `TWIST_S` 3.5 s x its rider's speed longer (`PAIR_RIDER`, `PAIR_V`; solved by bisection), sampled `TWIST_SUB` x finer there; the per-section twist sets the difficulty curve (§5.6); the drawn lane runs on under the core, the walked path ends at `CORE_R` |
 | copies | a wave rides rotated copies of its lane: swarm 20/24, fast 3/5, shield 2/3, armor 2, boss 1 (Lovers 2 opposite, Devil 6 on 3, her host on the same 3), **never exactly four** (`NO_LANES`); the set is turned by `laneBestTurn` (rule in §2.2: most even copies, then most total lane, then nearest the usual turn; turned 90 degrees in landscape) |
 | lit | a lane lights only with live enemies (`alive / sent`, `LANE_FADE_IN_MS`); a boss lane is wider, haloed, and waits for the sky (§5.5); Roman numerals on `LABEL_R` 430 never overlap (`placeLabels`); lit layers rebuild at most every `LIT_MIN_MS`; in 3D the lit lanes are drawn by the bell shader (§8.2), the 2D layers only off it; a finished wave's lanes go dark the frame its last enemy dies, whatever wave is up next (`laneHold` keeps a lane only while a live lane of its wave `u.n` runs) |
-| footprint | a tower is a hex of `TOWER_K` cells, `towerGap()` from another, blocked by the core only where outlines touch (`coreKeep`); building on a lane is allowed (towers and enemies never collide); `CORNER_SLOTS` is empty (dormant, §4.14) |
+| footprint | a tower is a hex of `TOWER_K` cells, `towerGap()` from another, blocked by the core only where outlines touch (`coreKeep`); building on a lane is allowed (towers and enemies never collide); `CORNER_SLOTS` is empty (dormant, §4.11) |
 
 ### 2.2 The play box (pillar 1)
 
@@ -105,7 +105,7 @@ too. The lanes' CORE TWIST (§2.1) gives the same time to the core instead. The 
 
 | | ARC | FRZ | SOL | ACD | GRV | CRR | IFR |
 |---|---|---|---|---|---|---|---|
-| design | hit-scan chain lightning | an aura, no shots | a ray that splits from enemy to enemy | continuous jets and pools | a void a shot, with novas and an aura (§4.9) | a carrier launching interceptors (§4.10) | a homing meteor bursting into a fan of straight shards, fires and eight-beamed flares (§4.11) |
+| design | hit-scan chain lightning | an aura, no shots | a ray that splits from enemy to enemy | continuous jets and pools | a void a shot, with novas and an aura (§4.5) | a carrier launching interceptors (§4.5) | a homing meteor bursting into a fan of straight shards, fires and eight-beamed flares (§4.5) |
 | colour | yellow | cyan | pink | green | violet | blue | orange |
 | default targeting | Near | Near | Near | Near | Near | Near | Near |
 | leash (`MOVE_BASE`) | medium (200) | long (240) | medium (222) | longest (280) | medium (200) | long (240) | short (120) |
@@ -203,37 +203,62 @@ x7 at the core) and the tower's targeting; move only for a spot 10% better.
 **Look**: the level is the hex's glow and rings; the stat triangle on the hex grows a ring a
 purchase; an affordable buy flashes an up-chevron; labels are three letters.
 
-### 4.5 What each axis buys
+### 4.5 The towers, one by one
 
-**ARC** - THE ARC REDESIGN (owner, 2026-10-29: "Hits hard, big chain, forks are limited to 1 fork per node, doesn't refork after 1
+Each tower in the same shape: its **role**, its **marks** (the target row), its **parts** where it has a rulebook, its **paths** (the three
+axes, tiers I .. IV and the capstone at V; the capstone rules: §4.6) and where its **traps** are. Ids, names and the per-tier numbers: the code.
+
+#### ARC, the arc tower (`web/aspira-arc.js`, the look `aspira-arc-body.js`)
+
+**Role.** THE ARC REDESIGN (owner, 2026-10-29: "Hits hard, big chain, forks are limited to 1 fork per node, doesn't refork after 1
 fork, cannot hit same target twice"): ONE hard strike a shot, then a chain of jumps, each leaping from the enemy it hit to the next
 within its own reach (`arcRange`, not ARC's small range: close zap, conducts to a few units nearby). From Voltage I (`ARC_FORK_FROM`) the strike forks
 ONCE into two chains, and nothing forks after. **One hit set an attack**: no enemy is struck twice by one attack (`fire` shares
 `seen`; `skillHop`). No charges, no bursts. The axis ids stay (saves, sims, smoke); only the names changed. How it got here:
 ARCHAEOLOGY §4.
 
-| axis | buys |
-|---|---|
-| Conductivity (id `conductivity`) | the carry: what each jump keeps of the hit before it (`ARC_AMP_FALL`, above 1 from tier III: jumps out-hit the strike) |
-| Voltage | the chain: more jumps (`ARC_VOLT_JUMPS`) and a farther reach a jump (`ARC_VOLT_REACH`); the one fork from `ARC_FORK_FROM` |
-| Shock (id `capacitance`) | never slows (`ARC_RES_SLOW` all 0: the owner's ARC brief, ARCHAEOLOGY §13.7); every hit strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); **Shocked** (owner, 2026-11-01, "1": "Shock makes shocked enemies take more damage from ARC"): each hit marks its target for `STAT_SLOW_T` (0.6 s; `shockT`, refreshed on hit), and a marked enemy takes x(1 + `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2) from ARC's hits (not the burn); the mark shows as a thin triangle in ARC's colour round the die (aspira-enemies.js), the card says "Shocked enemies take X% more damage from ARC."; no area zap |
+**Marks.** swarm +2 · fast -2 · shield -2 · armor +2 (the mark target, §4.8; the measured marks: the build card's `VS_MARKS`)
 
-**FRZ** - everything inside the aura is slowed (only while inside) and takes a quiet tick;
+**Paths 0 -> V.**
+
+| axis | buys, tiers I .. IV | capstone (V) |
+|---|---|---|
+| Conductivity (id `conductivity`) | the carry: what each jump keeps of the hit before it (`ARC_AMP_FALL`, above 1 from tier III: jumps out-hit the strike) | **Grounding**: each chain's last jump bursts on every enemy within 40 u, at that jump's hit; a white ring (`ARC_GROUND_R`) |
+| Voltage | the chain: more jumps (`ARC_VOLT_JUMPS`) and a farther reach a jump (`ARC_VOLT_REACH`); the one fork from `ARC_FORK_FROM` | **Storm**: every 5th strike forks 3 ways; the rings spin up and flash (`ARC_STORM_EVERY`, `ARC_STORM_FORK`) |
+| Shock (id `capacitance`) | never slows (`ARC_RES_SLOW` all 0: the owner's ARC brief, ARCHAEOLOGY §13.7); every hit strips a share of the armor left (`ARC_RES_STRIP`, `shredPct`); from II its bolts hit harder (`ARC_RES_DMG` x1.05-1.2, on the card "Its bolts hit xN harder."); **Shocked** (owner, 2026-11-01, "1": "Shock makes shocked enemies take more damage from ARC"): each hit marks its target for `STAT_SLOW_T` (0.6 s; `shockT`, refreshed on hit), and a marked enemy takes x(1 + `ARC_SHOCK_AMP` 0/.3/.7/1.6/1.8/2) from ARC's hits (not the burn); the mark shows as a thin triangle in ARC's colour round the die (aspira-enemies.js), the card says "Shocked enemies take X% more damage from ARC."; no area zap | **Superstorm**: a Shocked enemy that dies passes its Shock (time refreshed) to every enemy within 80 u, a zap to each (`ARC_SHOCK_PASS_R`, `ARC_PASS_DEPTH`) |
+
+**Traps.** §11, the rows naming ARC.
+
+#### FRZ, the freeze tower (`web/aspira-frz.js`, the ice `aspira-frz-ice.js` / `aspira-frz-ice3d.js`, the moons `aspira-frz-moons.js`)
+
+**Role.** Everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the speed the slow takes (`frzBite`: `FRZ_CHILL_K` x slow x the enemy's own speed / `ENEMY_BASE_SPEED`, owner
 2026-11-06 "1 yes"; it reads speed, never type, so fast enemies take most), never over `FRZ_BITE_TD` (8) x td. **No armor reduction** (owner, 2026-10-29: "no armor reduction effects, more slow").
 **Weakness: shields and armor** - a shielded enemy cannot be slowed (no chill, no Fracture, a Permafrost pulse does nothing);
 a tick on it pops one charge.
 
-| axis | buys |
-|---|---|
-| Fracture (id `temp`; Brittle until 2026-11-06, owner: "rename it to Fracture") | a colder aura, a faster tick, more **damage taken** (a slowed enemy takes more from EVERY tower, credited to the FRZ; the card row "Damage taken"); range |
-| Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow (its armor crack `FRZ_RIME_CRACK` is 0 at every tier); at full frost the rime spreads to the nearest enemy; slide |
-| Moons | copies of the aura orbiting the tower (separate slow sources, so they multiply), with satellites at the top tiers |
+**Marks.** swarm +1 · fast +2 · shield -1 · armor -2 (the mark target, §4.8; the measured marks: the build card's `VS_MARKS`)
 
-**SOL** - one TRACKING BEAM, held on its first target while that target lives and stays in range (owner, 2026-11-04: "SOL 0: fire a
+**Paths 0 -> V.**
+
+| axis | buys, tiers I .. IV | capstone (V) |
+|---|---|---|
+| Fracture (id `temp`; Brittle until 2026-11-06, owner: "rename it to Fracture") | a colder aura, a faster tick, more **damage taken** (a slowed enemy takes more from EVERY tower, credited to the FRZ; the card row "Damage taken"); range | **Zero Point**: the fracture lingers 2 s after an enemy leaves the aura (`FRZ_LINGER_S`) |
+| Permafrost (id `rime`) | rings pulsing to the aura's edge, each leaving a permanent stacking slow (its armor crack `FRZ_RIME_CRACK` is 0 at every tier); at full frost the rime spreads to the nearest enemy; slide | **Ice Age**: a fully frosted enemy is frozen solid 0.5 s, once per 6 s each (bosses cut like slows, `bossSlowMul`) (`FRZ_DEEP_S`, `FRZ_DEEP_CD`) |
+| Moons | copies of the aura orbiting the tower (separate slow sources, so they multiply), with satellites at the top tiers | **Constellation**: no mechanic (Wai: keep the moons) |
+
+**Traps.** §11, the rows naming FRZ.
+
+#### SOL, the sun tower (`web/aspira-sol.js`, the beam `aspira-solbeam.js`, the body `aspira-sol-body.js`)
+
+**Role.** One TRACKING BEAM, held on its first target while that target lives and stays in range (owner, 2026-11-04: "SOL 0: fire a
 single tracking beam at a target ... It lasts as long as the first target is alive, the first target must be in range"). Armor cuts it like any
 other tower. Its checks and weak spots are measured, not designed: the build card's marks (`VS_MARKS`, §4.8). The code: `web/aspira-sol.js`
 (`stepSolTrack`); the look: `solTrackBeams` (aspira-effects.js); how it got here: ARCHAEOLOGY §4 (the band model it replaced).
+
+**Marks.** swarm -3 · fast +1 · shield +1 · armor +1 (the mark target, §4.8; the measured marks: the build card's `VS_MARKS`)
+
+**Parts.**
 
 | part | principle |
 |---|---|
@@ -246,116 +271,43 @@ other tower. Its checks and weak spots are measured, not designed: the build car
 | scorch (Scorch) | a pulse lays `SOL_SCORCH_M` / `SOL_PULSE_K` burn stacks at once (4) on every enemy it hits, each a share of its hit (`solTickHit`, `pulse`; owner, 2026-11-05: "scorch is what pops shields" - the stacks a second held), each stack on its own clock, one pop a tick (`solScorchTick`); every live stack slows its enemy `SOL_SCORCH_SLOW`, summed and capped at `TOWER_SLOW_MAX`, never a shielded one (`solScorchTick`, `applySlow` tag `scorch`; owner, 2026-10-31: "Make SOL scorch slow"); Scorch V doubles a stack's ticks at half each - a longer burn, more shield pops (`v`: the doubled ring) |
 | drawing | `t.solB` at its live ends, never an fx entry: a pulse's FLASH (`SOL_PULSE_FLASH` 0.15 s, fading; dark between shots), the splits a segment an enemy, each dimmer by its carry. A beam that stops at its enemy (the main, a split without Breach) is THIN (`SOL_THIN_W` 0.3 x its hit's width); one that PIERCES (the main at Reflection 0 + Breach, a split with Breach, on to the edge: `solShowLen`) is full width (`SOL_PIERCE_W`) - owner, 2026-11-05: "primary beam way thinner (thicker with pierce)". Between shots the AIM LINE: a thin plain line to the lock, alpha 0.4 -> 0.8 as the next shot comes (over a new lock's `SOL_AIM` or the gap; "I want the aiming visual effect back"). No prism, no rod |
 
-| axis | buys |
-|---|---|
-| Scorch (id `focus`) | a LONGER burn (`SOL_SCORCH_N` ticks), never a hotter one; at V twice the ticks at half each |
-| Reflection (id `refraction`) | the splits (`SOL_SPLIT`, none at tier 0) |
-| Breach | the armor a hit strips (`SOL_BREACH_ARMOR`, none at tier 0) and the splits' carry (`SOL_TRACK_HOP`) |
+**Paths 0 -> V.**
 
-**ACD** - jets whose burn ramps while held (doubling, capped), each tick a real hit; jets never share an enemy; a jet resets
+| axis | buys, tiers I .. IV | capstone (V) |
+|---|---|---|
+| Scorch (id `focus`) | a LONGER burn (`SOL_SCORCH_N` ticks), never a hotter one; at V twice the ticks at half each | **Solar Flare**: each shot's first enemy hit leaves an IFR flare in SOL's colour, burning as IFR's untaken flare; at most 4 live a tower (`SOL_FLARE_SHARE`, `SOL_FLARE_MAX`) |
+| Reflection (id `refraction`) | the splits (`SOL_SPLIT`, none at tier 0) | **Corona**: each of the 8 splits splits again into 2, to the screen edge (24 beams) (`SOL_SUB_SPLIT`) |
+| Breach | the armor a hit strips (`SOL_BREACH_ARMOR`, none at tier 0) and the splits' carry (`SOL_TRACK_HOP`) | **Starfire**: look only: the Breach marker drawn as a blade |
+
+**Traps.** §11, the rows naming SOL.
+
+#### ACD, the acid tower (`web/aspira-acid.js`, the look `aspira-acid-draw.js` / `aspira-acd-body.js`)
+
+**Role.** Jets whose burn ramps while held (doubling, capped), each tick a real hit; jets never share an enemy; a jet resets
 when its enemy dies or leaves, unless Flow carries its ramp on. Tier 0 is one jet and no pools. Its checks and weak spots: the build
 card's marks (`VS_MARKS`, §4.8). The code: `web/aspira-acid.js`, the look `aspira-acid-draw.js`; how it got here: ARCHAEOLOGY §4.
 
-| axis | buys |
-|---|---|
-| Corrosion | a tick takes a fixed % of the armor left (`shredPct`, `ACD_CORRODE` per tier; the jets only); eaten armor drips as **goo** that homes on the next enemy; a picked-up drop strips `ACD_GOO_STRIP` of the picker's CURRENT armor (15-75% at I-V) and deals `ACD_GOO_DMG` x the dropping ACD's td (2-8x) (7.1.4, owner 2026-11-01 picked "1"; it was the armor lost x 2.6-9.2) |
-| Flow (id `spray`) | more jets (`ACD_LINES`); a jet keeps part of its ramp when its enemy dies **or escapes** (`ACD_FLOW_CARRY`, the fast answer); range |
-| Spill | the jets drip slimy acid pools that burn and do NOT slow (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught, no slows"; `ACD_POOL_SLOW` 0) - bigger and more often by tier; a kill leaves no pool; slide |
+**Marks.** swarm -1 · fast -3 · shield +2 · armor +2 (the mark target, §4.8; the measured marks: the build card's `VS_MARKS`)
 
-### 4.6 The capstones (tier V, one axis a tower)
+**Paths 0 -> V.**
 
-Wai's picks of 2026-11-06 (memory `capstones-2026-11-06`), built and screened tower by tower by Balance, shipped 7.7.88 .. 7.7.112; the card
-lines are `aspira-desc.js` (audited against the code 2026-11-07). A capstone is a MECHANIC on top of the tier table's leap (`CAPSTONE_NUM`,
-aspira-capstone.js); its knobs:
+| axis | buys, tiers I .. IV | capstone (V) |
+|---|---|---|
+| Corrosion | a tick takes a fixed % of the armor left (`shredPct`, `ACD_CORRODE` per tier; the jets only); eaten armor drips as **goo** that homes on the next enemy; a picked-up drop strips `ACD_GOO_STRIP` of the picker's CURRENT armor (15-75% at I-V) and deals `ACD_GOO_DMG` x the dropping ACD's td (2-8x) (7.1.4, owner 2026-11-01 picked "1"; it was the armor lost x 2.6-9.2) | **Oblivion**: a corroded enemy takes x1.2 from EVERY tower for 0.5 s after its last acid (one timer, never stacking) (`ACD_CORR_TAKE`, `ACD_CORR_TAKE_S`) |
+| Flow (id `spray`) | more jets (`ACD_LINES`); a jet keeps part of its ramp when its enemy dies **or escapes** (`ACD_FLOW_CARRY`, the fast answer); range | **Monsoon**: no mechanic (the table's leap: 11 jets) |
+| Spill | the jets drip slimy acid pools that burn and do NOT slow (owner, 2026-10-29: "Increase ACD pools so that swarm gets caught, no slows"; `ACD_POOL_SLOW` 0) - bigger and more often by tier; a kill leaves no pool; slide | **Extinction**: a pool that drops over another joins its LAKE: x1.25 burn within 149 u of the lake's first pool; drawn as one body (`drawLake`) (`ACD_LAKE_K`, `ACD_LAKE_R`) |
 
-| tower | axis -> capstone | what it does | knobs | file |
-|---|---|---|---|---|
-| ARC | Conductivity -> Grounding | each chain's last jump bursts on every enemy within 40 u, at that jump's hit; a white ring | `ARC_GROUND_R` | aspira-arc.js |
-| ARC | Voltage -> Storm | every 5th strike forks 3 ways; the rings spin up and flash | `ARC_STORM_EVERY`, `ARC_STORM_FORK` | aspira-arc.js |
-| ARC | Shock -> Superstorm | a Shocked enemy that dies passes its Shock (time refreshed) to every enemy within 80 u, a zap to each | `ARC_SHOCK_PASS_R`, `ARC_PASS_DEPTH` | aspira-arc.js |
-| FRZ | Fracture -> Zero Point | the fracture lingers 2 s after an enemy leaves the aura | `FRZ_LINGER_S` | aspira-frz.js |
-| FRZ | Permafrost -> Ice Age | a fully frosted enemy is frozen solid 0.5 s, once per 6 s each (bosses cut like slows, `bossSlowMul`) | `FRZ_DEEP_S`, `FRZ_DEEP_CD` | aspira-frz.js |
-| FRZ | Moons -> Constellation | no mechanic (Wai: keep the moons) | - | - |
-| SOL | Scorch -> Solar Flare | each shot's first enemy hit leaves an IFR flare in SOL's colour, burning as IFR's untaken flare; at most 4 live a tower | `SOL_FLARE_SHARE`, `SOL_FLARE_MAX` | aspira-sol.js |
-| SOL | Reflection -> Corona | each of the 8 splits splits again into 2, to the screen edge (24 beams) | `SOL_SUB_SPLIT` | aspira-sol.js |
-| SOL | Breach -> Starfire | look only: the Breach marker drawn as a blade | - | aspira-solids.js, aspira-sol-body.js |
-| ACD | Corrosion -> Oblivion | a corroded enemy takes x1.2 from EVERY tower for 0.5 s after its last acid (one timer, never stacking) | `ACD_CORR_TAKE`, `ACD_CORR_TAKE_S` | aspira-acid.js |
-| ACD | Flow -> Monsoon | no mechanic (the table's leap: 11 jets) | - | - |
-| ACD | Spill -> Extinction | a pool that drops over another joins its LAKE: x1.25 burn within 149 u of the lake's first pool; drawn as one body (`drawLake`) | `ACD_LAKE_K`, `ACD_LAKE_R` | aspira-acid.js, aspira-acid-draw.js |
-| GRV | Void -> Event Horizon | each crush kill grows the void x1.1, to x1.5, fading back over 3 s | `GRV_EH_GROW`, `GRV_EH_MAX`, `GRV_EH_FADE` | aspira-grv.js |
-| GRV | Nova -> Hypernova | every 4th nova rings twice, the 2nd ring x1.5 the reach (same hit rules); a white flash | `GRV_SUPER_EVERY`, `GRV_SUPER_R` | aspira-grv.js, aspira-grv-draw.js |
-| GRV | Gravity Well -> Undertow | an enemy in the aura nearer the core (`coreXY`) than the tower is reeled back along its lane to the void's centre over 0.6 s; each enemy at most once every 4 s, whichever GRV reels it | `GRV_REEL_T`, `GRV_REEL_CD` | aspira-grv.js |
-| CRR | Hangar -> Full Wing | an interceptor whose target dies with ammo left retargets within 300 u, up to 2 times a sortie | `CRR_RETARGETS`, `CRR_RETARGET_R` | aspira-crr.js |
-| CRR | Tether -> Anchor | no new mechanic: the tether runs on to one more enemy (as before) | - | aspira-crr.js |
-| CRR | Armament -> Autopilot | bursts into 10 pellets (x1.125 td) whenever it heads home | `CRR_BURST_N`, `CRR_BURST_K` | aspira-crr.js |
-| IFR | Meteor -> Impact | every 3rd charged meteor is big (drawn x2, hitbox unchanged), its first hit x4 | `IFR_BIG_EVERY`, `IFR_BIG_HIT_K` | aspira-ifrit.js |
-| IFR | Hellfire -> Hellfire | each fire strikes a pentagram's 5 chords across its circle, each a chain burning like a flare | `IFR_CHAINS_N`, `IFR_CHAIN_K` | aspira-ifrit.js |
-| IFR | Flare -> Mega Firaga | one flare a landing plus a flare ring 60% up its spokes (its own hit); flares at most 300 across | `IFR_V_SPAN` | aspira-ifrit.js |
+**Traps.** §11, the rows naming ACD.
 
-The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with every core power; the numbers' dated snapshot is ARCHAEOLOGY §13.10.
+#### GRV, the gravity tower (`web/aspira-grv.js`, the look `aspira-grv-draw.js`)
 
-### 4.7 Rules every axis obeys
-
-| Rule | |
-|---|---|
-| no tier lowers a stat | pillar 4; `ACD_SPRAY_MUL` floored at 1 |
-| a tier's words | change only when behaviour changes (§7.3) |
-| debuff credit | damage a debuff adds goes to the tower that caused it (`damageCredit`) |
-| armor shred | EVERY strip is a % of the CURRENT armor (owner 2026-10-28: "all strip should be changed to a % not a flat number"; `shredPct`, per-tier tables, the same at every wave), so strips multiply toward 0, never below; `SHRED_MAX` 0.9 stays as a safety. The goo keeps `shredArmor` (its drop is a fixed share of the wave's armor reference). No negative armor, no "shredded takes extra" |
-| 10 s at most | no effect on the board outlives `EFFECT_MAX_S` 10 s - GRV holes, the Orbital Relay; ACD pools `POOL_MAX_S` 5 s, goo `GOO_MAX_S` 30 s (owner, 2026-10-18). Debuffs ON an enemy (Breach, Corrosion's strip) are outside the rule |
-| tier names | one a tier (Transfer .. Hyperstorm, Chill .. Zero Point, ...), used on the end screen, never on the card; ARCHAEOLOGY §12 |
-
-### 4.8 The mark target (pillar 6)
-
-THE MARK TARGET (owner, 2026-10-29 15:45: "save super important! priority #1"; its history and every owner quote: ARCHAEOLOGY §4.6) is
-`scripts/aspira-sim/mark-target.json`; the towers are balanced TO it, never the other way (`VS_MARKS` is never edited by hand;
-`marktarget.py` runs again only on the owner's word). Each tower's mark a type, -3 .. +2 (generated from the json, 2026-11-07):
-
-| tower | swarm | fast | shield | armor |
-|---|---|---|---|---|
-| ARC | +2 | -2 | -2 | +2 |
-| FRZ | +1 | +2 | -1 | -2 |
-| SOL | -3 | +1 | +1 | +1 |
-| ACD | -1 | -3 | +2 | +2 |
-| GRV | +1 | +1 | -3 | +1 |
-| CRR | -2 | +2 | +1 | -1 |
-| IFR | +2 | -1 | +2 | -3 |
-
-Every type column is +2 +2 +1 +1 -1 -2 -3, every row and column sums to 0, every tower checks two types or more. **The target is the goal**: ARC is +2 vs armor (owner,
-2026-11-07: "go by the target marks, ARC wasn't designed to be good against armor, but got here balancing the target marks. so ARC should
-+2 armor now"; the older "ARC and IFR by design are bad vs armor" is history, ARCHAEOLOGY §4.6) - who is weak to a type reads off the
-table (vs armor: IFR -3, FRZ -2, CRR -1). The old counter table is archaeology (owner, 2026-11-07: "counter table is archaeology, target
-marks is the goal"). `COUNTERS` (`aspira-defs.js`) is DERIVED from it - `main` = the +2 cells, `help` = the +1 cells: swarm `[arc, ifr]` /
-`[frz, grv]`, fast `[frz, crr]` / `[sol, grv]`, armor `[arc, acd]` / `[sol, grv]`, shield `[acd, ifr]` / `[sol, crr]` (checked 2026-11-07) - and
-the build card's `GOOD_VS` / `HELPS_VS` derive from `COUNTERS` (SOL and ACD add bosses, `BOSS_KILLERS`). The card's symbol marks (`VS_MARKS`)
-are MEASURED, a `countermx` run at 9 points (`scripts/aspira-sim/countermx.mjs`, the command below); the old design matrix: ARCHAEOLOGY §4.6.
-
-**THE MARKS AT FIVE POINT LEVELS** (owner, 2026-11-06: "1B, but also add a 0 point and 3 point check", then "most important marks are 9 and 13,
-but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 2026-11-07 "1C": the 0-point band loosened to +/-2). Every balance patch runs all five against the mark target:
-
-| points | what it is | marks.py | the bar |
-|---|---|---|---|
-| 9 | the card's marks (spread builds) | `--write` | the first target: written into `VS_MARKS` |
-| 13 | each axis maxed in turn (V + IV + IV), averaged a tower | `--focus` | the second target (the capstone check) |
-| 3, 6 | the early and mid game | `--band` | every cell within 1 of the target, else `RULE FAIL` |
-| 0 | the opening (tier 0 towers) | `--band` | every cell within 2 of the target, else `RULE FAIL` (owner, 2026-11-07 "1C") |
-
-The windows follow the good model's tower points by wave (median 3 at wave 60, 5 at 80, 8 at 100-110). From `scripts/aspira-sim`, with
-`KINDS=arc,frz,sol,acd,grv,crr,ifr` and 2 seeds (the 13-point run takes about 4x the 9-point one):
-
-| points | command |
-|---|---|
-| 0 | `SPREAD_ONLY=1 POINTS=0 WINDOWS=5-19 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
-| 3 | `SPREAD_ONLY=1 POINTS=3 WINDOWS=55-65 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
-| 6 | `SPREAD_ONLY=1 POINTS=6 WINDOWS=81-89 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
-| 9 | `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
-| 13 | `POINTS=13 WINDOWS=101-109,111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus` |
-
-### 4.9 GRV, the gravity tower (`web/aspira-grv.js`, the look `aspira-grv-draw.js`)
-
-Its target (the mark target, §4.8): a help against swarm, fast and armor, weak to shields; mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
+**Role.** Its target (the mark target, §4.8): a help against swarm, fast and armor, weak to shields; mid reach (about ARC's); its measured checks and weak spots are the build card's marks (`VS_MARKS`,
 §4.8). Palette: a violet aura and outline, a yellow nova (`--asp-violet-*`, `--asp-bh-*`). There is no projectile: everything
 happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
+
+**Marks.** swarm +1 · fast +1 · shield -3 · armor +1 (the mark target, §4.8; the measured marks: the build card's `VS_MARKS`)
+
+**Parts.**
 
 | part | principle |
 |---|---|
@@ -368,17 +320,25 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 | aura (Gravity Well) | an aura round the void, never past twice its size: it slows (never the shielded), harder inside the void and on an enemy already past it, and every enemy in it glides across its lane toward the lane's centre line (`GRV_LAT_V`, easing back after); it deals no damage |
 | look | the void's black centre is logarithmic in its size (`grvCoreR`), touching disks join; the aura is a radial band clear at both ends; every GRV damage number flies into its void (`grvFloat`) |
 
+**Paths 0 -> V.**
+
 | axis | buys | capstone |
 |---|---|---|
 | **Void** | a bigger void, a harder crush, more pellets | **Event Horizon**: a void twice as heavy; each enemy its crush kills grows it x1.1, to x1.5, fading over 3 s (§4.6) |
 | **Nova** (id `supernova`) | the novas before each void, faster by tier, their armor strip (`GRV_NOVA_STRIP`) | **Hypernova**: the most strip; every 4th nova rings twice, the 2nd ring x1.5 the reach (§4.6) |
 | **Gravity Well** (id `radiation`) | the aura (pull and slow), its size and strength; the pellets' damage and range | **Undertow**: an enemy in the aura nearer the core than the tower is reeled back to the void, each at most once every 4 s (§4.6) |
 
-### 4.10 CRR (id `crr`), the carrier (`web/aspira-crr.js`)
+**Traps.** §11, the rows naming GRV.
 
-The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), its target (the mark target, §4.8) checks on fast and shield; its measured checks and weak
+#### CRR (id `crr`), the carrier (`web/aspira-crr.js`)
+
+**Role.** The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), its target (the mark target, §4.8) checks on fast and shield; its measured checks and weak
 spots are the build card's marks (`VS_MARKS`, §4.8). It never fires itself; its **interceptors** do. The constants (wing sizes,
 speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY §4.6c.
+
+**Marks.** swarm -2 · fast +2 · shield +1 · armor -1 (the mark target, §4.8; the measured marks: the build card's `VS_MARKS`)
+
+**Parts.**
 
 | Part | Rule |
 |---|---|
@@ -393,6 +353,8 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 | draw | a volley flies as a V (`carBoltV`, draw only): each wing bolt `CRR_V_W` out and `CRR_V_B` back of its game spot, opening over `CRR_V_IN` and closing inside `CRR_V_SHUT` of its target; a carrier's darts are ONE path, one fill and one stroke; trails stay ROUND-joined - bevel + butt drew them ~3x slower in WebKit (2.5 -> 7.5 ms at 3 x 17); trails are the CRR's draw cost (~60 segments an interceptor) |
 | look | hairline trails (`carTrails`); darts sized by Armament, drawn at `CRR_DART_DRAW` 0.5 (owner, 2026-11-05: "Halve interceptor sizes"; the draw only); the tether a thin ARC-style chain in light blue, never under 0.7 alpha; drawn in `skyKeep` so a boss sky does not invert them. No new 3D primitives: darts are filled triangles, firing lines and pellets single strokes (the board's path context takes no gradient stroke, §11) |
 
+**Paths 0 -> V.**
+
 | Axis | Buys | Capstone (V) |
 |---|---|---|
 | Hangar | WIDTH: more interceptors (`CRR_HANGAR`), all waiting in orbit | **Full Wing**: the biggest wing (41); an interceptor whose target dies with ammo left retargets within 300 u, up to 2 times a sortie (§4.6) |
@@ -401,14 +363,20 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 
 The Orbital Relay multiplies the wing by `RELAY_MUL` (`relayStats`).
 
-### 4.11 IFR, Ifrit (`web/aspira-ifrit.js`, the look `aspira-ifrit-draw.js`)
+**Traps.** §11, the rows naming CRR.
 
-The fire aeon of FFX (the owner's design), orange, designed for **swarm + shield**; its measured checks and weak spots are the
+#### IFR, Ifrit (`web/aspira-ifrit.js`, the look `aspira-ifrit-draw.js`)
+
+**Role.** The fire aeon of FFX (the owner's design), orange, designed for **swarm + shield**; its measured checks and weak spots are the
 build card's marks (`VS_MARKS`, §4.8). **Each axis owns one part of the meteor's life and its own damage** - every hit is
 `TOWERS.ifr.dmg` x that axis's table, none multiplies another's. Design and reasons:
 `docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md` (on the 2026-10-19 spec); the numbers: the code.
 
 ![The meteor's life](docs/arch/ifrit-ball.svg)
+
+**Marks.** swarm +2 · fast -1 · shield +2 · armor -3 (the mark target, §4.8; the measured marks: the build card's `VS_MARKS`)
+
+**Parts.**
 
 | Part | Rule |
 |---|---|
@@ -420,13 +388,25 @@ build card's marks (`VS_MARKS`, §4.8). **Each axis owns one part of the meteor'
 | flare | a big + over a tiny x, a random size; every tick burns what touches a spoke; its glow brightens with its hit (`ifrFlareI`), a meteor's brighter than the fire's (`IFR_FLARE_MAIN_K`) |
 | look | the meteor: a black disc, an inner glow from 30% at the outline to 0 at 30% of the radius in, the outline glow - drawn x1.25 a Meteor tier in flight, with its trail and shards (`IFR_METEOR_DRAW_K`; the orbiting charges at x1); in 3D the spokes are GPU glow lines (`fxGlGlowLine`); no gradients on the board context. Flares GLOW LIKE FIRE (owner, 2026-11-05): a meteor's white-hot core, orange round it, an ember-red halo (`IFR_MAIN_COL`; the fire's own flares stay red), each flickering on its own (`ifrFlick`: brightness +-22%, size +-6%, phase hashed from its spot). In 2D (the card demo, the 2D view) a flare is a STAMP (`ifrSpriteDraw`): each look stroked once, then one drawImage (§11). Hellfire's circle: x3 alpha while it rides its enemy, fading out over 0.4 s once grown when it rides nothing (the fire lives on to light its flares) |
 
+**Paths 0 -> V.**
+
 | axis | buys | good against (owner) | capstone (V) |
 |---|---|---|---|
 | Meteor | charge time, speed, the meteor's hit; meteors stored in orbit | all-rounder | **Impact**: a bigger fan (`IFR_FAN_CAP`); every 3rd charged meteor is big (drawn x2), its first hit x4 (§4.6) |
-| Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across with IV's flare count; each fire strikes a pentagram of 5 chains across its circle, each burning like a flare (§4.6) |
+| Hellfire | the fire: max size, growth speed, flare density | shield and swarm | a fire six towers across with IV's flare count; while a fire follows an enemy, TWO burning chain rings circle it - one inside its circle, one on it in the plain ring's place - turning opposite ways, each burning what it touches like a flare (`IFR_HF_RINGS`, `IFR_CHAIN_K`; owner, 2026-11-07: "make it 2 rings, one inside and the other outside, have them both rotating in opposite directions slowly") |
 | Flare (id `firaga`) | the flares: size, damage, burn time (`IFR_BURN_S`; a flare's ticks never step over 2x a tier); the flare tick (`IFR_TICK_K0`) carries most of IFR's damage, the meteor's hit (`IFR_ROUTE_K0`, IFR's td) the rest | shield and swarm | ONE flare a landing plus a flare ring 60% up its spokes, the ring its own hit; flares at most 300 across (§4.6; two flares 2026-10-31 .. 11-06) |
 
-### 4.12 Trio scale and the designed deaths
+**Traps.** §11, the rows naming IFR.
+
+### 4.6 The capstones (tier V, one axis a tower)
+
+Wai's picks of 2026-11-06 (memory `capstones-2026-11-06`), built and screened tower by tower by Balance, shipped 7.7.88 .. 7.7.112; the card
+lines are `aspira-desc.js` (audited against the code 2026-11-07). A capstone is a MECHANIC on top of the tier table's leap - each tower's three are in its paths table (§4.5) - (`CAPSTONE_NUM`,
+aspira-capstone.js); its knobs:
+
+
+The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with every core power; the numbers' dated snapshot is ARCHAEOLOGY §13.10.
+### 4.9 Trio scale and the designed deaths
 
 Every trio is played to wave 120 by the smart saver (perfect play, both powers, a few seeds: `tribal.mjs`); a trio's score = 120 +
 lives left on a win, else the wave reached. A **designed death** is a trio MISSING A COUNTER: no tower in it has a check (a
@@ -445,7 +425,7 @@ The list, read off the marks (`VS_MARKS`, `aspira-chooser.js`) as they stand aft
 | swarm | SOL+ACD+CRR |
 | armor | FRZ+CRR+IFR |
 
-### 4.13 The core and its two powers
+### 4.10 The core and its two powers
 
 The core is **free**: no price, no tiers. Bosses hand its powers out outright at full
 strength (`CORE_GRANTS`); the pick flow is dormant. Buttons bottom-left above the speed bar, in their own
@@ -457,7 +437,7 @@ inverts with the boss sky, lifts the tower card and passes a press on a tower th
 | **Temporal Drive** | 2nd boss (wave 24) | hold the core, or the button | every enemy stops dead (a 100% slow, `core:time`) for 6 game s; cooldown 3 waves | holds the wave clock and spawns; needs a live board and ends when it empties; Strength ignores it; stacks with the Relay (either fires while the other runs) |
 | **Orbital Relay** | 4th boss (wave 48) | the button then a tower, or drag the core onto one | that tower acts as five (`RELAY_MUL`, `relayStats`: x`RELAY_MUL` each: ARC its attacks, SOL its targets, ACD its jets, FRZ its moons, targets and tick, GRV its rate, CRR its wing, IFR its charge and rate) for 10 s (`EFFECT_MAX_S`); cooldown 4 waves | **stays on that tower**; arming pauses the game |
 
-### 4.14 Dormant code (kept on purpose; nothing reaches it)
+### 4.11 Dormant code (kept on purpose; nothing reaches it)
 
 | What | Where |
 |---|---|
@@ -652,11 +632,13 @@ still to walk to the core at the enemy's unslowed pace, averaged - the further o
 
 | Gesture | Result |
 |---|---|
-| tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel; building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 - CLAUDE.md has the command), so they follow the matrix (§4.8): each type's leak is taken against the SEVEN-TOWER mean for that type, then against the tower's own mean - a table whose every row AND column sums to 0 - scaled to one mark per 20 points and rounded so the sums stay 0 (owner, 2026-10-23: "Col and row need to sum to 0"; dashes fine, no fixed count); two towers with the same marks are flagged (`marks.py`). THE BALANCE TARGET is `scripts/aspira-sim/mark-target.json` (owner, 2026-10-29: "save super important! priority #1"; the file is the truth and CLAUDE.md quotes it - no copy here, a copy here went stale): every type column +2 +2 +1 +1 -1 -2 -3, rows and columns sum to 0, every tower two checked types or more; `marktarget.py` finds the nearest such table to the measured marks, and balance moves the towers to it |
+|  tap an empty open slot | **seven tower cards** in two columns (`aspira-chooser.js`: name, price, the four enemy symbols each with its checks and x's, flavour; no numbers; keys 1-4 pick the first four) and a cancel (more below) |
 | tap a tower, its home slot, or the core | its card |
 | a press moving under `DRAG_PX` | a tap; more on a tower = a move (§4.4) |
 | unaffordable | tappable but dimmed (`.poor`): a tap shakes it and says "need Nc more" |
 | before the first tower | the free slots flash, a white triangle bobs over the top-left one |
+
+- **tap an empty open slot**: building the THIRD tower, a card's x's on a type neither built tower has a check on are boxed red (`vsGaps`); too poor = the card shakes and stays. The order is shuffled ONCE per browser and kept (`spire.buildOrder` in localStorage), so a key is whatever card sits in that place. The marks (`VS_MARKS`) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 - CLAUDE.md has the command), so they follow the matrix (§4.8): each type's leak is taken against the SEVEN-TOWER mean for that type, then against the tower's own mean - a table whose every row AND column sums to 0 - scaled to one mark per 20 points and rounded so the sums stay 0 (owner, 2026-10-23: "Col and row need to sum to 0"; dashes fine, no fixed count); two towers with the same marks are flagged (`marks.py`). THE BALANCE TARGET is `scripts/aspira-sim/mark-target.json` (owner, 2026-10-29: "save super important! priority #1"; the file is the truth and CLAUDE.md quotes it - no copy here, a copy here went stale): every type column +2 +2 +1 +1 -1 -2 -3, rows and columns sum to 0, every tower two checked types or more; `marktarget.py` finds the nearest such table to the measured marks, and balance moves the towers to it
 
 Keys: 1-4 speeds (5 = 10x, owner), Space pause, M mute, U lock in the basket, Esc cancel;
 with a chooser open 1-4 pick the first four of its cards instead (the build chooser shows all seven, so the last three are tap only). No key opens the build chooser or builds without it (by choice).
@@ -669,9 +651,11 @@ with a chooser open 1-4 pick the first four of its cards instead (the build choo
 | control | three `[-] pips [+]` steppers (axis name and tier, `0->II` while pulled; pips filled = locked, half = pulled, hollow = to buy, the last orange, red once another axis holds the capstone) beside the chart; the + flashes while the bank covers a buy |
 | confirm | the tower's name and purchases with the cost (`Arc II (-440c)`), bold when affordable, pulsing while a basket waits; sell smaller under it; the targeting slider small |
 | stats | in SECTIONS, one a mechanic (`STAT_SECTIONS`, `aspira-sliders.js`), a row no section names under "Tower" first; each `now -> next`, worse in red (`LOWER_BETTER`); rows the tower lacks left out; kills and damage live |
-| demo | a live scene of the tower at work in the description box (`aspira-demo*.js`; the text behind the i): a layout per tower tier 0 and per axis (`DEMO_LAYOUTS`, shares of the live range); each lane sends rows THREE WIDE, each slot filled at 50% by a seeded hash, rows about the number gap apart (`demoPlace0` / `demoLatStep`; SOL's layouts twice the rows); its own flat 3D camera, the range's far edge as far from the box's right edge as the tower is from its left, but **never zoomed in past the board's own tower size at its default zoom** (`demoBoardK`). A layout may set its own lane offset (`dy`, x the range; Nova's 0.2). Its CORE is the box's left exit level with the tower (`G.demoCore` - never `G.core`, the board's power state): rules that measure to the core read `coreXY()` (aspira-defs.js), never raw `CX`/`CY`. Draws that must fit the box read `demoDrawing` (true while a scene draws): Hypernova's rings scale by one factor so the widest stays in the canvas (`grvNovaFit`); the board never scales. Walkers carry the health of the wave the tower's points reach (`demoWave`: 30 + 7 a point, to 119), drawn at a wave-30 body's size; the scene holds one inert spawn so it never sends a real wave (a gap between rows read as a clear field) - the smoke's "demo late builds" pins both |
+|  demo | a live scene of the tower at work in the description box (`aspira-demo*.js`; the text behind the i): a layout per tower tier 0 and per axis (`DEMO_LAYOUTS`, shares of the live range) (more below) |
 | buy-card demo | the same scene for a random 5-point build of a kind, opened by the i on its buy card: one panel, the demo over the triangle, a close button; any click closes (`aspira-demo-buy.js`) |
 | fit | **every section shows at every reasonable size, no scroll** (owner, 2026-11-06): `fitPop` shrinks the chart, then `fitTight` takes in order tight spacing + stats in two columns, the demo shrunk to 72 px, the content zoomed to 0.75, and only then a scroll; pinned over 10 sizes x 7 towers by `tests/test_spire_cardfit_browser.py` in exec-fn's real page shell |
+
+- **demo**: each lane sends rows THREE WIDE, each slot filled at 50% by a seeded hash, rows about the number gap apart (`demoPlace0` / `demoLatStep`; SOL's layouts twice the rows); its own flat 3D camera, the range's far edge as far from the box's right edge as the tower is from its left, but **never zoomed in past the board's own tower size at its default zoom** (`demoBoardK`). A layout may set its own lane offset (`dy`, x the range; Nova's 0.2). Its CORE is the box's left exit level with the tower (`G.demoCore` - never `G.core`, the board's power state): rules that measure to the core read `coreXY()` (aspira-defs.js), never raw `CX`/`CY`. Draws that must fit the box read `demoDrawing` (true while a scene draws): Hypernova's rings scale by one factor so the widest stays in the canvas (`grvNovaFit`); the board never scales. Walkers carry the health of the wave the tower's points reach (`demoWave`: 30 + 7 a point, to 119), drawn at a wave-30 body's size; the scene holds one inert spawn so it never sends a real wave (a gap between rows read as a clear field) - the smoke's "demo late builds" pins both
 
 ### 7.4 Wave list, HUD, end screens
 
@@ -707,10 +691,13 @@ Adaptation: only the **far-detail radius** shrinks on slow frames (`stepDetail`)
 | text stamped once | `aspira-textcache.js`, a pixel budget with least-recently-used eviction, evicted canvases zeroed so iOS frees them |
 | caps | damage numbers, sparks, pools a tower, goo drops (ARCHAEOLOGY §12) |
 | nothing drawn that cannot show | a die wholly off the canvas (every corner and its breach spike past the line width) skips its draw (`solidOffCanvas`, `aspira-solids.js`), and so do its tracer (`drawStarTrail`) and shield lines (`linesOffCanvas`, `aspira-walls.js`): a late wave walks in from far off screen, and those enemies were nearly half the moving layer's 2D path ops. A cull must be pixel-identical (a WebKit diff, deterministic clock); a cut that changes how enemies look is the owner's call |
-| lit lanes on the GPU (3D) | `aspira-lanegl.js` (`LANE_GL`, 7.0.28): each lit path's distance field is baked once into a 4x3 atlas of 512-px tiles (2048x1536, ~12 MB; R = the line's SIGNED distance, G its plain distance, both to `LGL_LMAX`; B = the glow distance to `LGL_DMAX`), one path a frame by `lglBuild`. The bell shader (`WARP_FS`, `LANE_GLSL` after `HULL_GLSL`) reads them through a varying `lw` (world offset from the core) and lays glow and line over the board sample: per group of lanes sharing colour, star and alpha, the same level profiles as 2D (`LIT_GLOW_SOFT`, `LIT_LINE_SOFT` / `BOSS_LINE_SOFT`, boss widths x`BOSS_LANE_W`) and the same masks (`GLOW_FADE_R` falloff, the core fade). The line takes `max(abs(signed), plain - 0.75 texel)`: a plain field at 3 world units a texel does not interpolate at the line's V and drew it beaded. So in 3D there is no fade layer, no lane hold and no board redraw a lane; only `laneGlOn()` false (2D, `?diag=nolanegl`, atlas not ready, outside a 3D frame) draws the 2D layers. **Under the board's ink** (7.1.3; owner, 2026-11-01: "lit lanes should cover nothing"): the board is its flat `COL.bg` fill plus ink, so the shader lays the lanes over the bare `bgCol` and puts the board's ink back over them by how far each pixel is from bg (x `LANE_INK_K` 3) - labels and rim circles cover the lanes, the faint grid shows across them |
-| board strips | in 3D with GPU lanes, a board redraw whose only change is the lane LABELS (Roman numerals, rim circles: `laneItem` records each one's box, `laneDirty()` the union of changed ones padded `LANE_ITEM_PAD`) and/or the boss bar uploads only that rect (`warp.statRect`, texSubImage2D; `boardUp.byWhy` `labels` / `boss`); a new key or sky phase uploads the whole board; a new WAVE is its twelve idle labels' strips (their WAVE:LANE text is all the board shows of it). One strip a changed box (7.1.1): `laneDirty` returns a box per changed label (its old and new spot) and `stripsMerge` joins boxes within `STRIP_JOIN` 8 px, one box round them all past `STRIP_MAX` 16 (the twelve labels of a new wave stay twelve strips); both upload paths send each (`createImageBitmap` per strip). The off-frame path logs `bmp:<why>:<whole|strip>`. With the GPU lanes the board's signature carries no 2D fade-in bucket (the board holds no lit lane; that bucket's coming and going sent the whole board) The board's settled boss bar steps in 1% of HP (`BOSS_BOARD_STEPS` 100; owner, 2026-11-05: "1" - each step is a strip upload, ~11.5 ms in-frame on an iPhone). Such a redraw also DRAWS only its strips (7.6.14): the board canvas is clipped to the very rects that go up, so the browser rasters a few % of it, not all S x S (traps: §11 "board") |
+|  lit lanes on the GPU (3D) | `aspira-lanegl.js` (`LANE_GL`, 7.0.28): each lit path's distance field is baked once into a 4x3 atlas of 512-px tiles (2048x1536, ~12 MB; R = the line's SIGNED distance, G its plain distance, both to `LGL_LMAX`; B = the glow distance to `LGL_DMAX`), one path a (more below) |
+|  board strips | in 3D with GPU lanes, a board redraw whose only change is the lane LABELS (Roman numerals, rim circles: `laneItem` records each one's box, `laneDirty()` the union of changed ones padded `LANE_ITEM_PAD`) and/or the boss bar uploads only that rect (`warp.statRect`, texSubImage2D; `boardUp.byWhy` `labels` / `boss`) (more below) |
 | 2D lane layers on a stalling device | when the GPU lanes are off and the board upload stalls (`warpUpSlow >= 3`, an iPhone), the lane layers draw at half resolution (`laneLD()` 2, blitted back up) with a 3-level glow (`LIT_GLOW_SOFT3`); the fade layer builds, masks and uploads only its lanes' box (`laneRec`, `laneFadeL.dirty`), in the frame (texSubImage2D from the `warp.litBox` canvas) - never off the frame (§11) |
 | text atlas | a text stamp is a slot on a 1024-px atlas page (`aspira-textcache.js`; at most 6 pages on a phone, 18 on a desktop), packed on shelves by bucket height with 2 px clear round each, drawn from the slot's corner and clipped to it; a dropped stamp's slot goes to the next of its height that fits; with every page full the least recently used stamp whose slot fits (no smaller, at most 2 buckets taller and 32 px wider) gives it up (`gpuSplit.textTaken`); only a stamp too big for a page, or of a size with no shelf, gets its own canvas |
+
+- **lit lanes on the GPU (3D)**: frame by `lglBuild`. The bell shader (`WARP_FS`, `LANE_GLSL` after `HULL_GLSL`) reads them through a varying `lw` (world offset from the core) and lays glow and line over the board sample: per group of lanes sharing colour, star and alpha, the same level profiles as 2D (`LIT_GLOW_SOFT`, `LIT_LINE_SOFT` / `BOSS_LINE_SOFT`, boss widths x`BOSS_LANE_W`) and the same masks (`GLOW_FADE_R` falloff, the core fade). The line takes `max(abs(signed), plain - 0.75 texel)`: a plain field at 3 world units a texel does not interpolate at the line's V and drew it beaded. So in 3D there is no fade layer, no lane hold and no board redraw a lane; only `laneGlOn()` false (2D, `?diag=nolanegl`, atlas not ready, outside a 3D frame) draws the 2D layers. **Under the board's ink** (7.1.3; owner, 2026-11-01: "lit lanes should cover nothing"): the board is its flat `COL.bg` fill plus ink, so the shader lays the lanes over the bare `bgCol` and puts the board's ink back over them by how far each pixel is from bg (x `LANE_INK_K` 3) - labels and rim circles cover the lanes, the faint grid shows across them
+- **board strips**: a new key or sky phase uploads the whole board; a new WAVE is its twelve idle labels' strips (their WAVE:LANE text is all the board shows of it). One strip a changed box (7.1.1): `laneDirty` returns a box per changed label (its old and new spot) and `stripsMerge` joins boxes within `STRIP_JOIN` 8 px, one box round them all past `STRIP_MAX` 16 (the twelve labels of a new wave stay twelve strips); both upload paths send each (`createImageBitmap` per strip). The off-frame path logs `bmp:<why>:<whole|strip>`. With the GPU lanes the board's signature carries no 2D fade-in bucket (the board holds no lit lane; that bucket's coming and going sent the whole board) The board's settled boss bar steps in 1% of HP (`BOSS_BOARD_STEPS` 100; owner, 2026-11-05: "1" - each step is a strip upload, ~11.5 ms in-frame on an iPhone). Such a redraw also DRAWS only its strips (7.6.14): the board canvas is clipped to the very rects that go up, so the browser rasters a few % of it, not all S x S (traps: §11 "board")
 
 ### 8.3 Draw order and other visuals
 
@@ -739,13 +726,15 @@ each prism (`drawOrbiters`: what stands behind the tower before its prism, the r
 
 | Tower | Axes, as they show (file) |
 |---|---|
-| ARC | Voltage: hex rings round the prism, one more a tier, turning, sized to clear the prism at every turn - the inside of a ring's glow 0.46 x the prism's corner radius (10 u) off its corners (`arcRingR`, `ARC_RING_GAP_K`; owner, 2026-11-07: "they should be horizontally further to avoid clipping"), the group spanning 40% of the prism's height round its middle (`ARC_RING_SPAN`; owner, 2026-11-07: "push the rings closer together (vertically center the group)"; 2026-11-08: "they should take up 40% of the tower's height"); the bolts' width and glow by Voltage - a tier 0 strike as a Voltage V one was, +25% a tier (`ARC_VOLT_W`), each hop thinner by its share of the strike and tapering along its length to the next hop's (owner, 2026-11-08: "arc beam intensity should be a gradient not a step from one beam to another"; `arcIntAt`), the core's white mix fixed (owner, 2026-11-07: "current volt 5 brightness should be arc 0 brightness / volt levels should increase intensity further"); Conductivity: thicker, glowier rings; Shock: brief arcs between top corners; the bolt leaves the top corner nearest its target (`aspira-arc-body.js`) |
+|  ARC | Voltage: hex rings round the prism, one more a tier, turning, sized to clear the prism at every turn - the inside of a ring's glow 0.46 x the prism's corner radius (10 u) off its corners (`arcRingR`, `ARC_RING_GAP_K`; owner, 2026-11-07: "they should be horizontally further to avoid clipping"), (more below) |
 | FRZ | Permafrost hex crystals and Fracture shards round the base (the ice, below); the moons as ice d12s (`aspira-frz-moons.js`); opaque walls |
 | SOL | Reflection: the prism becomes a 6 / 8 / 9 / 10 / 12 / 14-gon; Scorch: the top outline thicker, whiter, glowier (baked into the tower sprite); Breach: a katana blade on every corner, back ones dimmer, standing on the floor at 160-320% of a LEVEL-4 tower's visible height whatever the tower's level (owner, 2026-11-07: "breach blades, always use the level 4 tower height for the blade height, instead of the current tower height"; `aspira-sol-body.js`) |
 | ACD | drips down every wall that faces the camera, the side ones too, the Flow tier's groups spread one a face (owner, 2026-11-08: "ACD drips should be on side faces too, not just front two faces"), a moving puddle, bubbles popping on the top (`aspira-acd-body.js`) |
 | GRV | the body and the Gravity Well particles and chains (`aspira-grv-draw.js`) |
 | CRR | interceptors as V=V darts at their own altitudes, their chain trails, tethers and bolts on the same 3D layer (`aspira-crr-draw.js`) |
 | IFR | orbiting meteors at 75% height showing the build: the Hellfire ring, the Flare rays (`aspira-ifrit-draw.js`) |
+
+- **ARC**: the group spanning 40% of the prism's height round its middle (`ARC_RING_SPAN`; owner, 2026-11-07: "push the rings closer together (vertically center the group)"; 2026-11-08: "they should take up 40% of the tower's height"); the bolts' width and glow by Voltage - a tier 0 strike as a Voltage V one was, +25% a tier (`ARC_VOLT_W`), each hop thinner by its share of the strike and tapering along its length to the next hop's (owner, 2026-11-08: "arc beam intensity should be a gradient not a step from one beam to another"; `arcIntAt`), the core's white mix fixed (owner, 2026-11-07: "current volt 5 brightness should be arc 0 brightness / volt levels should increase intensity further"); Conductivity: thicker, glowier rings; Shock: brief arcs between top corners; the bolt leaves the top corner nearest its target (`aspira-arc-body.js`)
 
 Every glow is a smooth blur or a GPU falloff, never stacked bands (owner, 2026-11-06: "never use step glow unless huge perf gains"); the one
 exception left is the lit lanes' 2D FALLBACK (no WebGL), where a blur would cost the slow device most - the GPU lanes are a shader bell.
@@ -887,7 +876,7 @@ function without touching the game. Run one at a time with `nice -n 19` on the d
 |---|---|
 | the curve; real trio games per type and boss | `waverep`, `curve`, `rand`, `late` |
 | every trio / combo / solo kind | `trios` (three scripted styles; walks only the first four kinds), `combos`, `solo`, `wave1`, `swap`, `eval`, `style` |
-| the trio scale (§4.12): all 35 trios of the seven kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
+| the trio scale (§4.9): all 35 trios of the seven kinds under perfect play, the per-kind damage factor, why a trio dies | `tribal` (the run), `triscale.py` (scores and factors), `triodiag` (per enemy type: lives lost, closest approach) |
 | the economy check behind the step price (§4.2) and the build card marks (§4.8) | `eco`, `marks.py` (from a `countermx` run) |
 | the counter matrix | `countermx` |
 | an axis tier's value; a buy's payoff | `isolation`, `chartvalue`, `payoff` (each buy alone: gain, price, gain a credit), `buildlog` (purchases by wave) |
@@ -906,7 +895,7 @@ the marks build), ACD's Flow carry and ramp (Q0-Q3), IFR's 8/12 shards and shard
 |---|---|
 | any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22); 19 of the 21 duos is accepted - ARC+IFR and FRZ+IFR need one upgrade before the Star (owner, 2026-11-07 "2C") | `solo` (its duo table) |
 | an ordinary type's count and HP never drop from one of its waves to the next (owner, 2026-10-22: "types should never get weaker along any axis") | `planCount`, `enemyHp` (aspira-waves.js) |
-| every trio of kinds is winnable except the designed deaths (§4.12) (no kind required) | `trios`, `tribal` |
+| every trio of kinds is winnable except the designed deaths (§4.9) (no kind required) | `trios`, `tribal` |
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |
 | players held to `MAX_TOWERS` (`strategy.towerCap` lifts it for test teams) | the simulator |
 
@@ -973,11 +962,11 @@ says so where none is on file. Every new owner rule gets its row in the same com
 | board | **a boss's KIN that come ahead of a gated boss must not be held for the bar** (7.7.18): `barHold` (aspira-bossbar.js, page only) holds a boss and its kin while the HP bar flies in - the bar flies in for bosses on the board. The Devil's host comes first and she is gated on it (`devilGateShut`): holding the host deadlocked the wave (Wai: "Freezes"). `devilEsc` is exempt; the smoke plays the Devil with `BAR_HOLD` on (waves.mjs). A new kin-first boss needs the same exemption. The simulator never loads the bar, so it can never show such a stall |
 | view | **a 2D flare stamp is made from the GPU glow's own formula, pixel by pixel** (2026-11-06, `ifrStampPixels`; it was the stroked flare, 0.5% of a frame off): each look once, cached; it carries the view's linear part (the card demo's floor is squeezed) - a stamp keyed on scale alone would be wrong there |
 | view | **a cache on a per-frame object caches nothing** (7.7.x): the prisms' `o.geo` is rebuilt each frame, so its gradients were made ~96 times a late frame; keep a frame-crossing cache keyed by the EXACT numbers a gradient is made from (`prismGrad`) |
-| board | **a strip redraw is clipped to the UPLOADED rects, and the strips are found before the draw** (`warpRender`, 7.6.14): the changed boxes come from the draw itself (`laneItem` -> `laneDirty`, `bossBarMoved`), so a DRY pass runs first - `drawLanes` and/or `warpBossBarBoard` under an empty clip (`rect(0,0,0,0)`), which lays the boxes and moves their history (`laneItemsPrev`, `B.boardHp`) - then the board draws clipped. Four rules: (1) the clip is `stripsMerge(pending strips + new boxes)`, exactly `warp.statRect`, never the boxes before merging - a merged strip's gaps go up too, and from an unredrawn canvas they are stale (14034 px off in the WebKit texture check on a boss + labels event); (2) after a dry pass the real pass's `laneDirty()` / `bossBarMoved()` read nothing (the history already moved): use the dry pass's boxes, and when it could not tell (`null`) send the whole board (`dryMiss`), never the empty strip the second read gives; (3) `warp.cvPart` marks a canvas that holds a clipped redraw: a WHOLE send from it (a new texture) clears `statKey`, so the next render redraws it all; (4) only strip events clip - key, sky, wave and lane events draw everything. Proof for any change here: copy each event's uploaded rects from the clipped canvas and from a full redraw of the same state (clock frozen in the frame) into two emulated textures, compare all S x S at >24/255 |
+|  board | **a strip redraw is clipped to the UPLOADED rects, and the strips are found before the draw** (`warpRender`, 7.6.14): the changed boxes come from the draw itself (`laneItem` -> `laneDirty`, `bossBarMoved`), so a DRY pass runs first - `drawLanes` and/or `warpBossBarBoard` (more below) |
 | view | **glCtx reuses its path's entries** (`aspira-glctx.js`, 7.6.9): the op entries, transformed points and parts come from pools (`opPool`, `ptPool`, `partPool`) rewound at `beginPath` - a reference to an op, a point or a part is valid only until the next `beginPath`; anything that must outlive the path (a replay, a cached shape) copies the numbers out. `op2` keeps moveTo / lineTo args in the entry's own pair; `g.m` is replaced, never changed in place, so an entry may keep it |
 | view | **glcStroke works on plain numbers in reused scratch buffers** (`GLC_X/Y/DX/DY` Float64Arrays, grown x2, never shrunk; 7.6.7): no array a point, a direction or a joint, and `trimToTowers` only when an end lies in a tower. Its toWorld carries `k`, `ox`, `oy` (warpRender) for the inline transform: a new caller of glcStroke passes a toWorld with them |
 | code | **load order is the page's, not the sim's**: a classic script's TOP-LEVEL lines run as it loads, so a function split into a later file is undefined there (7.6.11: `aspira-cardfit.js` after `aspira-ui.js`, whose last lines call `placePop` - "Can't find variable: placePop", no frame loop). Smoke and fp both passed it; only the WebKit pytest (`tests/test_spire_landscape_browser.py`) loads the page as a browser does - run it for any split that moves code between files, and load the new file BEFORE every file whose top level calls into it |
-| demo | **a mechanic change must keep its demo passing** (owner, 2026-11-03: "Add a mechanism to ensure demo scenes are always up to date"). The tower card's scene (`aspira-demo.js`, `-layouts.js`, `-card.js`) runs the game's real step and draw on a private game; its layouts place enemies in shares of the live range and declare what they show. Smoke (`demo.mjs`) fails on a tower or axis with no layout, a layout for one that is gone, any layout at any tier 0-V that stops showing what it declares (hits, many, strips, pops, slows, fast; seeded, 6 s a scene), and any leak into the real game. A new global that `step()` writes joins `demoIn`/`demoOut`'s swap. The traps it has taught: (1) the scene must run EVERYTHING the real frame runs for its towers - `step()` alone leaves effects and numbers un-aged (`stepFx`, `stepFloats`), and an effect drawn outside `drawSceneTop` (GRV's void cores, warpEntities part B) is missing until `demoDraw3d` calls it too; the signature check catches the second kind. (2) the private game is a real game: a walker at a lane's end is a leak, so lanes turn walkers back short of it, lives are unlimited and `gameOver` / `winGame` / `showOverlay` are no-ops while a scene runs. (3) never move an enemy object across the scene: holders (ARC beams, CRR targets) keep the object, so a teleport draws them across the box - a walker leaving is marked dead and gone and replaced by a fresh one. (4) the scene's geometry is unlike a map's (lanes 0.45 r from the tower): it finds game bugs no map shows - CRR's run-dry circling was one. Fix those in the game, not the scene. (5) the scene's CLOCK is the frame's real time x `BASE_SPEED`, in steps of at most 0.02 s like the frame loop (`demoFrame`'s `rdt`, `gk`); one fixed step a drawn frame ran it 1.25x on 60 Hz and 2.5x on a 120 Hz phone (2026-11-06). (6) the real step still SENDS WAVES: an empty field reads as `waveClear()` and `sendWave()` fills the board's lanes outside the box - the scene holds one inert spawn (timer Infinity); and a walker's health must keep pace with the build (a 13-point ACD's goo one-shot wave-30 walkers, so no jet held one and no pool dropped: `demoWave`). Smoke "demo late builds" (2026-11-07) |
+|  demo | **a mechanic change must keep its demo passing** (owner, 2026-11-03: "Add a mechanism to ensure demo scenes are always up to date"). The tower card's scene (`aspira-demo.js`, `-layouts.js`, `-card.js`) runs the game's real step and draw on a private game (more below) |
 | code | `fixedRand(wave, salt)`, never `Math.random`, for anything shaping a wave (a changed salt changes the sequence for everyone and every sim seed) |
 | code | whole numbers: HP, armor, hits floored, a landed hit >= 1, fractions banked; a spawned enemy never has 0 HP |
 | code | `G` stays structured-cloneable: no functions, DOM nodes or closures (autosave) |
@@ -1013,3 +1002,6 @@ says so where none is on file. Every new owner rule gets its row in the same com
 | repo | never commit the sound samples (public repo) or `graphify-out/` (both gitignored here: `/data/`, `/graphify-out/`) |
 | process | the version is bumped once a ship, by the ship (`spire-ship2.sh`, §9.4; peers never touch `aspira-version.txt`); the changelog is written by hand; `docs/spire-descriptions.md` is regenerated after any card text or number edit |
 | process | a balance claim needs a simulator run (`waverep` the curve, `trios` every trio, `countermx` the matrix); change one lever at a time and say what moved |
+
+- **board**: under an empty clip (`rect(0,0,0,0)`), which lays the boxes and moves their history (`laneItemsPrev`, `B.boardHp`) - then the board draws clipped. Four rules: (1) the clip is `stripsMerge(pending strips + new boxes)`, exactly `warp.statRect`, never the boxes before merging - a merged strip's gaps go up too, and from an unredrawn canvas they are stale (14034 px off in the WebKit texture check on a boss + labels event); (2) after a dry pass the real pass's `laneDirty()` / `bossBarMoved()` read nothing (the history already moved): use the dry pass's boxes, and when it could not tell (`null`) send the whole board (`dryMiss`), never the empty strip the second read gives; (3) `warp.cvPart` marks a canvas that holds a clipped redraw: a WHOLE send from it (a new texture) clears `statKey`, so the next render redraws it all; (4) only strip events clip - key, sky, wave and lane events draw everything. Proof for any change here: copy each event's uploaded rects from the clipped canvas and from a full redraw of the same state (clock frozen in the frame) into two emulated textures, compare all S x S at >24/255
+- **demo**: its layouts place enemies in shares of the live range and declare what they show. Smoke (`demo.mjs`) fails on a tower or axis with no layout, a layout for one that is gone, any layout at any tier 0-V that stops showing what it declares (hits, many, strips, pops, slows, fast; seeded, 6 s a scene), and any leak into the real game. A new global that `step()` writes joins `demoIn`/`demoOut`'s swap. The traps it has taught: (1) the scene must run EVERYTHING the real frame runs for its towers - `step()` alone leaves effects and numbers un-aged (`stepFx`, `stepFloats`), and an effect drawn outside `drawSceneTop` (GRV's void cores, warpEntities part B) is missing until `demoDraw3d` calls it too; the signature check catches the second kind. (2) the private game is a real game: a walker at a lane's end is a leak, so lanes turn walkers back short of it, lives are unlimited and `gameOver` / `winGame` / `showOverlay` are no-ops while a scene runs. (3) never move an enemy object across the scene: holders (ARC beams, CRR targets) keep the object, so a teleport draws them across the box - a walker leaving is marked dead and gone and replaced by a fresh one. (4) the scene's geometry is unlike a map's (lanes 0.45 r from the tower): it finds game bugs no map shows - CRR's run-dry circling was one. Fix those in the game, not the scene. (5) the scene's CLOCK is the frame's real time x `BASE_SPEED`, in steps of at most 0.02 s like the frame loop (`demoFrame`'s `rdt`, `gk`); one fixed step a drawn frame ran it 1.25x on 60 Hz and 2.5x on a 120 Hz phone (2026-11-06). (6) the real step still SENDS WAVES: an empty field reads as `waveClear()` and `sendWave()` fills the board's lanes outside the box - the scene holds one inert spawn (timer Infinity); and a walker's health must keep pace with the build (a 13-point ACD's goo one-shot wave-30 walkers, so no jet held one and no pool dropped: `demoWave`). Smoke "demo late builds" (2026-11-07)

@@ -275,6 +275,8 @@ HOW THE TABLES ARE BUILT AND OLD SAVES READ (as ARCHITECTURE §4.2 carried it un
 
 THE §4 RENUMBERING (2026-11-08; an old cite reads as the new): 4.2b -> 4.3, 4.3 -> 4.4, 4.4 -> 4.5, 4.5b -> 4.6, 4.5 -> 4.7, 4.6 (the mark target) -> 4.8,
 4.6b (GRV) -> 4.9, 4.6c (CRR) -> 4.10, 4.6e (IFR) -> 4.11, 4.6d (trio scale) -> 4.12, 4.7 (core) -> 4.13, 4.8 (dormant) -> 4.14. This file's own sub-numbers are local and unchanged.
+THEN (step 5, the same day): GRV 4.9, CRR 4.10 and IFR 4.11 folded into §4.5 "The towers, one by one" (with ARC, FRZ, SOL, ACD, one shape each);
+the capstone table of §4.6 split into each tower's paths table; trio scale 4.12 -> 4.9, core 4.13 -> 4.10, dormant 4.14 -> 4.11.
 
 ### 4.4-ter SOL's prism (2026-10-26 .. 2026-11-04)
 
