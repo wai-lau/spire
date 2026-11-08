@@ -150,7 +150,11 @@ function monoUp(key, n, f) { let a = monoMemo.get(key); if (!a) monoMemo.set(key
 const SCALE_FROM = 60, SCALE_A = 0.23, scaleMemo = new Map();
 const scaleOf = n => (n <= SCALE_FROM ? 1 : scaleMemo.get(n) ?? scaleMemo.set(n, Math.pow(enemyHpRaw("armor", n) / enemyHpRaw("armor", SCALE_FROM), SCALE_A - 1)).get(n));
 const escale = e => scaleOf(e.wave || 1);
-const enemyHp = (type, n0) => (ENEMIES[type].star || !TYPE_TUNE[type] ? enemyHpRaw(type, n0) : monoUp("hp|" + type + "|" + ENEMIES[type].hp, n0, m => enemyHpRaw(type, m))) * scaleOf(n0);
+// ENEMY_HP_X: every enemy's health, bosses too, x1.4 with the 0.6x core ease (owner, 2026-11-07: "B" - keep the ease, raise enemy health until wins
+// are back near the 0.8-era 26 of 50; sweep paired on 50 games: x1 32, x1.2 29, x1.4 26 wins; early lives lost 0 -> 0.22). Armor, bounty and size unchanged.
+// x1 through wave ENEMY_HP_FROM (12: the duo window, the Star too - flat x1.4 broke the duo rule, grv+ifr 18/21), easing to x1.4 by wave 20
+const ENEMY_HP_X = 1.4, ENEMY_HP_FROM = 12, ENEMY_HP_RAMP = 8, hpX = n => 1 + (ENEMY_HP_X - 1) * Math.min(1, Math.max(0, (n - ENEMY_HP_FROM) / ENEMY_HP_RAMP));
+const enemyHp = (type, n0) => (ENEMIES[type].star || !TYPE_TUNE[type] ? enemyHpRaw(type, n0) : monoUp("hp|" + type + "|" + ENEMIES[type].hp, n0, m => enemyHpRaw(type, m))) * scaleOf(n0) * hpX(n0);
 function planCountOwn(type, n) { // a wave's count as its own curves make it (before NO DROPS)
   const split = formSplit(type, waveCount(type, n, false), n), count = laneCount(type, waveCount(type, n), split);
   return type === "swarm" ? Math.max(Math.round(SWARM_WAVE_MIN / earlyN(n)), count) : Math.max(split, count);
