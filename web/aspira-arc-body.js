@@ -25,10 +25,13 @@ function arcStroke(path, css, core, w, glow, a) {
   ctx.globalAlpha = a; ctx.lineWidth = w; ctx.strokeStyle = core; ctx.stroke(path); ctx.restore();
 }
 // THE RINGS CLEAR THE PRISM AT EVERY TURN (owner, 2026-11-06: "dont let arc volt rings clip into tower, size correctly"): a ring turned up to 30 deg
-// off the prism brings its flat edges in to its corner radius x cos 30, so its corner radius is the prism's corner radius plus ARC_RING_GAP (the
-// glow's room) plus half its line, over cos 30 - the inside of its line never nearer the prism than ARC_RING_GAP at any angle (pinned, pins.mjs)
-const ARC_RING_GAP = 3, ARC_COS30 = Math.cos(Math.PI / 6);
-const arcRingR = (g, ct, s) => (g.R + ARC_RING_GAP + ARC_RING_W[ct] * s / 2) / ARC_COS30;
+// off the prism brings its flat edges in to its corner radius x cos 30, so its corner radius is the prism's corner radius plus the gap, the glow and
+// half its line, over cos 30 - the inside of its glow never nearer the prism's corners than the gap at any angle (pinned, pins.mjs)
+// FURTHER OUT (owner, 2026-11-07: "they should be horizontally further to avoid clipping"): the gap runs from the prism's corners to the inside of the
+// ring's GLOW - ARC_RING_GAP_K x the prism's corner radius (10 u on today's 21.8 u towers; was 3 u to the line), plus the glow's reach (arcRingGlow)
+const ARC_RING_GAP_K = 0.46, ARC_COS30 = Math.cos(Math.PI / 6);
+const arcRingGlow = (ct, s) => (0.6 + 3.2 * ARC_RING_GL[ct]) * s; // the glow's spread at Conductivity ct (drawArcRings' gl, without a Storm)
+const arcRingR = (g, ct, s) => (g.R * (1 + ARC_RING_GAP_K) + arcRingGlow(ct, s) + ARC_RING_W[ct] * s / 2) / ARC_COS30;
 // THE BACK / FRONT SPLIT AT THE SIDES (owner, 2026-11-07: "arc rings still clip into the tower"): each edge is cut where it crosses the screen row of
 // the ring's centre (its far-left / far-right reach, outside the prism) - the part above it is behind the prism, the part below in front. It was
 // sent whole to one side by its middle, so an edge across a side drew over the prism or vanished behind it. -> [[ax, ay, bx, by], ...] (world)
@@ -55,7 +58,7 @@ const ARC_RING_PITCH = 3;
 function drawArcRings(t, far, up, x, y, h) {
   const n = 1 + skillOf(t, "voltage"), ct = skillOf(t, "conductivity"), g = arcGeom(t), s = g.R / 40, now = performance.now() / 1000;
   const sk = t.stormT > 0 ? t.stormT / ARC_STORM_LIVE : 0, ph = t.stormPh || 0; // a Storm strike spins the rings up (stormPh turns, banked in arcBurnStep) and flashes them
-  const css = arcMix(COL[TOWERS.arc.color], Math.min(1, 0.6 + 0.08 * ct + ARC_STORM_WHITE * sk)), gl = (0.6 + 3.2 * ARC_RING_GL[ct]) * s * (1 + ARC_STORM_GLOW * sk);
+  const css = arcMix(COL[TOWERS.arc.color], Math.min(1, 0.6 + 0.08 * ct + ARC_STORM_WHITE * sk)), gl = arcRingGlow(ct, s) * (1 + ARC_STORM_GLOW * sk);
   for (let i = 0; i < n; i++) {
     const z = ARC_RING_PITCH * ARC_RING_W[5] * s * ((n - 1) / 2 - i), ti = n > 1 ? i * ARC_RING_T / (n - 1) : 0, th = arcTAU * ((now + ARC_RING_T - ti) / ARC_RING_T + ph); // ring 0 is the lowest
     up(x, y, () => { const mt = ctx.getTransform(); arcStroke(arcRing(g, arcRingR(g, ct, s), th, far, mt, x, y), css, css, ARC_RING_W[ct] * s, gl, 0.8 + 0.04 * ct); }, z);

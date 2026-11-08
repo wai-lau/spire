@@ -109,10 +109,10 @@ check("ARC: the Voltage rings never touch the prism at any turn (owner, 2026-11-
       for (let deg = 0; deg <= 60; deg++) { const th = deg * Math.PI / 180;
         for (let k = 0; k < 6; k++) { const a = g.a0 + Math.PI / 3 * k, px = g.R * Math.cos(a), py = g.R * Math.sin(a);
           for (let j = 0; j < 6; j++) { const a1 = g.a0 + Math.PI / 3 * j + th, a2 = a1 + Math.PI / 3; worst = Math.min(worst, segD(px, py, rr * Math.cos(a1), rr * Math.sin(a1), rr * Math.cos(a2), rr * Math.sin(a2)) - half); } } }
-      out.push({ ct, worst: +worst.toFixed(3) }); }
+      out.push({ ct, worst: +(worst - arcRingGlow(ct, s)).toFixed(3), want: +(ARC_RING_GAP_K * g.R).toFixed(3) }); }
     return JSON.stringify(out); })()`));
-  const bad = r.filter(x => !(x.worst >= 3 - 1e-6));
-  if (bad.length) return "a ring's line comes within " + bad.map(x => x.worst + " u (Conductivity " + x.ct + ")").join(", ") + " of the prism's corners; ARC_RING_GAP is 3";
+  const bad = r.filter(x => !(x.worst >= x.want - 1e-6));
+  if (bad.length) return "a ring's glow comes within " + bad.map(x => x.worst + " u (Conductivity " + x.ct + ", want " + x.want + ")").join(", ") + " of the prism's corners (ARC_RING_GAP_K x R; owner, 2026-11-07: \"they should be horizontally further\")";
 });
 
 check("ARC: a ring's back edges lie wholly above its centre's screen row and its front edges wholly below, cut at the sides, with nothing lost (owner, 2026-11-07: \"arc rings still clip into the tower\" - an edge across a side went whole to one pass)", () => {
