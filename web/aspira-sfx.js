@@ -197,18 +197,26 @@ function loadSamples() {
     SAMPLES[name] = [];
     // an entry is a file, or { file, start, end } to play only a slice of it
     // (seconds), e.g. just the double beep at the head of an advisor line
-    for (const f of [].concat(files)) {
+    for (const f of sfxClips(name, files)) {
       const clip = typeof f === "string" ? { file: f } : f;
       fetch(SAMPLE_DIR + clip.file).then(r => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(clip.file))))
-        .then(b => AC.decodeAudioData(b)).then(buf => { const start = clip.start || 0, end = clip.end || buf.duration; SAMPLES[name].push({ buf, start, end, norm: sampleNorm(buf, start, end) }); })
+        .then(b => AC.decodeAudioData(b)).then(buf => { const start = clip.start || 0, end = clip.end || buf.duration; SAMPLES[name].push({ buf, start, end, fade: !!clip.fade, norm: sampleNorm(buf, start, end), pk: samplePeak(buf, start, end) }); })
         .catch(() => {});
     }
   }
 }
-// VOLUME NORMALIZATION (owner, 2026-10-16: "add some kind of volume normalization"): each clip is measured once, decoded - its
-// LOUDEST 50ms window's RMS - and scaled to NORM_TARGET, within NORM_CLAMP (a near-silent clip is not blown up). The Brood War
-// set spans 0.20 (BUZZ) .. 0.50 (PPwrDown), about 8 dB; 0.37 is its median, so the mix as a whole stays where it was
-const NORM_TARGET = 0.37, NORM_CLAMP = [0.5, 2], NORM_WIN = 0.05;
+// A LONG CLIP CUT INTO SLICES (owner, 2026-11-07: "take samples from the long IFR sound instead of using the full sound every time"): an event
+// whose index entry is ONE plain file plays these [start, end] s of it instead, one a play in turn (sliceNext), each with a short fade in and
+// out (SLICE_FADE). In code, so the droplet's index.json is unchanged. IFR's TNsHit00.wav (3.6 s, one fire roar): five 0.44-0.46 s slices,
+// each starting just before a rise of its loudness (0.10, 0.72, 1.16, 1.52, 1.80 s)
+const SFX_SLICES = { ifr: [[0.08, 0.53], [0.68, 1.12], [1.12, 1.58], [1.48, 1.94], [1.76, 2.22]] }, SLICE_FADE = [0.008, 0.06], sliceNext = {};
+const sfxClips = (name, files) => (SFX_SLICES[name] && typeof files === "string" ? SFX_SLICES[name].map(([start, end]) => ({ file: files, start, end, fade: true })) : [].concat(files));
+// VOLUME NORMALIZATION (owner, 2026-10-16: "add some kind of volume normalization"; 2026-11-07: "make sure all the sounds are similar"): each
+// clip is measured once, decoded - the RMS of its MAIN HIT, its loudest NORM_WIN (150 ms) window - and scaled to NORM_TARGET, within
+// NORM_CLAMP; at play a voice's gain is held so its PEAK out stays under NORM_PEAK (playSample - no single voice clips). 0.333 keeps the towers' attack
+// median where the 50 ms rule had it (-20 dBFS out); the classes over it (gainFor) are the deliberate differences
+const NORM_TARGET = 0.333, NORM_CLAMP = [0.25, 4], NORM_WIN = 0.15, NORM_PEAK = 0.9;
+function samplePeak(buf, start, end) { const x = buf.getChannelData(0), sr = buf.sampleRate; let pk = 0; for (let i = Math.floor(start * sr), b = Math.min(x.length, Math.ceil(end * sr)); i < b; i++) { const v = Math.abs(x[i]); if (v > pk) pk = v; } return pk; }
 function sampleNorm(buf, start, end) {
   const x = buf.getChannelData(0), sr = buf.sampleRate, a = Math.floor(start * sr), b = Math.min(x.length, Math.ceil(end * sr)), win = Math.max(1, Math.floor(sr * NORM_WIN));
   let loud = 0;
@@ -234,13 +242,15 @@ const SOUND_GAIN = { kill: 0.4, sol: 2 };
 const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? SOUND_GAIN[name.split(".")[0]] ?? 1); // ("kill.fast" trimmed as "kill")
 function playSample(name, at = 0, off = 0) { // off: s into the clip to start from (SOL's shot, solSfx)
   const list = SAMPLES[name], n = playing[name] || 0;
-  const src = AC.createBufferSource(), g = AC.createGain(), clip = list[Math.floor(Math.random() * list.length)];
+  const src = AC.createBufferSource(), g = AC.createGain(), clip = SFX_SLICES[name] && list[0].fade ? list[(sliceNext[name] = ((sliceNext[name] ?? -1) + 1) % list.length)] : list[Math.floor(Math.random() * list.length)];
   src.buffer = clip.buf;
-  g.gain.value = sfxScale * sampleGain * (clip.norm || 1) * gainFor(name) / (SOUND_MAX[name] ? 1 + n : 1);
+  g.gain.value = Math.min(sfxScale * sampleGain * (clip.norm || 1) * gainFor(name), clip.pk > 0 ? NORM_PEAK / clip.pk : Infinity) / (SOUND_MAX[name] ? 1 + n : 1);
   src.connect(g).connect(master);
   voices++; playing[name] = n + 1; const L = { name, nodes: [[src, g]] }; sfxLive.add(L);
   src.onended = () => { sfxEnd(src); playing[name]--; sfxLive.delete(L); };
-  src.start(AC.currentTime + at, clip.start + off, Math.max(0.01, clip.end - clip.start - off)); src.__g = g;
+  const t0 = AC.currentTime + at, dur = Math.max(0.01, clip.end - clip.start - off);
+  if (clip.fade) { const v = g.gain.value; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v, t0 + SLICE_FADE[0]); g.gain.setValueAtTime(v, t0 + Math.max(SLICE_FADE[0], dur - SLICE_FADE[1])); g.gain.linearRampToValueAtTime(0, t0 + dur); }
+  src.start(t0, clip.start + off, dur); src.__g = g;
   return src;
 }
 // samples played back to back (owner: the boss warning - a double beep, then
