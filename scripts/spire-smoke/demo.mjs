@@ -208,7 +208,7 @@ check("demo CRR: every interceptor gets home within 2 s and the wing keeps launc
       const skills = key === "base" ? {} : { [key]: tier }, t = { kind: "crr", cell, x: C.x, y: C.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
       const S = demoScene("crr", skills, cell, demoPlace("crr", towerStats(t), cell, DEMO_LAYOUTS.crr[key])), T = S.G.towers[0], back = new Map(), was = new Map();
       let longest = 0, sorties = 0;
-      for (let f = 0; f < 720; f++) { demoFrame(S); for (const i of T.icp || []) { /* 12 s: a sortie is up to 30 volleys since 2026-11-05 ("fire for longer"), so Armament III-V make ~one sortie an interceptor in 10 */
+      for (let f = 0; f < 720; f++) { demoFrame(S); for (const i of T.icp || []) { /* 12 s: a sortie is up to 40 volleys (no cap since 2026-11-07, "Ok no ammo limit"; 30 from 2026-11-05 "fire for longer"), so Armament III-V make ~one sortie an interceptor in 10 */
         if (was.get(i) === "home" && i.state === "out") sorties++; was.set(i, i.state);
         const n = i.state === "back" ? (back.get(i) || 0) + 1 : 0; back.set(i, n); longest = Math.max(longest, n); } }
       const wing = (T.icp || []).length;

@@ -29,7 +29,7 @@ check("IFR Flare: a flare's ticks (its whole burn) never more than 2x the tier b
   const n = run(`IFR_BURN_S.map((b, i) => Math.floor(Math.min(EFFECT_MAX_S, b) / IFR_TICK_S[i] + 1e-9))`);
   if (n.length !== 6 || n.some((v, k) => k && (v < n[k - 1] || v > 2 * n[k - 1]))) return "ticks a flare by tier " + JSON.stringify(n);
 });
-check("CRR: at most 30 volleys a sortie and at most 3 bolts a volley (fired at once) at every Armament tier, rising (owner, 2026-11-01: \"volleys per sortie should never go above 30\" / \"My intent with volleys was to describe the number of bolts fired at once ... It should not go above 3\")", () => {
+check("CRR: volleys a sortie rising by Armament tier, no cap (owner, 2026-11-07: \"Ok no ammo limit\"; was at most 30), and at most 3 bolts a volley (fired at once) at every Armament tier, rising (owner, 2026-11-01: \"volleys per sortie should never go above 30\" / \"My intent with volleys was to describe the number of bolts fired at once ... It should not go above 3\")", () => {
   // (no ammo cap since 2026-11-07, owner: "Ok no ammo limit" - was <= 30 a sortie)
   const [a, b] = run(`[CRR_AMMO.slice(), CRR_BOLTS_BY.slice()]`);
   if (a.length !== 6 || a.some((v, k) => k && v < a[k - 1])) return "CRR_AMMO " + JSON.stringify(a);
