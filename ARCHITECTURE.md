@@ -1,8 +1,8 @@
 # THE SPIRE - game design
 
-Spiral tower defence at `wai-lau.net/spire`, phone first. The CURRENT design, verified
-against the code at 5.1.32 (2026-10-16); the header, the pillars, §2.1, §4.1, §4.2 and the named constants re-checked at 6.18.36
-(2026-10-30). **The code holds the numbers.** The tuned values at
+Spiral tower defence at `wai-lau.net/spire`, phone first. The CURRENT design. Written against the code at 5.1.32 (2026-10-16);
+the header, the pillars, §2.1, §4.1, §4.2 and the named constants re-checked at 6.18.36 (2026-10-30); §4.1 and §4.6 (the mark target,
+COUNTERS) re-checked at 7.10.1 (2026-11-07). Other sections may lag the code: **the code holds the numbers.** The tuned values at
 4.4.2 (its §12, with the later changes noted there), every superseded one, the measurements and the incidents behind the
 traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 `git show f00d730:ARCHITECTURE.md`.
@@ -108,12 +108,9 @@ too. The lanes' CORE TWIST (§2.1) gives the same time to the core instead. The 
 | design | hit-scan chain lightning | an aura, no shots | a ray that splits from enemy to enemy | continuous jets and pools | a void a shot, with novas and an aura (§4.6b) | a carrier launching interceptors (§4.6c) | a homing meteor bursting into a fan of straight shards, fires and eight-beamed flares (§4.6e) |
 | colour | yellow | cyan | pink | green | violet | blue | orange |
 | default targeting | Near | Near | Near | Near | Near | Near | Near |
-| main counter of (`GOOD_VS`: a +2 in the mark target, §7.2) | armor | swarms, fast | armor, bosses | bosses | nothing | fast, shields | swarms, shields |
-| helps against (`HELPS_VS`: a +1) | fast | nothing | shields | swarms, shields, armor | swarms, fast, armor | nothing | nothing |
-| weak to (a -1 or worse) | swarms, shields | shields, armor | swarms, fast | fast | shields | swarms, armor | fast, armor |
 | leash (`MOVE_BASE`) | medium (200) | long (240) | medium (222) | longest (280) | medium (200) | long (240) | short (120) |
 
-Ids `arc frz sol acd grv crr ifr` (`KINDS`; `crr` was `car` until 6.18.4, renamed 2026-10-29). The seven hues sit 360/7 OKLCH degrees apart (§10.1); range x `RANGE_BONUS`. The legacy path/form tree
+What each kind beats and is weak to: the mark target, §4.6 (the one table). Ids `arc frz sol acd grv crr ifr` (`KINDS`; `crr` was `car` until 6.18.4, renamed 2026-10-29). The seven hues sit 360/7 OKLCH degrees apart (§10.1); range x `RANGE_BONUS`. The legacy path/form tree
 (`aspira-upgrades.js`) is dormant: every kind `hasSkills`.
 
 ### 4.2 The chart (pillar 4)
@@ -309,21 +306,27 @@ The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with ever
 | 10 s at most | no effect on the board outlives `EFFECT_MAX_S` 10 s - GRV holes, the Orbital Relay; ACD pools `POOL_MAX_S` 5 s, goo `GOO_MAX_S` 30 s (owner, 2026-10-18). Debuffs ON an enemy (Breach, Corrosion's strip) are outside the rule |
 | tier names | one a tier (Transfer .. Hyperstorm, Chill .. Zero Point, ...), used on the end screen, never on the card; ARCHAEOLOGY §12 |
 
-### 4.6 The counter matrix (pillar 6)
+### 4.6 The mark target (pillar 6)
 
-**OLD - the design matrix below is superseded** (owner, 2026-10-29: "ignore all designs except mark"; "delete all other mark plans, or mark them OLD"): the towers are balanced to the mark target, `scripts/aspira-sim/mark-target.json` (§7.2 has its rows), and the table is kept only for its levers.
+THE MARK TARGET (owner, 2026-10-29 15:45: "save super important! priority #1"; its history and every owner quote: ARCHAEOLOGY §4.6) is
+`scripts/aspira-sim/mark-target.json`; the towers are balanced TO it, never the other way (`VS_MARKS` is never edited by hand;
+`marktarget.py` runs again only on the owner's word). Each tower's mark a type, -3 .. +2 (generated from the json, 2026-11-07):
 
-| enemy \ tower | ARC | FRZ | SOL | ACD | GRV | CRR | the lever |
-|---|---|---|---|---|---|---|---|
-| **swarm** | MAIN | help | weak (one lock) | help | MAIN | weak (one target a volley) | branching hits; bursts; a void that feeds on a crowd |
-| **fast** | help | MAIN | help | weak (cold jets) | weak (no time to feed) | MAIN | the chill bite doubles on fast; interceptors outrun them |
-| **armor** | weak (grounds the arc) | help | MAIN | help | MAIN | weak (small bolts) | strip multiplies armor down (never below 0); armor scales with HP |
-| **shield** | help | weak (no slow) | help | MAIN | weak (the slow skips them) | MAIN | pops a hit: ACD one a tick, SOL by Focus, CRR one a bolt |
+| tower | swarm | fast | shield | armor |
+|---|---|---|---|---|
+| ARC | +2 | -2 | -2 | +2 |
+| FRZ | +1 | +2 | -1 | -2 |
+| SOL | -3 | +1 | +1 | +1 |
+| ACD | -1 | -3 | +2 | +2 |
+| GRV | +1 | +1 | -3 | +1 |
+| CRR | -2 | +2 | +1 | -1 |
+| IFR | +2 | -1 | +2 | -3 |
 
-The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds and a `help` list of two, DERIVED FROM THE MARK TARGET (main = a +2, help = a +1;
-swarm `[frz, ifr]` / `[acd, grv]`, fast `[frz, crr]` / `[arc, grv]`, armor `[arc, sol]` / `[acd, grv]`, shield `[crr, ifr]` / `[sol, acd]`). The build card derives from it: `GOOD_VS` / `HELPS_VS` (SOL and ACD add bosses,
-`BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 since 6.16.0 - the command below, with the other four levels), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
-measures it.
+Every type column is +2 +2 +1 +1 -1 -2 -3, every row and column sums to 0, every tower checks two types or more; IFR (-3) and CRR (-1) are
+bad vs armor by design. `COUNTERS` (`aspira-defs.js`) is DERIVED from it - `main` = the +2 cells, `help` = the +1 cells: swarm `[arc, ifr]` /
+`[frz, grv]`, fast `[frz, crr]` / `[sol, grv]`, armor `[arc, acd]` / `[sol, grv]`, shield `[acd, ifr]` / `[sol, crr]` (checked 2026-11-07) - and
+the build card's `GOOD_VS` / `HELPS_VS` derive from `COUNTERS` (SOL and ACD add bosses, `BOSS_KILLERS`). The card's symbol marks (`VS_MARKS`)
+are MEASURED, a `countermx` run at 9 points (`scripts/aspira-sim/countermx.mjs`, the command below); the old design matrix: ARCHAEOLOGY §4.6.
 
 **THE MARKS AT FIVE POINT LEVELS** (owner, 2026-11-06: "1B, but also add a 0 point and 3 point check", then "most important marks are 9 and 13,
 but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 2026-11-07 "1C": the 0-point band loosened to +/-2). Every balance patch runs all five against the mark target:

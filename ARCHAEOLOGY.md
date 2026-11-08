@@ -313,6 +313,21 @@ shields"; SOL weak to swarm. Levers added 10-11/12: shield pops per hit (ACD 3 -
 "frost cracks armor" (gone), armor scaled with `ENEMY_HP_MUL` (it had been left out of the x0.225 HP cut
 and ate 4.4x too much of each hit), armor scaling with HP (10-13).
 
+The 10-08 design matrix and the COUNTERS paragraph, as ARCHITECTURE §4.6 carried them until 2026-11-07 (OLD since the owner's
+2026-10-29 "ignore all designs except mark"; its COUNTERS lists were already stale against the target):
+
+| enemy \ tower | ARC | FRZ | SOL | ACD | GRV | CRR | the lever |
+|---|---|---|---|---|---|---|---|
+| **swarm** | MAIN | help | weak (one lock) | help | MAIN | weak (one target a volley) | branching hits; bursts; a void that feeds on a crowd |
+| **fast** | help | MAIN | help | weak (cold jets) | weak (no time to feed) | MAIN | the chill bite doubles on fast; interceptors outrun them |
+| **armor** | weak (grounds the arc) | help | MAIN | help | MAIN | weak (small bolts) | strip multiplies armor down (never below 0); armor scales with HP |
+| **shield** | help | weak (no slow) | help | MAIN | weak (the slow skips them) | MAIN | pops a hit: ACD one a tick, SOL by Focus, CRR one a bolt |
+
+The matrix is DATA: `COUNTERS` in `aspira-defs.js`: each type has a `main` that is a LIST of two kinds and a `help` list of two, DERIVED FROM THE MARK TARGET (main = a +2, help = a +1;
+swarm `[frz, ifr]` / `[acd, grv]`, fast `[frz, crr]` / `[arc, grv]`, armor `[arc, sol]` / `[acd, grv]`, shield `[crr, ifr]` / `[sol, acd]`). The build card derives from it: `GOOD_VS` / `HELPS_VS` (SOL and ACD add bosses,
+`BOSS_KILLERS`), and the symbol marks (`VS_MARKS`, §7.2) come from a `countermx` run (SPREAD_ONLY, 9 points, waves 101-109 and 111-119 since 6.16.0 - the command below, with the other four levels), so the card can never disagree with it. `scripts/aspira-sim/countermx.mjs`
+measures it.
+
 ### 4.6b GRV and ATC: the numbers and how they got here (2026-10-15..16)
 
 Moved out of ARCHITECTURE §4.6b / §4.6c, which now describe the mechanics only. Values at 5.1.32 (the code is the truth).
