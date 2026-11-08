@@ -117,7 +117,7 @@ const I_edgeDist = c => Math.max(0, Math.max(...I_HAX.map(n => Math.abs(c[0] * n
 const I_heightFall = c => 1 - 0.75 * Math.pow(I_clamp(I_edgeDist(c) / I_FALL_DMAX, 0, 1), 1.5);
 const I_balScore = (vol, v, u) => { const l = vol[0] + (u < 0 ? v : 0), r = vol[1] + (u < 0 ? 0 : v); return Math.abs(l - r) / (l + r); };
 function* I_genPerma(N) {
-  const g = I_G, r = I_rng(I_SEED_P), aT = g.R * I_COS30, nodes = [{ c: [0, 0], a: aT, side: g.R, ring: 0, used: new Set() }], out = I_ST.hexes, vol = [0, 0], rMin = g.R / 9; // radius R/9..2R/3
+  const g = I_G, r = I_rng(I_SEED_P), aT = g.R * I_COS30, nodes = [{ c: [0, 0], a: aT, side: g.R, ring: 0, used: new Set() }], out = I_ST.hexes, vol = [0, 0], rMin = g.R * 2 / 9; // radius 2R/9 .. 2R/3: a third of the largest to the largest (owner, 2026-11-07: "change perma size to range from 1/3-1, I know this will take up a lot more space, this is fine"; was R/9, a sixth)
   let k = 1; // when it runs out of room the outer pieces shrink (k) toward the smallest allowed size
   const candidates = (nd, ring) => { // every feasible crystal glued to a free face of nd (the shorter face inside the longer)
     const pool = [];
@@ -271,7 +271,7 @@ function frzIceView(t, x, y, top, Rw) {
   const Ft = warpFrame(x, y, top), Fb = warpFrame(x, y, warpFloor()), /* (the real floor: the crystals grow from it; the lifted prism's visible height is floor to top) */ k = Math.hypot(Ft[0], Ft[1]), sq = Math.hypot(Ft[2], Ft[3]) / k, m = Rw * k / 40;
   const T = { x: Ft[0] * x + Ft[2] * y + Ft[4], y: Ft[1] * x + Ft[3] * y + Ft[5] }, by = Fb[1] * x + Fb[3] * y + Fb[5];
   const c0 = CELLS[t.cell], p = c0.pts[0], dx = p.x - c0.x, dy = p.y - c0.y, sx = Ft[0] * dx + Ft[2] * dy, syy = Ft[1] * dx + Ft[3] * dy;
-  const rot = ((Math.atan2(syy / sq, sx) * 180 / Math.PI + 90) % 60 + 60) % 60;
+  const rot = ((Math.atan2(dy, dx) * 180 / Math.PI + 90) % 60 + 60) % 60; void sx; void syy; /* the hex's turn in the WORLD (2026-11-08): read off the screen it matched the prism only near the screen's centre column (owner: "frz tower ice not aligned with tower") */
   const Hs = Math.max(4, (by - T.y) / m);
   return { T, m, sq, Hs, rot, K3: (top * 40) / (Hs * Rw) }; // K3: the mockup's floor units a height unit, for a real angle (top / Hs world a height unit, Rw / 40 a floor unit)
 }
@@ -321,24 +321,31 @@ function frzIceGet(t, v0, np, nf) { // the tower's ice: its scene for these tier
   const c = I.M.count(); if (I.c !== c || I.want !== want) { I.c = c; I.want = want; const sc = I.M.scene(np, nf); I.scene = { back: sc.back, front: sc.front, done: I.M.done }; I.sceneAt = (I.sceneAt || 0) + 1; }
   return I;
 }
-// NEVER REDRAWN (owner, 2026-11-06: "Never redraw the ice"): the pieces are baked ONCE, at I.mB px a unit - the first view's scale with room for
-// the closest zoom (ICE_ZOOM_ROOM, capped) - and the image then only moves and scales with the tower: no re-bake on a move, a pan or a zoom. While
-// it first grows, each grown step shows (a quick bake, no ridge glow) and the full bake lands once grown; a tier bought later keeps the old image up
-// while the new one bakes (in slices) and swaps in whole, so what is already shown never changes
+// NEVER REGROWN, RE-PROJECTED PER VIEW SHAPE (owner, 2026-11-06: "Never redraw the ice"; 2026-11-08: "nono, this is something to do with perspective, the
+// FRZ tower looks OK when the tower is near the center of screen"): the crystals are grown ONCE (their shapes never change) and baked at I.mB px a unit -
+// the first view's scale with room for the closest zoom (ICE_ZOOM_ROOM, capped). The bake is keyed on the VIEW'S SHAPE AT THE TOWER (ice3dProj's floor
+// and up axes over the floor's scale, in ICE_VIEW_Q steps): a pan, zoom or tilt that changes it re-projects the same crystals in slices while the
+// last image stays up, and swaps whole; up to ICE_KEEP_BYTES of images a tower are kept, so a pan back is instant. Never per frame. While it first grows, each grown
+// step shows (a quick bake, no ridge glow); a tier bought later keeps the old image up until the new one is whole
+const ICE_VIEW_Q = 0.06, ICE_KEEP_BYTES = 4e6; // the key's step; the kept images' pixels a tower (RGBA, about 12 on a phone, 2-3 on a desktop)
+const iceViewKey = P => { const l = Math.hypot(P.ex[0], P.ex[1]) || 1, q = v => Math.round(v / l / ICE_VIEW_Q); return [P.ex[0], P.ex[1], P.ey[0], P.ey[1], P.ez[0], P.ez[1]].map(q).join(","); };
 const ICE_ZOOM_ROOM = 2;
 function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters, after the tower's top (far: nothing - the 3D bake hides what the prism covers)
   const np = skillOf(t, "rime"), nf = skillOf(t, "temp"); if (!np && !nf) return;
   const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v, np, nf); if (!I.scene || far || typeof ice3dBegin !== "function") return;
   const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white, list = sc.back.concat(sc.front);
-  I.proj ||= ice3dProj(x, y, top, Rw, I.view.Hs); I.m0 ||= v.m; // (the camera of its first view, frozen)
+  const proj = ice3dProj(x, y, top, Rw, I.view.Hs), vk = iceViewKey(proj); I.proj = I.bake && I.bake.vk === vk ? I.bake.proj : proj;
   const kB = I.kB ||= (typeof ZOOM_MAX === "number" && typeof viewZoom === "number" && viewZoom > 0 ? Math.min(ICE_ZOOM_ROOM, Math.max(1, ZOOM_MAX / viewZoom)) : 1);
   // growing: QUICK bakes (no ridge glow, the first view's own scale) of the latest grown step, each in slices - the last one stays up meanwhile;
   // grown: the FULL bake, the same way. The image on screen changes only when a bake is whole
-  const want = sc.done ? "f" + I.sceneAt : "q" + I.sceneAt;
-  if ((!I.bake || I.bake.want !== want) && (!I.glow || I.glow.want !== want)) I.glow = { at: I.sceneAt, want, J: sc.done ? ice3dBegin(list, I.proj, I.view.rot, kB, ice, frz, true) : ice3dBegin(list, I.proj, I.view.rot, 1, ice, frz, false) };
-  // THE FULL BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"), swapped in whole once done
-  if (I.glow) { if (!I.glow.J || ice3dRun(I.glow.J, ICE_GLOW_MS)) { I.bake = { want: I.glow.want, J: I.glow.J }; I.glow = null; } }
+  const want = (sc.done ? "f" + I.sceneAt : "q" + I.sceneAt) + "|" + vk, kept = (I.kept ||= new Map());
+  if ((!I.bake || I.bake.want !== want) && kept.has(want)) { I.bake = kept.get(want); kept.delete(want); kept.set(want, I.bake); I.glow = null; } // (a view seen lately: no bake)
+  if ((!I.bake || I.bake.want !== want) && (!I.glow || I.glow.want !== want)) { const a0 = performance.now(); I.glow = { at: I.sceneAt, want, vk, proj, m0: v.m, ms: 0, J: sc.done ? ice3dBegin(list, proj, I.view.rot, kB, ice, frz, true) : ice3dBegin(list, proj, I.view.rot, 1, ice, frz, false) }; I.glow.ms += performance.now() - a0; }
+  // THE BAKE IN SLICES (no frame pays it whole - owner, 2026-11-05: "No bursts, just faster consistently"), swapped in whole once done
+  if (I.glow) { const a0 = performance.now(), done = !I.glow.J || ice3dRun(I.glow.J, ICE_GLOW_MS); I.glow.ms += performance.now() - a0;
+    if (done) { I.bake = { want: I.glow.want, vk: I.glow.vk, proj: I.glow.proj, m0: I.glow.m0, ms: I.glow.ms, J: I.glow.J }; I.bakes = (I.bakes || 0) + 1; const Jd = I.glow.J; if (Jd) { Jd.z = Jd.id = Jd.hf = Jd.tris = Jd.img = null; } /* (the bake's buffers, 3x the image: not kept) */
+    if (sc.done) { kept.set(want, I.bake); const bytes = () => [...kept.values()].reduce((a, b) => a + (b.J ? b.J.W * b.J.H * 4 : 0), 0); while (kept.size > 1 && bytes() > ICE_KEEP_BYTES) kept.delete(kept.keys().next().value); } I.glow = null; } }
   const J = I.bake && I.bake.J; if (!J) return;
-  const F = warpFrame(x, y, warpFloor()), bx = F[0] * x + F[2] * y + F[4], by = F[1] * x + F[3] * y + F[5], z = v.m / I.m0 / J.k; // (the one image, at this spot's scale, on its floor point)
+  const F = warpFrame(x, y, warpFloor()), bx = F[0] * x + F[2] * y + F[4], by = F[1] * x + F[3] * y + F[5], z = v.m / I.bake.m0 / J.k; // (the image of this view's shape, at this spot's scale, on its floor point)
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(J.cv, bx + J.ox * z, by + J.oy * z, J.W * z, J.H * z); ctx.restore();
 }
