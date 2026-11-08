@@ -43,8 +43,8 @@ void laneFlush(float dG, float dL, vec4 b, vec4 c, LHP vec2 p) { // one group: b
     ${lglLevels(LIT_GLOW_SOFT, BOSS_LANE_W.toFixed(4), "c.x", "dG", "laneG")}
     ${lglLevels(BOSS_LINE_SOFT, "1.0", "c.y", "dL", "laneL")}
   } else {
-    ${lglLevels(LIT_GLOW_SOFT, "1.0", "c.x", "dG", "laneG")}
-    ${lglLevels(LIT_LINE_SOFT, "1.0", "c.y", "dL", "laneL")}
+    ${lglLevels(LIT_GLOW_SOFT, LANE_PLAIN_W.toFixed(4), "c.x", "dG", "laneG")}
+    ${lglLevels(LIT_LINE_SOFT, LANE_PLAIN_W.toFixed(4), "c.y", "dL", "laneL")} /* x LANE_PLAIN_W (2026-11-07): the glow's 72 u still inside LGL_DMAX, the line's 24 inside LGL_LMAX */
     if (dL < ${(LGL_LMAX - 1).toFixed(1)}) { // THE CURTAIN along the whole lane: the line's own distance field (LGL_LMAX u either side), a smooth (1 - d)^2 fade across, waving and
       // shimmering like the glow above - on the line's layer, which runs the lane's length (the glow's is masked to the core's surround)
       LHP float ang = atan(p.y, p.x), rr = length(p), t = laneTime;
@@ -131,7 +131,7 @@ function laneGlBind(gl, u) {
     const order = [...groups.values()].sort((a, b) => (a[0].star ? 1 : 0) - (b[0].star ? 1 : 0));
     let gi = 0;
     for (const us of order) {
-      const v = us[0], rgb = warpGridRgb(v.color), ga = Math.min(1, (v.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * v.a) * laneLitK(v), la = (v.star ? BOSS_LANE_K * v.a : v.a) * laneLitK(v); /* laneLitK: fast / shield / armor at half (aspira-lanes.js) */
+      const v = us[0], rgb = warpGridRgb(v.color), ga = Math.min(1, (v.star ? 0.22 * BOSS_LANE_K : LIT_GLOW_A) * v.a) * laneLitK(v), la = (v.star ? BOSS_LANE_K * v.a : v.a) * laneLitK(v); /* laneLitK: a non-boss lane at LANE_PLAIN_K (aspira-lanes.js) */
       for (const w of us) {
         if (n >= LGL_N) break;
         lglA.set([Math.cos(w.ang), Math.sin(w.ang), (w.pi % 4) / 4, Math.floor(w.pi / 4) / 3], 4 * n); lglB.set([rgb[0], rgb[1], rgb[2], gi], 4 * n); lglC.set([ga, la, v.star ? 1 : 0, 0], 4 * n); n++;
