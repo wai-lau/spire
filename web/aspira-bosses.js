@@ -3,16 +3,17 @@
 // rules - it comes alone, holds the wave timer, costs its HP% left in lives if it
 // gets through (bossLeakLives, below; ended the game until 2026-11-03) - and adds its own trick:
 //   12 Star        none: the plain boss that teaches the rules; its fleet a 3 x 10 lattice of fast behind it (FLEET_LATTICE, 2026-11-05)
-//   24 Empress     no fleet; a whole swarm wave pours out of her past 2/3 and past 1/3 of her HP (2026-11-05)
+//   24 Chariot     its speed a smooth gallop, x(1.5 + 0.5 sin) over CHARIOT_EVERY s (chariotPace; a step until 2026-11-07)
 //   36 Strength    takes 10% of any slow (BOSS_SLOW_K); at the centre of a 3 x 12 armor lattice (FLEET_LATTICE, 2026-11-05)
-//   48 Chariot     every CHARIOT_EVERY s it sprints at CHARIOT_SPD x for CHARIOT_T s
-//   60 Lovers      a PAIR on opposite lanes, no trick (2026-11-05: the heal-and-run went), with one armor wave scattered like a swarm round them
-//   72 Temperance  regenerates TEMPERANCE_REGEN of its HP a second (owner: tripled to 6%, and x5 HP); at the centre of a 3 x 12 shield lattice (2026-11-05)
-//   84 Devil       her host first (half a fast + half a swarm wave, devilEscorts), the six once half of it is on screen; comes as SIX (DEVIL_COPIES), each a full boss on its own copy of the
-//                  lane, two a lane - each one through costs a sixth of its HP% in lives (owner; replaced the Moon)
-//   96 Justice     no single hit takes more than JUSTICE_CAP of its HP; at the crossing of a 7 x 13 cross of armored, shielded escorts (2026-11-05)
-//  108 Judgement   comes alone; killed, she rises once at the start of her lane at full HP with 1.2 swarm waves (bossRise, 2026-11-05)
-//  120 Death       a juiced-up Star (owner): no tricks, the most HP but the Chariot; half a wave of each of the four types round her at once (2026-11-05)
+//   48 Lovers      a PAIR on opposite lanes, no trick but the core's ease does not slow them, with one armor wave scattered round them
+//   60 Empress     broods of swarm at 90 / 70 / 50% of her HP; VEILED (untouchable, faint, slower) while any of a brood lives (bossVeil, 2026-11-07)
+//   72 Judgement   comes alone; killed, she rises once at the start of her lane at full HP with 1.2 swarm waves, VEILED while they live
+//   84 Justice     no single hit takes more than JUSTICE_CAP of its HP; at the crossing of a 7 x 13 cross of armored, shielded escorts (laid straight)
+//   96 Temperance  regenerates TEMPERANCE_REGEN of its HP a second; at the centre of a 3 x 12 shield lattice (2026-11-05)
+//  108 Death       a juiced-up Star (owner): no tricks, the most HP but the Chariot; half a wave of each of the four types round her at once (2026-11-05)
+//  120 Devil       THE FINAL BOSS: her host first (half a fast + half a swarm wave, devilEscorts), the six once half of it is on screen; comes as SIX
+//                  (DEVIL_COPIES), each a full boss on its own copy of the lane, two a lane - each one through costs a sixth of its HP% in lives
+// (the order and the tricks: owner, 2026-11-07 22:15 / 22:30 / 22:40; the waves are ARCANA's order x STAR_EVERY)
 // Boss HP is ENEMIES.bonus.hp (halved, owner). Loaded after aspira-waves.js
 // (the simulator loads it too).
 // each with a HINT (owner): a mythic subtitle under its name - its trick told
@@ -23,16 +24,18 @@ const ARCANA = [
   // refit hps and stuff"): 12 Star, 24 Chariot, 36 Strength, 48 Lovers, 60 Empress, 72 Judgement, 84 Justice, 96 Temperance, 108 Death, 120 the Devil
   // (22:40: "swap order of justice and judgement")
   // (was Star, Empress, Strength, Chariot, Lovers, Temperance, Devil, Justice, Judgement, Death)
+  // THE HINTS FOR THE NEW TRICKS (2026-11-08): Chariot, Strength, Lovers, Empress, Judgement, Death rewritten (Visual, Leader-relayed); the Devil's is the
+  // owner's own, verbatim but the set's capital and full stop ("six faces hunger / three paths, vermillion, and yet / even one, dooms all"); Star, Justice, Temperance kept
   { id: "star", name: "The Star", hint: ["One light in the dark", "crossing the long silent sky", "asks only to meet."] },
-  { id: "chariot", name: "The Chariot", hint: ["The reins slip loose now", "and the horses break and run,", "faster than your aim."] },
-  { id: "strength", name: "Strength", hint: ["No frost can bind her,", "no chain will shorten her stride.", "She walks through the cold."] },
-  { id: "lovers", name: "The Lovers", hint: ["Apart, they still come", "the same hour from either side,", "armored in their vow."] /* new poem (owner, 2026-11-05: "new poem" - two bosses on opposite lanes, an armor wave round them, no trick; was "Two walk as one heart. / Part them, and the one who stays / will never forgive.", the heal-and-run) */ },
-  { id: "empress", name: "The Empress", hint: ["Strike the mother once", "and the field fills with her young:", "her children answer."] },
-  { id: "judgement", name: "Judgement", hint: ["The trumpet sounds once;", "what has fallen hears its name", "and rises again."] },
+  { id: "chariot", name: "The Chariot", hint: ["Like the tide, it comes -", "surging close, then falling back,", "then surging again."] },
+  { id: "strength", name: "Strength", hint: ["A mountain that walks,", "plated thick against the storm;", "blows break on her stone."] },
+  { id: "lovers", name: "The Lovers", hint: ["Apart, they still come,", "and nearing home, they hasten -", "love will not slow down."] /* new poem (owner, 2026-11-05: "new poem" - two bosses on opposite lanes, an armor wave round them, no trick; was "Two walk as one heart. / Part them, and the one who stays / will never forgive.", the heal-and-run) */ },
+  { id: "empress", name: "The Empress", hint: ["Wound her, and she sleeps", "behind a veil of her young;", "slay them, and she wakes."] },
+  { id: "judgement", name: "Judgement", hint: ["The trumpet sounds once;", "the fallen rise as its shield -", "none may judge the judge."] },
   { id: "justice", name: "Justice", hint: ["The scales hold steady.", "No blow, however heavy,", "outweighs the balance."] },
   { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "the wound fills, and heals."] },
-  { id: "death", name: "Death", hint: ["No riddle, no trick,", "only the long road to dark,", "only, now, the end."] },
-  { id: "devil", name: "The Devil", hint: ["Six faces, one want,", "six roads leading to your door.", "Let not one get through."] },
+  { id: "death", name: "Death", hint: ["No riddle, no trick,", "only the long road to dark -", "and one more beyond."] },
+  { id: "devil", name: "The Devil", hint: ["Six faces hunger", "three paths, vermillion, and yet", "even one, dooms all."] },
 ];
 // EACH BOSS ITS OWN DIE (owner, 2026-11-07: "visually update dice shapes, (keep boss sizes): chariot should use the fast dice shape / strength
 // should use the shield shape / lovers armor / empress d20 / ... judgement cube / justice shield / ... temperence armor / death d20 / devil fast"):

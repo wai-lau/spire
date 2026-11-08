@@ -94,7 +94,10 @@ const hpShrink = (e, f) => { const m = e.arcana ? SHRINK_MIN_BOSS : SHRINK_MIN; 
 // OFF SCREEN = FAINT (owner, 2026-10-19: "enemies off screen should have their opacity reduced by 80%, and fade in over 1s as they enter
 // the screen"): ENEMY_OFF_A until e.seen latches (enemySeen), then up to full over ENEMY_FADE_S of real time (e.seenAt, stepEnemies - the same second at any game speed)
 const ENEMY_OFF_A = 0.05, ENEMY_FADE_S = 0.4; // OFF the board, an enemy and all it carries (shields, tracers, marks) at ENEMY_OFF_A, then a quick fade in over ENEMY_FADE_S s once seen (owner, 2026-10-26; were 0.2 / 1 s)
-const enemyVis = e => !e.seen ? ENEMY_OFF_A : e.seenAt == null ? 1 : Math.min(1, ENEMY_OFF_A + (1 - ENEMY_OFF_A) * (performance.now() - e.seenAt) / (1000 * ENEMY_FADE_S));
+// THE VEIL READS (owner, 2026-11-07: "empress visually reduced in opacity"): a veiled boss (e.veiled - Empress, Judgement, aspira-bosses.js) at
+// ENEMY_VEIL_A, faint but there at any zoom - not the near-invisible off-board ENEMY_OFF_A its !seen would give
+const ENEMY_VEIL_A = 0.35;
+const enemyVis = e => e.veiled ? ENEMY_VEIL_A : !e.seen ? ENEMY_OFF_A : e.seenAt == null ? 1 : Math.min(1, ENEMY_OFF_A + (1 - ENEMY_OFF_A) * (performance.now() - e.seenAt) / (1000 * ENEMY_FADE_S));
 const ACD_RING_DASH = [2, 4], NO_DASH = []; // (kept: no array a dotted ring a frame - perf, 2026-11-02)
 function drawEnemy(e, solid) {
   // damage shows as both size and opacity: full HP = full size, solid; near death small (hpShrink), faint
