@@ -119,18 +119,22 @@ function solTrackBeams() {
     let last = null; // (the segment before: a segment that goes on from its end widens from its width - a cone, solBeamFlush)
     const seg = (a, b, k, w) => { const f = pool[n] || (pool[n] = { k: "beam", t: 0, life: 1, m: true, slim: true, color: TOWERS.sol.color }); n++;
       f.a = a; f.b = b; f.d = d * k; f.bw = undefined; f.thin = w; f.share = Math.sqrt(k); f.alpha = fl; f.prev = last && last.b === a ? last : null; f.first = a === t; f.off = !!b && b.hp === undefined && !b.kind; last = f; (out ||= []).push(f); };
-    const mainW = B.pl && B.pl.L > 0 ? SOL_PIERCE_W : SOL_THIN_W;
+    const mainW = B.pl && B.pl.L > 0 ? SOL_PIERCE_W : SOL_THIN_W, n0 = n; let kidW = 0; // n0: the main beam's segments start here
     seg(t, B.e, 1, mainW);
     if (B.pl && B.pl.L > 0) { const ax = t.x, ay = t.y, d0 = Math.hypot(B.e.x - ax, B.e.y - ay) || 1, ux = (B.e.x - ax) / d0, uy = (B.e.y - ay) / d0, L = solShowLen(ax, ay, ux, uy, B.pl.L), end = B.pl.end ||= { x: 0, y: 0 }; end.x = ax + ux * L; end.y = ay + uy * L; seg(B.e, end, st.hop || 1, mainW); } // (the main beam on through, Reflection 0 + Breach)
     // a split from the first target THROUGH each enemy it crosses, dimming by its carry at each, and on past the last to the play box's edge
     // as drawn (solShowLen of l.L, the line's length the game uses - owner, 2026-11-04: "all secondary beams fly off to edge of screen")
     for (const l of B.links) {
-      const lw = l.L > 0 ? SOL_PIERCE_W : SOL_THIN_W; let from = l.from || B.e, k = 1, cut = false; for (const h of l.hits) { if (h.e.dead && !ghost) { cut = true; break; } seg(from, h.e, h.k, lw); from = h.e; k = h.k; }
+      const lw = l.L > 0 ? SOL_PIERCE_W : SOL_THIN_W; let from = l.from || B.e, k = 1, cut = false; for (const h of l.hits) { if (h.e.dead && !ghost) { cut = true; break; } seg(from, h.e, h.k, lw); kidW = Math.max(kidW, beamWidth(d * h.k) * lw); from = h.e; k = h.k; }
       if (cut || !(l.L > 0)) continue;
       const org = l.from || B.e, ax = org.x, ay = org.y, d0 = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / d0, uy = (l.e.y - ay) / d0, L = solShowLen(ax, ay, ux, uy, l.L);
       const end = l.end ||= { x: 0, y: 0 }; end.x = ax + ux * L; end.y = ay + uy * L;
-      if ((end.x - from.x) * ux + (end.y - from.y) * uy > 0) seg(from, end, k * (st.hop || 1), lw);
+      if ((end.x - from.x) * ux + (end.y - from.y) * uy > 0) { seg(from, end, k * (st.hop || 1), lw); kidW = Math.max(kidW, beamWidth(d * k * (st.hop || 1)) * lw); }
     }
+    // THE MAIN BEAM NEVER THINNER THAN A CHILD (owner, 2026-11-08: "SOLs primary beam should never be thinner than any of the child beams"): with
+    // Reflection the main beam stops at its target (SOL_THIN_W) while Breach's splits pierce (SOL_PIERCE_W), so a split drew wider - the main
+    // beam's segments are raised to the widest child's core (the children keep their own, pierce look and all)
+    { const mw = beamWidth(d) * mainW; if (kidW > mw) for (let j = n0; j < n && pool[j].first !== undefined; j++) { const f = pool[j]; if (f.a === t || (B.pl && f.a === B.e && f.thin === mainW)) f.thin = mainW * kidW / mw; } }
     }
   }
   return out;

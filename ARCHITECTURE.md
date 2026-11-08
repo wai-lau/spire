@@ -957,6 +957,7 @@ says so where none is on file. Every new owner rule gets its row in the same com
 | iOS never zooms on a double tap | "Make iOS not zoom on doubleclick" | 2026-11-07 | CSS `touch-action: manipulation` (aspira.css) |
 | Every sound at one loudness in its class: towers' attacks one level, kills 3.5 dB under (they come on every death), alerts / voices / build and upgrade cues 4.4 dB over (they must stand out), SOL 6 dB over (one voice each 1.58 s where the others stack 3) | "make sure all the sounds are similar in volume" | 2026-11-07 | `sampleNorm` (each clip's 150 ms main hit to one target, peak held under 0.9) + the class gains (`gainFor`, `SOUND_GAIN`; aspira-sfx.js) |
 | Auto-challenge is the viewer's choice, off by default | "under \"challenge the X\" / add a checkbox for auto-challenge"; "move auto-challenge checkbox below wave indicator when checked" | 2026-11-08 | `autoChalBox` (aspira-wavelist.js); review |
+| SOL's main beam is never thinner than a child beam | "SOLs primary beam should never be thinner than any of the child beams" | 2026-11-08 | smoke: "SOL's main beam is never thinner than a child beam ..." (sol.mjs); `solTrackBeams` |
 | Score is gone | "remove anything based around score" | 2026-10-29 | code (§3) |
 
 ## 11. Traps (every one load-bearing; the stories: ARCHAEOLOGY §11)

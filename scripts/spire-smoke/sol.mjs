@@ -108,3 +108,13 @@ check("SOL Reflection V: each split splits again into 2, both running to the pla
   if (!r.carry) return "a sub-split's carry is above its parent's share x the hop";
   if (r.ivSubs) return "Reflection IV made sub-splits (only the capstone does)";
 });
+
+check("SOL's main beam is never thinner than a child beam - Reflection + Breach, every tier mix (owner, 2026-11-08: \"SOLs primary beam should never be thinner than any of the child beams\")", () => {
+  const r = run(`(() => { const bad = []; for (const rf of [1, 3, 5]) for (const bk of [0, 3, 5]) for (const fo of [0, 4]) {
+      const { t, es, st } = solRig({ refraction: rf, breach: bk, focus: fo }, [[40, 0], [70, 40], [70, -40], [100, 0], [110, 60], [110, -60], [140, 0]]);
+      t.solB = solTrackStart(t, solTrackSt(t, st), es[0]); solRun(t, 2); t.solB.fl = 0; const segs = solTrackBeams() || [];
+      const core = f => beamWidth(f.d || 0) * (f.thin || 1), main = segs.filter(f => f.a === t).map(core), kids = segs.filter(f => f.a !== t).map(core);
+      if (main.length && kids.length && Math.max(...kids) > Math.min(...main) + 1e-9) bad.push("R" + rf + " B" + bk + " F" + fo + ": main " + Math.min(...main).toFixed(3) + " < child " + Math.max(...kids).toFixed(3)); }
+    return bad; })()`);
+  if (r.length) return r.slice(0, 4).join("; ");
+});
