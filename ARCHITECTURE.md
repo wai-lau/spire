@@ -2,7 +2,8 @@
 
 Spiral tower defence at `wai-lau.net/spire`, phone first. The CURRENT design. Written against the code at 5.1.32 (2026-10-16);
 the header, the pillars, §2.1, §4.1, §4.2 and the named constants re-checked at 6.18.36 (2026-10-30); §4.1 and §4.8 (the mark target,
-COUNTERS) re-checked at 7.10.1 (2026-11-07). Other sections may lag the code: **the code holds the numbers.** The tuned values at
+COUNTERS) re-checked at 7.10.1 (2026-11-07); §4.5 (the seven towers), §4.6, §5.4 (the bosses) and §9.4 rewritten against the code at
+7.12.6 (2026-11-08). Other sections may lag the code: **the code holds the numbers.** The tuned values at
 4.4.2 (its §12, with the later changes noted there), every superseded one, the measurements and the incidents behind the
 traps are in **ARCHAEOLOGY.md** (same section numbers). The pre-rewrite text:
 `git show f00d730:ARCHITECTURE.md`.
