@@ -187,7 +187,7 @@ check("landscape: a tower on an open slot meets wave 1 (slots and lane picks agr
   if (!(r.dealt > 0 || r.near <= r.range)) return "no enemy came within range (nearest " + r.near + ", range " + r.range + ")";
 });
 
-check("a boss in the threat zone shows its HP left, 0-100, over itself; one further out shows nothing (owner, 2026-11-03)", () => {
+check("a boss shows its HP left, 0-100, over itself all its run: in the threat zone and far out (owner, 2026-11-03; always since 2026-11-07)", () => {
   const env = boot(), r = env.run;
   r(`BAR_HOLD = false; G = newGame(); G.money = 1e9; G.started = true; G.nextIn = 1e9; G.waveIn = { 12: 1 }; spawnEnemy("bonus", 12, 0, 0); spawnEnemy("bonus", 12, 1, 0);
      { const [a, b] = G.enemies; a.arcana = b.arcana = "star"; a.hp = a.max * 0.546; b.hp = b.max * 0.3;
@@ -198,7 +198,7 @@ check("a boss in the threat zone shows its HP left, 0-100, over itself; one furt
   const eta = r("[etaToCore(G.enemies[0]), etaToCore(G.enemies[1])]"), said = r("const s = window.__said; text = window.__t0; BAR_HOLD = true; s");
   if (!(eta[0] <= 4 && eta[1] > 4)) return "rig: etas " + eta.map(x => x.toFixed(1));
   if (!said.includes("55")) return "no 55 over the near boss (said: " + said.slice(0, 12).join(" ") + ")";
-  if (said.includes("30")) return "the far boss (30) shows a number";
+  if (!said.includes("30")) return "no 30 over the far boss (owner, 2026-11-07: \"keep on the boss always\")";
 });
 
 check("a boss's ETA to the core matches when it gets there, in reach (1x), not (OFF_SCREEN_SPEED), or reached mid-way, with the core ease (2026-11-03)", () => {
