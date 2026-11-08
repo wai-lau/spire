@@ -178,7 +178,7 @@ function* I_genFrac(N, hexes) {
   const spot = (t, rs) => { const p = I_centroid3(t), hd = Math.max(...I_HAX.map(n => Math.abs(p[0] * n[0] + p[1] * n[1]))); return hd >= aT + 0.35 * rs && Math.abs(p[0]) + rs * 0.87 <= 86 && p[1] + rs <= 100 && p[1] - rs >= -105; }; // outside the tower, inside the canvas
   const make = () => { // one valid candidate shard (every rule satisfied), or null
     const p = [gauss() * 0.65 * g.R, gauss() * 0.65 * g.R] /* tighter round the tower (Wai 11-06: more likely near it; sd was R) */, hd = Math.max(...I_HAX.map(n => Math.abs(p[0] * n[0] + p[1] * n[1]))), near = I_clamp((hd - aT) / 40, 0, 2);
-    const rs = I_lerp(g.R / 6, g.R / 3, /* side R/6..R/3: footprint halved, height kept (Wai 11-06) */ Math.pow(r(), 0.55 + 0.4 * near)) / Math.sqrt(3), hmax = g.Hs * (0.8 + 1.4 * Math.pow(r(), 0.3 + 0.7 * near)); /* taller near the tower (Wai 11-06; exponent was 0.6 + 0.35 near) */ // rs: circumradius; height 80-220% of the tower's
+    const rs = I_FRAC_BASE * I_lerp(g.R / 6, g.R / 3, /* side R/6..R/3: footprint halved, height kept (Wai 11-06) */ Math.pow(r(), 0.55 + 0.4 * near)) / Math.sqrt(3), hmax = I_FRAC_H * g.Hs * (0.8 + 1.4 * Math.pow(r(), 0.3 + 0.7 * near)); /* taller near the tower (Wai 11-06; exponent was 0.6 + 0.35 near) */ // rs: circumradius; height 80-220% of the tower's
     const psi = r() * I_TAU, tri0 = [0, 1, 2].map(k => [p[0] + rs * Math.cos(psi + k * I_TAU / 3), p[1] + rs * Math.sin(psi + k * I_TAU / 3)]);
     if (!spot(tri0, rs)) return null;
     const th = (50 + 20 * r()) * Math.PI / 180; let ga; do { ga = r() * I_TAU; } while (Math.tan(th) * Math.sin(ga) > 0.45); // ga: the direction the top RISES toward; not strongly toward the viewer, or the top face would face away
@@ -187,10 +187,16 @@ function* I_genFrac(N, hexes) {
     // stands on the floor wherever it falls, a crossing drawn right by the bake's depth test (frzIce3dBake). LEANING OUT (owner: "Tilt fracs away from centre of
     // tower, random amounts between 15 and 30 deg"): its axis tilts away from the tower's centre by a seeded 15-30 deg from upright, the base on the floor
     // (tv: floor units a unit up, in the mockup's units - g.K3 turns a real angle into them); its tips stay inside the canvas (and so inside the moons' orbit)
-    const tri = tri0, host = -1, how = 'free', ct = I_centroid3(tri0), cl = Math.hypot(ct[0], ct[1]) || 1, lean = Math.tan((15 + 15 * r()) * Math.PI / 180) * (g.K3 || 1);
+    // ON TOP, NOT THROUGH (owner, 2026-11-08: "for frac, 1/3 the heights, and place them on top of stuff instead of through stuff"; it reverses 11-06's
+    // poke-through): a shard whose centre falls on a Permafrost sheet moves wholly onto it and stands on its top (host: lifted by the sheet's height in
+    // a scene that shows the sheet, on the floor in one that does not); one that only clips a sheet moves off it to the nearest clear spot
+    let tri = tri0, host = -1, how = 'free'; const ct0 = I_centroid3(tri0), under = hexP.map((hp, i) => (I_inPoly(hp, ct0) ? i : -1)).filter(i => i >= 0).sort((a, b) => hexes[b].hgt - hexes[a].hgt);
+    if (under.length) { const sh = I_shiftInside(tri0, hexP[under[0]]); if (!sh) return null; tri = sh.tri; host = under[0]; how = 'in'; }
+    else if (hexP.some(hp => I_polyHit(tri0, hp))) { const sh = I_shiftOutside(tri0, hexP, t2 => spot(t2, rs), Math.atan2(ct0[1], ct0[0])); if (!sh) return null; tri = sh.tri; how = 'moveOut'; }
+    const ct = I_centroid3(tri), cl = Math.hypot(ct[0], ct[1]) || 1, lean = Math.tan((15 + 15 * r()) * Math.PI / 180) * (g.K3 || 1);
     tri.tv = [ct[0] / cl * lean, ct[1] / cl * lean];
     if (!tri.every((q, i) => { const x = q[0] + tri.tv[0] * hg[i], y = q[1] + tri.tv[1] * hg[i]; return Math.abs(x) <= 86 && y <= 100 && y >= -105; })) return null;
-    const c2 = I_centroid3(tri), f = I_heightFall(c2), hgS = hg.map(h => h * f), spec = { tri, hg: hgS, host, hostH: host >= 0 ? hexes[host].hgt : 0, v: c2[1], u: c2[0] };
+    const c2 = I_centroid3(tri), f = I_heightFall(c2), hgS = hg.map(h => h * f), spec = { tri, hg: hgS, host, hostH: host >= 0 ? hexes[host].hgt : 0, v: c2[1], u: c2[0], tp: 1 / I_FRAC_BASE };
     let fit = null; // it must work in every scene it can appear in: on its hex (hex shown) and on the floor (hex not shown)
     for (const lift of host >= 0 ? [0, spec.hostH] : [0]) { fit = I_fitShard(spec, lift, host >= 0 ? hexes[host].c[1] : 0); if (!fit || I_hiddenByTower(fit.pr)) { I_ICE_STATS.hidden++; return null; } }
     spec.vol = 1.299 * rs * rs * (hgS[0] + hgS[1] + hgS[2]) / 3 * fit.k; // footprint area x average height (with the falloff)
@@ -208,7 +214,10 @@ function* I_genFrac(N, hexes) {
   }
   return out;
 }
-const I_shardPrism = (s, nP) => { const lift = s.host >= 0 && s.host < nP ? s.hostH : 0; return I_fitShard(s, lift, lift ? I_ST.hexes[s.host].c[1] : 0).pr; };
+const I_shardPrism = (s, nP) => { const lift = s.host >= 0 && s.host < nP ? s.hostH : 0, pr = I_fitShard(s, lift, lift ? I_ST.hexes[s.host].c[1] : 0).pr; pr.tp = s.tp; return pr; };
+// FRACTURE'S SHAPE (owner, 2026-11-08: "1/3 the heights"; "increase size of base of crystals by 1.5 to 2x (tops stay same size)"): heights x I_FRAC_H, the base
+// x I_FRAC_BASE wider and the top drawn back to the old size (tp, ice3dFaces) - a wider foot, the same tip
+const I_FRAC_H = 1 / 3, I_FRAC_BASE = 1.75;
 // PAINTER ORDER (Wai 11-06): for every pair of prisms whose screen silhouettes overlap, the one nearer the viewer is drawn later. "Nearer" comes from a separating
 // axis between their FLOOR footprints (the vertical plane between them has the camera on one side; the view direction on the floor is +v); a shard standing on a hex
 // goes right after it; then a topological sort (a cycle, or a pair the footprints cannot separate, is broken by centre depth). The tower is a node too: the pieces
@@ -286,7 +295,7 @@ const ICE_WK_WAIT_MS = 3000; // no word from the worker this long after a post: 
 // /aspira-frz-ice.js is served cacheable for a day, so a browser that had 7.7.89's copy (no worker half) loaded THAT into the worker, which
 // never answered - and the board waited on it for ever. The script tag's src carries the content hash the server stamps on every page
 const iceWkSrc = (f = "aspira-frz-ice.js") => { const el = typeof document !== "undefined" && document.querySelector('script[src*="' + f + '"]'); return el && el.src ? el.src : location.origin + "/" + f; };
-const icePlain = L => L.map(P => ({ walls: P.walls.map(w => ({ lit: w.lit, pts: w.pts })), topPts: P.topPts, topVis: P.topVis, y0: P.y0, y1: P.y1, foot: P.foot.map(q => [q[0], q[1]]), hg: P.hg, lift: P.lift, tv: P.tv, v: P.v }));
+const icePlain = L => L.map(P => ({ walls: P.walls.map(w => ({ lit: w.lit, pts: w.pts })), topPts: P.topPts, topVis: P.topVis, y0: P.y0, y1: P.y1, foot: P.foot.map(q => [q[0], q[1]]), hg: P.hg, lift: P.lift, tv: P.tv, v: P.v, tp: P.tp }));
 function iceWorker() {
   if (iceWk !== null) return iceWk || null;
   try { iceWk = new Worker(URL.createObjectURL(new Blob(["importScripts(" + JSON.stringify(iceWkSrc()) + "," + JSON.stringify(iceWkSrc("aspira-frz-ice3d.js")) + ");"], { type: "text/javascript" })));

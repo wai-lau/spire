@@ -22,7 +22,7 @@ function ice3dPt(J, u, v, h) {
 }
 // one solid's faces: its walls and its top as 3D polygons (corner [x, y, depth, height share]); kind 0 a wall, 1 a top; lit: a wall's light
 function ice3dFaces(J, P, pi, out) {
-  const n = P.foot.length, tv = P.tv || [0, 0], lift = P.lift || 0, hmax = lift + Math.max(...P.hg), at = (i, top) => { const h = top ? P.hg[i] : 0, q = ice3dPt(J, P.foot[i][0] + tv[0] * h, P.foot[i][1] + tv[1] * h, lift + h); q.push((lift + h) / (hmax || 1)); return q; };
+  const n = P.foot.length, tv = P.tv || [0, 0], lift = P.lift || 0, hmax = lift + Math.max(...P.hg), at = (i, top) => { const h = top ? P.hg[i] : 0, tq = top && P.tp ? P.tp : 1, q = ice3dPt(J, cu + (P.foot[i][0] - cu) * tq + tv[0] * h, cv + (P.foot[i][1] - cv) * tq + tv[1] * h, lift + h); /* tp: a top drawn back toward the centre (Fracture's wider foot, 2026-11-08) */ q.push((lift + h) / (hmax || 1)); return q; };
   const cu = P.foot.reduce((a, q) => a + q[0], 0) / n, cv = P.foot.reduce((a, q) => a + q[1], 0) / n;
   for (let i = 0; i < n; i++) {
     const j = (i + 1) % n, a = P.foot[i], b = P.foot[j]; let nx = b[1] - a[1], ny = a[0] - b[0]; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
