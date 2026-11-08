@@ -115,6 +115,19 @@ check("ARC: the Voltage rings never touch the prism at any turn (owner, 2026-11-
   if (bad.length) return "a ring's line comes within " + bad.map(x => x.worst + " u (Conductivity " + x.ct + ")").join(", ") + " of the prism's corners; ARC_RING_GAP is 3";
 });
 
+check("ARC: a ring's back edges lie wholly above its centre's screen row and its front edges wholly below, cut at the sides, with nothing lost (owner, 2026-11-07: \"arc rings still clip into the tower\" - an edge across a side went whole to one pass)", () => {
+  const r = JSON.parse(run(`(() => { G = newGame(); G.money = 1e9; ui.build = "arc"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); ui.build = null;
+    const t = G.towers[0], g = arcGeom(t), rr = arcRingR(g, 5, g.R / 40), cx = 100, cy = 200, bad = []; let worstLen = 0;
+    for (const mt of [{ b: 0.1, d: 0.55, f: 7 }, { b: -0.3, d: 0.8, f: -40 }, { b: 0, d: 1, f: 0 }]) for (let deg = 0; deg < 60; deg += 3) {
+      const th = deg * Math.PI / 180, cyS = mt.b * cx + mt.d * cy + mt.f, sy = (x, y) => mt.b * x + mt.d * y + mt.f - cyS; let len = 0;
+      for (const back of [true, false]) for (const q of arcRingSegs(g, rr, th, back, mt, cx, cy)) { len += Math.hypot(q[2] - q[0], q[3] - q[1]);
+        for (const v of [sy(q[0], q[1]), sy(q[2], q[3])]) if (back ? v > 1e-6 : v < -1e-6) bad.push([deg, back, +v.toFixed(3)]); }
+      worstLen = Math.max(worstLen, Math.abs(len - 6 * rr)); }
+    return JSON.stringify({ bad: bad.slice(0, 4), worstLen }); })()`));
+  if (r.bad.length) return "ring segments on the wrong side of the centre row: " + JSON.stringify(r.bad);
+  if (r.worstLen > 1e-6) return "the back + front segments miss " + r.worstLen + " u of the ring";
+});
+
 check("FRZ: its ice is grown ONCE - a move never regrows it (owner, 2026-11-06: \"FRZ perm and frac get regenerated every time frz moves / it should only be generated once, and follow movement of tower\"; the key was the view at its current spot)", () => {
   const r = JSON.parse(run(`(() => { G = newGame(); G.money = 1e9; ui.build = "frz"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); ui.build = null;
     const t = G.towers[0]; for (let i = 0; i < 3; i++) upgradeTower(t, "rime", true); for (let i = 0; i < 2; i++) upgradeTower(t, "temp", true);

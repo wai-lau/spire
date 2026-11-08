@@ -100,7 +100,7 @@ function fireSkillChain(t, st, e, seen) {
   if (seen && seen.has(e.id)) return; // a second strike never re-hits what the first took
   const col = TOWERS[t.kind].color, d = shotDamage(t, st, e, st.dmg);
   beam(t, e, col, arcBeamLife(st), 1.5, d);
-  const root = { e, fx: Object.assign(fx[fx.length - 1], { soft: true, alpha: ARC_A }), up: null, kids: new Set() };
+  const root = { e, fx: Object.assign(fx[fx.length - 1], { soft: true, alpha: ARC_A, vt: skillOf(t, "voltage") }), up: null, kids: new Set() }; // vt: its Voltage tier, the look's (arcInt, aspira-arc-body.js)
   // Voltage SHOWS (owner): a white-hot core in every arc, and at tier III the
   // strike point throws sparks
   const v = skillOf(t, "voltage");
@@ -127,7 +127,7 @@ function voltCarry(c, e, left) {
     let o = null, bd = (c.st.arcRange * VOLT_CARRY_R) ** 2;
     for (const x of G.enemies) { if (x.dead || !x.seen || seen.has(x) || c.hits.has(x.id)) continue; /* never one its bolt already struck */ const dd = (x.x - e.x) ** 2 + (x.y - e.y) ** 2; if (dd < bd) { bd = dd; o = x; } }
     if (!o) return;
-    beam(e, o, TOWERS.arc.color, arcBeamLife(c.st), 1, left); Object.assign(fx[fx.length - 1], { soft: true, alpha: ARC_A }); // a glow like every ARC beam (owner, 2026-10-24)
+    beam(e, o, TOWERS.arc.color, arcBeamLife(c.st), 1, left); Object.assign(fx[fx.length - 1], { soft: true, alpha: ARC_A, vt: skillOf(c.t, "voltage") }); // a glow like every ARC beam (owner, 2026-10-24)
     const h = o.hp; fromHit(e, () => damage(o, left, c.t, false, false, c.st)); seen.add(o); c.hits.set(o.id, 1);
     if (!o.dead) return; left -= Math.max(0, h); e = o;
   }
@@ -241,7 +241,7 @@ function skillHopTo(c, node, nxt, depth) {
   const raw = c.st.dmg * c.st.arcFall ** depth, d = shotDamage(c.t, c.st, nxt, raw);
   node.kids.add(nxt.id); c.seen.add(nxt.id); c.hits.set(nxt.id, (c.hits.get(nxt.id) || 0) + 1);
   beam(node.e, nxt, c.col, arcBeamLife(c.st), 1.5, d);
-  Object.assign(fx[fx.length - 1], { soft: true, alpha: Math.min(1, ARC_A * (raw / c.st.dmg) ** ARC_CORR), share: raw / c.st.dmg }); // brighter as its share of the strike grows (ARC_A); share: its width too (arcInt, aspira-arc-body.js)
+  Object.assign(fx[fx.length - 1], { soft: true, alpha: Math.min(1, ARC_A * (raw / c.st.dmg) ** ARC_CORR), share: raw / c.st.dmg, vt: skillOf(c.t, "voltage") }); // brighter as its share of the strike grows (ARC_A); share: its width too (arcInt, aspira-arc-body.js)
   if (skillOf(c.t, "voltage")) fx[fx.length - 1].pierce = true; // Voltage's white-hot core
   const child = { e: nxt, fx: fx[fx.length - 1], up: node, kids: new Set(), d };
   keepLit(node, arcBeamLife(c.st));

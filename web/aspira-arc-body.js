@@ -1,7 +1,7 @@
 // /spire - ARC's BODY and BOLT LOOK (owner, 2026-11-06, ported from the approved mockup). Draw only - the simulator never loads it, nothing
 // here touches the game, and no Math.random (a seeded hash keyed by tower and time slot picks every jag and flash).
-//   VOLTAGE   hexagonal rings round the prism, 1 + tier of them (1 at tier 0 .. 6 at V), corner radius R + 10 mockup units, spread over
-//             the middle 60% of the prism, each turning about the vertical axis at 1 turn / ARC_RING_T s, ring i lagging i/(n-1) of a turn
+//   VOLTAGE   hexagonal rings round the prism, 1 + tier of them (1 at tier 0 .. 6 at V), corner radius R + 10 mockup units, close together
+//             (ARC_RING_PITCH) round the prism's middle, each turning about the vertical axis at 1 turn / ARC_RING_T s, ring i lagging i/(n-1) of a turn
 //             (the first and last line up), always already mid-spin; the back edges before the prism, the front after (drawOrbiters)
 //   CONDUCTIVITY  those rings thicker and glowier (V about 2x I)
 //   SHOCK     ~70 ms jagged arcs between random ADJACENT top-face corners, 4 / 8 / 12 / 20 / 28 flashes a second for I-V
@@ -29,21 +29,35 @@ function arcStroke(path, css, core, w, glow, a) {
 // glow's room) plus half its line, over cos 30 - the inside of its line never nearer the prism than ARC_RING_GAP at any angle (pinned, pins.mjs)
 const ARC_RING_GAP = 3, ARC_COS30 = Math.cos(Math.PI / 6);
 const arcRingR = (g, ct, s) => (g.R + ARC_RING_GAP + ARC_RING_W[ct] * s / 2) / ARC_COS30;
-function arcRing(g, rr, th, back, mt, cx, cy) { // one ring's back or front edges as a path (world coords in the frame mt)
-  const path = new Path2D(), cyS = mt.b * cx + mt.d * cy + mt.f;
+// THE BACK / FRONT SPLIT AT THE SIDES (owner, 2026-11-07: "arc rings still clip into the tower"): each edge is cut where it crosses the screen row of
+// the ring's centre (its far-left / far-right reach, outside the prism) - the part above it is behind the prism, the part below in front. It was
+// sent whole to one side by its middle, so an edge across a side drew over the prism or vanished behind it. -> [[ax, ay, bx, by], ...] (world)
+function arcRingSegs(g, rr, th, back, mt, cx, cy) {
+  const out = [], cyS = mt.b * cx + mt.d * cy + mt.f, sy = q => mt.b * q[0] + mt.d * q[1] + mt.f;
   const pt = k => { const a = g.a0 + arcTAU / 6 * k + th; return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)]; };
   for (let k = 0; k < 6; k++) {
-    const a = pt(k), b = pt((k + 1) % 6), sy = mt.b * (a[0] + b[0]) / 2 + mt.d * (a[1] + b[1]) / 2 + mt.f;
-    if ((sy < cyS) === back) { path.moveTo(a[0], a[1]); path.lineTo(b[0], b[1]); }
+    const a = pt(k), b = pt((k + 1) % 6), ya = sy(a) - cyS, yb = sy(b) - cyS, ba = ya < 0, bb = yb < 0;
+    if (ba === bb) { if (ba === back) out.push([a[0], a[1], b[0], b[1]]); continue; }
+    const u = ya / (ya - yb), m = [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+    out.push(ba === back ? [a[0], a[1], m[0], m[1]] : [m[0], m[1], b[0], b[1]]);
   }
+  return out;
+}
+function arcRing(g, rr, th, back, mt, cx, cy) { // one ring's back or front edges as a path (world coords in the frame mt)
+  const path = new Path2D();
+  for (const q of arcRingSegs(g, rr, th, back, mt, cx, cy)) { path.moveTo(q[0], q[1]); path.lineTo(q[2], q[3]); }
   return path;
 }
+// THE RINGS CLOSE TOGETHER, THE GROUP CENTRED (owner, 2026-11-07: "push the rings closer together (vertically center the group)"): ring to ring
+// ARC_RING_PITCH x a Conductivity V ring's thickness (so the thickest rings still read apart), the group's middle at the prism's middle (z 0 in the
+// lifted frame drawOrbiters gives); was spread over the middle 60% of the prism
+const ARC_RING_PITCH = 3;
 function drawArcRings(t, far, up, x, y, h) {
   const n = 1 + skillOf(t, "voltage"), ct = skillOf(t, "conductivity"), g = arcGeom(t), s = g.R / 40, now = performance.now() / 1000;
   const sk = t.stormT > 0 ? t.stormT / ARC_STORM_LIVE : 0, ph = t.stormPh || 0; // a Storm strike spins the rings up (stormPh turns, banked in arcBurnStep) and flashes them
   const css = arcMix(COL[TOWERS.arc.color], Math.min(1, 0.6 + 0.08 * ct + ARC_STORM_WHITE * sk)), gl = (0.6 + 3.2 * ARC_RING_GL[ct]) * s * (1 + ARC_STORM_GLOW * sk);
   for (let i = 0; i < n; i++) {
-    const z = h / 2 - h * (n === 1 ? 0.5 : 0.2 + 0.6 * i / (n - 1)), ti = n > 1 ? i * ARC_RING_T / (n - 1) : 0, th = arcTAU * ((now + ARC_RING_T - ti) / ARC_RING_T + ph); // ring 0 is the lowest
+    const z = ARC_RING_PITCH * ARC_RING_W[5] * s * ((n - 1) / 2 - i), ti = n > 1 ? i * ARC_RING_T / (n - 1) : 0, th = arcTAU * ((now + ARC_RING_T - ti) / ARC_RING_T + ph); // ring 0 is the lowest
     up(x, y, () => { const mt = ctx.getTransform(); arcStroke(arcRing(g, arcRingR(g, ct, s), th, far, mt, x, y), css, css, ARC_RING_W[ct] * s, gl, 0.8 + 0.04 * ct); }, z);
   }
 }
@@ -116,15 +130,16 @@ function arcBoltPts(f, ax, ay, bx, by) { // the jagged polyline [x, y, ...] (and
   const fork = [pts[m], pts[m + 1], pts[m] + Math.cos(ang) * 6 * S + (r() - 0.5) * 3 * S, pts[m + 1] + Math.sin(ang) * 6 * S, pts[m] + Math.cos(ang) * 12 * S, pts[m + 1] + Math.sin(ang) * 12 * S + (r() - 0.5) * 4 * S];
   return { pts, fork };
 }
-// INTENSITY BY THE DAMAGE CARRIED (owner, 2026-11-07: "Arc beams should increase in intensity depending on the damage it carries"): each strike and
-// hop's width (its glow with it) and alpha from the damage it carries (f.d), on the damage numbers' own band (dmgNumber: rel = (hit / the damage a
-// second / DMG_DPS_K)^DMG_SIZE_EXP, 14 -> 30 px) - x ARC_INT_W[0] the width at the weakest to x ARC_INT_W[1] at the strongest, alpha x ARC_INT_A[0]..1:
-// a beam reads as hard as its number (relative to all the damage a second, as the numbers are), each hop also by its share of the strike
-// (f.share, aspira-arc.js) on the same exponent; the weakest hop still plain, the strongest no white-out (the core stays the same mix)
-const ARC_INT_W = [0.6, 2.2], ARC_INT_A = [0.6, 1];
+// INTENSITY BY VOLTAGE, THINNING BY THE SHARE CARRIED (owner, 2026-11-07: "current volt 5 brightness should be arc 0 brightness / volt levels
+// should increase intensity further"; it was by the damage against the damage a second, 7.8.8: "Arc beams should increase in intensity depending
+// on the damage it carries"): a strike's width (its glow with it - shadowBlur and the GPU glow line scale with the width) is ARC_INT_W[1] (the
+// strongest of the old band, where a Voltage V strike sat) x ARC_VOLT_W[its Voltage tier] - +25% a tier, x2.25 at V; each hop thins by its share
+// of the strike (f.share, aspira-arc.js) on DMG_SIZE_EXP, down to ARC_INT_W[0] at the weakest, and fades to ARC_INT_A[0]. The core's colour mix
+// (arcMix 0.7) never changes - no white-out at V: the width and the glow carry it. f.vt: the tower's Voltage tier (0 when none is known)
+const ARC_INT_W = [0.6, 2.2], ARC_INT_A = [0.6, 1], ARC_VOLT_W = [1, 1.25, 1.5, 1.75, 2, 2.25];
 function arcInt(f) {
-  const dps = typeof G !== "undefined" && G ? G.dps || 0 : 0, rel = (f.d > 0 ? Math.min(1, f.d / Math.max(1, dps) / DMG_DPS_K) ** DMG_SIZE_EXP : 0) * Math.min(1, f.share ?? 1) ** DMG_SIZE_EXP; // (x the hop's share of its strike, same exponent: a falling chain thins hop by hop)
-  return [ARC_INT_W[0] + (ARC_INT_W[1] - ARC_INT_W[0]) * rel, ARC_INT_A[0] + (1 - ARC_INT_A[0]) * rel];
+  const sh = Math.min(1, f.share ?? 1) ** DMG_SIZE_EXP, top = ARC_INT_W[1] * ARC_VOLT_W[Math.min(5, f.vt || 0)];
+  return [ARC_INT_W[0] + (top - ARC_INT_W[0]) * sh, ARC_INT_A[0] + (1 - ARC_INT_A[0]) * sh];
 }
 const arcBoltFade = f => { const k = Math.max(0, 1 - ARC_BOLT_LIFE * f.t / f.life); return Math.min(1, k * 2); }; // twice the old speed
 function fxGlArcBolt(f) { // 3D: a glow capsule and a thin bright core a jag
