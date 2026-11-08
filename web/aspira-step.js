@@ -34,14 +34,14 @@ function stepSpawns(dt) {
 // at the core - before slows and stuns (effSpeed). Every enemy, bosses too. The sim runs this same step.
 const CORE_EASE = 0.6; // 0.6 at the core (owner, 2026-11-07 18:10: "perfect, increase the ease to 60%"; was 0.8)
 function coreEase(e) {
-  if (waveClock(e.n) !== 1) return 1;
+  if (waveClock(e.n) !== 1 || e.arcana === "lovers") return 1; // the Lovers ignore the ease (owner, 2026-11-07 22:30: "lovers speed doesn't get affected by the ease")
   const left = Math.max(0, PATHS[e.pi].len - e.s); if (e.ease0 == null) e.ease0 = Math.max(1, left);
   return 1 - (1 - CORE_EASE) * (1 - Math.min(1, left / e.ease0));
 }
 // the time to cover the lane left at base speed v under the ease (etaToCore, aspira-ui.js): speed v (CORE_EASE + (1 - CORE_EASE) x / E)
 // at x left of E, so t = E / ((1 - CORE_EASE) v) ln((CORE_EASE + (1 - CORE_EASE) D / E) / CORE_EASE); off the x1 clock, D / (3 v)
 function coreEaseTime(e, v) {
-  const D = Math.max(0, PATHS[e.pi].len - e.s); if (waveClock(e.n) !== 1) return D / (v * waveClock(e.n));
+  const D = Math.max(0, PATHS[e.pi].len - e.s); if (waveClock(e.n) !== 1) return D / (v * waveClock(e.n)); if (e.arcana === "lovers") return D / v; // (no ease)
   const E = Math.max(D, e.ease0 ?? D, 1), k = 1 - CORE_EASE;
   return E / (k * v) * Math.log((CORE_EASE + k * D / E) / CORE_EASE);
 }
@@ -51,7 +51,7 @@ const JIT_FADE_R = 400; // swarm wander is full beyond this radius, 0 at the cor
 let FACING = true;
 function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower's reach = off screen: aspira-positioning.js)
   for (const e of G.enemies) {
-    if (e.gone) continue; if (!e.seen && enemySeen(e)) { e.seen = true; devilCount(e); e.seenAt = performance.now(); } // (off-screen: untouchable - enemySeen, aspira-positioning.js)
+    if (e.gone) continue; if (!e.seen && !e.veiled && enemySeen(e)) { e.seen = true; devilCount(e); e.seenAt = performance.now(); } // (off-screen: untouchable - enemySeen, aspira-positioning.js)
     if (e.dead) {
       // a GHOST (owner): the dead keep drifting in at their plain pace,
       // untargetable and harmless, and are removed at the core with no life lost

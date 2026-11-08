@@ -167,6 +167,7 @@ function pathAtInto(pi, s, ang, out) {
   return out;
 }
 const FORM_B = { x: 0, y: 0 }, FORM_Q = { x: 0, y: 0 }, ENEMY_AT = { x: 0, y: 0 }; // scratch points - each read before the next call writes it
+const CROSS_OFF = 40; // u: how far a rigid cross's escort may sit from its own lane spot (about the lane's half width)
 function formOffset(e, p, s = e.s) {
   // (a boss's escorts never spin about it - bossKin)
   const spin = e.bossKin ? 0 : FORM_SPIN[e.type], c = s - (e.ahead || 0) + (e.aheadC || 0), phi = spin ? c / spin : 0; // c: the centre unit's place - one phase for all
@@ -174,5 +175,12 @@ function formOffset(e, p, s = e.s) {
   const along = a0 * cs - e.lat * sn, across = a0 * sn + e.lat * cs + (wv ? wv[0] * Math.sin(2 * Math.PI * c / wv[1]) : 0);
   const b = pathAtInto(e.pi, c + along, e.ang, FORM_B), q = pathAtInto(e.pi, c + along + 3, e.ang, FORM_Q), tx = q.x - b.x, ty = q.y - b.y, L = Math.hypot(tx, ty) || 1;
   const k = across * Math.min(1, Math.hypot(b.x - CX, b.y - CY) / FORM_FADE_R) / L;
-  p.x = b.x - ty * k; p.y = b.y + tx * k; if (s === e.s) e.faceA = Math.atan2(ty, tx); /* (not a trail point's - aspira-enemies.js) */ // ITS OWN SPOT'S LANE heading - a corner points along the lane (owner, 2026-10-26)
+  p.x = b.x - ty * k; p.y = b.y + tx * k;
+  if (e.straight) { // A RIGID CROSS (Justice, owner 2026-11-07: "It doesn't look like a cross"): laid straight off the lane's heading at the boss's own spot, so the
+    // arm along the lane stays a line on a curve - but never more than CROSS_OFF from its own lane spot (the spiral tightens to the core: the arm ends
+    // would leave the lane floor, 230 u at 83% of the lane), so it bends only where the lane does it hard. The place only: e.s, its ETA and leak as before
+    const c0 = pathAtInto(e.pi, c, e.ang, FORM_B), c1 = pathAtInto(e.pi, c + 3, e.ang, FORM_Q), ux = c1.x - c0.x, uy = c1.y - c0.y, U = Math.hypot(ux, uy) || 1, f = Math.min(1, Math.hypot(c0.x - CX, c0.y - CY) / FORM_FADE_R);
+    const sx = c0.x + (ux * along - uy * across * f) / U, sy = c0.y + (uy * along + ux * across * f) / U, dx = sx - p.x, dy = sy - p.y, d = Math.hypot(dx, dy), w = d > CROSS_OFF ? CROSS_OFF / d : 1;
+    p.x += dx * w; p.y += dy * w; if (s === e.s) e.faceA = Math.atan2(uy, ux); return;
+  } if (s === e.s) e.faceA = Math.atan2(ty, tx); /* (not a trail point's - aspira-enemies.js) */ // ITS OWN SPOT'S LANE heading - a corner points along the lane (owner, 2026-10-26)
 }

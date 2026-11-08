@@ -20,15 +20,16 @@
 // 5-7-5 syllables, drawn one under another
 const ARCANA = [
   // THE ORDER (owner, 2026-11-07 22:15: "chariot goes after star / empress goes after lovers / devil after death / temperence moves after judgement /
-  // refit hps and stuff"): 12 Star, 24 Chariot, 36 Strength, 48 Lovers, 60 Empress, 72 Justice, 84 Judgement, 96 Temperance, 108 Death, 120 the Devil
+  // refit hps and stuff"): 12 Star, 24 Chariot, 36 Strength, 48 Lovers, 60 Empress, 72 Judgement, 84 Justice, 96 Temperance, 108 Death, 120 the Devil
+  // (22:40: "swap order of justice and judgement")
   // (was Star, Empress, Strength, Chariot, Lovers, Temperance, Devil, Justice, Judgement, Death)
   { id: "star", name: "The Star", hint: ["One light in the dark", "crossing the long silent sky", "asks only to meet."] },
   { id: "chariot", name: "The Chariot", hint: ["The reins slip loose now", "and the horses break and run,", "faster than your aim."] },
   { id: "strength", name: "Strength", hint: ["No frost can bind her,", "no chain will shorten her stride.", "She walks through the cold."] },
   { id: "lovers", name: "The Lovers", hint: ["Apart, they still come", "the same hour from either side,", "armored in their vow."] /* new poem (owner, 2026-11-05: "new poem" - two bosses on opposite lanes, an armor wave round them, no trick; was "Two walk as one heart. / Part them, and the one who stays / will never forgive.", the heal-and-run) */ },
   { id: "empress", name: "The Empress", hint: ["Strike the mother once", "and the field fills with her young:", "her children answer."] },
-  { id: "justice", name: "Justice", hint: ["The scales hold steady.", "No blow, however heavy,", "outweighs the balance."] },
   { id: "judgement", name: "Judgement", hint: ["The trumpet sounds once;", "what has fallen hears its name", "and rises again."] },
+  { id: "justice", name: "Justice", hint: ["The scales hold steady.", "No blow, however heavy,", "outweighs the balance."] },
   { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "the wound fills, and heals."] },
   { id: "death", name: "Death", hint: ["No riddle, no trick,", "only the long road to dark,", "only, now, the end."] },
   { id: "devil", name: "The Devil", hint: ["Six faces, one want,", "six roads leading to your door.", "Let not one get through."] },
@@ -77,9 +78,15 @@ const BOSS_INTRO = 2; /* 20% shorter (owner, 2026-10-12; was 2.5) */ // s betwee
 // THE EMPRESS'S BROOD (owner, 2026-11-05, the boss redesign: "Empress, spawns a wave of swarm on every 3rd of hp"): past 2/3 and past 1/3 of
 // her HP, a whole swarm wave of her wave number (typeWaveCount) pours out behind her, streaming like a swarm wave. Was EMPRESS_BROOD 12
 // swarmers a fifth (fitted 2026-10-05)
-const EMPRESS_STEP = 1 / 3, EMPRESS_GAP = 6; // HP share a brood; u between swarmers as they pour out
+const EMPRESS_GAP = 6; // u between swarmers as they pour out (EMPRESS_STEP 1/3 gone with the 90/70/50 broods)
+// AT 90 / 70 / 50% (owner, 2026-11-07 22:30: "release swarm at 90% 70% 50% hp"; was past 2/3 and 1/3) - and VEILED while any of them lives:
+// "empress visually reduced in opacity, untargettable and invuln while swarm is up" (e.veiled, bossVeil below)
+const EMPRESS_AT = [0.9, 0.7, 0.5]; // HP share a brood; u between swarmers as they pour out
 // a plain wave of `type` at wave n, as wavePlan would send it (the count taper, never under the wave before): the boss redesign's "a wave"
 const typeWaveCount = (type, n) => Math.max(1, Math.round(countK(n) * Math.max(waveCount(type, n), planCount(type, n))));
+// A SMOOTH GALLOP (owner, 2026-11-07 22:30: "chariot, change speed from step fn to sinusoidal"): x(1.5 + 0.5 sin) over a CHARIOT_EVERY (1 s) period -
+// the same x1.5 average, peaking at the sprint's x2 (CHARIOT_SPD) and easing to x1 between; was 0.5 s at x2, 0.5 s at x1
+const chariotPace = t => 1 + (CHARIOT_SPD - 1) / 2 * (1 + Math.sin(2 * Math.PI * t / CHARIOT_EVERY));
 const CHARIOT_EVERY = 1, CHARIOT_T = 0.5, CHARIOT_SPD = 2, LOVERS_SPD = 1.5; // THE GALLOP (owner, 2026-11-06: "make chariot speed gallop instead, like 0.5s sprint ever second"): 0.5 s at x2 every second - the same x1.5 average as the old 1 s at x3 every 4 s (was 4, 1, 3)
 const DEVIL_TRAIL = 540; // world units between the two Devils on a lane, ~1.5 s at its pace (aspira-step.js stepSpawns)
 const TEMPERANCE_REGEN = 0.06, DEVIL_COPIES = 5, DEVIL_LANES = 3, JUSTICE_CAP = 0.02; /* (JUDGEMENT_REVIVE 0.3 GONE 2026-11-05: she rises at full HP at her lane's start - bossRise) */ /* 0.5 -> 0.3 (2026-11-03): its second life was what reached the core (survivors lost ~10 lives each); HP x0.85 moved it 23% -> 22% ended, the revive at 30% (HP x1) 22% -> 13%, with 19% surviving a leak (the felt-threat band) */
@@ -116,7 +123,7 @@ function bossSpawn(e, n) {
   e.spd = (e.spd || 1) * (BOSS_SPEED[e.arcana] || 1) * BOSS_PACE;
   const grow = hpPow(eqWave(n)) + eqWave(n) * 4 / 18; // the armored enemy's armor curve (spawnEnemy)
   e.armor = e.armor0 = Math.floor((BOSS_ARMOR[e.arcana] || 0) * Math.pow(grow, ARMOR_EXP) * escale(e)); // (x the LATE SCALE)
-  e.baseSpd = e.spd; e.broodAt = 1 - EMPRESS_STEP; e.sprintT = CHARIOT_EVERY;
+  e.baseSpd = e.spd; e.broodI = 0; e.sprintT = 0;
   e.shield = e.shieldMax = (BOSS_SHIELD[e.arcana] || 0) + Math.round(BOSS_SHIELD_K * shieldsOf("shield", n).shield); e.shieldBuf = 0;
   // HP per boss: BOSS_HP (fitted, see there; the Devil's is each of six)
   e.max *= bossHpMul(e.arcana); // (BOSS_HP_K: every boss but the Star; BOSS_FAR: the ones that stayed far - bossHpMul, above)
@@ -201,7 +208,7 @@ function bossFleet(e, n) {
         m.max = Math.floor(m.max * BOSS_HEFT); m.hp = m.max; // an escort twice as tough too (BOSS_HEFT)
         if (lat && lat.shield) { m.shield = m.shieldMax = shieldsOf("shield", n).shield; m.shieldBuf = 0; } // (Justice's cross: armored AND shielded)
         if (slots) { // its place in the formation: across the lane, and ahead (+) or behind (-) the boss's spot
-          m.form = true; m.lat = slots[c][0]; m.s = e.s + slots[c][1]; m.ahead = slots[c][1]; m.aheadC = 0;
+          m.form = true; m.lat = slots[c][0]; m.s = e.s + slots[c][1]; m.ahead = slots[c][1]; m.aheadC = 0; if (lat && lat.at === "cross") m.straight = true;
           reach[0] = Math.max(reach[0], slots[c][1] + r); reach[1] = Math.max(reach[1], -slots[c][1] + r);
         } else {
           // on its TRACK across the lane, spaced so NOTHING OVERLAPS (owner, 2026-10-09): ahead, behind, ahead... of the boss's
@@ -248,19 +255,20 @@ function stepFleetQ(dt) {
 function bossStep(e, dt) {
   const regen = BOSS_SHIELD_REGEN[e.arcana] || 0; // a shield that REFILLS (up to its full ring)
   if (regen && e.shield < e.shieldMax) { e.shieldBuf += regen * dt; const n = Math.floor(e.shieldBuf); if (n) { e.shieldBuf -= n; e.shield = Math.min(e.shieldMax, e.shield + n); } }
-  if (isA(e, "empress") && e.broodAt > 1e-6 && e.hp / e.max <= e.broodAt) {
-    e.broodAt -= EMPRESS_STEP;
+  if (isA(e, "empress") && e.broodI < EMPRESS_AT.length && e.hp / e.max <= EMPRESS_AT[e.broodI]) {
+    e.broodI++;
     for (let i = 0, N = typeWaveCount("swarm", e.n); i < N; i++) {
       spawnEnemy("swarm", e.n, e.pi, e.ang || 0);
       const m = G.enemies[G.enemies.length - 1]; m.s = Math.max(0, e.s - EMPRESS_GAP * i);
       m.bossKin = true; // the boss's own: the inverted sky holds till these die too
+      (e.veilKin ||= []).push(m);
     }
   }
+  if (e.veilKin) bossVeil(e);
   if (isA(e, "chariot")) {
-    e.sprintT -= dt;
-    if (e.sprintT <= -CHARIOT_T) e.sprintT += CHARIOT_EVERY;
-    e.spd = e.baseSpd * (e.sprintT <= 0 ? CHARIOT_SPD : 1);
-    for (const m of e.fleet || []) if (!m.dead) m.spd = m.fleetSpd * (e.sprintT <= 0 ? CHARIOT_SPD : 1); // the outriders keep pace
+    e.sprintT = (e.sprintT + dt) % CHARIOT_EVERY; const k = chariotPace(e.sprintT);
+    e.spd = e.baseSpd * k;
+    for (const m of e.fleet || []) if (!m.dead) m.spd = m.fleetSpd * k; // the outriders keep pace
   }
   if (isA(e, "temperance")) { // regen banks fractions and heals in WHOLE points (HP stays a whole number)
     e.regenBuf = (e.regenBuf || 0) + e.max * TEMPERANCE_REGEN * dt;
@@ -281,12 +289,23 @@ function bossHitCap(e, amt) {
 // except with 1.2 waves worth of swarm in swarm pattern, no respawn at 30%"); her second death is her last. Was: rose where she fell at
 // JUDGEMENT_REVIVE (30%) of her HP
 const JUDGEMENT_SWARM = 1.2;
+// THE VEIL (owner, 2026-11-07 22:30, Empress and Judgement): while any enemy of a swarm she released lives, e.veiled - she takes no damage and no
+// tower or effect picks her, by clearing e.seen (every target, area and damage path already skips an unseen enemy - enemySeen); stepEnemies
+// does not latch e.seen back while veiled. She still walks, and a veiled boss at the core still costs its lives. Drawn at reduced opacity
+// (e.veiled - aspira-enemies.js enemyVis reads !seen as faint already)
+function bossVeil(e) {
+  const up = e.veilKin.some(m => !m.dead && !m.gone);
+  if (up && !e.veiled) { e.veiled = true; e.seen = false; }
+  else if (!up && e.veiled) { e.veiled = false; e.veilKin = null; if (enemySeen(e)) { e.seen = true; e.seenAt = performance.now(); } }
+}
 function bossRise(e) {
   if (e.risen || !isA(e, "judgement")) return false;
   ring(e.x, e.y, 60, "orange", 0.5); // (where she fell)
   e.risen = true; e.dead = false; e.hp = e.max; e.shield = e.shieldMax; e.shieldBuf = 0;
   e.s = entryS(e.pi); const p = pathAt(e.pi, e.s, e.ang || 0); e.x = p.x; e.y = p.y; e.ease0 = null; e.slows = null; e.slowT = 0; e.stunT = 0; e.seen = false;
+  const n0 = G.enemies.length, q0 = (G.fleetQ || []).length;
   bossScatter(e, e.n, ENEMIES.bonus.size * (e.sizeMul || 1), [["swarm", JUDGEMENT_SWARM]], true);
+  e.veilKin = G.enemies.slice(n0).concat((G.fleetQ || []).slice(q0)).filter(m => m !== e); bossVeil(e); // VEILED while her swarm lives (owner, 2026-11-07 22:30: "judgement invuln and untargettable while swarm is up")
   return true;
 }
 // from kill(): a Lover left alone heals to full and runs faster

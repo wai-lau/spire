@@ -80,7 +80,7 @@ function drawThreat() {
 const BOSS_HP_PX = 26, BOSS_HP_UP = 12; // world units: its size; how far above the body's top
 function drawBossHp(pp) {
   for (const e of G.enemies) {
-    if (e.dead || !ENEMIES[e.type].star || !e.seen) continue; // ALWAYS, from its spawn on the board (owner, 2026-11-07: "Lives lost, keep on the boss always" - "As in like the percentage thing"; only within THREAT_FROM s of the core before)
+    if (e.dead || !ENEMIES[e.type].star || (!e.seen && !e.veiled)) continue; // (a veiled boss keeps its number) // ALWAYS, from its spawn on the board (owner, 2026-11-07: "Lives lost, keep on the boss always" - "As in like the percentage thing"; only within THREAT_FROM s of the core before)
     const n = Math.max(0, Math.ceil(Math.max(0, e.hp) / (e.max || 1) * 100 - 1e-9)), y = e.y - ENEMIES[e.type].size * (e.sizeMul || 1) - BOSS_HP_UP;
     pp(e.x, y, () => text(String(n), e.x, y, BOSS_HP_PX, "white", true, true));
   }
