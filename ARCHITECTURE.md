@@ -322,8 +322,11 @@ THE MARK TARGET (owner, 2026-10-29 15:45: "save super important! priority #1"; i
 | CRR | -2 | +2 | +1 | -1 |
 | IFR | +2 | -1 | +2 | -3 |
 
-Every type column is +2 +2 +1 +1 -1 -2 -3, every row and column sums to 0, every tower checks two types or more; IFR (-3) and CRR (-1) are
-bad vs armor by design. `COUNTERS` (`aspira-defs.js`) is DERIVED from it - `main` = the +2 cells, `help` = the +1 cells: swarm `[arc, ifr]` /
+Every type column is +2 +2 +1 +1 -1 -2 -3, every row and column sums to 0, every tower checks two types or more. **The target is the goal**: ARC is +2 vs armor (owner,
+2026-11-07: "go by the target marks, ARC wasn't designed to be good against armor, but got here balancing the target marks. so ARC should
++2 armor now"; the older "ARC and IFR by design are bad vs armor" is history, ARCHAEOLOGY §4.6) - who is weak to a type reads off the
+table (vs armor: IFR -3, FRZ -2, CRR -1). The old counter table is archaeology (owner, 2026-11-07: "counter table is archaeology, target
+marks is the goal"). `COUNTERS` (`aspira-defs.js`) is DERIVED from it - `main` = the +2 cells, `help` = the +1 cells: swarm `[arc, ifr]` /
 `[frz, grv]`, fast `[frz, crr]` / `[sol, grv]`, armor `[arc, acd]` / `[sol, grv]`, shield `[acd, ifr]` / `[sol, crr]` (checked 2026-11-07) - and
 the build card's `GOOD_VS` / `HELPS_VS` derive from `COUNTERS` (SOL and ACD add bosses, `BOSS_KILLERS`). The card's symbol marks (`VS_MARKS`)
 are MEASURED, a `countermx` run at 9 points (`scripts/aspira-sim/countermx.mjs`, the command below); the old design matrix: ARCHAEOLOGY §4.6.
