@@ -814,7 +814,6 @@ focus loss.
   as a power multiplier).
 - **Game smoke (10-11)** "smoke tests for all basic features as commit hook": 17 checks -> 22 now; it exists because a
   trailing `//` comment swallowed `render()`'s else branch (blanked 2D and 3D's floor with no error).
-  `test_spire_sliders_browser.py`'s docstring still speaks of six slots and picks at waves 30 and 60 (pre-10-11).
 - **File splits at the 500-line cap** (exec-fn's hook): `towers` -> `acid`, `skills` -> `frz`, `chart`, `stats`,
   `sliders`, `desc`, `game` -> `waves`, `floats`, `formations`, `ui` -> `chooser`, `wavelist`, `threat`, `draw` -> `lanes`,
   `effects`, `enemies`, `textcache`, `warp` -> `warplayers`, `fxgl`, `glctx`, `fog`, `solids`, `walls`.
