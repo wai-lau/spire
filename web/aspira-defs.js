@@ -133,7 +133,7 @@ const CELLS = (function buildCells() {
   });
   return out;
 })();
-// a slot is OPEN once the boss of its unlock wave is down (bossKilled sets
+// a slot is OPEN once the boss of its unlock wave is gone (bossGone sets
 // G.opened); the six ring slots always are
 const cellOpen = ci => ci >= 0 && (CELLS[ci].ang == null || OPEN_SLOTS.includes(CELLS[ci].ang)) && (!CELLS[ci].unlock || !!(typeof G !== "undefined" && G && G.opened && G.opened[ci]));
 const openCells = () => CELLS.filter((c, i) => cellOpen(i)).length;

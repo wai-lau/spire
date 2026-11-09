@@ -320,11 +320,13 @@ function bossRise(e) {
   return true;
 }
 // from kill(): a Lover left alone heals to full and runs faster
-function bossKilled(e) {
-  // the LAST boss of its wave down: that wave's corner slot opens (owner: unlocks
-  // come AFTER the boss, never during its wave), the slot flashing meanwhile
-  // (aspira-waves.js) - or, on a CORE_PICKS wave, a core power is won (aspira-core.js),
-  // announced where the boss's name was, with an arrow down at the core (owner)
+// A BOSS GONE - KILLED (kill) OR AT THE CORE (stepEnemies) - pays the same either way (owner, 2026-11-09: "bosses should always give reward,
+// regardless of whether you killed it or not" / "same with powers given at wave"; the kill-only rule dates from when a leak ended the game):
+// its drop once a wave (bonusDrop; a Devil only as the last one standing; nothing on the winning wave, nor when its own leak ended the run),
+// and, the LAST boss of its wave gone: that wave's corner slot opens (owner: unlocks come AFTER the boss, never during its wave), the slot
+// flashing meanwhile (aspira-waves.js), and its wave's core power is given (grantPowers, aspira-core.js), announced where the boss's name was
+function bossGone(e) {
+  if (bossPays(e) && e.wave < WIN_WAVE && G.lives > 0) bonusDrop(e);
   if (!G.enemies.some(o => o !== e && !o.dead && o.arcana && o.n === e.n)) {
     grantPowers(e.n); // waves 20 / 40: a core power (aspira-core.js)
     if (CORE_PICKS.includes(e.n)) {

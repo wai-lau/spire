@@ -309,7 +309,7 @@ function kill(e, t) {
   creditDot(e.x, e.y, b); // the credits FLY to the core and land there (aspira-floats.js)
   G.charge = Math.min(POWER_FULL, G.charge + 1);
   burst(e.x, e.y, ENEMIES[e.type].color, 14);
-  if (e.type === "bonus") { if (bossPays(e) && e.wave < WIN_WAVE) bonusDrop(e); bossKilled(e); } // the last Devil pays; a Lover's mate enrages (aspira-bosses.js)
+  if (e.type === "bonus") bossGone(e); // its drop, and the wave's power / slot once its last boss is gone (aspira-bosses.js) - the same when one reaches the core
   if (e.shatter && e.slowT > 0 && !shattering) shatterAt(e); // FRZ's Shatter
   if (e.shockT > 0 && e.shockPass) arcShockPass(e); // Shock V: its debuffs pass to the enemies round it (aspira-arc.js)
   if (e.charged) staticDischarge(e); // ARC's Static (the old path)

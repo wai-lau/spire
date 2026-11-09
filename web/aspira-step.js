@@ -95,6 +95,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       e.dead = true;
       const before = G.lives;
       G.lives -= ENEMIES[e.type].star ? bossLeakLives(e) : ENEMIES[e.type].leak || 1; // a boss: its HP% left (bossLeakLives, aspira-bosses.js)
+      if (e.type === "bonus") bossGone(e); // A BOSS AT THE CORE STILL PAYS: its drop, and the wave's power / slot (owner, 2026-11-09; aspira-bosses.js)
       sfx("leak"); shakeScreen(); livesLost(); if (typeof threatBounce === "function") threatBounce(e); // (threatBounce: its threat ring bounces out, aspira-ui.js) "X lives left" where the interest pop-up goes (aspira-waves.js)
       ring(e.x, e.y, 40, "pink", 0.17);
       // a boss that gets through ends the game only when its lives run out (owner, 2026-11-03; was outright, 2026-10-02)

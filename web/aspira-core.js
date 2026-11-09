@@ -18,8 +18,9 @@
 // - CORNER_SLOTS in aspira-defs.js). The last power left is simply given.
 // (two powers since the Relay merge, so two picks: the Devil's wave hands out nothing)
 // NO PICKING (owner, 2026-10-11: "temporal drive available at level 20 no picking, orbital relay at 40"): each power is
-// GIVEN, at full strength, as the REWARD for its wave's boss (grantPowers, from bossKilled - owner: "losing to a boss is
-// losing anyway"). Was a choice at the falls of Strength (30) and Temperance (60)
+// GIVEN, at full strength, as the REWARD for its wave's boss, killed or at the core (grantPowers, from bossGone - owner, 2026-11-09:
+// "same with powers given at wave"; 2026-10-11: "losing to a boss is losing anyway", when a leak ended the game). Was a choice at the
+// falls of Strength (30) and Temperance (60)
 const CORE_GRANTS = [[2 * STAR_EVERY, "temporal"], [4 * STAR_EVERY, "relay"]]; // the 2nd and 4th bosses (24 / 48 since the 12-wave cycle)
 const CORE_UNLOCK = CORE_GRANTS[0][0], CORE_TIERS = 3, CORE_PICKS = [] /* (the picks are gone; corePicks() stays 0) */, CORE_POINTS = CORE_TIERS * CORE_GRANTS.length;
 const CORE_POWERS = [
@@ -48,7 +49,7 @@ function pickPower(id) {
   c.picks--; c.pw = { ...c.pw, [id]: CORE_TIERS }; // a fresh object: the simulator's stat cache keys on it
   return true;
 }
-// from bossKilled, the last boss of wave n down: the power that wave gives, outright (and announced under the core)
+// from bossGone, the last boss of wave n gone (killed or at the core): the power that wave gives, outright (and announced under the core)
 function grantPowers(n) {
   for (const [w, id] of CORE_GRANTS) {
     if (w !== n || powerLvl(id)) continue;
@@ -57,7 +58,7 @@ function grantPowers(n) {
     (c.flashAt ||= {})[id] = n + 1; // its button flashes when the NEXT wave starts (owner, 2026-10-14: "instead of flashing powers after boss kill, flash them when wave after boss begins"; updatePowers)
   }
 }
-// (unused since 2026-10-11 - no picks) from bossKilled, the last boss of a CORE_PICKS wave down: one power to choose
+// (unused since 2026-10-11 - no picks) from bossGone, the last boss of a CORE_PICKS wave down: one power to choose
 // (the only one left is given outright; none left: nothing to give)
 function grantPick() {
   const left = powersLeft();

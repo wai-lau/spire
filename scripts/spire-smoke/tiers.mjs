@@ -384,4 +384,12 @@ check("a boss at the core costs its HP% left in lives, a Lover half, a Devil cop
   if (JSON.stringify(r) !== JSON.stringify([12, 5, 1, false, null, true, "death"])) return "lives lost / over / breachBy, then a 40% Death on 12 lives " + JSON.stringify(r) + " (expected [12,5,1,false,null,true,\"death\"])";
 });
 
+check("a boss that reaches the core still pays (owner, 2026-11-09: \"bosses should always give reward, regardless of whether you killed it or not\" / \"same with powers given at wave\"): the wave-24 boss at the core grants Temporal Drive and its drop, once; a boss whose own leak ends the run pays no drop", () => {
+  const r = run(`(() => { G = newGame(); G.lives = 30; const leak = (n, arcana, hp) => { const e = { type: "bonus", arcana, n, wave: n, hp, max: 100, x: CX, y: CY, pi: 0, s: PATHS[0].len + 1, spd: 0, ang: 0 };
+    G.enemies.push(e); stepEnemies(0.001); };
+    const t0 = powerLvl("temporal"), i0 = G.interest; leak(24, "chariot", 10); const l1 = G.lives, paid = !!(G.bossPaid || {})[24], t1 = powerLvl("temporal"), got = l1 > 20 || G.interest > i0;
+    G.lives = 1; leak(36, "strength", 50); return { t0, t1, paid, got, l1, over: G.over, paid36: !!(G.bossPaid || {})[36] }; })()`);
+  if (r.t0 || !r.t1 || !r.paid || !r.got) return "wave 24 at the core " + JSON.stringify(r) + " (expected Temporal Drive given and the drop paid)";
+  if (r.paid36 || !r.over) return "a fatal leak " + JSON.stringify(r) + " (expected the run over and no drop)";
+});
 // ---------- ACD capstones (Corrosion V, Spill V; Wai's capstone brief 2026-11-06) ----------
