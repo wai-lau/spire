@@ -160,13 +160,24 @@ function fxGlArcBolt(f) { // 3D: a glow capsule and a thin bright core a jag
 }
 // a polyline's ARC_GRAD_N pieces: each(first point, last point, its middle u along) - the pieces share their end points (no gap)
 function arcPieces(pts, each) { const n = pts.length / 2 - 1, m = Math.min(ARC_GRAD_N, n); for (let k = 0; k < m; k++) { const a = Math.round(n * k / m), b = Math.round(n * (k + 1) / m); each(a, b, (a + b) / 2 / n); } }
+let ARC_BOLT_Q = new Float64Array(64);
+function arcBoltQ(pts, fork, pt) { // the bolt's points, then the fork's, projected to device px into one reused buffer (grown x2, never shrunk)
+  const n = (pts.length + fork.length) / 2;
+  if (ARC_BOLT_Q.length < n * 2) ARC_BOLT_Q = new Float64Array(Math.max(n * 2, ARC_BOLT_Q.length * 2));
+  const Q = ARC_BOLT_Q; let k = 0;
+  for (const p of [pts, fork]) for (let j = 0; j < p.length; j += 2) { const P = pt(p[j], p[j + 1]); Q[k++] = P.x; Q[k++] = P.y; }
+  return Q;
+}
 function drawArcBolt2D(f, x1, y1, x2, y2, pt, ws) { // 2D: pt projects a world point to device px (the canvas is in device px here)
   if (arcIn3d(f.a)) return; // (drawn from its prism's top: drawArcBolts3d)
   const fa = arcBoltFade(f); if (fa <= 0) return;
   const o = arcBoltFrom(f, x1, y1, x2, y2), { pts, fork } = arcBoltPts(f, o[0], o[1], x2, y2), css = COL[f.color], core = arcMix(css, 0.7), w0 = (f.thin || 1) * ARC_BOLT_S * 1.5 * ws;
-  const path = (p, a = 0, b = p.length / 2 - 1) => { const q = new Path2D(); for (let j = a; j <= b; j++) { const P = pt(p[j * 2], p[j * 2 + 1]); j > a ? q.lineTo(P.x, P.y) : q.moveTo(P.x, P.y); } return q; };
+  // NO ALLOCATION A STROKE (perf, 2026-11-09): every point projected ONCE into a reused buffer, each piece stroked on the context's own path -
+  // the same pixels as a Path2D a piece (WebKit, 0 px differ with the shadow and round caps), no Path2D and no point object a stroke
+  const Q = arcBoltQ(pts, fork, pt), nP = pts.length / 2;
+  const path = (o, a, b) => { ctx.beginPath(); for (let j = a; j <= b; j++) j > a ? ctx.lineTo(Q[(o + j) * 2], Q[(o + j) * 2 + 1]) : ctx.moveTo(Q[(o + j) * 2], Q[(o + j) * 2 + 1]); };
   ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.shadowColor = css; ctx.strokeStyle = core;
-  arcPieces(pts, (a, b, u) => { const [ik, ia] = arcIntAt(f, u), w = ik * w0; ctx.shadowBlur = 3.2 * w; ctx.globalAlpha = fa * ia; ctx.lineWidth = w; ctx.stroke(path(pts, a, b)); });
-  { const [ik, ia] = arcIntAt(f, 0.5), w = ik * w0; ctx.shadowBlur = 3.2 * w; ctx.globalAlpha = fa * ia; ctx.lineWidth = w * 0.6; ctx.stroke(path(fork)); }
+  arcPieces(pts, (a, b, u) => { const [ik, ia] = arcIntAt(f, u), w = ik * w0; ctx.shadowBlur = 3.2 * w; ctx.globalAlpha = fa * ia; ctx.lineWidth = w; path(0, a, b); ctx.stroke(); });
+  { const [ik, ia] = arcIntAt(f, 0.5), w = ik * w0; ctx.shadowBlur = 3.2 * w; ctx.globalAlpha = fa * ia; ctx.lineWidth = w * 0.6; path(nP, 0, fork.length / 2 - 1); ctx.stroke(); }
   ctx.restore();
 }
