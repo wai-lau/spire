@@ -359,7 +359,7 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 
 | Axis | Buys | Capstone (V) |
 |---|---|---|
-| Hangar | WIDTH: more interceptors (`CRR_HANGAR`), all waiting in orbit | **Full Wing**: the biggest wing (41); an interceptor whose target dies with ammo left retargets within 300 u, up to 2 times a sortie (§4.6) |
+| Hangar | WIDTH: more interceptors (`CRR_HANGAR`), all waiting in orbit | **Warp Drive**: the biggest wing (41); each flies out at `CRR_WARP_V` (3000 u a second), faded out, and drops out of warp `CRR_WARP_END` orbit radii short of its target, just before it turns to face it, fading back in; no retarget at any tier, a target's death sends it home (§4.6) |
 | Tether (id `launch`) | the tether: more interceptors tethering, a harder slow, more damage per tether | **Anchor**: the hardest slow and most damage per tether |
 | Armament | DEPTH: a harder bolt (`CRR_BOLTS_BY`), more volleys a sortie | **Autopilot**: an interceptor bursts into 10 pellets (x1.125 td each) WHENEVER it heads home - out of volleys or target lost - and is rebuilt at home after the normal reload (§4.6) |
 
@@ -423,7 +423,7 @@ aspira-capstone.js); its knobs:
 | GRV | Void -> Event Horizon | each crush kill grows the void x1.1, to x1.5, fading back over 3 s | `GRV_EH_GROW`, `GRV_EH_MAX`, `GRV_EH_FADE` | aspira-grv.js |
 | GRV | Nova -> Hypernova | every 4th nova rings twice, the 2nd ring x1.5 the reach (same hit rules); a white flash | `GRV_SUPER_EVERY`, `GRV_SUPER_R` | aspira-grv.js, aspira-grv-draw.js |
 | GRV | Gravity Well -> Undertow | an enemy in the aura nearer the core (`coreXY`) than the tower is reeled back along its lane to the void's centre over 0.6 s; each enemy at most once every 4 s, whichever GRV reels it | `GRV_REEL_T`, `GRV_REEL_CD` | aspira-grv.js |
-| CRR | Hangar -> Full Wing | an interceptor whose target dies with ammo left retargets within 300 u, up to 2 times a sortie | `CRR_RETARGETS`, `CRR_RETARGET_R` | aspira-crr.js |
+| CRR | Hangar -> Warp Drive | the way out at `CRR_WARP_V`, invisible: opacity 1 -> 0 over `CRR_WARP_FADE_S` at launch, 0 -> 1 from the drop-out `CRR_WARP_END` radii short of the target; no trail while in warp (owner, 2026-11-09: "no retarget / instead, warp drive / when an interceptor is needed, quickly fade opacity to 0, increase fly-to speed to 3000, then when the interceptor is near enemy (just before starting to turn to face them) face opacity back to 100") | `CRR_WARP_V`, `CRR_WARP_END`, `CRR_WARP_FADE_S` (look) | aspira-crr.js, aspira-crr-draw.js |
 | CRR | Tether -> Anchor | no new mechanic: the tether runs on to one more enemy (as before) | - | aspira-crr.js |
 | CRR | Armament -> Autopilot | bursts into 10 pellets (x1.125 td) whenever it heads home | `CRR_BURST_N`, `CRR_BURST_K` | aspira-crr.js |
 | IFR | Meteor -> Impact | every 3rd charged meteor is big (drawn x2, hitbox unchanged), its first hit x4 | `IFR_BIG_EVERY`, `IFR_BIG_HIT_K` | aspira-ifrit.js |
@@ -468,15 +468,15 @@ marks is the goal"). `COUNTERS` (`aspira-defs.js`) is DERIVED from it - `main` =
 the build card's `GOOD_VS` / `HELPS_VS` derive from `COUNTERS` (SOL and ACD add bosses, `BOSS_KILLERS`). The card's symbol marks (`VS_MARKS`)
 are MEASURED, a `countermx` run at 9 points (`scripts/aspira-sim/countermx.mjs`, the command below); the old design matrix: ARCHAEOLOGY §4.6.
 
-**THE MARKS AT FIVE POINT LEVELS** (owner, 2026-11-06: "also add a 0 point and 3 point check", then "most important marks are 9 and 13,
-but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 2026-11-07: the 0-point band loosened to +/-2). Every balance patch runs all five against the mark target:
+**THE MARKS AT FIVE POINT LEVELS** (owner, 2026-11-06: "1B, but also add a 0 point and 3 point check", then "most important marks are 9 and 13,
+but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 2026-11-07 "1C": the 0-point band loosened to +/-2). Every balance patch runs all five against the mark target:
 
 | points | what it is | marks.py | the bar |
 |---|---|---|---|
 | 9 | the card's marks (spread builds) | `--write` | the first target: written into `VS_MARKS` |
 | 13 | each axis maxed in turn (V + IV + IV), averaged a tower | `--focus` | the second target (the capstone check) |
 | 3, 6 | the early and mid game | `--band` | every cell within 1 of the target, else `RULE FAIL` |
-| 0 | the opening (tier 0 towers) | `--band` | every cell within 2 of the target, else `RULE FAIL` (owner, 2026-11-07: the 0-point band loosened to +/-2) |
+| 0 | the opening (tier 0 towers) | `--band` | every cell within 2 of the target, else `RULE FAIL` (owner, 2026-11-07 "1C") |
 
 The windows follow the good model's tower points by wave (median 3 at wave 60, 5 at 80, 8 at 100-110); the owner set the five levels and the
 bands, not the windows. All five in one go: `scripts/aspira-sim/marks5.sh`. By hand, from `scripts/aspira-sim`, with
@@ -605,9 +605,9 @@ costs lives without ending the run in 10-30% of them is the target, reported by 
 its HP% left in lives (a Lover half, a Devil copy a sixth, rounded up; owner, 2026-11-03), so with 18 lives a boss with more
 than ~18% left still ends it.
 
-**BOSS DEPTH** (owner, 2026-11-06: "make sure bosses just get to about 120% of a normal wave"; 2026-11-07: refit Strength, Chariot, Lovers and the Devil on 100 games toward one normal wave, Temperance and Justice to the redesign): each boss's HP (`BOSS_HP`)
+**BOSS DEPTH** (owner, 2026-11-06: "make sure bosses just get to about 120% of a normal wave"; 2026-11-07 "3D"): each boss's HP (`BOSS_HP`)
 is fitted on 100 bosses-on games so it gets about as far toward the core as the normal waves round it (the Star x1.2, the Chariot held at
-x1.2, the owner's pick for a Chariot "still OP", 2026-11-07); the dated passes: ARCHAEOLOGY §5.
+x1.2 by the owner's "A"); the dated passes: ARCHAEOLOGY §5.
 
 THE BOSSES (the order: owner, 2026-11-07 22:15 / 22:40; the tricks: 2026-11-05 redesign and 2026-11-07 22:30). "A wave" = `typeWaveCount(type, n)`:
 a plain wave of that type at the boss's wave number, as `wavePlan` sends it (the count taper included). The fleet code lives in
@@ -979,7 +979,7 @@ the marks build), ACD's Flow carry and ramp (Q0-Q3), IFR's 8/12 shards and shard
 
 | Balance rule the owner set (keep when changing numbers) | Checked by |
 |---|---|
-| any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22); 19 of the 21 duos is accepted - ARC+IFR and FRZ+IFR need one upgrade before the Star (owner, 2026-11-07: those two pairs exempt from the duo rule) | `solo` (its duo table) |
+| any duo of two DIFFERENT L1 towers clears waves 1-12, the Star too, with no life lost (owner, 2026-10-22); 19 of the 21 duos is accepted - ARC+IFR and FRZ+IFR need one upgrade before the Star (owner, 2026-11-07 "2C") | `solo` (its duo table) |
 | an ordinary type's count and HP never drop from one of its waves to the next (owner, 2026-10-22: "types should never get weaker along any axis") | `planCount`, `enemyHp` (aspira-waves.js) |
 | every trio of kinds is winnable except the designed deaths (§4.9) (no kind required) | `trios`, `tribal` |
 | no tier lowers a stat; each kind has a niche | `countermx`, `isolation`, `payoff` |
@@ -995,9 +995,9 @@ says so where none is on file. Every new owner rule gets its row in the same com
 | The mark target is frozen and is the goal | "woah, yknow what, this looks good ... save super important! priority #1"; "target already frozen"; "counter table is archaeology, target marks is the goal" | 2026-10-29, 10-31, 11-07 | `mark-target.json` + `marks.py` RULE FAIL; VS_MARKS never by hand: review (§4.8) |
 | ARC is +2 vs armor (the target, not the old design) | "go by the target marks, ARC wasn't designed to be good against armor, but got here balancing the target marks. so ARC should +2 armor now" | 2026-11-07 | the target table (§4.8) |
 | Every tower checks two enemy types or more | quote not on file (CLAUDE.md's wording: "Every tower beats or at least helps against two or more enemy types") | 2026-10-19 | `marks.py` RULE FAIL (`MIN_CHECKED`) |
-| Marks at five point levels, 9 and 13 the targets, 0/3/6 in bands | "also add a 0 point and 3 point check"; "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 2026-11-07: the 0-point band loosened to +/-2 | 2026-11-06, 11-07 | `marks.py --band` RULE FAIL (§4.8) |
+| Marks at five point levels, 9 and 13 the targets, 0/3/6 in bands | "1B, but also add a 0 point and 3 point check"; "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; "1C" (0 points: +/-2) | 2026-11-06, 11-07 | `marks.py --band` RULE FAIL (§4.8) |
 | Tiers are purchases: 0, I .. V, nothing between | "drop all the god damn levels between that can not be bought, stop listing them everywhere" | 2026-10-23 | smoke: "tiers are purchases ..." (tiers.mjs) |
-| No damage step above 2x a level, each part on its own; the curve rises | "Hard rule, no level damage steps above 2x"; "just keep it below 2x for any level"; 2026-11-05: each part (the curve step, each tier table) counts on its own | 2026-11-01, 11-05 | smoke: "curve: by total level alone, rising, each level's hit BELOW 2x ..." (tiers.mjs) |
+| No damage step above 2x a level, each part on its own; the curve rises | "Hard rule, no level damage steps above 2x"; "just keep it below 2x for any level"; "B" (each part counts on its own) | 2026-11-01, 11-05 | smoke: "curve: by total level alone, rising, each level's hit BELOW 2x ..." (tiers.mjs) |
 | Nothing shown above 800% (8x the tower's damage) | "Nothing should ever be above like 800%"; "Maybe do like 1/8xtd to 8x or something" | 2026-10-31 | smoke: "no card sentence names a number over 800% ..." (tiers.mjs) |
 | No insane numbers (Strength exempt) | "Try to get this game in shape with minimal lag and no insane numbers over the next 12h"; Strength: "allow strength to ignore \"crazy numbers\" rule" | 2026-10-31, 11-07 | review |
 | Armor is a curve: a hit loses R/(R+hit), at most 90% | "armor is a percentage / applied non-linearly"; "wait armor doesn't take flat amount off every hit anymore, update that" | 2026-10-28, 11-04 | `armorTake` (`ARMOR_CAP` 0.9, `ARMOR_K`); review |
@@ -1007,11 +1007,11 @@ says so where none is on file. Every new owner rule gets its row in the same com
 | Fire-rate raises need the owner's pick | "but I want _you_ to avoid raising fire rate autonomously" | 2026-11-01 | smoke pins SOL's flat rate (tiers.mjs); others: review |
 | No ammo cap on CRR | "Ok no ammo limit" | 2026-11-07 | `CRR_AMMO` (11 .. 40); the tiers.mjs 30-volley pin is being moved to the no-cap rule (Balance) |
 | Every trio of kinds is winnable but the designed deaths | "for every combination of 3 towers, it is possible to win" | (pillar 2) | sim `trios`, `tribal` (§10.4) |
-| Any two fresh towers beat the Star (ARC+IFR, FRZ+IFR exempt) | 2026-11-07: ARC+IFR and FRZ+IFR exempt (those two pairs need one upgrade before the Star); the base rule: §10.4's balance table | 2026-10-22, 11-07 | sim `duo0`, `solo` (§10.4) |
+| Any two fresh towers beat the Star (ARC+IFR, FRZ+IFR exempt) | "2C" (2026-11-07: those two pairs need one upgrade before the Star); the base rule: §10.4's balance table | 2026-10-22, 11-07 | sim `duo0`, `solo` (§10.4) |
 | A type never gets weaker from one of its waves to the next | "types should never get weaker along any axis" | 2026-10-22 | `planCount`, `enemyHp` |
 | Empress and Judgement are untouchable while their swarms live (Empress faded, her swarms at 90 / 70 / 50% HP); Chariot's speed a smooth sine; each boss its own die; Justice and Judgement swap places - ships with the boss reorder | "empress visually reduced in opacity, untargettable and invuln while swarm is up yes / release swarm at 90% 70% 50% hp / ... / chariot, change speed from step fn to sinusoidal / ... / judgement invuln and untargettable while swarm is up"; "visually update dice shapes, (keep boss sizes) ... swap order of justice and judgement ... also update haikus" | 2026-11-07 | review; dice: `BOSS_DIE` (aspira-bosses.js) |
 | A boss at the core costs its HP% left in lives (Lovers /2, Devil /6, rounded up) | "lets make bosses make you lose lives equal to the percentage of life left on the boss instead of rhe losing the game instantly. ... (Lovers gets /2, devil gets /6 lives lost rounded up, but numbers on the dice still show put of 100)" | 2026-11-03 | `bossLeakLives`; review |
-| Bosses about one normal wave deep | "make sure bosses just get to about 120% of a normal wave"; then 2026-11-07: refit Strength, Chariot, Lovers and the Devil on 100 games toward 1.0x, Temperance and Justice join the redesign; Chariot "still OP" -> HP x1.2 | 2026-11-06, 11-07 | sim, 100 games |
+| Bosses about one normal wave deep | "make sure bosses just get to about 120% of a normal wave"; then "3D" (the answer to "refit Strength/Chariot/Lovers/Devil on 100 games toward 1.0x, Temperance+Justice join the redesign"); Chariot "still OP" -> "A" (HP x1.2) | 2026-11-06, 11-07 | sim, 100 games |
 | Enemies ease to 0.6x speed at the core (FRZ's bonus ignores it; the Lovers do not ease - ships with the boss reorder) | "gradually slow down the enemies from the moment they are no longer 3x speed to 0.8x when they hit the core"; "perfect, increase the ease to 60%"; "lovers speed doesn't get affected by the ease" | 2026-11-03, 11-07 | `CORE_EASE`; smoke: boss ETA with the core ease (waves.mjs) |
 | Fun is the tiebreak when rules conflict | "The answer to this is whatever makes the game more fun and engaging" | 2026-11-03 | review (Leader) |
 | A balance battery's changes ship as the next MINOR, and only that | "every group of changes that is the result of a balance battery run should result in a new minor version"; "stop doing the new day new minor thing" | 2026-10-19 | the ship script; review |
@@ -1039,6 +1039,7 @@ says so where none is on file. Every new owner rule gets its row in the same com
 | The carrier is CRR everywhere (kind id `crr`) | "Rename all instances of CAR to CRR jesus." | 2026-10-29 | kind id `crr`; smoke: an old `car` save comes back as `crr` |
 | Ship each finished change at once | "can you release to prod more often?" | 2026-11-05 | `spire-ship2.sh` per change; a battery ships once its bosses-on half passes the gate; review (Leader) |
 | GitHub push retries at most once every 10 minutes | "No automatic retry loops against GitHub / Actually no / 1 try every 10 min is OK" | 2026-11-04 | `spire-ship2.sh` pushes once; review (Leader) |
+| CRR's Hangar V is Warp Drive: the way out at 3000 u a second, unseen, back in view just before the turn; no retarget at any tier | "no retarget / instead, warp drive / when an interceptor is needed, quickly fade opacity to 0, increase fly-to speed to 3000, then when the interceptor is near enemy (just before starting to turn to face them) face opacity back to 100" | 2026-11-09 | `aspira-crr.js` (i.warp), `aspira-crr-draw.js` (carWarpA); smoke: the Hangar V demo shows a warp (`showsV`) |
 | Score is gone | "remove anything based around score" | 2026-10-29 | code (§3) |
 
 ## 11. Traps (every one load-bearing; the stories: ARCHAEOLOGY §11)

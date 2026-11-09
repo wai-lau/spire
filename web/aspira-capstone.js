@@ -74,7 +74,7 @@ const CAPSTONE_NUM = [
   [ACD_CONTAGION, { every: 0.6, life: 5, r: 412.5 } /* r x2.5, every /1.5 with its table (2026-10-29; was 0.9, 165) */],
   // GRV (rework 2026-10-25): Void the biggest void (Singularity: twice the start mass, four times the cap); Nova the fastest novas, stripping the most (Hypernova);
   // Gravity Well the widest, coldest aura (Event Horizon: the whole aura slows as hard as its inner tier)
-  // CRR: Hangar forty interceptors (Full Wing); Tether the strongest tether (Anchor; the chain is from tier II, CRR_CHAIN_FROM); Armament the hardest, fastest, longest sorties (Autopilot)
+  // CRR: Hangar forty interceptors (Warp Drive); Tether the strongest tether (Anchor; the chain is from tier II, CRR_CHAIN_FROM); Armament the hardest, fastest, longest sorties (Autopilot)
   [CRR_HANGAR, 41 /* +1 (2026-11-06; was 40) */ /* x2 (owner, 2026-11-04, on picked-but-unshot leakers: "that's a problem of needing more interceptors"); was 20 */ /* x0.6 with the stuck-interceptor fix (owner, 2026-11-04: "b"; was 34) */ /* x2 with the slower flight (2026-11-02; was 17) */], [CRR_TETHER_SLOW, 0.375 /* x0.5 (owner, 2026-11-04: "reduce the slow"; was 0.75) */], [CRR_AMMO, 72 /* x3 with the table (2026-10-29: a third the bolt; was 24) */ /* (36 with the backed-out x1.5, 2026-10-27) */ /* x1.5 with its table (2026-10-24 marks target); was 16, under IV - smoke "a capstone value never runs against its table" */],
   [GRV_AURA_R, 279.5], [GRV_SLOW, 1.2012 /* x1.3 x1.5 with its table (2026-10-24); was 0.616, under IV */], [GRV_NOVA_R, 230], /* (GRV_PELLETS gone with the GRV rework, 2026-10-25: its new tables are written 0..V in aspira-grv.js) */
   // IFR (axes redone 2026-10-20): Meteor a fan of 12 that fissures (Impact); Hellfire a fire six towers across (its capstone: chains, aspira-ifrit.js); Flare the biggest, hottest, longest flares (its capstone: one flare and its circle)
@@ -99,7 +99,7 @@ const CAPSTONE_TIERS = {
   void: { name: "Event Horizon" } /* the capstones follow their parts (GRV rework 2026-10-25): Void V a heavier void */,
   supernova: { name: "Hypernova" },
   radiation: { name: "Undertow" },
-  hangar: { name: "Full Wing" },
+  hangar: { name: "Warp Drive" }, /* (owner, 2026-11-09; was Full Wing, the retarget) */
   launch: { name: "Anchor" } /* (owner, 2026-10-17: "have Anchor as the final level") - its beam chains on to one more enemy */,
   armament: { name: "Autopilot" },
   meteor: { name: "Impact" },

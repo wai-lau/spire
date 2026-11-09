@@ -39,14 +39,30 @@ function carAlt(t, i, k) { // its height as a share of the prism's
   if (i.alt == null) { const u1 = Math.max(1e-6, carHash(t.id || 0, k)), u2 = carHash(k + 0.5, (t.id || 0) + 7.3); i.alt = Math.max(CRR_ALT_LO, Math.min(CRR_ALT_HI, 0.5 + CRR_ALT_SD * Math.sqrt(-2 * Math.log(u1)) * Math.cos(6.283185307 * u2))); }
   return i.alt;
 }
+// WARP DRIVE, SEEN (owner, 2026-11-09: "quickly fade opacity to 0 ... then when the interceptor is near enemy (just before starting to turn to
+// face them) face opacity back to 100"): an interceptor's opacity falls 1 -> 0 over CRR_WARP_FADE_S of game time once i.warp turns on (its launch)
+// and rises 0 -> 1 over the same once it turns off (i.warpAt, the drop-out before the turn); draw only, a record of when it flipped, off the object
+const CRR_WARP_FADE_S = 0.15, carWarpSeen = new WeakMap();
+function carWarpA(i) {
+  const now = G.clock || 0, w = !!i.warp; let r = carWarpSeen.get(i);
+  if (!r) carWarpSeen.set(i, r = { w, at: -Infinity });
+  if (r.w !== w) { r.w = w; r.at = now; }
+  const u = Math.min(1, Math.max(0, (now - r.at) / CRR_WARP_FADE_S));
+  return w ? 1 - u : u;
+}
 function drawCarBodies(t, far, top) { // top: the prism's top height (warpFrame units); far: the ones behind the carrier's centre, else the rest
   const z = carZ(t), Fk = warpFrame(t.x, t.y, top * 0.5), k = Math.hypot(Fk[0], Fk[1]);
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = COL.blue; ctx.strokeStyle = COL.ltblue; ctx.lineWidth = CRR_EDGE_W * k; ctx.lineJoin = "round"; ctx.globalAlpha = 1;
-  ctx.beginPath(); let any = false;
+  ctx.beginPath(); let any = false; const faded = [];
   try {
-    t.icp.forEach((i, n) => { if (!(i.state !== "home" || i.hold) || (i.y < t.y) !== far) return; carM = warpFrame(i.x, i.y, top * carAlt(t, i, n)); carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); any = true; });
+    t.icp.forEach((i, n) => { if (!(i.state !== "home" || i.hold) || (i.y < t.y) !== far) return; if (carWarpA(i) < 1) { faded.push([i, n]); return; } carM = warpFrame(i.x, i.y, top * carAlt(t, i, n)); carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); any = true; });
   } finally { carM = null; }
   if (any) { ctx.fill(); ctx.stroke(); }
+  for (const [i, n] of faded) { // (a warping one alone, at its fade - the rest stay one path)
+    const a = carWarpA(i); if (a <= 0) continue;
+    ctx.globalAlpha = a; ctx.beginPath(); try { carM = warpFrame(i.x, i.y, top * carAlt(t, i, n)); carDart(i, z * (1 + CRR_SIZE_JIT * (i.oj || 0))); } finally { carM = null; } ctx.fill(); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
   carParts3d(t, far, top, z, k);
 }
 // THE CHAINS AND BOLTS WITH THEM, AT HEIGHT (owner, 2026-11-06: "draw interceptor chains on same layer so that they can be attached correctly to interceptor /
@@ -94,6 +110,7 @@ function carTrails(t) {
   const nMax = Math.max(CRR_TRAIL_MIN, Math.round(CRR_TRAIL_N * Math.min(1, CRR_TRAIL_REF / Math.max(1, out))));
   for (const i of t.icp) {
     if (i.state === "home" && !i.hold) { i.trail = null; continue; }
+    if (i.warp) { i.trail = null; continue; } // NO STREAK IN WARP (owner, 2026-11-09): the trail starts again where it drops out
     if ((mx || my) && i.state === "home" && i.trail) for (let k = 0; k < i.trail.length; k += 2) { i.trail[k] += mx; i.trail[k + 1] += my; }
     const tr = i.trail ||= [i.x, i.y], n = tr.length;
     if ((tr[n - 2] - i.x) ** 2 + (tr[n - 1] - i.y) ** 2 >= CRR_TRAIL_STEP * CRR_TRAIL_STEP) { tr.push(i.x, i.y); } if (tr.length > nMax * 2) { const cut = tr.length - nMax * 2; tr.copyWithin(0, cut); tr.length -= cut; } /* in place: splice(0, 2) made a garbage array every push, ~170 a frame at 3 x 40 (2026-11-05) */
