@@ -335,7 +335,7 @@ happens where it fires. The numbers and how it got here: ARCHAEOLOGY §4.6b.
 
 **Role.** The owner's StarCraft carrier, electric blue (`--asp-blue-hsl`), its target (the mark target, §4.8) checks on fast and shield; its measured checks and weak
 spots are the build card's marks (`VS_MARKS`, §4.8). It never fires itself; its **interceptors** do. The constants (wing sizes,
-speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY §4.6c.
+speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY §4.6c-bis and §4.6c-ter.
 
 **Marks.** swarm -2 · fast +2 · shield +1 · armor -1 (the mark target, §4.8; the measured marks: the build card's `VS_MARKS`)
 
