@@ -529,6 +529,7 @@ inverts with the boss sky, lifts the tower card and passes a press on a tower th
 | the old power bar | `POWERS`, `usePower`, `G.charge` |
 | Kepler moon orbit | `MOON_ECC` 0 = a circle |
 | boss trait tables | `BOSS_ARMOR` / `BOSS_SPEED` / `BOSS_SHIELD*`, neutral except Justice's speed |
+| ARC's Static charge | `s.charge` is always null (`arcSkillStats`), so `e.charge` / `e.charged`, `dischargeStatic` and the charge border never run; removal queued behind Balance's ARC work (2026-11-09) |
 
 ## 5. Enemies and waves
 
