@@ -6,6 +6,7 @@ Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTION
 
 | When | Question | Answer |
 |---|---|---|
+| 11-09 ~18:10 | Offer: move SOL's beam glow and ARC's chain hops (soft-shadow 2D draws, the expensive kind on phones) to the GPU, with a slight change in the glow's falloff | "yes, put as much stuff on the GPU if it can improve performance" - ARC hops and SOL glow first, then whatever else measures faster; visible changes shown as before/after |
 | 11-09 ~18:05 | The adaptive simulated player wins 50% with bosses on (old player 34%): raise every enemy's health back to about a third, keep it, or name a target? | Keep it: "I think the good player is really good now". The adaptive player at ~50% is the reference; no game-wide health raise |
 | 11-09 ~13:35 | Boss escort rows: Judgement's x6 swarm (~870) draws as one solid white bar on her card; cap the icons and show a count, or leave the bar? | Cap and count: each escort band shows as many icons as still read, then a count such as "x870"; every big escort gets it |
 | 11-09 ~13:00 | Ifrit: Meteor won't move with damage (Meteor fire rate by tier / Hellfire lift alone / keep live) | Meteor's fire rate rises by tier on top of the big Hellfire lift; Flare trim only if the fast/shield guard holds |
