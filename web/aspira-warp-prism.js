@@ -35,7 +35,7 @@ const WARP_PRISM_STOPS = 6, WARP_PRISM_GONE = 0.95;
 // (o.geo on this frame's object), so every wall and upright made its gradient anew each frame - ~96 a late frame, each wall's 7 blended stops. Keyed by
 // the EXACT numbers it is made from (ends, light, colours), so a reused one is the same gradient; a tower that moves or a shaking screen makes new
 // ones, and past PRISM_GRAD_MAX the set is dropped whole
-const PRISM_GRAD_MAX = 600, prismGrads = new Map();
+const PRISM_GRAD_MAX = 600, prismGrads = new Map(), PRISM_UP_A = 0.96;
 function prismGrad(key, make) { let g = prismGrads.get(key); if (!g) { if (prismGrads.size >= PRISM_GRAD_MAX) prismGrads.clear(); g = make(); prismGrads.set(key, g); } return g; } // GONE: the share of a prism's height, from its top, where it has faded out; STOPS: its gradient's (the blend is not linear)
 function warpPrism(o) {
   const pf = 1 - (1 - warpFade) * WARP_PRISM_FADE; // they fade less below the floor than the dice
@@ -87,7 +87,8 @@ function warpPrism(o) {
     ctx.globalAlpha = 0.8;
     if (band.lo > 0 || band.hi < Infinity) continue;
     { ctx.beginPath(); ctx.moveTo(T[w.i].x, T[w.i].y); ctx.lineTo(T[w.j].x, T[w.j].y); ctx.strokeStyle = o.col; ctx.stroke(); }
-    for (const v of [w.i, w.j]) { // (each upright is two walls' corner: its gradient made ONCE, kept beside the walls' - perf, 2026-11-05: 144 a late frame, half of them twins)
+    ctx.globalAlpha = PRISM_UP_A; /* ONE STROKE AN UPRIGHT (perf, 2026-11-08): each corner was stroked by both its walls at 0.8 - now once, by the wall it starts, at the pair's 1 - 0.2^2 */
+    for (const v of [w.i]) { // (each upright is two walls' corner: its gradient made ONCE, kept beside the walls' - perf, 2026-11-05: 144 a late frame, half of them twins)
       const E = at(T[v], B[v]), g = (grads.up ||= {})[v] ||= prismGrad("u|" + T[v].x + "," + T[v].y + "," + E.x + "," + E.y + "|" + o.col, () => { const g = ctx.createLinearGradient(T[v].x, T[v].y, E.x, E.y); g.addColorStop(0, o.col); g.addColorStop(1, "transparent"); return g; });
       ctx.beginPath(); ctx.moveTo(T[v].x, T[v].y); ctx.lineTo(E.x, E.y); ctx.strokeStyle = g; ctx.stroke();
     }
