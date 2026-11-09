@@ -7,7 +7,7 @@
 // height and its hex's turn, from its 3D frame - frzIceView), in the mockup's units (a hex of radius 40, screen y down from the top face's centre), seeded
 // by its cell, and TIME-SLICED (frzIceMaker in the ice Worker, or a few ms a frame without one - a full set is ~2 s of work; the crystals appear in their first-n order, growing in). Each
 // tower's pieces are BAKED into one image by a per-pixel depth test (aspira-frz-ice3d.js), re-baked only when its tiers, its grown count or its view's shape
-// change (ICE_VIEW_Q); a frame draws one image a FRZ (drawFrzIce, from drawOrbiters). Look only
+// change (ICE_VIEW_Q); a frame draws one image a FRZ twice (frzIceUnder before the enemies, frzIceOnPrism over its prism - below). Look only
 const ICE_SLICE_MS = 3;
 const I_TAU = Math.PI * 2;
 // the tower whose ice is being built or drawn: the generator reads these (iceUse sets them from that tower's own maker, so the code stays the mockup's)
@@ -355,9 +355,26 @@ function frzIceGet(t, v0, np, nf) { // the tower's ice: its scene for these tier
 const ICE_VIEW_Q = 0.06, ICE_KEEP_BYTES = 4e6; // the key's step; the kept images' pixels a tower (RGBA, about 12 on a phone, 2-3 on a desktop)
 const iceViewKey = P => { const l = Math.hypot(P.ex[0], P.ex[1]) || 1, q = v => Math.round(v / l / ICE_VIEW_Q); return [P.ex[0], P.ex[1], P.ey[0], P.ey[1], P.ez[0], P.ez[1]].map(q).join(","); };
 const ICE_ZOOM_ROOM = 2;
-function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters, after the tower's top (far: nothing - the 3D bake hides what the prism covers)
+// UNDER THE ENEMIES, OVER ITS PRISM (owner, 2026-11-09: "perma and frac should render under enemies also" / "also FRZ top border is occluded
+// sometimes"): the ice is drawn TWICE a frame - whole, on the enemies' layer before them (frzIceUnder: under every enemy, as the floor and the lanes
+// are), and again on the towers' layer clipped to its prism's outline on screen, after the walls and BEFORE the top (frzIceOnPrism): the ice in
+// front of the prism still covers it (the bake already left out what the prism hides), and the top's outline is drawn last - always over its own
+// ice. The bake advances on the first call only (clip: none)
+function frzIceSpot(t) { const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y; return { x, y, h: towerH(t), Rw: Math.hypot(c0.pts[0].x - c0.x, c0.pts[0].y - c0.y) * TOWER_K * TOWER_DRAW_K, c0 }; }
+function frzIceUnder() { // warpEntities, the floor band, before the enemies
+  for (const t of G.towers) { if (t.kind !== "frz") continue; const s = frzIceSpot(t), L = warpLift; warpLift = s.h / 2; try { drawFrzIce(t, false, s.x, s.y, s.h / 2, s.Rw); } finally { warpLift = L; } }
+}
+function frzIceOnPrism(t, x, y, h) { // a FRZ's top(), after its walls, before its top: the ice clipped to the prism (its top and bottom rings' hull, as warpPrism lays them)
+  const s = frzIceSpot(t), k = cam.k, pts = s.c0.pts.map(p => ({ x: x + (p.x - s.c0.x) * TOWER_K * TOWER_DRAW_K, y: y + (p.y - s.c0.y) * TOWER_K * TOWER_DRAW_K })), P = [];
+  for (const hz of [h / 2, -h / 2 * WARP.prism.below]) { const [a, b, c2, d, e, f] = warpFrame(x, y, hz); for (const p of pts) P.push({ x: a * p.x + c2 * p.y + e, y: b * p.x + d * p.y + f }); }
+  const H = iceHull(P.map(p => [p.x, p.y])); if (H.length < 3) return;
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath(); H.forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py))); ctx.closePath(); ctx.clip();
+  try { drawFrzIce(t, false, x, y, h / 2, s.Rw, true); } finally { ctx.restore(); }
+}
+function drawFrzIce(t, far, x, y, top, Rw, clip = false) { // frzIceUnder (whole) and frzIceOnPrism (clip: the image only, no bake step)
   const np = skillOf(t, "rime"), nf = skillOf(t, "temp"); if (!np && !nf) return;
   const v = frzIceView(t, x, y, top, Rw), I = frzIceGet(t, v, np, nf); if (!I.scene || far || typeof ice3dBegin !== "function") return;
+  if (clip) { const J = I.bake && I.bake.J; if (!J) return; frzIceBlit(I, J, v, x, y); return; }
   const sc = I.scene, frz = COL[TOWERS.frz.color], ice = typeof mixRgb === "function" ? mixRgb(frz, COL.white, 0.6) : COL.white, list = sc.back.concat(sc.front);
   const proj = ice3dProj(x, y, top, Rw, I.view.Hs), vk = iceViewKey(proj); I.proj = I.bake && I.bake.vk === vk ? I.bake.proj : proj;
   const kB = I.kB ||= (typeof ZOOM_MAX === "number" && typeof viewZoom === "number" && viewZoom > 0 ? Math.min(ICE_ZOOM_ROOM, Math.max(1, ZOOM_MAX / viewZoom)) : 1);
@@ -376,6 +393,9 @@ function drawFrzIce(t, far, x, y, top, Rw) { // from drawOrbiters, after the tow
     if (done) { I.bake = { want: I.glow.want, vk: I.glow.vk, proj: I.glow.proj, m0: I.glow.m0, ms: I.glow.ms, J: I.glow.J }; I.bakes = (I.bakes || 0) + 1; const Jd = I.glow.J; if (Jd) { Jd.z = Jd.id = Jd.hf = Jd.tris = Jd.img = null; } /* (the bake's buffers, 3x the image: not kept) */
     if (sc.done) { kept.set(want, I.bake); const bytes = () => [...kept.values()].reduce((a, b) => a + (b.J ? b.J.W * b.J.H * 4 : 0), 0); while (kept.size > 1 && bytes() > ICE_KEEP_BYTES) kept.delete(kept.keys().next().value); } I.glow = null; } }
   const J = I.bake && I.bake.J; if (!J) return;
+  frzIceBlit(I, J, v, x, y);
+}
+function frzIceBlit(I, J, v, x, y) {
   const F = warpFrame(x, y, warpFloor()), bx = F[0] * x + F[2] * y + F[4], by = F[1] * x + F[3] * y + F[5], z = v.m / I.bake.m0 / J.k; // (the image of this view's shape, at this spot's scale, on its floor point)
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.drawImage(J.cv, bx + J.ox * z, by + J.oy * z, J.W * z, J.H * z); ctx.restore();
 }

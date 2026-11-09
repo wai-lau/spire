@@ -152,6 +152,7 @@ function demoDraw3d(S) {
   const t = G.towers[0], m = S.mid || [t.x, t.y];
   const th0 = drawThreat; drawThreat = () => {}; // (no threat marks: a walker's lane ends at the box's edge, not a core - its ETA would light them there)
   try { up(m[0], m[1], () => { ctx.save(); drawTowerRange(t, true); ctx.restore(); drawSceneTop(); drawFx("beams"); }); } finally { drawThreat = th0; } // the floor
+  if (typeof frzIceUnder === "function") frzIceUnder(); // (FRZ's ice under the dummies, as on the board - aspira-frz-ice.js)
   for (const e of G.enemies) { const w = enemyWallPieces(e); if (w.length) warpShieldLines(w, COL[ENEMIES[e.type].color], 0.8 * SHIELD_DRAW_A * enemyVis(e), [e.x, e.y]); }
   const dice = G.enemies.slice().sort((a, b) => a.y - b.y);
   for (const e of dice) up(e.x, e.y, () => drawEnemy(e, true));
@@ -162,6 +163,7 @@ function demoDraw3d(S) {
     try {
     drawOrbiters(t, true, up, t.x, t.y, h); // (what circles it: far side under the prism, near side over - aspira-warp-prism.js)
     warpPrism({ x: t.x, y: t.y, h, col, opaque: t.kind === "frz", pts: (typeof solPolyPts === "function" && solPolyPts(t, t.x, t.y, TOWER_DRAW_K)) || c0.pts.map(p => ({ x: t.x + (p.x - c0.x) * TOWER_K * TOWER_DRAW_K, y: t.y + (p.y - c0.y) * TOWER_K * TOWER_DRAW_K })) });
+    if (t.kind === "frz" && typeof frzIceOnPrism === "function") frzIceOnPrism(t, t.x, t.y, h);
     up(t.x, t.y, () => drawTower(t), h / 2);
     drawOrbiters(t, false, up, t.x, t.y, h);
     } finally { warpLift = 0; }

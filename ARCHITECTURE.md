@@ -833,7 +833,7 @@ SOLID (floor outline, a height at each corner, its lift, a shard's lean); `aspir
 tower's first 3D view and BAKES it with a per-pixel depth test (the tower's prism a depth-only occluder): the colours, then the ridges where
 the depth test shows them, in slices (~2 ms a frame). **Baked once**: growth shows step by step, the full bake swaps in whole, and after that the
 one image only moves and scales with the tower - no rebake on a move, a pan or a zoom; a tier bought later keeps the old image up until the new
-one is whole. SOL's blades follow the same rule.
+one is whole. SOL's blades follow the same rule. **Under the enemies, over its prism** (owner, 2026-11-09: "perma and frac should render under enemies also" / "also FRZ top border is occluded sometimes"): the image is drawn twice a frame - whole on the enemies' layer before them (`frzIceUnder`), and clipped to its prism's screen outline on the towers' layer after the walls and before the top (`frzIceOnPrism`), so the front ice still covers the prism and the top's outline always wins; the bake steps on the first draw only.
 
 ### 8.4 Audio
 
