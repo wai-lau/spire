@@ -63,7 +63,7 @@ def dist(k, r):
 
 # BY DESIGN (owner rules the measured raw marks cannot know): CRR is NOT meant to beat armor (owner, 2026-10-27: "CRR isn't supposed
 # to be good vs armor anyway") - its armor mark stays below 0
-# - and every MAIN counter of the counter matrix (COUNTERS, aspira-defs.js; ARCHITECTURE.md 4.6, pillar 6) checks its type: +1 or more
+# - and every MAIN counter of the counter matrix (COUNTERS, aspira-defs.js; ARCHITECTURE.md §4.8, pillar 6) checks its type: +1 or more
 # MOOT since 2026-10-29 (owner: "ignore all designs except mark"): COUNTERS is now DERIVED FROM mark-target.json (a ++ = main, a + = help),
 # so this pin only restates the target; the fitter stays for a future re-fit
 DEFS = (pathlib.Path(__file__).resolve().parents[2] / "web" / "aspira-defs.js").read_text()

@@ -70,7 +70,7 @@ function demoLatStep(S, dt) {
   }
 }
 // one walker on lane `lane`, `at` of the way along it (0: the right edge), at DEMO_HP_K x the health of a body of the wave the tower's points
-// reach in play (demoWave: wave 30 at 0 points, + DEMO_WAVE_PT a point, to 119 - the good model's points by wave, ARCHITECTURE 4.6); was wave 30 at
+// reach in play (demoWave: wave 30 at 0 points, + DEMO_WAVE_PT a point, to 119 - the good model's points by wave, ARCHITECTURE §4.8); was wave 30 at
 // every build, which a 13-point ACD's goo one-shot (16k a hit on ~300 HP) before its jets could hold one, so the demo dropped no pools after its opening
 const demoSizeK = (type, n) => 1 + SIZE_LOG * Math.log10(enemyHp(type, n) / earlyHpX(type, n) / (enemyHp(type, 1) / earlyHpX(type, 1))); // spawnEnemy's size by wave
 // ~90% DIE (owner, 2026-11-07: "For all demo try to have ~90% enemies die" / "By adjusting the enemies"): a scene's walker health is x S.hpK (from

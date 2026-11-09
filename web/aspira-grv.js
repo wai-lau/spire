@@ -1,4 +1,4 @@
-// /spire - GRV, the GRAVITY tower (owner's design 2026-10-15, reworked 2026-10-25; ARCHITECTURE.md 4.6b): designed for swarm + armor,
+// /spire - GRV, the GRAVITY tower (owner's design 2026-10-15, reworked 2026-10-25; ARCHITECTURE.md §4.5, GRV): designed for swarm + armor,
 // mid reach, no projectile. Every shot leaves a VOID where its target is about to be; the void crushes what is inside and IS its mass -
 // it grows with the damage it deals (to GRV_MASS_MAX), evaporates by its circumference, sheds PELLETS as it loses mass, and drifts into
 // and merges with other voids. Nova: novas implode on the best spot before each void, striking and stripping armor. Gravity Well: an
