@@ -300,8 +300,6 @@ html, body, #asp { touch-action: manipulation; }
   text-transform: uppercase;
 }
 
-.asp-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
-.asp-grid.six { grid-template-columns: repeat(6, 1fr); }
 .asp-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 /* THE SPEND BAR (aspira-chooser.js): credits and "-Xc" above the one cancel /
@@ -403,7 +401,6 @@ html, body, #asp { touch-action: manipulation; }
 
 /* a GRID, so neither column can starve the other (owner: the small one collapsed to a sliver, one letter a line) */
 .asp-pop .asp-cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
-.asp-pop .asp-key { font-size: var(--fs-xs); }
 .asp-pop .asp-cols dt { white-space: nowrap; }
 .asp-pop .asp-spec { padding-left: var(--space-4); border-left: 1px solid hsl(var(--green-hsl) / 0.12); }
 .asp-pop .asp-cols dd { white-space: normal; overflow-wrap: break-word; } /* a long "now -> next" wraps at its words, never a letter a line */
@@ -414,10 +411,6 @@ html, body, #asp { touch-action: manipulation; }
 .asp-pop .asp-sec dl { margin: 0; }
 .asp-hint { margin: 0; font-size: var(--fs-sm); line-height: var(--lh-snug); color: hsl(var(--green-hsl)); } /* bright on every card alike, the stats' old size (owner) */
 
-.asp-bar { height: 6px; background: hsl(var(--bg-hsl) / 0.45); border-radius: var(--radius-1); overflow: hidden; }
-.asp-bar i { display: block; height: 100%; width: 0; background: hsl(var(--orange-hsl)); }
-#asp button.asp-pw { font-weight: var(--fw-bold); padding-inline: var(--space-0-5); }
-#asp button.asp-pw.live { border-color: hsl(var(--cyan-hsl)); color: hsl(var(--cyan-hsl)); }
 
 /* the selected tower's stats, pinned beside it on the board (aspira-ui.js) */
 .asp-pop {
@@ -444,13 +437,6 @@ html, body, #asp { touch-action: manipulation; }
 .asp-pop[data-kind="core"] { --green-hsl: var(--white-hsl); } /* the core's card is white, like the core */
 .asp-pop[data-kind] { color: hsl(var(--green-hsl)); }
 
-/* CRT stack well below even crt-dim.css's reduced strength: a fast board of
-   fine lines and small shapes is unreadable under full scanlines. aspira.css
-   loads only on /aspira, so these global selectors touch no other page.
-   Opacity, not rescaled alphas, for the same palette-lint reason as crt-dim. */
-.cyber-bg, .cyber-lines, .cyber-scan { opacity: 0.4; }
-.cyber-blur { backdrop-filter: blur(calc(var(--blur-2xs) * 0.4)); }
-.cyber-crt { backdrop-filter: brightness(0.95) contrast(1.15); }
 
 #asp button.asp-choice { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-0-5); width: 100%; text-align: left; }
 .asp-choice span { font-size: var(--fs-2xs); font-weight: var(--fw-normal); color: hsl(var(--green-hsl) / 0.8); }
@@ -749,7 +735,6 @@ html, body, #asp { touch-action: manipulation; }
 
 
 /* the targeting buttons sit SMALL under sell (owner) */
-#asp .asp-modes button { padding: var(--space-1) var(--space-2); font-size: var(--fs-2xs); }
 
 /* the targeting-priority SLIDER (owner): three snapping stops, labels under it */
 .asp-prio-slider { width: 100%; height: var(--space-8); margin: 0; appearance: none; background: transparent; cursor: pointer; } /* the volume slider's track and knob */
@@ -813,7 +798,6 @@ html, body, #asp { touch-action: manipulation; }
 .asp-box { display: block; width: var(--space-7); height: var(--space-7); fill: none; stroke: currentcolor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* a boss row: the boss centred, a line out to either side (owner) */
-.asp-bline { flex: 1; height: 0; margin: 0 var(--space-1); border-top: 1px solid currentcolor; }
 .asp-bside { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; } /* a boss row: the escort either side (bossRowIcons, aspira-wavelist.js) */
 .asp-bmid { display: flex; align-items: center; flex: none; }
 .asp-wavenote .e-boss > .asp-bside { filter: none; } /* the escort keeps its own colours; only the boss icons invert */

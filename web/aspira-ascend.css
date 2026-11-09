@@ -35,7 +35,7 @@
 #asp-asc-in.asp-asc-green { color: hsl(var(--green-hsl)); }
 #asp-asc-in::placeholder { color: currentcolor; opacity: 0.35; }
 #asp-asc-note { font-size: var(--fs-sm); }
-#asp-asc-board { position: relative; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; pointer-events: auto; } /* ASC_SHOW rows tall, the rest scroll (aspira-ascend.js sets max-height) */
+#asp-asc-board { position: relative; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; pointer-events: auto; } /* the end screen's spare height, the rest scrolls inside (aspira-ascend.js clears max-height) */
 .asp-asc-table { border-collapse: collapse; font-size: var(--fs-sm); background: hsl(var(--bg-hsl) / 0.45); }
 .asp-asc-table td { padding: 0.25em 0.75em; text-align: left; white-space: nowrap; } /* every row ONE line (owner, 2026-10-17), em padding so it shrinks with fitOneLine */
 .asp-asc-table td:first-child { letter-spacing: var(--tracking-mega); }
