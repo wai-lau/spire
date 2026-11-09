@@ -12,7 +12,7 @@ function upgradeOptions(t) {
   const need = pendingChoice(t);
   if (need) return (need === "path" ? UPGRADES[t.kind] : UPGRADES[t.kind][t.path].finals).map((o, i) => ({ choice: i, name: o.name, desc: o.desc }));
   if (t.lvl + 1 === MAX_LVL && t.form != null) {
-    // the L4 step names the form's own super and says what it does
+    // (the dormant path / form tree, §4.11) the L4 step names the form's own super and says what it does
     const f = UPGRADES[t.kind][t.path].finals[t.form];
     return [{ choice: null, ...(f.super || { name: "Super " + f.name, desc: "a stronger " + f.name }) }];
   }

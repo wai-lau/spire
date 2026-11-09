@@ -1,7 +1,7 @@
 // /aspira - TOWER STATS AND PRICES: the level tables, towerStats (a tower's stats from its level, chart and aura) and what
 // building, upgrading and selling cost. Split from aspira-defs.js at its cap; loaded right after it (the simulator too, sim.mjs FILES).
 
-// Towers have four levels (L1-L4, matching the UI). Each table holds one
+// DORMANT (ARCHITECTURE §4.11: every tower runs on its chart; these serve the path / form tree and sim.mjs only). Towers had four levels (L1-L4). Each table holds one
 // value per level; L2 brings the path choice, L3 the final form, L4 the super
 // form. (These are the old 15-level curves sampled at levels 1/5/10/15, so the
 // balance is unchanged by the condensing.)
@@ -31,16 +31,14 @@ function towerStats(t, noAura = false) {
   switch (t.kind) {
     // arc reach = the tower's own range (owner: tripled from half the old range),
     // measured from each arc's parent enemy
-    // ARC levels up MODESTLY (owner, option A): the L2 path brings the big change
     // ARC runs on its SKILL CHART now (aspira-arc.js; owner 2026-10-05)
     case "arc": arcSkillStats(t, s, b); break;
-    // SOL levels up MODESTLY like ARC and ACD (owner): the L2 path brings the change
+    // (no chart: the dormant level tables)
     case "sol":
       if (hasSkills(t)) { solSkillStats(t, s, b); break; } // SOL's chart (aspira-skills.js)
       s.dmg = b.dmg * LVL_ARC_DMG[i]; s.range = b.range * RANGE_BONUS * LVL_ARC_RANGE[i];
       s.crit = LVL_SOL_CRIT[i]; s.rate = b.rate * LVL_SOL_RATE[i]; break;
     case "frz": if (hasSkills(t)) { frzSkillStats(t, s, b); break; } s.slow = LVL_SLOW[i]; s.targets = 3; break; // owner: 3 rays by default (2026-10-04; was 1 since 2026-10-02)
-    // ACD levels up MODESTLY like ARC (owner): the L2 path brings the big change
     case "grv": grvSkillStats(t, s, b); break; // the gravity tower (aspira-grv.js)
     case "crr": carSkillStats(t, s, b); break; // the carrier (aspira-crr.js)
     case "ifr": ifrSkillStats(t, s, b); break; // Ifrit (aspira-ifrit.js)

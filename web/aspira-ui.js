@@ -155,8 +155,7 @@ button(volBox, "", "", () => setMuted(!muted), "asp-mute");
 })();
 
 // the card's stat rows (rayForm, SPEC, statRow) live in aspira-stats.js
-// choice: the path (at level 5) or final form (at level 10) being bought;
-// those two upgrades cannot happen without one
+// choice: the axis id a buy goes to (every tower is charted), or the dormant tree's path / final form (§4.11)
 // quiet: no sound, ring or refresh - the sliders' lock-in buys several and plays once
 function upgradeTower(t, choice = null, quiet = false) {
   if (!t || t.lvl >= maxLvl(t) || G.money < upCost(t)) return;
