@@ -103,6 +103,7 @@ function demoFrame(S, c2d, view, draw, rdt = DEMO_DT, gk = 1) {
   demoRun(S, () => {
     const before = G.enemies.filter(e => e.demo && !e.dead).map(e => [e, e.hp]);
     for (let left = rdt * gk; left > 1e-9;) { const h = Math.min(DEMO_STEP, left); step(h); stepFx(h); S.t += h; left -= h; demoLatStep(S, h); }
+    if (!S.warped && G.towers[0] && (G.towers[0].icp || []).some(i => i.warp)) S.warped = true; // (demoShows' "warps")
     coins.length = 0; G.money = 0; /* NO CREDITS (Leader, 2026-11-03): a kill's coins and their "+Nc" pop would mislead - none change hands */ stepFloats(rdt); // (the effects and the numbers AGE outside step, as in the frame loop - the numbers in REAL time: without stepFx and stepFloats they never left the scene - owner, 2026-11-03: "carrier demo bug, numbers stuck")
     for (const [e, hp] of before) {
       const h = e.demo, T = e.tally;

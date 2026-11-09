@@ -197,14 +197,14 @@ check("CRR: tier 0 ten interceptors, all held in orbit when ready (owner, 2026-1
   if (n[0] !== 1) return "Tether I: " + n[0] + " interceptors tethered at once (expected 1 - " + n[1] + " tether steps in all)"; // at most ONE at a time; which one rides it moves (carTethered, 2026-10-25)
 });
 
-check("CRR Hangar V retargets: an interceptor whose target dies with ammo left picks a fresh enemy, at most CRR_RETARGETS (2) times a sortie, then goes home; below Hangar V it goes home at once (owner, 2026-11-06: \"Hangar V, retargets up to 2 times\")", () => {
-  const go = hangar => run(`(() => { const { t, es, st } = tierLane("crr", { hangar: ${hangar} }, [90, 110, 130, 150]); G.started = true; G.nextIn = 1e9; G.spawns = []; step(1 / 60);
-    const i = t.icp[0], seq = []; i.state = "out"; i.e = es[0]; i.ammo = 99; i.rt = 0; i.hold = false; i.x = es[0].x; i.y = es[0].y; i.orb = true;
-    for (let k = 0; k < 400 && i.state === "out"; k++) { if (i.e && !i.e.dead) { if (!seq.includes(i.e)) seq.push(i.e); i.e.dead = true; } stepIcp(i, t, towerStats(t), 1 / 60); }
-    return { targets: seq.length, rt: i.rt, state: i.state, retargets: towerStats(t).retargets }; })()`);
+check("CRR Hangar V WARP DRIVE (owner, 2026-11-09: \"no retarget / instead, warp drive ... increase fly-to speed to 3000, then when the interceptor is near enemy (just before starting to turn to face them)\"): a launched interceptor flies out at CRR_WARP_V and drops to its normal speed CRR_WARP_END orbits from its target (i.warpAt set there), before it is on its circle; its target dead, it goes home - no retarget at any tier; below Hangar V no warp", () => {
+  const go = hangar => run(`(() => { const { t, es } = tierLane("crr", { hangar: ${hangar} }, [210]); G.started = true; G.nextIn = 1e9; G.spawns = []; const st = towerStats(t); let top = 0, at = null, off = null;
+    let orbFirst = false; for (let k = 0; k < 600 && !off; k++) { step(1 / 20); const i = t.icp.find(o => o.state === "out"); if (!i) continue; top = Math.max(top, i.v || 0); if (i.orb && i.warp) orbFirst = true; if (i.warpAt && !at) { at = i.warpAt; off = Math.hypot(at.x - es[0].x, at.y - es[0].y); } }
+    const i = t.icp.find(o => o.state === "out"); if (i && i.e) i.e.dead = true; if (i) stepIcp(i, t, st, 1 / 60);
+    return { warp: st.warp, top: Math.round(top), off: off == null ? null : Math.round(off), orbFirst, home: i ? i.state !== "out" : null, R: CRR_ORBIT, sp: Math.round(st.speed) }; })()`);
   const v = go(5), iv = go(4);
-  if (v.retargets !== 2 || v.targets !== 3 || v.rt !== 2 || v.state === "out") return "Hangar V " + JSON.stringify(v) + " (expected 3 targets in a sortie, 2 retargets, then home)";
-  if (iv.retargets !== 0 || iv.targets !== 1 || iv.state === "out") return "Hangar IV " + JSON.stringify(iv) + " (expected no retarget: one target, then home)";
+  if (v.warp !== 3000 || v.top < 1.5 * v.sp || v.off == null || v.off > 2 * v.R * 1.2 + 10 || v.off < 1.3 * v.R * 0.8 || v.orbFirst || v.home !== true) return "Hangar V " + JSON.stringify(v) + " (expected out well above its normal speed in the sim's 1/20 s step, normal speed ~1.6 orbits out, before its circle, home when its target dies)";
+  if (iv.warp || iv.top > 1.05 * iv.sp || iv.off != null || iv.home !== true) return "Hangar IV " + JSON.stringify(iv) + " (expected no warp, home when its target dies)";
 });
 check("CRR Armament V bursts on EVERY way home: a forced return with ammo left throws CRR_BURST_N pellets, deterministically; below V none (owner, 2026-11-06: \"Arms, explodes into pellets if about to return to base for any reason\")", () => {
   const go = armament => run(`(() => { const { t, es } = tierLane("crr", { armament: ${armament} }, [90]); G.started = true; G.nextIn = 1e9; G.spawns = []; step(1 / 60);

@@ -9,7 +9,7 @@ import { boot, check } from "./harness.mjs";
 
 const { run } = boot();
 const DEMO_CHECK_S = 6;
-const SHOWS = ["hits", "many", "strips", "pops", "slows", "fast"];
+const SHOWS = ["hits", "many", "strips", "pops", "slows", "fast", "warps"]; // (warps: CRR Warp Drive, 2026-11-09)
 
 check("demo coverage: a layout for every tower's tier 0 and every axis, none for a tower or axis that is gone", () => {
   return run(`(() => { const bad = [], known = ${JSON.stringify(SHOWS)};
@@ -17,7 +17,7 @@ check("demo coverage: a layout for every tower's tier 0 and every axis, none for
       if (!L.base) bad.push(kind + ": no base (tier 0) layout");
       for (const ax of SKILL_TREES[kind]) if (!L[ax.id]) bad.push(kind + "." + ax.id + " (" + ax.name + "): no layout");
       for (const key of Object.keys(L)) { if (key !== "base" && !SKILL_TREES[kind].some(ax => ax.id === key)) bad.push(kind + "." + key + ": no such axis");
-        const s = L[key].shows || []; if (!s.length) bad.push(kind + "." + key + ": shows nothing"); for (const x of s) if (!known.includes(x)) bad.push(kind + "." + key + ": unknown show " + x); } }
+        const s = L[key].shows || []; if (!s.length) bad.push(kind + "." + key + ": shows nothing"); for (const x of s.concat(L[key].showsV || [])) if (!known.includes(x)) bad.push(kind + "." + key + ": unknown show " + x); } }
     for (const kind of Object.keys(DEMO_LAYOUTS)) if (!SKILL_TREES[kind]) bad.push(kind + ": no such tower");
     return bad.join("; "); })()`);
 });
@@ -30,7 +30,7 @@ check("demo behaviour: every layout at every tier shows what it declares (seeded
         const skills = key === "base" ? {} : { [key]: tier }, t = { kind, cell, x: c.x, y: c.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
         const S = demoScene(kind, skills, cell, demoPlace(kind, towerStats(t), cell, L));
         for (let f = 0; f < ${DEMO_CHECK_S} * 60; f++) demoFrame(S);
-        const got = demoShows(S), miss = L.shows.filter(x => !got.includes(x));
+        const got = demoShows(S), want = L.shows.concat(tier === SKILL_TIERS ? L.showsV || [] : []), miss = want.filter(x => !got.includes(x)); /* showsV: what only the capstone shows (CRR Warp Drive) */
         if (miss.length) bad.push(kind + "." + key + " " + tier + ": no " + miss.join(", ") + " (showed " + (got.join(", ") || "nothing") + ")");
         /* NUMBERS EXPIRE (owner, 2026-11-03: "carrier demo bug, numbers stuck" - the scene never aged its effects): none past its life, the list bounded */
         const old = S.fx.filter(f => !(f.t < f.life)).length + S.dmgLive.filter(f => !(f.t < f.life)).length;

@@ -8,6 +8,7 @@
 //   hits     the tower damages an enemy            many    2+ enemies take damage (chains, splits, splash, a wing)
 //   strips   an armored enemy loses armor           pops    a shielded enemy loses a shield charge
 //   slows    a walker loses 10%+ of its pace         fast    the fast walker loses a bigger share of its pace than the non-fast one (FAST_SLOW_MUL)
+//   warps    a CRR interceptor flew a leg in warp (Hangar V, Warp Drive) - in `showsV`: checked at the capstone tier only
 // Every layout's enemies WALK the scene's two lanes in a lattice (below); a layout names their mix (`types`), rarely its rows or arrival rate
 const DEMO_SOL_ROWS = 14; // SOL's rows a lane: twice the rest (owner, 2026-11-06: "also SOL demo needs more enemies" - Reflection V splits to 8)
 const DEMO_LAYOUTS = {
@@ -43,7 +44,7 @@ const DEMO_LAYOUTS = {
   },
   crr: {
     base: { types: ["swarm", "shield", "armor", "swarm"], shows: ["hits", "pops"] },
-    hangar: { types: ["swarm", "shield", "swarm", "armor", "swarm"], shows: ["hits", "many", "pops"] },
+    hangar: { rows: 3, types: ["swarm", "shield", "swarm", "armor", "swarm"], shows: ["hits", "many", "pops"], showsV: ["warps"] }, // (rows 3: the wing goes at the nearest lane first and, with no retarget since Warp Drive (owner, 2026-11-09), the far lane's opening rows walked out unhurt - 5 of 13 hurt; now 6 of 9)
     launch: { types: ["fast", "swarm"], shows: ["hits", "slows"] }, // (no "fast": the bolt slow that also slowed the swarm is gone, 2026-11-04 - only the tethered are slowed)
     armament: { types: ["shield", "swarm", "shield", "armor", "swarm", "swarm"], shows: ["hits", "pops"] }, // (two more walkers: a wing twice the size, 2026-11-04, launches every interceptor)
   },
@@ -127,6 +128,7 @@ function demoSpan(r) { const c = Math.cos(warpTilt()), hh = r * c * DEMO_FIT; re
 function demoShows(S) {
   const E = S.T.map(t => ({ type: t.type, demo: t.demo, tally: t })), hit = E.filter(e => e.tally.dmg > 0), out = []; // (every walker the scene had, the killed too)
   if (hit.length) out.push("hits"); if (hit.length >= 2) out.push("many");
+  if (S.warped) out.push("warps"); // CRR's Warp Drive: an interceptor flew a leg in warp (demoFrame sets S.warped)
   if (E.some(e => e.demo.armor > 0 && e.tally.armor < e.demo.armor)) out.push("strips");
   if (E.some(e => e.demo.shield > 0 && e.tally.shield < e.demo.shield)) out.push("pops");
   const slow = E.filter(e => e.demo.walk && e.tally.slow > 0.1); if (slow.length) out.push("slows");
