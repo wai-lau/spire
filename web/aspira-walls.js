@@ -5,7 +5,7 @@
 // drawn before it, the ones IN FRONT after - so the core's prism and a die hide and are hidden as they should.
 // Loaded after aspira-warp.js and aspira-solids.js.
 
-// the live segments of a shield (drawSegs's geometry): each { a: [x, y], b: [x, y], r: its ring }
+// the live segments of a shield (the old 2D drawSegs's geometry): each { a: [x, y], b: [x, y], r: its ring }
 function segPieces(x, y, segs, sides, rot, base, gap, off = 0) {
   const k = shieldPulse(), out = [];
   segs.forEach((on, i) => {
@@ -49,7 +49,7 @@ function warpShieldLines(pieces, col, a0, at) {
   }
   ctx.globalAlpha = 1;
 }
-// the core's shields: its life segments (kept in step here - the 2D drawCore is not called in 3D), its level
+// the core's shields: its life segments (kept in step here; the 2D drawCore that once did it is gone), its level
 // rings and the ring that breathes while a core power waits
 function coreWallPieces() {
   G.lifeFlash = G.lifeFlash || [];

@@ -264,7 +264,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
     ctx.globalAlpha = Math.min(1, k * 2);
     const one = () => {
     if (f.k === "beam") {
-      ctx.globalAlpha = Math.min(1, ctx.globalAlpha * (f.alpha ?? 1) * BEAM_BRIGHT) * (f.share ?? 1) ** 2; // share: a SOL beam's part of the first beam's hit, squared past the cap (aspira-towers.js rayHit) // ARC: an arc as opaque as its damage share; x BEAM_BRIGHT (owner)
+      ctx.globalAlpha = Math.min(1, ctx.globalAlpha * (f.alpha ?? 1) * BEAM_BRIGHT) * (f.share ?? 1) ** 2; // share: a SOL beam's part of the first beam's hit, squared past the cap (the old SOL shot's rayHit, gone 2026-11-05) // ARC: an arc as opaque as its damage share; x BEAM_BRIGHT (owner)
       // glow underlay + core, both widening with the damage behind the shot
       ctx.strokeStyle = pass === "beams" && !f.slim ? skyOwnCss(f.color) : COL[f.color]; ctx.lineCap = "round"; // (the entity layer's beams: own colour on the full sky where it reads - skyOwnCss, aspira-fxgl.js)
       // a following beam reads its endpoints live from the tower/enemy it joins
@@ -284,7 +284,7 @@ function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
         }
       } else { const A = pt(x1, y1); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); }
       // the core's width is the DAMAGE of this hit (owner: every tower) - a
-      // multi-beam shot's beams each carry the whole hit (rayHit)
+      // multi-beam shot's beams each carry the whole hit (the old shot's rayHit)
       const core = (f.soft ? BEAM_MIN + ((f.bw ??= beamWidth(f.d || 0)) - BEAM_MIN) * ARC_W_CORR : (f.bw ??= beamWidth(f.d || 0))) * (f.thin || 1) * ws; // (soft: a chart ARC's, flatter with damage - aspira-arc.js; thin: its leaps)
       if (f.m) {
         const a = ctx.globalAlpha;

@@ -1,5 +1,5 @@
 // /aspira — the skill CHART drawn (UI only; split off aspira-skills.js at the
-// 500-line cap): the triangle radar on the tower card (skillChart) and the
+// 500-line cap): the triangle radar on the tower card (sliderChart, aspira-sliders.js) and the
 // small one inside a tower's hex on the board (boardChart). Loaded after
 // aspira-skills.js; the simulator does not load it.
 // ---------- the chart (UI only; the upgrade cards draw it) ----------
@@ -9,7 +9,7 @@
 // triangle's corners ARE three of the hex's corners (every other one, at the
 // outline), with the inner tier triangles and the three axes drawn faint, and
 // the build's shape filled in the tower's colour
-const BOARD_CHART_MIN = 8 / 46; // skillChart's inner radius over its outer
+const BOARD_CHART_MIN = 8 / 46; // the card chart's inner radius over its outer
 function boardChart(t, x, y, alpha, c0) {
   const axes = SKILL_TREES[t.kind], col = COL[TOWERS[t.kind].color];
   // axis i points where the CARD's chart puts it (owner: same orientation - the

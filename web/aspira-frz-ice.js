@@ -5,7 +5,7 @@
 // nothing wholly hidden behind the tower, no shard straddling a hex, left / right volume balanced, heights falling off toward the edge, opaque faces). The generator
 // is the approved mockup's (tower-looks.html, I_genPerma / I_genFrac / I_paintOrder), run per tower IN THAT TOWER'S OWN VIEW (Gm: its screen squash and visible
 // height and its hex's turn, from its 3D frame - frzIceView), in the mockup's units (a hex of radius 40, screen y down from the top face's centre), seeded
-// by its cell, and TIME-SLICED (frzIceStep: a few ms a frame - a full set is ~2 s of work; the crystals appear in their first-n order, growing in). Each
+// by its cell, and TIME-SLICED (frzIceMaker in the ice Worker, or a few ms a frame without one - a full set is ~2 s of work; the crystals appear in their first-n order, growing in). Each
 // tower's pieces are BAKED into one image by a per-pixel depth test (aspira-frz-ice3d.js), re-baked only when its tiers, its grown count or its view's shape
 // change (ICE_VIEW_Q); a frame draws one image a FRZ (drawFrzIce, from drawOrbiters). Look only
 const ICE_SLICE_MS = 3;
@@ -30,7 +30,7 @@ function iceUse(M) {
 const I_clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function I_rng(seed) { let a = seed | 0; return function () { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 function I_hexPts(g, r, z) { const o = []; for (let k = 0; k < 6; k++) { const a = (-90 + I_HEX_ROT + 60 * k) * Math.PI / 180; o.push([g.cx + r * Math.cos(a), g.cy - z + r * g.sq * Math.sin(a)]); } return o; }
-const I_poly = () => null; // (the mockup's Path2D: the game draws from the points - frzIceBake)
+const I_poly = () => null; // (the mockup's Path2D: the game draws from the points - the bake, aspira-frz-ice3d.js)
 // ---------- FRZ ----------
 // Wai 11-06 FRZ pass. PERMAFROST = ice hex prisms glued face to face (same orientation as the tower's hex); FRACTURE = triangular ice shards with a steep slanted
 // top, scattered round the tower. Each feature's geometry is built ONCE from one seeded sequence (a tier takes the first n, so earlier pieces stay), the prism

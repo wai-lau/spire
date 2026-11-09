@@ -64,7 +64,7 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
     if (why) { replay(why); real.fill(...a); }
   };
   g.stroke = (...a) => {
-    const st = real.strokeStyle, dash = g.dash ? real.getLineDash() : null, glow = real.shadowBlur > 0 && plain(real.shadowColor) && real.shadowColor; // a glow: soft rings under it in the SHADOW's colour (glcGlow) - any colour since 2026-10-28 (perf: GRV's nova ring glows violet under a whitening stroke, and that one difference sent the whole moving layer up ~35 times a second, the iPhone logs' stroke:shadow)
+    const st = real.strokeStyle, dash = g.dash ? real.getLineDash() : null, glow = real.shadowBlur > 0 && plain(real.shadowColor) && real.shadowColor; // a glow: soft rings under it in the SHADOW's colour (glcStroke's glow) - any colour since 2026-10-28 (perf: GRV's nova ring glows violet under a whitening stroke, and that one difference sent the whole moving layer up ~35 times a second, the iPhone logs' stroke:shadow)
     const why = odd ? "stroke:" + odd : a.length ? "stroke:path" : dash && dash.length !== 2 ? "stroke:dash" + dash.length : real.globalCompositeOperation !== "source-over" ? "stroke:" + real.globalCompositeOperation :
       real.shadowBlur > 0 && !glow ? "stroke:shadow" : (real.filter || "none") !== "none" ? "stroke:filter" : !plain(st) ? "stroke:style" :
       real.lineJoin !== "round" && parts.some(p => !p.circle && p.pts.length + (p.closed ? 1 : 0) > 2 && !glcRegular(p, g.w2)) ? "stroke:join-" + real.lineJoin : null; // (a mitred corner: the canvas - but a regular polygon's is the batch's shape 5)

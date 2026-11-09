@@ -82,7 +82,7 @@ function drawTimeStop(c) {
 // own back edge (owner, 2026-10-16: "the front of the orbital relay display is broken" - drawn in the effects layer it was cut by
 // the towers' hull mask); like drawLeashRings3d (aspira-camera.js)
 function drawRelayHex3d() {
-  const arm = typeof ui !== "undefined" && ui.relayArm; // ARMED: every tower flashes its hexagon, "tap one" (drawRelayArm's look, in 3D)
+  const arm = typeof ui !== "undefined" && ui.relayArm; // ARMED: every tower flashes its hexagon, "tap one" (the old 2D relay-arm look, in 3D)
   if ((!G.core && !arm) || !warp.ent) return;
   const g = warp.ent.getContext("2d"), px = canvasDpr() * warpRes(), b = blinkWave();
   const hex = (t, k) => { const c0 = CELLS[t.cell], x = t.x ?? c0.x, y = t.y ?? c0.y; g.beginPath(); c0.pts.forEach((q, i) => { const p = warpProject(x + (q.x - c0.x) * TOWER_K * TOWER_DRAW_K * k, y + (q.y - c0.y) * TOWER_K * TOWER_DRAW_K * k, 0); if (i) g.lineTo(p.x, p.y); else g.moveTo(p.x, p.y); }); g.closePath(); g.stroke(); };

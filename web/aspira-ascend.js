@@ -105,7 +105,7 @@ function showAscendants() {
   ascLoad();
 }
 
-// THE ASCENDANT BOXES (moved from aspira-ui.js, 2026-10-21): built once by autoWaitBox, drawn by updateAutoWait
+// THE ASCENDANT BOXES (moved from aspira-ui.js, 2026-10-21): built once by ascBoxes, drawn by updateAutoWait
 function ascBoxes() {
   // the ASCENDANT-only boxes sit UNDER THE TITLE (owner, 2026-10-21: "move those checkboxes under ASCENDANT"), one each
   const asc = document.createElement("div");

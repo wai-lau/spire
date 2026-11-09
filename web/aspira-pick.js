@@ -3,7 +3,7 @@
 // out to its outermost ring; in 3D the screen outline of each standing prism (its top, walls and the half below the
 // floor) and the core's shields on the floor - before, a press counted only where the ray met the FLOOR, so the
 // raised top of a tower, drawn well above its floor spot, missed it. Loaded after aspira-warp.js.
-// the core's outermost drawn ring (drawCore, aspira-draw.js): its life rings, a ring per power, the pick waiting
+// the core's outermost drawn ring (coreWallPieces, aspira-walls.js): its life rings, a ring per power, the pick waiting
 function coreOuterR() {
   const out = LIFE_GAP * LIFE_RINGS / CORE_R, lvl = Math.round(coreLvl() / CORE_TIERS);
   return CORE_R * (1 + out + LEVEL_GAP * (lvl + (corePicks() > 0 ? 1 : 0)));
