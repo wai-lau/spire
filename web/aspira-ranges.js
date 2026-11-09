@@ -1,7 +1,7 @@
 // /spire - TOWER RANGES (split from aspira-draw.js at its 500-line cap, 2026-11-03): the range rings over the boss's HP bar, a
 // blocked slot's mark, the range path (flat or projected), a tower's range drawn, the soft disc. Loads right after aspira-draw.js.
 // THE RANGES OVER THE BOSS'S HP BAR (owner, 2026-10-27: "tower ranges and effects should appear above hp"): every tower's reach ring -
-// a moon tower's moons' circles, ARC's dashed reach, a chart FRZ's moon orbit - as a projected polygon on the entity layer at the floor's
+// a moon tower's moons' circles, ARC's dashed reach - as a projected polygon on the entity layer at the floor's
 // level (warpEntities' part A, after drawBossBarFloor), so it lies over the bar and under the dice, the beams and the towers. The
 // selected tower's at full strength with its disc, the rest faint; under a boss sky every one white at full strength ("range should be
 // visible during boss waves"), in the frame's palette so it turns over with the rest - drawTowerRange itself, with a projection

@@ -183,8 +183,7 @@ function* I_genFrac(N, hexes) {
     if (!spot(tri0, rs)) return null;
     const th = (50 + 20 * r()) * Math.PI / 180; let ga; do { ga = r() * I_TAU; } while (Math.tan(th) * Math.sin(ga) > 0.45); // ga: the direction the top RISES toward; not strongly toward the viewer, or the top face would face away
     const gd = [Math.cos(ga), Math.sin(ga)], pr = tri0.map(q => q[0] * gd[0] + q[1] * gd[1]), pm = Math.max(...pr), hg = pr.map(x => I_clamp(hmax - Math.tan(th) * (pm - x), 0.15 * hmax, hmax));
-    // POKING THROUGH IS FINE (owner, 2026-11-06: "Allow poking in and out of perms" - the old rule moved a shard wholly inside a hex or wholly out): a shard
-    // stands on the floor wherever it falls, a crossing drawn right by the bake's depth test (frzIce3dBake). LEANING OUT (owner: "Tilt fracs away from centre of
+    // LEANING OUT (owner: "Tilt fracs away from centre of
     // tower, random amounts between 15 and 30 deg"): its axis tilts away from the tower's centre by a seeded 15-30 deg from upright, the base on the floor
     // (tv: floor units a unit up, in the mockup's units - g.K3 turns a real angle into them); its tips stay inside the canvas (and so inside the moons' orbit)
     // ON TOP, NOT THROUGH (owner, 2026-11-08: "for frac, 1/3 the heights, and place them on top of stuff instead of through stuff"; it reverses 11-06's

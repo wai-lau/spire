@@ -1,11 +1,12 @@
-// /spire - FRZ'S ICE IN 3D (owner, 2026-11-06: "also ice crystals should be 3d"; "Allow poking in and out of perms"; "Never redraw the ice").
+// /spire - FRZ'S ICE IN 3D (owner, 2026-11-06: "also ice crystals should be 3d"; "Never redraw the ice").
 // Draw only. Every piece the generator makes (aspira-frz-ice.js) is a SOLID: its floor outline (the mockup's units, the tower's hex radius 40), a
 // height above its base at each corner, its base's lift and a shard's lean (tv). Each tower's ice is projected ONCE, through an affine copy of the
 // 3D camera taken at the tower's first view (ice3dProj: the floor's two axes and the up axis in device px a world unit), and baked with a
-// PER-PIXEL DEPTH TEST - every wall and top, and the tower's own prism as a depth-only occluder - so a shard poking through a Permafrost crystal
-// shows only what is outside it, in front or behind as it is, and what stands behind the tower is hidden by it. Then each pixel's colour (the
+// PER-PIXEL DEPTH TEST - every wall and top, and the tower's own prism as a depth-only occluder - so where two pieces cross only the nearer
+// shows, and what stands behind the tower is hidden by it. Then each pixel's colour (the
 // opaque base, the ice tint fading down a wall by its height, the top's tint) and, last, the ridges - only where the depth test shows them - in a
-// smooth glow. The whole bake runs in slices (ice3dRun), and the one image then only moves and scales with the tower (drawFrzIce).
+// smooth glow. The bake runs in the ice Worker (an OffscreenCanvas, the image sent back as an ImageBitmap) or, without one, in slices on the
+// main thread (ice3dRun); the image then only moves and scales with the tower (drawFrzIce), re-baked only when the view's shape changes.
 const ICE3D_EPS = 0.02, ICE3D_BAND = 24; // BAND: rows put a step // depth slack, world units, for an edge lying on its own faces
 // the camera at the tower's first view: device px per world unit along x, y and up, the view direction (nearer = larger), and the mockup's scales
 function ice3dProj(x, y, top, Rw, Hs) {
