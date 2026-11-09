@@ -22,15 +22,30 @@ function openChangelog() {
   if (!card) {
     card = document.createElement("div");
     card.id = "asp-log"; card.className = "asp-deck asp-log";
-    // each entry in THREE SECTIONS (owner, 2026-10-21: "For the changelog, split each section into Balance Perf and UI"; grouped by
-    // subject 2026-10-16 .. 21): Balance / Perf / UI headings, each section's lines in LOG_SUBJECTS order (stable) so one tower's sit
-    // together, the "Subject:" lead in bold; Perf and UI a size smaller (asp-log-ui)
-    const SECTIONS = [["Balance", "b"], ["Perf", "p"], ["UI", "u"]];
+    // each entry in THREE SECTIONS (owner, 2026-10-21: "For the changelog, split each section into Balance Perf and UI"; 2026-11-09: "rename UI
+    // to Visual"): Balance / Perf / Visual headings, each section's lines in LOG_SUBJECTS order (stable) so one tower's sit together, the
+    // "Subject:" lead in bold; Perf and Visual a size smaller (asp-log-small). GROUPED WITHIN (owner, 2026-11-09: "then group within
+    // visual/balance if warranted"): in Balance and Visual, a subject with 2+ lines gets its own small heading (h5) and its lines drop the
+    // repeated lead; a subject with one line stays a plain line with its bold lead
+    const SECTIONS = [["Balance", "b", true], ["Perf", "p", false], ["Visual", "vis", true]];
     const rank = new Map(LOG_SUBJECTS.map(([name], k) => [name, k]));
-    const li = (i, small) => { const m = i.match(/^([^:]{1,40}):\s*(.*)$/); return "<li" + (small ? ' class="asp-log-ui"' : "") + ">" + (m ? "<b>" + m[1] + ":</b> " + m[2] : i) + "</li>"; };
-    const day = d => "<h3>" + d.v + " · " + d.day + "</h3>" + SECTIONS.map(([name, k]) => {
+    const lead = i => i.match(/^([^:]{1,40}):\s*(.*)$/);
+    const named = (s, head) => { const e = LOG_SUBJECTS.find(([n]) => n === s); return !!(e && e[1].test(head)); }; // the lead itself names the heading's subject: drop it under that heading
+    const li = (i, small, bare) => { const m = lead(i); return "<li" + (small ? ' class="asp-log-small"' : "") + ">" + (m ? (bare ? m[2] : "<b>" + m[1] + ":</b> " + m[2]) : i) + "</li>"; };
+    const list = (is, small, group) => {
+      if (!group) return "<ul>" + is.map(i => li(i, small)).join("") + "</ul>";
+      const subj = new Map(); for (const i of is) { const s = logSubject(i); (subj.get(s) || subj.set(s, []).get(s)).push(i); }
+      let out = "", open = false;
+      for (const [s, ls] of subj) {
+        if (ls.length < 2 || s === "Other") { if (!open) { out += "<ul>"; open = true; } out += ls.map(i => li(i, small)).join(""); continue; } // (Other is no subject: never a heading)
+        if (open) { out += "</ul>"; open = false; }
+        out += "<h5" + (small ? ' class="asp-log-small"' : "") + ">" + s + "</h5><ul>" + ls.map(i => li(i, small, !!(lead(i) && named(s, lead(i)[1])))).join("") + "</ul>";
+      }
+      return out + (open ? "</ul>" : "");
+    };
+    const day = d => "<h3>" + d.v + " · " + d.day + "</h3>" + SECTIONS.map(([name, k, group]) => {
       const is = (d[k] || []).map((i, n) => [i, n]).sort((a, b) => (rank.get(logSubject(a[0])) - rank.get(logSubject(b[0]))) || a[1] - b[1]).map(x => x[0]);
-      return is.length ? "<h4>" + name + "</h4><ul>" + is.map(i => li(i, k !== "b")).join("") + "</ul>" : "";
+      return is.length ? "<h4>" + name + "</h4>" + list(is, k !== "b", group) : "";
     }).join("");
     card.innerHTML = '<h2>changes</h2><div class="asp-log-list">' + CHANGELOG.map(day).join("") + "</div>";
     button(card, "asp-primary", "close", closeChangelog);

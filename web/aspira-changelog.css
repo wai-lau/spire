@@ -14,10 +14,12 @@
 }
 .asp-log[hidden] { display: none; }
 .asp-log h2 { margin: 0; font-size: var(--fs-2xs); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: hsl(var(--orange-hsl)); }
-.asp-log-list { overflow-y: auto; min-height: 0; font-size: calc(var(--fs-2xs) * 0.9); line-height: var(--lh-tight); } /* tight (owner, 2026-10-14); Buffs and Nerfs at this size, Perf/UI a size down (.asp-log-ui) */
+.asp-log-list { overflow-y: auto; min-height: 0; font-size: calc(var(--fs-2xs) * 0.9); line-height: var(--lh-tight); } /* tight (owner, 2026-10-14); Buffs and Nerfs at this size, Perf/Visual a size down (.asp-log-small) */
 .asp-log h3 { margin: var(--space-3) 0 var(--space-1); font-size: calc(var(--fs-2xs) * 0.9); color: hsl(var(--green-hsl)); }
-.asp-log h4 { margin: var(--space-1) 0; font-size: calc(var(--fs-2xs) * 0.9); font-weight: var(--fw-normal); color: hsl(var(--orange-hsl)); } /* Balance / Perf / UI (2026-10-21) */
-.asp-log .asp-log-ui { font-size: calc(var(--fs-2xs) * 0.8); } /* Perf/UI: the smaller (everything a step down again - owner, 2026-10-16: "bump down all font sizes in changelog"; both a step down - owner, 2026-10-15: "only bump down changelog") */
+.asp-log h4 { margin: var(--space-1) 0; font-size: calc(var(--fs-2xs) * 0.9); font-weight: var(--fw-normal); color: hsl(var(--orange-hsl)); } /* Balance / Perf / Visual (2026-10-21; UI renamed Visual 2026-11-09) */
+.asp-log .asp-log-small { font-size: calc(var(--fs-2xs) * 0.8); } /* Perf/Visual: the smaller (everything a step down again - owner, 2026-10-16: "bump down all font sizes in changelog"; both a step down - owner, 2026-10-15: "only bump down changelog") */
+.asp-log h5 { margin: var(--space-1) 0 0 var(--space-2); font-size: calc(var(--fs-2xs) * 0.9); font-weight: var(--fw-bold); } /* a subject with 2+ lines inside Balance / Visual (owner, 2026-11-09: "group within visual/balance if warranted") */
+.asp-log h5.asp-log-small { font-size: calc(var(--fs-2xs) * 0.8); }
 .asp-log ul { margin: 0; padding-left: var(--space-4); }
 .asp-log li { margin-bottom: var(--space-px); }
 .asp-log > button { align-self: center; }

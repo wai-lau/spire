@@ -9,7 +9,7 @@ CHANGELOG.push(
     "Sol: 17 beams at the third purchase and 25 at the capstone.", "Sol: Refraction, crits and Breach hit harder late.",
     "Carrier: Tether pulses, shots and Hangar hit harder late.", "Acid: Corrosion, Spray and pool burn hit harder late.",
     "Build cards: Checks and x's re-measured against all six towers; Freeze and Sol now differ.",
-  ], u: [
+  ], vis: [
     "Shield: An enemy's outer layers are spokes as thick as its outline.", "Shield: Shield enemies are drawn smaller.",
     "Auto-wait: The first two slow-downs start later, 4 s and 1.5 s from the core (was 6 s and 2 s).",
     "End screen: The leak list and top players fill the space and scroll inside themselves.",
@@ -24,7 +24,7 @@ CHANGELOG.push(
     "Freeze: Rime pulses faster and harder.",
     "Bosses: The Lovers walk in step, so they arrive together.", "Core: Orbital Relay back to x3 (was x5).",
     "Leaderboard: An Ascendant's best wave counts the win; a loss no longer says 'your best'.",
-  ], u: [
+  ], vis: [
     "Carrier: The short name is now CRR; its description explains focus fire.",
     "Shield: The pop's 0 always shows at full size; the blue ring is gone.",
     "Damage numbers: Sized against your towers' total damage a second.",
@@ -41,7 +41,7 @@ CHANGELOG.push(
     "Board: Damage-number stamps reuse canvases, easing late-wave hitches on phones.",
     "Board: Shield rings are found by formula instead of a loop.",
     "Board: The desktop number cache holds 3x as many stamps.",
-  ], u: [
+  ], vis: [
     "Board: Lanes turn in finer steps to keep more of each on screen.",
     "Board: The build and upgrade cards no longer grey out the board behind them.",
     "Shield: An enemy's last layer loses one side a hit, down to a triangle; the next hit unshields it.",
@@ -68,7 +68,7 @@ CHANGELOG.push(
     "Waves: Enemies can't be targeted, hit or slowed until they are on screen.",
     "Board: Tower building spots sit 100 u further from the core.",
     "Controls: Auto-move starts off in every new game; its confirm reads NO LEADERBOARD.",
-  ], u: [
+  ], vis: [
     "Carrier: The short name is CAR again (was ATC).", "Board: A tower's upgrade card opens only from its home slot.",
     "Damage numbers: Keep their own colours on a boss's inverted sky.",
     "Shield: The last layer is drawn thicker, shrinks as it breaks and goes only after the outer layers.",
@@ -86,7 +86,7 @@ CHANGELOG.push(
     "Board: The next wave's lane labels are prepared before the wave starts.",
     "Board: On those phones the board image is prepared off the frame.",
     "Board: An emptied lane stays lit until the wave ends.",
-  ], u: [
+  ], vis: [
     "Shield: Drawn about 20 units further from the enemy.",
     "Damage numbers: A killing blow shows the whole hit (Carrier, Acid pools, Gravity).",
     "Leaderboard: Every row fits on one line, as do the build cards' checks and x's.",
@@ -146,7 +146,7 @@ CHANGELOG.push(
     "Gravity: Past ~80 pellets in the air they merge into fewer, harder ones (same damage).",
     "Board: Fixed the game freezing as soon as a black hole appeared.",
     "Sound: The engine sleeps while the tab is hidden or the game is muted.",
-  ], u: [
+  ], vis: [
     "Carrier: Interceptors loop smoothly round their target, avoiding the core and towers.",
     "Carrier: Bolts reach 390.", "Carrier: Interceptors are half size, growing with Armament.",
     "Carrier: A brighter cobalt blue kept on boss waves.",
@@ -209,7 +209,7 @@ CHANGELOG.push(
     "Carrier: Every shot slows its target (20%, double on fast; never shielded ones).",
     "Carrier: A shot is three bolts, each a third of its hit; less ammo a sortie (8 to 16, was 12 to 28).",
     "Carrier: After a kill an interceptor takes a new target only close by, else flies home.",
-  ], u: [
+  ], vis: [
     "Carrier: Short name is ATC.", "Carrier: Interceptors are thin, long darts flying a clothespin path.",
     "Carrier: Shots are light-blue bolts side by side.",
     "Gravity: A black-hole look with aura bands from white-hot to deep purple and a magenta colour.",
@@ -230,7 +230,7 @@ CHANGELOG.push(
     "Armor: Waves have x1.5 enemies (was x2), each worth 1.33 credits (was 1).",
     "Upgrades: Four buys an axis, I-IV; IV is the capstone.",
     "Upgrades: The old II-III and IV-V are one buy each at both prices.",
-  ], u: [
+  ], vis: [
     "Damage numbers: Over 1,000 read short: 1.7k, 17k, 1.2M.", "Changes: Text smaller.",
     "Board: A tower flashes for an upgrade only when its next buy is affordable.",
     "Core: Either power slams the core down while it runs.",
@@ -253,7 +253,7 @@ CHANGELOG.push(
     "Controls: Auto-move glides 1.5x faster and as fast as the game speed.",
   ], p: [
     "Board: 3D is faster, most of all on phones; resolution no longer drops.",
-  ], u: [
+  ], vis: [
     "Controls: The tower card closes with an X beside the upgrade button.",
     "Controls: Tapping the bar beside the speed buttons closes the open window.",
     "Tower cards: Permafrost says what it adds (\"+11% slow, stacking\").",
@@ -279,7 +279,7 @@ CHANGELOG.push(
     "Acid: Corrosion goo strips more armor.", "Bosses: x1.4 HP; Empress and Strength x3.5, Death x2.8.",
     "Sol: Refraction cone a third narrower.", "Swarm: Waves spread over twice as many lanes.",
     "Leaderboard: Auto-move marks the game (DQ) and keeps it off the board; it glides at half speed.",
-  ], u: [
+  ], vis: [
     "Controls: Tower cards open from the home slot; an up arrow marks an affordable upgrade.",
     "Waves: From wave 97, augmented enemies wear their augment's colour.",
     "All towers: A tower that can't stay put glides home.",
@@ -287,21 +287,21 @@ CHANGELOG.push(
   { v: "4.1", day: "Oct 12", b: [
     "Bosses: A boss every 12 waves; the game is won at wave 120.",
     "Waves: Enemies x1.5 HP from wave 25; timers 20% shorter.", "All towers: Ranges x0.75; movement leash x1.5.",
-  ], u: [
+  ], vis: [
     "Controls: After a boss, the next wave waits for Challenge.",
     "Board: The game holds while the boss sky turns over; 3D is the default view.",
     "Board: Red threat marks on the closest enemies.",
   ] },
   // the milestones before the changelog, read back from the history (2026-10-14)
-  { v: "4.0", day: "Oct 11", b: ["All towers: Tier VI capstones.", "Core: Three towers a game; powers cool down by wave."], u: ["Controls: Towers drag on a leash and coast.", "Leaderboard: TOP PLAYERS."] },
-  { v: "3.1", day: "Oct 10", u: ["Controls: Towers drag anywhere inside their leash."] },
-  { v: "3.0", day: "Oct 9", b: ["Bosses: Every boss brings a fleet."], u: ["Board: 3D view as a spire, with dice enemies and prism towers."] },
-  { v: "2.3", day: "Oct 8", b: ["All towers: Capstones.", "Bosses: Each has its own armor and shields."], u: ["Core: Powers as buttons."] },
-  { v: "2.2", day: "Oct 7", b: ["Core: Bosses grant the powers; Orbital Relay."], u: ["Controls: Upgrade by dragging the tower's chart."] },
-  { v: "2.1", day: "Oct 6", b: ["Core: Powers, including Temporal Drive; tower roles.", "All towers: Range rework, shorter ranges."], u: ["Controls: Build by tapping a slot."] },
+  { v: "4.0", day: "Oct 11", b: ["All towers: Tier VI capstones.", "Core: Three towers a game; powers cool down by wave."], vis: ["Controls: Towers drag on a leash and coast.", "Leaderboard: TOP PLAYERS."] },
+  { v: "3.1", day: "Oct 10", vis: ["Controls: Towers drag anywhere inside their leash."] },
+  { v: "3.0", day: "Oct 9", b: ["Bosses: Every boss brings a fleet."], vis: ["Board: 3D view as a spire, with dice enemies and prism towers."] },
+  { v: "2.3", day: "Oct 8", b: ["All towers: Capstones.", "Bosses: Each has its own armor and shields."], vis: ["Core: Powers as buttons."] },
+  { v: "2.2", day: "Oct 7", b: ["Core: Bosses grant the powers; Orbital Relay."], vis: ["Controls: Upgrade by dragging the tower's chart."] },
+  { v: "2.1", day: "Oct 6", b: ["Core: Powers, including Temporal Drive; tower roles.", "All towers: Range rework, shorter ranges."], vis: ["Controls: Build by tapping a slot."] },
   { v: "2.0", day: "Oct 5", b: ["All towers: Skill charts with three upgrade axes.", "Board: Corner slots open as bosses fall."] },
   { v: "1.3", day: "Oct 4", b: ["All towers: Ranges x0.75."] },
   { v: "1.2", day: "Oct 3", b: ["Sol: Rework with Impale and bleed."] },
   { v: "1.1", day: "Oct 2", b: ["Acid: New tower; upgrade trees for all four towers; six build slots.", "Bosses: Ten tarot bosses."] },
-  { v: "1.0", day: "Oct 1", u: ["Board: The Spire, spiral tower defence on a star chart."] },
+  { v: "1.0", day: "Oct 1", vis: ["Board: The Spire, spiral tower defence on a star chart."] },
 );
