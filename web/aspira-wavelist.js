@@ -92,7 +92,7 @@ const waveName = (type, n) => (comboOn(type, n) ? COMBO_NAME[type] : type);
 const WAVE_PLANS = new Map(); // n -> its plan, as the list last drew it (a tap opens its card: aspira-wavecard.js)
 // WHAT A BOSS WAVE BRINGS (owner, 2026-11-06: "no, just show escort like other waves, but keep boss at center"): its escort, type by type, counted
 // the way the boss code spawns it (aspira-bossfleet.js, aspira-bosses.js) - a lattice's fixed grid, a scattered share of plain waves, the Chariot's
-// FLEET, the Devil's host, the Empress's two broods (at 2/3 and 1/3 of her HP), Judgement's swarm when she rises - the late arrivals included. Pure
+// FLEET, the Devil's host, the Empress's broods (one at each EMPRESS_AT step, 90 / 70 / 50% of her HP), Judgement's swarm when she rises - the late arrivals included. Pure
 // (no spawn, no Math.random): [[type, count], ...]
 function bossBrings(n) {
   const id = arcanaOf(n).id, bodies = bossCount(n), lat = FLEET_LATTICE[id], out = [];
