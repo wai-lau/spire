@@ -120,9 +120,9 @@ function drawEnemy(e, solid) {
     // (drawn as lines on the floor round the die: aspira-walls.js)
   }
   ctx.globalAlpha = 1;
-  if (e.charged || e.charge) { // ARC's Static charge: a border in ARC's colour just outside the outline (owner) - ONE PER CHARGE held (Capacitance, 2026-10-08)
+  if (e.charged) { // ARC's Static mark (the dormant path tree, ARCHITECTURE §4.11): a border in ARC's colour just outside the outline (owner)
     ctx.strokeStyle = COL[TOWERS.arc.color]; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.6 * enemyVis(e); // ARC's colour, whatever it is - thin and faint (owner, 2026-10-08: "reduce intensity")
-    const n = e.charge ? Math.min(5, e.charge.list.length) : 1;
+    const n = 1;
     // ALWAYS an UPWARD TRIANGLE (owner, 2026-10-21: "arc capacitance outline should always be an upward triangle"; was the enemy's own
     // shape, turning with it), its INNER radius where the old border sat - so the body stays inside: the corners at twice that
     for (let k = 0; k < n; k++) { poly(e.x, e.y, 2 * (size + 4 + 3 * k), 3, -Math.PI / 2, false); ctx.stroke(); }

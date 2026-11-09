@@ -17,16 +17,8 @@ const ARC_VOLTAGE_FALL = [0.8, 1.04, 1.6, 2]; /* x1.6 (axis balance, owner 2026-
 let ARC_CONDUCTIVITY = [{ s: 1, j: 1, f: 1, r: 0.7, v: 0 }, { s: 1, j: 2, f: 1, r: 0.84, v: 0 }, { s: 3, j: 3, f: 1, r: 1.12, q: 1.225, v: 1 }, { s: 6, j: 3, f: 2, r: 1.68, q: 1.155, v: 3 }] /* s + v: the re-strikes became bolts (owner, 2026-10-26: one bolt strikes a unit once - "increase number of bolts if necessary"; s was 2, 3) */ /* the SHIELD POPPER (owner, 2026-10-24, marks target C: "A4 ... seem OK"): reach x0.7, two forks fewer (at least 1), d x0.5 - it no longer clears every crowd; were f 2 2 3 4, r 1 1.2 1.6 2.4, d 1 1 2.02 3.05 */ /* strikes 3 / 4 -> 2 / 3, the lost share split root-wise into q (fire rate) and d, d x1.1 (owner, 2026-10-24: "conductivity hit counts should not go up so fast" / "maybe conductivity increases damage and fire rate"; d was 1.5 / 2.4) */ /* IV / V strikes cut 3 / 4 -> 2 / 3 (owner, 2026-10-11: "nerf arc and boost others") */ /* IV / V: three and four arcs at III's depth and forking (owner, 2026-10-08) */; // IV chains twice, V three arcs (2026-10-07) // owner 2026-10-06: a tier never lowers the hit (d was 1 / .775 / .613 / .394); the tree and the jump reach pay for it
 // v: DEAD (unread since 2026-10-26, "one bolt strikes a unit once" - skillHop's max = 1; do not sweep it): once how many times a bolt
 // could RETURN to an enemy it already struck
-// Capacitance by tier (owner, 2026-10-07): the charge, x the hit that left it, and
-// how many times the charged enemy ARCS when next hit (dischargeStatic). The
-// charge shares are the old ring's fits (2026-10-06: +25 / +50 / +100%); refit later
-// owner, 2026-10-08 (isolation: the weakest ARC axis, 136% team at V): more charge and more arcs (were 1..5 arcs at .22 .. .45)
-// BURSTS, NOT ARCS (owner, 2026-10-08: "Capa is too much like Cond now - circle AoE instead of arcs; add multiple
-// charges instead of arcing more ... hits add more and more charges as you level up"): an ARC hit leaves `n`
-// charges, each worth `frac` of the hit; the next hit from anything sets them ALL off, each a BURST of radius
-// ARC_BURST_R round the enemy hitting everything inside (each burst its own hit: armor bites each, each pops a shield)
-const ARC_CAPACITANCE = [null, { n: 1, frac: 0.035 }, { n: 4, frac: 0.219 }, { n: 5, frac: 0.186 }]; /* frac x0.25 (axis balance 2026-10-25: Capacitance focus leaked 0%, Voltage 31; was 0.14 0.875 0.745) */ // frac 0.1 -> 0.14 (2026-10-12, chartvalue 30-60: tier III read 96% of the 2/2/2 team and 3/0/3 92% - now 99% / 98%) // a burst hits all round it, so each charge is small: isolation I..V 110 119 150 167 184% (with the slows below)
-const ARC_BURST_R = 70, ARC_BURST_A = 0.45;
+// (THE STATIC CHARGE - Capacitance's 2026-10-07 charges that burst when the enemy was next hit or died, ARC_CAPACITANCE / ARC_BURST_R -
+// GONE 2026-11-09: dead since the ARC redesign of 2026-10-29 set st.charge null on every build)
 // each jump hits ARC_FALL as hard and reaches ARC_SHRINK as far as the one before (owner)
 const ARC_FALL = 0.5, ARC_SHRINK = 0.7;
 // a jump's reach, before Conductivity lengthens it (owner: longer by default). It
@@ -69,7 +61,7 @@ function arcSkillStats(t, s, b) {
   curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24)
   s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.rate *= ARC_BURST_RATE; s.dmg *= ARC_ECHO_K;
   s.arcRange = ARC_VOLT_REACH[v]; s.targets = 1; s.branch = 1; s.fork = v >= ARC_FORK_FROM; s.layers = ARC_VOLT_JUMPS[v]; s.revisit = 0;
-  s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.charge = null; s.statSlow = 0; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.shockAmp = ARC_SHOCK_AMP[z]; s.burn = ARC_BURN; s.skill = true;
+  s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.shockAmp = ARC_SHOCK_AMP[z]; s.burn = ARC_BURN; s.skill = true;
   s.ground = c >= CAPSTONE_TIER; s.storm = v >= CAPSTONE_TIER; s.shockPass = z >= CAPSTONE_TIER; // the capstones (ARC_GROUND_R ..)
   s.dmg *= ARC_RES_DMG[z] * ARC_DMG_K; // Shock (id capacitance) hits a little harder by tier, each tier at most 2x the last with the curve's x1.9 (owner, 2026-11-01: "no level damage steps above 2x")
 }
@@ -87,12 +79,6 @@ let arcPassDepth = 0, arcPassLeft = ARC_PASS_FRAME;
 // forks st.branch ways, st.layers jumps deep. A bolt NEVER hits the same
 // enemy twice (owner) - so it can never strike more enemies than are in
 // reach - and each jump hits ARC_FALL as hard and reaches ARC_SHRINK as far.
-// Capacitance (owner, 2026-10-07: "Hits charge the target, charged targets arc
-// once when hit by anything"): an ARC hit leaves a CHARGE on the enemy it struck,
-// worth st.charge.frac of the hit; charges STACK. The next hit on that enemy from
-// ANY tower - the ARC that charged it too (owner: it procs itself) - makes it ARC
-// (dischargeStatic: every charge bursts round it) before the
-// new charge lands, and the charge is gone; so does its DEATH (owner).
 // THE FLICKER KEEPS UP WITH THE RATE (owner, 2026-10-26: "as ARC fire rate increases, the beam duration should also decrease to match and
 // maintain flickering"): a beam lasts CHAIN_BEAM_LIFE x the bare ARC's rate over this one's, never longer
 const arcBeamLife = st => CHAIN_BEAM_LIFE * Math.min(1, TOWERS.arc.rate * ARC_BURST_RATE / (st.rate || 1));
@@ -154,51 +140,17 @@ function skillHit(c, e, d) {
   if (c.st.shockAmp && !e.dead) { e.shockAmp = Math.max(e.shockT > 0 && e.shockAmp || 0, c.st.shockAmp); e.shockT = STAT_SLOW_T; if (c.st.shockPass) e.shockPass = true; } // SHOCKED for the slow's time, refreshed on hit
   if (c.st.resStrip && !e.dead) shredPct(e, c.t, c.st.resStrip); // a SHARE of the armor left, as every strip since 6.18.0 (Wai 2026-10-28)
   if (c.st.burn && !e.dead) e.arcBurn = { t: ARC_BURN_N * ARC_BURN_Q, k: d * c.st.burn / ARC_BURN_N, id: c.t.id, acc: 0 }; // THE BURN (arcBurnStep)
-  const b = c.st.charge;
-  if (!b || e.dead) return;
-  const ch = e.charge || (e.charge = { list: [], t: c.t });
-  for (let k = 0; k < b.n; k++) ch.list.push(d * b.frac); // n charges a hit (the hit itself set off any it had)
-  ch.t = c.t; ch.slow = Math.max(ch.slow || 0, c.st.statSlow || 0);
 }
-let staticQuiet = false;
 // Overload's leaps SLOW what they hit (owner, 2026-10-06, the no-FRZ niche search):
 // 30% for STAT_SLOW_T s - a late team without FRZ can answer the fast waves
 const ARC_STAT_SLOW = [0, 0.25, 0.35, 0.45] /* from tier I and deeper (2026-10-11, roles: Capacitance is ARC's FAST answer - leaks 0% of fast, Conductivity 4; was 0 0 0 .15 .17 .2) */, STAT_SLOW_T = 0.6; // from III (owner, 2026-10-08: kept at III, not moved to V)
-// a DISCHARGE: every charge the enemy holds BURSTS round it (ARC_CAPACITANCE; 2026-10-08, was a chain of
-// arcs - too much like Conductivity). Quiet: a burst neither charges nor sets off charges, so there is
-// no chain reaction (staticQuiet).
 // ARC's LOOK only (owner, 2026-10-08: "overwhelming at high levels" -> "less visible overall, the strike most of all;
 // still tied to damage, but less"): the strike draws at ARC_A, a jump at ARC_A x (its share of the strike)^ARC_CORR -
 // so under Voltage IV-V, where a jump carries MORE than the strike, the far jumps outshine the shot; widths follow the
 // damage at ARC_W_CORR of the usual slope; Capacitance's leaps thin and faint; the glow narrower and dimmer (drawFx, f.soft)
 const ARC_A = 0.4, ARC_CORR = 0.5, ARC_W_CORR = 0.5, ARC_LEAP_A = 0.6 * ARC_A, ARC_LEAP_W = 0.6, ARC_GLOW_R = 3, ARC_GLOW_C = 0.35; /* the GLOW: its reach (x the core width, each side) and centre alpha - a falloff, not a layer (owner, 2026-10-23: "Beams should have glow, not semiopaque second layer"; was a 2x-wide layer at 0.16) */ // A and GLOW_A x1.33 (owner, 2026-10-19: "make arc visual effect slightly more intense"; were 0.3 / 0.12)
 const ARC_BEAM_W = 0.2; // an ARC beam's glow x this, and its thin opaque core (owner, 2026-10-26: "condense arc beams visually, make them 0.2x current widths" / "I want fully opaque thin core back")
-// CAPACITANCE CHAINS from tier CAP_CHAIN_FROM (owner, 2026-10-18: "a charged enemy that dies discharges into its neighbours" - it did,
-// but not when a discharge killed it: no chain reaction): a charged enemy a discharge kills joins capQueue and goes off after the
-// burst that killed it, once each (its charge is spent as it goes)
-const CAP_CHAIN_FROM = 2 /* today's I, tier II since the tier redesign (2026-10-24) */, capQueue = [], CAP_BURST_K = [1, 1.1, 1.35, 1.7, 2]; // CAP_BURST_K: the burst's reach by Capacitance tier
-function dischargeStatic(e) {
-  const outer = !staticQuiet;
-  dischargeOne(e);
-  if (outer) while (capQueue.length) { const q = capQueue.shift(); if (q.charge) dischargeOne(q); }
-}
-function dischargeOne(e) {
-  const ch = e.charge;
-  e.charge = null;
-  staticQuiet = true;
-  try {
-    // every charge BURSTS round the enemy: everything within ARC_BURST_R (the enemy too) takes it, a ring per charge
-    // ONE thin, faint ring for the whole discharge, no glow (owner, 2026-10-08: "reduce intensity, no glow"; was a glowing ring per charge)
-    ring(e.x, e.y, ARC_BURST_R, TOWERS.arc.color, 0.18, false); const rf = fx[fx.length - 1]; if (rf && rf.k === "ring") Object.assign(rf, { a: ARC_BURST_A, w: 1.2 }); // (the simulator stubs ring out)
-    ch.list.forEach(dmg => {
-      for (const o of G.enemies) {
-        if (o.dead || !o.seen || Math.hypot(o.x - e.x, o.y - e.y) > ARC_BURST_R * CAP_BURST_K[skillOf(ch.t, "capacitance")]) continue;
-        fromHit(e, () => damage(o, dmg, ch.t, false, false, null)); // away from the discharging enemy
-        if (ch.slow && !o.dead) applySlow(o, ch.slow, STAT_SLOW_T, ch.t.id + ":stat");
-      }
-    });
-  } finally { staticQuiet = false; }
-}
+const CAP_BURST_K = [1, 1.1, 1.35, 1.7, 2]; // (UNUSED since the Static charge went, 2026-11-09 - kept: aspira-capstone.js lists it; the old burst's reach by Shock tier)
 // the nearest enemy this bolt has not hit yet, within this jump's (shrunk) reach
 // CHAINS TARGET LIKE THEIR TOWER (owner, 2026-10-07: "chains should use the same targeting
 // algorithm as the parent"): of the enemies a jump can reach, the one the tower's own mode

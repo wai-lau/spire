@@ -107,7 +107,7 @@ const OFF_SCREEN_SPEED = 3, effSpeed = e => ENEMIES[e.type].speed * ENEMY_SPEED 
 // FRESH (owner): an enemy carrying NO debuff - slowed, stunned, bleeding,
 // burning, corroded, frostbitten, shredded, poisoned or charged
 const debuffed = e => e.slowT > 0 || e.stunT > 0 || e.bleedCrit > 0 || e.breachN > 0 || e.burnT > 0 || e.corrodeT > 0 ||
-  e.biteT > 0 || e.shredT > 0 || e.dotT > 0 || !!e.charged || !!e.charge;
+  e.biteT > 0 || e.shredT > 0 || e.dotT > 0 || !!e.charged;
 const coreD2 = e => (e.x - CX) ** 2 + (e.y - CY) ** 2;
 const MODE_KEY = {
   // close = closest to the CORE (owner), not to the tower: the most urgent enemy
@@ -143,7 +143,6 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   if (e.dead || !e.seen) return; // OFF-SCREEN: untouchable (enemySeen)
   amt *= escale(e); // the LATE SCALE: a raw tower hit, x its target's wave scale (aspira-waves.js)
   if (e.shockT > 0 && !quiet && t) amt *= 1 + e.shockAmp; // SHOCKED: EVERY tower's hits land harder, not the burns/ticks (quiet) (owner, 2026-11-07: "that ARC debuff, it should increase all damage not just ARC"; was ARC's bolts only) - x Corrosion V's +20% (one multiply each: at most 3 x 1.2 = 3.6)
-  if (e.charge && !staticQuiet && t) dischargeStatic(e); // ARC Static: ANY tower's hit sets the charges off, the charging ARC's too (aspira-arc.js)
   // a shield eats one whole HIT, whatever its size - ANY damage pops ONE charge, quiet hits too, never more
   // (owner, 2026-10-26: "anything that deals damage should pop a shield charge"; splash/poison once bounced, Ion pierced, shieldPop took more)
   if (e.shield > 0) {
@@ -314,9 +313,6 @@ function kill(e, t) {
   if (e.shatter && e.slowT > 0 && !shattering) shatterAt(e); // FRZ's Shatter
   if (e.shockT > 0 && e.shockPass) arcShockPass(e); // Shock V: its debuffs pass to the enemies round it (aspira-arc.js)
   if (e.charged) staticDischarge(e); // ARC's Static (the old path)
-  // the chart ARC's Static: a charged enemy that DIES lets its charges go too
-  // (owner) - unless a Static blast killed it (no chain reaction)
-  if (e.charge && !staticQuiet) dischargeStatic(e); else if (e.charge && e.charge.t && skillOf(e.charge.t, "capacitance") >= CAP_CHAIN_FROM) capQueue.push(e); // a discharge killed it: it goes off next (CAP_CHAIN_FROM, aspira-skills.js)
 }
 
 // a boss drops +BOSS_LIFE_DROP LIVES or +0.5% INTEREST, fixed per boss wave; ONCE a boss wave (2026-10-15: two-lane bosses paid twice)
