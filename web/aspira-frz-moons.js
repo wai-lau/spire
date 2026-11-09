@@ -25,13 +25,18 @@ function drawD12(x, y, size, th, ice, edge, base) { // base: an OPAQUE face colo
     const q = D12_Q[i]; q.x = P.x + k * x1 * size; q.y = P.y + k * (p.c * y1 * size - p.s * (z2 * size + hz)); }
   const lx = CX - x, ly = CY - y, lz = warp.lightZ || 1, ll = Math.hypot(lx, ly, lz); // lit from the core's top, as the dice
   ctx.lineJoin = "round"; ctx.lineWidth = Math.max(0.6, 0.06 * size * k); ctx.strokeStyle = edge;
+  // BATCHED (perf, 2026-11-08): the opaque base under every face in ONE fill, each face's lit ice its own, the edges in ONE stroke (was three
+  // ops a face: base, ice, edge)
+  const face = f => f.forEach((i, j) => (j ? ctx.lineTo(D12_Q[i].x, D12_Q[i].y) : ctx.moveTo(D12_Q[i].x, D12_Q[i].y))), seen = [];
   for (const f of D12.F) {
     let n0 = 0, n1 = 0, n2 = 0; for (const i of f) { n0 += D12_R[i][0]; n1 += D12_R[i][1]; n2 += D12_R[i][2]; }
     if (n1 * p.s + n2 * p.c <= 0) continue; // turned away from the camera
-    const lit = Math.max(0, (n0 * lx + n1 * ly + n2 * lz) / (ll * Math.hypot(n0, n1, n2)));
-    ctx.beginPath(); f.forEach((i, j) => (j ? ctx.lineTo(D12_Q[i].x, D12_Q[i].y) : ctx.moveTo(D12_Q[i].x, D12_Q[i].y))); ctx.closePath();
-    if (base) { ctx.globalAlpha = 1; ctx.fillStyle = base; ctx.fill(); } ctx.globalAlpha = 0.45 + 0.5 * lit; ctx.fillStyle = ice; ctx.fill(); ctx.globalAlpha = 0.9; ctx.stroke();
+    seen.push(f, Math.max(0, (n0 * lx + n1 * ly + n2 * lz) / (ll * Math.hypot(n0, n1, n2))));
   }
+  if (base) { ctx.globalAlpha = 1; ctx.fillStyle = base; ctx.beginPath(); for (let m = 0; m < seen.length; m += 2) { face(seen[m]); ctx.closePath(); } ctx.fill(); }
+  ctx.fillStyle = ice;
+  for (let m = 0; m < seen.length; m += 2) { ctx.globalAlpha = 0.45 + 0.5 * seen[m + 1]; ctx.beginPath(); face(seen[m]); ctx.closePath(); ctx.fill(); }
+  ctx.globalAlpha = 0.9; ctx.beginPath(); for (let m = 0; m < seen.length; m += 2) { face(seen[m]); ctx.closePath(); } ctx.stroke();
 }
 function drawFrzMoons(t, far) {
   if (t.kind !== "frz" || typeof frzSources !== "function" || typeof warpProject !== "function") return;
