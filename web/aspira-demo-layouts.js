@@ -8,51 +8,50 @@
 //   hits     the tower damages an enemy            many    2+ enemies take damage (chains, splits, splash, a wing)
 //   strips   an armored enemy loses armor           pops    a shielded enemy loses a shield charge
 //   slows    a walker loses 10%+ of its pace         fast    the fast walker loses a bigger share of its pace than the non-fast one (FAST_SLOW_MUL)
-// Places: `clump` - a loose knot at `at` x range out; `fan` - spread across the range; `line` - a file away from the tower; `walk` -
-// walkers along the lane stretch inside the range, staggered, looping
+// Every layout's enemies WALK the scene's two lanes in a lattice (below); a layout names their mix (`types`), rarely its rows or arrival rate
 const DEMO_SOL_ROWS = 14; // SOL's rows a lane: twice the rest (owner, 2026-11-06: "also SOL demo needs more enemies" - Reflection V splits to 8)
 const DEMO_LAYOUTS = {
   arc: {
-    base: { place: "walk", types: ["swarm", "swarm", "armor", "swarm", "swarm", "swarm"], shows: ["hits", "many"] },
-    conductivity: { place: "walk", types: ["swarm", "swarm", "armor", "swarm", "swarm", "swarm"], shows: ["hits", "many"] },
-    voltage: { place: "walk", types: ["swarm", "swarm", "swarm", "armor", "swarm", "swarm", "swarm", "swarm"], shows: ["hits", "many"] },
-    capacitance: { place: "walk", types: ["armor", "swarm", "armor", "swarm", "armor"], shows: ["hits", "many", "strips"] },
+    base: { types: ["swarm", "swarm", "armor", "swarm", "swarm", "swarm"], shows: ["hits", "many"] },
+    conductivity: { types: ["swarm", "swarm", "armor", "swarm", "swarm", "swarm"], shows: ["hits", "many"] },
+    voltage: { types: ["swarm", "swarm", "swarm", "armor", "swarm", "swarm", "swarm", "swarm"], shows: ["hits", "many"] },
+    capacitance: { types: ["armor", "swarm", "armor", "swarm", "armor"], shows: ["hits", "many", "strips"] },
   },
   frz: {
-    base: { place: "walk", types: ["fast", "swarm"], shows: ["hits", "slows", "fast"] },
-    temp: { place: "walk", types: ["fast", "swarm", "armor"], shows: ["hits", "slows", "fast"] },
-    rime: { place: "walk", types: ["fast", "swarm", "armor"], shows: ["hits", "slows", "fast"] },
-    moons: { place: "walk", types: ["fast", "swarm", "swarm"], shows: ["hits", "slows", "fast"] },
+    base: { types: ["fast", "swarm"], shows: ["hits", "slows", "fast"] },
+    temp: { types: ["fast", "swarm", "armor"], shows: ["hits", "slows", "fast"] },
+    rime: { types: ["fast", "swarm", "armor"], shows: ["hits", "slows", "fast"] },
+    moons: { types: ["fast", "swarm", "swarm"], shows: ["hits", "slows", "fast"] },
   },
   sol: {
-    base: { place: "walk", rows: DEMO_SOL_ROWS, types: ["swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm"], shows: ["hits"] }, // (MORE ENEMIES, twice the count: owner, 2026-11-06 "also SOL demo needs more enemies") (a plain line: the beam holds one walker till it dies - Leader, 2026-11-04)
-    focus: { place: "walk", rows: DEMO_SOL_ROWS, types: ["shield", "armor", "shield", "shield", "armor", "shield"], shows: ["hits", "slows", "pops"] }, // (shields: Scorch V's ticks pop them - owner, 2026-11-04 "more ticks vs shield"; "pops" since the tracking beam, 7.6.0 - the old shot left a tier-I shield whole)
-    refraction: { place: "walk", rows: DEMO_SOL_ROWS, types: ["fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm"], shows: ["hits", "many"] }, // (TEN: Reflection V splits to 8 others - with 5 it showed 4 at most, and its pulse cleared them between flashes: owner, 2026-11-06 "in demo SOL reflected beam is not visible at refl 5") (spread fast: the splits reach what the first beam cannot - Leader, 2026-11-04)
-    breach: { place: "walk", rows: DEMO_SOL_ROWS, types: ["armor", "armor", "armor", "armor", "armor", "armor", "armor", "armor"], shows: ["hits", "strips"] },
+    base: { rows: DEMO_SOL_ROWS, types: ["swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm", "swarm"], shows: ["hits"] }, // (MORE ENEMIES, twice the count: owner, 2026-11-06 "also SOL demo needs more enemies") (a plain line: the beam holds one walker till it dies - Leader, 2026-11-04)
+    focus: { rows: DEMO_SOL_ROWS, types: ["shield", "armor", "shield", "shield", "armor", "shield"], shows: ["hits", "slows", "pops"] }, // (shields: Scorch V's ticks pop them - owner, 2026-11-04 "more ticks vs shield"; "pops" since the tracking beam, 7.6.0 - the old shot left a tier-I shield whole)
+    refraction: { rows: DEMO_SOL_ROWS, types: ["fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm", "fast", "swarm"], shows: ["hits", "many"] }, // (TEN: Reflection V splits to 8 others - with 5 it showed 4 at most, and its pulse cleared them between flashes: owner, 2026-11-06 "in demo SOL reflected beam is not visible at refl 5") (spread fast: the splits reach what the first beam cannot - Leader, 2026-11-04)
+    breach: { rows: DEMO_SOL_ROWS, types: ["armor", "armor", "armor", "armor", "armor", "armor", "armor", "armor"], shows: ["hits", "strips"] },
   },
   acd: {
-    base: { place: "walk", types: ["swarm", "armor", "swarm"], shows: ["hits"] },
-    corrosion: { place: "walk", types: ["armor", "armor", "swarm"], shows: ["hits", "strips"] },
-    spray: { place: "walk", types: ["swarm", "swarm", "armor", "swarm", "swarm"], shows: ["hits", "many"] },
-    contagion: { place: "walk", types: ["swarm", "armor", "swarm", "swarm"], shows: ["hits", "many"] },
+    base: { types: ["swarm", "armor", "swarm"], shows: ["hits"] },
+    corrosion: { types: ["armor", "armor", "swarm"], shows: ["hits", "strips"] },
+    spray: { types: ["swarm", "swarm", "armor", "swarm", "swarm"], shows: ["hits", "many"] },
+    contagion: { types: ["swarm", "armor", "swarm", "swarm"], shows: ["hits", "many"] },
   },
   grv: {
-    base: { place: "walk", types: ["swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits"] }, // (tier 0's void holds one at a time)
-    void: { place: "walk", types: ["swarm", "shield", "swarm", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many"] },
-    supernova: { place: "walk", dy: 0.2, types: ["armor", "swarm", "armor", "swarm", "shield"], shows: ["hits", "many", "strips"] },
-    radiation: { place: "walk", types: ["fast", "armor"], shows: ["hits", "slows", "fast"] }, // (armor, not swarm: GRV slows small enemies harder; NO "reels": Undertow cannot fire here - the voids sit on the densest cluster, the one entering upstream of the tower, and it reels only enemies past it; a tower near the entry edge fired 1-3 in 4 s only half outside the box - Leader 2026-11-07: card text, not the demo)
+    base: { types: ["swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits"] }, // (tier 0's void holds one at a time)
+    void: { types: ["swarm", "shield", "swarm", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many"] },
+    supernova: { dy: 0.2, types: ["armor", "swarm", "armor", "swarm", "shield"], shows: ["hits", "many", "strips"] },
+    radiation: { types: ["fast", "armor"], shows: ["hits", "slows", "fast"] }, // (armor, not swarm: GRV slows small enemies harder; NO "reels": Undertow cannot fire here - the voids sit on the densest cluster, the one entering upstream of the tower, and it reels only enemies past it; a tower near the entry edge fired 1-3 in 4 s only half outside the box - Leader 2026-11-07: card text, not the demo)
   },
   crr: {
-    base: { place: "walk", types: ["swarm", "shield", "armor", "swarm"], shows: ["hits", "pops"] },
-    hangar: { place: "walk", types: ["swarm", "shield", "swarm", "armor", "swarm"], shows: ["hits", "many", "pops"] },
-    launch: { place: "walk", types: ["fast", "swarm"], shows: ["hits", "slows"] }, // (no "fast": the bolt slow that also slowed the swarm is gone, 2026-11-04 - only the tethered are slowed)
-    armament: { place: "walk", types: ["shield", "swarm", "shield", "armor", "swarm", "swarm"], shows: ["hits", "pops"] }, // (two more walkers: a wing twice the size, 2026-11-04, launches every interceptor)
+    base: { types: ["swarm", "shield", "armor", "swarm"], shows: ["hits", "pops"] },
+    hangar: { types: ["swarm", "shield", "swarm", "armor", "swarm"], shows: ["hits", "many", "pops"] },
+    launch: { types: ["fast", "swarm"], shows: ["hits", "slows"] }, // (no "fast": the bolt slow that also slowed the swarm is gone, 2026-11-04 - only the tethered are slowed)
+    armament: { types: ["shield", "swarm", "shield", "armor", "swarm", "swarm"], shows: ["hits", "pops"] }, // (two more walkers: a wing twice the size, 2026-11-04, launches every interceptor)
   },
   ifr: {
-    base: { place: "walk", types: ["swarm", "shield", "swarm", "shield", "swarm"], shows: ["hits", "pops"] },
-    meteor: { place: "walk", types: ["swarm", "swarm", "swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many", "pops"] }, // (a longer pack: the fan's shards fly straight, no homing - only what sits on their lines is hit, 2026-11-04)
-    hellfire: { place: "walk", types: ["swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many", "pops"] },
-    firaga: { place: "walk", types: ["swarm", "shield", "swarm", "shield"], shows: ["hits", "pops"] },
+    base: { types: ["swarm", "shield", "swarm", "shield", "swarm"], shows: ["hits", "pops"] },
+    meteor: { types: ["swarm", "swarm", "swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many", "pops"] }, // (a longer pack: the fan's shards fly straight, no homing - only what sits on their lines is hit, 2026-11-04)
+    hellfire: { types: ["swarm", "shield", "swarm", "swarm", "shield", "swarm"], shows: ["hits", "many", "pops"] },
+    firaga: { types: ["swarm", "shield", "swarm", "shield"], shows: ["hits", "pops"] },
   },
 };
 // the layout a card shows for tower `t` previewed as `pv`: the axis being bought (pv over t), else the tower's highest axis, else its tier 0
