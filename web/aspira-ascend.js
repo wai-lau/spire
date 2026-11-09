@@ -71,7 +71,7 @@ async function ascSend(ev) {
   try {
     const verEl = document.querySelector(".asp-ver span"), won = !!G.won, body = { initials, lives: Math.max(0, G.lives), team: ascTeam(), won, wave: won ? WIN_WAVE : G.wave, ver: verEl ? verEl.textContent.trim() : "" }; // ver: the version played (owner, 2026-10-16)
     const r = await fetch(ASC_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!r.ok) throw new Error(r.status === 429 ? "Too many posts - try later." : "Could not save.");
+    if (!r.ok) throw new Error(r.status === 429 ? "Too many posts. Try again later." : "Could not save.");
     const res = await r.json();
     if (ascForm) ascForm.remove(); ascForm = null; note.textContent = initials + (won ? " has ascended." : " is on the board.");
     ascBoard(res.entries || [], res.entry);
