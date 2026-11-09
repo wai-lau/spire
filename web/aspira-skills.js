@@ -1,74 +1,44 @@
-// /aspira - SKILL CHARTS (owner, 2026-10-05). A tower type with a chart (only
-// ARC so far) levels up to 1 + SKILL_POINTS; each upgrade raises ONE of its
-// three axes a tier (max SKILL_TIERS, four), like a JoJo Stand chart, and every tier
-// is a named step. The other towers keep the path / form tree
-// (aspira-upgrades.js). Loaded after aspira-towers.js (the simulator too):
-// this file also holds ARC's skill-chart FIRING, kept out of towers.js (cap).
-// NINE points (owner, 2026-10-07; was 6): every axis can be maxed. Points are bought
-// by DRAGGING the axes of the chart on the tower card (aspira-sliders.js), any
-// number at once; each still costs its own step of the ladder below
-// FIVE tiers an axis (owner, 2026-10-07: "add another 2 tiers to each upgrade"; was 3), fifteen points a tower
-// SIX with the capstone tier (owner, 2026-10-11; aspira-capstone.js): ONE axis a tower may take to the capstone, so sixteen points (5 + 5 + 6)
-// FIVE TIERS since the tier redesign (owner 2026-10-24: tier 0 the plain tower, tier I a first hint; damage, rate and range from the stat
-// curve, aspira-curve.js). Before: FOUR TIERS (owner, 2026-10-23: "drop all the god damn levels between that can not be bought"): an axis level is a PURCHASE, 0 I II III IV
-// (SKILL_TIERS, IV the capstone), and every per-tier table below holds those five values (the capstone's pushed by aspira-capstone.js). The
-// price LADDER below (SKILL_POINTS, SKILL_STEP_COST) keeps its steps: a tier takes TIER_STEPS of them. NOTE: dated comments in this file
-// and its tower files speak the old seven-slot tables (0 1 2 3 4 5 6) - an old slot 3 is now tier II, 5 tier III, 6 tier IV
+// /aspira - SKILL CHARTS (owner, 2026-10-05). Every tower has a chart: three axes, each 0, I .. V (SKILL_TIERS; V the capstone, one a
+// tower - aspira-capstone.js), thirteen purchases a tower (SKILL_POINTS), each raising ONE axis a tier, like a JoJo Stand chart; every tier
+// is a named step. Points are bought by DRAGGING the axes on the tower card (aspira-sliders.js), any number at once, each at its own step of
+// the price ladder below. Loaded after aspira-towers.js (the simulator too). What each axis buys: ARCHITECTURE.md §4.5.
+// THE TIER REDESIGN (owner, 2026-10-23: "drop all the god damn levels between that can not be bought"; 2026-10-24): an axis tier is a
+// PURCHASE and every per-tier table holds the six values 0..V (V pushed by aspira-capstone.js); damage, rate and range come from the stat
+// curve by total level (aspira-curve.js). NOTE: dated comments in this file and its tower files may speak the old seven-slot tables
+// (0 1 2 3 4 5 6) - an old slot 3 is now tier II, 5 tier III, 6 tier IV
 const SKILL_POINTS = 13, SKILL_TIERS = 5; // tiers 0..V, V the capstone, 13 purchases a tower (5 + 4 + 4) (tier redesign, owner 2026-10-24; was 16 points / tiers 0..IV)
 // the ladder step a tier stands on, on the old seven-slot scale: what a formula that grew LINEARLY with the level (DRIP_TIER_K, CRR_DART_GROW) keeps its numbers through
 const TIER_LEVEL = [0, 0.5, 1, 3, 5, 6]; // tier I halfway to today's I (tier redesign 2026-10-24; was 0 1 3 5 6)
-// cost of each of the six small upgrades, x the build cost (about the old
-// three-step total, spread over six; balance later). DEARER (owner, 2026-10-06:
-// "make the levels more expensive and more powerful"): was 2 / 3.5 / 5.5 / 8 / 10.5 / 13,
-// a full chart 42.5 builds; now 62.5 (the first points stay near their old price, the last ones cost nearly double) - and every tier hits harder to match (below)
-// ...and on, for the three points past the sixth (owner, 2026-10-07: "keep increasing
-// the prices"): the step grows by one more each time, a full chart 174.5 builds (6,980c)
-// (the six points past the ninth, 2026-10-07: each step grows by one more again - a full chart 695.5 builds, 27,820c)
+// THE PRICE LADDER: step k's cost x the build cost, one step a purchase; it climbs steeply (owner, 2026-10-06: "make the levels more
+// expensive and more powerful"; 2026-10-07: "keep increasing the prices")
 const SKILL_STEP_COST = [6.5, 13, 25, 41.5, 63.125, 89, 95.4, 123.7, 155.5, 190.8, 230.2, 273, 319.3] /* the first six x1.25 (owner, 2026-10-29: "let's try the mild econ"; were 5.2 10.4 20 33.2 50.5 71.2) */ /* 13 steps, one a purchase (tier redesign 2026-10-24: tiers 0..V, 13 purchases): the 17-step curve resampled, the full tower's total kept - a PLACEHOLDER, the redesign's balance battery sets the economy; was 4 6.4 11.2 17.6 25.6 35.2 46.4 59.2 73.6 89.6 107.2 126.4 147.2 169.6 193.6 219.2 246.4 */ /* x1.6 (owner, 2026-10-15: "the worst [no-weakness trio] is able to afford 100% upgrades with perfect play and interest" - eco.mjs: ARC+FRZ+ACD owned 109-287% of a max build at x1.5, 86-93% at x1.75; was 2.5 4 7 11 16 22 29 37 46 56 67 79 92 106 121 137 154) */; // the 17th: a capstone takes TWO levels (aspira-capstone.js) // the 16th: the capstone point (2026-10-11)
 // Each axis: its `id`, its `name` (the slider) and its tiers' `name`s (the end screen). WHAT A TOWER DOES is
 // one composed sentence for the whole chart, aspira-desc.js, each tier changing as few words as carry the
 // gain (owner, 2026-10-07) - the card shows the change in track changes (aspira-sliders.js); range and movement come
 // from the curve by total level (aspira-curve.js). (Per-tier `desc` / `base` sentences lived here until 2026-10-14.)
 const SKILL_TREES = {
-  // ARC (owner): Conductivity = ALL the branching (owner, 2026-10-05) - how
-  // many times the chain jumps AND how many ways each jump forks; Voltage =
-  // raw power, damage and range; Static = an EXPLOSION on every hit that marks
-  // what it catches. Base: one jump forking two ways, three enemies.
+  // ARC (the redesign, owner 2026-10-29; the ids stay - saves, sims, smoke): Conductivity (the carry), Voltage (the chain), Shock (id
+  // capacitance, the armor break) - arcSkillStats, aspira-arc.js
   arc: [
-    // THE ARC REDESIGN (owner, 2026-10-29): the ids stay (saves, sims, smoke); the axes are AMPERAGE (id conductivity), VOLTAGE and
-    // RESISTANCE (id capacitance) - arcSkillStats below
     { id: "conductivity", name: "Conductivity", tiers: [{ name: "Transfer" }, { name: "Superconductor" }, { name: "Storm" }] },
     { id: "voltage", name: "Voltage", tiers: [{ name: "Spark" }, { name: "Vaporize" }, { name: "Plasma" }] },
     { id: "capacitance", name: "Shock", tiers: [{ name: "Static" }, { name: "Overload" }, { name: "Tempest" }] },
   ],
 };
-// FRZ (owner, 2026-10-05): an AURA - everything inside is slowed (and loses it
-// the moment it leaves) and ticks a little damage. Frost = a wider, colder
-// aura; Rime = a ring PULSE out to the aura's edge leaving a STACKING
-// PERMANENT slow on all it passes; Moons = 1 / 2 / 3 orbiting copies of the
-// tower at half of everything.
+// FRZ: Fracture (id temp, the aura), Permafrost (id rime, the pulses), Moons - aspira-frz.js
 SKILL_TREES.frz = [
   { id: "temp", name: "Fracture" /* (owner, 2026-11-06: "rename it to Fracture"; 2026-11-01 Brittle, was Sublimation; 2026-10-12, was Temp) */, tiers: [{ name: "Chill" }, { name: "Absolute Zero" }, { name: "Heat Death" }] },
   { id: "rime", name: "Permafrost" /* (owner, 2026-10-12; was Rime) */, tiers: [{ name: "Frost" }, { name: "Cryosphere" }, { name: "Glaciation" }] },
   { id: "moons", name: "Moons", tiers: [{ name: "Moon" }, { name: "Desolation" }, { name: "Eclipse" }] },
 ];
-// SOL (owner, 2026-10-05): Focus = more beams (the old Quad look: side by
-// side at the tower, CONVERGING on the target - not parallel, owner), each its
-// own full hit, 2 / 3 / 4; Refract = the beam bends on to 2 / 5 / 9 more
-// enemies, each within SOL_CONE degrees of the first shot's direction (a light
-// cone shows it); Pierce (was Impale; owner: light-themed) = 1 / 2 / 4 BREACH
-// stacks per hit (the old bleed: armor down and crit up for every tower, for
-// good). Focus x Pierce multiply:
-// 4 beams x 6 = 24 Breaches a volley on one target.
+// SOL: one tracking beam (2026-11-04): Scorch (id focus, the burn), Reflection (id refraction, the splits), Breach (the armor strip) -
+// aspira-sol.js
 SKILL_TREES.sol = [
   { id: "focus", name: "Scorch" /* (owner, 2026-10-25: SOL is always one beam - Focus became Scorch; the id stays - saves, sims) */, tiers: [{ name: "Sear" }, { name: "Blaze" }, { name: "Inferno" }] },
   { id: "refraction", name: "Reflection" /* (owner, 2026-11-04, the tracking-beam spec: "Reflection: First beam no longer pierces, instead it splits towards N targets"; 2026-10-25: "Rename Reflection to Diffraction"; 2026-10-22 Reflection; the id stays - saves) */, tiers: [{ name: "Lens" }, { name: "Spectrum" }, { name: "Aurora" }] },
   { id: "breach", name: "Breach", tiers: [{ name: "Pierce" }, { name: "Glare" }, { name: "Sunfire" }] },
 ];
-// ACD (owner, 2026-10-05): its lines DRIP burning PUDDLES onto the lane by
-// default, each burning at a share of its line's current heat. Catalyst = the
-// burn ramps faster (tier III: a line whose enemy dies hands half its ramp to
-// the next); Pour = 2 / 3 / 5 lines at once; Seep = more, longer, bigger puddles.
+// ACD: Corrosion (the armor strip), Flow (id spray, the jets), Spill (id contagion, the pools) - aspira-acid.js
 SKILL_TREES.acd = [
   { id: "corrosion", name: "Corrosion", tiers: [{ name: "Etch" }, { name: "Dissolve" }, { name: "Annihilate" }] },
   { id: "spray", name: "Flow", tiers: [{ name: "Mist" }, { name: "Torrent" }, { name: "Cascade" }] },
@@ -81,16 +51,6 @@ const skillOf = (t, id) => (t.skills && t.skills[id]) || 0;
 // tower's ladder steps fold onto the 4 drawn ones
 const shownLvl = t => (!hasSkills(t) ? t.lvl : t.lvl >= maxLvl(t) ? MAX_LVL : Math.min(MAX_LVL, 1 + Math.floor((t.lvl - 1) / 4))); // thirteen purchases, four a look (2026-10-24; was five)
 
-// REACH BY TIER (owner, 2026-10-06: ranges and movement were HALVED, and "no upgrade
-// causes any stat to go down - balance by playing around with ranges and movement
-// instead"; then: each tower through what is distinctive about IT, not generic
-// multipliers). A tier multiplies the tower's range / leash (SLIDE_MAX 3, aspira-move.js) by [range, slide] (slide SPEED is gone - owner, 2026-10-12); each tower buys them differently:
-//   ARC  (a long-range ANCHOR, owner) Conductivity and Voltage = RANGE; Capacitance =
-//        SLIDE extent (owner: "static should increase movement range")
-//   FRZ  Temp = a wider aura (its range IS the aura); FRZ roams by kind (aspira-towers.js)
-//   SOL  (a long-range ANCHOR) Focus and Refraction = RANGE; Breach = SLIDE extent (owner)
-//   ACD  Spray = range (more lines need more targets in reach); Spill = a roaming
-//        plague (the puddles follow the lane): slide
 // (SKILL_MOVE / skillMove - each axis's range and slide factors - GONE: owner, 2026-10-26 "no axis should directly increase tower range,
 // tower movement, or tower damage"; both ride the curve by total level now, aspira-curve.js)
 

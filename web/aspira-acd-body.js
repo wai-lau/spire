@@ -2,7 +2,7 @@
 // always alive under the tower at its tier's size, Corrosion = bubbles rising inside the prism that pop on its top face. Look only: the game never
 // reads any of it, the simulator never loads it. Drawn with the tower by drawOrbiters (aspira-warp-prism.js): the puddle FIRST (far pass, before
 // the prism), the drips and bubbles AFTER it and its top (near pass); the card's demo calls the same. Loaded after aspira-ifrit-draw.js.
-// Numbers are the approved mockup's, in its units (a hex of radius 40); ACD_S = world u a mockup unit. No Math.random: every jitter is hashed from
+// Numbers are the approved mockup's, in its units (a hex of radius 40); S = world u a mockup unit (R / 40). No Math.random: every jitter is hashed from
 // the tower's id and the time slot. Drips and bubbles are COL.drip's hue (yellower than the tower's green), the puddle the tower's own.
 const ACD_FLOW = { // per front face (left, right): [centre along the face 0..1, drips in the group], by Flow tier
   1: [[[0.5, 2]], []],

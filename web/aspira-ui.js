@@ -163,7 +163,7 @@ function upgradeTower(t, choice = null, quiet = false) {
   const need = pendingChoice(t);
   if (need && choice == null) return;
   if (need === "skill" && skillOf(t, choice) >= axisCap(t, choice)) return; // full, or a second capstone (aspira-capstone.js)
-  // a skill buy is one tier of the axis: TIER_STEPS ladder steps (II and III take two, the capstone two - aspira-capstone.js)
+  // a skill buy is one tier of the axis: TIER_STEPS ladder steps (one a tier, the capstone CAPSTONE_LEVELS - aspira-capstone.js)
   const steps = need === "skill" ? tierSteps(t, choice) : 1;
   const c = steps > 1 ? skillPointsCost(t, steps) : upCost(t);
   if (G.money < c) return;

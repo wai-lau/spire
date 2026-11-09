@@ -288,7 +288,7 @@ function carOrbit(i, e, st, d, dt) {
 // a shot: st.bolts light-blue bolts, each the tower's damage - armor takes a bigger share of small hits (armorTake: R / (R + hit), since 2026-10-28): ATC's armor weakness (with
 // the steep hit tables a single big hit shrugged armor off). A STREAM (owner, 2026-10-16: "bolts should come from the center of the
 // interceptor (from underneath) and shoot in a constant stream", "4 bolts evenly distributed over the time it takes to fire one
-// salvo", "homing, and just keep going straight if the enemy dies"): one bolt every 1 / (rate x CRR_BOLTS) s, a projectile that
+// salvo", "homing, and just keep going straight if the enemy dies"): one bolt every 1 / (rate x st.bolts) s, a projectile that
 // homes on its target; its target gone, it flies on straight and hits the first enemy it touches, or nothing (was: three at once,
 // side by side, landing the instant they were fired)
 /* (CRR_FIRE_R - fire on the way in from 340 u - GONE 2026-11-04: interceptors fire only in orbit) */
