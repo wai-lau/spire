@@ -61,7 +61,7 @@ function skillScaleFix(g) {
 // (76 -> 60), ACD_PUDDLE_HEAT x3 (61 -> 51), CRR_TETHER_K x9 (90 -> 60), CRR_SIDE_DMG x1.4 (57 -> 49), CRR_SHOT_MUL III-IV x0.85
 // (Armament 38). SOL Breach (81) and ARC's single-target axes stay behind: count-limited, a mechanic question, not a number
 const CAPSTONE_NUM = [
-  // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit; Capacitance eight charges
+  // ARC: Conductivity six arcs chaining twice; Voltage each jump carries twice the hit (Capacitance's eight charges went with the Static charge, 2026-11-09)
   [ARC_VOLTAGE_FALL, 2.56 /* x1.6 with its table (2026-10-25); was 1.6 */], [ARC_VOLTAGE_JUMP, 2], [ARC_STAT_SLOW, 0.55],
   [ARC_CONDUCTIVITY, { s: 8 /* s + v (2026-10-26: re-strikes became bolts; was 4) */ /* was 6 (owner, 2026-10-24: hit counts grow slower; the share went to d and q) */, j: 4, f: 2 /* was 4 */, r: 2.1 /* was 3 */, q: 1.225, v: 4 }],
   // FRZ: Fracture a far deeper chill; Permafrost the fastest, deepest rings; Moons three moons with three moonlets each, burning far harder (capped 2026-10-20)

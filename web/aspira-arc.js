@@ -1,6 +1,6 @@
 // /spire - ARC's CHART (split out of aspira-skills.js 2026-11-05, the 500-line cap): its numbers by tier, arcSkillStats (towerStats
-// calls it), and the chart's firing - the chain as a tree grown a hop a generation, Voltage's carry, the burn, Capacitance's charges
-// and their discharge, the hops. Loaded right after aspira-skills.js (the simulator too, sim.mjs FILES).
+// calls it), and the chart's firing - the chain as a tree grown a hop a generation, Voltage's carry, the burn, Shock's
+// mark and its pass, the hops. Loaded right after aspira-skills.js (the simulator too, sim.mjs FILES).
 
 // ARC's numbers by tier (index 0 = untaken; tiers 0..V since the tier redesign - aspira-capstone.js, aspira-tier01.js).
 // Voltage (REWORKED 2026-10-07, owner - raw damage on the strike was a dud axis; its fitted damage history: ARCHAEOLOGY.md)
