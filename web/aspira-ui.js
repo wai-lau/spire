@@ -1,6 +1,6 @@
-// /aspira — DOM: HUD, build/inspect/power decks, input, overlay, main loop.
+// /aspira — DOM: HUD, the build and speed buttons, input, overlay, main loop.
 
-// ui.speed is a setting (1/1.5/2/3, the owner's 10); SPEED_MULT turns it into simulation rate.
+// ui.speed is a setting (0.75/1/1.5/2/3, the owner's 10); SPEED_MULT turns it into simulation rate.
 // 1x is REAL TIME (owner): every rate/duration in the code is in real seconds.
 // the old 2x is the new 1x (owner, 2026-10-02): every button runs the game
 // twice as fast as its label used to (0.5x added, 10x for testing - owner)
@@ -82,7 +82,7 @@ function onTap(ev) {
   refreshPanels();
 }
 
-// ---------- decks ----------
+// ---------- the build and speed buttons ----------
 function button(parent, cls, html, onclick, id) {
   const btn = document.createElement("button");
   btn.className = cls; btn.innerHTML = html; btn.onclick = onclick;
