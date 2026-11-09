@@ -95,7 +95,7 @@ focus loss.
 - **Tower bodies by axis** (owner, 11-06: "every upgrade axis also changes a visible feature"): ARC's Voltage rings (sized to clear the
   prism at any turn, then pushed out to the glow's inside, split back / front at the centre's screen row), SOL's Breach blades (baked per
   view shape, a level-4 tower's height), FRZ's Permafrost sheets and Fracture shards (grown once in a Worker, baked per pixel with the
-  prism as a depth-only occluder), GRV's orb, CRR's V=V interceptors, IFR's flares.
+  prism as a depth-only occluder), GRV's orb, CRR's V=V interceptors, IFR's flares and Hellfire V's rings.
 - **The lift trap** (towers lifted floor -> h since 7.8.11): code that still assumed the old frame drew ARC's bolt end h/2 above the
   enemy and baked FRZ's ice occluder at half height (the ice showed through the prism until 7.12.9).
 - **FRZ moons** (7.12.10): the D12's face normals were in the wrong orientation (0 of 12 faces planar); fixed, and the moon orbit ring
