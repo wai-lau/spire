@@ -69,6 +69,7 @@ function warpPrism(o) {
   const top = o.h / 2 + warpLift, end = top - WARP_PRISM_GONE * (o.h / 2 + o.h / 2 * WARP.prism.below);
   // the point of an upright P -> Q at height `end`
   const at = (P, Q) => { const t = (top - end) / (P.z - Q.z); return { x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t }; };
+  const tops = [];
   for (const w of walls) {
     const quad = [B[w.i], B[w.j], T[w.j], T[w.i]];
     if (warpPath(quad)) {
@@ -86,13 +87,14 @@ function warpPrism(o) {
     // the edges whole, once, with the parts above the floor (stroked per floor slice they showed every cut as a gap)
     ctx.globalAlpha = 0.8;
     if (band.lo > 0 || band.hi < Infinity) continue;
-    { ctx.beginPath(); ctx.moveTo(T[w.i].x, T[w.i].y); ctx.lineTo(T[w.j].x, T[w.j].y); ctx.strokeStyle = o.col; ctx.stroke(); }
+    tops.push(w.i, w.j); /* the top edges: ONE path, stroked after the walls (perf, 2026-11-08: was a stroke a wall) */
     ctx.globalAlpha = PRISM_UP_A; /* ONE STROKE AN UPRIGHT (perf, 2026-11-08): each corner was stroked by both its walls at 0.8 - now once, by the wall it starts, at the pair's 1 - 0.2^2 */
     for (const v of [w.i]) { // (each upright is two walls' corner: its gradient made ONCE, kept beside the walls' - perf, 2026-11-05: 144 a late frame, half of them twins)
       const E = at(T[v], B[v]), g = (grads.up ||= {})[v] ||= prismGrad("u|" + T[v].x + "," + T[v].y + "," + E.x + "," + E.y + "|" + o.col, () => { const g = ctx.createLinearGradient(T[v].x, T[v].y, E.x, E.y); g.addColorStop(0, o.col); g.addColorStop(1, "transparent"); return g; });
       ctx.beginPath(); ctx.moveTo(T[v].x, T[v].y); ctx.lineTo(E.x, E.y); ctx.strokeStyle = g; ctx.stroke();
     }
   }
+  if (tops.length) { ctx.globalAlpha = 0.8; ctx.strokeStyle = o.col; ctx.beginPath(); for (let k = 0; k < tops.length; k += 2) { ctx.moveTo(T[tops[k]].x, T[tops[k]].y); ctx.lineTo(T[tops[k + 1]].x, T[tops[k + 1]].y); } ctx.stroke(); }
   warpBand = band.lo === -Infinity && band.hi === Infinity ? null : band; ctx.globalAlpha = 1;
 }
 // a screen point (2D canvas device px) back to the canvas spot drawn there:
