@@ -9,6 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pickNext, usePowers } from "./corepower.mjs";
 import { patchProbe } from "./simver.mjs";
+import { bestBuy, haveSurface } from "./sim-buyer.mjs"; // the adaptive buyer (BUYER=adaptive, owner 2026-11-09)
 // ASPIRA_WEB=<dir> pins a run to a SNAPSHOT of the game files: every game
 // re-reads them, so a balance commit landing mid-run would otherwise mix two
 // versions (2026-10-07)
@@ -209,6 +210,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     leaks: {}, leakWave: {}, coreMem: {}, trace: [], buys: [], pivoted: [], hist: [], lastWave: -1, waveNear: Infinity, bossNear: Infinity, fired: [],
     econ: [], builtAt: null, fullAt: null }; // the economy's ledger: a line every 10 waves, the wave every slot was filled / every tower maxed
   let next = null; // the committed next action (holds a tower: snapshotted by id)
+  const adaptive = process.env.BUYER === "adaptive" && haveSurface() && !strategy.randomAxis && !strategy.skills; // (the good model; the random human keeps its bad build)
   // the game's tower cap (MAX_TOWERS, 3 since 2026-10-11) holds every player; strategy.towerCap overrides it for a
   // team that is MEANT to be bigger (teambal.mjs's 4 + 1), and the game is told so its own placement agrees
   if (strategy.towerCap) g.run(`MAX_TOWERS = ${strategy.towerCap}; OPEN_SLOTS = SLOT_ANGLES.slice();`); // a bigger test team gets all six slots
@@ -228,7 +230,10 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     const opening = strategy.opening || [];
     if (!full && G.towers.length < opening.length) next = { kind: opening[G.towers.length] }; // (an opening longer than the cap stops at it)
     else if (!full && strategy.queue && strategy.queue.length) next = { kind: strategy.queue.shift() };
-    else if (ups.length && (full || rnd() < (strategy.up ?? 0.5))) next = { up: ups[0] };
+    else if (ups.length && (full || rnd() < (strategy.up ?? 0.5))) {
+      const bb = adaptive ? bestBuy(g, S, { ADAPT_WAVES, ADAPT_DECAY, ADAPT_NEAR, ADAPT_LIFE }, S.rot || 0) : null, bt = bb && G.towers.find(t => t.id === bb.id); // the best (tower, path) for the trouble it is in
+      next = bt ? { up: bt, axis: bb.axis } : { up: ups[0] };
+    }
     else if (!full) next = { kind: pick() };
     else next = null;
   };
@@ -276,7 +281,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
         const t = next.up, [p, f] = (strategy.paths || {})[t.kind] || [0, 0];
         if (G.money - g.upCost(t) < floor) return;
         const need = g.pendingChoice(t);
-        const axis = need === "skill" ? (strategy.randomAxis ? randomOpenAxis(t) : strategy.skills && strategy.skills[t.kind] ? strategy.skills[t.kind].find(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)) : adaptAxis(t)) : null;
+        const axis = need === "skill" ? (next.axis ? next.axis : strategy.randomAxis ? randomOpenAxis(t) : strategy.skills && strategy.skills[t.kind] ? strategy.skills[t.kind].find(id => ((t.skills || {})[id] || 0) < g.axisCap(t, id)) : adaptAxis(t)) : null;
         const had = { ...(t.skills || {}) };
         if (g.upgrade(t, axis || (need === "path" ? p : f))) S.buys.push({ w: G.wave, k: t.kind, id: t.id, a: Object.keys(t.skills || {}).find(x => (t.skills[x] || 0) > (had[x] || 0)) || "lvl", to: (t.skills || {})[Object.keys(t.skills || {}).find(x => (t.skills[x] || 0) > (had[x] || 0))] }); // the purchase log (buildlog.mjs)
         S.used[t.kind] = 1; next = null; S.buysLeft--; continue;
@@ -385,12 +390,12 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     // `next` rides along by tower id: re-choosing it would roll the player's RNG and fork the build order
     // the game's own state outside G: the positioning cache (posPred holds enemy refs - stale after a
     // restore, and it fed the branch's enemies into the replay) and the debuff key counter
-    snapshot() { return { G: structuredClone(g.G), rng: g.rng.get(), S: structuredClone(S), knobs: live(), next: next && (next.up ? { upId: next.up.id } : { kind: next.kind }), seq: g.run("debuffSeq") }; },
+    snapshot() { return { G: structuredClone(g.G), rng: g.rng.get(), S: structuredClone(S), knobs: live(), next: next && (next.up ? { upId: next.up.id, axis: next.axis } : { kind: next.kind }), seq: g.run("debuffSeq") }; },
     restore(snap) {
       g.setG(structuredClone(snap.G)); g.rng.set(snap.rng); g.clearFx();
       g.run(`posPred = null; posPredAt = -1; debuffSeq = ${snap.seq};`);
       Object.assign(S, structuredClone(snap.S));
-      next = !snap.next ? null : snap.next.upId ? { up: g.G.towers.find(t => t.id === snap.next.upId) } : { kind: snap.next.kind };
+      next = !snap.next ? null : snap.next.upId ? { up: g.G.towers.find(t => t.id === snap.next.upId), axis: snap.next.axis } : { kind: snap.next.kind };
       for (const k of KNOBS) delete strategy[k];
       Object.assign(strategy, structuredClone(snap.knobs));
     },
