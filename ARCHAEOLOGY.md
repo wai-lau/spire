@@ -1449,3 +1449,13 @@ The mechanic knobs only (the tier tables' V leaps are `CAPSTONE_NUM`, aspira-cap
 | IFR Impact (Meteor V) | `IFR_BIG_EVERY` 3, `IFR_BIG_HIT_K` 4, `IFR_BIG_DRAW_K` 2 | every 3rd = a fixed stand-in for Wai's 1/3 chance |
 | IFR Hellfire (Hellfire V) | `IFR_CHAINS_N` 5 (the pentagram), `IFR_CHAIN_K` 1 | 3 random chords 60-180 deg until 2026-11-07; IV's flare count kept (33) |
 | IFR Mega Firaga (Flare V) | `IFR_V_SPAN` 300 u; the ring 0.6 up the spokes, its own hit | two flares 2026-10-31 .. 11-06 |
+
+### 13.11 The paths pass, 2026-11-07 .. 11-09 (Balance; numbers as Leader relayed them)
+
+The brief (owner, 2026-11-07: "each upgrade path leaks roughly the same amount across types"; "Make sure balanced when playing"; 2026-11-08:
+"check all, not just one axis at a time"): a TEAM path test - the tower at every legal build beside a fixed panel of partner pairs, same seeds
+and waves, team leak per type; a path's usefulness is the marginal team-leak drop of a point moved into it; tolerance +-3 team-leak points.
+
+| tower | what the test found | lever | result |
+|---|---|---|---|
+| CRR | Full Wing (Hangar V) worth 50 points of leak, Armament V 15, Tether V 4 | interceptors fly home when the target dies (owner, 11-01) and carry up to 40 volleys (11-07 "Ok no ammo limit"), so a retarget spends a full sortie; fewer retargets or a shorter reach barely helped | owner, 2026-11-09 "2a": one retarget, carrying part of the leftover ammo (the share from the sim) |
