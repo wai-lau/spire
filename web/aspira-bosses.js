@@ -111,9 +111,9 @@ const BOSS_LANE_HP = 1.107;
 // 100)"). Was: a boss that got through ended the game outright (owner, 2026-10-02). Each body counts its own hp / max.
 const BOSS_LEAK_DIV = { lovers: 2, devil: 6 };
 const bossLeakLives = e => Math.max(1, Math.ceil(Math.max(0, e.hp) / (e.max || 1) * 100 / (BOSS_LEAK_DIV[e.arcana] || 1) - 1e-9));
-// the game-over title when a BOSS gets through (owner: "overwhelmed by strength")
+// the game-over title when a BOSS gets through (owner: "overwhelmed by strength"; 2026-11-09: "crushed by strength instead of overwhelmed")
 const BOSS_BREACH = {
-  star: "eclipsed by the star", empress: "smothered by the empress", strength: "overwhelmed by strength",
+  star: "eclipsed by the star", empress: "smothered by the empress", strength: "crushed by strength",
   chariot: "overrun by the chariot", lovers: "undone by the lovers", temperance: "outlasted by temperance",
   devil: "bound by the devil", justice: "sentenced by justice", judgement: "weighed by judgement", death: "silenced by death",
 };

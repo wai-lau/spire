@@ -36,7 +36,7 @@ const SPEC = {
     // ONE NUMBER A ROW (owner, 2026-10-26: "for the stats only have 1 number per line"): every compound row split
     return [["Hits", hits + " a bolt"], ["Forks", st.fork ? "once" : "—"], ["Arc dmg", tdP("arc", st, st.dmg * st.arcFall)],
       ...(st.resSlow ? [["Res slow", Math.round(st.resSlow * 100) + "%"], ["Res lasts", STAT_SLOW_T + "s"]] : []) /* only while Shock slows: none since the ARC brief (7.1.16), so no dead "—" rows */,
-      ["Shocked", st.shockAmp ? "+" + Math.round(st.shockAmp * 100) + "% from ARC" : "—"],
+      ["Shocked", st.shockAmp ? "+" + Math.round(st.shockAmp * 100) + "% from every tower" : "—"], // (every tower since 7.11.0; owner, 2026-11-09: "shock should increase damage from all towers not just shock")
       ["Armor strip", st.resStrip ? Math.round(st.resStrip * 100) + "% of armor" : "—"],
       ...(st.skill ? [["Jumps", st.layers ? st.layers : "—"], ["Jump reach", st.layers ? Math.round(arcJumpR(st)) : "—"]] /* "—" at tier 0: no chain (tier redesign) */
         : [["Arc hop", Math.round(st.arcRange)], ["Reach", Math.round(chainReach(st))]]),
