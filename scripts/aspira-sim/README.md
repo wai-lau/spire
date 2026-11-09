@@ -61,8 +61,8 @@ Some of these predate the tier redesign (2026-10-24) or the 3-tower game and no 
 would otherwise mix two versions.
 `pool.mjs` runs a task module over a job list on a worker pool (`pool-worker.mjs`
 is the entry); with an `out.jsonl` a run resumes where it stopped.
-`formvalue.mjs` and `latesearch.mjs` are the pre-chart versions (path/form
-tree, `buyCore`) and no longer run - kept for the record.
+`formvalue.mjs` and `latesearch.mjs`, the pre-chart versions (path/form
+tree, `buyCore`), no longer ran and were archived 2026-11-08 (the main checkout's gitignored `.archaeology/scripts/`).
 
 A `patch` is a JS file run inside the game's context after it loads — change
 `TOWERS` / `ENEMIES` / `UPGRADES` numbers (or redefine a function) to try a
