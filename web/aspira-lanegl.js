@@ -15,7 +15,18 @@ const LGL_T = 512, LGL_RT = R0 + 6, LGL_DMAX = 76, LGL_LMAX = 26 /* 66 / 16 unti
 // distance is the larger of |signed| and plain less 0.75 texel: the signed one at the line, the plain one between turns
 const lgl = { tex: null, gl: null, built: 0, ready: false, buf: null };
 // the profiles as GLSL: each level's alpha onto the layer (premultiplied), its coverage from the distance - one board pixel of antialiasing
-const lglLevels = (prof, wk, aSrc, d, dst) => prof.map(([w, la]) => `{ float a = min(1.0, ${aSrc} * ${la.toFixed(4)}) * clamp((${(w / 2).toFixed(4)} * ${wk} - ${d}) * laneK + 0.5, 0.0, 1.0); ${dst} = ${dst} * (1.0 - a) + vec4(col, 1.0) * a; }`).join("\n    ");
+// ONE LANE, ONE LOOK (owner, 2026-11-09: "can you fix this such that the lanes don't look like they are composed of two layers? / want the interior glow
+// opacity to match the line part"; smooth, never stepped - 2026-11-06): each level but the thinnest (the line itself, one board pixel of antialiasing) fades
+// out over the outer LGL_SOFT of its half width (smoothstep), so its edge is a ramp, not a step; the glow is ONE such level (lglGlow), not six
+const LGL_SOFT = 0.6, LGL_GLOW_IN = 0.25; // a level's soft outer part (of its half width); the glow's flat interior (of its half width)
+const lglLevels = (prof, wk, aSrc, d, dst) => prof.map(([w, la], k) => { const hw = `${(w / 2).toFixed(4)} * ${wk}`, cov = k === prof.length - 1 ? `clamp((${hw} - ${d}) * laneK + 0.5, 0.0, 1.0)` : `(1.0 - smoothstep(${hw} * ${(1 - LGL_SOFT).toFixed(2)}, ${hw}, ${d}))`;
+  return `{ float a = min(1.0, ${aSrc} * ${la.toFixed(4)}) * ${cov}; ${dst} = ${dst} * (1.0 - a) + vec4(col, 1.0) * a; }`; }).join("\n    ");
+// the line's own opacity through its body - its levels but the thinnest one composited, plus the curtain's mean (non-boss) - the glow's interior takes it
+const lglBody = (prof, aSrc, curtain) => "(1.0 - " + prof.slice(0, -1).map(([, la]) => `(1.0 - min(1.0, ${aSrc} * ${la.toFixed(4)}))`).join(" * ") + (curtain ? ` * (1.0 - ${aSrc} * ${(AUR_CURTAIN * 0.8).toFixed(4)})` : "") + ")";
+// THE GLOW, one level: the line's body opacity over its interior (LGL_GLOW_IN of its half width), falling smoothly to nothing at its edge - the widest
+// width of the old profile, so it reaches as far as before; glowK: the glow's alpha over its old share of the line's (c.x / (c.y x the glow's base)), at
+// most 1 - an aurora's AUR_GLOW lifts it there, so its interior is the line's body; a dimmer glow (a fading lane) is fainter
+const lglGlow = (hw, body, glowK, d) => `{ float a = min(1.0, ${body} * ${glowK}) * (1.0 - smoothstep(${(hw * LGL_GLOW_IN).toFixed(4)}, ${hw.toFixed(4)}, ${d})); laneG = laneG * (1.0 - a) + vec4(col, 1.0) * a; }`;
 const AUR_GLOW = 2.2, AUR_WIDE = 0.8, AUR_CURTAIN = 0.35; // the aurora: its glow's alpha x, its distance x (under 1: wider)
 const LANE_GLSL = `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
@@ -40,10 +51,10 @@ void laneFlush(float dG, float dL, vec4 b, vec4 c, LHP vec2 p) { // one group: b
     c.x = min(1.0, c.x * ${AUR_GLOW.toFixed(2)} * (0.85 + 0.15 * sin(t * 1.1 + b.w * 1.7)) * (0.6 + 0.8 * sh) * ray); c.y *= 0.75 + 0.35 * sh; // (the glow brighter than a plain lit lane's: AUR_GLOW)
   }
   if (c.z > 0.5) {
-    ${lglLevels(LIT_GLOW_SOFT, BOSS_LANE_W.toFixed(4), "c.x", "dG", "laneG")}
+    ${lglGlow(LIT_GLOW_SOFT[0][0] / 2 * BOSS_LANE_W, lglBody(BOSS_LINE_SOFT, "c.y", false), "min(1.0, c.x / max(1e-4, c.y * 0.22))", "dG")}
     ${lglLevels(BOSS_LINE_SOFT, "1.0", "c.y", "dL", "laneL")}
   } else {
-    ${lglLevels(LIT_GLOW_SOFT, LANE_PLAIN_W.toFixed(4), "c.x", "dG", "laneG")}
+    ${lglGlow(LIT_GLOW_SOFT[0][0] / 2 * LANE_PLAIN_W, lglBody(LIT_LINE_SOFT, "c.y", true), "min(1.0, c.x / max(1e-4, c.y * " + LIT_GLOW_A.toFixed(4) + "))", "dG")}
     ${lglLevels(LIT_LINE_SOFT, LANE_PLAIN_W.toFixed(4), "c.y", "dL", "laneL")} /* x LANE_PLAIN_W (4 since 2026-11-07): the glow's 72 u half width inside LGL_DMAX, the line's 24 inside LGL_LMAX */
     if (dL < ${(LGL_LMAX - 1).toFixed(1)}) { // THE CURTAIN along the whole lane: the line's own distance field (LGL_LMAX u either side), a smooth (1 - d)^2 fade across, waving and
       // shimmering like the glow above - on the line's layer, which runs the lane's length (the glow's is masked to the core's surround)
