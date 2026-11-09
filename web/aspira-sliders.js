@@ -1,13 +1,13 @@
-// /aspira - the TOWER CARD and its UPGRADE SLIDERS (owner, 2026-10-07): a chart tower is upgraded
-// by DRAGGING each axis of its triangle outward, a stop per tier. Several axes
+// /aspira - the TOWER CARD and its UPGRADE CONTROLS (owner, 2026-10-07): a tower is upgraded with a
+// + / - stepper per axis, a step per tier (they were handles dragged on the chart's axes). Several axes
 // may be pulled before buying - the BASKET - and the card previews the result:
 // stat rows read now -> next, the description shows its change as TRACK
 // CHANGES (removed words struck through, added ones underlined, like Word or
-// Docs), the upgrade button prices the whole basket and LOCKS IT IN. A handle
+// Docs), the upgrade button prices the whole basket and LOCKS IT IN. A - button
 // stops at the tier already locked in and the card SAYS so (#asp-slider-note). The bank is no limit to a pull (owner, 2026-10-07):
 // a basket it cannot cover shows its cost in red on a button that will not take
-// the tap (the handles flash only where a point IS affordable). The U key
-// locks in (1-3 stay the speed keys). UI only; loaded after aspira-chart.js and
+// the tap (the + flashes only where a point IS affordable). The U key
+// locks in (the number keys stay the speed keys). UI only; loaded after aspira-chart.js and
 // before aspira-ui.js, whose helpers (button, noFunds, ...) and aspira-stats.js's (statRow, SPEC) it
 // calls at run time.
 const basket = { id: null, add: {} }; // the pulled points per axis of the selected tower
@@ -27,8 +27,8 @@ function axisRoom(t, id) {
 
 // ---------- the control: three + / - steppers, and the chart beside them ----------
 // (owner, 2026-10-07; was handles dragged on the chart's own axes): each axis
-// is a REAL range slider with its full name and tier under it, the three
-// stacked to the LEFT of the chart; the chart is the picture - the tier rings,
+// a row - its full name and tier, then - and + - the three stacked to the
+// LEFT of the chart; the chart is the picture - the tier rings,
 // what the tower has (filled), what the pull would make (dashed), the axes'
 // short names at the corners and no numbers
 // the chart's outer radius (bigger, owner), centre and tier-0 radius (viewBox units); each label
