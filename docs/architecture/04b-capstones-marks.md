@@ -27,7 +27,7 @@ aspira-capstone.js); its knobs:
 | CRR | Tether -> Anchor | no new mechanic: the tether runs on to one more enemy (as before) | - | aspira-crr.js |
 | CRR | Armament -> Autopilot | bursts into 10 pellets (x1.125 td) whenever it heads home | `CRR_BURST_N`, `CRR_BURST_K` | aspira-crr.js |
 | IFR | Meteor -> Impact | every 3rd charged meteor is big (drawn x2, hitbox unchanged), its first hit x4 | `IFR_BIG_EVERY`, `IFR_BIG_HIT_K` | aspira-ifrit.js |
-| IFR | Hellfire -> Hellfire | each fire strikes a pentagram's 5 chords across its circle, each a chain burning like a flare | `IFR_CHAINS_N`, `IFR_CHAIN_K` | aspira-ifrit.js |
+| IFR | Hellfire -> Hellfire | a fire that tracks its enemy wears two burning chain rings (0.85 and 1 of its circle) turning opposite ways; each burns what its band touches like a flare, at the fire flare's hit x `IFR_CHAIN_K` | `IFR_HF_RINGS`, `IFR_CHAIN_K`, `IFR_HF_RING_TURN_S` (look) | aspira-ifrit.js, aspira-ifrit-draw.js |
 | IFR | Flare -> Mega Firaga | one flare a landing plus a flare ring 60% up its spokes (its own hit); flares at most 300 across | `IFR_V_SPAN` | aspira-ifrit.js |
 
 The smoke's capstone crash sweep (`pins.mjs`) runs all 21 on the board with every core power; the numbers' dated snapshot is ARCHAEOLOGY §13.10.
