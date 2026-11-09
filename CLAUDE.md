@@ -38,10 +38,10 @@ are this repo's gitignored `data/aspira-sfx/`.
   and never touch `web/aspira-version.txt`; `~/.claude/spire-ship2.sh [--minor] "<subject>" [branch ...]` cherry-picks their unshipped commits onto
   `tier-redesign`, bumps the version once, smokes, runs the spire pytest, pushes, moves exec-fn's pointer and deploys; each peer then `git rebase
   tier-redesign`. A new tower is a new major. ARCHITECTURE.md §9.4.
-- **Every balance patch runs the marks at FIVE point levels** (`VS_MARKS`, owner 2026-10-18; 2026-11-06: "1B, but also add a 0 point and 3 point check",
+- **Every balance patch runs the marks at FIVE point levels** (`VS_MARKS`, owner 2026-10-18; 2026-11-06: "also add a 0 point and 3 point check",
   "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target marks"): 9 points writes the card
   (`marks.py --write`), 13 points (each axis maxed, `--focus`) is the second target, 3 / 6 must stay within 1 of the target and 0 within 2
-  (owner 2026-11-07 "1C": the 0-point band loosened to +/-2) (`--band`, RULE FAIL past it). The five commands and their windows: ARCHITECTURE.md §4.8.
+  (owner 2026-11-07: the 0-point band loosened to +/-2) (`--band`, RULE FAIL past it). The five commands and their windows: ARCHITECTURE.md §4.8.
 - **THE MARK TARGET** (owner, 2026-10-29: "save super important! priority #1"): `scripts/aspira-sim/mark-target.json` is the table the towers
   are balanced TO; never edit `VS_MARKS` by hand; `marktarget.py` (the fitter) runs again only on the owner's word; any other mark table in docs
   or plans is OLD. The table and its rules: ARCHITECTURE.md §4.8; its history and every owner quote: ARCHAEOLOGY.md §4.6.

@@ -13,6 +13,8 @@ ARCHITECTURE.md used to be — **the verbatim old ARCHITECTURE.md is in git:
 the full wording). Values here are SUPERSEDED unless a line says "still". Owner quotes are
 the owner's (Wai, she/her) words from the commit log.
 
+Owner answers to the Leader's questions, newest first: [docs/answered-questions.md](docs/answered-questions.md).
+
 ## 0. Timeline
 
 2026-10-01 `/aspira` born owner-only (star-chart board, a build disc of ~270 hex cells, lanes
@@ -577,7 +579,7 @@ instead of contagion"); kills leave pools only with Contagion, and then every AC
 
 ### 5.x The boss order and table before the 2026-11-07 reorder, and the refit in progress (moved from ARCHITECTURE §5.4, 2026-11-08)
 
-**BOSS DEPTH - REFIT IN PROGRESS** (as ARCHITECTURE carried it until the reorder refit shipped) (owner, 2026-11-06: "make sure bosses just get to about 120% of a normal wave"; 2026-11-07 "3D"): a boss's
+**BOSS DEPTH - REFIT IN PROGRESS** (as ARCHITECTURE carried it until the reorder refit shipped) (owner, 2026-11-06: "make sure bosses just get to about 120% of a normal wave"; 2026-11-07: refit four bosses on 100 games toward one normal wave): a boss's
 HP is refit so it gets about as far toward the core as the normal waves round it, on 100 games. The Star stays at x1.2 a normal wave;
 Strength, Chariot, Lovers and Devil are refit to about x1.0; Temperance, Justice, Empress, Judgement and Death are on the redesign
 list (their mechanics change first). The refit numbers land with Balance's ship (ARCHAEOLOGY §12).
@@ -601,7 +603,7 @@ strength only takes 10% of any slow"). "A wave" = `typeWaveCount(type, n)`: a pl
 
 The reorder refit that replaced it (2026-11-08, bosses-on 100 games; the code comment at `BOSS_HP`): strength 6.44 -> 39, lovers 35.7 -> 21.4,
 empress 11.02 -> 5.5, judgement 1.904 -> 5.7, justice 3.2 -> 14, temperance 4.76 -> 2.43, death 0.72 -> 1.79, devil 1.277 -> 1.43; chariot held
-at 31.82 (x1.2, owner's "A"). Depth ratios: Strength 0.92, Lovers 1.13, Empress 1.03, Justice 1.06, Temperance 0.85, Judgement 0.28, Death 0.79,
+at 31.82 (x1.2, the owner's pick for a Chariot "still OP"). Depth ratios: Strength 0.92, Lovers 1.13, Empress 1.03, Justice 1.06, Temperance 0.85, Judgement 0.28, Death 0.79,
 Devil 0.77.
 
 ## 6. Damage model history
@@ -1458,4 +1460,4 @@ and waves, team leak per type; a path's usefulness is the marginal team-leak dro
 
 | tower | what the test found | lever | result |
 |---|---|---|---|
-| CRR | Full Wing (Hangar V) worth 50 points of leak, Armament V 15, Tether V 4 | interceptors fly home when the target dies (owner, 11-01) and carry up to 40 volleys (11-07 "Ok no ammo limit"), so a retarget spends a full sortie; fewer retargets or a shorter reach barely helped | owner, 2026-11-09 "2a": one retarget, carrying part of the leftover ammo (the share from the sim) |
+| CRR | Full Wing (Hangar V) worth 50 points of leak, Armament V 15, Tether V 4 | interceptors fly home when the target dies (owner, 11-01) and carry up to 40 volleys (11-07 "Ok no ammo limit"), so a retarget spends a full sortie; fewer retargets or a shorter reach barely helped | owner, 2026-11-09: one retarget, carrying part of the leftover ammo (the share from the sim) |
