@@ -322,7 +322,7 @@ $("asp-ov-btn").onclick = () => {
 document.addEventListener("keydown", ev => {
   if (ev.target.closest("input, textarea, [contenteditable]")) return;
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
-  // the chooser is open: only a card choice gets through (1-3)
+  // the chooser is open: only a card choice gets through (1-4)
   if (chooser.t) {
     if (["1", "2", "3", "4"].includes(ev.key)) chooseUpgrade(Number(ev.key) - 1);
     else if (ev.key === "Escape") closeChooser();

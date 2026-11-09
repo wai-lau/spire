@@ -5,7 +5,7 @@
 // option at a branch (2-3 paths or forms), a single card for a plain step -
 // each laid out like the tower's card with the stats it changes. Nothing is
 // charged until a card is tapped; clicking outside (or Esc) just closes. The
-// game pauses meanwhile. Keys 1-3 pick a card.
+// game pauses meanwhile. Keys 1-4 pick a card.
 const chooser = { t: null, opts: [], wasPaused: false };
 function upgradeOptions(t) {
   if (hasSkills(t)) return skillOptions(t); // a chart tower: the next tier of each open axis
