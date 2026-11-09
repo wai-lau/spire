@@ -73,24 +73,8 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
   };
   g.setLineDash = d => { g.dash = !!(d && d.length); real.setLineDash(d); };
   g.getLineDash = () => real.getLineDash();
-  g.setTransform = (a, b, c, d, e, f) => { if (typeof a === "object") { const M = a; g.m = [M.a, M.b, M.c, M.d, M.e, M.f]; real.setTransform(M); } else { g.m = [a, b, c, d, e, f]; real.setTransform(a, b, c, d, e, f); } };
-  g.getTransform = () => real.getTransform();
-  g.transform = (a, b, c, d, e, f) => { real.transform(a, b, c, d, e, f); const M = real.getTransform(); g.m = [M.a, M.b, M.c, M.d, M.e, M.f]; };
-  g.translate = (x, y) => g.transform(1, 0, 0, 1, x, y);
-  g.scale = (x, y) => g.transform(x, 0, 0, y, 0, 0);
-  g.rotate = a => g.transform(Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0);
-  g.resetTransform = () => g.setTransform(1, 0, 0, 1, 0, 0);
-  g.save = () => { g.stack.push([g.m.slice(), g.dash, g.clipC]); real.save(); };
-  g.restore = () => { const s = g.stack.pop(); if (s) { [g.m, g.dash, g.clipC] = s; fxGl.clipC = g.clipC; } real.restore(); };
-  // a radial gradient from clear at its centre to one colour at the rim (gradDisc) is drawn by the batch; any other by the canvas
-  g.createRadialGradient = (x0, y0, r0, x1, y1, r1) => {
-    const gr = real.createRadialGradient(x0, y0, r0, x1, y1, r1), add = gr.addColorStop.bind(gr), stops = [];
-    gr.addColorStop = (o, c) => { stops.push([o, c]); add(o, c); gr.__disc = r0 === 0 && x0 === x1 && y0 === y1 && stops.length === 2 && stops[0][0] === 0 && stops[0][1] === "transparent" && stops[1][0] === 1 ? { col: stops[1][1] } : null; gr.__multi = r0 === 0 && x0 === x1 && y0 === y1 && stops.length >= 3 ? stops : null; };
-    return gr;
-  };
-  // everything else straight to the canvas (and the layer is then sent up this frame)
-  for (const name of ["fillText", "strokeText", "drawImage", "fillRect", "strokeRect", "putImageData"]) g[name] = (...a) => { g.used = true; glcWhy(name); return real[name](...a); };
-  g.clearRect = (...a) => real.clearRect(...a);
+  glcTransforms(g, real);
+  glcPassThrough(g, real);
   /* the boss sky's two passes (skyKeep, aspira-bosses.js) clip to the sky's circle - inside it, or everything OUTSIDE it (an even-odd circle + a huge rect): the batch clips its shapes to that circle itself (mode 1 / 2 in the instance), so the moving layer is not sent up for them */
   g.clip = (...a) => {
     const c0 = parts.length === 1 && parts[0].circle, evenodd = a[0] === "evenodd";
@@ -107,8 +91,32 @@ function glCtx(real, toWorld) { // toWorld: the real canvas's pixels -> world un
     }
     replay("clip"); real.clip(...a);
   };
-  for (const name of ["measureText", "createLinearGradient", "createPattern", "isPointInPath", "getImageData", "createImageData", "createConicGradient"]) g[name] = (...a) => real[name](...a);
   return g;
+}
+// THE TRANSFORM AND THE STATE STACK: kept on g (g.m, the dash flag, the clip) as on the real context (split from glCtx at its function cap, 2026-11-08)
+function glcTransforms(g, real) {
+  g.setTransform = (a, b, c, d, e, f) => { if (typeof a === "object") { const M = a; g.m = [M.a, M.b, M.c, M.d, M.e, M.f]; real.setTransform(M); } else { g.m = [a, b, c, d, e, f]; real.setTransform(a, b, c, d, e, f); } };
+  g.getTransform = () => real.getTransform();
+  g.transform = (a, b, c, d, e, f) => { real.transform(a, b, c, d, e, f); const M = real.getTransform(); g.m = [M.a, M.b, M.c, M.d, M.e, M.f]; };
+  g.translate = (x, y) => g.transform(1, 0, 0, 1, x, y);
+  g.scale = (x, y) => g.transform(x, 0, 0, y, 0, 0);
+  g.rotate = a => g.transform(Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0);
+  g.resetTransform = () => g.setTransform(1, 0, 0, 1, 0, 0);
+  g.save = () => { g.stack.push([g.m.slice(), g.dash, g.clipC]); real.save(); };
+  g.restore = () => { const s = g.stack.pop(); if (s) { [g.m, g.dash, g.clipC] = s; fxGl.clipC = g.clipC; } real.restore(); };
+}
+// what the batch never draws, and the queries: straight to the real canvas (split from glCtx at its function cap, 2026-11-08)
+function glcPassThrough(g, real) {
+  // a radial gradient from clear at its centre to one colour at the rim (gradDisc) is drawn by the batch; any other by the canvas
+  g.createRadialGradient = (x0, y0, r0, x1, y1, r1) => {
+    const gr = real.createRadialGradient(x0, y0, r0, x1, y1, r1), add = gr.addColorStop.bind(gr), stops = [];
+    gr.addColorStop = (o, c) => { stops.push([o, c]); add(o, c); gr.__disc = r0 === 0 && x0 === x1 && y0 === y1 && stops.length === 2 && stops[0][0] === 0 && stops[0][1] === "transparent" && stops[1][0] === 1 ? { col: stops[1][1] } : null; gr.__multi = r0 === 0 && x0 === x1 && y0 === y1 && stops.length >= 3 ? stops : null; };
+    return gr;
+  };
+  // everything else straight to the canvas (and the layer is then sent up this frame)
+  for (const name of ["fillText", "strokeText", "drawImage", "fillRect", "strokeRect", "putImageData"]) g[name] = (...a) => { g.used = true; glcWhy(name); return real[name](...a); };
+  g.clearRect = (...a) => real.clearRect(...a);
+  for (const name of ["measureText", "createLinearGradient", "createPattern", "isPointInPath", "getImageData", "createImageData", "createConicGradient"]) g[name] = (...a) => real[name](...a);
 }
 // the batch's fills: whole circles (a plain colour or the gradDisc) and REGULAR POLYGONS (FRZ's moons, poly() - the canvas
 // fallback sent the whole moving layer up every frame on a phone, 2026-10-14); false: something else, the canvas draws it
