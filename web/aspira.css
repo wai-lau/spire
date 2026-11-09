@@ -800,6 +800,7 @@ html, body, #asp { touch-action: manipulation; }
 /* a boss row: the boss centred, a line out to either side (owner) */
 .asp-bside { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; } /* a boss row: the escort either side (bossRowIcons, aspira-wavelist.js) */
 .asp-bmid { display: flex; align-items: center; flex: none; }
+.asp-bcount { font-size: 0.6em; margin: 0 0.2em; white-space: nowrap; vertical-align: middle; color: currentcolor; } /* a capped escort band's count (escBand, aspira-wavelist.js) */
 .asp-wavenote .e-boss > .asp-bside { filter: none; } /* the escort keeps its own colours; only the boss icons invert */
 
 /* every LIVE wave's row: one unbroken light white band (owner); every cell
