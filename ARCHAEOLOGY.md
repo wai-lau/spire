@@ -740,6 +740,23 @@ day); boss voices per Arcana (the Archon set locally); `LOUD_GAIN` / `TOWER_GAIN
 2 after the limiter; the core-power sounds (own, not "upgrade complete"); the shutdown sound on a leak. No auto-pause on
 focus loss.
 
+### 8.5 The look passes, 11-06 .. 11-09 (Visual)
+
+- **Tower bodies by axis** (owner, 11-06: "every upgrade axis also changes a visible feature"): ARC's Voltage rings (sized to clear the
+  prism at any turn, then pushed out to the glow's inside, split back / front at the centre's screen row), SOL's Breach blades (baked per
+  view shape, a level-4 tower's height), FRZ's Permafrost sheets and Fracture shards (grown once in a Worker, baked per pixel with the
+  prism as a depth-only occluder), GRV's orb, CRR's V=V interceptors, IFR's flares.
+- **The lift trap** (towers lifted floor -> h since 7.8.11): code that still assumed the old frame drew ARC's bolt end h/2 above the
+  enemy and baked FRZ's ice occluder at half height (the ice showed through the prism until 7.12.9).
+- **FRZ moons** (7.12.10): the D12's face normals were in the wrong orientation (0 of 12 faces planar); fixed, and the moon orbit ring
+  dropped (the range keeps the indicator). **Fracture** (7.12.11): a third as tall, a 1.75x foot, standing on the sheets, not through.
+- **The ice bake off the main thread** (11-08): a 379 ms bake sliced on the main thread cost 2 ms of every frame for ~3 s of a pan; the
+  Worker bakes on an OffscreenCanvas and transfers an ImageBitmap (posting the crystal list per job cloned it: 29 ms spikes - §11).
+- **Sound** (11-07): every sample normalized on its loudest 150 ms, class gains (towers, kills, alerts), sliced and round-robin samples,
+  SOL's one voice a tower, the shield-pop / ARC sound swap.
+- **2D path ops** (11-08 .. 09, 7.12.22 .. 7.12.24), a late phone scene: strokes 189 -> 114 (each prism upright stroked once, the top
+  edges one path, the moons' bases and edges one fill / one stroke), fills 200 -> 185; pixel diffs named, none visible at 3x.
+
 ## 9. Meta history
 
 - **7.0.0 released (10-30, 409accb; exec-fn fd0a082a).** "Can you also release what you have as 7.0 even if it's not completely ready?": the tier-redesign branch, 311 commits since 6.15.11 (tiers 0-V, the ARC rebuild drawn as chains, ACD pools, SOL band and Breach, FRZ without strip, CRR 3x bolts, the new formations, waves 1-12, the mark target), one 7.0 changelog entry, smoke 126/126, pytest 45 passed. Known open: ARC 0 +1 -3 +2 against its target +2 -2 -2 +2; the good model wins about 103/200 of the covering trios.
