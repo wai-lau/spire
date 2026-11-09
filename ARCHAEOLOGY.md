@@ -801,6 +801,14 @@ focus loss.
 - **File splits at the 500-line cap** (exec-fn's hook): `towers` -> `acid`, `skills` -> `frz`, `chart`, `stats`,
   `sliders`, `desc`, `game` -> `waves`, `floats`, `formations`, `ui` -> `chooser`, `wavelist`, `threat`, `draw` -> `lanes`,
   `effects`, `enemies`, `textcache`, `warp` -> `warplayers`, `fxgl`, `glctx`, `fog`, `solids`, `walls`.
+- **Dead code removed (2026-11-09, 7.12.31 .. 7.12.33; each proven by `fp.sh` IDENTICAL + the smoke):** ARC's Static charge
+  (Capacitance's 10-07 charges that burst when the enemy was next hit or died: `ARC_CAPACITANCE`, `ARC_BURST_R`, `dischargeStatic`,
+  `capQueue`, the damage and death hooks, the charge border) - dead since the 10-29 redesign set `st.charge` null; the old SOL
+  shot's one-number-a-volley hold (`dmgBatch`); `entCtx`, `moonOrbit` (the moon ring went 11-08), `clampView`, the flat LOD die
+  (`warpFlatDie`, unused since 10-12's "swarm should render in full 3d all the time"); six unread look constants (`SOL_TRACK_FLASH`,
+  `BOSS_BAR_TRACK`, `DEMO_EDGE`, `ASC_SHOW`, `COIN_R`, `TOWER_CARD_H`); the CRT stack's `.cyber-*` CSS (the page has had `crt=False`
+  since 10-09) and six `.asp-*` classes no element carried; two sim scripts (`latesearch.mjs`, `formvalue.mjs`, both on `buyCore`)
+  moved to the gitignored `.archaeology/scripts/`. Unread constants in the balance files went to Balance to drop tower by tower.
 - **Repo split (10-14):** `/aspira` lived in exec-fn's ARCHITECTURE.md §22 and `api/`, `web/`, `scripts/` until it moved to
   `wai-lau/spire` with history (`git filter-repo`); the parent consumes it as `apps/spire`.
 
