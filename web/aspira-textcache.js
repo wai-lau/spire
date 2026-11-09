@@ -75,7 +75,7 @@ function textSprite(str, x, y, size, color, outline, bold, shrink = 1) {
     textSprites.set(key, sp); textPx += sp.px; textEvict(key);
   }
   const k = dev / q * shrink, X = m.a * x + m.e, Y = m.d * y + m.f; // shrink: the same stamp, drawn smaller (perf, 2026-10-16: a fading number made a stamp per 0.5 px step - the cache sat full and thrashed)
-  const st = CanvasRenderingContext2D.prototype.setTransform; // (the prototype's: the full-density layer's own would scale it - entCtx)
+  const st = CanvasRenderingContext2D.prototype.setTransform; // (the prototype's: the full-density layer's own would scale it - the old entCtx wrapper did)
   st.call(ctx, 1, 0, 0, 1, 0, 0); // device px; only the transform changes, so it alone is put back (a save / restore a number was most of its cost)
   ctx.drawImage(sp.c, sp.sx, sp.sy, sp.w, sp.h, X - sp.ox * k, Y - sp.oy * k, sp.w * k, sp.h * k); /* (the stamp fills the corner of a bucket-sized slot: its page's, or its own canvas's at 0, 0) */
   st.call(ctx, m);

@@ -70,17 +70,6 @@ function warpTowCtx() {
   const x = c.getContext("2d"); x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height); ctxDefaults(x);
   return x;
 }
-// the overlay's context, its transforms and shadow blurs scaled by warp.entScale (set once on the context)
-function entCtx(c) {
-  const x = c.getContext("2d");
-  if (x.__ent) return x;
-  x.__ent = true;
-  const st = x.setTransform.bind(x), k = () => warp.entScale || 1;
-  x.setTransform = (a, b, c2, d, e, f) => (typeof a === "object" ? st(a) : st(a * k(), b * k(), c2 * k(), d * k(), e * k(), f * k()));
-  const P = CanvasRenderingContext2D.prototype, sb = Object.getOwnPropertyDescriptor(P, "shadowBlur");
-  if (sb && sb.set) Object.defineProperty(x, "shadowBlur", { configurable: true, get() { return sb.get.call(this) / k(); }, set(v) { sb.set.call(this, v * k()); } });
-  return x;
-}
 // BEAMS GONE UNDER A TOWER (owner, 2026-10-14: "make all beams 100% transparent when covered by a tower" - "yes do that bigger
 // change"): each tower prism's outline ON SCREEN (the hull of its top and bottom hexagons, last frame's - warpEntities) goes to
 // the bell's shader, which clears the effects layer (fxt: every beam, jet, hit and ring) inside it, a pixel soft at the edge.

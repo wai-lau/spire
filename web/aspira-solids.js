@@ -184,21 +184,6 @@ function blendFill3(c0, a0, c1, a1, c2, a2, twice) {
   if (!s) { if (blendCache.size > BLEND_CACHE_MAX) blendCache.clear(); s = "rgba(" + (r | 0) + "," + (g | 0) + "," + (b | 0) + "," + a / 255 + ")"; blendCache.set(key, s); }
   return s;
 }
-// LOD (owner, 2026-10-12: "do some major perf work for 3d"): a die SMALLER than SOLID_LOD_PX on screen - most of a late
-// swarm - is one flat shape at its projected spot, drawn once in the top pass: 229 dice cost 38 ms of a 60 ms frame (profiled)
-const SOLID_LOD_PX = 12; // (a budget of full dice a frame, the rest flat, ran for an hour - owner: NO)
-function warpFlatDie(e) {
-  if (e.type !== "swarm") return false; // ONLY a tiny SWARMER is ever flat - every other enemy stays a die (owner, 2026-10-12)
-  const P = warpProject(e.x, e.y), r = solidSize(e) * cam.k * P.s;
-  if (!(r < SOLID_LOD_PX) && !farFx(e)) return false; // (or out in the far ring - farFx, aspira-quality.js)
-  if (warpBand && warpBand.lo !== 0) return true; // only the pass above the floor draws it
-  const d = ENEMIES[e.type], n = d.sides, col = COL[d.color], fa = warpFade * Math.max(SOLID_FAR_MIN, Math.min(1, P.s / warp.p.z) ** 2) * enemyVis(e);
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.beginPath();
-  for (let i = 0; i < n; i++) { const a = (e.rot || 0) + i * 6.283 / n; if (i) ctx.lineTo(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); else ctx.moveTo(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r); }
-  ctx.closePath(); ctx.fillStyle = blendFill([[rgbOf(col), 0.35 * fa], [rgbOf(COL.tfrz), 0.35 * fa * SOLID_FROZEN_A * frostK(e)]]); ctx.fill();
-  ctx.strokeStyle = blendFill([[rgbOf(COL[ENEMIES[e.type].color]), 0.9 * fa], [rgbOf(COL.white), 0.9 * fa * rimeK(e)]]); ctx.lineWidth = 1.2 * cam.k; ctx.stroke(); // (its own type's outline - no augment colour since 2026-11-05)
-  return true;
-}
 // NO FOG ON ENEMIES (owner, 2026-10-12: "remove fog on enemies"): a die draws ONCE, whole and at full strength, in the pass
 // above the floor - no fading slices below it, no clipping (and that much less work a frame)
 function warpSolid(e) {
@@ -220,7 +205,7 @@ function solidOffCanvas(g) {
   return x1 < -m || y1 < -m || x0 > W + m || y0 > H + m;
 }
 function warpSolidWhole(e) {
-  // (tiny swarmers drew FLAT here for an afternoon - owner, 2026-10-12: "swarm should render in full 3d all the time"; warpFlatDie unused)
+  // (tiny swarmers drew FLAT here for an afternoon - owner, 2026-10-12: "swarm should render in full 3d all the time"; the flat LOD die, warpFlatDie, was removed 2026-11-09)
   if (e.geomAt !== warp.frame) { e.geomAt = warp.frame; e.geom = solidGeom(e); }
   const g = e.geom, band = warpBand;
   if (!g || solidOffCanvas(g)) return;

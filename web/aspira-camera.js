@@ -54,13 +54,6 @@ function devXY(ev) {
   const r = cv.getBoundingClientRect(), dpr = canvasDpr();
   return { x: (ev.clientX - r.left) * dpr, y: (ev.clientY - r.top) * dpr };
 }
-// keep the core (the chart's centre) somewhere on the canvas
-function clampView() {
-  const cx = cam.ox + CX * cam.k, cy = cam.oy + CY * cam.k;
-  const { w, h } = warpScreenFull(); // (the canvas is the picture's square)
-  cam.ox += Math.max(0, Math.min(w, cx)) - cx;
-  cam.oy += Math.max(0, Math.min(h, cy)) - cy;
-}
 function refit() { resize(); fitK = cam.fit; }
 
 // THE WHEEL ZOOMS on a desktop (ZOOM_WHEEL, aspira-draw.js; owner, 2026-10-19): ~10% a mouse notch (100 px), smooth on a trackpad,
