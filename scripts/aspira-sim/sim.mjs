@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pickNext, usePowers } from "./corepower.mjs";
 import { patchProbe } from "./simver.mjs";
-import { bestBuy, haveSurface } from "./sim-buyer.mjs"; // the adaptive buyer (BUYER=adaptive, owner 2026-11-09)
+import { bestBuy, haveSurface } from "./sim-buyer.mjs"; // the adaptive buyer, every sim player's default (owner 2026-11-09: "simulated players should always go for the best build"); BUYER=old: the cheapest-tower + axis-vs.json spend, for comparisons
 // ASPIRA_WEB=<dir> pins a run to a SNAPSHOT of the game files: every game
 // re-reads them, so a balance commit landing mid-run would otherwise mix two
 // versions (2026-10-07)
@@ -210,7 +210,7 @@ export function makePlayer(strategy, seed = 1, maxWave = 60, dt = 0.02, patch = 
     leaks: {}, leakWave: {}, coreMem: {}, trace: [], buys: [], pivoted: [], hist: [], lastWave: -1, waveNear: Infinity, bossNear: Infinity, fired: [],
     econ: [], builtAt: null, fullAt: null }; // the economy's ledger: a line every 10 waves, the wave every slot was filled / every tower maxed
   let next = null; // the committed next action (holds a tower: snapshotted by id)
-  const adaptive = process.env.BUYER === "adaptive" && haveSurface() && !strategy.randomAxis && !strategy.skills; // (the good model; the random human keeps its bad build)
+  const adaptive = (process.env.BUYER || "adaptive") === "adaptive" && haveSurface() && !strategy.randomAxis && !strategy.skills; // (the good model; the random human keeps its bad build)
   // the game's tower cap (MAX_TOWERS, 3 since 2026-10-11) holds every player; strategy.towerCap overrides it for a
   // team that is MEANT to be bigger (teambal.mjs's 4 + 1), and the game is told so its own placement agrees
   if (strategy.towerCap) g.run(`MAX_TOWERS = ${strategy.towerCap}; OPEN_SLOTS = SLOT_ANGLES.slice();`); // a bigger test team gets all six slots

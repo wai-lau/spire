@@ -3,7 +3,9 @@
 // path - the trouble it is in by enemy type (each type's closeness and lives lost over the last ADAPT_WAVES waves, recent ones weighing
 // more, plus the types of the next BUY_AHEAD waves on the list) times what one more tier there cuts that type's team leak (surface.json,
 // surfvalue.py: the tower's own gain a point + the path's edge at the level nearest its points after the buy), over the tier's price -
-// and buys the best. No trouble yet: every type weighs the same (the best overall). Replaces the cheapest-tower + axis-vs.json row spend.
+// and buys the best. No trouble yet: every type weighs the same (the best overall). The default since 2026-11-09 (paired 50 on 7.12.37,
+// bosses skipped: 22 -> 37 wins, lives 9.0 -> 15.7); BUYER=old keeps the cheapest-tower + axis-vs.json row spend. surface.json: the 7.12.37
+// team surface (surfvalue.py); refresh a tower's rows when its balance changes
 import fs from "node:fs";
 
 const TYPES = ["swarm", "fast", "shield", "armor"], BUY_AHEAD = 2, AHEAD_K = 0.3;
