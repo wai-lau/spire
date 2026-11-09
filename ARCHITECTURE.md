@@ -477,16 +477,18 @@ but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 
 | 3, 6 | the early and mid game | `--band` | every cell within 1 of the target, else `RULE FAIL` |
 | 0 | the opening (tier 0 towers) | `--band` | every cell within 2 of the target, else `RULE FAIL` (owner, 2026-11-07 "1C") |
 
-The windows follow the good model's tower points by wave (median 3 at wave 60, 5 at 80, 8 at 100-110). From `scripts/aspira-sim`, with
-`KINDS=arc,frz,sol,acd,grv,crr,ifr` and 2 seeds (the 13-point run takes about 4x the 9-point one):
+The windows follow the good model's tower points by wave (median 3 at wave 60, 5 at 80, 8 at 100-110); the owner set the five levels and the
+bands, not the windows. All five in one go: `scripts/aspira-sim/marks5.sh`. By hand, from `scripts/aspira-sim`, with
+`KINDS=arc,frz,sol,acd,grv,crr,ifr` and 2 seeds. `N=1` (one tower of a kind) at 0 / 3 / 6 / 13: three towers clear the early windows at
+~0% leak and nothing ranks; 9 points keeps the default `N=3`:
 
 | points | command |
 |---|---|
-| 0 | `SPREAD_ONLY=1 POINTS=0 WINDOWS=5-19 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
-| 3 | `SPREAD_ONLY=1 POINTS=3 WINDOWS=55-65 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
-| 6 | `SPREAD_ONLY=1 POINTS=6 WINDOWS=81-89 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
+| 0 | `SPREAD_ONLY=1 N=1 POINTS=0 WINDOWS=9-19 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
+| 3 | `SPREAD_ONLY=1 N=1 POINTS=3 WINDOWS=55-65 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
+| 6 | `SPREAD_ONLY=1 N=1 POINTS=6 WINDOWS=81-89 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
 | 9 | `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
-| 13 | `POINTS=13 WINDOWS=101-109,111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus` |
+| 13 | `N=1 POINTS=13 WINDOWS=111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus` |
 
 ### 4.9 Trio scale and the designed deaths
 
