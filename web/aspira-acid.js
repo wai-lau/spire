@@ -1,16 +1,16 @@
-// /aspira - ACD, the acid tower: its burning LINES and their ramp, Rain's
-// chain, and (the skill chart) Seep's PUDDLES. Split from aspira-towers.js at
+// /aspira - ACD, the acid tower: its burning JETS (lines) and their ramp, and
+// Spill's POOLS (the skill chart: Corrosion, Flow, Spill). Split from aspira-towers.js at
 // its 500-line cap; same global scope, loaded right after it (the simulator too).
 
 // ACD (owner): continuous LINES on enemies whose burn RAMPS EXPONENTIALLY
-// while held - doubling every st.double seconds (1s; Catalyst 0.6s), capped at
+// while held - doubling every st.double seconds (ACD_DOUBLE), capped at
 // st.cap (x64). It starts LOW (3 dmg/s at x1). Damage lands in st.rate ticks a
 // second, each a real hit (armor cuts it, a shield eats it). Each line keeps
 // its own ramp, which resets when its enemy dies or leaves range.
-//   st.targets    lines at once (Pour 3)
+//   st.targets    jets at once (ACD_LINES by Flow tier)
 //   st.residue    seconds a line keeps burning after its enemy leaves range
 //   st.plagueR    each tick also burns everyone within this radius of the
-//                 line's enemy (Plague); st.bloom grows it with the ramp
+//                 line's enemy (Plague; 0 on the chart); st.bloom grows it with the ramp
 //   st.corrode    armor stripped from everything a tick burns, below zero
 //   st.allInRange no lines: every enemy in range burns on its own ramp
 // ACD_BASE_MAX 64 -> 32 (overnight phase 3, 2026-10-06): ACD dealt 52-99% of a late team's damage
@@ -90,9 +90,9 @@ function stepAcd(t, dt) {
   if (st.contagion) stepPuddles(t, st, dt); // the chart ACD's puddles (below)
 }
 
-// ---------- ACD's chart (moved from aspira-skills.js at its 500-line cap, 2026-10-07): Catalyst ramp, Pour lines, Seep puddles ----------
-// FITTED 2026-10-06 to +25 / +50 / +100% (Spray to +30 / +60 / +120%, since
-// its lines can never share an enemy): Corrosion's ramp time, Spray's per-line
+// ---------- ACD's chart (moved from aspira-skills.js at its 500-line cap, 2026-10-07): Corrosion's strip, Flow's jets, Spill's pools ----------
+// FITTED 2026-10-06 to +25 / +50 / +100% (Flow, id spray, to +30 / +60 / +120%, since
+// its lines can never share an enemy): Corrosion's ramp time, Flow's per-line
 // damage, Spill's puddle heat (tier III's is below II's - its puddles are bigger)
 // REFIT 2026-10-06 (overnight phase 2: standard team, waves 20-40, HP scaled so it is pressed - the earlier thin-field fits ran 3-12x over target)
 // CORROSION REWORKED 2026-10-07 (owner): a dud axis (111% at 0, 96% at III) - the

@@ -1,8 +1,8 @@
-// /aspira - FRZ's CHART: the aura, the Rime pulses, the moons (split from aspira-skills.js
+// /aspira - FRZ's CHART: the aura, Permafrost's pulses (id rime), the moons (split from aspira-skills.js
 // at its 500-line cap, 2026-10-08). Loaded right after aspira-arc.js (the simulator too):
 // towerStats / the game loop call frzSkillStats, frzStep and drawFrzSkill at run time.
 
-// ---------- FRZ's chart: the aura, the Rime pulses, the moons ----------
+// ---------- FRZ's chart: the aura, Permafrost's pulses, the moons ----------
 // numbers by tier (index 0 = untaken); balance later (owner: ideas first)
 // FITTED 2026-10-06 to +25 / +50 / +100% DELAY (enemy-seconds of slow bought
 // for the other towers; FRZ + L1 ARC + L1 SOL, waves 20-30) - the first
@@ -27,9 +27,9 @@ const FRZ_RIME_CRACK = [0, 0, 0, 0]; /* NO ARMOR REDUCTION (owner, 2026-10-29: F
 // ignore armor" - damage() now bites every hit); the empty opts the shield-pop call passes
 const FRZ_TICK_HIT = {};
 const FRZ_RIME = [0, 0.19, 0.36, 0.5775, 0.7975, 0.9375]; /* DOUBLE a pulse - two pulses' worth, 1 - (1 - v)^2, with the rate halved (owner, 2026-10-26: "halve rime ring pulse rate, but double effect"; was 0 0.1 0.2 0.35 0.55 0.75) */ /* even (owner, 2026-10-26 "Go"; was 0 0.01 0.02 0.3 0.9 0.9) */ // HALVED with the period (owner, 2026-10-14: "double pulse rate, half effect and opacity" - was .04 .07 .12 .17 .22; same frost a second, twice the rings); each pulse's permanent stacking slow (a shielded enemy takes none - applySlow refuses it; this was "the SHIELD answer" while pulses shattered shields, until 2026-10-12) (2026-10-11: a slow, tanky shield takes the most pulses; was 0 .024 .035 .054 .064 .068): Rime build leaks 13% of shields, Temp 24, Moons 23
-// FRZ's own levers (owner: no generic multipliers): Rime pulses MORE OFTEN each tier, the moons are STRONGER copies each tier
+// FRZ's own levers (owner: no generic multipliers): Permafrost pulses MORE OFTEN each tier, the moons are STRONGER copies each tier
 const FRZ_RIME_PERIOD = [1.333, 1.333, 1, 0.7, 0.5, 0.3] /* x2: half the pulse rate (owner, 2026-10-26) */ /* even (owner, 2026-10-26 "Go"; was 0.667 0.667 0.667 0.257 0.183 0.128) */ /* /1.5: x1.5 the rings, count first (axis balance 2026-10-25; was 1 1 0.385 0.275) */ /* halved (owner, 2026-10-14; was 2 2 1.7 1.4 1.2 1) */, FRZ_MOON_BY = [0.6, 0.7, 0.8, 0.9, 1, 1.1]; /* gentler (owner, 2026-10-26 "Fix moons": IV-V tripled the aura copies, Moons focus 5% leaked -> 14; was 0.6 0.75 0.9 1.1 1.35 1.625) */ /* even, 0..V written whole (owner, 2026-10-26: no two tiers alike; was 0.6 0.714 0.85 1.54 1.54 1.625) */ /* stronger moons for the 140 orbit (2026-10-08; were .485 .515 .58 .58 .58 at 70): isolation I..V ~112 125 151 172 ~225% - V overshoots at any strength >= IV's: five moons that far out cover most of the lanes */ // weakened (owner, 2026-10-08; isolation: Moons V 499% team); was .78 .9 .95 1 1 1 // Moons IV / V: four and five full moons
-// TEMP CONDUCTS FASTER (owner, 2026-10-11: "make temp conduct faster"): each Temp tier shortens the aura's TICK (s) -
+// TEMP CONDUCTS FASTER (owner, 2026-10-11: "make temp conduct faster"): each Fracture (id temp) tier shortens the aura's TICK (s) -
 // the same bite each tick, so more damage and more shield pops a second (capstone VI in aspira-capstone.js)
 const FRZ_TEMP_TICK = [0.21, 0.19, 0.17, 0.15, 0.125, 0.1] /* even, never under 0.1 (owner, 2026-10-26 "Go"; was 0.21 0.207 0.204 0.192 0.1 0.1) */ /* IV 0.0586 -> 0.1, capstone 0.0495 -> 0.1: no tick under 0.1s (owner, 2026-10-25: "Fastest tick rate should be 0.1/s, on anything") - the same damage a second, a tick's bite scales with it */ /* x0.6 with FRZ_TICK x0.6: more ticks, same damage - better vs shield (2026-10-24 marks target) */ /* BATTERY 6.7.0 (2026-10-20): untaken 0.5 -> 0.35 and I-III to match - a lone L1 FRZ lost 3-10 on waves 1-11 after the 6.5 spacing (armor 2x, fast 3x) */; /* V x1/1.93, VI x1/2.93 (steeper late tiers, tuned 2026-10-17) */
 // THE NIP (owner, 2026-10-25, the tier redesign's duo rule: "FRZ chill nips"): tier 0's chill hurts a little - FRZ_NIP x a tier 0 tick,
@@ -78,7 +78,7 @@ function frzSources(t, st) {
   return out;
 }
 // every step (aspira-step.js): slow what is inside each aura, tick its damage,
-// and grow the Rime pulses
+// and grow Permafrost's pulses
 // The per-type bite tables (FRZ_BITE, FRZ_BITE_BY, 2026-10-08..11) were replaced by frzBite below; ARCHAEOLOGY.md.
 // THE COLDER, THE HARDER (owner, 2026-10-12: "make frz deal damage relative to slow percentage"; replaced the bite by
 // TYPE - "get rid of all enemy based damage multis"; the tables above are dead): a tick hurts x (1 + FRZ_CHILL_K x
@@ -165,7 +165,7 @@ function frzStep(t, dt) {
     t.pulses = t.pulses.filter(p => p.age < FRZ_RIME_GROW);
   }
 }
-// UI: the aura discs, the moons and the Rime rings (aspira-effects.js drawTethers)
+// UI: the aura discs, the moons and Permafrost's rings (aspira-effects.js drawTethers)
 const MOON_TRI = 11; // a moon's triangle, corner to centre
 const FRZ_AURA_A = 0.4, FRZ_RIM_A = 0.25; // the aura's disc and rim, toned down (owner, 2026-10-07; were 0.8 / 0.45)
 const MOON_FX = 0.6; /* slightly more visible (owner, 2026-10-13: "increase FRZ moon and satellite aura visibility slightly"; was 0.45) */ // a moon's look against the tower's own (drawFrzSkill, drawTowerRange's orbit)
@@ -176,7 +176,7 @@ function drawFrzSkill(t, st) {
     // effects (except main one)") - the tower's own aura stays as it was
     const m = i ? MOON_FX : 1;
     gradDisc(s.x, s.y, st.range * s.k, col, FRZ_AURA_A * m); // fainter (owner, 2026-10-07; was 0.8)
-    // Frost (owner): a FROSTED RIM, thicker the colder the aura (its slow)
+    // the aura (owner): a FROSTED RIM, thicker the colder the aura (its slow)
     // ...as TWO thin rings, not one thick one (owner, 2026-10-12): each a third of the old width, the outer on the edge
     const rw = FRZ_RIM_W * st.aura * s.k;
     ctx.strokeStyle = col; ctx.globalAlpha = FRZ_RIM_A * m; ctx.lineWidth = rw / 3;
@@ -185,7 +185,7 @@ function drawFrzSkill(t, st) {
     // not "k < 1" - owner: they went missing) is a TRIANGLE pointing at the tower
     if (i && !(typeof drawFrzMoons === "function" && typeof warp !== "undefined" && warp.p)) { ctx.fillStyle = col; ctx.globalAlpha = 0.95 * MOON_FX; poly(s.x, s.y, s.small ? MOON_TRI * 0.55 : MOON_TRI, 3, Math.atan2(t.y - s.y, t.x - s.x), false); ctx.fill(); }
   });
-  // Rime (owner): a THIN expanding ring with a GLOW
+  // Permafrost (owner): a THIN expanding ring with a GLOW
   ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.shadowColor = col; ctx.shadowBlur = 12 * cam.k;
   for (const p of t.pulses || []) {
     const f = Math.min(1, p.age / FRZ_RIME_GROW);

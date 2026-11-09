@@ -67,7 +67,7 @@ const withSkill = (t, id) => ({ ...t.skills, [id]: skillOf(t, id) + 1 });
 const skillPointsCost = (t, n) => { if (freeBuild()) return 0; let c = 0; for (let i = 0; i < n; i++) c += Math.round(TOWERS[t.kind].cost * SKILL_STEP_COST[t.lvl - 1 + i]); return c; };
 const withSkills = (t, add) => { const s = { ...t.skills }; for (const [id, n] of Object.entries(add)) if (n) s[id] = (s[id] || 0) + n; return s; };
 
-// (FRZ's chart - aura, Rime, moons - lives in aspira-frz.js)
+// (FRZ's chart - aura, Permafrost, moons - lives in aspira-frz.js)
 
 // ---------- SOL's chart: the tables the tracking beam reads (aspira-sol.js) - Reflection's splits, Breach's strip, the crit ----------
 // Breach stacks per hit (owner: "each beam permanently weakens the target's armor" - Breach is what strips it; the base SOL strips nothing)

@@ -19,7 +19,7 @@ function drawAcd() {
     }
     for (const l of t.lines) {
       if (l.e.dead) continue;
-      // Catalyst: the line THROBS, faster the further its burn has ramped (owner)
+      // Corrosion (the old Catalyst path too): the line THROBS, faster the further its burn has ramped (owner)
       const f = acdFrac(l, st), cat = skillOf(t, "corrosion") > 0 || (t.path != null && UPGRADES.acd[t.path].name === "Catalyst");
       const k = (Math.hypot(l.e.x - t.x, l.e.y - t.y) > st.range ? 0.5 : 1) *
         (cat ? 0.7 + 0.3 * Math.sin(performance.now() / 1000 * (4 + 20 * f)) : 1);
@@ -49,7 +49,7 @@ function drawTethers() {
   for (const t of G.towers) {
     if (t.kind !== "frz") continue;
     const st = towerStats(t, true), r = st.range, col = COL[TOWERS[t.kind].color];
-    if (st.skill) { ownColours(() => drawFrzSkill(t, st)); continue; } // the chart FRZ: aura, moons, Rime (aspira-frz.js)
+    if (st.skill) { ownColours(() => drawFrzSkill(t, st)); continue; } // the chart FRZ: aura, moons, Permafrost (aspira-frz.js)
     // Moons / Desolation: orbiting moons, always shown - in FRZ's OWN colour on a
     // boss sky, like the towers (owner)
     if (st.moons) { ownColours(() => drawMoons(t, st, COL[TOWERS[t.kind].color], shimmer)); continue; }
