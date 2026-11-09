@@ -1,0 +1,47 @@
+# Answered questions (Spire)
+
+Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTIONS.md the moment they were answered (owner, 2026-11-09: "move the 'answered' section into an archaeology doc", "the answered questions should get committed"). Newest first. Each row: when (2026 dates), the question with its options, the owner's answer, the reading taken. Decisions are named in words; question numbers and option letters are dropped once answered. The rules these produced live in ARCHITECTURE's standing owner rules; this file is the history.
+
+## Log
+
+| When | Question | Answer |
+|---|---|---|
+| 11-09 ~13:00 | Ifrit: Meteor won't move with damage (Meteor fire rate by tier / Hellfire lift alone / keep live) | Meteor's fire rate rises by tier on top of the big Hellfire lift; Flare trim only if the fast/shield guard holds |
+| 11-09 ~12:45 | Carrier: Full Wing's retarget (2 s re-arm pause / no retarget, new capstone / leave) | "no retarget / instead, warp drive / when an interceptor is needed, quickly fade opacity to 0, increase fly-to speed to 3000, then when the interceptor is near enemy (just before starting to turn to face them) face opacity back to 100" - Hangar V becomes Warp Drive (outbound leg only); Balance builds and measures, Visual the fade and card |
+| 11-09 ~03:20 | Carrier: Hangar V's retarget worth 50 pts vs 15 / 4 for the other capstones (part of the leftover ammo / new capstone / lift the others) | Full Wing keeps 1 retarget, the interceptor takes part of its leftover ammo (half or a third, Balance sims both) |
+| 11-09 ~03:20 | Ifrit: per-path damage-per-tier tables, breaking the one-constant rule (yes / legal knobs only) | allowed for Ifrit, like Gravity's three tables; ships after marks + 50-game screen |
+| 11-08 ~11:38 | Justice's cross bends near the core (looser clamp / shorter arm / accept) | accepted; the cross stays clean for its first seconds |
+| 11-08 ~11:38 | Death ends 20% of games on its escort (third of a wave / delayed escort / leave) | escort a third of each wave instead of half; Balance refits in the next boss pass |
+| 11-08 ~11:38 | Judgement is the easy boss, depth 0.28 (accept / faster veiled walk / HP x10) | "How is judgement weak? Like have a bigger swarm wave then" - read as: keep the 0.2x veiled walk, grow her swarm from 1.2 waves until the wave reaches depth ~1.0 (whole wave, boss or swarm) with at most 10% of games ending there |
+| 11-08 ~02:30 | Unknown auto-challenge edits on the live server blocking deploys (commit them / drop, rebuild in repo / coordinate) | the edits were already gone when Leader went to drop them; 7.11.1 is live; Visual builds auto-challenge in the repo |
+| 11-08 ~01:50 | Veils make Empress and Judgement a wall (broods a third of a wave / veil lifts at half dead / veiled walk half speed) | half of each of the first and last options: broods 2/3 of a wave each (Judgement 1.2 -> 0.8 waves) and veiled bosses walk at 0.75x |
+| 11-08 ~00:30 | SOL 6 dB over the other attacks (keep / level exactly) | keep |
+| 11-07 ~22:30 | Six bosses short of target (mechanic tests / push HP past our limits) | Empress untargetable, invulnerable and faded while her swarm is up, swarms at 90 / 70 / 50% HP; Judgement the same while its swarm is up; Strength may break "no crazy numbers"; Chariot speed a smooth sine; Lovers ignore the core ease. Temperance / Justice / Death not yet picked |
+| 11-07 ~22:00 | Chariot "still OP" (HP x1.6 -> x1.2 / gentler gallop / both) - asked in chat, should have been here | Chariot HP back to x1.2, gallop unchanged |
+| 11-07 ~20:45 | ARC early armor/shield after the strip measurement (exempt / / lift type rule) | "raise arc damage while reducing chaining/forking" - new lever, Balance probing |
+| 11-07 ~19:20 | Ease 0.6 made the game easier, 26 -> 32 / 50 wins (keep / keep + enemy HP up / 0.7 / 0.8) | keep 0.6, raise enemy health game-wide until wins are back near 26 / 50 |
+| 11-07 ~19:10 | ARC early shield/armor after the levers failed (exempt / early-kit redesign) | "Fewer bigger hits?" + "Also B" - ARC early (tiers 0-II, fading by level 7) fires half as often at double the hit; probing |
+| 11-07 ~17:55 | Early cells no damage or strip moves (exempt / type-shaped ARC lever) | Balance tries Shock's boost building on repeated hits and more chain on spaced armor; FRZ / IFR leftovers stay listed |
+| 11-07 ~17:05 | Early marks out of band (ratchet / hard band + levers / drop) | band stays hard; build ARC armor strip, IFR 9 shards at a smaller hit, FRZ Moons I cut (probe); ACD / GRV / CRR early cells listed as known |
+| 11-07 ~06:48 | Boss depth after the 100-game check (refit 4 to 1.0x / E same to 1.2x / keep) | Strength, Chariot, Lovers, Devil refit on 100 games to 1.0x; Temperance + Justice join the redesign (5 bosses); Star x1.2 |
+| 11-07 ~06:48 | Duo rule's last two pairs (IFR tier-0 rate x2.5 / accept) | accepted: ARC+IFR and FRZ+IFR need one upgrade before the Star; 19 / 21 |
+| 11-07 ~06:48 | 0-point marks band (exempt / tier-0 leanings / loosen to +/-2) | 0 points within +/-2 of target; 3 and 6 keep +/-1 |
+| 11-06 ~22:45 | Should the marks include capstones (full towers / keep 9 + a 13-point check / keep)? | keep the 9-point card plus a 13-point check, "but also add a 0 point and 3 point check": card stays 9-point; 0, 3 and 13-point checks reported beside it |
+| 11-06 ~22:20 | ACD pools under 150 u: how does ACD keep its shield check (jet dmg x2 / Flow splash)? | "more pools" - more, smaller pools (each and any merged lake < 150 u); Balance tunes count/drop rate on marks |
+| 11-06 ~20:35 | Which GRV Nova ring jumped at placement (body / field / drag)? | "on nova, no clue" - closed; not reproducible; send a capture if it shows again |
+| 11-06 ~19:00 | IFR fire rate: A keep x0.65 / back to x1 (wins +10, marks 8 -> 10) | "A? balance another way that is more type asymmetric" - kept; Balance looks for a type-asymmetric IFR lever |
+| 11-06 ~18:50 | GRV Void V capstone: Event horizon | "yes to GRV void V" |
+| 11-06 ~18:40 | Capstone mechanics + looks (21 proposals) | All 20 answered (ARC all, Shock V changed; FRZ yes except Moons, no looks; SOL Scorch = flare on first hit, Reflection yes, Breach look only; ACD Corrosion = damage debuff, Flow unchanged, Spill yes; GRV Nova yes, Well = reel back past-tower enemies; CRR Hangar 2 retargets, Tether unchanged, Arms pellets on any return; IFR Meteor big 1/3 x4 hit, Hellfire chains, Flare circle). Balance builds with balancing runs. Void V asked back. |
+| 11-06 ~17:30 | Q1 tower looks, SOL part (last) | Scorch = flickering ember streaks running down the side faces (10x count, length, intensity; no ring); Reflection = the tower itself gains sides (8..14); Breach = top-face outline thicker, whiter, glowier. All seven towers' looks now specced; mockup https://claude.ai/artifact/K9RY9rfEz6zrejqfruR9Ai |
+| 11-06 ~14:50 | Q1 tower looks, ACD part | Flow = the drips (lengths jittered hard; 2 / 2+2 / 3+3 / 2x2 each face / 3+2 each face); Spill = puddle under the tower, always animating; Corrosion = bubbles rising inside the tower, popping at the top |
+| 11-06 ~14:15 | Q1 tower looks, ARC part | Shock = the corner arcs as brief random flashes between adjacent corners, more often per tier, slightly thinner; Voltage = rings round the prism ~10u out, 1 at tier 0 + one per level, spread evenly up it; Conductivity = those rings glow more and thicker; ARC's attack becomes jagged lightning instead of chain links. Mockup updated, Visual builds it |
+| 11-06 ~13:55 | Q1 tower looks, FRZ part | "I like the new moons, hold off on the othwer two FRZ axes" - moons built to the mockup look, then "can we make the moons d12s" (lit ice dodecahedra); Fracture/Permafrost on hold |
+| 11-06 ~13:45 | Q1 tower looks, GRV part (Void orb, Nova ring, Gravity Well debris) | "GRV is good, but move the orb a bit higher off the top of the tower" - Visual built it (7.7.69: the escort shows in each boss's wave-list row, boss in the middle) |
+| 11-06 ~13:20 | Beams from the tower top, and occlusion | "I just want the beams to occlude towers, just render them over the enemies", then "no for now leave the attacks starting where they start" - not built |
+| 11-06 ~13:10 | Offer: boss wave card shows the escort as a text line | "no, just show escort like other waves, but keep boss at center" - shipped: the escort shows in each boss wave-list row, boss in the middle |
+| 11-06 ~08:55 | FRZ: chill damage grows with the speed it takes away | "1 yes" - shipped with an 800% cap (fast's uncapped peak was ~1390%). Fresh 50 games: 19/50 vs 21/50, -4.0 (SE 4.9), within noise; over 100 games about 0. Marks: FRZ on target, total stays 10 (GRV 0 -> 2 through the ranking) |
+| 11-06 ~08:55 | Fast-enemy double slow: A / / / D | "C it's a fast specialty" - kept as is |
+| 11-06 ~02:50 | ARC x0.7 damage vs fast | "No, don't have type specific damage" |
+| 11-06 ~01:45 | Fast enemies further apart for ARC | "Can we space the pods of 5 fast further apart instead?" (tested: no effect, closed) |
+| 11-06 ~00:55 | GRV novas | "1. Yes, make this ring move slower too ... 2. Also yes" (shipped 7.7.37) |
+| 11-06 | G3 (GRV can't break shields) | Dropped by Leader: one-nova GRV reached its target without it |
