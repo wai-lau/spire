@@ -1,13 +1,13 @@
 // /spire - FRZ'S ICE: PERMAFROST AND FRACTURE CRYSTALS (owner, 2026-11-06: "Permafrost: Add tower shaped hexagonal prisms ... with at least one face fully touching
 // the tower or another permafrost prism ... fill innermost faces before expanding" / "Fracture: Same, except triangular prisms, and have the top face at a steep
 // angle ... positionally distributed normally (less likely further from tower) allow and calculated intersections, then save final geometry or something to
-// save on render" - and the day's refinements: counts 8/16/24/36/48 and 9/15/24/33/45, sizes, heights 10-40% / 80-220%, the top face never covered, nothing
-// wholly hidden behind the tower, no shard straddling a hex, left / right volume balanced, heights falling off toward the edge, opaque faces). The generator
+// save on render" - and the day's refinements: counts (I_ICE_N), sizes, heights 10-40% / 80-220% (a shard's x I_FRAC_H since 11-08), the top face never covered,
+// nothing wholly hidden behind the tower, no shard straddling a hex, left / right volume balanced, heights falling off toward the edge, opaque faces). The generator
 // is the approved mockup's (tower-looks.html, I_genPerma / I_genFrac / I_paintOrder), run per tower IN THAT TOWER'S OWN VIEW (Gm: its screen squash and visible
 // height and its hex's turn, from its 3D frame - frzIceView), in the mockup's units (a hex of radius 40, screen y down from the top face's centre), seeded
 // by its cell, and TIME-SLICED (frzIceStep: a few ms a frame - a full set is ~2 s of work; the crystals appear in their first-n order, growing in). Each
-// tower's pieces are BAKED into two canvases - behind its prism and in front of it - redrawn only when its tiers, its grown count or the zoom change; a frame
-// draws two images a FRZ (drawFrzIce, from drawOrbiters). Look only
+// tower's pieces are BAKED into one image by a per-pixel depth test (aspira-frz-ice3d.js), re-baked only when its tiers, its grown count or its view's shape
+// change (ICE_VIEW_Q); a frame draws one image a FRZ (drawFrzIce, from drawOrbiters). Look only
 const ICE_SLICE_MS = 3;
 const I_TAU = Math.PI * 2;
 // the tower whose ice is being built or drawn: the generator reads these (iceUse sets them from that tower's own maker, so the code stays the mockup's)
@@ -106,7 +106,7 @@ function I_fitFront(base, hg, lift = 0, key) { /* returns its prism, cut (0 or 1
   return { pr: at(k), cut: 1, k };
 }
 // PERMAFROST: each new crystal's face lies fully on a face of the tower or of an earlier crystal (the shorter face inside the longer); the tower's six faces
-// are tried first, then ring 1 crystals, and so on outward. Radius 1/3..2/3 of the tower's, height 20-70% of its height, both biased big/tall near the tower.
+// are tried first, then ring 1 crystals, and so on outward. Radius 4/9..4/3 of the tower's (doubled 2026-11-08), height 20-70% of its height, both biased big/tall near the tower.
 // LEFT / RIGHT BALANCE BY VOLUME (Wai 11-06: "try to balance by volume the shards on the left and right sides"): a piece's volume is its footprint area x height (a shard: its
 // average height), its side the sign of its centre's u. Each placement is the BEST of a pool of valid candidates (all other rules already satisfied): the one that leaves the
 // running left/right volumes closest to equal, so every first-n prefix (every tier) stays balanced; hexes and shards are each balanced on their own, hence together too.
@@ -149,8 +149,8 @@ function* I_genPerma(N) {
   return out;
 }
 // FRACTURE: triangular prisms sprouting anywhere round the tower (a 2D normal falloff from its centre, none inside its footprint); the top face slants steeply
-// from one tall vertex, so each is a sharp shard. NO SHARD STRADDLES A HEX (Wai 11-06): a shard whose base overlaps a Permafrost hex is moved either wholly
-// inside that hex (then it rises out of the hex's top face) or wholly outside every hex, whichever needs the smaller move. Shard-on-shard overlaps are fine.
+// from one tall vertex, so each is a sharp shard. NO SHARD STRADDLES A HEX (Wai 11-06): a shard whose centre is on a Permafrost hex moves wholly onto it
+// and stands on its top; one that only clips a hex moves wholly off every hex (2026-11-08; see ON TOP, NOT THROUGH below). Shard-on-shard overlaps are fine.
 const I_centroid3 = t => [(t[0][0] + t[1][0] + t[2][0]) / 3, (t[0][1] + t[1][1] + t[2][1]) / 3];
 function I_shiftInside(tri, hp) { // the smallest move that puts the whole triangle inside convex polygon hp, or null when it cannot fit
   const c0 = I_centroid3(tri), off = tri.map(q => [q[0] - c0[0], q[1] - c0[1]]), hc = [hp.reduce((s, q) => s + q[0], 0) / hp.length, hp.reduce((s, q) => s + q[1], 0) / hp.length], E = [];
