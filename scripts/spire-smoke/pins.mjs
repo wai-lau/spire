@@ -188,3 +188,39 @@ check("capstone crash sweep: 7 towers x 3 axes at V on the board, every core pow
     return bad.join("; "); })()`);
   return r;
 });
+
+// FRZ'S MOONS ARE SOLID DICE (7.12.10; owner, 2026-11-08: "also moons are still fucked up?"): the D12's faces had their normals in the wrong
+// orientation - 0 of 12 faces planar. Every face of D12 is a flat pentagon whose normal points away from the die's centre
+check("FRZ moons: every D12 face is a flat pentagon facing outward (7.12.10: the face normals were in the wrong orientation)", () => {
+  const r = JSON.parse(run(`(() => { const out = []; for (const f of D12.F) {
+    const P = f.map(i => D12.V[i]), c = [0, 1, 2].map(k => P.reduce((s, p) => s + p[k], 0) / P.length);
+    const a = P[0].map((q, k) => q - c[k]), b = P[1].map((q, k) => q - c[k]), n = [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]], l = Math.hypot(...n) || 1;
+    const off = Math.max(...P.map(p => Math.abs((p[0] - c[0]) * n[0] + (p[1] - c[1]) * n[1] + (p[2] - c[2]) * n[2]) / l));
+    out.push({ n: P.length, off, outward: (c[0] * n[0] + c[1] * n[1] + c[2] * n[2]) / l }); }
+    return JSON.stringify(out); })()`));
+  if (r.length !== 12) return r.length + " faces (expected 12)";
+  const bad = r.findIndex(f => f.n !== 5 || f.off > 1e-6 || !(f.outward > 0));
+  return bad < 0 ? "" : "face " + bad + ": " + JSON.stringify(r[bad]);
+});
+// FRZ'S PRISM OCCLUDES ITS ICE AT ITS LIFTED HEIGHT (7.12.9; owner, 2026-11-08: "frz tower needs to occlude"): towers stand lifted floor -> h
+// since 7.8.11, and the ice bake's occluder took the prism's top alone - half its height - so the ice behind the tower showed through it
+check("FRZ ice: the bake's occluder is the prism's FULL lifted height (ice3dProj's sh = (top + warpLift) / Hs; 7.12.9: top alone, half of it)", () => {
+  const r = JSON.parse(run(`(() => { const L0 = warpLift; warpLift = 7; try { const p = ice3dProj(CX + 100, CY, 20, 40, 30); return JSON.stringify({ h: p.sh * 30 }); } finally { warpLift = L0; } })()`));
+  return Math.abs(r.h - 27) < 1e-9 ? "" : "the occluder stands " + r.h + " units tall (expected top 20 + lift 7)";
+});
+// FRACTURE ON TOP, NOT THROUGH (7.12.11; owner, 2026-11-08: "place them on top of stuff instead of through stuff"): a shard either stands
+// wholly on one Permafrost sheet (its host) or clear of every sheet - never part in, part out
+check("FRZ Fracture: every shard is wholly on its host sheet or clear of every sheet (7.12.11: shards poked through the Permafrost)", () => {
+  const r = JSON.parse(run(`(() => { G = newGame(); G.money = 1e9; ui.build = "frz"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); ui.build = null;
+    const t = G.towers[0]; for (let i = 0; i < 5; i++) upgradeTower(t, "rime", true); for (let i = 0; i < 4; i++) upgradeTower(t, "temp", true);
+    const np = skillOf(t, "rime"), nf = skillOf(t, "temp"), v = { sq: 0.55, Hs: 30, rot: 10 };
+    let I = frzIceGet(t, v, np, nf); for (let k = 0; k < 6000 && !(I.scene && I.scene.done); k++) { iceFrameAt = -1; I = frzIceGet(t, v, np, nf); }
+    const M = I.M, H = M.ST.hexes, S = M.ST.specs, R = M.rot;
+    const hexP = H.map(h => [0, 1, 2, 3, 4, 5].map(k => [h.c[0] + h.side * Math.cos((-90 + R + 60 * k) * Math.PI / 180), h.c[1] + h.side * Math.sin((-90 + R + 60 * k) * Math.PI / 180)]));
+    const inHex = (P, q) => { let s = 0; for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length], c = (b[0] - a[0]) * (q[1] - a[1]) - (b[1] - a[1]) * (q[0] - a[0]); if (Math.abs(c) < 1e-6) continue; if (!s) s = Math.sign(c); else if (Math.sign(c) !== s) return false; } return true; };
+    const bad = []; S.forEach((s, i) => { if (s.host >= 0) { if (!s.tri.every(q => inHex(hexP[s.host], q))) bad.push(i + " sticks out of its sheet"); }
+      else if (hexP.some(hp => I_polyHit(s.tri, hp))) bad.push(i + " crosses a sheet it does not stand on"); });
+    return JSON.stringify({ done: !!(I.scene && I.scene.done), hexes: H.length, shards: S.length, hosted: S.filter(s => s.host >= 0).length, bad }); })()`));
+  if (!r.done || !r.shards || !r.hexes) return "the ice never finished in the rig (" + r.hexes + " sheets, " + r.shards + " shards)";
+  return r.bad.length ? r.bad.slice(0, 3).join("; ") + " (" + r.bad.length + " of " + r.shards + ")" : "";
+});
