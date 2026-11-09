@@ -26,6 +26,19 @@ const sfxStat = { played: {}, skipped: {}, cut: {} }; // per name, since load (a
 function sfxBump(name, now) { const r = (sfxRate[name] || 0) * Math.exp(-(now - (sfxRateAt[name] ?? now)) / SFX_RATE_TAU); sfxRateAt[name] = now; return (sfxRate[name] = r + 1); }
 const sfxRateNow = (name, now) => (sfxRate[name] || 0) * Math.exp(-(now - (sfxRateAt[name] ?? now)) / SFX_RATE_TAU);
 function sfxEnd(node) { voices--; if (node.__dy) voicesDying--; }
+// FIFO (owner, 2026-11-09, IFR: "maybe FIFO the sounds (up to 5 sounds instead of 3) alongside priority"): at SOUND_MAX copies a new one does
+// not skip - the oldest copy of that name fades out (SFX_KILL_FADE) and the new one plays. Measured (TNsHit00, normalized, x 1/(1+n) a copy):
+// 5 copies at 0.15-0.9 s apart peak 0.27-0.33 summed, under NORM_PEAK (0.9) - no further quieting
+const SFX_FIFO = { ifr: true };
+function sfxFifoCut(name, now) {
+  for (const L of sfxLive) {
+    if (L.name !== name || L.cut) continue;
+    L.cut = true; sfxLive.delete(L); sfxStat.cut[name] = (sfxStat.cut[name] || 0) + 1;
+    for (const [src, g] of L.nodes) { if (src.__dy) continue; src.__dy = true; voicesDying++;
+      try { g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), now); g.gain.exponentialRampToValueAtTime(0.0001, now + SFX_KILL_FADE); src.stop(now + SFX_KILL_FADE); } catch (_e) { /* (already stopped) */ } }
+    return;
+  }
+}
 function sfxMakeRoom(name, now) { // -> true when there is a voice for `name` (a commoner cut if need be)
   if (voices - voicesDying <= MAX_VOICES) return true;
   const mine = sfxRateNow(name, now);
@@ -209,7 +222,9 @@ function loadSamples() {
 // whose index entry is ONE plain file plays these [start, end] s of it instead, one a play in turn (sliceNext), each with a short fade in and
 // out (SLICE_FADE). In code, so the droplet's index.json is unchanged. IFR's TNsHit00.wav (3.6 s, one fire roar): five 0.44-0.46 s slices,
 // each starting just before a rise of its loudness (0.10, 0.72, 1.16, 1.52, 1.80 s)
-const SFX_SLICES = { ifr: [[0.08, 0.53], [0.68, 1.12], [1.12, 1.58], [1.48, 1.94], [1.76, 2.22]] }, SLICE_FADE = [0.008, 0.06], sliceNext = {};
+// (IFR's five slices went back to the whole clip - owner, 2026-11-09: "restore IFR sfx to just play full sound instead of segment, maybe FIFO the
+// sounds (up to 5 sounds instead of 3) alongside priority"; the slicing stays for any later clip)
+const SFX_SLICES = {}, SLICE_FADE = [0.008, 0.06], sliceNext = {};
 const sfxClips = (name, files) => (SFX_SLICES[name] && typeof files === "string" ? SFX_SLICES[name].map(([start, end]) => ({ file: files, start, end, fade: true })) : [].concat(files));
 // VOLUME NORMALIZATION (owner, 2026-10-16: "add some kind of volume normalization"; 2026-11-07: "make sure all the sounds are similar"): each
 // clip is measured once, decoded - the RMS of its MAIN HIT, its loudest NORM_WIN (150 ms) window - and scaled to NORM_TARGET, within
@@ -223,10 +238,10 @@ function sampleNorm(buf, start, end) {
   for (let i = a; i < b; i += win >> 1) { let s = 0; const j = Math.min(b, i + win); for (let k = i; k < j; k++) s += x[k] * x[k]; loud = Math.max(loud, Math.sqrt(s / Math.max(1, j - i))); }
   return loud > 0 ? Math.max(NORM_CLAMP[0], Math.min(NORM_CLAMP[1], NORM_TARGET / loud)) : 1;
 }
-// Each TOWER's sound plays at most 3 copies at once (owner, 2026-10-02),
+// Each TOWER's sound plays at most 3 copies at once (owner, 2026-10-02; IFR 5, oldest out first - SFX_FIFO),
 // sample or synth alike: playing[name] counts live copies and a 4th is
 // skipped. A sample copy is also quieter by how many are already sounding.
-const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, crr: 3, carshot: 3, ifr: 3, ifrblast: 3, slam: 3 /* the boss bar's pieces slamming home (BLASTCAN, owner 2026-10-27: "use the rules for sound overlap cap") */ }, playing = {};
+const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, crr: 3, carshot: 3, ifr: 5 /* the whole 3.6 s roar, FIFO (SFX_FIFO; owner, 2026-11-09) */, ifrblast: 3, slam: 3 /* the boss bar's pieces slamming home (BLASTCAN, owner 2026-10-27: "use the rules for sound overlap cap") */ }, playing = {};
 let curSound = null; // the synth sound being built, so envelope() can count it
 // LOUDNESS (owner, 2026-10-02): the bosses' warnings and voices and every
 // upgrade/build sound stand well above the towers' shots - about 10 dB
@@ -305,7 +320,7 @@ function sfx(name, ...args) {
   if (muted || !AC || AC.state !== "running" || !(SFX[name] || sample)) return null;
   const now = AC.currentTime; sfxBump(name, now);
   if (now - (lastAt[name] ?? -1) < (GAP[name] ?? GAP[name.split(".")[0]] ?? 0.03)) return null;
-  if (SOUND_MAX[name] && (playing[name] || 0) >= SOUND_MAX[name]) return null;
+  if (SOUND_MAX[name] && (playing[name] || 0) >= SOUND_MAX[name] && !SFX_FIFO[name]) return null;
   // sounds keep their 1x DENSITY whatever the game speed (owner): at k x only
   // about 1 in k triggers of a name plays; loud cues (bosses, upgrades) always do
   if (!LOUD.test(name)) {
@@ -313,6 +328,7 @@ function sfx(name, ...args) {
     if (k > 1) { soundCredit[name] = (soundCredit[name] || 0) + 1 / k; if (soundCredit[name] < 1) return null; soundCredit[name] -= 1; }
   }
   if (!sfxMakeRoom(name, now)) { sfxStat.skipped[name] = (sfxStat.skipped[name] || 0) + 1; return null; }
+  if (SFX_FIFO[name] && (playing[name] || 0) >= SOUND_MAX[name]) sfxFifoCut(name, now); // the OLDEST copy makes way (after the rare-first check: a cut copy frees no voice for a rarer sound)
   lastAt[name] = now; sfxStat.played[name] = (sfxStat.played[name] || 0) + 1;
   if (sample) return playSample(name);
   const inst = { name, nodes: 0, live: { name, nodes: [] } }; sfxLive.add(inst.live);
