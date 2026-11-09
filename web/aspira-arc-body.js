@@ -1,6 +1,6 @@
 // /spire - ARC's BODY and BOLT LOOK (owner, 2026-11-06, ported from the approved mockup). Draw only - the simulator never loads it, nothing
 // here touches the game, and no Math.random (a seeded hash keyed by tower and time slot picks every jag and flash).
-//   VOLTAGE   hexagonal rings round the prism, 1 + tier of them (1 at tier 0 .. 6 at V), corner radius R + 10 mockup units, spanning
+//   VOLTAGE   hexagonal rings round the prism, 1 + tier of them (1 at tier 0 .. 6 at V), its glow clear of the prism's corners at any turn (arcRingR), spanning
 //             ARC_RING_SPAN of the prism's height round its middle, each turning about the vertical axis at 1 turn / ARC_RING_T s, ring i lagging i/(n-1) of a turn
 //             (the first and last line up), always already mid-spin; the back edges before the prism, the front after (drawOrbiters)
 //   CONDUCTIVITY  those rings thicker and glowier (V about 2x I)
