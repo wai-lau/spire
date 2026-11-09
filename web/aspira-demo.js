@@ -21,17 +21,17 @@ function demoIn(S) {
   if (demoHeld) throw new Error("demo scene: nested demoIn");
   if (S.lanes) { S.pi0 = PATHS.length; PATHS.push(...S.lanes); } // (a walker scene's own two lanes: on PATHS only while it runs)
   S.sumsHeld = new Map(dmgSums); dmgSums.clear(); for (const [k, v] of S.sums || []) dmgSums.set(k, v); // the tick numbers being summed (a const Map: its CONTENTS swap)
-  demoHeld = { G, fx, dmgLive, dmgHold, hitFrom, coins, grvAll, carObs, sparkN, grvLastHit, bannerText, bannerT, bannerCol, shakeUntil, muted, sfxScale, fxBroken: fxGl.broken, gameOver, winGame, showOverlay };
+  demoHeld = { G, fx, dmgLive, hitFrom, coins, grvAll, carObs, sparkN, grvLastHit, bannerText, bannerT, bannerCol, shakeUntil, muted, sfxScale, fxBroken: fxGl.broken, gameOver, winGame, showOverlay };
   gameOver = winGame = showOverlay = demoNoEnd; // THE PRIVATE GAME NEVER ENDS ANYTHING (2026-11-03: on 7.2.4-5 a card left open ~18 laps leaked its walkers' lives to a game over - the page's end screen and its sound)
-  G = S.G; fx = S.fx; dmgLive = S.dmgLive; dmgHold = S.dmgHold; hitFrom = S.hitFrom; coins = S.coins; grvAll = S.grvAll; carObs = S.carObs;
+  G = S.G; fx = S.fx; dmgLive = S.dmgLive; hitFrom = S.hitFrom; coins = S.coins; grvAll = S.grvAll; carObs = S.carObs;
   sparkN = S.sparkN; grvLastHit = S.grvLastHit; bannerText = S.bannerText; bannerT = S.bannerT; bannerCol = S.bannerCol; shakeUntil = S.shakeUntil;
   if (S.sound) sfxScale = DEMO_VOL; else muted = true; fxGl.broken = true; // (sound: the tower's own, quieter - owner, 2026-11-03: "Real sounds"; the 2D way for hits and rings - the GPU batch belongs to the real frame)
 }
 function demoOut(S) {
   const H = demoHeld; if (!H) return;
-  S.G = G; S.fx = fx; S.dmgLive = dmgLive; S.dmgHold = dmgHold; S.hitFrom = hitFrom; S.coins = coins; S.grvAll = grvAll; S.carObs = carObs;
+  S.G = G; S.fx = fx; S.dmgLive = dmgLive; S.hitFrom = hitFrom; S.coins = coins; S.grvAll = grvAll; S.carObs = carObs;
   S.sparkN = sparkN; S.grvLastHit = grvLastHit; S.bannerText = bannerText; S.bannerT = bannerT; S.bannerCol = bannerCol; S.shakeUntil = shakeUntil;
-  G = H.G; fx = H.fx; dmgLive = H.dmgLive; dmgHold = H.dmgHold; hitFrom = H.hitFrom; coins = H.coins; grvAll = H.grvAll; carObs = H.carObs;
+  G = H.G; fx = H.fx; dmgLive = H.dmgLive; hitFrom = H.hitFrom; coins = H.coins; grvAll = H.grvAll; carObs = H.carObs;
   sparkN = H.sparkN; grvLastHit = H.grvLastHit; bannerText = H.bannerText; bannerT = H.bannerT; bannerCol = H.bannerCol; shakeUntil = H.shakeUntil;
   muted = H.muted; sfxScale = H.sfxScale; fxGl.broken = H.fxBroken; gameOver = H.gameOver; winGame = H.winGame; showOverlay = H.showOverlay; demoHeld = null;
   if (S.lanes) PATHS.length = S.pi0;
@@ -46,7 +46,7 @@ const demoRun = (S, fn) => { demoIn(S); try { return fn(); } finally { demoOut(S
 // off) and a fresh one of its type walks in at the right. Nothing is refilled mid-lane. S.T keeps every walker's tally (the dead ones too)
 // - damage, the least armor and shield, the most pace lost - for the smoke (demoShows)
 function demoScene(kind, skills, cell, list) {
-  const S = { G: freshG(), fx: [], dmgLive: [], dmgHold: null, hitFrom: null, coins: [], grvAll: [], carObs: [], sparkN: 0, grvLastHit: 0, bannerText: "", bannerT: 0, bannerCol: "orange", shakeUntil: 0, t: 0, T: [] };
+  const S = { G: freshG(), fx: [], dmgLive: [], hitFrom: null, coins: [], grvAll: [], carObs: [], sparkN: 0, grvLastHit: 0, bannerText: "", bannerT: 0, bannerCol: "orange", shakeUntil: 0, t: 0, T: [] };
   S.lanes = list.lanes; S.lat = list.lat || null; // (the lattice: rows still to come - demoLatStep)
   demoRun(S, () => {
     G.started = true; G.wave = 1; G.nextIn = Infinity; G.money = 0; G.waveIn = { 30: 1 }; G.lives = 1e9; // (in reach: no off-screen x3; lives no walker can use up - a game over froze the scene)
