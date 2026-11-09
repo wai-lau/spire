@@ -610,7 +610,7 @@ x1.2 by the owner's "A"); the dated passes: ARCHAEOLOGY §5.
 
 THE BOSSES (the order: owner, 2026-11-07 22:15 / 22:40; the tricks: 2026-11-05 redesign and 2026-11-07 22:30). "A wave" = `typeWaveCount(type, n)`:
 a plain wave of that type at the boss's wave number, as `wavePlan` sends it (the count taper included). The fleet code lives in
-`aspira-bossfleet.js` (loaded right after aspira-bosses.js). THE table: wave = its place in `ARCANA` x `STAR_EVERY`.
+`aspira-bossfleet.js` (loaded after aspira-bosses.js and its sky, `aspira-bosssky.js`). THE table: wave = its place in `ARCANA` x `STAR_EVERY`.
 
 | wave | boss | trick | fleet | `BOSS_HP` | die (`BOSS_DIE`) |
 |---|---|---|---|---|---|
@@ -907,7 +907,7 @@ files capped at 500 lines (exec-fn's pre-commit) and so split by seam:
 | Stage (in order) | Scripts |
 |---|---|
 | data and state | `defs` (geometry, tables), `towerstats` (`towerStats`, prices), `drawsize` (how big things are drawn, apart from their game size), `sfx`, `upgrades` (dormant), `game` (`G`, combat, damage, slows), `step` (the tick, spawns, enemy movement, game end) |
-| waves | `formations`, `floats` (numbers, coins), `waves`, `wavelanes` (each type's lane and its turn on screen, split 2026-11-05), `bosses`, `bossfleet` (the boss fleets: lattices, scatters, the Devil's host), `bossbar` (the boss's HP along its lane), `positioning` (+ the play box) |
+| waves | `formations`, `floats` (numbers, coins), `waves`, `wavelanes` (each type's lane and its turn on screen, split 2026-11-05), `bosses`, `bosssky` (the inverted sky, its spokes, the Star's tint; split 2026-11-09), `bossfleet` (the boss fleets: lattices, scatters, the Devil's host), `bossbar` (the boss's HP along its lane), `positioning` (+ the play box) |
 | towers | `towers` (ARC, SOL, moons), `move` (leash, tower marks), `sol` (SOL), `acid` (ACD) + `acid-draw` (its look, 2026-11-05), `skills` (the charts' shared helpers), `arc` (ARC's chart, split from skills 2026-11-05), `frz`, `grv` (GRV) + `grv-draw` (its look, 2026-11-05), `crr` (CRR), `ifrit` (IFR) + `ifrit-draw` (its look), `desc`, `capstone` (tier V on every table, tier I inserted), `curve` (the stat curve), `tier01` (tier 0 / tier I), `chart`, `stats`, `sliders` (the card), the LOOKS kept apart from the logic: `crr-draw` (CRR's interceptors, trails, tethers and bolts), `arc-body` (ARC's rings, Shock arcs, the bolt), `acd-body` (ACD's drips, puddle, bubbles) |
 | core and meta | `core`, `core-fx`, `powers`, `endstats`, `ascend` |
 | draw (the board texture + overlay, 2D canvas calls) | `quality` (`q3d`, `stepDetail`, just before draw), `threat`, `draw`, `ranges` (tower ranges, split from draw), `textcache`, `effects`, `enemies`, `lanes`, `lanefade` (the fade-in layer, split from lanes), `camera`, `fling`, `fog`, then the tower looks drawn with the towers (2026-11-06): `solbeam` (SOL's beams and cones), `frz-moons` (FRZ's moons as ice d12s), `frz-ice` (FRZ's ice generator - also run as a Worker) + `frz-ice3d` (its 3D depth-tested bake), `sol-body` (SOL's faces, Scorch outline, Breach blades) |

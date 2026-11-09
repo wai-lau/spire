@@ -816,7 +816,7 @@ focus loss.
   trailing `//` comment swallowed `render()`'s else branch (blanked 2D and 3D's floor with no error).
 - **File splits at the 500-line cap** (exec-fn's hook): `towers` -> `acid`, `skills` -> `frz`, `chart`, `stats`,
   `sliders`, `desc`, `game` -> `waves`, `floats`, `formations`, `ui` -> `chooser`, `wavelist`, `threat`, `draw` -> `lanes`,
-  `effects`, `enemies`, `textcache`, `warp` -> `warplayers`, `fxgl`, `glctx`, `fog`, `solids`, `walls`.
+  `effects`, `enemies`, `textcache`, `warp` -> `warplayers`, `fxgl`, `glctx`, `fog`, `solids`, `walls`, `bosses` -> `bossfleet`, `bosssky` (2026-11-09).
 - **Dead code removed (2026-11-09, 7.12.31 .. 7.12.33; each proven by `fp.sh` IDENTICAL + the smoke):** ARC's Static charge
   (Capacitance's 10-07 charges that burst when the enemy was next hit or died: `ARC_CAPACITANCE`, `ARC_BURST_R`, `dischargeStatic`,
   `capQueue`, the damage and death hooks, the charge border) - dead since the 10-29 redesign set `st.charge` null; the old SOL
