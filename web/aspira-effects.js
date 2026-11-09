@@ -99,7 +99,7 @@ function drawMoons(t, st, col, shimmer) {
 // k there: alpha ~ k, the core thinner). Each pulse (a shot every 1 / (rate x SOL_PULSE_K) s) the beams FLASH and ease back. One object a segment, kept per tower
 // (a WeakMap: nothing on the tower that the autosave could keep)
 const SOL_THIN_W = 0.3, SOL_PIERCE_W = 1, SOL_AIM_W = 3, SOL_AIM_A0 = 0.4, SOL_AIM_A1 = 0.4, solAimF = new WeakMap(); // beam widths x its hit's (a stopping beam a third, a piercing one as it was); the aim line: x3 the least beam (~1.2 u), alpha 0.4 -> 0.8 as the shot comes (the old charge line, a little bolder)
-const SOL_TRACK_FLASH = 0.35, SOL_PULSE_FLASH = 0.15, solTrackPool = new WeakMap(); // SOL_PULSE_FLASH: s a shot's beam shows, fading (the pulse, 2026-11-05)
+const SOL_PULSE_FLASH = 0.15, solTrackPool = new WeakMap(); // SOL_PULSE_FLASH: s a shot's beam shows, fading (the pulse, 2026-11-05)
 function solTrackBeams() {
   let out = null;
   for (const t of G.towers) {

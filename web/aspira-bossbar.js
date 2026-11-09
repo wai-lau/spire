@@ -1,6 +1,6 @@
 // THE BOSS'S HP ALONG ITS LANE - the bar, its pieces, marks and labels, split out of aspira-bosses.js (the 500-line cap, 2026-10-27);
 // drawn on the top layer through warpEntities (aspira-warp.js) and clipped out under every tower and die (bossClip)
-const BOSS_BAR_W = 2.2, BOSS_BAR_TRACK = 0.3; // as thin as a lit lane's opaque core, LIT_LINE_SOFT's last (owner, 2026-10-26: "a lot thinner"; was 21); the track = full HP, translucent
+const BOSS_BAR_W = 2.2; // as thin as a lit lane's opaque core, LIT_LINE_SOFT's last (owner, 2026-10-26: "a lot thinner"; was 21)
 const BOSS_BAR_MARKS = [0.85, 0.65, 0.4, 0.25, 0.1, 0.05]; // the %HP marks along the lane (owner, 2026-10-27: "the numbers: 0 10 25 40 60 90", then "90 and 60 are confusing, use 65 and 85", then "instead of 0, just use 5%" - the 0 sat misaligned on the lane's last swing into the core; 2026-10-26: 80 60 40 20 10 5 and 0 at the core) - drawn as numbers on the bar (drawBossLabels)
 // THE BOSS'S HP ALONG ITS LANE (owner, 2026-10-26: "show the boss HPs along their lane, this way we can tell if we need to step our
 // game up" / "it should stay in place" / "hp removal should come from outside in, not inside out / it should make the lane white

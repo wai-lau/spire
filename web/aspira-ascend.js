@@ -4,7 +4,7 @@
 // ASC_MIN_WAVE - 1, may post three letters, arcade style; the board ranks the Ascendants (wins, GOLD rows) first, then
 // everyone else by the wave reached (GREEN rows), tower names in their own colours. A game over before that shows the
 // board alone. UI only; winGame / gameOver (aspira-step.js) call in.
-const ASC_URL = "/api/spire/ascendants", ASC_SHOW = 10, ASC_MIN_WAVE = 11;
+const ASC_URL = "/api/spire/ascendants", ASC_MIN_WAVE = 11;
 const ASC_TITLE = '<p class="asp-asc-title">Top players</p>';
 function ascBox() {
   let el = $("asp-asc");
@@ -40,7 +40,7 @@ function ascBoard(entries, mine, pending = null) {
   if (!entries.length) { board.textContent = "No one on the board yet."; return; }
   const table = document.createElement("table");
   table.className = "asp-asc-table";
-  // EVERY entry, but only ASC_SHOW rows tall - the rest a scroll away (owner, 2026-10-12: "show only top 10 players, but allow
+  // EVERY entry, the rest a scroll away (owner, 2026-10-12: "show only top 10 players, but allow
   // the leaderboard to be scrollable"); your own row scrolled into view
   for (const e of entries) {
     const tr = table.insertRow();

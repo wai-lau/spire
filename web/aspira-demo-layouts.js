@@ -118,8 +118,8 @@ function demoLatRow(lat, ln, at) { // one row on lane ln, `at` of the way along 
 const DEMO_LANE_DY = 0.45;
 function demoPlace(kind, st, cell, L) { return demoPlace0(kind, st, cell, L); }
 // THE BOX in world terms (demoView3d): the range ellipse x DEMO_FIT high, DEMO_BOX_AR x that wide, centred on the tower; what an enemy needs
-// round its spot - its die below, its die and the biggest number above, DEMO_EDGE to spare (smoke: "every walker inside the box")
-const DEMO_EDGE = 6, demoNumRoom = () => DMG_PX_MIN + DMG_PX_SPAN;
+// round its spot - its die below, its die and the biggest number above (smoke: "every walker inside the box")
+const demoNumRoom = () => DMG_PX_MIN + DMG_PX_SPAN;
 // how far a walker's drawing reaches from its spot: its drawn size (DRAW_SIZE, DRAW_ALL), x1.75 for a die's corners, + a shield's ring
 const demoReach = type => ENEMIES[type].size * (DRAW_SIZE[type] || 1) * DRAW_ALL * 1.75 + (type === "shield" ? 14 : 0);
 function demoSpan(r) { const c = Math.cos(warpTilt()), hh = r * c * DEMO_FIT; return { c, hh, hw: hh * DEMO_BOX_AR }; }

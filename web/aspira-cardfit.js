@@ -20,11 +20,10 @@ function cardLift(w) {
   }
   return { x, lift };
 }
-const POP_MIN_H = 160, CHART_MIN = 140, CHART_FLOOR = 80, TOWER_CARD_H = 520; // the chart's floor: the triangle is the card's focus (owner); CHART_FLOOR only when the WINDOW itself is too short
+const POP_MIN_H = 160, CHART_MIN = 140, CHART_FLOOR = 80; // the chart's floor: the triangle is the card's focus (owner); CHART_FLOOR only when the WINDOW itself is too short
 const towerWide = () => matchMedia("(orientation: landscape) and (min-width: 700px)").matches; // the two-half card (aspira.css)
 // fit the card to `room` WITHOUT scrolling (owner): wide, the chart fills its
-// half's height (aspira.css) and the card stands TOWER_CARD_H tall when the room
-// allows; stacked, the chart is shrunk until the card fits, and at the chart's
+// half's height (aspira.css); stacked, the chart is shrunk until the card fits, and at the chart's
 // floor the card grows past the bar rather than clip. Runs when the content or
 // the room changed, not every frame
 // winRoom: from the card's highest top to the window's bottom
