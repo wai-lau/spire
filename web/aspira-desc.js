@@ -27,11 +27,10 @@ const NUM_WORD = ["", "one", "two", "three", "four", "five", "six", "seven", "ei
 // hits, a colder or wider aura, faster pulses, a stronger acid, more or bigger puddles -
 // changes no words; the card's stat rows show that change (now -> next)
 const DESCRIBE = {
-  // "Arcs fork on hit, each jump carrying half the hit." -> Conductivity: chain once and / into
-  // three / twin; Voltage: most of .. all of (its harder hit is a stat row); Capacitance: the charge sentence (owner's words)
   arc(sk) {
     // THE ARC REDESIGN (owner, 2026-10-29): one bolt, a chain (Voltage: its length), one fork at the strike from Voltage ARC_FORK_FROM,
-    // Conductivity the carry, Shock a slow and an armor break on every hit - every number read live (Visual polishes the prose)
+    // Conductivity the carry (ARC_AMP_FALL), Shock (id capacitance) an armor break, a harder bolt and a shock mark on every hit - no slow since
+    // the ARC brief (2026-11-01); each jump only further out (2026-11-06); the capstones last - every number read live
     const c = sk.conductivity || 0, v = sk.voltage || 0, z = sk.capacitance || 0, TIMES = ["", " once", " twice"];
     const fl = ARC_AMP_FALL[c], d = Math.round(Math.abs(fl - 1) * 100), j = ARC_VOLT_JUMPS[v], times = TIMES[j] || " " + (NUM_WORD[j] || j) + " times"; /* (24 and 30 jumps at Voltage IV / V, 7.7.0: past NUM_WORD, a numeral) */
     const pc = (d === 0 ? "full damage" : d + "% " + (fl < 1 ? "less" : "more") + " damage") + " every chain";
