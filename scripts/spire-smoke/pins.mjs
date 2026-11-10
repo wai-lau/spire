@@ -224,3 +224,18 @@ check("FRZ Fracture: every shard is wholly on its host sheet or clear of every s
   if (!r.done || !r.shards || !r.hexes) return "the ice never finished in the rig (" + r.hexes + " sheets, " + r.shards + " shards)";
   return r.bad.length ? r.bad.slice(0, 3).join("; ") + " (" + r.bad.length + " of " + r.shards + ")" : "";
 });
+
+check("3D stars stay ROUND on screen on the GPU (owner, 2026-10-09: \"stars in bg should not get distorted\"; aspira-glstars.js, 2026-11-09): each star goes up as a screen-space disc of drawStars' own radius at warpStar's spot, laid evenly in x and y - no floor frame", () => {
+  const r = run(`(() => {
+    if (typeof GLSTARS_VS !== "string") return "aspira-glstars.js not loaded";
+    if (!/loc = corner \\* ext/.test(GLSTARS_VS) || /tcam|warpFrame|texCam/.test(GLSTARS_VS)) return "the star quad is not an even screen-space square";
+    const sent = []; const nop = () => {}; const gl = new Proxy({}, { get: (o, k) => k === "getExtension" ? () => new Proxy({}, { get: () => nop }) : k === "getProgramParameter" ? () => true : k === "bufferData" ? (t, d) => { if (d && d.length && d.length % 4 === 0 && d.length !== 12) sent.push(Float32Array.from(d)); } : typeof k === "string" && /^[A-Z_]+$/.test(k) ? 1 : () => ({}) });
+    const saveA = Object.assign({}, starAt), W = 1200, H = 900; warp.p = warp.p || warpParams(); glStars.gl = null; glStars.broken = false;
+    const pn = performance.now; performance.now = () => 5000;
+    try { glStarsDraw(gl, W, H); } finally { performance.now = pn; Object.assign(starAt, saveA); }
+    const D = sent[sent.length - 1]; if (!D) return "no stars sent";
+    for (let k = 0; k < D.length; k += 4) { if (!(D[k + 2] > 0)) return "star " + k / 4 + " radius " + D[k + 2]; }
+    return D.length / 4; })()`);
+  if (typeof r === "string") return r;
+  if (!(r > 50)) return "only " + r + " stars on screen (the rig is broken)";
+});

@@ -225,6 +225,7 @@ function warpDraw() {
   gl.bindBuffer(gl.ARRAY_BUFFER, warp.buf);
   gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
   gl.drawArrays(gl.TRIANGLES, 0, warp.n);
+  if (typeof glStarsDraw === "function") { gl.disableVertexAttribArray(loc); glStarsDraw(gl, sc.w, sc.h); gl.useProgram(pr); } // the background stars, round on screen (aspira-glstars.js)
   if (skyPal()) warpFlip(gl);
   warpEntities();
 }

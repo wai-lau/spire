@@ -387,6 +387,7 @@ function drawScaleBar() {
 const STAR_LEVELS = 24;
 const STAR_LV = Array.from({ length: STAR_LEVELS + 1 }, () => []), STAR_N = new Int32Array(STAR_LEVELS + 1); // the batches and how much of each is this frame's, kept from frame to frame - never truncated, which frees the store (perf, 2026-10-28: 25 fresh arrays grown to ~3300 numbers a frame were 100 KB of garbage)
 function drawStars(at) {
+  if (at && typeof glStarsOn === "function" && glStarsOn() && glStars.n >= 0 && glStars.prog) return; // 3D: drawn on the GPU with the bell (aspira-glstars.js)
   const now = performance.now() / 1000, red = starRed(); // reddening before a boss (aspira-bosses.js)
   const lv = STAR_LV, ln = STAR_N, W = ctx.canvas.width, Hh = ctx.canvas.height; ln.fill(0);
   STARS.forEach((st, i) => {
