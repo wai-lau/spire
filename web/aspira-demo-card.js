@@ -20,6 +20,7 @@ function demoMount(t, pv) {
   const w = Math.max(120, Math.round(cv.clientWidth || box.clientWidth || 360)), dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(w * dpr); cv.height = Math.round(w * DEMO_ASPECT * dpr);
   if (key !== demoCard.key || !demoCard.S) {
+    if (typeof sfxCutScene === "function") sfxCutScene(demoCard.S); // (the old scene's sounds stop with it)
     const L = DEMO_LAYOUTS[t.kind] && (DEMO_LAYOUTS[t.kind][lay] || DEMO_LAYOUTS[t.kind].base); if (!L) return;
     demoCard.S = demoScene(t.kind, tw.skills || {}, t.cell, demoPlace(t.kind, towerStats(tw), t.cell, L)); demoCard.S.sound = true; demoCard.key = key;
   }
@@ -28,7 +29,7 @@ function demoMount(t, pv) {
 // every frame (aspira-ui.js frame, its real `dt`, already capped at 0.05 s so a stalled tab takes no huge step): the scene at 1x play
 function demoTick(dt = DEMO_DT) {
   const D = demoCard; if (!D.cv) return;
-  if (D.cv.isConnected === false || ui.sel !== D.tid) { D.cv = D.c2 = D.S = null; D.key = ""; D.text = false; return; } // the card closed (or redrew without it): the next card opens on its scene
+  if (D.cv.isConnected === false || ui.sel !== D.tid) { if (typeof sfxCutScene === "function") sfxCutScene(D.S); D.cv = D.c2 = D.S = null; D.key = ""; D.text = false; return; } // the card closed (or redrew without it): the next card opens on its scene
   if (D.text || document.hidden) return;
   try { demoFrame(D.S, D.c2, D.view, demoDraw3d, Math.min(0.05, dt), BASE_SPEED); } catch (err) { D.cv = null; D.S = null; D.key = ""; if (typeof console !== "undefined") console.error("demo scene", err); } // (a broken scene leaves the card, never the game)
 }

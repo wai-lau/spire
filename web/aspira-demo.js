@@ -21,7 +21,7 @@ function demoIn(S) {
   if (demoHeld) throw new Error("demo scene: nested demoIn");
   if (S.lanes) { S.pi0 = PATHS.length; PATHS.push(...S.lanes); } // (a walker scene's own two lanes: on PATHS only while it runs)
   S.sumsHeld = new Map(dmgSums); dmgSums.clear(); for (const [k, v] of S.sums || []) dmgSums.set(k, v); // the tick numbers being summed (a const Map: its CONTENTS swap)
-  demoHeld = { G, fx, dmgLive, hitFrom, coins, grvAll, carObs, sparkN, grvLastHit, bannerText, bannerT, bannerCol, shakeUntil, muted, sfxScale, fxBroken: fxGl.broken, gameOver, winGame, showOverlay };
+  demoHeld = { S, G, fx, dmgLive, hitFrom, coins, grvAll, carObs, sparkN, grvLastHit, bannerText, bannerT, bannerCol, shakeUntil, muted, sfxScale, fxBroken: fxGl.broken, gameOver, winGame, showOverlay };
   gameOver = winGame = showOverlay = demoNoEnd; // THE PRIVATE GAME NEVER ENDS ANYTHING (2026-11-03: on 7.2.4-5 a card left open ~18 laps leaked its walkers' lives to a game over - the page's end screen and its sound)
   G = S.G; fx = S.fx; dmgLive = S.dmgLive; hitFrom = S.hitFrom; coins = S.coins; grvAll = S.grvAll; carObs = S.carObs;
   sparkN = S.sparkN; grvLastHit = S.grvLastHit; bannerText = S.bannerText; bannerT = S.bannerT; bannerCol = S.bannerCol; shakeUntil = S.shakeUntil;

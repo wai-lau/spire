@@ -30,15 +30,16 @@ function sfxEnd(node) { voices--; if (node.__dy) voicesDying--; }
 // not skip - the oldest copy of that name fades out (SFX_KILL_FADE) and the new one plays. Measured (TNsHit00, normalized, x 1/(1+n) a copy):
 // 5 copies at 0.15-0.9 s apart peak 0.27-0.33 summed, under NORM_PEAK (0.9) - no further quieting
 const SFX_FIFO = { ifr: true };
-function sfxFifoCut(name, now) {
-  for (const L of sfxLive) {
-    if (L.name !== name || L.cut) continue;
-    L.cut = true; sfxLive.delete(L); sfxStat.cut[name] = (sfxStat.cut[name] || 0) + 1;
-    for (const [src, g] of L.nodes) { if (src.__dy) continue; src.__dy = true; voicesDying++;
-      try { g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), now); g.gain.exponentialRampToValueAtTime(0.0001, now + SFX_KILL_FADE); src.stop(now + SFX_KILL_FADE); } catch (_e) { /* (already stopped) */ } }
-    return;
-  }
+function sfxFifoCut(name, now) { for (const L of sfxLive) if (L.name === name && !L.cut) return sfxFade(L, now); }
+function sfxFade(L, now) { // a live sound out: a SFX_KILL_FADE fade, then stopped (its voices freed as they end)
+  L.cut = true; sfxLive.delete(L); sfxStat.cut[L.name] = (sfxStat.cut[L.name] || 0) + 1;
+  for (const [src, g] of L.nodes) { if (src.__dy) continue; src.__dy = true; voicesDying++;
+    try { g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), now); g.gain.exponentialRampToValueAtTime(0.0001, now + SFX_KILL_FADE); src.stop(now + SFX_KILL_FADE); } catch (_e) { /* (already stopped) */ } }
 }
+// A DEMO'S SOUNDS END WITH IT (owner, 2026-11-09: "tower building demos should have sound also"): a sound started inside a demo scene (demoHeld,
+// aspira-demo.js) carries that scene (L.scene); when the scene closes or is rebuilt, sfxCutScene fades out whatever of it still sounds
+const sfxScene = () => (typeof demoHeld !== "undefined" && demoHeld ? demoHeld.S : null);
+function sfxCutScene(S) { if (!S || !AC) return; const now = AC.currentTime; for (const L of [...sfxLive]) if (L.scene === S && !L.cut) sfxFade(L, now); }
 function sfxMakeRoom(name, now) { // -> true when there is a voice for `name` (a commoner cut if need be)
   if (voices - voicesDying <= MAX_VOICES) return true;
   const mine = sfxRateNow(name, now);
@@ -46,9 +47,7 @@ function sfxMakeRoom(name, now) { // -> true when there is a voice for `name` (a
     let worst = null, wr = mine;
     for (const L of sfxLive) { if (L.cut) continue; const r = sfxRateNow(L.name, now); if (r > wr) { wr = r; worst = L; } }
     if (!worst) return false;
-    worst.cut = true; sfxLive.delete(worst); sfxStat.cut[worst.name] = (sfxStat.cut[worst.name] || 0) + 1;
-    for (const [src, g] of worst.nodes) { if (src.__dy) continue; src.__dy = true; voicesDying++;
-      try { g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(Math.max(0.0001, g.gain.value), now); g.gain.exponentialRampToValueAtTime(0.0001, now + SFX_KILL_FADE); src.stop(now + SFX_KILL_FADE); } catch (_e) { /* (already ended) */ } }
+    sfxFade(worst, now);
   }
   return true;
 }
@@ -261,7 +260,7 @@ function playSample(name, at = 0, off = 0) { // off: s into the clip to start fr
   src.buffer = clip.buf;
   g.gain.value = Math.min(sfxScale * sampleGain * (clip.norm || 1) * gainFor(name), clip.pk > 0 ? NORM_PEAK / clip.pk : Infinity) / (SOUND_MAX[name] ? 1 + n : 1);
   src.connect(g).connect(master);
-  voices++; playing[name] = n + 1; const L = { name, nodes: [[src, g]] }; sfxLive.add(L);
+  voices++; playing[name] = n + 1; const L = { name, nodes: [[src, g]], scene: sfxScene() }; sfxLive.add(L);
   src.onended = () => { sfxEnd(src); playing[name]--; sfxLive.delete(L); };
   const t0 = AC.currentTime + at, dur = Math.max(0.01, clip.end - clip.start - off);
   if (clip.fade) { const v = g.gain.value; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v, t0 + SLICE_FADE[0]); g.gain.setValueAtTime(v, t0 + Math.max(SLICE_FADE[0], dur - SLICE_FADE[1])); g.gain.linearRampToValueAtTime(0, t0 + dur); }
@@ -331,7 +330,7 @@ function sfx(name, ...args) {
   if (SFX_FIFO[name] && (playing[name] || 0) >= SOUND_MAX[name]) sfxFifoCut(name, now); // the OLDEST copy makes way (after the rare-first check: a cut copy frees no voice for a rarer sound)
   lastAt[name] = now; sfxStat.played[name] = (sfxStat.played[name] || 0) + 1;
   if (sample) return playSample(name);
-  const inst = { name, nodes: 0, live: { name, nodes: [] } }; sfxLive.add(inst.live);
+  const inst = { name, nodes: 0, live: { name, nodes: [], scene: sfxScene() } }; sfxLive.add(inst.live);
   curSound = inst;
   let h;
   try { h = SFX[name](...args); } finally { curSound = null; }
