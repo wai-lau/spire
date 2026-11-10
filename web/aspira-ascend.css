@@ -2,6 +2,9 @@
    Ascendants (wins) in gold, everyone else in green, tower names in their own colours */
 #asp-asc[hidden] { display: none; }
 #asp-asc { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); } /* (its margin-top, room below Play again, went to the leak list with the swap - 2026-10-19) */
+.asp-asc-head { display: flex; align-items: center; gap: var(--space-2); } /* the title between its chevrons (owner, 2026-11-09: one major version a page) */
+#asp .asp-asc-chev { background: none; border: 0; padding: 0 var(--space-2); font: inherit; font-size: var(--fs-sm); color: hsl(var(--orange-hsl)); cursor: pointer; pointer-events: auto; }
+#asp .asp-asc-chev:disabled { opacity: 0.3; cursor: default; } /* (no older / newer major with rows) */
 .asp-asc-title { font-size: var(--fs-sm); letter-spacing: var(--tracking-mega); text-transform: uppercase; color: hsl(var(--orange-hsl)); }
 #asp-asc-form { display: flex; gap: var(--space-2); }
 #asp-asc-form[hidden] { display: none; }

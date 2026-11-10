@@ -129,7 +129,7 @@ def _is_owner(request: Request) -> bool:
 @guest_protected.get("/api/spire/ascendants")
 async def spire_ascendants(request: Request):
     rows = spire_board.visible(DATA_DIR, spire_board.load(DATA_DIR), _is_owner(request))  # the owner's own games: hidden from guests
-    return {"entries": spire_board.ranked(rows)[: spire_board.SHOW_MAX]}
+    return {"entries": spire_board.shown(rows)}
 
 
 @guest_protected.post("/api/spire/ascendants")
@@ -147,7 +147,7 @@ async def spire_ascend(request: Request):
     if owner:
         entry["owner"] = True  # shown to the owner only (spire_board.visible)
     rows = spire_board.visible(DATA_DIR, spire_board.add(DATA_DIR, entry), owner)
-    return {"entries": spire_board.ranked(rows)[: spire_board.SHOW_MAX], "entry": entry}
+    return {"entries": spire_board.shown(rows), "entry": entry}
 
 
 # ---------- SLOW LOGS (spire_perflog.py): a session's frame and audio summary every 3 min of play ----------

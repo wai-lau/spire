@@ -42,7 +42,20 @@ HIDDEN = "spire_ascendants_hidden.json"
 # two-body boss paid its drop once a body; written by `python spire_board.py fix <ts> <initials> lives=<n>`) - applied when the
 # board is shown, the journal untouched like OWNER_MARKS and HIDDEN
 FIXES = "spire_ascendants_fix.json"
-SHOW_MAX = 500  # the most the GET returns (display only - the store keeps every entry)
+SHOW_MAX = 500  # the most the GET returns OF EACH MAJOR VERSION (display only - the store keeps every entry)
+
+
+def shown(rows: list) -> list:
+    """`rows` ranked, the top SHOW_MAX of each major version (the version's first number; rows with no version one group) - the
+    board pages by major (owner, 2026-11-09: "split the top players by major version"), so an old major's rows are never crowded out."""
+    seen: dict = {}
+    out = []
+    for r in ranked(rows):
+        k = str(r.get("ver", "")).split(".")[0]
+        seen[k] = seen.get(k, 0) + 1
+        if seen[k] <= SHOW_MAX:
+            out.append(r)
+    return out
 MAX_LIVES = 100000
 MIN_WAVE, WIN_WAVE, MAX_WAVE = 11, 120, 1000  # (a win is wave 120 since the 12-wave boss cycle, 2026-10-12)
 TOWER_KINDS = ("arc", "frz", "sol", "acd", "grv", "crr", "ifr")

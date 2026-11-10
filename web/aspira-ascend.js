@@ -5,10 +5,24 @@
 // everyone else by the wave reached (GREEN rows), tower names in their own colours. A game over before that shows the
 // board alone. UI only; winGame / gameOver (aspira-step.js) call in.
 const ASC_URL = "/api/spire/ascendants", ASC_MIN_WAVE = 11;
-const ASC_TITLE = '<p class="asp-asc-title">Top players</p>';
+// ONE MAJOR VERSION A PAGE (owner, 2026-11-09: "split the top players by major version, add chevrons to the left and the right of TOP PLAYERS
+// ... to navigate to other major version"): the board shows the games of one major (ascMajor: the version's first number; a row from before
+// the version column, 2026-10-16, by its date - ASC_MAJOR_FROM, the changelog's first day of each major), this game's own by default; the
+// chevrons either side of the title page to the older and newer majors that have rows, each greyed at its end. Ranked within the major as ever
+const ASC_ROWS = 11; // the board's height in rows (ascRender)
+const ASC_MAJOR_FROM = [[Date.UTC(2026, 9, 15) / 1000, 5], [Date.UTC(2026, 9, 11) / 1000, 4], [0, 3]]; // [from ts, major], newest first - rows with no version only
+const ascMajor = e => { const m = /^(\d+)\./.exec((e.ver || "")); if (m) return +m[1]; const ts = e.ts || 0; return (ASC_MAJOR_FROM.find(([t]) => ts >= t) || [0, 0])[1]; };
+const ascVerNow = () => { const el = document.querySelector(".asp-ver span"); return el ? el.textContent.trim() : ""; };
+const ASC_TITLE = '<div class="asp-asc-head"><button type="button" class="asp-asc-chev" data-d="-1" aria-label="Older version">\u2039</button><p class="asp-asc-title">Top players</p><button type="button" class="asp-asc-chev" data-d="1" aria-label="Newer version">\u203A</button></div>';
+const asc = { all: [], mine: null, pending: null, major: 0 };
+function ascPage(d) { // a chevron: the next major with rows (or your own), d -1 older, +1 newer
+  const ms = ascMajors(), i = ms.indexOf(asc.major), j = i + d;
+  if (j >= 0 && j < ms.length) { asc.major = ms[j]; ascRender(); }
+}
+function ascMajors() { const s = new Set(asc.all.map(ascMajor)); if (asc.pending) s.add(ascMajor(asc.pending)); s.add(asc.major); return [...s].sort((a, b) => a - b); }
 function ascBox() {
   let el = $("asp-asc");
-  if (!el) { el = document.createElement("div"); el.id = "asp-asc"; $("asp-ov-right").before(el); } // ABOVE the title, where the leaks were (owner, 2026-10-19: "swap location of scores and waves"; was below Play again, 2026-10-11)
+  if (!el) { el = document.createElement("div"); el.id = "asp-asc"; $("asp-ov-right").before(el); el.addEventListener("click", ev => { const b = ev.target.closest && ev.target.closest(".asp-asc-chev"); if (b && !b.disabled) ascPage(+b.dataset.d); }); } // ABOVE the title, where the leaks were (owner, 2026-10-19: "swap location of scores and waves"; was below Play again, 2026-10-11)
   return el;
 }
 const ascTeam = () => [...new Set(G.towers.filter(t => !t.isCore).map(t => t.kind))];
@@ -33,9 +47,19 @@ function ascPendingAt(entries, e) {
   return i < 0 ? entries.length : i;
 }
 function ascBoard(entries, mine, pending = null) {
+  const own = pending || mine;
+  Object.assign(asc, { all: entries, mine, pending, major: own ? ascMajor(own) : ascMajor({ ver: ascVerNow(), ts: Date.now() / 1000 }) });
+  ascRender();
+}
+function ascRender() {
   const board = $("asp-asc-board");
   if (!board) return;
+  const ms = ascMajors(), i = ms.indexOf(asc.major), title = document.querySelector("#asp-asc .asp-asc-title");
+  for (const b of document.querySelectorAll("#asp-asc .asp-asc-chev")) b.disabled = +b.dataset.d < 0 ? i <= 0 : i >= ms.length - 1;
+  if (title) title.textContent = "Top players \u00B7 v" + asc.major;
   board.textContent = "";
+  const mine = asc.mine, pending = asc.pending && ascMajor(asc.pending) === asc.major ? asc.pending : null;
+  let entries = asc.all.filter(e => ascMajor(e) === asc.major);
   if (pending) { entries = entries.slice(); entries.splice(ascPendingAt(entries, pending), 0, pending); }
   if (!entries.length) { board.textContent = "No one on the board yet."; return; }
   const table = document.createElement("table");
@@ -54,9 +78,15 @@ function ascBoard(entries, mine, pending = null) {
   board.append(table);
   fitOneLine(table, Math.min(document.documentElement.clientWidth - 24, $("asp-asc").parentElement.clientWidth || 1e9)); // every row on ONE line, the table shrunk to fit (aspira-chooser.js)
   const rows = table.rows;
-  board.style.maxHeight = ""; /* the board takes the end screen's spare height and scrolls inside it (aspira-endstats.css; owner, 2026-10-18 - was ASC_SHOW rows tall) */
-  const me = table.querySelector(".asp-asc-mine");
-  if (me) board.scrollTop = Math.max(0, me.offsetTop - rows[0].offsetTop - (board.clientHeight - me.offsetHeight) / 2); // CENTRED on your row
+  // ELEVEN ROWS, YOURS THE SIXTH (owner, 2026-11-09: "for top players, show 11 rows, with player score in the middle if possible"): the board is
+  // ASC_ROWS rows tall - five above your row, five below - and scrolled to them; near either end of the list the first or last ASC_ROWS show,
+  // your row where it falls; no row of yours on this page, the top ASC_ROWS. Measured from the real rows (your pending row, with its input, is
+  // taller); a screen with less spare height still shrinks the board (aspira-endstats.css), and the rest scrolls, as ever
+  const me = table.querySelector(".asp-asc-mine"), at = me ? me.rowIndex : 0, n = rows.length;
+  const r0 = Math.max(0, Math.min(n - ASC_ROWS, at - (ASC_ROWS >> 1))), r1 = Math.min(n, r0 + ASC_ROWS) - 1, span = rows[r1].offsetTop + rows[r1].offsetHeight - rows[r0].offsetTop;
+  board.style.maxHeight = Math.ceil(span) + "px";
+  board.scrollTop = rows[r0].offsetTop - rows[0].offsetTop;
+  if (me && board.clientHeight + 1 < span) board.scrollTop = Math.max(0, me.offsetTop - rows[0].offsetTop - (board.clientHeight - me.offsetHeight) / 2); // (shorter than ASC_ROWS: centred on your row)
   if (pending && ascForm) { const inp = $("asp-asc-in"); if (inp && !inp.disabled) try { inp.focus({ preventScroll: true }); } catch (_e) { /* (an old browser: no options) */ } }
 }
 async function ascLoad(pending = null) {

@@ -172,3 +172,13 @@ def test_old_car_rows_read_as_crr_and_a_post_takes_crr_only(tmp_path):
     base = {"initials": "NEW", "lives": 5, "won": True, "wave": 120}
     assert spire_board.clean_entry({**base, "team": ["crr", "arc"]})["team"] == ["arc", "crr"]
     assert spire_board.clean_entry({**base, "team": ["car"]}) is None
+
+
+def test_shown_caps_each_major_not_the_whole_board(monkeypatch):
+    """One major version a page (owner, 2026-11-09): the GET keeps the top SHOW_MAX of EACH major, so an old major's rows
+    are never crowded out by a newer one's."""
+    monkeypatch.setattr(spire_board, "SHOW_MAX", 2)
+    rows = [{"initials": f"N{i:02d}", "lives": 0, "won": False, "wave": 50 + i, "ts": i, "ver": "7.1.0"} for i in range(5)]
+    rows += [{"initials": "OLD", "lives": 0, "won": False, "wave": 12, "ts": 99, "ver": "6.3.1"}, {"initials": "NOV", "lives": 0, "won": False, "wave": 11, "ts": 98}]
+    got = [r["initials"] for r in spire_board.shown(rows)]
+    assert got == ["N04", "N03", "OLD", "NOV"]
