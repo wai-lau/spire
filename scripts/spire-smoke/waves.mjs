@@ -256,7 +256,7 @@ check("bosses (owner, 2026-11-05): the Lovers bring one armor wave scattered lik
   if (s.arc !== "lovers" || s.ty.armor !== Math.round(r.want / 2) || s.n !== s.ty.armor || !r.jit) return "Lovers fleet " + JSON.stringify(s).slice(0, 200) + " jit " + r.jit + " (a wave " + r.want + ")";
   if (r.healed || r.ran) return "Lovers pair " + JSON.stringify(r);
 });
-check("bosses (owner, 2026-11-05; veil 2026-11-07): Judgement comes alone; killed, she rises once at her lane's start at full HP with 1.2 swarm waves behind her, and her second death is her last", () => {
+check("bosses (owner, 2026-11-05; veil 2026-11-07; 6 swarm waves 2026-11-09): Judgement comes alone; killed, she rises once at her lane's start at full HP with JUDGEMENT_SWARM swarm waves behind her, and her second death is her last", () => {
   const r = run(`(() => { G = newGame(); G.wave = 71; spawnEnemy("bonus", 72, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana);
     if (!G.enemies.includes(e)) { G.fleetQ.splice(G.fleetQ.indexOf(e), 1); G.enemies.push(e); } const f0 = e.fleet.length; e.s = PATHS[0].len * 0.7; e.hp = 0; kill(e);
     const a = { f0, vs: effSpeed(e) / (effSpeed({ ...e, veiled: false }) || 1), dead: e.dead, hp: e.hp / e.max, at: e.s - entryS(0), kin: G.fleetQ.concat(G.enemies).filter(m => m.type === "swarm" && m.bossKin).length, want: Math.round(JUDGEMENT_SWARM * typeWaveCount("swarm", 72)), veiled: !!e.veiled, veilN: (e.veilKin || []).length };
@@ -273,8 +273,8 @@ check("bosses (owner, 2026-11-05): the Devil's host (half a fast + half a swarm 
   if (r.tot !== r.want || !r.kin || !r.wander) return "Devil host " + JSON.stringify(r);
   if (r.at == null || r.at < r.tot / 2 || r.most !== 6) return "Devil gate: first devil after " + r.at + " of " + r.tot + " seen, " + r.most + " devils at once";
 });
-check("bosses (owner, 2026-11-05): Death comes with half a plain wave of each of the four types, all at once round her", () => {
-  const s = bossRig(108), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.round(typeWaveCount(k, 108) / 2))`);
+check("bosses (owner, 2026-11-05; a third since 2026-11-09): Death comes with a third of a plain wave of each of the four types, all at once round her", () => {
+  const s = bossRig(108), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.round(typeWaveCount(k, 108) / 3))`);
   if (s.arc !== "death" || ["fast", "swarm", "armor", "shield"].some((k, i) => s.ty[k] !== want[i]) || !s.ahead || !s.behind) return "Death fleet " + JSON.stringify(s.ty) + " (want " + want + ")";
 });
 

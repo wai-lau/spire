@@ -29,8 +29,9 @@ function latticeSlots(m, R, size, at) {
 // share of a plain wave of each type (typeWaveCount; split among a pair's bodies), strewn round the boss like a swarm - each at a random
 // spot across SCATTER_W either side of the lane and along SCATTER_U a body of lane, ahead and behind, clear of the boss, wandering like a
 // swarmer (jit) at the boss's pace
-// Death (owner, 2026-11-05: "Death 1/2 of each wave at the same time + death itself"): half a plain wave of each of the four types, all at once round her
-const FLEET_SCATTER = { lovers: [["armor", 1]], death: [["fast", 0.5], ["swarm", 0.5], ["armor", 0.5], ["shield", 0.5]] };
+// Death (owner, 2026-11-05: "Death 1/2 of each wave at the same time + death itself"; 2026-11-09: her escort cut to a third): a third of a plain
+// wave of each of the four types, all at once round her (100 games bosses on, adaptive buyer: her depth 0.74 -> 0.47, runs ending there 17 -> 8%)
+const FLEET_SCATTER = { lovers: [["armor", 1]], death: [["fast", 1 / 3], ["swarm", 1 / 3], ["armor", 1 / 3], ["shield", 1 / 3]] };
 const SCATTER_W = 52, SCATTER_U = 14, SCATTER_UK = { death: 0.35 }; // (Death's host packed ~3x tighter along the lane: "at the same time")
 function bossScatter(e, n, R, parts = FLEET_SCATTER[e.arcana], rise = false) { // rise: Judgement's second coming - all behind her, held at the mouth, no queueFleet (she is already on the board)
   const bodies = rise ? 1 : bossCount(n), span = [R, R], s0 = entryS(e.pi);
