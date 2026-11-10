@@ -25,7 +25,7 @@ const ARCANA = [
   // (22:40: "swap order of justice and judgement")
   // (was Star, Empress, Strength, Chariot, Lovers, Temperance, Devil, Justice, Judgement, Death)
   // THE HINTS FOR THE NEW TRICKS (2026-11-08): Chariot, Strength, Lovers, Empress, Judgement, Death rewritten (Visual, Leader-relayed); the Devil's is the
-  // owner's own, verbatim but the set's capital and full stop ("six faces hunger / three paths, vermillion, and yet / even one, dooms all"); Star, Justice, Temperance kept
+  // owner's own, verbatim but the set's capital and full stop ("six faces hunger / three vermillion paths, beware, / even one dooms all", rewritten 2026-11-09; was "three paths, vermillion, and yet / even one, dooms all"); Star, Justice, Temperance kept
   { id: "star", name: "The Star", hint: ["One light in the dark", "crossing the long silent sky", "asks only to meet."] },
   { id: "chariot", name: "The Chariot", hint: ["Like the tide, it comes -", "surging close, then falling back,", "then surging again."] },
   { id: "strength", name: "Strength", hint: ["A mountain that walks,", "plated thick against the storm;", "blows break on her stone."] },
@@ -35,7 +35,7 @@ const ARCANA = [
   { id: "justice", name: "Justice", hint: ["The scales hold steady.", "No blow, however heavy,", "outweighs the balance."] },
   { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "the wound fills, and heals."] },
   { id: "death", name: "Death", hint: ["No riddle, no trick,", "only the long road to dark -", "and one more beyond."] },
-  { id: "devil", name: "The Devil", hint: ["Six faces hunger", "three paths, vermillion, and yet", "even one, dooms all."] },
+  { id: "devil", name: "The Devil", hint: ["Six faces hunger", "three vermillion paths, beware,", "even one dooms all."] },
 ];
 // EACH BOSS ITS OWN DIE (owner, 2026-11-07: "visually update dice shapes, (keep boss sizes): chariot should use the fast dice shape / strength
 // should use the shield shape / lovers armor / empress d20 / ... judgement cube / justice shield / ... temperence armor / death d20 / devil fast"):

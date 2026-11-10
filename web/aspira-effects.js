@@ -106,8 +106,12 @@ function solTrackBeams() {
     if (t.kind !== "sol") continue;
     let n = 0; for (const B of [t.solFl, t.solB]) { const ghost = B && B === t.solFl; if (!B || (!ghost && B.e.dead)) continue; // (ghost: a dropped lock's last flash - its dead stay drawn)
     if (!ghost && !((B.fl ?? 1e9) < SOL_PULSE_FLASH)) { // THE AIM LINE, between shots (owner, 2026-11-05: "I want the aiming visual effect back" / "short aim time is mostly for visual"): the old charge line, a thin
-      // plain line in SOL's colour from the tower to its lock, brightening as the next pulse comes - over the aim of a NEW lock (B.aim, SOL_AIM), else over the gap (t.solCd)
-      const gap = 1 / (towerStats(t).rate * (typeof SOL_PULSE_K === "number" ? SOL_PULSE_K : 1)), p = B.aim > 0 ? 1 - B.aim / SOL_AIM : 1 - Math.max(0, t.solCd || 0) / gap;
+      // plain line in SOL's colour from the tower to its lock, brightening as the next pulse comes - over the aim of a NEW lock (B.aim, SOL_AIM), else over
+      // the last SOL_SHOT_AT of REAL time before the pulse, when the shot's build-up sounds (solSfx, aspira-sfx.js); before that no line (owner, 2026-11-09:
+      // "SOL charging time should last as long as the sound does at 1x speed" - the look only, the fire rate is unchanged)
+      const shotS = typeof SOL_SHOT_AT === "number" ? SOL_SHOT_AT : 0.62, real = Math.max(0, t.solCd || 0) / (typeof gameSpeedX === "function" ? gameSpeedX() : 1);
+      if (!(B.aim > 0) && real > shotS) continue;
+      const p = B.aim > 0 ? 1 - B.aim / SOL_AIM : 1 - real / shotS;
       let aim = solAimF.get(t); if (!aim) solAimF.set(t, aim = { k: "beam", t: 0, life: 1, m: false, slim: false, color: TOWERS.sol.color, d: 0, share: 1, thin: SOL_AIM_W });
       aim.a = t; aim.b = B.e; aim.bw = undefined; aim.alpha = (SOL_AIM_A0 + SOL_AIM_A1 * Math.min(1, Math.max(0, p)) ** 2) / BEAM_BRIGHT; (out ||= []).push(aim); continue; }
     if (!((B.fl ?? 1e9) < SOL_PULSE_FLASH)) continue; // (a dropped lock's ghost: its flash only)
