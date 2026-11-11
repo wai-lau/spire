@@ -2,10 +2,11 @@
 
 Spiral tower defence at `wai-lau.net/spire` (`/aspira` 301s to it; files, code
 and the nav key keep the name `aspira`). The current game design, topic by topic
-(§1 overview .. §10 tech): **ARCHITECTURE.md** (this repo), whose **§11 is every
-trap** - read it before changing code. Incidents, superseded designs and
-balance/perf history: **ARCHAEOLOGY.md** (same top-level numbering; its §12 is the tuned-number snapshot at 4.4.2, its §13 the battery log by date - the code is the truth). Code comments
-that say `ARCHITECTURE.md §22` mean the whole of ARCHITECTURE.md.
+(§1 overview .. §10 tech): **ARCHITECTURE.md** (this repo), an INDEX - the sections
+live one file each in `docs/architecture/NN-*.md`, and **§11, every trap, is
+`docs/architecture/11-traps.md`** - read it before changing code. Incidents, superseded designs and
+balance/perf history: **ARCHAEOLOGY.md**, an index too (same top-level numbering; the sections in `docs/archaeology/NN-*.md`; its §12 is the tuned-number snapshot at 4.4.2, its §13 the battery log by date - the code is the truth). Code comments
+that say `ARCHITECTURE.md §22` mean the whole of ARCHITECTURE.md; a "§4.8" resolves through the index.
 
 ## Where this repo lives
 
@@ -28,6 +29,9 @@ are this repo's gitignored `data/aspira-sfx/`.
 
 ## Working here
 
+- **No tracked text file over 500 lines, docs included** (owner, 2026-11-10: "add a 500 line limit to every file, including docs"; the changelog keeps
+  its owner exemption, 2026-10-20 "allow overcap on changelog"): split a growing file on a real seam - a doc by section (`docs/architecture/`,
+  `docs/archaeology/`; §13's battery log by month when it nears 500), code as the 500-line cap already says.
 - **Commit in this repo** (`git -C apps/spire commit …` from exec-fn). exec-fn's
   push hook pushes it, then bumps + pushes exec-fn's pointer. Never edit the
   files through exec-fn's index.
