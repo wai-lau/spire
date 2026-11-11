@@ -256,13 +256,14 @@ check("bosses (owner, 2026-11-05): the Lovers bring one armor wave scattered lik
   if (s.arc !== "lovers" || s.ty.armor !== Math.round(r.want / 2) || s.n !== s.ty.armor || !r.jit) return "Lovers fleet " + JSON.stringify(s).slice(0, 200) + " jit " + r.jit + " (a wave " + r.want + ")";
   if (r.healed || r.ran) return "Lovers pair " + JSON.stringify(r);
 });
-check("bosses (owner, 2026-11-05; veil 2026-11-07; 6 swarm waves 2026-11-09): Judgement comes alone; killed, she rises once at her lane's start at full HP with JUDGEMENT_SWARM swarm waves behind her, and her second death is her last", () => {
+check("bosses (owner, 2026-11-05; veil 2026-11-07; 6 swarm waves 2026-11-09): Judgement comes alone; killed, she rises once at her lane's start at full HP with JUDGEMENT_SWARM swarm waves on the usual swarm lanes (owner, 2026-11-09), veiled while they live or are still coming, and her second death is her last", () => {
   const r = run(`(() => { G = newGame(); G.wave = 71; spawnEnemy("bonus", 72, 0, 0); const e = G.enemies.concat(G.fleetQ).find(x => x.arcana);
     if (!G.enemies.includes(e)) { G.fleetQ.splice(G.fleetQ.indexOf(e), 1); G.enemies.push(e); } const f0 = e.fleet.length; e.s = PATHS[0].len * 0.7; e.hp = 0; kill(e);
-    const a = { f0, vs: effSpeed(e) / (effSpeed({ ...e, veiled: false }) || 1), dead: e.dead, hp: e.hp / e.max, at: e.s - entryS(0), kin: G.fleetQ.concat(G.enemies).filter(m => m.type === "swarm" && m.bossKin).length, want: Math.round(JUDGEMENT_SWARM * typeWaveCount("swarm", 72)), veiled: !!e.veiled, veilN: (e.veilKin || []).length };
-    for (const m of e.veilKin || []) m.dead = true; e.seen = true; bossStep(e, 0.01); a.unveiled = !e.veiled;
+    const a = { f0, vs: effSpeed(e) / (effSpeed({ ...e, veiled: false }) || 1), dead: e.dead, hp: e.hp / e.max, at: e.s - entryS(0), kin: G.spawns.filter(w => w.veilOf === e.id).reduce((c, w) => c + w.list.filter(k => k === "swarm").length, 0), want: Math.round(JUDGEMENT_SWARM * typeWaveCount("swarm", 72)), veiled: !!e.veiled,
+      copies: G.spawns.filter(w => w.veilOf === e.id).length, onSwarmLanes: G.spawns.filter(w => w.veilOf === e.id).every(w => w.lanes === undefined || w.lanes.swarm === laneMap(72).swarm) };
+    for (const w of G.spawns) if (w.veilOf === e.id) w.idx = w.list.length; bossStep(e, 0.01); a.stillVeiled = !!e.veiled; for (const m of e.veilKin || []) m.dead = true; e.seen = true; bossStep(e, 0.01); a.unveiled = !e.veiled;
     e.hp = 0; kill(e); a.dead2 = e.dead; return a; })()`);
-  if (r.f0 || r.dead || r.hp !== 1 || Math.abs(r.at) > 0.01 || r.kin !== r.want || !r.dead2 || !r.veiled || r.veilN !== r.want || !r.unveiled || Math.abs(r.vs - 0.2) > 1e-9) return "Judgement (veiled while her rise swarm lives at 0.2x speed, owner 2026-11-07/08) " + JSON.stringify(r);
+  if (r.f0 || r.dead || r.hp !== 1 || Math.abs(r.at) > 0.01 || r.kin !== r.want || !r.dead2 || !r.veiled || r.copies < 3 || !r.onSwarmLanes || !r.unveiled || Math.abs(r.vs - 0.2) > 1e-9) return "Judgement (veiled while her rise swarm lives at 0.2x speed, owner 2026-11-07/08) " + JSON.stringify(r);
 });
 check("bosses (owner, 2026-11-05): the Devil's host (half a fast + half a swarm wave, loose like swarm) comes first; her six come once half of it has been on screen", () => {
   const r = run(`(() => { const bh = BAR_HOLD; BAR_HOLD = false; try { G = newGame(); G.lives = 1e6; G.started = true; G.wave = 119; sendWave(); let at = null, most = 0, preSeen = -1;
@@ -273,9 +274,17 @@ check("bosses (owner, 2026-11-05): the Devil's host (half a fast + half a swarm 
   if (r.tot !== r.want || !r.kin || !r.wander) return "Devil host " + JSON.stringify(r);
   if (r.at == null || r.at < r.tot / 2 || r.most !== 6) return "Devil gate: first devil after " + r.at + " of " + r.tot + " seen, " + r.most + " devils at once";
 });
-check("bosses (owner, 2026-11-05; a third since 2026-11-09): Death comes with a third of a plain wave of each of the four types, all at once round her", () => {
-  const s = bossRig(108), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.round(typeWaveCount(k, 108) / 3))`);
-  if (s.arc !== "death" || ["fast", "swarm", "armor", "shield"].some((k, i) => s.ty[k] !== want[i]) || !s.ahead || !s.behind) return "Death fleet " + JSON.stringify(s.ty) + " (want " + want + ")";
+check("bosses (owner, 2026-11-05; a third 2026-11-09; five lanes 2026-11-09): Death's escort - a third of a plain wave of each type - walks five lanes, one a type on its own lane, tough as any escort, and only her lane lights", () => {
+  const r = run(`(() => { const bh = BAR_HOLD; BAR_HOLD = false; try { G = newGame(); G.lives = 1e6; G.started = true; G.wave = 107; sendWave();
+    const esc = G.spawns.filter(w => w.heft), lanes = laneMap(108), ty = {}; for (const w of esc) ty[w.list[0]] = w.list.length;
+    const boss = G.spawns.filter(w => ENEMIES[w.list[0]].star), lit = Object.keys(G.laneTotals || {});
+    const keys = new Set(esc.map(w => w.lanes[w.list[0]] + ":" + w.ang.toFixed(3)));
+    G.enemies = []; for (let i = 0; i < 200 && esc.some(w => w.idx < w.list.length); i++) step(0.05);
+    const k = G.enemies.filter(m => m.bossKin && m.type === "fast")[0];
+    return { ty, nEsc: esc.length, lanesN: keys.size, boss: boss.length, lit, bossLit: boss.map(w => laneKey(lanes.bonus, w.ang)), kin: !!k };
+  } finally { BAR_HOLD = bh; } })()`), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.max(1, Math.round(typeWaveCount(k, 108) / 3)))`);
+  if (["fast", "swarm", "armor", "shield"].some((k, i) => r.ty[k] !== want[i]) || r.nEsc !== 4 || r.lanesN !== 4 || r.boss !== 1 || !r.kin
+    || r.lit.length !== 1 || r.lit[0] !== r.bossLit[0]) return "Death five lanes " + JSON.stringify(r) + " (want " + want + ")";
 });
 
 // NO BOSS WAVE STALLS ON THE HP BAR (2026-11-05, Wai: "The devil boss broken / Freezes"): the page holds a boss and its kin for the bar's

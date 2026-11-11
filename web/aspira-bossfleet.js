@@ -71,5 +71,15 @@ function devilEscorts(lanes, n) {
     const key = laneKey(lanes.bonus, ang); (G.laneTotals ||= {})[key] = (G.laneTotals[key] || 0) + part.length;
   }
 }
+// DEATH ON FIVE LANES (owner, 2026-11-09: "Death boss should have 5 lanes, 1 for each type, do not show lanes for non-boss"): her escort -
+// FLEET_SCATTER.death's share of a plain wave of each type - walks one lane per type, each type on its own usual lane in its own formations,
+// Death on hers; the four escort lanes walk UNLIT (no laneTotals: only her lane lights). Each body BOSS_HEFT tough and hers (bossKin) like
+// any escort. Was (2026-11-05): scattered round her on her lane
+function deathEscorts(lanes, n) {
+  for (const [k, mul] of FLEET_SCATTER.death) {
+    const list = Array(Math.max(1, Math.round(typeWaveCount(k, n) * mul))).fill(k), ang = laneBestTurn(lanes[k], 1, n, k);
+    G.spawns.push({ n, list, lanes, ang, idx: 0, timer: 0, heft: true });
+  }
+}
 const devilGateShut = w => !!(w.gate && G.devilEsc && G.devilEsc.n === w.n && G.devilEsc.seen < G.devilEsc.total / 2);
 function devilCount(e) { if (e.devilEsc && !e.devilCounted && G.devilEsc) { e.devilCounted = true; G.devilEsc.seen++; } } // seen, or dead first

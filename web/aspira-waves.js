@@ -214,6 +214,16 @@ const BOUNTY_BASE = 2, BOUNTY_SLOPE = 0.35, BOUNTY_KNEE = 30 /* (owner, 2026-10-
 // need to buy upgrades"; 2026-10-29 "let's try the mild econ"): x BOUNTY_SCARCE to eq wave 40, back to full by 50
 const BOUNTY_SCARCE = 0.8, econEarly = n => (n <= 40 ? BOUNTY_SCARCE : n >= 50 ? 1 : BOUNTY_SCARCE + (1 - BOUNTY_SCARCE) * (n - 40) / 10);
 const bountyBase = n => econEarly(n) * (BOUNTY_BASE + BOUNTY_SLOPE * Math.min(n, BOUNTY_KNEE) + BOUNTY_SLOPE_LATE * Math.max(0, n - BOUNTY_KNEE)) * (1 + (BOUNTY_EARLY - 1) * Math.min(1, Math.max(0, (BOUNTY_EARLY_TO - n) / 10))); // full to wave 20, easing off by 30 (no drop at 31)
+// THREE MAIN LANES, 80% of a swarm on a bell (swarmLanes, aspira-formations.js): list split over k3 lane copies of wave n's swarm lane;
+// extra rides on every spawn (Judgement's rise: veilOf). Also Judgement's rising swarm (aspira-bosses.js judgementSwarm)
+function swarmMainSpawns(n, list, lanes, k3, extra = null) {
+  const ls = swarmLanes(lanes.swarm, k3, n), sz = swarmParts(list.length, k3), gap = 0.024 / ENEMY_SPEED;
+  for (let j = 0, at = 0; j < k3; j++) {
+    const part = list.slice(at, at + sz[j]); at += sz[j]; if (!part.length) continue;
+    G.spawns.push({ n, list: part, lanes, ang: ls[j].ang, idx: 0, timer: 0, gaps: ls[j].main ? bellGaps(part.length, gap) : null, ...extra });
+    const key = laneKey(lanes.swarm, ls[j].ang); (G.laneTotals ||= {})[key] = (G.laneTotals[key] || 0) + part.length;
+  }
+}
 function sendWave() {
   if (G.over) return;
   if (G.nextIn > 0 && waveClear() && typeof carCutShort === "function") carCutShort(G.nextIn); // a cleared field cut the wait short: ATC still gets that time's interceptors (aspira-crr.js)
@@ -240,15 +250,7 @@ function sendWave() {
     const want = boss ? bossSplit(G.wave) : firstOne(G.wave) ? 1 : formSplit(list[0], list.length, G.wave);
     const k = Math.min(list.length, want), per = Math.floor(list.length / k), share = list[0] === "swarm"; // swarm: the remainder SHARED out, one more on the first lanes
     const k3 = k - k % SWARM_MAIN; // (a short swarm: its lanes down to a multiple of three, so the main three sit on the grid)
-    if (share && !boss && k3 > SWARM_MAIN) { // THREE MAIN LANES, 80% of the swarm on a bell (swarmLanes, aspira-formations.js)
-      const ls = swarmLanes(lanes.swarm, k3, G.wave), sz = swarmParts(list.length, k3), gap = 0.024 / ENEMY_SPEED;
-      for (let j = 0, at = 0; j < k3; j++) {
-        const part = list.slice(at, at + sz[j]); at += sz[j]; if (!part.length) continue;
-        G.spawns.push({ n: G.wave, list: part, lanes, ang: ls[j].ang, idx: 0, timer: 0, gaps: ls[j].main ? bellGaps(part.length, gap) : null });
-        const key = laneKey(lanes.swarm, ls[j].ang); (G.laneTotals ||= {})[key] = (G.laneTotals[key] || 0) + part.length;
-      }
-      return;
-    }
+    if (share && !boss && k3 > SWARM_MAIN) { swarmMainSpawns(G.wave, list, lanes, k3); return; } // THREE MAIN LANES (swarmMainSpawns)
     for (let j = 0, at = 0; j < k; j++) {
       const len = share ? per + (j < list.length - per * k ? 1 : 0) : per, part = list.slice(at, at + len); at += len;
       if (!part.length) continue;
@@ -260,6 +262,7 @@ function sendWave() {
     }
   });
   if (G.wave % STAR_EVERY === 0 && arcanaOf(G.wave).id === "devil") devilEscorts(lanes, G.wave); // her host, ahead of her (aspira-bosses.js)
+  if (G.wave % STAR_EVERY === 0 && arcanaOf(G.wave).id === "death") deathEscorts(lanes, G.wave); // her escort, a lane a type, unlit (aspira-bossfleet.js)
   G.nextIn = WAVE_TIMER;
   G.started = true;
 }

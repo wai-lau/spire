@@ -200,7 +200,7 @@ const FLEET_BEHIND = { star: true };
 const FLEET_TRACK_W = 26, fleetTracks = n => (fixedRand(n, 7) < 0.5 ? 3 : 5); // 3 or 5, never 4 (owner, 2026-10-13: "make nothing use 4 lanes exactly"; was 3-5)
 const fleetLanes = (e, n) => (isA(e, "judgement") ? { L: 12, off: 0.5 } : { L: 1, off: 0 }); // only the Judgement spreads its escorts (owner, 2026-10-12: "escorts don't spread, only judgement"; every fleet rode 3-5 lanes briefly)
 function bossFleet(e, n) {
-  if (FLEET_SCATTER[e.arcana]) { e.fleet = []; bossScatter(e, n, ENEMIES.bonus.size * (e.sizeMul || 1)); return; }
+  if (FLEET_SCATTER[e.arcana] && !isA(e, "death")) { e.fleet = []; bossScatter(e, n, ENEMIES.bonus.size * (e.sizeMul || 1)); return; } // (Death's escort walks its own lanes: deathEscorts)
   const lat = FLEET_LATTICE[e.arcana], kinds = lat ? [lat.k] : FLEET[e.arcana];
   if (!kinds) { e.fleet = []; e.fleetSpan = 0; G.lastBoss = e; return; } // (no fleet: the next boss body spaces off this one, never a boss before)
   e.fleet = [];
@@ -308,18 +308,24 @@ const JUDGEMENT_SWARM = 6;
 // does not latch e.seen back while veiled. She still walks, and a veiled boss at the core still costs its lives. Drawn at reduced opacity
 // (e.veiled - aspira-enemies.js enemyVis reads !seen as faint already)
 function bossVeil(e) {
-  const up = e.veilKin.some(m => !m.dead && !m.gone);
+  const up = e.veilKin.some(m => !m.dead && !m.gone) || G.spawns.some(w => w.veilOf === e.id && w.idx < w.list.length); // (Judgement's swarm still coming counts)
   if (up && !e.veiled) { e.veiled = true; e.seen = false; }
   else if (!up && e.veiled) { e.veiled = false; e.veilKin = null; if (enemySeen(e)) { e.seen = true; e.seenAt = performance.now(); } }
+}
+// HER SWARM COMES ON THE USUAL SWARM LANES (owner, 2026-11-09: "for judgement wave, swarm should come in on usual swarm lanes, just more units"):
+// JUDGEMENT_SWARM swarm waves' worth, split over her wave's swarm lanes exactly as a swarm wave is (swarmMainSpawns, aspira-waves.js), each body
+// hers (veilOf: it joins her veilKin as it spawns, aspira-step.js). Was: scattered behind her on her own lane (bossScatter's rise)
+function judgementSwarm(e) {
+  const n = e.n, list = Array(Math.max(1, Math.round(typeWaveCount("swarm", n) * JUDGEMENT_SWARM))).fill("swarm"), lanes = laneMap(n);
+  const k = Math.min(list.length, formSplit("swarm", list.length, n)), k3 = Math.max(SWARM_MAIN, k - k % SWARM_MAIN);
+  swarmMainSpawns(n, list, lanes, k3, { veilOf: e.id });
 }
 function bossRise(e) {
   if (e.risen || !isA(e, "judgement")) return false;
   ring(e.x, e.y, 60, "orange", 0.5); // (where she fell)
   e.risen = true; e.dead = false; e.hp = e.max; e.shield = e.shieldMax; e.shieldBuf = 0;
   e.s = entryS(e.pi); const p = pathAt(e.pi, e.s, e.ang || 0); e.x = p.x; e.y = p.y; e.ease0 = null; e.slows = null; e.slowT = 0; e.stunT = 0; e.seen = false;
-  const n0 = G.enemies.length, q0 = (G.fleetQ || []).length;
-  bossScatter(e, e.n, ENEMIES.bonus.size * (e.sizeMul || 1), [["swarm", JUDGEMENT_SWARM]], true);
-  e.veilKin = G.enemies.slice(n0).concat((G.fleetQ || []).slice(q0)).filter(m => m !== e); bossVeil(e); // VEILED while her swarm lives (owner, 2026-11-07 22:30: "judgement invuln and untargettable while swarm is up")
+  judgementSwarm(e); e.veilKin = []; bossVeil(e); // VEILED while her swarm lives or is still coming (owner, 2026-11-07 22:30: "judgement invuln and untargettable while swarm is up")
   return true;
 }
 // from kill(): a Lover left alone heals to full and runs faster
