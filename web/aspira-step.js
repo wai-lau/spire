@@ -52,6 +52,7 @@ const JIT_FADE_R = 400; // swarm wander is full beyond this radius, 0 at the cor
 // balance simulator switches it off (scripts/aspira-sim)
 let FACING = true;
 function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower's reach = off screen: aspira-positioning.js)
+  if (G.waveTap) for (const n in G.waveTap) { if (G.waveIn && G.waveIn[n]) { delete G.waveTap[n]; continue; } if ((G.waveTap[n] += dt) >= OFF_TAPER_S) { (G.waveIn ||= {})[n] = 1; delete G.waveTap[n]; } } // the x3 taper (waveClock)
   for (const e of G.enemies) {
     if (e.gone) continue; if (!e.seen && !e.veiled && enemySeen(e)) { e.seen = true; devilCount(e); e.seenAt = performance.now(); } // (off-screen: untouchable - enemySeen, aspira-positioning.js)
     if (e.dead) {
@@ -71,7 +72,7 @@ function stepEnemies(dt) { const reach = reachCircles(); // (out of every tower'
       if (e.burnT > 0) e.burnT -= dt; // under an ACD burn (Fresh targeting)
       if (e.marks) sumMarks(e, dt);
       if (e.dotT > 0) { solScorchTick(e, dt); if (e.dead) continue; } // SOL's scorch stacks, popping shields (aspira-sol.js)
-      { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; if ((e.seen && inReach(e, reach)) || (m && m.seen && inReach(m, reach))) (G.waveIn ||= {})[e.n] = 1; e.s += (m ? Math.min(effSpeed(e) * coreEase(e), effSpeed(m) * coreEase(m)) : effSpeed(e) * coreEase(e)) * waveClock(e.n) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") - a WAVE loses it TOGETHER, the moment its first unit reaches a tower's range (owner, 2026-10-26) */
+      { const m = e.mate && !e.mate.dead && !e.enraged ? e.mate : null; if ((e.seen && inReach(e, reach)) || (m && m.seen && inReach(m, reach))) (G.waveIn ||= {})[e.n] = 1; else if (e.seen && !(G.waveIn && G.waveIn[e.n]) && !(G.waveTap && G.waveTap[e.n] != null) && tapNear(e, reach)) (G.waveTap ||= {})[e.n] = 0; e.s += (m ? Math.min(effSpeed(e) * coreEase(e), effSpeed(m) * coreEase(m)) : effSpeed(e) * coreEase(e)) * waveClock(e.n) * dt; } /* the LOVERS walk in step at the slower one's pace; OFF-SCREEN x3 (owner, 2026-10-18: "triple movement speed of all enemies not on screen") - a WAVE loses it TOGETHER, the moment its first unit reaches a tower's range (owner, 2026-10-26) */
     }
     const p = e.form ? ENEMY_AT : pathAtInto(e.pi, e.s, e.ang, ENEMY_AT); // (a scratch point, read at once - aspira-formations.js)
     if (e.form) formOffset(e, p); // its place in a formation (aspira-formations.js) - which sets p whole, so no pathAt first (perf)

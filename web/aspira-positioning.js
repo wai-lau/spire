@@ -385,6 +385,13 @@ function phoneInside(x, y, inset = 0, on3d = phoneOn3d()) { // on3d: asked once 
 // OFF_SCREEN_SPEED like an unseen one (stepEnemies, aspira-step.js). The circles are worked out once a step
 const reachCircles = () => G.towers.map(t => { const c = CELLS[t.cell] || t, R = leashR(t) + towerStats(t).range; return [c.x, c.y, R * R]; });
 const inReach = (e, reach) => reach.some(([x, y, r2]) => (e.x - x) ** 2 + (e.y - y) ** 2 <= r2);
+// the x3 taper (waveClock): would e be in a reach after OFF_TAPER_S at the taper's pace? Its spot OFF_TAPER_D x its speed x OFF_TAPER_S on
+// along its own lane (lane distance, not a straight line), widened by its wander (it swings up to 2 x e.jit across)
+const TAP_AT = { x: 0, y: 0 };
+function tapNear(e, reach) {
+  const p = pathAtInto(e.pi, Math.min(PATHS[e.pi].len, e.s + OFF_TAPER_D * effSpeed(e) * OFF_TAPER_S), e.ang || 0, TAP_AT), w = 2 * (e.jit || 0);
+  return reach.some(([x, y, r2]) => Math.hypot(p.x - x, p.y - y) <= Math.sqrt(r2) + w);
+}
 // THE BOX SWITCHES BETWEEN WAVES ONLY: a resize/rotation just sets boxPending; boxSwitchIfIdle (before each step of the frame loop, aspira-ui.js: a clear field lasts one step, the next wave
 // goes at once; plus a 250 ms timer for a paused game - never step(), the simulator must not see it) applies it once the field is clear and no lane is lit (or before the run starts)
 let boxPending = null;

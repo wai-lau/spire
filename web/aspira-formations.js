@@ -103,7 +103,12 @@ const TYPE_SPEED_K = { shield: 1.5, armor: 1.5 }, plainK = type => (ENEMIES[type
 // unit of that wave reaches the range of a tower"): G.waveIn[n] is set by the first unit of wave n inside a tower's reach (stepEnemies);
 // till then the whole wave - its units on the board, those queued behind the mouth (stepFleetQ) and its releases (stepSpawns) - runs
 // OFF_SCREEN_SPEED x, so its spacing in distance is the designed one throughout
-const waveClock = n => (G.waveIn && G.waveIn[n] ? 1 : OFF_SCREEN_SPEED);
+// THE x3 TAPERS (owner, 2026-11-09: "x3 speed outside every tower's range + movement, tapering over the last second"): once a seen unit
+// of wave n is would be in a tower's reach OFF_TAPER_D x its speed x OFF_TAPER_S further along its lane, give or take its wander (tapNear, aspira-positioning.js), the wave's clock
+// eases OFF_SCREEN_SPEED -> 1 over OFF_TAPER_S s (G.waveTap[n], stepEnemies) and then holds 1 (G.waveIn); a unit inside a reach still
+// ends it at once. The core ease starts at 1 as before
+const OFF_TAPER_S = 1, OFF_TAPER_D = 2; // (the taper averages 2x; a swarmer's wander, which swings up to 2 x e.jit across, is added to the margin: it can close on a reach faster than the lane)
+const waveClock = n => (G.waveIn && G.waveIn[n] ? 1 : G.waveTap && G.waveTap[n] != null ? OFF_SCREEN_SPEED - (OFF_SCREEN_SPEED - 1) * Math.min(1, G.waveTap[n] / OFF_TAPER_S) : OFF_SCREEN_SPEED);
 function formSplit(type, count, n) {
   if (type === "armor") return ARMOR_ONE_BLOCK ? 1 : ARMOR_LANES; // always (laneCount rounds up)
   if (type === "swarm") return SWARM_LANES[Math.floor(fixedRand(n, 3) * SWARM_LANES.length)];

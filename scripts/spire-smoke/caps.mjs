@@ -65,7 +65,7 @@ check("GRV Gravity Well V UNDERTOW (owner, 2026-11-06: \"enemies closer to the c
 check("GRV Gravity Well V cannot STUNLOCK a boss (owner, 2026-11-06: \"make sure that it cannot stunlock bosses with 3GRVs\"): three GRVs at Void V / Nova V / Well V on a boss's lane - over 20 s it still covers a clear share of the lane it covers with Well IV and with no GRV", () => {
   const r = run(`(() => { const go = (w, n3) => { G = newGame(); G.money = 1e9; G.lives = 1e6; G.started = true; G.wave = 35; spawnEnemy("bonus", 36, 0, 0);
       const e = G.enemies.concat(G.fleetQ).find(x => x.arcana); G.fleetQ = []; G.enemies = [e]; e.fleet = []; e.hp = e.max = 1e15; e.armor = e.armor0 = 0; e.shield = e.shieldMax = 0; e.seen = true;
-      const s0 = PATHS[0].len * 0.55, p0 = pathAt(0, s0, 0); e.s = s0; e.x = p0.x; e.y = p0.y; e.spd = e.baseSpd = e.spd;
+      const s0 = PATHS[0].len * 0.7 /* (0.55 reeled once by luck of the x3 dash, gone with its taper 2026-11-10; 0.7 reels twice either way) */, p0 = pathAt(0, s0, 0); e.s = s0; e.x = p0.x; e.y = p0.y; e.spd = e.baseSpd = e.spd;
       const open = CELLS.map((c, i) => i).filter(i => cellOpen(i) && canPlace(i)).sort((a, b) => Math.hypot(CELLS[a].x - p0.x, CELLS[a].y - p0.y) - Math.hypot(CELLS[b].x - p0.x, CELLS[b].y - p0.y));
       for (let i = 0; i < n3; i++) { ui.build = "grv"; placeTower(CELLS[open[i]]); const t = G.towers[G.towers.length - 1]; t.skills = { void: 5, supernova: 5, radiation: w }; t.lvl = 1 + towerLevel(t); }
       G.spawnQ = []; let reels = 0; const _r = grvReel; grvReel = (...a) => { const b = a[0].reelAt; _r(...a); if (a[0].reelAt !== b) reels++; }; try { for (let k = 0; k < 20 * 30; k++) { G.wave = 35; step(1 / 30); } } finally { grvReel = _r; } return { d: e.s - s0, reels }; };

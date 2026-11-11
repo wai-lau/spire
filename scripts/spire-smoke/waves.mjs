@@ -300,3 +300,10 @@ check("the Devil's wave never stalls on the HP bar's hold: her host walks in fir
   for (; i < 60 * 12 && most < 6; i += 4) { frames(env, 4); most = Math.max(most, env.run("G.enemies.concat(G.fleetQ || []).filter(e => e.arcana === \"devil\" && !e.dead).length")); }
   if (most !== 6) return "wave " + w + ": " + most + " Devils on the board after " + (i / 60).toFixed(1) + " s of the page (host seen " + env.run("G.devilEsc ? G.devilEsc.seen + \"/\" + G.devilEsc.total : \"-\"") + ")";
 });
+check("off-screen x3 TAPERS (owner, 2026-11-09: \"x3 speed outside every tower's range + movement, tapering over the last second\"): a wave nearing a tower's reach eases x3 -> x1 over OFF_TAPER_S, then holds x1", () => {
+  const r = run(`(() => { G = newGame(); G.money = 1e9; G.lives = 1e6; G.started = true; G.wave = 5; ui.build = "arc"; { const p0 = pathAt(0, 0, 0), far = CELLS.map((c, i) => i).filter(i => cellOpen(i) && canPlace(i)).sort((a, b) => Math.hypot(CELLS[b].x - p0.x, CELLS[b].y - p0.y) - Math.hypot(CELLS[a].x - p0.x, CELLS[a].y - p0.y)); placeTower(CELLS[far[0]]); } // (far from the mouth: room for the whole taper)
+    spawnEnemy("swarm", 6, 0, 0); G.enemies = G.enemies.slice(-1); G.fleetQ = []; G.enemies[0].seen = true; G.spawns = []; G.nextIn = Infinity; const out = { at0: waveClock(6) }; let t = 0, start = null;
+    for (let k = 0; k < 60 * 120 && !(G.waveIn && G.waveIn[6]); k++) { G.wave = 5; step(1 / 60); t += 1 / 60; if (start === null && G.waveTap && G.waveTap[6] != null) { start = t; out.tap0 = waveClock(6); } if (start !== null && out.mid == null && t - start >= OFF_TAPER_S / 2) out.mid = waveClock(6); }
+    out.dur = start === null ? null : t - start; out.end = waveClock(6); return out; })()`);
+  if (r.at0 !== 3 || r.tap0 == null || r.tap0 < 2.9 || !(r.mid > 1.5 && r.mid < 2.5) || r.end !== 1 || !(r.dur >= 0.9 && r.dur <= 1.05)) return "taper " + JSON.stringify(r);
+});
