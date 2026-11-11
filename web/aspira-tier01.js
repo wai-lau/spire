@@ -27,5 +27,5 @@ ACD_LINES[0] = 1; ACD_LINES[1] = 2; ACD_CONTAGION[0] = null;
 // GRV: the nova and a TINY void every third nova, no aura (owner, 2026-10-25: "add void at 0 (every 3 novas) / But, tiny, no aura")
 GRV_AURA_R[0] = 30;
 
-// IFR: tier 0 a meteor that bursts into 6 (IFR_FAN_N, aspira-ifrit.js); the fire and the flares off until bought - ifrSkillStats
+// IFR: tier 0 a meteor that bursts into IFR_FAN_BY[0] (aspira-ifrit.js); the fire and the flares off until bought - ifrSkillStats
 

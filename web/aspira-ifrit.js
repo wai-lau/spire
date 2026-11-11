@@ -3,7 +3,7 @@
 // corpse if it dies. Its FIRST hit makes the FIRE (Hellfire: it grows to its max, burns what stands in it in many small ticks, lingers, and
 // once grown lights flares inside it, as many as its area) and a 360-degree FAN of meteors (Meteor's count) that fly straight (never homing, 2026-11-04) and hit
 // for damage, each lighting a FLARE where it lands (Flare, id firaga: their size, damage and burn; its capstone three a landing). Meteor's
-// capstone bursts into IFR_FAN_CAP, no fissure (owner, 2026-10-26). Loaded after aspira-crr.js (the simulator too); the look is aspira-ifrit-draw.js. Every list
+// capstone bursts into IFR_FAN_BY[V], no fissure (owner, 2026-10-26). Loaded after aspira-crr.js (the simulator too); the look is aspira-ifrit-draw.js. Every list
 // on the tower holds plain objects (ids and coordinates, never enemy refs): autosave clones G.
 // Spec: docs/superpowers/specs/2026-10-20-ifrit-axes-redesign-design.md (much changed since by the owner's notes, 2026-10-20 - the code is the truth)
 
@@ -11,10 +11,19 @@
 const IFR_CHARGE_S0 = 1.4; // s to fill THE charge at tier 0 - the STAT CURVE's rate shortens it (tier redesign 2026-10-24; was Meteor's table 1.4 1.4 1.4 1.2, V 0.6)
 const IFR_BALL_V = [360, 390, 450, 510] /* was [140 .. 320] (solo.mjs 2026-10-19: a lone L1 lost 25/21/23 lives on waves 1-11 and x4 the hit barely moved it - at 140 u/s the ring opened after armor and swarm had walked out of it; 360: 8/6/2) */; // Meteor: u/s in flight - SLOW against fast (130 u/s walks out of the blast past ~150 u), the fast weakness (VI 540)
 const IFR_ROUTE_K0 = 0.675; /* x0.6 (2026-11-02, owner: "IFR looks like just a curve nerf" - IFR's strength is Flare, so Meteor + Hellfire come down and Flare's tick goes up to keep the shield check; was 1.125) */ /* x0.75 with the Flare burns x1.5 (2026-11-01; was 1.5) */ // the meteor's hit, x the tower's damage - ONE number since the tier redesign (2026-10-24; was Meteor's 1.5 2 3 80, V 800 - the curve's now)
-const IFR_FAN_N = 9, IFR_FAN_CAP = 9; /* NINE (2026-11-07, owner "B": the 0/3/6-pt band levers, Leader: "IFR shards 6 -> 9"; marks 0 pts in band, 3 pts shield fixed, 9/13 unchanged; Meteor V stays apart by its big x4 meteors, not the count) */ /* EVERY meteor bursts into 6, tier 0 too; only Meteor's capstone bursts bigger, and nothing splits again (owner, 2026-10-26: "IFR meteor burst should start at 6" / "Does not increase burst size except for capstone / And capstone does not make it split again"); was IFR_FAN 0 2 6 7 7 8, V 9 + the fissure */
+/* (IFR_FAN_N / IFR_FAN_CAP, nine shards at every tier, gone with the meteor decouple 2026-11-10: IFR_FAN_BY) */ /* NINE (2026-11-07, owner "B": the 0/3/6-pt band levers, Leader: "IFR shards 6 -> 9"; marks 0 pts in band, 3 pts shield fixed, 9/13 unchanged; Meteor V stays apart by its big x4 meteors, not the count) */ /* EVERY meteor bursts into 6, tier 0 too; only Meteor's capstone bursts bigger, and nothing splits again (owner, 2026-10-26: "IFR meteor burst should start at 6" / "Does not increase burst size except for capstone / And capstone does not make it split again"); was IFR_FAN 0 2 6 7 7 8, V 9 + the fissure */
+// THE METEOR DECOUPLE (owner, 2026-11-10: "no miniflares within non-main circles / move the extra splitting into meteor / this way, meteor won't
+// need to increase fire rate, only direct hit damages and shard counts / this way, we can decouple meteor levels from the other abilities /
+// compensate hellfire path by increasing number of miniflares within main circle"): each IFR path's power comes from its own tier (Ifrit's
+// paths may each carry a per-tier table, owner 2026-11-09). By Meteor tier 0..V: the burst's shards (IFR_FAN_BY), each shard's own re-split into
+// small meteors that only hit (IFR_RESPLIT, IFR_RESPLIT_K x the meteor's hit, spawning nothing) and the meteors' direct hit (IFR_METEOR_HK); the
+// charge rate no longer rises with Meteor. Shard circles keep their ring hit but light no small flares; the MAIN circle lights IFR_HF_MAIN x as
+// many by Hellfire tier (Hellfire 0 lights none). let: the balance runs tune them
+let IFR_FAN_BY = [9, 9, 10, 11, 12, 13], IFR_RESPLIT = [0, 0, 2, 2, 3, 3], IFR_RESPLIT_K = 0.25, IFR_RESPLIT_DEG = 25;
+let IFR_METEOR_HK = [1, 1.3, 1.7, 2.2, 2.9, 3.8], IFR_HF_MAIN = [1, 10, 10, 10, 10, 10];
 // METEOR (owner, 2026-10-26: "Increasing levels of meteor increases charge rate and allows more meteors to be stored in orbit"), 0..V written whole:
 // x the charge rate, and the meteors held charged in orbit (they launch IFR_LAUNCH_GAP s apart once an enemy is in range)
-const IFR_METEOR_RATE = [1, 1.2, 1.4, 1.6, 2.34, 2.86] /* IV, V x1.3 (2026-10-27, late rows at 13 points: 101-109 fast leaked 63% -> 21, 111-119 shield 81 -> 49; Ball speed x1.5 helped nothing) */, IFR_STORE = [1, 2, 3, 4, 5, 6] /* one more EVERY Meteor tier (owner, 2026-10-26: "IFR meteor storage should always increase per tier in meteor"; was 1 2 2 3 3 4) */, IFR_LAUNCH_GAP = 0.15; // Meteor: the meteors the first impact fans out round 360 degrees (owner, 2026-10-20: "initial fan counts should be something like 0:5 1:7 2:9 3:12"; VI 12, its fissure the capstone)
+const IFR_STORE = [1, 2, 3, 4, 5, 6] /* one more EVERY Meteor tier (owner, 2026-10-26: "IFR meteor storage should always increase per tier in meteor"; was 1 2 2 3 3 4) */, IFR_LAUNCH_GAP = 0.15; // Meteor: the meteors the first impact fans out round 360 degrees (owner, 2026-10-20: "initial fan counts should be something like 0:5 1:7 2:9 3:12"; VI 12, its fissure the capstone)
 const IFR_FAN_T = 0.4, IFR_FAN_SD = 0.3, IFR_FAN_MAX_S = 1; // the fan's release times: a bell round FAN_T s, sd FAN_SD, kept in [0, FAN_MAX_S] ("increase timing jitter to 0.3s around 0.4s")
 let IFR_HOME_R = 400; // BATTERY 6.6.0: 50 -> 400 (owner's lever: homing distance). (let: the sims sweep it) // HOMING (owner, 2026-10-20: "start homing in on target at 50u"): an enemy whose body comes within this of a meteor is locked and the meteor steers straight at it
 const IFR_FISSURE_DEG = 30, IFR_FLY_S = 10, IFR_FLY_R = 1400; // the capstone's two fissure meteors fly this far either side of the one that hit; a meteor's longest flight (s); the simulator's 'off screen' (no view): this far from the core
@@ -96,18 +105,18 @@ function ifrSkillStats(t, s, b) {
   s.targets = 1;
   // EACH AXIS ITS OWN PART, ITS OWN DAMAGE (owner, 2026-10-20: "axes don't feel unique nor impactful"), every hit x TOWERS.ifr.dmg:
   // Meteor the meteors, Hellfire the fire the first one leaves, Flare (id firaga) the flares
-  s.fan = m >= CAPSTONE_TIER ? IFR_FAN_CAP : IFR_FAN_N; s.fissure = false; s.store = IFR_STORE[m];
-  s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K0;
+  s.fan = IFR_FAN_BY[m]; s.resplit = IFR_RESPLIT[m]; s.fissure = false; s.store = IFR_STORE[m];
+  s.ballV = IFR_BALL_V[m]; s.ballR = IFR_BALL_RAD[m]; s.routeK = IFR_ROUTE_K0 * IFR_METEOR_HK[m];
   // THE FIRE AT HELLFIRE 0 (owner, 2026-11-05: "ok IFR should start with the hellfire circle, lighting no flares, so it extinguishes the moment
   // it reaches full size"): every IFR's first impact grows the circle (its ring hit), but only Hellfire I+ lights its flares (s.fireFlares)
   s.fire = true; s.fireFlares = h > 0; s.flares = f > 0; // the flares are Flare's (tier redesign 2026-10-24)
-  s.fireR = Math.max(s.ballR * IFR_FIRE_FLOOR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireDens = IFR_FIRE_DENS[h]; s.fireHK = IFR_FIRE_HK; 
+  s.fireR = Math.max(s.ballR * IFR_FIRE_FLOOR, IFR_FIRE_R[h]); s.fireV = IFR_FIRE_V[h]; s.fireDens = IFR_FIRE_DENS[h]; s.hfMain = IFR_HF_MAIN[h]; s.fireHK = IFR_FIRE_HK; 
   s.triple = f >= CAPSTONE_TIER /* Flare V (the name is the old three-flares capstone's): ONE flare a landing + its circle (IFR_RING_AT) */; s.hfK = f ? IFR_HF_FK : 1;
   s.bigMeteor = m >= CAPSTONE_TIER; s.chains = h >= CAPSTONE_TIER ? IFR_HF_RINGS.length : 0; // Meteor V: every IFR_BIG_EVERY-th launch is big; Hellfire V: a fire's chains
   s.beamL = IFR_BEAM_L[f]; s.beamW = IFR_BEAM_W[f]; const ft = ifrFlareTiming(f); s.burnS = ft.burn; s.tickS = ft.tick; s.flareK = IFR_TICK_K0 * ft.k; // (a third as long, the same per flare - ifrFlareTiming)
   // every hit is st.dmg x its axis's K AT THE HIT, so what towerStats does to dmg after this (the DAM core power, an aura) reaches all of them
   const c = curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.range = b.range * RANGE_BONUS * c.range; // the STAT CURVE (tier redesign 2026-10-24)
-  s.chargeS = IFR_CHARGE_S0 / c.rate / IFR_METEOR_RATE[m]; s.chargeS /= IFR_RATE_K; s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
+  s.chargeS = IFR_CHARGE_S0 / c.rate; s.chargeS /= IFR_RATE_K; /* (no Meteor rate rise since the decouple, 2026-11-10) */ s.rate = 1 / s.chargeS; // the card's Damage and Rate: the base every hit multiplies, meteors a second
   s.skill = true;
 }
 // ---------- the charge ----------
@@ -217,6 +226,12 @@ function ifrFan(born, st, x, y, skip) {
   const n = st.fan, a0 = Math.random() * 2 * Math.PI;
   for (let i = 0; i < n; i++) born.push([x, y, a0 + i * 2 * Math.PI / n, skip, 1, ifrFanDelay(n)]);
 }
+// a shard's RE-SPLIT (the meteor decouple, 2026-11-10): st.resplit small meteors fanned IFR_RESPLIT_DEG apart round its heading, each hitting
+// once for IFR_RESPLIT_K of the meteor's hit and spawning nothing (gen 2)
+function ifrResplit(born, st, b, skip) {
+  const n = st.resplit || 0, a0 = Math.atan2(b.vy, b.vx), d = IFR_RESPLIT_DEG * Math.PI / 180;
+  for (let i = 0; i < n; i++) born.push([b.x, b.y, a0 + (i - (n - 1) / 2) * d, skip, 2, 0]);
+}
 // a fan meteor's release: the bell, its mean, sd and cap all x the root of the fan's size over the untaken one's (owner, 2026-10-20: "spread them out more in time, the more of them there are")
 const ifrFanDelay = n => { const k = Math.sqrt(n / IFR_FAN_REF); return Math.min(IFR_FAN_MAX_S * k, Math.max(0, k * (IFR_FAN_T + IFR_FAN_SD * ifrNormal()))); };
 // the main meteor lands: a flare there - at the Flare capstone also its CIRCLE, IFR_RING_AT of the way up the flare's spokes (f.circ: its radius;
@@ -264,22 +279,22 @@ function stepIfrBalls(t, st, dt) {
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 <= r * r) { hit = e; break; }
     }
     if (hit) {
-      const amt = st.dmg * st.routeK * (b.big ? IFR_BIG_HIT_K : 1), h0 = hitFrom; /* (b.big: Meteor V's big one, its first hit x IFR_BIG_HIT_K) */ HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
+      const amt = st.dmg * st.routeK * (b.big ? IFR_BIG_HIT_K : 1) * (b.gen === 2 && !b.fis ? IFR_RESPLIT_K : 1), h0 = hitFrom; /* (b.big: Meteor V's big one, its first hit x IFR_BIG_HIT_K) */ HIT_AT.x = b.x - b.vx; HIT_AT.y = b.y - b.vy; hitFrom = HIT_AT;
       try { damage(hit, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(hit, t, st, amt);
       b.left = 0; b.hitId = hit.id; /* the fire it lights rides this enemy (ifrImpact) */
       if (!b.gen) { /* THE FIRST IMPACT (owner, 2026-10-20: "only first impact causes hellfire"): the fire and the 360-degree fan */
         b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, hit.id);
-      } else { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b, false); }
-      if (b.gen === 1 && st.fissure) { const a = Math.atan2(b.vy, b.vx), d = IFR_FISSURE_DEG * Math.PI / 180; born.push([b.x, b.y, a - d, hit.id, 2, 0], [b.x, b.y, a + d, hit.id, 2, 0]); } /* the capstone: a fan meteor's hit fissures */
+      } else if (b.gen === 1) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b, false); ifrResplit(born, st, b, hit.id); } /* a shard: its circle, then its re-split; a re-split meteor only hits */
+      if (b.gen === 1 && st.fissure) { const a = Math.atan2(b.vy, b.vx), d = IFR_FISSURE_DEG * Math.PI / 180; born.push([b.x, b.y, a - d, hit.id, 2, 0, true], [b.x, b.y, a + d, hit.id, 2, 0, true]); } /* the capstone: a fan meteor's hit fissures */
     } else if (atCorpse) { /* at its dead target's spot: the launched one bursts there (fire, the fan); a fan meteor just goes */
       b.left = 0;
       b.ax = b.x; b.ay = b.y; if (!b.gen) { ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } else ifrImpact(t, st, b, false);
-    } else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b, false); } /* its fuse: it bursts mid-flight */
+    } else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; b.ax = b.x; b.ay = b.y; if (b.gen === 1) { ifrImpact(t, st, b, false); ifrResplit(born, st, b, null); } } /* its fuse: it bursts mid-flight */
     else if (!b.gen && b.left <= 0) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } /* the launched one never goes silently: out of time, it bursts where it is */
     else if ((b.gen || (b.lock == null && b.cx == null)) && !ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst - never the launched one while it hunts (its seen target may sit where the camera does not reach; owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening") */
   }
   keepLive(t.ifrBalls);
-  for (const [x, y, a, id, gen, wait] of born) ifrMeteor(t, st, x, y, a, gen, id, wait);
+  for (const [x, y, a, id, gen, wait, fis] of born) { ifrMeteor(t, st, x, y, a, gen, id, wait); if (fis) t.ifrBalls[t.ifrBalls.length - 1].fis = true; }
 }
 // THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), no flare (owner, 2026-10-20: "no flare on initial meteor hit"). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)
 // EVERY METEOR'S landing (owner, 2026-10-20: "all meteors, main incl, each create their own hellfire"): a flare, and a Hellfire of its own -
@@ -289,7 +304,7 @@ function stepIfrBalls(t, st, dt) {
 const IFR_MAIN_FLARE_K = 3; // the main flare's hit x this (marks, 9 pts 101-119: x(1 + the burst) = x7 took IFR's leak to 0/2/2/34, x2 lost its checks; x3 held its row)
 function ifrImpact(t, st, b, main = true) {
   const hk = IFR_SHARD_HK / Math.sqrt(1 + st.fan); // IFR_SHARD_HK: x0.8 with the nine shards (2026-11-07) - their fires keep the six-shard total
-  if (st.fire) (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens * hk, hk, win: st.burnS, big: main && st.triple, nf: !st.fireFlares, left: 1, eid: b.hitId ?? null, ch: st.chains || 0, seed: ifrHash(b.ax, b.ay, t.shots || 0, b.flown || 0) });
+  if (st.fire) (t.ifrFires ||= []).push({ x: b.ax, y: b.ay, r: Math.min(b.r, st.fireR), R: st.fireR, v: st.fireV, dens: st.fireDens * hk * (main ? st.hfMain || 1 : 1), hk, win: st.burnS, big: main && st.triple, nf: !st.fireFlares || !main, left: 1, eid: b.hitId ?? null, ch: st.chains || 0, seed: ifrHash(b.ax, b.ay, t.shots || 0, b.flown || 0) });
   // ONLY THE MAIN METEOR LIGHTS THE FLARE (owner, 2026-11-05: "for IFR, only main meteor should cause the yellow flare, move all flare damage
   // to main flare"): the burst's meteors light none, and the main one's flare (Flare V: its three) carries the landings' damage, x3 (marks: x(1 + the
   // burst) - its size unchanged (owner-locked, 2026-10-20). Was: every meteor lit its own (owner, 2026-10-20)

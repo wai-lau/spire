@@ -120,7 +120,7 @@ const DESCRIBE = {
   // IFR (owner, 2026-10-20): Meteor the fan (Impact: each fan hit splits in two); Hellfire the fire, wider and longer (its capstone: six
   // towers across); Flare the flares - bigger, hotter, longer (its capstone: the flare's circle, IFR_RING_AT)
   ifr(sk) {
-    const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0, n = m >= CAPSTONE_TIER ? IFR_FAN_CAP : IFR_FAN_N, st = IFR_STORE[m];
+    const m = sk.meteor || 0, h = sk.hellfire || 0, f = sk.firaga || 0, n = IFR_FAN_BY[m], st = IFR_STORE[m];
     // 100% = a meteor's hit (IFR_ROUTE_K0 x st.dmg); a fire flare's hit shrinks as the burst grows (hk), the fire's wall is IFR_RING_HIT_K of it
     const hf = IFR_TICK_K[0] * (f ? IFR_HF_FK : 1) * IFR_FIRE_HK * IFR_HF_HIT_K * IFR_SHARD_HK / Math.sqrt(1 + n) / IFR_ROUTE_K0; // x IFR_SHARD_HK as ifrImpact's hk (the nine shards, 7.9.0; the card left it out until 2026-11-08)
     const fr = Math.max(IFR_BALL_RAD[m] * IFR_FIRE_FLOOR, IFR_FIRE_R[h]), n0 = Math.max(1, Math.round(IFR_FIRE_FLARES * IFR_FIRE_DENS[h] * (fr / IFR_FIRE_FLARE_R0) ** 2)), nf = Math.max(IFR_FIRE_MIN, n0); // as stepIfrFires lights them
