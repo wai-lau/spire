@@ -262,7 +262,7 @@ function updateHud() {
   setText($("asp-wave"), G.wave); // the HUD keeps Arabic numerals (owner); the upcoming-wave list is Roman
   updateAutoWait();
   // BEST is the furthest WAVE reached (owner: no one cares about score; there is none since 2026-10-29)
-  setText($("asp-best"), Math.max(bestWave(), G.wave));
+  { const b = typeof bestNow === "function" ? bestNow() : best, el = $("asp-best"), asc = !!b.ascended; setText(el, asc ? "ASCENDANT" : Math.max(bestWave(), G.wave)); el.classList.toggle("asp-best-asc", asc); } // an Ascendant of this major: the word, in the board's gold (owner, 2026-11-09)
   flashBuild();
   for (const k of KINDS) {
     const btn = $("asp-tw-" + k);

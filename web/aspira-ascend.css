@@ -62,3 +62,11 @@
 .asp-asc-k[data-kind="grv"] { color: hsl(var(--asp-violet-hsl)); }
 .asp-asc-k[data-kind="crr"] { color: hsl(var(--asp-blue-hsl)); }
 .asp-asc-k[data-kind="ifr"] { color: hsl(var(--asp-ifr-hsl)); }
+/* the BEST stat opens the board (owner, 2026-11-09); an Ascendant of this major reads the word in the board's gold */
+#asp-best { cursor: pointer; pointer-events: auto; }
+#asp-best.asp-best-asc { color: hsl(var(--orange-hsl)); }
+#asp-ascpop { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: hsl(var(--bg-hsl) / 0.45); z-index: var(--z-modal); pointer-events: auto; }
+#asp-ascpop[hidden] { display: none; }
+#asp-ascpop #asp-asc { max-height: 90dvh; padding: var(--space-3); background: hsl(var(--bg-hsl) / 0.45); }
+#asp-ascpop #asp-asc { display: flex; flex-direction: column; align-items: center; }
+#asp-ascpop #asp-asc > #asp-asc-board { flex: 0 1 auto; min-height: 0; } /* its own height here (the end screen gives it the spare height) */

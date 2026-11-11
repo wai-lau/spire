@@ -104,6 +104,7 @@ async function ascSend(ev) {
     if (!r.ok) throw new Error(r.status === 429 ? "Too many posts. Try again later." : "Could not save.");
     const res = await r.json();
     if (ascForm) ascForm.remove(); ascForm = null; note.textContent = initials + (won ? " has ascended." : " is on the board.");
+    if (res.entry && typeof bestRow === "function") bestRow(res.entry);
     ascBoard(res.entries || [], res.entry);
   } catch (e) { note.textContent = e.message; input.disabled = false; }
 }
@@ -164,3 +165,28 @@ function ascCheck(id, on, label, used) {
   b.hidden = !best.ascended; // ASCENDANTS only (owner, 2026-10-13: "non-ascendants do not get that checkbox")
   if (b.dataset.html !== h) { b.dataset.html = h; b.innerHTML = h; b.setAttribute("aria-checked", String(on)); }
 }
+
+// BEST BY MAJOR (owner, 2026-11-09: "BEST in HUD should only count this major version" / "if they beat the game during current major version, it
+// should just say ASCENDANT in bright yellow (no number)"): best.byMajor[major] = { wave, ascended, row } beside the all-time best (which still
+// gates the Ascendant boxes); the major as TOP PLAYERS reads it (ascMajor - the release-7 renumber holds); row: the player's best posted entry
+const ascMajorNow = () => ascMajor({ ver: ascVerNow(), ts: Date.now() / 1000 });
+const bestNow = () => (best.byMajor && best.byMajor[ascMajorNow()]) || { wave: 0 };
+function bestKeep(wave, won) {
+  const M = ascMajorNow(), b = ((best.byMajor ||= {})[M] ||= { wave: 0 });
+  b.wave = Math.max(b.wave || 0, wave); if (won) b.ascended = true;
+}
+function bestRow(e) { // a posted entry: kept if it ranks above the one kept (wins by lives, then the wave - ascPendingAt's order)
+  const b = ((best.byMajor ||= {})[ascMajor(e)] ||= { wave: 0 }), key = x => (ascWon(x) ? [1, x.lives] : [0, x.wave]), [w, v] = key(e), o = b.row && key(b.row);
+  if (!o || w > o[0] || (w === o[0] && v > o[1])) b.row = { ts: e.ts, initials: e.initials, lives: e.lives, wave: e.wave, won: e.won };
+  try { localStorage.setItem("aspira.best", JSON.stringify(best)); } catch (_e) {}
+}
+// BEST OPENS THE BOARD (owner, 2026-11-09: "clicking BEST wave in the HUD should open the TOP players box with current best row highlighted if there
+// is one for this major version"): the board in a panel of its own over the game, on this major's page, the kept row highlighted; any tap closes it
+function bestBoard() {
+  let pop = $("asp-ascpop"); if (!pop) { pop = document.createElement("div"); pop.id = "asp-ascpop"; ($("asp") || document.body).appendChild(pop); pop.addEventListener("click", ev => { if (!(ev.target.closest && ev.target.closest(".asp-asc-chev"))) bestBoardClose(); }); }
+  const box = ascBox(); pop.appendChild(box); box.hidden = false; box.innerHTML = ASC_TITLE + '<div id="asp-asc-board"></div>'; pop.hidden = false;
+  const row = bestNow().row;
+  (async () => { try { const r = await fetch(ASC_URL); if (r.ok) ascBoard((await r.json()).entries || [], row || null); } catch (_e) { ascBoard([], row || null); } })();
+}
+function bestBoardClose() { const pop = $("asp-ascpop"), box = $("asp-asc"); if (box && $("asp-ov-right")) { $("asp-ov-right").before(box); box.hidden = true; } if (pop) pop.hidden = true; }
+if (typeof document !== "undefined") document.addEventListener("click", ev => { const s = ev.target.closest && ev.target.closest("#asp-best"); if (s) bestBoard(); });

@@ -155,6 +155,7 @@ function winGame() {
   G.over = true; G.won = true;
   best.ascended = true; // (the title read ASCENDANT from then on until 2026-10-23 - the boss name now, aspira-ui.js)
   if (G.wave > best.wave) best.wave = G.wave;
+  if (typeof bestKeep === "function") bestKeep(G.wave, true); // this major's record (aspira-ascend.js)
   try { localStorage.setItem("aspira.best", JSON.stringify(best)); } catch (_e) {}
   if (typeof renderEndStats === "function") renderEndStats();
   showOverlay("ascendant", // the win title (owner, 2026-10-06; was "the core holds")
@@ -165,6 +166,7 @@ function gameOver() {
   G.over = true;
   sfx("over");
   if (G.wave > best.wave) best.wave = G.wave;
+  if (typeof bestKeep === "function") bestKeep(G.wave, false); // this major's record (aspira-ascend.js)
   try { localStorage.setItem("aspira.best", JSON.stringify(best)); } catch (_e) {}
   if (typeof renderEndStats === "function") renderEndStats(); // the end screen's tower + leak stats (aspira-endstats.js)
   if (typeof showAscendants === "function") showAscendants(); // a loss: THE ASCENDANTS board, no entry (aspira-ascend.js)
