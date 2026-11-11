@@ -13,7 +13,7 @@ const ASC_ROWS = 11; // the board's height in rows (ascRender)
 const ASC_MAJOR_FROM = [[Date.UTC(2026, 9, 15) / 1000, 5], [Date.UTC(2026, 9, 11) / 1000, 4], [0, 3]]; // [from ts, major], newest first - rows with no version only
 const ascMajor = e => { const m = /^(\d+)\./.exec((e.ver || "")); if (m) return +m[1]; const ts = e.ts || 0; return (ASC_MAJOR_FROM.find(([t]) => ts >= t) || [0, 0])[1]; };
 const ascVerNow = () => { const el = document.querySelector(".asp-ver span"); return el ? el.textContent.trim() : ""; };
-const ASC_TITLE = '<div class="asp-asc-head"><button type="button" class="asp-asc-chev" data-d="-1" aria-label="Older version">\u2039</button><p class="asp-asc-title">Top players</p><button type="button" class="asp-asc-chev" data-d="1" aria-label="Newer version">\u203A</button></div>';
+const ASC_TITLE = '<div class="asp-asc-head"><button type="button" class="asp-primary asp-asc-chev" data-d="-1" aria-label="Older version">\u2039</button><p class="asp-asc-title">Top players</p><button type="button" class="asp-primary asp-asc-chev" data-d="1" aria-label="Newer version">\u203A</button></div>';
 const asc = { all: [], mine: null, pending: null, major: 0 };
 function ascPage(d) { // a chevron: the next major with rows (or your own), d -1 older, +1 newer
   const ms = ascMajors(), i = ms.indexOf(asc.major), j = i + d;
@@ -56,7 +56,7 @@ function ascRender() {
   if (!board) return;
   const ms = ascMajors(), i = ms.indexOf(asc.major), title = document.querySelector("#asp-asc .asp-asc-title");
   for (const b of document.querySelectorAll("#asp-asc .asp-asc-chev")) b.disabled = +b.dataset.d < 0 ? i <= 0 : i >= ms.length - 1;
-  if (title) title.textContent = "Top players \u00B7 v" + asc.major;
+  if (title) { title.textContent = "Top players"; const v = document.createElement("span"); v.className = "asp-asc-maj"; v.textContent = "v" + asc.major; title.append(v); } // two lines, the chevrons as tall as both (owner, 2026-11-09)
   board.textContent = "";
   const mine = asc.mine, pending = asc.pending && ascMajor(asc.pending) === asc.major ? asc.pending : null;
   let entries = asc.all.filter(e => ascMajor(e) === asc.major);

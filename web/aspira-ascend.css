@@ -2,9 +2,12 @@
    Ascendants (wins) in gold, everyone else in green, tower names in their own colours */
 #asp-asc[hidden] { display: none; }
 #asp-asc { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); } /* (its margin-top, room below Play again, went to the leak list with the swap - 2026-10-19) */
-.asp-asc-head { display: flex; align-items: center; gap: var(--space-2); } /* the title between its chevrons (owner, 2026-11-09: one major version a page) */
-#asp .asp-asc-chev { background: none; border: 0; padding: 0 var(--space-2); font: inherit; font-size: var(--fs-sm); color: hsl(var(--orange-hsl)); cursor: pointer; pointer-events: auto; }
+.asp-asc-head { display: flex; align-items: stretch; gap: var(--space-2); } /* the title between its chevrons (owner, 2026-11-09: one major version a page) */
+/* THE CHEVRONS ARE BUTTONS (owner, 2026-11-09: "top players chevrons should be bigger and span both lines, make them buttons styled like the enter,
+   but don't flash"): .asp-primary (the enter's outline and colour), as tall as the title's two lines, never flashing */
+#asp .asp-asc-chev { padding: 0 var(--space-3); font-size: var(--fs-xl); cursor: pointer; pointer-events: auto; animation: none; }
 #asp .asp-asc-chev:disabled { opacity: 0.3; cursor: default; } /* (no older / newer major with rows) */
+.asp-asc-title .asp-asc-maj { display: block; text-align: center; } /* the major version, the title's second line */
 .asp-asc-title { font-size: var(--fs-sm); letter-spacing: var(--tracking-mega); text-transform: uppercase; color: hsl(var(--orange-hsl)); }
 #asp-asc-form { display: flex; gap: var(--space-2); }
 #asp-asc-form[hidden] { display: none; }
@@ -45,7 +48,9 @@
 .asp-asc-table td.asp-asc-ver { font-size: 0.75em; opacity: 0.6; font-variant-numeric: tabular-nums; } /* the version played (owner, 2026-10-16) */
 .asp-asc-gold { color: hsl(var(--orange-hsl)); }
 .asp-asc-green { color: hsl(var(--green-hsl)); }
-.asp-asc-mine td:first-child { text-decoration: underline; }
+/* YOUR ROW, AFTER POSTING, HIGHLIGHTED WHOLE (owner, 2026-11-09: "underline of initials sticks out, instead of doing this, after submitting, row should be highlighted") */
+.asp-asc-mine.asp-asc-green td { background: hsl(var(--green-hsl) / 0.12); }
+.asp-asc-mine.asp-asc-gold td { background: hsl(var(--orange-glow-hsl) / 0.25); }
 .asp-asc-pending td { border-block: var(--space-px) solid currentcolor; } /* YOUR row, the form in it (owner, 2026-10-22) - framed in its own colour */
 .asp-asc-pending td:first-child { text-decoration: none; }
 .asp-asc-pending #asp-asc-form { align-items: center; }
