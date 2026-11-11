@@ -32,6 +32,7 @@ function latticeSlots(m, R, size, at) {
 // Death (owner, 2026-11-05: "Death 1/2 of each wave at the same time + death itself"; 2026-11-09: her escort cut to a third): a third of a plain
 // wave of each of the four types, all at once round her (100 games bosses on, adaptive buyer: her depth 0.74 -> 0.47, runs ending there 17 -> 8%)
 const FLEET_SCATTER = { lovers: [["armor", 1]], death: [["fast", 1 / 3], ["swarm", 1 / 3], ["armor", 1 / 3], ["shield", 1 / 3]] };
+let DEATH_ESC_HP = 1; // Death's escort HP multiplier: a sim lever (ASPIRA_PATCH="DEATH_ESC_HP = 0.5;"), x1 = unchanged
 const SCATTER_W = 52, SCATTER_U = 14, SCATTER_UK = { death: 0.35 }; // (Death's host packed ~3x tighter along the lane: "at the same time")
 function bossScatter(e, n, R, parts = FLEET_SCATTER[e.arcana], rise = false) { // rise: Judgement's second coming - all behind her, held at the mouth, no queueFleet (she is already on the board)
   const bodies = rise ? 1 : bossCount(n), span = [R, R], s0 = entryS(e.pi);
@@ -39,7 +40,7 @@ function bossScatter(e, n, R, parts = FLEET_SCATTER[e.arcana], rise = false) { /
   for (const [k, count] of all) for (let c = 0; c < count; c++) {
     spawnEnemy(k, n, e.pi, e.ang || 0);
     const m = G.enemies[G.enemies.length - 1], r = ENEMIES[k].size;
-    m.max = Math.floor(m.max * BOSS_HEFT); m.hp = m.max; // (BOSS_HEFT, as every escort)
+    m.max = Math.floor(m.max * BOSS_HEFT * (e.arcana === "death" ? DEATH_ESC_HP : 1)); m.hp = m.max; // (BOSS_HEFT, as every escort; DEATH_ESC_HP her own lever)
     let lat, ahead; do { lat = (Math.random() * 2 - 1) * SCATTER_W; ahead = (Math.random() - (rise ? 1 : 0.5)) * along; } while (Math.hypot(lat, ahead) < R + r + FLEET_GAP);
     m.form = true; m.lat = lat; m.s = e.s + ahead; m.ahead = ahead; m.aheadC = 0;
     span[0] = Math.max(span[0], ahead + r); span[1] = Math.max(span[1], -ahead + r);
