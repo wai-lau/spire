@@ -1,6 +1,6 @@
 # THE SPIRE
 
-A spiral tower defence game for the phone. You get three towers, seven kinds to choose them from, and 120 waves to survive.
+A spiral tower defence game for the phone. You build up to three towers from seven kinds and try to survive 120 waves.
 
 **Play it at [wai-lau.net/spire](https://wai-lau.net/spire).** You need a browser with WebGL. It was built for phones and plays on a desktop too. The page asks you to pass a Cloudflare Turnstile check first.
 
@@ -11,19 +11,19 @@ A spiral tower defence game for the phone. You get three towers, seven kinds to 
 Enemies come down spiral lanes toward the core in the middle, and every one that reaches it costs you lives. You start with 18.
 
 ```mermaid
-flowchart LR
-  build["Tap an open slot<br/>to build a tower"] --> wave["A wave warps in"]
-  wave --> kills["Kills pay credits"]
-  kills --> spend["Build, or buy<br/>upgrades"]
+flowchart TD
+  build["Build a tower"] --> wave["Wave comes"]
+  wave --> pay["Earn credits"]
+  pay --> spend["Build or upgrade"]
   spend --> wave
-  wave -. "every 12th wave" .-> boss["A boss and its fleet"]
+  wave -. "every 12th" .-> boss["Boss"]
   boss --> wave
-  boss -- "the 10th boss falls (wave 120)" --> win(["Win"])
-  wave -- "lives reach 0" --> lose(["Lose"])
+  boss -- "wave 120" --> win(["Win"])
+  wave -- "0 lives" --> lose(["Lose"])
 ```
 
-- You can have three towers at once. Each costs more than the one before, and you can sell one back for most of what you paid.
-- You can drag a tower around its slot at any time, as far as its leash reaches, and it keeps firing while it moves.
+- Three towers is the limit. Each costs more than the one before, and selling one gets back most of what you paid.
+- Drag a tower around its slot whenever you like, as far as its leash reaches. It keeps firing while it moves.
 - Each tower has three upgrade tracks of five tiers. It can buy 13 tiers in all, so one track reaches tier V (the capstone) and the other two stop at IV.
 - Waves are fixed: wave 30 sends the same enemies in every game. Crits, stuns and the visuals are the random parts.
 - The bosses are the Major Arcana. One comes every 12 waves, from The Star at wave 12 to The Devil at wave 120, and each has its own trick and a haiku that hints at it. Two of them give the core a power: Temporal Drive freezes the board for a few seconds, and Orbital Relay makes one tower fire as five.
@@ -109,7 +109,7 @@ The simulator runs the real game code headless with a scripted player, as fast a
 node scripts/aspira-sim/sim.mjs '{"mix":{"arc":1,"frz":1,"sol":1}}' 1 12
 ```
 
-The balance work is done with it: the counter matrix behind the build cards' marks, every team of three, the boss fits and the economy. [`scripts/aspira-sim/README.md`](scripts/aspira-sim/README.md) lists every script.
+Balance work runs on it: the counter matrix behind the build cards' marks, every team of three, the boss fits and the economy. [`scripts/aspira-sim/README.md`](scripts/aspira-sim/README.md) lists every script.
 
 ### Committing
 
