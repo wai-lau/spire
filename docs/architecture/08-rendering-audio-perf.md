@@ -82,6 +82,13 @@ one is whole. SOL's blades follow the same rule. **Under the enemies, over its p
 
 ### 8.4 Audio
 
+- **The owner's picks of 2026-11-09** sit in code (`SFX_FILES`, `aspira-sfx.js`), so the droplet's index.json stays as it is and only the samples go up: shield death TSCDth00 ("Shield death sound: TSCDth00.wav"), armor death pabDth00 ("pabDth00.wav death sound for armor"), the boss bar's tile slam takes armor's old TTaFir00 ("current armor death sound, use it for the boss hp tile slam"), boss death pcaDth01 ("pcaDth01.wav boss death sound"), every click BUTTON.WAV ("clicking things should play the BUTTON.WAV sound"), a refused buy PError ("PError.wav for invalid commands like when you don't have enough money"), a win PRescue ("PRescue.wav after beating the game"); clicks, errors, the win and a boss's death play at any game speed.
+- **SOL fires the Yamato** ("replace SOL firing sound with TBaYam02.wav" / "keep the charge part of the previous effect, then fire the yamato"): PabCag00's build-up, faded at its own shot (`SOL_SHOT_AT`), then TBaYam02 on the pulse; a death re-lock hands the build-up on (`solSfxRelock`).
+- **Swarm deaths by size** ("Swarm death sound should change in pitch and loudness depending on swarm unit size (use biggest if multiple die at the same time)"): one sound a game step, set by the biggest swarmer (`swarmKillSfx`: gain x size^0.5, pitch x size^-0.35, clamped).
+- **ARC's chains** ("chains should also play the attack sound, but relative to amount of damage carried over (cap vol 80% of initial beam). One sound per chain level, not one per enemy struck!"): one ARC sample a hop depth at min(0.8, its share of the strike), 50 ms a level apart (`arcChainSfx`).
+- **IFR** plays its whole 3.6 s roar, up to 5 at once, the oldest out first (`SFX_FIFO`, 2026-11-09); a card's demo plays the tower's sounds, faded out with its card (`sfxCutScene`).
+
+
 Synthesised WebAudio through a limiter (`aspira-sfx.js`), created on the first gesture:
 voice-limited, per-sound gaps, **at most 3 copies of a tower's sound at once**, density kept
 at any speed. Mute and volume persist. Optional **Brood War samples** from the owner's own

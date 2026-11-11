@@ -191,6 +191,7 @@ const closeCard = () => { ui.sel = null; refreshPanels(); };
 // cost (optional): also SAY so (owner, 2026-10-07) - "need Nc more" on the
 // button for NEED_MS, long enough to read, then gone
 function noFunds(btn, cost) {
+  sfx("error"); // (owner, 2026-11-09: "PError.wav for invalid commands like when you don't have enough money")
   if (cost != null) {
     const n = btn.querySelector(".asp-need") || btn.insertAdjacentElement("afterbegin", document.createElement("div"));
     n.className = "asp-need"; n.innerHTML = "need " + cr(short(Math.ceil(cost - G.money))) + " more";

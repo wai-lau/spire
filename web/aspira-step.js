@@ -152,7 +152,7 @@ function step(dt) {
 // Beams, rings and sparks age in GAME time (they follow the 1/2/3x speed);
 const WIN_WAVE = 120; // the 10th boss (a boss every STAR_EVERY 12 since 2026-10-12; was 100)
 function winGame() {
-  G.over = true; G.won = true;
+  G.over = true; G.won = true; if (typeof sfx === "function") sfx("win"); // (owner, 2026-11-09: "PRescue.wav after beating the game")
   best.ascended = true; // (the title read ASCENDANT from then on until 2026-10-23 - the boss name now, aspira-ui.js)
   if (G.wave > best.wave) best.wave = G.wave;
   if (typeof bestKeep === "function") bestKeep(G.wave, true); // this major's record (aspira-ascend.js)

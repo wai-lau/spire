@@ -305,7 +305,8 @@ function kill(e, t) {
   if (t) t.kills = (t.kills || 0) + 1;
   const mul = (e.markT > 0 ? e.markMul : 1) * (G.power.MNY > 0 ? 2 : 1) * (e.slowT > 0 && e.siphon ? e.siphon : 1);
   const b = e.wave >= WIN_WAVE ? 0 : e.bounty * mul; // DEATH's wave PAYS NOTHING - no credits or drop (owner, 2026-10-17: "death should not give any rewards")
-  sfxFor("kill", e.type); // each enemy type its own death sound where one is mapped ("kill.fast" ..., owner 2026-10-16), else the shared one
+  if (e.type === "swarm" && typeof swarmKillSfx === "function") swarmKillSfx(e); else sfxFor("kill", e.type); // each enemy type its own death sound where one is mapped ("kill.fast" ..., owner 2026-10-16), else the shared one; swarm by size (owner, 2026-11-09)
+  if (e.arcana) sfx("bossdeath"); // a boss dying (owner, 2026-11-09: "pcaDth01.wav boss death sound")
   creditDot(e.x, e.y, b); // the credits FLY to the core and land there (aspira-floats.js)
   G.charge = Math.min(POWER_FULL, G.charge + 1);
   burst(e.x, e.y, ENEMIES[e.type].color, 14);

@@ -194,11 +194,17 @@ const sfxKey = k => k.split(".").map(p => LEGACY_SFX[p] || p).join(".");
 // loads; the events keep their own names - so their volume, gap, voice cap and rarity (sfxBump) are theirs as before. A shield pop has no sound of
 // its own (shieldBreak); the shield enemy's death is "kill.shield"
 const SFX_SAMPLE_SWAP = [["arc", "kill.shield"]];
+// THE OWNER'S PICKS OF 2026-11-09, in code so the droplet's index.json is unchanged (only the samples go up): "Shield death sound: TSCDth00.wav";
+// "pabDth00.wav death sound for armor"; "current armor death sound, use it for the boss hp tile slam"; "pcaDth01.wav boss death sound"; "clicking
+// things should play the BUTTON.WAV sound"; "PError.wav for invalid commands like when you don't have enough money"; "PRescue.wav after beating
+// the game"; "replace SOL firing sound with TBaYam02.wav" (solSfx). ARC keeps the shield's old sample (the 11-07 swap, above)
+const SFX_FILES = { "kill.shield": "Sound/Terran/SCV/TSCDth00.wav", "kill.armor": "Sound/Protoss/Arbiter/pabDth00.wav", slam: "Sound/Bullet/TTaFir00.wav",
+  bossdeath: "Sound/Protoss/Carrier/pcaDth01.wav", click: "Sound/Misc/BUTTON.WAV", error: "Sound/Misc/PError.wav", win: "Sound/Misc/PRescue.wav", solshot: "Sound/Terran/Battle/TBaYam02.wav" };
 const swapSfxSamples = m => { for (const [a, b] of SFX_SAMPLE_SWAP) { const A = m[a], B = m[b]; if (B === undefined) delete m[a]; else m[a] = B; if (A === undefined) delete m[b]; else m[b] = A; } return m; };
 const migrateSfx = m => Object.fromEntries(Object.entries(m).map(([k, v]) => [sfxKey(k), v]));
 fetch(SAMPLE_DIR + "index.json").then(r => (r.ok ? r.json() : null)).then(m => {
   if (!m) return;
-  sampleMap = swapSfxSamples(migrateSfx(m));
+  sampleMap = Object.assign(swapSfxSamples(migrateSfx(m)), SFX_FILES); // (SFX_FILES last: the owner's 2026-11-09 picks over the index)
   if (typeof m._gain === "number") sampleGain = m._gain;
   loadSamples();
 }).catch(() => {});
@@ -240,25 +246,27 @@ function sampleNorm(buf, start, end) {
 // Each TOWER's sound plays at most 3 copies at once (owner, 2026-10-02; IFR 5, oldest out first - SFX_FIFO),
 // sample or synth alike: playing[name] counts live copies and a 4th is
 // skipped. A sample copy is also quieter by how many are already sounding.
-const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, crr: 3, carshot: 3, ifr: 5 /* the whole 3.6 s roar, FIFO (SFX_FIFO; owner, 2026-11-09) */, ifrblast: 3, slam: 3 /* the boss bar's pieces slamming home (BLASTCAN, owner 2026-10-27: "use the rules for sound overlap cap") */ }, playing = {};
+const SOUND_MAX = { arc: 3, frz: 3, sol: 3, acd: 3, grv: 3, grvaura: 3, crr: 3, carshot: 3, ifr: 5 /* the whole 3.6 s roar, FIFO (SFX_FIFO; owner, 2026-11-09) */, ifrblast: 3, solshot: 3, slam: 3 /* the boss bar's pieces slamming home (BLASTCAN, owner 2026-10-27: "use the rules for sound overlap cap") */ }, playing = {};
 let curSound = null; // the synth sound being built, so envelope() can count it
 // LOUDNESS (owner, 2026-10-02): the bosses' warnings and voices and every
 // upgrade/build sound stand well above the towers' shots - about 10 dB
 // (TOWER_GAIN 0.6 vs LOUD_GAIN 2)
 const TOWER_GAIN = 0.6, LOUD_GAIN = 1; /* 2 -> 1 (owner, 2026-10-16: "some audio (like the boss intro sounds and the carrier sounds) sound much louder than others"): the voice lines and build / upgrade / boss cues sat 10-15 dB over the towers' shots (measured: -11..-15 vs -23 dB), now 4-8 */
-const LOUD = /^(bosswarn|bossvoice|coreup|up|build|thud)/; // (thud: in the LOUD class for the game-speed exemption - every landing sounds)
+const LOUD = /^(bosswarn|bossvoice|bossdeath|coreup|up|build|thud|click|error|win)/; /* (click, error, win, bossdeath: every one plays at any game speed - owner, 2026-11-09) */ // (thud: in the LOUD class for the game-speed exemption - every landing sounds)
 // per-sound trims (owner): the ship explosion on every kill was too loud
 // SOL x2 (owner, 2026-11-07: "play SOL sound effect much louder so it matches the others"): measured, ONE clip is already level - after the
 // loudness normalization every tower attack's loudest 150 ms sits at -20 dBFS (SOL's shot -20.2, the others' median -20.0); what is quieter
 // is the DENSITY: SOL fires one voice a tower every 1.58 s, the others stack up to SOUND_MAX copies (1 + 1/2 + 1/3 = 1.83x, +5 dB). x2 =
 // +6 dB, its peak -11.7 -> -5.7 dBFS on one voice: no clipping, no limiter needed (a GainNode above 1 is fine)
-const SOUND_GAIN = { kill: 0.4, sol: 2 };
+const SOUND_GAIN = { kill: 0.4, sol: 2, solshot: 2 };
 const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? SOUND_GAIN[name.split(".")[0]] ?? 1); // ("kill.fast" trimmed as "kill")
+let sfxOpt = null; // { gain, rate } for the next playSample only (swarmKillSfx, arcChainSfx)
 function playSample(name, at = 0, off = 0) { // off: s into the clip to start from (SOL's shot, solSfx)
   const list = SAMPLES[name], n = playing[name] || 0;
   const src = AC.createBufferSource(), g = AC.createGain(), clip = SFX_SLICES[name] && list[0].fade ? list[(sliceNext[name] = ((sliceNext[name] ?? -1) + 1) % list.length)] : list[Math.floor(Math.random() * list.length)];
   src.buffer = clip.buf;
   g.gain.value = Math.min(sfxScale * sampleGain * (clip.norm || 1) * gainFor(name), clip.pk > 0 ? NORM_PEAK / clip.pk : Infinity) / (SOUND_MAX[name] ? 1 + n : 1);
+  if (sfxOpt) { g.gain.value *= sfxOpt.gain ?? 1; if (sfxOpt.rate) src.playbackRate.value = sfxOpt.rate; sfxOpt = null; }
   src.connect(g).connect(master);
   voices++; playing[name] = n + 1; const L = { name, nodes: [[src, g]], scene: sfxScene() }; sfxLive.add(L);
   src.onended = () => { sfxEnd(src); playing[name]--; sfxLive.delete(L); };
@@ -292,11 +300,15 @@ function sfxFor(name, kind) {
 // and its shot lands on the pulse - the clip starts SOL_SHOT_AT (its shot's onset, measured on PabCag00.wav) of real time before it, partway in
 // when less is left (a new lock's SOL_AIM, a fast fire rate, a fast game). ONE voice a tower (solVoice): the next charge cuts the last one's
 // tail; a lock lost or switched before its shot stops it at once over SOL_SHOT_FADE. Called from stepSolTrack (none in the simulator: no AC)
+// THE YAMATO FIRES (owner, 2026-11-09: "replace SOL firing sound with TBaYam02.wav" / "keep the charge part of the previous effect, then fire the
+// yamato"): the "sol" clip plays its build-up only - faded out over SOL_SHOT_FADE at its own shot - and "solshot" (TBaYam02) lands on the pulse;
+// without a "solshot" sample the old whole clip plays. The charge line (aspira-effects.js) keeps spanning the build-up
 const SOL_SHOT_AT = 0.62, SOL_SHOT_FADE = 0.025, solVoice = new WeakMap();
 function solVoiceStop(t, v) {
   solVoice.delete(t); if (!v || !AC) return;
-  const n = AC.currentTime, g = v.src.__g.gain;
-  try { g.cancelScheduledValues(n); g.setValueAtTime(g.value, n); g.linearRampToValueAtTime(0, n + SOL_SHOT_FADE); v.src.stop(n + SOL_SHOT_FADE + 0.01); } catch (err) { /* already stopped */ }
+  const n = AC.currentTime;
+  for (const src of [v.src, v.bang]) { if (!src) continue; const g = src.__g.gain;
+    try { g.cancelScheduledValues(n); g.setValueAtTime(g.value, n); g.linearRampToValueAtTime(0, n + SOL_SHOT_FADE); src.stop(n + SOL_SHOT_FADE + 0.01); } catch (err) { /* already stopped */ } }
 }
 function solSfx(t, e, cd) { // each SOL step: e its lock (null: none), cd the game s to its next pulse
   if (!AC) return;
@@ -308,8 +320,10 @@ function solSfx(t, e, cd) { // each SOL step: e its lock (null: none), cd the ga
   if (v) solVoiceStop(t, v);
   if ((playing.sol || 0) >= SOUND_MAX.sol) return;
   sfxBump("sol", now); if (!sfxMakeRoom("sol", now)) return;
-  const src = playSample("sol", 0, SOL_SHOT_AT - real);
-  solVoice.set(t, { src, e, shot: now + real });
+  const src = playSample("sol", 0, SOL_SHOT_AT - real), yam = SAMPLES.solshot && SAMPLES.solshot.length;
+  let bang = null;
+  if (yam) { const g = src.__g.gain, v0 = g.value, at = now + real; try { g.setValueAtTime(v0, Math.max(now, at - SOL_SHOT_FADE)); g.linearRampToValueAtTime(0, at); src.stop(at + 0.01); } catch (err) { /* (a stopped source) */ } bang = playSample("solshot", real); }
+  solVoice.set(t, { src, bang, e, shot: now + real });
 }
 // how many times faster than 1x the game runs now (aspira-ui.js's speed; 1 in the simulator)
 const soundCredit = {};
@@ -337,3 +351,23 @@ function sfx(name, ...args) {
   if (inst.nodes) playing[name] = (playing[name] || 0) + 1; else sfxLive.delete(inst.live);
   return h || null;
 }
+// SWARM DEATHS BY SIZE (owner, 2026-11-09: "Swarm death sound should change in pitch and loudness depending on swarm unit size (use biggest if
+// multiple die at the same time)"): the deaths of one game step make ONE sound, set by the biggest swarmer (e.drawJit, its drawn size): bigger is
+// louder and lower - gain x size^0.5, pitch x size^-0.35, each clamped. Through sfx, so the rarity rule and the game-speed thinning stay
+let swarmKillMax = 0;
+function swarmKillSfx(e) {
+  if (typeof AC === "undefined" || !AC) return;
+  const was = swarmKillMax; swarmKillMax = Math.max(swarmKillMax, e.drawJit || 1); if (was) return;
+  Promise.resolve().then(() => { const k = swarmKillMax; swarmKillMax = 0; sfxOpt = { gain: Math.min(1.8, Math.max(0.55, k ** 0.5)), rate: Math.min(1.35, Math.max(0.7, k ** -0.35)) }; if (!sfxFor("kill", "swarm")) sfxOpt = null; });
+}
+// ARC's CHAIN SOUNDS (owner, 2026-11-09: "for arc, chains should also play the attack sound, but relative to amount of damage carried over (cap
+// vol 80% of initial beam). One sound per chain level, not one per enemy struck!"): each hop DEPTH of a strike plays the ARC sample once, at the
+// strike's volume x its share of the strike's damage (arcFall^depth), at most ARC_CHAIN_VOL; a step ARC_CHAIN_GAP s after the level before
+const ARC_CHAIN_VOL = 0.8, ARC_CHAIN_GAP = 0.05;
+function arcChainSfx(share, depth) {
+  if (muted || !AC || AC.state !== "running" || !(SAMPLES.arc && SAMPLES.arc.length) || (playing.arc || 0) >= 2 * SOUND_MAX.arc) return;
+  const now = AC.currentTime; sfxBump("arc", now); if (!sfxMakeRoom("arc", now)) return;
+  sfxOpt = { gain: Math.min(ARC_CHAIN_VOL, share) }; playSample("arc", depth * ARC_CHAIN_GAP);
+}
+// EVERY CLICK (owner, 2026-11-09: "clicking things should play the BUTTON.WAV sound"): a button, a card or a checkbox anywhere in the game
+if (typeof document !== "undefined") document.addEventListener("click", ev => { const b = ev.target && ev.target.closest && ev.target.closest("button, .asp-card, [role=checkbox]"); if (b && b.closest("#asp")) sfx("click"); }, true);

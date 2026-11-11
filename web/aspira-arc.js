@@ -192,6 +192,7 @@ let ARC_JUMP_TOUGH = false, ARC_JUMP_MIN = 0;
 function skillHopTo(c, node, nxt, depth) {
   const raw = c.st.dmg * c.st.arcFall ** depth, d = shotDamage(c.t, c.st, nxt, raw);
   node.kids.add(nxt.id); c.seen.add(nxt.id); c.hits.set(nxt.id, (c.hits.get(nxt.id) || 0) + 1);
+  if (!(c.snd ||= new Set()).has(depth)) { c.snd.add(depth); if (typeof arcChainSfx === "function") arcChainSfx(raw / c.st.dmg, depth); } // ONE sound a chain level (aspira-sfx.js; the page only)
   beam(node.e, nxt, c.col, arcBeamLife(c.st), 1.5, d);
   Object.assign(fx[fx.length - 1], { soft: true, alpha: Math.min(1, ARC_A * (raw / c.st.dmg) ** ARC_CORR), share: raw / c.st.dmg, vt: skillOf(c.t, "voltage"), fall: c.st.arcFall }); // fall: the next hop's share of this one - the look tapers to it (arcIntAt) // brighter as its share of the strike grows (ARC_A); share: its width too (arcInt, aspira-arc-body.js)
   if (skillOf(c.t, "voltage")) fx[fx.length - 1].pierce = true; // Voltage's white-hot core
