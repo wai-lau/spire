@@ -215,7 +215,7 @@ const BOUNTY_BASE = 2, BOUNTY_SLOPE = 0.35, BOUNTY_KNEE = 30 /* (owner, 2026-10-
 const BOUNTY_SCARCE = 0.8, econEarly = n => (n <= 40 ? BOUNTY_SCARCE : n >= 50 ? 1 : BOUNTY_SCARCE + (1 - BOUNTY_SCARCE) * (n - 40) / 10);
 const bountyBase = n => econEarly(n) * (BOUNTY_BASE + BOUNTY_SLOPE * Math.min(n, BOUNTY_KNEE) + BOUNTY_SLOPE_LATE * Math.max(0, n - BOUNTY_KNEE)) * (1 + (BOUNTY_EARLY - 1) * Math.min(1, Math.max(0, (BOUNTY_EARLY_TO - n) / 10))); // full to wave 20, easing off by 30 (no drop at 31)
 // THREE MAIN LANES, 80% of a swarm on a bell (swarmLanes, aspira-formations.js): list split over k3 lane copies of wave n's swarm lane;
-// extra rides on every spawn (Judgement's rise: veilOf). Also Judgement's rising swarm (aspira-bosses.js judgementSwarm)
+// extra rides on every spawn
 function swarmMainSpawns(n, list, lanes, k3, extra = null) {
   const ls = swarmLanes(lanes.swarm, k3, n), sz = swarmParts(list.length, k3), gap = 0.024 / ENEMY_SPEED;
   for (let j = 0, at = 0; j < k3; j++) {

@@ -93,7 +93,7 @@ const EMPRESS_AT = [0.9, 0.7, 0.5];
 // HALF A AND HALF C (owner, 2026-11-08: "half A and half C", after the reorder's first pass - Empress 3.5x a wave's depth, Judgement 8.9x): each brood
 // EMPRESS_BROOD_K (2/3) of a swarm wave and the veiled Empress walks at 0.75x; Judgement (owner, 2026-11-08: "wait, for judgement, keep 1.2x wave, walk at
 // 0.2 speed when veiled") keeps her swarm waves (JUDGEMENT_SWARM) and walks at 0.2x while veiled - VEIL_SPD by boss, read by effSpeed (aspira-game.js)
-const EMPRESS_BROOD_K = 2 / 3, VEIL_SPD = { empress: 0.75, judgement: 0.2 }; // HP share a brood; u between swarmers as they pour out
+const EMPRESS_BROOD_K = 2 / 3, VEIL_SPD = { empress: 0.75, judgement: 0.5 /* (owner, 2026-11-10: "instead of 0.2 speed judgement should move at 0.5"; was 0.2) */ }; // HP share a brood; u between swarmers as they pour out
 // a plain wave of `type` at wave n, as wavePlan would send it (the count taper, never under the wave before): the boss redesign's "a wave"
 const typeWaveCount = (type, n) => Math.max(1, Math.round(countK(n) * Math.max(waveCount(type, n), planCount(type, n))));
 // A SMOOTH GALLOP (owner, 2026-11-07 22:30: "chariot, change speed from step fn to sinusoidal"): x(1.5 + 0.5 sin) over a CHARIOT_EVERY (1 s) period -
@@ -302,7 +302,10 @@ function bossHitCap(e, amt) {
 // JUDGEMENT_REVIVE (30%) of her HP
 // 6 swarm waves (owner, 2026-11-09, on her being the weak boss: "like have a bigger swarm wave then"; 40 games each to wave 80, bosses on: her
 // whole wave reached 0.31 of a normal wave's depth at 1.2, 0.44 at 3.5, 0.55 at 5, 1.04 at 6; 10 broke through, 94% of runs ended there)
-const JUDGEMENT_SWARM = 6;
+// SIX LANES, ~1.5 WAVES (owner, 2026-11-10: "judgement boss is not fun, it takes toooo long for the swarm to finish spawning", "wait no, why
+// 6 waves? / it should have 6 lanes", "count wise, maybe somewhere like 1.5>"): 1.5 swarm waves' worth, even over JUDGEMENT_LANES lane copies
+// at once, each body BOSS_HEFT x JUDGEMENT_KIN_HP tough (let: the depth refit's lever - per-unit HP, never the count or her speed)
+const JUDGEMENT_SWARM = 1.5, JUDGEMENT_LANES = 6; let JUDGEMENT_KIN_HP = 1;
 // THE VEIL (owner, 2026-11-07 22:30, Empress and Judgement): while any enemy of a swarm she released lives, e.veiled - she takes no damage and no
 // tower or effect picks her, by clearing e.seen (every target, area and damage path already skips an unseen enemy - enemySeen); stepEnemies
 // does not latch e.seen back while veiled. She still walks, and a veiled boss at the core still costs its lives. Drawn at reduced opacity
@@ -312,13 +315,17 @@ function bossVeil(e) {
   if (up && !e.veiled) { e.veiled = true; e.seen = false; }
   else if (!up && e.veiled) { e.veiled = false; e.veilKin = null; if (enemySeen(e)) { e.seen = true; e.seenAt = performance.now(); } }
 }
-// HER SWARM COMES ON THE USUAL SWARM LANES (owner, 2026-11-09: "for judgement wave, swarm should come in on usual swarm lanes, just more units"):
-// JUDGEMENT_SWARM swarm waves' worth, split over her wave's swarm lanes exactly as a swarm wave is (swarmMainSpawns, aspira-waves.js), each body
-// hers (veilOf: it joins her veilKin as it spawns, aspira-step.js). Was: scattered behind her on her own lane (bossScatter's rise)
+// HER SWARM ON SIX LANES AT ONCE (above): split evenly over JUDGEMENT_LANES copies of her wave's swarm lane spread round the board (laneBestTurn,
+// as a split wave picks its copies), each a bell of swarm gaps and lit like a swarm wave's; each body hers (veilOf: it joins her veilKin as it
+// spawns, aspira-step.js, and takes its heft there). Was (2026-11-09): 6 waves over the usual swarm lanes; before that scattered behind her
 function judgementSwarm(e) {
-  const n = e.n, list = Array(Math.max(1, Math.round(typeWaveCount("swarm", n) * JUDGEMENT_SWARM))).fill("swarm"), lanes = laneMap(n);
-  const k = Math.min(list.length, formSplit("swarm", list.length, n)), k3 = Math.max(SWARM_MAIN, k - k % SWARM_MAIN);
-  swarmMainSpawns(n, list, lanes, k3, { veilOf: e.id });
+  const n = e.n, N = Math.max(1, Math.round(typeWaveCount("swarm", n) * JUDGEMENT_SWARM)), lanes = laneMap(n), L = Math.min(JUDGEMENT_LANES, N);
+  const base = laneBestTurn(lanes.swarm, L, n, "swarm"), gap = 0.024 / ENEMY_SPEED;
+  for (let j = 0; j < L; j++) {
+    const c = Math.floor(N / L) + (j < N % L ? 1 : 0), ang = (base + (j / L) * Math.PI * 2) % (Math.PI * 2); if (!c) continue;
+    G.spawns.push({ n, list: Array(c).fill("swarm"), lanes, ang, idx: 0, timer: 0, gaps: bellGaps(c, gap), veilOf: e.id, loose: true });
+    const key = laneKey(lanes.swarm, ang); (G.laneTotals ||= {})[key] = (G.laneTotals[key] || 0) + c;
+  }
 }
 function bossRise(e) {
   if (e.risen || !isA(e, "judgement")) return false;

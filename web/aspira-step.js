@@ -13,7 +13,7 @@ function stepSpawns(dt) {
       // FORMATIONS (aspira-formations.js): fast Vs and armor's lattice spawn as a group; the rest one by one
       const m = (!w.loose && formSpawn(w, type)) || (spawnEnemy(type, w.n, w.lanes[type], w.ang || 0), 1);
       if (w.heft) for (const k of G.enemies.slice(-m)) { k.max = Math.floor(k.max * BOSS_HEFT); k.hp = k.max; k.bossKin = true; } // Death's escort (deathEscorts): as tough as any escort, hers
-      if (w.veilOf != null) { const k = G.enemies[G.enemies.length - 1], b = G.enemies.find(o => o.id === w.veilOf && !o.dead); k.bossKin = true; if (b) (b.veilKin ||= []).push(k); } // Judgement's rising swarm: hers as it spawns (aspira-bosses.js)
+      if (w.veilOf != null) { const k = G.enemies[G.enemies.length - 1], b = G.enemies.find(o => o.id === w.veilOf && !o.dead); k.bossKin = true; if (b) (b.veilKin ||= []).push(k); k.max = Math.floor(k.max * BOSS_HEFT * JUDGEMENT_KIN_HP); k.hp = k.max; } // Judgement's rising swarm: hers as it spawns (aspira-bosses.js)
       if (w.kin) { const k = G.enemies[G.enemies.length - 1]; k.bossKin = true; k.devilEsc = true; if (!k.jit) k.jit = 18 + Math.random() * 45; } // the Devil's host: hers, loose, wandering like swarm
       // spacing is a balance lever: swarms stream evenly and very densely
       // (5x the bodies in the same time as before), trains spread ~60+ apart; a formation waits its members' worth
