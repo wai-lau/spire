@@ -17,7 +17,7 @@ A tier that only moves a number changes no words - the stat row shows it (2026-1
 ## Sentence rules
 
 1. **Damage is a share of tower damage, written `X%td`.** `td` = the card's "Damage (td)" row, and 100% is still written
-   (`100%td`) (2026-10-26). A share is anything sized off the tower's hit: a bolt, a tick total, a pellet, a pool burn.
+   (`100%td`) (2026-10-26). Each card's MAIN hit reads exactly `100%td` at every level and tier, the unit set per build (`cardMain`): the most often applied hit, or the middle of a wide range, named when it isn't otherwise printed (ACD's "(100%td at 8×)") (owner, 2026-11-09). A share is anything sized off the tower's hit: a bolt, a tick total, a pellet, a pool burn.
 2. **A change is not a share** and keeps its words: "20% less damage every chain", "losing 30% intensity every hit", "take 35% more
    damage" (2026-10-25).
 3. **A burn reads its share A SECOND: `X%td a second`**, and `for Ys` when it ends - never a total, never the number of hits; hit

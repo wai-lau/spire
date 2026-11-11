@@ -47,6 +47,6 @@ battery's changes and only that (a new day is not a minor); every other ship is 
 major** (GRV and ATC made 4.5 into 5.0 and 4.6 into 5.1). The workflow that bumps it: CLAUDE.md "Shipping". `spire_build()` stamps the newest
 file mtime; both go into the template and every slow log. The changelog card (`aspira-changelog.js`, tap the version) lists each minor's
 player-visible changes as facts, grouped by SUBJECT (`logSubject`: a tower, an enemy type, the core ... read from a leading "Subject:" or the
-first one a line names; Buffs and Nerfs are no longer headed, the lines keep their three kinds underneath, Perf/UI smaller): add a line with every
+first one a line names; Buffs and Nerfs are no longer headed, the lines keep their three kinds underneath, Perf/Visual smaller); sections Balance / Perf / Visual (owner, 2026-11-09: "for the changelog, rename UI to Visual / then group within visual/balance if warranted"), and within Balance and Visual a subject with 2+ lines gets its own small heading, its lines without the repeated lead: add a line with every
 change a player would notice. The 7.0.0 release note and how 5.1 became 5.1-5.8: ARCHAEOLOGY §9.
 
