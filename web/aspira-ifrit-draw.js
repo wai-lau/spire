@@ -78,7 +78,7 @@ function drawIfrFires(t, low) {
 const IFR_FADE_IN_U = 8; // a burst meteor is full within 8 u of flight (owner, 2026-10-26: "IFR should fade in faster"; was 25)
 const IFR_BIG_DRAW_K = 2; // Meteor V: a big meteor (b.big, aspira-ifrit.js) is drawn this x - its tracer too; the hitbox is unchanged
 const IFR_CHAIN_I = 3, IFR_CHAIN_LINK = 1.1, IFR_CHAIN_GLOW_A = 0.8, IFR_RING_SEGS = 28; // Hellfire V's chains: glow intensity (as a flare's, IFR_FLARE_I0), the chain links' size (x ARC's) and alpha; Flare V's circle: drawn as this many glow segments
-const IFR_SHARD_DRAW = 1 / 3; // (IFR_TRACER_U: aspira-ifrit.js - the sim loads no draw file)
+const IFR_SHARD_DRAW = 1 / 3 * 2; /* x2 again on 7.14.1's x2 (owner, 2026-11-10: "visual, double size of ifr secondary and tertiary meteors") - the burst shards drawn at 2/3 of their radius x IFR_METEOR_SIZE_K */ // (IFR_TRACER_U: aspira-ifrit.js - the sim loads no draw file)
 // THE LAUNCHED METEOR'S TRACER, like an enemy's (owner, 2026-10-26: "meteor tracer should depend on movement and fade out like enemies"):
 // the path it FLEW (b.trail, the last IFR_TRACER_U of it - stepIfrBalls), not a line along its heading, as one tapered shape fading
 // from the meteor's colour to nothing at the tail (drawStarTrail, aspira-enemies.js)
@@ -102,6 +102,7 @@ function drawIfrBalls(t, low) {
     const bk = b.big ? IFR_BIG_DRAW_K : IFR_METEOR_SIZE_K; /* Meteor V's big one as it was; every other meteor and shard x2 */
     if (!b.gen) drawMeteorTrail(b, dk * bk);
     drawIfrMeteor(b.x, b.y, (b.gen ? b.r * IFR_SHARD_DRAW : b.r) * dk * bk, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
+    if (!b.gen) ifrBodyMarks(b.x, b.y, b.r * dk * bk, skillOf(t, "hellfire"), skillOf(t, "firaga"), 1); // IN FLIGHT AS IN ORBIT (owner, 2026-11-10: "primary IFR meteors should look like the ones that are orbiting, not blank"): the Hellfire ring and Flare rays
   } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
