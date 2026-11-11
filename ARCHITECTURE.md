@@ -146,7 +146,7 @@ all (`nudge`: ARC Conductivity's rate; no axis moves range since 2026-10-26, `sk
 is flat (its rate never rises). Per-axis raw damage tables are gone; a sub-attack's factor is
 one constant (`FRZ_RIME_BITE0`, `ACD_POOL_HEAT`,
 `IFR_ROUTE_K0`, `IFR_TICK_K0`; CRR's tether deals no damage) - except GRV, whose three parts are per-tier tables: the pellets (`GRV_PELLET_K`), the void's crush by Void tier (`GRV_INNER_K`; `GRV_INNER_K0` is an unused alias) and the nova's hit by Nova tier (`GRV_NOVA_RATE`, owner 2026-11-06: "2. Also yes" - it was the fire rate), and so is any factor on the tower's own damage, on from its first tier
-(`SOL_CRIT_K`, `SOL_SCORCH_TOTAL`, `IFR_FIRE_HK`, `IFR_HF_FK`, ARC's `ARC_DMG_K`). A whole-tower RATE factor on the curve is one constant too: SOL `SOL_RATE_K` (with `SOL_DMG_K`, fewer, harder shots), FRZ's aura `FRZ_TICK_RATE_K` (fewer, harder ticks: the same damage a second, fewer shield pops), IFR's charge `IFR_RATE_K` (a plain rate cut, no damage back). Per-tier tables that stay hold counts, shapes, reaches and
+(`SOL_CRIT_K`, `SOL_SCORCH_TOTAL`, `IFR_FIRE_HK`, `IFR_HF_FK`, ARC's `ARC_DMG_K`, ACD's `ACD_DMG_K`). A whole-tower RATE factor on the curve is one constant too: SOL `SOL_RATE_K` (with `SOL_DMG_K`, fewer, harder shots), FRZ's aura `FRZ_TICK_RATE_K` (fewer, harder ticks: the same damage a second, fewer shield pops), IFR's charge `IFR_RATE_K` (a plain rate cut, no damage back). Per-tier tables that stay hold counts, shapes, reaches and
 debuffs on the enemy (FRZ Fracture, slows, armor strips). `towerLevel` counts the tower's own axes only. Each stats function sets `dmgCurve` /
 `rateCurve` (the curve plus nudges) before a mechanic splits the hit.
 

@@ -263,6 +263,10 @@ const ACD_POOL_HEAT = 0.21; /* x2 with the bigger pools (2026-10-29; was 0.105) 
 // CONTAGION SPREADS (owner, 2026-10-13: "make acd contagion better vs swarms"): from Spill I an enemy a POOL kills leaves
 // a pool of its own, as hot - a crowd dying in acid carries it down the lane (a full pool since 2026-10-22; was 0.8x wide, half as long).
 // (KILL POOLS - a kill under a jet or in a pool leaving a pool, ACD_SPREAD_MAX - GONE with the tier redesign, owner 2026-10-24: "get rid of kill pools")
+// ACD's OWN DAMAGE x this (owner, 2026-11-09: "looks like ACD IFR CRR and ARC are weak overall"; ACD trios won 7 of 47 bosses-on on the adaptive
+// good player, 7.13.0). 100 games bosses on, paired: x1.3 50 -> 55 wins, ACD trios 7 -> 12; x1.6 57 / 14 but its 3-point marks drift; marks at
+// 9 points unchanged in distance from the target
+const ACD_DMG_K = 1.3;
 function acdSkillStats(t, s, b) {
   const c = skillOf(t, "corrosion");
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.double = ACD_DOUBLE[0]; s.cap = ACD_BASE_MAX; s.plagueR = 0; // the STAT CURVE (tier redesign 2026-10-24)
@@ -271,6 +275,7 @@ function acdSkillStats(t, s, b) {
   const f = skillOf(t, "spray"); // Flow (id kept: saves)
   s.carry = ACD_FLOW_CARRY[f]; s.burnSlow = ACD_POOL_SLOW[skillOf(t, "contagion")]; s.corrode = ACD_CORRODE[c]; s.targets = ACD_LINES[f]; s.contagion = acdPools(skillOf(t, "contagion"));
   s.contagionHeat = ACD_POOL_HEAT; s.lake = skillOf(t, "contagion") >= CAPSTONE_TIER; s.skill = true;
+  s.dmg *= ACD_DMG_K; // ACD's own damage, every part (one constant, ARCHITECTURE.md 4.3)
 }
 // SPILL V, ACID LAKE (owner/Wai capstone brief 2026-11-06: "overlapping pools merge, burn +25%; merged pools bubble"): a Spill-V ACD's pools whose
 // circles overlap are one LAKE - each such pool (p.lake, set when a pool drops over another) burns x ACD_LAKE_K. Every pool still ticks on its
