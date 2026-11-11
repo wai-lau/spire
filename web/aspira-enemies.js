@@ -116,7 +116,7 @@ function drawEnemy(e, solid) {
   const perma = e.slowT === Infinity;
   // shield = SEGMENTS (owner): one per charge, on rings of its own shape
   if (e.shield > 0 || e.shSegs) {
-    e.shSegs = syncSegs(e.shSegs || [], shieldShown(e, d.sides), d.sides, undefined, true);
+    e.shSegs = shieldFade(e, d.sides) || syncSegs(e.shSegs || [], shieldShown(e, d.sides), d.sides, undefined, true);
     // (drawn as lines on the floor round the die: aspira-walls.js)
   }
   ctx.globalAlpha = 1;
@@ -222,6 +222,31 @@ function drawScorchRing(e, r, vis, ring = 0) { // ring 1: Scorch V's outer ring,
 const SHIELD_RINGS = 2;
 const SHIELD_OUT = 20; // the shield rings sit this many u further out from the body (owner, 2026-10-17: "draw the shields about 20u further away from the shielded unit") - 2D and the 3D walls
 const shieldShown = (e, sides) => { const cap = sides * SHIELD_RINGS * (SHIELD_RINGS + 1) / 2 - SHIELD_IN_OFF, s = Math.max(0, e.shield); return (e.shieldMax || 0) > cap ? Math.ceil(s * cap / e.shieldMax) : s; };
+// SPOKES FADE (owner, 2026-11-09: "for shielded unit visuals: the the number of shields should be divided by the max number of spokes +2
+// (when > max spokes +2), every shield lost reduces opacity of a random spoke by some value (until all spokes are at 0 opacity) then for
+// the last 2 shield (empty rhombus and empty triangle) continue popping as now"): past what the rings hold, the outer ring's spokes
+// (sides x SHIELD_RINGS of them) share the charges above the last layer's L = sides - SHIELD_IN_OFF; each charge lost takes
+// spokes / (max - L) of alpha off a random still-lit spoke (e.shAl, one alpha a spoke), then the last layer pops a chip a charge as
+// before. At or under the cap, null: syncSegs as ever. A look only (Math.random in the draw, like syncSegs).
+function shieldFade(e, sides) {
+  const L = sides - SHIELD_IN_OFF, n = sides * SHIELD_RINGS, max = e.shieldMax || 0, s = Math.max(0, e.shield);
+  if (max <= n + L) { e.shAl = null; return null; }
+  const al = e.shAl ||= new Array(n).fill(1), step = n / (max - L), want = Math.max(0, s - L) * step;
+  let sum = 0; for (const v of al) sum += v;
+  while (sum > want + 1e-6) { // a charge lost: dim a random lit spoke
+    const lit = []; for (let i = 0; i < n; i++) if (al[i] > 1e-6) lit.push(i);
+    if (!lit.length) break;
+    const i = lit[Math.floor(Math.random() * lit.length)], d = Math.min(step, al[i], sum - want); al[i] -= d; sum -= d;
+  }
+  while (sum < want - 1e-6) { // a charge back (a boss's regen): brighten a random dimmed spoke
+    const dim = []; for (let i = 0; i < n; i++) if (al[i] < 1 - 1e-6) dim.push(i);
+    if (!dim.length) break;
+    const i = dim[Math.floor(Math.random() * dim.length)], d = Math.min(step, 1 - al[i], want - sum); al[i] += d; sum += d;
+  }
+  const segs = []; for (let j = 0; j < L; j++) segs.push(j < Math.ceil(Math.min(L, s)));
+  for (let i = 0; i < n; i++) segs.push(al[i] > 1e-6);
+  return segs;
+}
 function syncSegs(segs, n, sides, flashes, keepInner) {
   let have = segs.reduce((a, v) => a + (v ? 1 : 0), 0);
   while (have > n) {

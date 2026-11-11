@@ -6,12 +6,12 @@
 // Loaded after aspira-warp.js and aspira-solids.js.
 
 // the live segments of a shield (the old 2D drawSegs's geometry): each { a: [x, y], b: [x, y], r: its ring }
-function segPieces(x, y, segs, sides, rot, base, gap, off = 0) {
+function segPieces(x, y, segs, sides, rot, base, gap, off = 0, al = null) { // al: an enemy's fading spokes' alphas (shieldFade)
   const k = shieldPulse(), out = [];
   segs.forEach((on, i) => {
     if (!on) return;
     const sp = off ? shieldSpoke(x, y, i, sides, rot, base, gap, k, segs) : null; // an enemy's outer chip: a SPOKE (aspira-enemies.js)
-    if (sp) { out.push({ a: [sp[0], sp[1]], b: [sp[2], sp[3]], r: ringOf(i, sides, off).r, thick: true }); return; /* as thick as the outline (owner, 2026-10-18) */ }
+    if (sp) { out.push({ a: [sp[0], sp[1]], b: [sp[2], sp[3]], r: ringOf(i, sides, off).r, thick: true, al: al ? al[i - (sides - off)] : 1 }); return; /* as thick as the outline (owner, 2026-10-18) */ }
     const { r: ring, pos } = ringOf(i, sides, off), r = (base + gap * ring) * k, s = Math.floor(pos / ring), j = pos % ring;
     const a0 = rot + s * Math.PI * 2 / sides, a1 = rot + (s + 1) * Math.PI * 2 / sides;
     const x0 = x + Math.cos(a0) * r, y0 = y + Math.sin(a0) * r, x1 = x + Math.cos(a1) * r, y1 = y + Math.sin(a1) * r;
@@ -36,14 +36,16 @@ function linesOffCanvas(pieces, pt) {
   for (const p of pieces) for (const q of [p.a, p.b]) { const A = pt(q[0], q[1]); if (A.x < x0) x0 = A.x; if (A.x > x1) x1 = A.x; if (A.y < y0) y0 = A.y; if (A.y > y1) y1 = A.y; }
   return x1 < -m || y1 < -m || x0 > W + m || y0 > H + m;
 }
+const SHIELD_AL_STEPS = 16; // a fading spoke's alpha in 16 steps: spokes at one step share a stroke (shieldFade, aspira-enemies.js)
 function warpShieldLines(pieces, col, a0, at) {
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineCap = "round"; ctx.lineWidth = 1.4 * cam.k; ctx.strokeStyle = col;
   const F = at && warpFrame(at[0], at[1], 0), pt = F ? (x, y) => ({ x: F[0] * x + F[2] * y + F[4], y: F[1] * x + F[3] * y + F[5] }) : (x, y) => warpProject(x, y, 0);
   if (at && linesOffCanvas(pieces, pt)) { ctx.globalAlpha = 1; return; } // (nothing of it can show - perf, 2026-11-06, as solidOffCanvas)
   const byRing = new Map();
-  for (const p of pieces) (byRing.get(p.r) || byRing.set(p.r, []).get(p.r)).push(p);
-  for (const [r, ps] of byRing) {
-    ctx.globalAlpha = a0 * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (r - 1)); ctx.lineWidth = (ps[0].thick ? SHIELD_LAST_W : 1) * 1.4 * cam.k; ctx.beginPath(); /* thick: an enemy's last layer */
+  for (const p of pieces) { const q = p.al === undefined || p.al >= 1 ? 1 : Math.round(p.al * SHIELD_AL_STEPS) / SHIELD_AL_STEPS, key = p.r + q * 0.001; (byRing.get(key) || byRing.set(key, []).get(key)).push(p); p.q = q; }
+  for (const [, ps] of byRing) {
+    const r = ps[0].r; if (!(ps[0].q > 0)) continue;
+    ctx.globalAlpha = a0 * ps[0].q * Math.max(SHIELD_RING_MIN, SHIELD_RING_FADE ** (r - 1)); ctx.lineWidth = (ps[0].thick ? SHIELD_LAST_W : 1) * 1.4 * cam.k; ctx.beginPath(); /* thick: an enemy's last layer */
     for (const p of ps) { const A = pt(p.a[0], p.a[1]), B = pt(p.b[0], p.b[1]); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); }
     ctx.stroke();
   }
@@ -64,7 +66,7 @@ function coreWallPieces() {
 function enemyWallPieces(e) {
   if (!e.shSegs || e.dead) return [];
   const d = ENEMIES[e.type];
-  const ps = segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, shieldBase(e, solidSize(e)), 2.5, SHIELD_IN_OFF).filter(p => p.r !== 1); // SHIELD_OUT: aspira-enemies.js
+  const ps = segPieces(e.x, e.y, e.shSegs, d.sides, e.rot, shieldBase(e, solidSize(e)), 2.5, SHIELD_IN_OFF, e.shAl).filter(p => p.r !== 1); // SHIELD_OUT: aspira-enemies.js
   const k = e.shSegs.slice(0, d.sides - SHIELD_IN_OFF).filter(Boolean).length; // the LAST layer: a regular k-gon, thick (shieldPoly, aspira-enemies.js)
   if (k) { const c = shieldPoly(e.x, e.y, (shieldBase(e, solidSize(e)) + 2.5) * shieldPulse(), k + SHIELD_IN_OFF, d.sides, e.rot), m = c.length; for (let i = 0; i < m; i++) ps.push({ a: c[i], b: c[(i + 1) % c.length], r: 1, thick: true }); }
   return ps;
