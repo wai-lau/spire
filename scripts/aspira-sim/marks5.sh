@@ -15,4 +15,4 @@ run SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs "${SEEDS9:
 run N=1 POINTS=13 WINDOWS=111-119 node countermx.mjs 2 > "$O-13.out" 2>/dev/null
 for L in 0 3 6; do echo "== $L pts"; python3 marks.py "$O-$L.out" --band | grep -vE "^\{" || true; done
 echo "== 9 pts"; python3 marks.py "$O-9.out" | grep -vE "^\{" || true
-echo "== 13 pts"; python3 marks.py "$O-13.out" --focus | grep -vE "^\{" || true
+echo "== 13 pts"; python3 marks.py "$O-13.out" --focus --band --band-total 2 | grep -vE "^\{" || true

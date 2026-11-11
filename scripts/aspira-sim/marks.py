@@ -1,6 +1,6 @@
 # check / x marks per tower from a countermx run (SPREAD_ONLY=1 POINTS=6 WINDOWS=61-69): leak % per type -> checks on the types it
 # beats, x's on the ones it leaks, each row and each column summing to 0 (see PER_MARK)
-# usage: python3 marks.py <countermx.out> [--write] [--focus] [--band]   --write puts the result into VS_MARKS (web/aspira-chooser.js) - run it after
+# usage: python3 marks.py <countermx.out> [--write] [--focus] [--band [--band-total N]]   --write puts the result into VS_MARKS (web/aspira-chooser.js) - run it after
 # EVERY balance patch (owner, 2026-10-18: "update the checks and xs here whenever you make a balance patch")
 # FIVE LEVELS (owner, 2026-11-06: "most important marks are 9 and 13, but 0 3 and 6 should never drift more than +/- 1 point away from target
 # marks"): countermx at POINTS 0 / 3 / 6 / 9 / 13. 9 (spread) writes the card; 13 is read with --focus (no SPREAD_ONLY: each tower's
@@ -104,11 +104,17 @@ for k, ts in lone.items():
 if "--band" in sys.argv[2:]:
     pts = re.search(r"\((\d+) pts\)", open(sys.argv[1]).read())
     BAND = 2 if pts and int(pts.group(1)) == 0 else 1
+    # THE 13-POINT BAND (owner, 2026-11-10: "hey for 13 points, allow up to +1 on any type (up to total of +2)"): --band-total N caps a
+    # tower's summed gap; marks5.sh reads 13 points with --focus --band --band-total 2 (each type within 1, at most 2 off in all)
+    BAND_TOTAL = int(sys.argv[sys.argv.index("--band-total") + 1]) if "--band-total" in sys.argv else None
     tgt = json.loads((pathlib.Path(__file__).resolve().parent / "mark-target.json").read_text())
     for k, m in marks.items():
         off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and abs(m[t] - tgt[k][i]) > BAND]
         if off:
             print(f"RULE FAIL: {k.upper()} outside the +/-{BAND} band: " + ", ".join(off))
+        tot = sum(abs(m[t] - tgt[k][i]) for i, t in enumerate(TYPES)) if k in tgt else 0
+        if BAND_TOTAL is not None and tot > BAND_TOTAL:
+            print(f"RULE FAIL: {k.upper()} total gap {tot} over {BAND_TOTAL} (the sum of |mark - target| over the four types)")
 
 if "--write" in sys.argv[2:]:
     assert not FOCUS, "the card's marks come from the spread rows (9 points), never --focus"
