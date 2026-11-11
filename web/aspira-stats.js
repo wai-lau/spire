@@ -12,7 +12,8 @@
 // ramp or crush runs past 8x its hit counts its td TD_UNIT x bigger - ACD's ramp then opens at 1/8 td and tops at 8 td (ACD_BASE_MAX 64 / 8),
 // FRZ's chill and GRV's crush land under 8 td too. The LABEL only: the damage dealt is unchanged. TD_UNIT itself lives in aspira-desc.js,
 // which the simulator loads too (the description graph runs there: with it here, the graph read ACD x8, FRZ x3, GRV x4 too high - 2026-11-06)
-const tdOf = (kind, st) => (TD_UNIT[kind] || 1) * tdBase(kind, st);
+const tdOf = (kind, st, sk = statSk) => (TD_UNIT[kind] || 1) * tdBase(kind, st) * (typeof cardMain === "function" ? cardMain(kind, sk || {}) : 1); // x the main hit's share: it reads 100%td (cardMain, aspira-desc.js)
+let statSk = null; // the skills of the tower whose SPEC rows are being built (SPEC, below)
 const tdBase = (kind, st) => kind === "ifr" ? st.dmg * IFR_ROUTE_K0 : kind === "frz" ? (st.biteDmg || st.dmg) / FRZ_TEMP_TICK[0] : kind === "grv" ? st.dmg * GRV_INNER_K[0] * GRV_START_MASS : st.dmg;
 const tdP = (kind, st, v) => { const T = tdOf(kind, st), r = T > 0 ? v / T : 0; return T > 0 ? +(100 * r).toFixed(r < 0.1 ? 1 : 0) + "%td" : "—"; };
 const dmgW = v => dmgUnits(v * (typeof scaleOf === "function" && typeof G !== "undefined" && G ? scaleOf(Math.max(1, G.wave || 1)) : 1));
@@ -110,3 +111,5 @@ function solTrackSpec(st0, t) {
     ["Breach", st.bleedArmor ? "−" + pc(1 - (1 - st.bleedArmor) ** (st.breach || 1)) + " armor a hit" : "—"] /* a hit: SOL fires in pulses (2026-11-05) */,
     ...(st.dot ? [["Scorch tick", +(d * st.dot.k / st0.dmg * 100).toFixed(1) + "%td"], ["Scorch ticks", st.dot.n], ["Scorch slow", pc(SOL_SCORCH_SLOW) + " / stack"]] : []), ["Form", rayForm(st)]];
 }
+// each tower's rows read %td of ITS main hit at its build (tdOf, cardMain): the skills ride in statSk while the rows are built
+for (const k of Object.keys(SPEC)) { const f = SPEC[k]; SPEC[k] = (st, t) => { const was = statSk; statSk = (t && t.skills) || {}; try { return f(st, t); } finally { statSk = was; } }; }

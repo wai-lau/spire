@@ -157,7 +157,7 @@ const statTidy = v => (typeof v === "number" && isFinite(v) ? statNum(v) : typeo
 function cardStats(t, pv) {
   const b = TOWERS[t.kind], st = towerStats(t), nx = pv ? towerStats(pv) : null, spN = nx ? SPEC[t.kind](nx, pv) : null;
   const rows = [];
-  if (b.dmg) rows.push(["Damage (td)", dmgUnits(tdOf(t.kind, st)), nx && dmgUnits(tdOf(t.kind, nx))]); // "Damage (td)", in the Tower section for every tower (owner, 2026-10-26: "Damage (td) should always be under tower!") - the 100% every %td counts in (tdOf, aspira-stats.js)
+  if (b.dmg) rows.push(["Damage (td)", dmgUnits(tdOf(t.kind, st, t.skills)), nx && dmgUnits(tdOf(t.kind, nx, pv.skills))]); // "Damage (td)", in the Tower section for every tower (owner, 2026-10-26: "Damage (td) should always be under tower!") - the 100% every %td counts in (tdOf, aspira-stats.js)
   const shotRate = q => (t.kind === "sol" && typeof SOL_PULSE_K === "number" ? q.rate * SOL_PULSE_K : q.rate).toFixed(2) + "/s"; // SOL: its SHOTS a second (it pulses every 1 / (rate x SOL_PULSE_K) - the sentence's "fires every")
   rows.push(["Range", Math.round(st.range), nx && Math.round(nx.range)], ["Rate", shotRate(st), nx && shotRate(nx)],
     ["Leash", slideSpan(t), nx && slideSpan(pv)]);
