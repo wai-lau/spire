@@ -36,17 +36,22 @@ const solBladeProfile = d => 1.6 + 1.6 * (Math.exp(3 * d) - 1) / (Math.exp(3) - 
 // ONE BLADE HEIGHT AT EVERY LEVEL (owner, 2026-11-07: "breach blades, always use the level 4 tower height for the blade height, instead of the
 // current tower height"): the profile runs on a level-SOL_BLADE_LVL tower's visible height, whatever this tower's level
 const SOL_BLADE_LVL = 4;
+// THE BLADES RIDE THE TOWER (owner, 2026-11-09: "For SOL breach blade appearance, I like the current look at level 8 / Calculate in a nonrelative unit how
+// much taller/shorter each blade is than the tower at level 8 / Then do tower height +/- that calculated height for each blade, no need to render blades
+// that are completely in the ground"): each blade's top sits its level-SOL_BLADE_REF offset (absolute, in towerH units) above or below THIS tower's height,
+// so level 8 looks as it did and a blade whose top would be underground is skipped
+const SOL_BLADE_REF = 8;
 const solBodyOf = new WeakMap();
 let solScratch = null;
 // device px of the world point (px, py) at height z (identity transform)
 const solScr = (px, py, z) => { const F = warpFrame(px, py, z); return [F[0] * px + F[2] * py + F[4], F[1] * px + F[3] * py + F[5]]; };
 function solBladeGeo(t, x, y, top) { // each blade's outline in device px, sorted back to front; -> { list, key }. top: the prism's top as drawOrbiters gives it
-  const n = solSides(t), c = CELLS[t.cell], p = c.pts[0], R = Math.hypot(p.x - c.x, p.y - c.y) * TOWER_K * TOWER_DRAW_K, a0 = solA0(t, n), z0 = warpFloor(), vis = (top + warpLift) * towerH({ lvl: SOL_BLADE_LVL }) / towerH(t); // z0: the REAL floor (the tower is lifted, warpLift); vis: its visible height
+  const n = solSides(t), c = CELLS[t.cell], p = c.pts[0], R = Math.hypot(p.x - c.x, p.y - c.y) * TOWER_K * TOWER_DRAW_K, a0 = solA0(t, n), z0 = warpFloor(), u = (top + warpLift) / towerH(t), hT = towerH(t), h4 = towerH({ lvl: SOL_BLADE_LVL }), h8 = towerH({ lvl: SOL_BLADE_REF }); // z0: the REAL floor (the tower is lifted, warpLift); u: visible units a towerH unit
   const s = R / 40, R5 = R + SOL_BLADE_OUT * 40 * s, w = 2 * R * Math.sin(Math.PI / n) / 6, th = SOL_BLADE_TH * 40 * s, base = solScr(x, y, z0);
   const cx = Array.from({ length: n }, (_, k) => solScr(x + R * Math.cos(a0 + 2 * Math.PI * k / n), y + R * Math.sin(a0 + 2 * Math.PI * k / n), z0)[0] - base[0]);
   const mx = Math.max(1e-6, ...cx.map(Math.abs)), list = [];
   for (let k = 0; k < n; k++) {
-    const a = a0 + 2 * Math.PI * k / n, ca = Math.cos(a), sa = Math.sin(a), bA = a, cb = Math.cos(bA), sb = Math.sin(bA), H = vis * solBladeProfile(Math.abs(cx[k]) / mx);
+    const a = a0 + 2 * Math.PI * k / n, ca = Math.cos(a), sa = Math.sin(a), bA = a, cb = Math.cos(bA), sb = Math.sin(bA), H = u * (hT + h4 * solBladeProfile(Math.abs(cx[k]) / mx) - h8); if (!(H > 0)) continue; // the tower's height +/- the blade's level-8 offset; one wholly underground is not drawn
     const pt = (u, z, off) => { const q = solScr(x + R5 * ca + u * cb - off * sb, y + R5 * sa + u * sb + off * cb, z0 + z); return [q[0] - base[0], q[1] - base[1]]; };
     const sh = [[0, 0], [w, 0], [0.88 * w, 0.8 * H], [0, H]], plates = [-th, th].map(off => sh.map(q => pt(q[0], q[1], off)));
     const ham = []; for (let z = 0.05 * H, i = 0; z < 0.74 * H; z += H * 0.03, i++) ham.push(pt(w - 0.12 * w * (z / (0.8 * H)) - 0.2 * w + 0.03 * w * Math.sin(i * 1.3), z, 0));

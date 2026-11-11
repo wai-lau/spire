@@ -53,7 +53,7 @@ const SOL_SCORCH_M = 3;
 // THE PULSE'S CADENCE (owner, 2026-11-05: "pulse at the old rate! for SOL" / "reduce fire rate of SOL then" / "short aim time is mostly for
 // visual"): a shot every 1 / (rate x SOL_PULSE_K) s for st.dmg / SOL_PULSE_K (the damage a second held), its scorch in SOL_SCORCH_M /
 // SOL_PULSE_K stacks a shot (the stacks a second held: "scorch is what pops shields"); a NEW lock aims SOL_AIM s before it may fire
-const SOL_FL_KEEP = 0.15; // s a pulse's flash shows (aspira-effects.js SOL_PULSE_FLASH: the same) - kept past the lock a killing pulse ends
+const SOL_FL_KEEP = 0.3; /* x2 with SOL_PULSE_FLASH (owner, 2026-11-09: "visual-only: double duration of SOL beams"); a look only - nothing in the game reads the kept flash */ // s a pulse's flash shows (aspira-effects.js SOL_PULSE_FLASH: the same) - kept past the lock a killing pulse ends
 let SOL_PULSE_K = 0.75, SOL_AIM = 0.3; // (marks 9 pts 101-119: x1 76/24/0/21, x0.75 80/30/0/23, x0.5 83/34/0/26 - all swarm -3, distance 20; x0.75 shipped: "reduce fire rate of SOL then")
 // SCORCH V's FLARE (owner, 2026-11-06: "SOL, don't require death, just first enemy hit, leave SOL colored IFR flare"): each shot's FIRST
 // enemy hit (the lock, whether it dies or not) leaves an IFR flare there in SOL's colour, burning as IFR's untaken Flare does (its length,
