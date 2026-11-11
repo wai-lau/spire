@@ -166,11 +166,12 @@ const carZ = t => (CRR_DART_K0 + CRR_DART_GROW * TIER_LEVEL[skillOf(t, "armament
 // OUT OF THE TIPS, LEFT THEN RIGHT (owner, 2026-11-06: "bolts fire out of tip of Vs alternating between"): the game's bolt leaves the interceptor's
 // centre (aspira-crr.js, untouched); it is DRAWN from a V's tip - the offset from its release spot to that tip, taken once, the interceptor's
 // tips taking turns (i.tk) - closing onto its true path over its first CRR_TIP_IN u
-const CRR_TIP_IN = 24, CRR_TIP0 = [0, 0];
+const CRR_TIP_IN = 24, CRR_TIP0 = [0, 0], CRR_PAIR_GAP = 3; // (PAIR_GAP: u between the two bolts of a pair, across their flight)
 function carBoltTip(b, t, fl) {
   if (b.tp) return b.tp; const i = b.icp; if (!i) return CRR_TIP0;
-  i.tk = i.tk === 1 ? -1 : 1; const ux = b.vx / CRR_BOLT_V, uy = b.vy / CRR_BOLT_V, [tx, ty] = carTip(i, carZ(t) * (1 + CRR_SIZE_JIT * (i.oj || 0)), i.tk);
-  return (b.tp = [tx - (b.x - ux * fl), ty - (b.y - uy * fl)]);
+  // A SALVO'S SPOTS (owner, 2026-11-09, CRR_SALVO): a pair from each V tip, then the centre's one or pair, the two of a pair CRR_PAIR_GAP apart across the flight
+  const ux = b.vx / CRR_BOLT_V, uy = b.vy / CRR_BOLT_V, [tx, ty] = b.spot ? carTip(i, carZ(t) * (1 + CRR_SIZE_JIT * (i.oj || 0)), b.spot) : [i.x, i.y], g = (b.pi || 0) * CRR_PAIR_GAP / 2;
+  return (b.tp = [tx - uy * g - (b.x - ux * fl), ty + ux * g - (b.y - uy * fl)]);
 }
 const CRR_TETHER_A0 = 0.7, CRR_TETHER_W = 0.4; // the tether chain: its least alpha (x CHAIN_A on top, as ARC's), its links x ARC's size
 function drawCar(darts) {
