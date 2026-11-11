@@ -26,15 +26,16 @@ const ARCANA = [
   // (was Star, Empress, Strength, Chariot, Lovers, Temperance, Devil, Justice, Judgement, Death)
   // THE HINTS FOR THE NEW TRICKS (2026-11-08): Chariot, Strength, Lovers, Empress, Judgement, Death rewritten (Visual, Leader-relayed); the Devil's is the
   // owner's own, verbatim but the set's capital and full stop ("six faces hunger / three vermillion paths, beware, / even one dooms all", rewritten 2026-11-09; was "three paths, vermillion, and yet / even one, dooms all"); Star, Justice, Temperance kept
+  // NO DASHES IN THE HAIKUS (owner, 2026-11-09: "remove em-dash or dashes from haikus"): a comma or a semicolon where a line used to break on one
   { id: "star", name: "The Star", hint: ["One light in the dark", "crossing the long silent sky", "asks only to meet."] },
-  { id: "chariot", name: "The Chariot", hint: ["Like the tide, it comes -", "surging close, then falling back,", "then surging again."] },
+  { id: "chariot", name: "The Chariot", hint: ["Like the tide, it comes,", "surging close, then falling back,", "then surging again."] },
   { id: "strength", name: "Strength", hint: ["A mountain that walks,", "plated thick against the storm;", "blows break on her stone."] },
-  { id: "lovers", name: "The Lovers", hint: ["Apart, they still come,", "and nearing home, they hasten -", "love will not slow down."] /* new poem (owner, 2026-11-05: "new poem" - two bosses on opposite lanes, an armor wave round them, no trick; was "Two walk as one heart. / Part them, and the one who stays / will never forgive.", the heal-and-run) */ },
+  { id: "lovers", name: "The Lovers", hint: ["Apart, they still come,", "and nearing home, they hasten;", "love will not slow down."] /* new poem (owner, 2026-11-05: "new poem" - two bosses on opposite lanes, an armor wave round them, no trick; was "Two walk as one heart. / Part them, and the one who stays / will never forgive.", the heal-and-run) */ },
   { id: "empress", name: "The Empress", hint: ["Wound her, and she sleeps", "behind a veil of her young;", "slay them, and she wakes."] },
-  { id: "judgement", name: "Judgement", hint: ["The trumpet sounds once;", "the fallen rise as its shield -", "none may judge the judge."] },
+  { id: "judgement", name: "Judgement", hint: ["The trumpet sounds once;", "the fallen rise as its shield;", "none may judge the judge."] },
   { id: "justice", name: "Justice", hint: ["The scales hold steady.", "No blow, however heavy,", "outweighs the balance."] },
   { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "the wound fills, and heals."] },
-  { id: "death", name: "Death", hint: ["No riddle, no trick,", "only the long road to dark -", "and one more beyond."] },
+  { id: "death", name: "Death", hint: ["Ghosts haunt these dark halls,", "they tell tales of a spire", "all their tales lead here."] } /* the owner's own words (owner, 2026-11-09: "ghosts haunt these dark halls, / they tell tales of a spire / all their tales lead here."), the set's capital */,
   { id: "devil", name: "The Devil", hint: ["Six faces hunger", "three vermillion paths, beware,", "even one dooms all."] },
 ];
 // EACH BOSS ITS OWN DIE (owner, 2026-11-07: "visually update dice shapes, (keep boss sizes): chariot should use the fast dice shape / strength

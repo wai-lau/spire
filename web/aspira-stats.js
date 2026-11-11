@@ -85,7 +85,10 @@ const SPEC = {
 // number in each value, lower-is-better for the rows in LOWER_BETTER, and a
 // number giving way to "—" (a stat the upgrade removes) counts as worse.
 const LOWER_BETTER = new Set(["Delay", "Doubles every", "Drips every", "Pulse every"]); // (Drips every: a shorter wait is better)
-function lastNum(v) { const m = String(v).match(/\d+(\.\d+)?/g); return m ? Number(m[m.length - 1]) : NaN; }
+// the RAW number, its unit read (owner, 2026-11-09: "900 -> 1.1k damage should show as green not red" - "1.1k" read as 1.1): thousands commas
+// dropped, a k / M / B suffix multiplied in
+const NUM_UNIT = { k: 1e3, K: 1e3, m: 1e6, M: 1e6, b: 1e9, B: 1e9 };
+function lastNum(v) { const m = [...String(v).matchAll(/(\d[\d,]*(?:\.\d+)?)(?:([kKmMbB])(?![a-zA-Z]))?/g)]; if (!m.length) return NaN; const [, n, u] = m[m.length - 1]; return Number(n.replace(/,/g, "")) * (NUM_UNIT[u] || 1); }
 function worse(label, now, next) {
   const a = lastNum(now), b = lastNum(next);
   if (isNaN(b)) return !isNaN(a) && String(next) === "—";
