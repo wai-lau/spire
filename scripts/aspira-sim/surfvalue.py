@@ -13,6 +13,20 @@ import statistics as st
 import sys
 from collections import defaultdict
 
+
+def write_surface(res, out):  # one tower x point-level entry a line (owner, 2026-11-10: "add a 500 line limit to every file")
+    with open(out, "w") as fh:
+        kinds = list(res)
+        fh.write("{\n")
+        for ki, k in enumerate(kinds):
+            Ps = list(res[k])
+            fh.write(f" {json.dumps(k)}: {{\n")
+            for pi, P in enumerate(Ps):
+                fh.write(f"  {json.dumps(P)}: {json.dumps(res[k][P])}" + (",\n" if pi < len(Ps) - 1 else "\n"))
+            fh.write(" }" + (",\n" if ki < len(kinds) - 1 else "\n"))
+        fh.write("}\n")
+
+
 T = ["swarm", "fast", "shield", "armor"]
 args = sys.argv[1:]
 out = "surface.json"
@@ -67,5 +81,5 @@ for kind in kinds:
                             d[t].append(leak[(kind, P, b, t)] - leak[(kind, P, yb, t)])
             m[i] = {t: round(st.mean(d[t]), 2) if d[t] else 0 for t in T}
         res[kind][str(P)] = {"g": g, "m": m}
-json.dump(res, open(out, "w"), indent=1)
+write_surface(res, out)
 print(out, {k: sorted(v, key=int) for k, v in res.items()})
