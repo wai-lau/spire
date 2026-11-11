@@ -24,12 +24,14 @@
 .asp-end-towers tr[data-kind="ifr"] { color: hsl(var(--asp-ifr-hsl)); }
 
 .asp-end-waves {
-  max-height: 4lh; /* the head and THREE waves, the rest scroll (owner, 2026-10-19; was 30dvh) */
+  line-height: var(--lh-snug);
+  max-height: calc(4em * var(--lh-snug)); /* the head and THREE waves, the rest scroll (owner, 2026-10-19; was 30dvh); in em, not lh: WebKit resolves lh before the end screen's zoom */
   overflow-y: auto;
   font-size: var(--fs-sm);
   background: hsl(var(--bg-hsl) / 0.45);
 }
 
+.asp-end-waves table { border-spacing: 0; } /* (the head + three rows exactly: the default 2 px spacing cut the third) */
 .asp-end-waves th,
 .asp-end-waves td { padding: 0 var(--space-3); text-align: left; }
 
@@ -41,6 +43,11 @@
    title, stats and Play again leave, each scrolling inside itself; since 2026-10-19 the leak list is three rows (.asp-end-waves) and the board takes the rest */
 #asp-ov { overflow: hidden; justify-content: flex-start; padding-bottom: calc(var(--space-8) + var(--foot-h, 0px)); } /* clear of the speed bar (owner, 2026-10-31: "Ensure at least top 3 lives lost are fully visible" - the list ran under it) */
 #asp-ov > * { flex-shrink: 0; }
+/* THE END SCREEN SHRINKS TO FIT (owner, 2026-11-10: "if the endscreen things don't fit at minimum rows, reduce font size until it does"):
+   endFit (aspira-endstats.js) steps --end-z down until everything fits; zoom scales each part whole (text, padding, Play again, the board),
+   the overlay's gap and top padding with it; never the overlay box itself (fixed to the screen) or its bottom padding (the speed bar) */
+#asp-ov > *:not(#asp-ov-right), #asp-ov-right > * { zoom: var(--end-z, 1); }
+#asp-ov { row-gap: calc(var(--space-4) * var(--end-z, 1)); padding-top: calc(var(--space-8) * var(--end-z, 1)); }
 #asp-ov-right { display: contents; } /* (one block only on a wide screen - below; on a phone its items are the overlay's own) */
 #asp-ov-right > * { flex-shrink: 0; }
 #asp-ov > #asp-asc:not([hidden]) { flex: 1 1 0; min-height: 0; } /* (#asp-asc is a flex column already - aspira-ascend.css) */
@@ -74,7 +81,7 @@
   #asp-ov > #asp-asc:not([hidden]) > #asp-asc-board { flex: 0 1 auto; } /* its own height, shrinking (and scrolling) only past the screen's */
   #asp-ov:has(> #asp-asc:not([hidden])) > #asp-ov-right {
     grid-column: 2; grid-row: 1; justify-self: start; align-self: center; max-height: 100%; min-height: 0;
-    display: flex; flex-direction: column; align-items: center; gap: var(--space-4);
+    display: flex; flex-direction: column; align-items: center; gap: calc(var(--space-4) * var(--end-z, 1));
   }
   #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-title { order: 1; }
   #asp-ov:has(> #asp-asc:not([hidden])) #asp-ov-text { order: 2; }
