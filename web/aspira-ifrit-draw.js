@@ -4,13 +4,17 @@
 // 3D moving layer turns them into GL instances; no gradient on the board context) ----------
 // DRAWN BIGGER UP THE METEOR AXIS (owner, 2026-11-05: "IFR meteor should visually increase meteor and shard sizes"): the meteor in flight, its trail and its
 // burst shards are drawn x IFR_METEOR_DRAW_K per Meteor tier (V x3.05) on top of their radius - the DRAWING only; the hit sizes (IFR_BALL_RAD) are the logic's
+// TWICE AS BIG (owner, 2026-11-09: "double the size of all meteors and secondary meteors; leave special meteor V meteors alone"): every meteor
+// DRAWN x IFR_METEOR_SIZE_K - in flight with its tracer, the burst shards, the charges in orbit (their Hellfire ring and Flare rays with them) -
+// but not Meteor V's big ones (b.big, IFR_BIG_DRAW_K, as they were); the hit sizes (IFR_BALL_RAD) untouched
+const IFR_METEOR_SIZE_K = 2;
 const IFR_METEOR_DRAW_K = 1.25, ifrDrawK = t => IFR_METEOR_DRAW_K ** (typeof skillOf === "function" ? skillOf(t, "meteor") : 0);
 function drawIfrCharge(t, st, low, far) { // far: true the meteors behind the tower's centre only, false those in front, undefined all
   if (t.ifrCharge <= 0) return;
   const cy = ifrCentre(t).y;
   const n = Math.max(1, st.store || 1); // the stored meteors, evenly round the orbit; the one still charging grows to the meteor it launches
   const h = skillOf(t, "hellfire"), fl = skillOf(t, "firaga");
-  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n); if (far != null && (c.y < cy) !== far) continue; const f = Math.min(1, t.ifrCharge - k), r = st.ballR * (0.3 + 0.7 * f); drawIfrMeteor(c.x, c.y, r, true, low); ifrBodyMarks(c.x, c.y, r, h, fl, f); } // (the charges in orbit keep their size - a bigger one crowds the tower's hex)
+  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n); if (far != null && (c.y < cy) !== far) continue; const f = Math.min(1, t.ifrCharge - k), r = st.ballR * (0.3 + 0.7 * f) * IFR_METEOR_SIZE_K; drawIfrMeteor(c.x, c.y, r, true, low); ifrBodyMarks(c.x, c.y, r, h, fl, f); } // (the charges in orbit x IFR_METEOR_SIZE_K since 2026-11-09; they had kept their size so as not to crowd the tower's hex)
 }
 // THE BODY SHOWS THE BUILD (owner, 2026-11-06: "I want the upgrades to each update a visual feature of the tower as well as their attacks / for example
 // with IFR / for the meteors that orbit it / meteor: bigger (already exists) / hellfire: brighter/thicker red ring around / flare: little flare on top of
@@ -21,7 +25,7 @@ const IFR_BODY_HF_GAP = 2.6, IFR_BODY_HF_W = [0, 0.7, 1.1, 1.5, 1.9, 2.4], IFR_B
 function ifrBodyMarks(x, y, r, h, fl, f) {
   if (h > 0) { ctx.strokeStyle = COL.threat; ctx.lineWidth = IFR_BODY_HF_W[h]; ctx.globalAlpha = IFR_BODY_HF_A[h] * f; ctx.beginPath(); ctx.arc(x, y, r + IFR_BODY_HF_GAP, 0, 6.283); ctx.stroke(); }
   if (fl > 0) {
-    const L = IFR_BALL_RAD[0] * IFR_BODY_FL_K * fl * f, d = L * IFR_BODY_FL_X * Math.SQRT1_2; // the long four + a shorter x, one path
+    const L = IFR_BALL_RAD[0] * IFR_METEOR_SIZE_K * IFR_BODY_FL_K * fl * f, d = L * IFR_BODY_FL_X * Math.SQRT1_2; // the long four + a shorter x, one path
     ctx.lineCap = "round"; ctx.beginPath();
     ctx.moveTo(x - L, y); ctx.lineTo(x + L, y); ctx.moveTo(x, y - L); ctx.lineTo(x, y + L); ctx.moveTo(x - d, y - d); ctx.lineTo(x + d, y + d); ctx.moveTo(x - d, y + d); ctx.lineTo(x + d, y - d);
     ctx.strokeStyle = COL.orange; ctx.lineWidth = 1.2 + 0.15 * fl; ctx.globalAlpha = 0.55 * f; ctx.stroke(); /* an orange halo, then the white-hot core over it - a meteor's flare's colours (IFR_MAIN_COL) */
@@ -95,7 +99,7 @@ function drawMeteorTrail(b, dk = 1) {
 function drawIfrBalls(t, low) {
   const dk = ifrDrawK(t);
   for (const b of t.ifrBalls) if (!(b.wait > 0)) {
-    const bk = b.big ? IFR_BIG_DRAW_K : 1; /* Meteor V's big one */
+    const bk = b.big ? IFR_BIG_DRAW_K : IFR_METEOR_SIZE_K; /* Meteor V's big one as it was; every other meteor and shard x2 */
     if (!b.gen) drawMeteorTrail(b, dk * bk);
     drawIfrMeteor(b.x, b.y, (b.gen ? b.r * IFR_SHARD_DRAW : b.r) * dk * bk, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
   } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */

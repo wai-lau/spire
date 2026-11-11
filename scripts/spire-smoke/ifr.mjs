@@ -345,7 +345,7 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
     const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
     const t = G.towers[0]; ifrInit(t); const st = towerStats(t), out = {};
     const rec = fn => { const A = [], F = [], oa = ctx.arc, of = ctx.fill; ctx.arc = function (x, y, r, ...a) { A.push({ r, a: ctx.globalAlpha }); return oa.call(this, x, y, r, ...a); }; ctx.fill = function (...a) { F.push(ctx.fillStyle); return of.apply(this, a); }; try { fn(); } finally { ctx.arc = oa; ctx.fill = of; } return { A, F }; };
-    t.ifrCharge = 0.5; const R = st.ballR * 0.65, c = rec(() => drawIfrTop(t));
+    t.ifrCharge = 0.5; const R = st.ballR * 0.65 * (typeof IFR_METEOR_SIZE_K === "number" ? IFR_METEOR_SIZE_K : 1), c = rec(() => drawIfrTop(t)); /* x IFR_METEOR_SIZE_K: every meteor drawn twice as big (owner, 2026-11-09) */
     out.outer = Math.max(...c.A.map(q => q.r)); out.R = R;
     // the inner glow, ONE smooth glow since 2026-11-06 (was stacked rings): a unit disc under the meteor's scale, filled with a radial gradient clear at 0.7 and full at 1 (ifrRimGrad)
     const inner = c.A.filter(q => Math.abs(q.r - 1) < 1e-9), rg = typeof ifrRimGrad === "function"; out.innerMin = rg ? 1 - IFR_INNER_DEPTH : 0; /* the gradient clear radius - cached across checks, so read off its constant */ out.innerA = Math.max(0, ...inner.map(q => q.a)); out.innerN = inner.length;
@@ -354,7 +354,7 @@ check("IFR's look: the charge grows to the meteor, an inner glow from 30% at the
     const ref = TOWERS.ifr.dmg * IFR_TICK_K[0]; out.i1 = ifrFlareI({ hit: ref, hf: true }); out.i2 = ifrFlareI({ hit: 2 * ref, hf: true }); out.i0 = ifrFlareI({ hit: ref / 10, hf: true });
     return out;
   })()`);
-  if (Math.abs(r.outer - r.R) > 1e-6) return "a half charge's outline is r " + r.outer + " (expected 0.65 x the meteor, " + r.R + ")";
+  if (Math.abs(r.outer - r.R) > 1e-6) return "a half charge's outline is r " + r.outer + " (expected 0.65 x the meteor x IFR_METEOR_SIZE_K, " + r.R + ")";
   if (!r.innerN || r.innerMin < 0.7 - 1e-6 || !(r.innerA <= 0.3 + 1e-6 && r.innerA > 0.2)) return "inner glow: " + r.innerN + " rings, deepest at " + r.innerMin + " r, brightest " + r.innerA + " (expected down to 0.7 r, 0.3 at the outline)";
   if (!r.hfBright) return "a fire flare from a higher Flare level is not brighter (owner, 2026-10-20)";
   if (!r.coreHf || !r.coreMain || !r.haloHf || r.mainK !== 3) return "flare colours: the fire's red core (orange centre line) " + r.coreHf + ", red halo " + r.haloHf + ", a meteor's white core (orange round it, a red halo) " + r.coreMain + ", meteor flares x" + r.mainK + " (owner, 2026-10-21: make sure it's red; 2026-10-20 red outside, orange inside; meteor flares brighter)";
