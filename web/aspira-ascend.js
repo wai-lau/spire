@@ -115,13 +115,17 @@ function showAscend() {
   const box = ascBox(), won = !!G.won;
   box.hidden = false;
   if (autoBarred()) { box.innerHTML = ASC_TITLE + '<p id="asp-asc-note">move-hax or cred-hax was used - this game stays off the board.</p><div id="asp-asc-board"></div>'; ascLoad(); return; }
-  box.innerHTML = ASC_TITLE + '<form id="asp-asc-form"><input id="asp-asc-in" class="' + (won ? "asp-asc-gold" : "asp-asc-green") + '" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" aria-label="your initials">' +
-    '<button class="asp-primary" type="submit"' + (won ? ">ascend" : ' aria-label="post">\u21B5') + '</button></form><p id="asp-asc-note">' +
+  // NEVER AUTOFILLED (owner, 2026-11-09: "this looks really scary, don't do that / no autofulling for this field" - Chrome offered a saved
+  // payment card under it): no <form> (autofill reads a form's fields as a set), no maxlength="3" (a three-character field reads as a card's
+  // security code; oninput keeps it to three), a name and label that are not a person's name, and the password managers' ignore flags; Enter
+  // and the button post it (ascSend)
+  box.innerHTML = ASC_TITLE + '<div id="asp-asc-form" role="group"><input id="asp-asc-in" name="asp-tag-' + Date.now().toString(36) + '" type="text" class="' + (won ? "asp-asc-gold" : "asp-asc-green") + '" autocomplete="off" data-lpignore="true" data-1p-ignore="true" data-form-type="other" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="AAA" aria-label="three letters for the board">' +
+    '<button class="asp-primary" type="button"' + (won ? ">ascend" : ' aria-label="post">\u21B5') + '</button></div><p id="asp-asc-note">' +
     (won ? "Leave your initials among the Ascendants." : "Wave " + G.wave + " - leave your initials on the board.") + '</p><div id="asp-asc-board"></div>';
   ascForm = $("asp-asc-form"); // (here till the board loads; then ascBoard moves it into YOUR row - and here it stays if the board cannot load)
   const input = $("asp-asc-in");
   input.oninput = () => { input.value = input.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3); };
-  ascForm.onsubmit = ascSend;
+  input.onkeydown = ev => { if (ev.key === "Enter") ascSend(ev); }; ascForm.querySelector("button").onclick = ascSend;
   const verEl = document.querySelector(".asp-ver span");
   ascLoad({ initials: "", team: ascTeam(), lives: Math.max(0, G.lives), won, wave: won ? WIN_WAVE : G.wave, ts: Date.now() / 1000, ver: verEl ? verEl.textContent.trim() : "" });
 }
