@@ -1,0 +1,403 @@
+/* the upgrade chooser (aspira-ui.js): 2-3 cards over the dimmed board, each
+   coloured like the tower; nothing is charged until one is tapped */
+.asp-chooser { z-index: var(--z-bubble); overflow-y: auto; justify-content: flex-start; background: none; } /* NO scrim: the board stays as it is behind the cards (owner, 2026-10-18: the greyed-out board read as weird) */ /* the cards above everything (owner) */
+.asp-chooser > :first-child { margin-top: auto; }
+.asp-chooser > :last-child { margin-bottom: auto; } /* CENTRED vertically (owner, 2026-10-07; was at the bottom) */ /* sits at the BOTTOM, where the tower card is (owner); its lift is set by aspira-ui.js */
+.asp-chooser .asp-chooser-cost {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-2);
+  background: hsl(var(--bg-hsl));
+  font-size: var(--fs-2xs);
+  color: hsl(var(--green-hsl));
+  text-shadow: none;
+}
+.asp-chooser[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-chooser[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
+.asp-chooser[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
+.asp-chooser[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
+.asp-chooser[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
+.asp-chooser[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-chooser[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
+
+/* the BUILD cards each wear their own tower's colour (aspira-chooser.js) - GRV and ATC in a PALE ink of it (owner, 2026-10-16: "use a
+   pale font if the card is dark", "maintain the same level of visibility"): lightness lifted to SOL's contrast on the dark card,
+   9.4:1 (GRV 46% -> 78% was 2.9:1, ATC 58% -> 74% was 5.5:1; ARC/FRZ/ACD 12:1) */ /* 2026-10-19 (owner: CRR and GRV cards "visually too similar"): the two inks were 18.5 apart (CIEDE2000); now GRV pale violet 270 99% 83% on its tower hue (10:1), CRR a deeper blue 213 100% 61% (6:1) - 27 apart */
+.asp-card[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-card[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
+.asp-card[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
+.asp-card[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
+.asp-card[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
+.asp-card[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-card[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
+
+/* ...unless the credits cannot cover it: faint Ember red, every kind alike (owner, 2026-10-07) */
+#asp .asp-card.poor, #asp .asp-tw.poor { --green-hsl: var(--orange-glow-hsl); color: hsl(var(--orange-glow-hsl)); }
+
+/* a card stays SOLID (the wave list showed through a faded one): its text fades instead, the "need" note excepted */
+#asp button.asp-card.poor { opacity: 1; }
+#asp .asp-card.poor > :not(.asp-need) { opacity: 0.45; }
+
+/* no build buttons (owner): free slots are tapped instead */
+#asp .asp-build { display: none; }
+
+/* the cards' GRID (aspira-chooser.js layoutCards sets --cols and --card-w by the
+   screen's shape, owner 2026-10-07): side by side the cards of a row stretch to
+   the SAME height (owner); stacked, each keeps its own */
+.asp-cards { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, var(--card-w, 380px))); justify-content: center; gap: var(--space-4); }
+
+/* cancel: the same as clicking off the cards (owner) */
+#asp button.asp-cancel { padding-inline: var(--space-8); background: hsl(var(--bg-hsl)); }
+
+/* while the cards are up, the board BLURS and darkens beneath them (owner); it
+   is frozen then (no redraw), so the filter is not re-run every frame */
+#asp.asp-choosing .asp-board canvas { filter: blur(var(--blur-xs)) brightness(0.5); }
+
+#asp.asp-choosing #asp-pop { visibility: hidden; } /* the tower card never peeks out from behind the cards (owner) */
+
+/* each card is laid out like the tower's own card (owner): name, the two stat
+   columns, then the tagline - brighter than the tower card's hint */
+#asp button.asp-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
+  width: 100%; /* its grid column's width (layoutCards) */
+  padding: var(--space-4);
+  text-align: left;
+  line-height: var(--lh-snug);
+  color: hsl(var(--green-hsl));
+
+  /* the tower card's own surface (owner: "match the tower cards") - .asp-deck's
+     tint over the background, .asp-pop's border */
+  background: linear-gradient(hsl(var(--green-hsl) / 0.12), hsl(var(--green-hsl) / 0.12)), hsl(var(--bg-hsl));
+  border-color: hsl(var(--green-hsl) / 0.45);
+  border-radius: var(--radius-3);
+}
+.asp-card .name { font-weight: var(--fw-bold); }
+.asp-card .asp-cols { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); align-items: start; } /* everything FITS (owner): the columns wrap under each other */
+.asp-card .asp-spec { padding-left: var(--space-4); border-left: 1px solid hsl(var(--green-hsl) / 0.12); }
+.asp-card dl { display: grid; grid-template-columns: auto 1fr; gap: var(--space-0-5) var(--space-4); min-width: 0; margin: 0; font-size: calc(var(--fs-2xs) * 0.8); font-variant-numeric: tabular-nums; }
+.asp-card dt { color: hsl(var(--green-hsl) / 0.45); }
+.asp-card dd { margin: 0; white-space: normal; overflow-wrap: anywhere; } /* a long value wraps inside its row, never out of the card (owner) */
+.asp-card .asp-hint { max-width: none; } /* not the overlay's 36ch */
+
+.asp-goodvs { font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); display: flex; flex-wrap: nowrap; white-space: nowrap; gap: 0 0.9em; align-items: center; overflow: hidden; } /* ONE line, shrunk to fit by fitOneLine (owner, 2026-10-17); em gap so it shrinks with it */
+.asp-goodvs .asp-vs { display: inline-flex; align-items: center; gap: var(--space-0-5); white-space: nowrap; } /* an enemy's symbol and its marks (aspira-chooser.js vsMarks) */
+.asp-panel-vs { margin-top: auto; padding-top: var(--space-4); justify-content: center; } /* (2026-11-07: ABOVE the targeting priority - the foot's anchor, margin-top auto, moved here) */
+.asp-panel-vs + .asp-prio-box { margin-top: 0; padding-top: var(--space-2); } /* centred (owner, 2026-11-06: "center the marks you just added") */ /* a placed tower's marks, under its targeting priority (aspira-sliders.js) */
+#asp { --asp-ui-green-hsl: var(--green-hsl); } /* the UI green fixed at the page (cancel's): a card retints --green-hsl to its tower */
+.asp-goodvs .asp-vs-y { color: hsl(var(--asp-ui-green-hsl)) /* the cancel button's green (owner, 2026-10-19; was --cat-social) */; font-weight: var(--fw-bold); } /* the SAME green and orange on every card (owner, 2026-10-16: "always show the checks and x in the same color") - not --asp-good/bad, which ARC and ACD retint */
+.asp-goodvs .asp-vs-n { color: hsl(var(--asp-threat-hsl)) /* the gap box's red (owner, 2026-10-19; was --orange-glow) */; font-weight: var(--fw-bold); }
+.asp-build-cards .asp-goodvs { padding: 1px calc(0.3em + 1px); margin: -1px calc(-0.3em - 1px); } /* room for a gap box's edges inside the row's clip (overflow: hidden), given back by the margin: the row sits where it did */
+.asp-goodvs .asp-vs-gapw { display: inline-flex; align-items: center; gap: calc(0.3em + 1px + var(--space-1)); } /* the box and its warning: the gap clears the box's edge (it takes no room, below) */
+.asp-goodvs .asp-vs-warn { width: 1.1em; height: 1.1em; color: hsl(var(--asp-threat-hsl)); } /* an SVG, not the U+26A0 glyph - fonts drew it filled, its "!" lost (owner, 2026-10-19) */
+.asp-goodvs .asp-vs-gap { border: 1px solid hsl(var(--asp-threat-hsl)) /* thinner (owner, 2026-10-19; was 2px) */; padding: 0 0.3em 0 0.1em; margin: -1px calc(-0.3em - 1px) -1px calc(-0.1em - 1px); /* takes no room: the marks stay where they were, the box grows into the gaps either side. LEFT 0.2em less: the enemy icon carries its own margin in its 20u viewBox (about 0.08-0.17em of ink inset) while the stroked marks run about 0.08em PAST their advance - fitted to the owner's screen (6 px left vs 3 right at 0.3em both) so the INK sits centred */ border-radius: var(--radius-1); } /* a BORDER, inside its own box: .asp-goodvs clips (overflow: hidden), which cut an outline to two side bars. An enemy type the two built towers leave open, on a card weak to it (vsGaps; owner, 2026-10-19: "a red box around the enemy and the Xs") */
+.asp-goodvs .asp-vs-m { color: hsl(var(--asp-mark-mid-hsl)); font-weight: var(--fw-bold); } /* neither good nor bad (owner, 2026-10-19: "if neither good or bad, put a yellow -")*/
+.asp-goodvs .asp-vs-y, .asp-goodvs .asp-vs-n, .asp-goodvs .asp-vs-m { -webkit-text-stroke: 0.7px currentcolor; paint-order: stroke fill; } /* BOLD marks, their own colours (owner, 2026-10-16: "dont change the x and check color here, just make it bold") - the glyphs have no heavy weight in the font */
+
+/* the BUILD cards are COMPACT so all four fit above the spend bar on a real
+   phone (owner: they overlapped it in iOS Safari) - tighter padding, gaps and
+   lines, the blurb a size smaller */
+.asp-cards.asp-build-cards { gap: var(--space-2); }
+/* an ODD last build card sits centred under the two columns, at a column's width (owner, 2026-10-19: "center the last tower" - seven cards since IFR) */
+.asp-build-cards > .asp-card:last-child:nth-child(odd) { transform: translateX(calc(50% + var(--space-2) / 2)); } /* left column, slid right by half its own width + half the gap: centred, the size of every other card */
+
+#asp .asp-build-cards button.asp-card { gap: var(--space-1); padding: var(--space-2-5) var(--space-3); line-height: var(--lh-tight); }
+
+.asp-build-cards .asp-hint { font-size: var(--fs-2xs); line-height: var(--lh-tight); white-space: nowrap; overflow: hidden; } /* ONE line, every card the same size (fitTaglines, aspira-chooser.js; owner, 2026-10-23) */
+
+
+#asp.asp-boss .asp-wavenote { filter: invert(1) drop-shadow(0 0 1px hsl(var(--bg-hsl))) drop-shadow(0 0 1px hsl(var(--bg-hsl))); }
+
+/* on the upgrade cards an INCREASE reads chatsubo green (owner); a change for
+   the worse stays Ember red */
+.asp-card .asp-next { color: hsl(var(--asp-good-hsl)); }
+.asp-card .asp-next.asp-worse { color: hsl(var(--asp-bad-hsl)); }
+
+/* the title left the header, so it flips with the boss sky on its own */
+
+/* the sound toggle is an icon (owner): a speaker, crossed out when muted */
+#asp-mute svg { display: block; width: 1.2em; height: 1.2em; fill: none; stroke: currentcolor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* PHONES (owner): the wave list drops its numbers (enemies, the countdown and - owner, 2026-10-11: "add wave type name to
+   the right of the pictures" - the name stay), and it and the title squeeze in LEFT of compact build buttons, on the
+   same bottom band */
+@media (width < 700px) {
+  /* no holes (owner: "gaps"): HP right after the count, rows packed */
+  .asp-wavenote { grid-template-columns: auto auto auto auto; gap: var(--space-1) 0; } /* the countdown + icons + hp + name */
+
+  .asp-wavenote > span:nth-child(5n + 2) { display: none; }
+  .asp-wavenote > span:nth-child(5n + 4) { padding-left: var(--space-2); }
+
+
+
+  /* the speed row and its volume slider stay ONE line (owner): tighter
+     buttons, and the slider takes what is left */
+  #asp-speed { gap: var(--space-1); }
+
+  #asp .asp-controls #asp-speed button { padding: var(--space-1); font-size: var(--fs-2xs); } /* smaller: the 1/4x button joined the row */
+
+
+
+  .asp-stats { gap: var(--space-1-5); } /* tighter: the top-right mute + slider column takes room */
+
+  .asp-card dd { white-space: normal; } /* a narrow card wraps rather than spill */
+
+  .asp-left { left: var(--space-3); gap: var(--space-1); }
+
+  .asp-title { font-size: var(--fs-xl); letter-spacing: var(--tracking-wide); } /* bigger (owner; was sm) */
+
+  .asp-bottom { right: calc(env(safe-area-inset-right, 0px) + var(--space-2)); }
+
+  #asp .asp-build { gap: var(--space-1); }
+
+  #asp .asp-build .asp-tw { min-width: 54px; padding-block: var(--space-3); } /* taller (owner); the width is what the list leaves */
+}
+
+/* a button the credits cannot cover is dimmed but still TAPPABLE (owner): a
+   tap flashes its cost Ember red and shakes it (noFunds, aspira-ui.js) */
+#asp button.poor { opacity: 0.45; }
+
+@keyframes asp-nofunds {
+  20%, 60% { transform: translateX(calc(-3 * var(--space-px))); }
+  40%, 80% { transform: translateX(calc(3 * var(--space-px))); }
+}
+
+#asp button.asp-nofunds { animation: asp-nofunds 0.4s ease-out; opacity: 1; }
+
+/* the tap's "need Nc more" (noFunds) */
+#asp .asp-need { color: hsl(var(--orange-glow-hsl)); font-weight: var(--fw-bold); font-size: var(--fs-xs); }
+
+#asp button.asp-nofunds .c,
+#asp button.asp-up-big.asp-nofunds { color: hsl(var(--orange-glow-hsl)); }
+
+/* sell, armed by a first tap: Ember until the second tap or a 2s timeout */
+#asp button.asp-sell.armed { color: hsl(var(--orange-glow-hsl)); border-color: hsl(var(--orange-glow-hsl)); }
+
+/* FPS is debug noise (owner): the counter keeps running, unseen */
+.asp-stat:has(#asp-fps) { display: none; }
+
+
+/* the targeting buttons sit SMALL under sell (owner) */
+
+/* the targeting-priority SLIDER (owner): three snapping stops, labels under it */
+.asp-prio-slider { width: 100%; height: var(--space-8); margin: 0; appearance: none; background: transparent; cursor: pointer; } /* the volume slider's track and knob */
+
+.asp-prio-labels { display: flex; justify-content: space-between; font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.45); cursor: pointer; }
+
+.asp-prio-labels .on { color: hsl(var(--green-hsl)); font-weight: var(--fw-bold); }
+
+/* the card's UPGRADE button wears the CARD's colour (owner), not orange */
+#asp .asp-pop button.asp-primary { border-color: hsl(var(--green-hsl)); color: hsl(var(--green-hsl)); }
+
+#asp .asp-pop button.asp-up-big { background: hsl(var(--green-hsl) / 0.12); }
+
+/* the BUILD cards keep their towers' own colours on a boss sky (owner) */
+#asp.asp-boss .asp-chooser.asp-building { filter: none; }
+
+/* the targeting priority at the FOOT of the info half - bottom right on a wide screen (owner, 2026-10-16: "for widescreen always have targetting prio bottom right side not halfway up page") */
+.asp-prio-box { margin-top: auto; padding-top: var(--space-4); }
+/* "Priority:" centred over the targeting row (owner) */
+.asp-prio { margin-bottom: calc(-1 * var(--space-2)); text-align: center; font-size: var(--fs-2xs); color: hsl(var(--green-hsl)); }
+
+/* the c of "40c" (cr) takes the font and colour of the text it ends - the core
+   option buttons style every span small and dim otherwise (owner: "fix the c") */
+#asp .asp-c { font: inherit; color: inherit; }
+
+/* auto-wait, auto-speed and quality: their own line in the header, under the stats (owner, 2026-10-10); it flips with the
+   header under a boss's sky */
+.asp-autowait { pointer-events: auto; align-self: stretch; flex-wrap: nowrap; gap: var(--space-4); } /* the header's box lets taps through, this does not */
+.asp-autowait.asp-ascboxes { flex-wrap: wrap; row-gap: var(--space-1); justify-content: flex-end; } /* the hax boxes STACK when the line has no room for both (owner, 2026-10-23: "Stack hax vertically if not wnough space") */
+
+/* a plain checkbox + label, no button box (owner: "not on a card"), lit text while it holds the game slow */
+#asp .asp-autowait button { flex: 0 0 auto; white-space: nowrap; display: inline-flex; align-items: center; gap: var(--space-1); padding: 0; border: none; background: none; font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); }
+
+#asp .asp-autowait button[hidden] { display: none; }
+#asp .asp-autowait .asp-amt { font-size: var(--fs-2xs); color: hsl(var(--orange-glow-hsl)); margin-left: var(--space-1); } /* (DQ): auto-move used this game - in Ember red (owner, 2026-10-13; was faint green) */ /* auto-move: Ascendants only (aspira-ui.js) */
+#asp .asp-autowait button.on { color: hsl(var(--green-hsl)); background: none; animation: asp-flash var(--asp-blink) ease-in-out infinite; } /* FLASHES while it holds the game slow (owner, 2026-10-08) */
+
+/* auto-wait ON and a power ONLINE flash BRIGHTER and HARDER (owner, 2026-10-08; were asp-blink):
+   faster, down to near nothing, and up to an over-bright glow in their own colour */
+#asp-ov-btn { animation: asp-flash 2.4s ease-in-out infinite; } /* slow (owner, 2026-10-12: "should not flash this fast"; was the 0.7s blink) */ /* Play again FLASHES (owner, 2026-10-12) - the overlay is only the game-over card */
+#asp #asp-sp-pause.asp-held { animation: asp-flash var(--asp-blink) ease-in-out infinite; } /* paused by the button (aspira-ui.js) */
+#asp .asp-powers .asp-power.pop { animation: asp-flash 0.5s ease-in-out infinite; } /* online: flashing for POWER_FLASH_MS (aspira-powers.js flashPower; owner 2026-10-14 "flash them longer" - was three quick ones) */
+
+@keyframes asp-flash {
+  0%, 100% { opacity: 1; filter: brightness(1.4) drop-shadow(0 0 var(--blur-sm) currentcolor); } /* a touch softer (owner, 2026-10-08; were 1.6 / 0.15) */
+  50% { opacity: 0.3; filter: none; }
+}
+
+
+/* 3D (aspira-warp.js): the 2D canvas (the board's texture source) takes every touch, unseen; the spire is drawn over it and lets touches through */
+#asp.asp-3d #asp-cv { opacity: 0; }
+#asp-gl { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; background: hsl(var(--bg-hsl)); }
+#asp-ent { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; } /* 3D: the core and enemies, flat over the bell */
+#asp-tow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: var(--z-sticky); } /* 3D: the TOWERS, over the wave list, powers and boxes (z-raised), under the end screen (later in the board, same z) and the cards (owner, 2026-10-22; warpTowCtx) */
+
+/* NO WEBGL (2026-10-18: the game is 3D only, aspira-ui.js noWebGl): a notice over the board */
+.asp-nogl { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 var(--space-6); z-index: var(--z-overlay); color: hsl(var(--green-hsl)); font-size: var(--fs-xl); }
+/* (the GL canvas is hidden, and #asp-ent given the background, by warpEntities only while a boss sky needs the picture copied into the overlay) */
+
+/* the checkbox glyph BIGGER than its label (owner), centred on it (inline-flex above) */
+.asp-box { display: block; width: var(--space-7); height: var(--space-7); fill: none; stroke: currentcolor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* a boss row: the boss centred, a line out to either side (owner) */
+.asp-bside { flex: 1; display: flex; align-items: center; justify-content: center; min-width: 0; } /* a boss row: the escort either side (bossRowIcons, aspira-wavelist.js) */
+.asp-bmid { display: flex; align-items: center; flex: none; }
+.asp-bcount { font-size: 0.6em; margin: 0 0.2em; white-space: nowrap; vertical-align: middle; color: currentcolor; } /* a capped escort band's count (escBand, aspira-wavelist.js) */
+.asp-wavenote .e-boss > .asp-bside { filter: none; } /* the escort keeps its own colours; only the boss icons invert */
+
+/* every LIVE wave's row: one unbroken light white band (owner); every cell
+   stretches to the row's full height, its text centred in it */
+
+/* the live waves' box (aspira-wavelist.js): one rounded green outline over their rows, out of the grid's flow */
+.asp-wavenote > .asp-curbox { position: absolute; inset: 0; grid-column: 1 / -1; margin: calc(-1 * var(--space-1-5)) calc(-1 * var(--space-2)); border: 1px solid hsl(var(--green-hsl)); border-radius: var(--radius-2); } /* a little room inside (owner) */
+.asp-wavenote > span { display: flex; align-items: center; align-self: stretch; }
+
+/* the skill chart on a chart tower's TOWER card (aspira-sliders.js): a
+   triangle radar, its rings and axes faint, what the tower HAS filled, what
+   the pulled points would make dashed (owner: a JoJo Stand chart) - and the
+   UPGRADE CONTROL itself: a wide invisible track along each axis to drag on, a
+   stop per tier, the locked-in tier a filled dot, the handle a ring that turns
+   red where it cannot go; the reason reads in the note under it */
+.asp-chart { display: block; width: 100%; height: auto; aspect-ratio: 120 / 97; margin: 0 auto; overflow: visible; } /* the viewBox is cropped to the triangle and its labels (SL_H), so no band sits under it (owner) */
+
+/* the tower card's TWO HALVES (owner, 2026-10-07; aspira-ui.js inspectTower): the
+   control (chart, targeting, confirm + cancel) and the info (name, description,
+   stats, sell). Stacked on a phone, the info first and the control at the thumb;
+   side by side on a wide screen, where the card doubles its width and the spend
+   bar's close gives way to the card's own cancel / close */
+
+/* stacked: the description, the sliders + chart + confirm, then the info (owner; the tower's name and points are on the upgrade button) */
+.asp-tower-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "desc" "ctl" "info"; gap: var(--space-2); }
+#asp-desc-box { grid-area: desc; }
+.asp-tower-title { grid-area: title; }
+.asp-tower-ctl { grid-area: ctl; }
+.asp-tower-info { grid-area: info; }
+.asp-tower-ctl, .asp-tower-info { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+
+/* the BUTTON GROUP at the foot of the control half, CENTRED (owner): upgrade + cancel,
+   and sell under them, smaller */
+#asp-upline { display: flex; justify-content: center; align-items: center; gap: var(--space-2); margin-top: auto; padding-top: var(--space-7); margin-bottom: var(--space-7); } /* breathing room under AND above the buttons (owner, 2026-10-08); sell left of upgrade (owner, 2026-10-13) */
+#asp-upbox { display: flex; flex-wrap: nowrap; justify-content: center; gap: var(--space-2); } /* the X stays beside upgrade, never under it (owner, 2026-10-14) */
+#asp-acts { display: flex; }
+
+/* SMALL buttons and a small targeting slider (owner, 2026-10-07): the triangle is the card's focus */
+#asp #asp-upbox button.asp-up-big { flex: 0 0 auto; width: calc(var(--space-10) * 5); overflow: hidden; text-overflow: ellipsis; /* FIXED (owner, 2026-10-13) */ white-space: nowrap; padding-block: var(--space-1-5); font-size: var(--fs-md); }
+#asp #asp-upbox button.asp-up-cancel { flex: 0 0 auto; align-self: stretch; width: var(--space-10); /* a SQUARE X as tall as upgrade (owner, 2026-10-14; was a 2.5x-wide "cancel" / "close") */ padding: 0; line-height: var(--lh-none); font-size: var(--fs-xl); background: hsl(var(--bg-hsl)); }
+#asp #asp-acts button { flex: 0 0 auto; width: calc(var(--space-10) * 4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: var(--space-1) var(--space-2); font-size: var(--fs-2xs); } /* FIXED width (owner, 2026-10-13: armed sell grew over upgrade) */
+
+/* the targeting slider SMALLER than the triangle's sliders (owner), its caption kept, small */
+.asp-tower .asp-prio-slider { height: var(--space-5); }
+.asp-tower .asp-prio-slider::-webkit-slider-runnable-track { height: var(--space-1-5); }
+.asp-tower .asp-prio-slider::-moz-range-track { height: var(--space-1-5); }
+.asp-tower .asp-prio-slider::-webkit-slider-thumb { width: var(--space-3); height: var(--space-4); margin-top: calc(var(--space-1-5) / 2 - var(--space-4) / 2 - 1px); }
+.asp-tower .asp-prio-slider::-moz-range-thumb { width: var(--space-3); height: var(--space-4); }
+.asp-tower .asp-prio { margin-bottom: 0; font-size: calc(var(--fs-2xs) * 0.8); }
+.asp-tower .asp-prio b { font-weight: var(--fw-normal); }
+
+/* the upgrade button is ONE line (owner): "Arc IV", and while axes are pulled "Arc IV (-440c)";
+   a basket the bank cannot cover: the cost red, the border red, no tap - but readable (owner) */
+.asp-up-big .asp-spend-cost { font-weight: var(--fw-normal); color: hsl(var(--asp-bad-hsl)); } /* the card's red, so it shows on the pink SOL card too */
+.asp-up-big .asp-spend-cost.asp-cost-ok { font-weight: var(--fw-bold); color: inherit; } /* affordable: just bold, the button's own colour (owner, 2026-10-09) */
+#asp #asp-upbox button.asp-up-big.poor { opacity: 1; border-color: hsl(var(--asp-bad-hsl)); cursor: not-allowed; }
+#asp #asp-upbox button.asp-up-big.asp-confirm { animation: asp-flash var(--asp-blink) ease-in-out infinite; } /* a pull waits: tap to lock it in (owner) */
+
+@media (orientation: landscape) and (width >= 700px) {
+  .asp-pop.asp-tower { display: flex; flex-direction: column; width: 760px; } /* as tall as its content (no forced height: it left empty bands - owner) */
+  .asp-tower-grid { flex: 1; grid-template: "desc info" auto "ctl info" 1fr / minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3) var(--space-6); } /* the description heads the LEFT half, over the sliders (owner); the info runs down the right */
+
+  /* the sliders and the chart at the TOP of the control half, the chart the full width of its column; the buttons at its foot */
+}
+#asp.asp-towercard .asp-spend { display: none; } /* the tower card has its own cancel / close, stacked or wide; the credits line above it stays */
+.asp-chart .grid { fill: none; stroke: hsl(var(--green-hsl) / 0.45); stroke-width: 0.6; }
+.asp-chart .now { fill: hsl(var(--green-hsl) / 0.45); stroke: hsl(var(--green-hsl)); stroke-width: 1.2; }
+.asp-chart .next { fill: hsl(var(--green-hsl) / 0.12); stroke: hsl(var(--green-hsl)); stroke-width: 1.2; stroke-dasharray: 3 2; }
+.asp-chart text { fill: hsl(var(--green-hsl) / 0.8); font-size: calc(var(--fs-2xs) * 0.65); dominant-baseline: middle; } /* in chart units: the labels scale with the chart; the full axis name, the tier under it */
+
+/* THE CONTROL (aspira-sliders.js, owner 2026-10-07): three real sliders stacked LEFT of
+   the chart, each with its full name and tier under it; the chart is the picture */
+.asp-ctl-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-3); align-items: center; } /* the shorter side sits centred on the taller (owner) */
+.asp-chart-box { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding-top: var(--space-2); } /* padding: the top label's first line rides above the viewBox */
+.asp-axes { display: flex; flex-direction: column; justify-content: center; gap: var(--space-3); min-width: 0; }
+.asp-axis-row { display: flex; flex-direction: column; gap: var(--space-0-5); }
+
+/* + / - STEPPERS (owner, 2026-10-08; were range sliders): [-] pips [+], thumb-sized buttons */
+.asp-axis-ctl { display: flex; align-items: center; gap: var(--space-2); }
+#asp .asp-axis-btn { flex: 0 0 auto; width: var(--space-10); height: var(--space-10); padding: 0; font-size: var(--fs-xl); font-weight: var(--fw-bold); line-height: var(--lh-none); }
+#asp .asp-axis-btn.dim { opacity: 0.45; } /* nothing pulled on this axis to put back */
+.asp-pips { display: flex; flex: 1; justify-content: space-between; gap: var(--space-1); min-width: 0; }
+.asp-pips i { flex: 1; height: var(--space-2-5); border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: var(--radius-1); }
+.asp-pips i.lock { background: hsl(var(--green-hsl)); border-color: hsl(var(--green-hsl)); } /* locked in */
+.asp-pips i.pull { background: hsl(var(--green-hsl) / 0.45); border-color: hsl(var(--green-hsl)); } /* pulled, not yet bought */
+
+/* the capstone tier IV (aspira-capstone.js): its pip and the chart's outer ring in orange - one axis a tower */
+.asp-pips i.capstone { border-color: hsl(var(--orange-hsl)); }
+.asp-pips i.capstone.lock { background: hsl(var(--orange-hsl)); }
+.asp-pips i.capstone.pull { background: hsl(var(--orange-hsl) / 0.45); }
+.asp-pips i.capstone.gone { border-color: hsl(var(--asp-bad-hsl)); background: hsl(var(--asp-bad-hsl) / 0.45); } /* another axis bought the capstone: this one is gone (owner, 2026-10-12) */
+.asp-chart .grid.capstone { stroke: hsl(var(--orange-hsl) / 0.45); }
+.asp-axis-name { display: flex; justify-content: space-between; font-size: var(--fs-2xs); color: hsl(var(--green-hsl) / 0.8); }
+.asp-axis-tier { font-weight: var(--fw-bold); color: hsl(var(--green-hsl)); }
+
+/* the + FLASHES while the bank covers a point on its axis; the - goes red where a step down was refused */
+#asp .asp-axis-btn.plus.can { animation: asp-flash var(--asp-blink) ease-in-out infinite; }
+#asp .asp-axis-btn.minus.stuck { border-color: hsl(var(--asp-bad-hsl)); color: hsl(var(--asp-bad-hsl)); }
+
+/* the reason a handle stopped, laid OVER the chart's lower edge (between the two
+   bottom labels, which sit in the corners) so it reserves no line of its own */
+.asp-slider-note { position: absolute; left: 0; right: 0; top: 100%; /* out of the flow: its line no longer lifted the chart (owner, 2026-10-15) */ min-height: calc(var(--fs-2xs) * var(--lh-tight)); text-align: center; font-size: var(--fs-2xs); line-height: var(--lh-tight); color: hsl(var(--green-hsl)); pointer-events: none; } /* its own line under the chart (it sat on the corner labels - owner) */
+
+/* the description's TRACK CHANGES (owner, 2026-10-07: like Word or Docs): removed
+   words struck through in Ember red, added ones underlined in the acid green */
+.asp-desc { height: calc(5 * var(--lh-tight) * var(--fs-2xs)); overflow: hidden; font-size: var(--fs-2xs); line-height: var(--lh-tight); color: hsl(var(--green-hsl)); } /* a FIXED five lines (owner): the sentences run on, wrapping; nothing moves as a sentence grows */
+.asp-desc del { color: hsl(var(--asp-bad-hsl)); text-decoration: line-through; }
+.asp-desc ins { color: hsl(var(--asp-good-hsl)); text-decoration: underline; }
+/* THE DEMO SCENE where the sentence was (owner, 2026-11-03; aspira-demo-card.js): the canvas at the box's width; its "i" bottom right, inside it, flips to the sentence */
+.asp-demo { position: relative; }
+/* EVERY SECTION FITS (aspira-cardfit.js fitTight): a short screen first loses the breathing room, then the stats go two columns */
+.asp-pop.asp-tight #asp-upline { padding-top: var(--space-2); margin-bottom: var(--space-1); }
+.asp-pop.asp-tight .asp-axes { gap: var(--space-1); }
+.asp-pop.asp-tight .asp-tower-grid { gap: var(--space-1) var(--space-4); }
+.asp-pop.asp-tight .asp-cols.asp-secs { columns: 2; }
+.asp-pop.asp-tight .asp-demo { margin-inline: auto; }
+.asp-pop.asp-fit-scroll { overflow-y: auto; } /* the last resort: nothing clipped, the rest a scroll away */
+.asp-demo-cv { display: block; width: 100%; height: auto; aspect-ratio: 372 / 180; background: hsl(var(--bg-hsl)); border-radius: var(--radius-3); } /* black, rounded (owner, 2026-11-06: "ensure all demos have a black background", "all demos should have rounded corners") */
+.asp-demo-txt { display: none; }
+.asp-demo.is-text .asp-demo-cv { visibility: hidden; }
+.asp-demo.is-text .asp-demo-txt { display: block; position: absolute; inset: 0; }
+.asp-demo.is-text .asp-demo-txt .asp-desc { height: 100%; }
+#asp button.asp-demo-i { position: absolute; right: var(--space-1); bottom: var(--space-1); display: grid; place-items: center; box-sizing: border-box; width: var(--space-5); height: var(--space-5); min-width: 0; min-height: 0; padding: 0; border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: 50%; background: none; color: hsl(var(--green-hsl)); font: inherit; font-size: var(--fs-2xs); line-height: var(--lh-none); cursor: pointer; }
+#asp .asp-build-cards .asp-card { position: relative; }
+#asp button.asp-buy-i { position: absolute; top: var(--space-1); right: var(--space-1); display: grid; place-items: center; box-sizing: border-box; width: var(--space-7); height: var(--space-7); min-width: 0; min-height: 0; padding: 0; border: 1px solid hsl(var(--green-hsl)); border-radius: 50%; background: hsl(var(--green-hsl) / 0.45); color: hsl(var(--green-hsl)); font: inherit; font-weight: var(--fw-bold); font-size: var(--fs-2xs); line-height: var(--lh-none); cursor: pointer; } /* the buy card's demo "i": top right, about the title's cap height (owner, 2026-11-07: "Info button too big" - was 32 px and covered the armor mark) */
+#asp .asp-build-cards .asp-card .name { padding-right: var(--space-5); } /* the corner the "i" sits in: the title never runs under it */
+#asp button.asp-buy-i::before { content: ""; position: absolute; inset: calc(-1 * var(--space-3)); border-radius: 50%; } /* its TAP target: 40 px round the 20 px circle, invisible */
+.asp-buy-panel[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-buy-panel[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
+.asp-buy-panel[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
+.asp-buy-panel[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
+.asp-buy-panel[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
+.asp-buy-panel[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-buy-panel[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
+.asp-buy-panel { position: fixed; z-index: var(--z-modal); box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding: var(--space-2-5); border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: var(--radius-3); background: linear-gradient(hsl(var(--green-hsl) / 0.12), hsl(var(--green-hsl) / 0.12)), hsl(var(--bg-hsl)); color: hsl(var(--green-hsl)); } /* the buy card's demo panel, in the card's own look (aspira-demo-buy.js) */
+.asp-buy-cv { display: block; width: 100%; height: auto; aspect-ratio: 372 / 180; background: hsl(var(--bg-hsl)); border-radius: var(--radius-3); } /* black, rounded - every demo (owner, 2026-11-06) */
+.asp-buy-tri { pointer-events: none; }
+#asp button.asp-buy-close { min-height: 0; padding: var(--space-1) var(--space-4); border: 1px solid hsl(var(--green-hsl) / 0.45); border-radius: var(--radius-3); background: none; color: hsl(var(--green-hsl)); font: inherit; cursor: pointer; }
+#asp button.asp-demo-i[aria-pressed="true"] { background: hsl(var(--green-hsl) / 0.45); }
+
+/* the CORE POWERS' BUTTONS under the title (owner, 2026-10-11; above it since 2026-10-08; aspira-powers.js): name, seconds left, and a
+   bar along the bottom that fills as the power recharges; flashing when ready, lit while it runs or is armed */
+.asp-powers { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); } /* stacked, TEMPORAL DRIVE over ORBITAL RELAY (owner, 2026-10-08) */
+#asp .asp-powers .asp-power { align-self: stretch; } /* one width: the wider label sets both */
+.asp-powers[hidden] { display: none; }
+#asp .asp-power { position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; gap: var(--space-0-5); min-width: calc(var(--space-10) * 3); padding: var(--space-1-5) var(--space-3); font-size: var(--fs-xs); line-height: var(--lh-none); text-transform: uppercase; }
+#asp .asp-power b { font-size: var(--fs-2xs); font-variant-numeric: tabular-nums; text-transform: none; }
+#asp button.asp-power:hover:not(:disabled) { border-color: currentcolor; } /* its own colour, not the buttons' green hover (a tap leaves hover on, on a phone) */
+#asp .asp-power i { position: absolute; bottom: 0; left: 0; height: var(--space-1); background: currentcolor; opacity: 0.45; }
+#asp .asp-power.cyan { color: hsl(var(--cyan-hsl)); border-color: hsl(var(--cyan-hsl) / 0.45); }
+#asp .asp-power.white { color: hsl(var(--white-hsl)); border-color: hsl(var(--gray-hsl) / 0.45); } /* (silver: white has no 0.45) */
+#asp .asp-power.ready { animation: asp-flash var(--asp-blink) ease-in-out infinite; border-color: currentcolor; }
+#asp .asp-power.run, #asp .asp-power.armed { border-color: currentcolor; background: hsl(var(--white-hsl) / 0.12); }
+
+/* diagnostics (aspira-quality.js DIAG): localStorage spire.diag = nohud hides the HUD panels, to see what the page's own layers cost */
+.asp-diag-nohud #asp .asp-head, .asp-diag-nohud #asp .asp-left, .asp-diag-nohud #asp .asp-bottom, .asp-diag-nohud #asp .asp-powerdock, .asp-diag-nohud #asp .asp-foot { visibility: hidden; }

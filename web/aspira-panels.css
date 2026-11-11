@@ -1,0 +1,252 @@
+/* THE SPEND BAR (aspira-chooser.js): credits and "-Xc" above the one cancel /
+   close, bottom right, the same spot on every screen that spends (owner) */
+
+/* CENTRED on the screen (owner), at the bottom bar's foot */
+.asp-spend { position: absolute; z-index: var(--z-overlay); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+.asp-spend[hidden] { display: none; }
+
+/* credits WHITE (owner), ABOVE the cards (placeCred positions it) */
+.asp-spend-cred { position: absolute; z-index: var(--z-overlay); transform: translateX(-50%); font-size: var(--fs-lg); color: hsl(var(--white-hsl)); white-space: nowrap; pointer-events: none; text-shadow: 0 0 var(--blur-sm) hsl(var(--bg-hsl)); }
+
+.asp-spend-cred[hidden] { display: none; }
+.asp-spend-cost { color: hsl(var(--pink-hsl)); } /* "(-40c)" in the palette's red (owner) */
+.asp-spend-cost.asp-cost-ok { color: inherit; font-weight: var(--fw-bold); } /* an upgrade you can afford: bold, no colour change (owner, 2026-10-09) */
+
+#asp .asp-spend button { width: 12ch; }
+
+/* the button wears the colour of the card it closes (owner) */
+.asp-spend[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-spend[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
+.asp-spend[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
+.asp-spend[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
+.asp-spend[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
+.asp-spend[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-spend[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
+.asp-spend[data-kind="core"] { --green-hsl: var(--white-hsl); }
+
+/* the boss's haiku, above the title (owner; was on the board under the core) */
+.asp-bosshint { text-align: right; font-size: var(--fs-2xs); line-height: var(--lh-snug); color: hsl(var(--pink-hsl)); white-space: pre; } /* exactly its 3 lines, never wrapped (owner) */
+
+/* (it had no width of its own 2026-10-08..23 so the centred column never moved; the column is right-aligned now) */
+.asp-buildcol .asp-bosshint:not(:empty) { align-self: flex-end; } /* right-aligned like the rest (2026-10-23; it hung from a zero width so the column stayed centred) */
+
+.asp-bosshint:empty { display: none; } /* "cancel" and "close" the same width: the button never shifts */
+
+/* over the chooser's blurred overlay while something is on offer */
+#asp.asp-spending .asp-bottom, #asp.asp-spending .asp-powerdock { z-index: var(--z-overlay); }
+.asp-row > button { flex: 1; }
+
+#asp button {
+  font: inherit;
+  color: hsl(var(--green-hsl));
+  background: hsl(var(--bg-hsl) / 0.45);
+  border: 1px solid hsl(var(--green-hsl) / 0.45);
+  border-radius: var(--radius-2);
+  padding: var(--space-2-5) var(--space-2);
+  cursor: pointer;
+}
+#asp button:hover:not(:disabled) { border-color: hsl(var(--green-hsl)); }
+#asp button:focus-visible { outline: 1px solid hsl(var(--orange-hsl)); outline-offset: var(--space-px); }
+#asp button:disabled { opacity: 0.45; cursor: not-allowed; }
+#asp button.asp-primary { border-color: hsl(var(--orange-hsl)); color: hsl(var(--orange-hsl)); font-weight: var(--fw-bold); }
+
+#asp button.asp-up-big {
+  width: 100%;
+  padding-block: var(--space-4);
+  font-size: var(--fs-xl);
+  letter-spacing: var(--tracking-wide);
+  background: hsl(var(--orange-glow-hsl) / 0.25);
+}
+.asp-next { color: hsl(var(--orange-hsl)); font-weight: var(--fw-bold); }
+
+/* BETTER and WORSE on a card (owner, 2026-10-08: they must CONTRAST with the card): Chatsubo
+   green and Ember red, except where the card's own colour is too close - Ember on the
+   Marigold ARC card goes Lizzie's pink, Chatsubo on the Chatsubo ACD card goes cyan */
+#asp .asp-pop, #asp .asp-card { --asp-good-hsl: var(--cat-social-h) var(--cat-social-s) var(--cat-social-l); --asp-bad-hsl: var(--orange-glow-hsl); }
+#asp [data-kind="arc"] { --asp-bad-hsl: var(--pink-hsl); }
+#asp [data-kind="acd"] { --asp-good-hsl: var(--cyan-hsl); }
+
+/* an upgrade that makes this stat WORSE (owner): red, bold - Ember is the palette's red */
+.asp-next.asp-worse { color: hsl(var(--orange-glow-hsl)); }
+
+/* on the tower card a change for the better is the description's INSERTED green (owner: the same reds and greens) */
+.asp-pop .asp-next { color: hsl(var(--asp-good-hsl)); }
+.asp-pop .asp-next.asp-worse { color: hsl(var(--asp-bad-hsl)); }
+
+#asp button.on { background: hsl(var(--green-hsl) / 0.12); border-color: currentcolor; }
+
+#asp .asp-tw { display: flex; flex-direction: column; align-items: center; gap: var(--space-0-5); padding-inline: var(--space-0-5); }
+.asp-tw .ab { font-size: var(--fs-xl); font-weight: var(--fw-bold); letter-spacing: var(--tracking-wide); }
+.asp-tw .c { font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+#asp .asp-tw.cyan { color: hsl(var(--cyan-hsl)); }
+#asp .asp-tw.chatsubo { color: hsl(var(--cat-social-h) var(--cat-social-s) var(--cat-social-l)); }
+#asp .asp-tw.pink { color: hsl(var(--pink-hsl)); }
+#asp .asp-tw.glow { color: hsl(var(--orange-glow-hsl)); }
+#asp .asp-tw.green { color: hsl(var(--green-hsl)); }
+#asp .asp-tw.orange { color: hsl(var(--orange-hsl)); }
+
+.asp-pop .name { font-weight: var(--fw-bold); }
+
+/* STATS much smaller than the tagline (owner): a deliberate one-off under the
+   scale's smallest step; the tagline takes the size the stats had (--fs-sm) */
+.asp-pop dl { display: grid; grid-template-columns: auto 1fr; gap: var(--space-0-5) var(--space-4); margin: 0; font-size: calc(var(--fs-2xs) * 0.8); font-variant-numeric: tabular-nums; }
+.asp-pop dt { color: hsl(var(--green-hsl) / 0.45); }
+.asp-pop dd { margin: 0; }
+
+/* two stat columns (owner): the rows that matter, bigger | the rest, small (aspira-sliders.js KEY_STATS) */
+
+/* a GRID, so neither column can starve the other (owner: the small one collapsed to a sliver, one letter a line) */
+.asp-pop .asp-cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+.asp-pop .asp-cols dt { white-space: nowrap; }
+.asp-pop .asp-spec { padding-left: var(--space-4); border-left: 1px solid hsl(var(--green-hsl) / 0.12); }
+.asp-pop .asp-cols dd { white-space: normal; overflow-wrap: break-word; } /* a long "now -> next" wraps at its words, never a letter a line */
+/* the stats in SECTIONS (aspira-sliders.js STAT_SECTIONS): two columns of whole sections, each under its mechanic's name */
+.asp-pop .asp-cols.asp-secs { display: block; columns: 160px 2; column-gap: var(--space-4); font-size: var(--fs-xs); }
+.asp-pop .asp-sec { break-inside: avoid; margin-bottom: var(--space-2); }
+.asp-pop .asp-sec h5 { margin: 0 0 var(--space-1); font-size: var(--fs-2xs); font-weight: var(--fw-normal); letter-spacing: var(--tracking-wide); text-transform: uppercase; color: hsl(var(--orange-hsl)); }
+.asp-pop .asp-sec dl { margin: 0; }
+.asp-hint { margin: 0; font-size: var(--fs-sm); line-height: var(--lh-snug); color: hsl(var(--green-hsl)); } /* bright on every card alike, the stats' old size (owner) */
+
+
+/* the selected tower's stats, pinned beside it on the board (aspira-ui.js) */
+.asp-pop {
+  position: absolute;
+  z-index: var(--z-bubble); /* the cards sit ABOVE everything else (owner, 2026-10-07) - the bar, the wave list, the spend bar - under only the CRT fx */
+  width: 380px; /* room for two stat columns (owner) */
+  max-width: calc(100% - 16px);
+  overflow: hidden; /* capped by placePop on a short screen and NEVER scrolled (owner): the chart shrinks to fit */
+  line-height: var(--lh-snug);
+  border-color: hsl(var(--green-hsl) / 0.45);
+}
+
+.asp-pop[hidden] { display: none; } /* .asp-deck's display:flex beats the UA [hidden] rule */
+
+/* the card is coloured like the tower clicked (owner): every green inside it
+   (tint, borders, labels, buttons) reads --green-hsl, so swap that one token */
+.asp-pop[data-kind="arc"] { --green-hsl: var(--asp-arc-hsl); }
+.asp-pop[data-kind="frz"] { --green-hsl: var(--asp-frz-hsl); }
+.asp-pop[data-kind="sol"] { --green-hsl: var(--asp-solar-hsl); }
+.asp-pop[data-kind="acd"] { --green-hsl: var(--asp-acd-hsl); }
+.asp-pop[data-kind="grv"] { --green-hsl: var(--asp-violet-ink-hsl); }
+.asp-pop[data-kind="crr"] { --green-hsl: var(--asp-blue-ink-hsl); }
+.asp-pop[data-kind="ifr"] { --green-hsl: var(--asp-ifr-hsl); }
+.asp-pop[data-kind="core"] { --green-hsl: var(--white-hsl); } /* the core's card is white, like the core */
+.asp-pop[data-kind] { color: hsl(var(--green-hsl)); }
+
+
+#asp button.asp-choice { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-0-5); width: 100%; text-align: left; }
+.asp-choice span { font-size: var(--fs-2xs); font-weight: var(--fw-normal); color: hsl(var(--green-hsl) / 0.8); }
+.asp-check { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-2xs); cursor: pointer; }
+.asp-check input { accent-color: hsl(var(--orange-hsl)); }
+
+/* volume slider next to the sound toggle (owner) */
+
+/* the volume slider drawn like the buttons (owner: "match the UI"): a track in
+   the button's outline and fill, a square thumb with the button's border */
+.asp-volbox {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-2);
+  z-index: var(--z-raised);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+#asp .asp-volbox #asp-mute { padding: var(--space-1-5); }
+.asp-volslot { position: relative; width: var(--space-8); height: calc(var(--space-8) * 4); }
+
+#asp-vol {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(var(--space-8) * 4);
+  height: var(--space-8);
+  margin: 0;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+#asp-vol::-webkit-slider-runnable-track,
+.asp-prio-slider::-webkit-slider-runnable-track {
+  height: var(--space-2);
+  background: hsl(var(--bg-hsl) / 0.45);
+  border: 1px solid hsl(var(--green-hsl) / 0.45);
+  border-radius: var(--radius-2);
+}
+
+#asp-vol::-moz-range-track,
+.asp-prio-slider::-moz-range-track {
+  height: var(--space-2);
+  background: hsl(var(--bg-hsl) / 0.45);
+  border: 1px solid hsl(var(--green-hsl) / 0.45);
+  border-radius: var(--radius-2);
+}
+
+#asp-vol::-webkit-slider-thumb,
+.asp-prio-slider::-webkit-slider-thumb {
+  width: var(--space-4);
+  height: var(--space-5);
+  margin-top: calc(var(--space-2) / 2 - var(--space-5) / 2 - 1px);
+  appearance: none;
+  background: hsl(var(--bg-hsl));
+  border: 1px solid hsl(var(--green-hsl));
+  border-radius: var(--radius-2);
+}
+
+#asp-vol::-moz-range-thumb,
+.asp-prio-slider::-moz-range-thumb {
+  width: var(--space-4);
+  height: var(--space-5);
+  background: hsl(var(--bg-hsl));
+  border: 1px solid hsl(var(--green-hsl));
+  border-radius: var(--radius-2);
+}
+
+/* the version stamp after BEST (owner): quiet, the stat label's dimness */
+.asp-ver { align-self: center; } /* "V 4.3.8", bright like the other numbers (owner, 2026-10-14; was dim and small) */
+
+/* palette swatches the canvas reads its colours from (aspira-defs.js) */
+.asp-sw { display: none; }
+.asp-sw.bg { color: hsl(var(--bg-hsl)); }
+.asp-sw.grid { color: hsl(var(--gray-hsl) / 0.45); }
+.asp-sw.green { color: hsl(var(--green-hsl)); }
+
+/* [Chatsubo] - the boards' Social hue, reused for the ACD tower */
+.asp-sw.chatsubo { color: hsl(var(--cat-social-h) var(--cat-social-s) var(--cat-social-l)); }
+.asp-sw.cyan { color: hsl(var(--cyan-hsl)); }
+.asp-sw.orange { color: hsl(var(--orange-hsl)); }
+.asp-sw.glow { color: hsl(var(--orange-glow-hsl)); }
+.asp-sw.pink { color: hsl(var(--pink-hsl)); }
+.asp-sw.white { color: hsl(var(--white-hsl)); }
+/* THE SEVEN TOWER HUES, the same angle apart FOR THE EYE: OKLCH hues 359 / 50 / 101 / 153 / 204 / 256 / 307 (SOL IFR ARC ACD FRZ CRR GRV, 360/7 apart; the six were 60 apart at 13 / 73 / 133 / 193 / 253 / 313, 2026-10-16), each keeping its own OKLCH lightness and chroma (pulled in to stay in sRGB) - ARC lifted to L 0.88 for a clean lightning yellow; neighbours checked by CIEDE2000, the closest pair 25 (scripts/aspira-sim/hues.py). The ink tokens shift by their tower's delta. Owner, 2026-10-19: "7 equidistant slots ... calibrate for Human Color Discrimination" */
+.asp-sw.tarc { color: hsl(var(--asp-arc-hsl)); }
+.asp-sw.tfrz { color: hsl(var(--asp-frz-hsl)); }
+.asp-sw.tacd { color: hsl(var(--asp-acd-hsl)); }
+.asp-sw.driplite { color: hsl(var(--asp-drip-lite-hsl)); }
+.asp-sw.drip { color: hsl(var(--asp-drip-hsl)); } /* ACD's drips and bubbles, nudged toward yellow (owner, 2026-11-06: "move the drips and bubbles towards yellow in the hue") */
+.asp-sw.tifr { color: hsl(var(--asp-ifr-hsl)); } /* IFR, the fire tower (2026-10-19): Kilika's orange */
+/* GRV (2026-10-15; new /spire colours are allowed - owner): violet its aura and outline, yellow its nova */
+/* ...its look from a black-hole image (owner, 2026-10-15: "these colors (excl bg), in a similar ratio"): deep purple, plum, pink,
+   coral, yellow, white-hot - the aura's bands; violet (its card and text) the plum, lifted to read on the board */
+/* the ENEMY colours, pinned at the root: a tower's card redefines --green-hsl as its own colour, which turned fast's icon
+   (green) the tower's colour in the build chooser (owner, 2026-10-16: "the enemies need to be colored correctly") */
+#asp { --asp-e-white-hsl: var(--white-hsl); --asp-e-green-hsl: var(--green-hsl); --asp-e-cyan-hsl: var(--cyan-hsl); --asp-e-pink-hsl: var(--pink-hsl); --asp-e-orange-hsl: var(--orange-hsl); }
+#asp { --asp-mark-mid-hsl: 55 100% 58% /* the build card's yellow "-" (neither good nor bad, 2026-10-19) */; --asp-blue-hsl: 213 85% 70% /* a touch darker, apart from FRZ (owner, 2026-10-22: "darken CRR colors a touch to distinguish from FRZ"; was 80%) */ /* = its card ink (owner, 2026-10-21: whiter, then "the build card text, that is the correct color for the towers ..."; was 212 91% 55%) */; --asp-ltblue-hsl: 195 100% 78%; --asp-violet-hsl: 270 99% 76% /* = its card ink (owner, 2026-10-21: "the build card text, that is the correct color for the towers, cards and all their upgrades and effects"; was 278 85% 43%, the dark purple of 2026-10-16) */; --asp-violet-ink-hsl: 270 99% 76% /* a touch darker (owner, 2026-10-21: "darken grv text on the build card a touch"; was 270 99% 83%) */; --asp-blue-ink-hsl: 213 85% 70% /* darker with the tower (owner, 2026-10-22; was 80%) */ /* whiter with Carrier's tower colour (owner, 2026-10-21: "make the colors for freeze and carrier both more white" - its cards; was 213 100% 61%) */; --asp-solar-hsl: 339 91% 77%; --asp-arc-hsl: 53 75% 67%; --asp-frz-hsl: 184 80% 72% /* whiter (owner, 2026-10-21; was 184 95% 48%) */; --asp-acd-hsl: 140 61% 65%; --asp-drip-hsl: 100 70% 62%; --asp-drip-lite-hsl: 100 100% 86%; --asp-ifr-hsl: 23 100% 65%; --asp-yellow-hsl: 54 100% 62%; --asp-threat-hsl: 0 100% 55%; --asp-bh-deep-hsl: 273 100% 17%; --asp-bh-plum-hsl: 312 98% 25%; --asp-bh-pink-hsl: 350 93% 60%; --asp-bh-coral-hsl: 6 85% 60%; --asp-bh-white-hsl: 300 100% 99%; }
+.asp-sw.violet { color: hsl(var(--asp-violet-hsl)); } /* GRV: DARK purple, SOL: BRIGHT pink (owner, 2026-10-16: "colors of gravity and SOL need to be more distinguishable, GRV dark, SOL bright"; violet was 312 85% 58%) */
+.asp-sw.solar { color: hsl(var(--asp-solar-hsl)); }
+.asp-sw.blue { color: hsl(var(--asp-blue-hsl)); }
+.asp-sw.ltblue { color: hsl(var(--asp-ltblue-hsl)); } /* CRR's bolts and pellets (StarCraft light blue) */ /* CRR, the carrier (2026-10-15): electric blue */
+.asp-sw.yellow { color: hsl(var(--asp-yellow-hsl)); }
+.asp-sw.threat { color: hsl(var(--asp-threat-hsl)); }
+.asp-sw.violetink { color: hsl(var(--asp-violet-ink-hsl)); } /* GRV's card text (and its damage numbers) */
+.asp-sw.blueink { color: hsl(var(--asp-blue-ink-hsl)); } /* ATC's card text (and its damage numbers) */ /* the threat marks (aspira-threat.js) */
+.asp-sw.bhdeep { color: hsl(var(--asp-bh-deep-hsl)); }
+.asp-sw.bhplum { color: hsl(var(--asp-bh-plum-hsl)); }
+.asp-sw.bhpink { color: hsl(var(--asp-bh-pink-hsl)); }
+.asp-sw.bhcoral { color: hsl(var(--asp-bh-coral-hsl)); }
+.asp-sw.bhwhite { color: hsl(var(--asp-bh-white-hsl)); }
+
