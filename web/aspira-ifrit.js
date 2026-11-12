@@ -232,7 +232,10 @@ function ifrFan(born, st, x, y, skip) {
 // once for IFR_RESPLIT_K of the meteor's hit and spawning nothing (gen 2)
 // THE RE-SPLIT METEOR'S HIT (owner, 2026-11-10: a small 40 u circle where one hits, look only): called once per hit, after its damage;
 // t its tower, b the meteor (b.x, b.y), e the enemy hit. Empty here - the look fills it (aspira-ifrit-draw.js)
-function ifrMiniHit(t, b, e) {}
+function ifrMiniHit(t, b, e) {
+  if (!t.ifrMini) t.ifrMini = [];
+  t.ifrMini.push({ x: b.x, y: b.y, age: 0 });
+}
 function ifrResplit(born, st, b, skip) {
   const n = st.resplit || 0, a0 = Math.atan2(b.vy, b.vx), d = IFR_RESPLIT_DEG * Math.PI / 180;
   for (let i = 0; i < n; i++) born.push([b.x, b.y, a0 + (i - (n - 1) / 2) * d, skip, 2, 0]);
@@ -301,6 +304,8 @@ function stepIfrBalls(t, st, dt) {
   }
   keepLive(t.ifrBalls);
   for (const [x, y, a, id, gen, wait, fis] of born) { ifrMeteor(t, st, x, y, a, gen, id, wait); if (fis) t.ifrBalls[t.ifrBalls.length - 1].fis = true; }
+  // the mini hit circles' ages (look only)
+  if (t.ifrMini) { for (const m of t.ifrMini) m.age += dt; while (t.ifrMini.length && t.ifrMini[0].age > IFR_MINI_L) t.ifrMini.shift(); }
 }
 // THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), no flare (owner, 2026-10-20: "no flare on initial meteor hit"). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)
 // EVERY METEOR'S landing (owner, 2026-10-20: "all meteors, main incl, each create their own hellfire"): a flare, and a Hellfire of its own -

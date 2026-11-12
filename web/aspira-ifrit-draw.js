@@ -9,6 +9,16 @@
 // but not Meteor V's big ones (b.big, IFR_BIG_DRAW_K, as they were); the hit sizes (IFR_BALL_RAD) untouched
 const IFR_METEOR_SIZE_K = 2;
 const IFR_METEOR_DRAW_K = 1.25, ifrDrawK = t => IFR_METEOR_DRAW_K ** (typeof skillOf === "function" ? skillOf(t, "meteor") : 0);
+const IFR_MINI_R = 20, IFR_MINI_L = 0.5; // the tertiary meteor's hit ring: radius 20 u (40 u across: the owner's "40u circle"), fading over 0.5 s (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well")
+// THE TERTIARY HIT CIRCLE (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well"): a look only -
+// where a re-split small meteor hits, a ring in the fire circle's look that grows from 30% to full while it fades over IFR_MINI_L
+function drawIfrMini(t) {
+  if (!t.ifrMini) return;
+  for (const m of t.ifrMini) {
+    const a = 1 - m.age / IFR_MINI_L, r = IFR_MINI_R * (0.3 + 0.7 * (1 - a)); // grows 30% -> 100% while it fades
+    drawIfrRingAt(m.x, m.y, r, a * 0.9, false, 1);
+  }
+}
 function drawIfrCharge(t, st, low, far) { // far: true the meteors behind the tower's centre only, false those in front, undefined all
   if (t.ifrCharge <= 0) return;
   const cy = ifrCentre(t).y;
@@ -101,8 +111,9 @@ function drawIfrBalls(t, low) {
   const dk = ifrDrawK(t);
   for (const b of t.ifrBalls) if (!(b.wait > 0)) {
     const bk = b.big ? IFR_BIG_DRAW_K : IFR_METEOR_SIZE_K; /* Meteor V's big one as it was; every other meteor and shard x2 */
+    const sizeK = b.gen === 1 ? IFR_SHARD_DRAW : (b.gen === 2 ? IFR_SHARD_DRAW * IFR_METEOR_SIZE_K : 1); // tertiaries (gen 2) drawn x2 more, the hitbox unchanged (owner, 2026-11-10: "visual, double size of ifr secondary and tertiary meteors"; the secondaries got theirs in 7.14.x)
     if (!b.gen) drawMeteorTrail(b, dk * bk);
-    drawIfrMeteor(b.x, b.y, (b.gen ? b.r * IFR_SHARD_DRAW : b.r) * dk * bk, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
+    drawIfrMeteor(b.x, b.y, b.r * sizeK * dk * bk, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
     if (!b.gen) ifrBodyMarks(b.x, b.y, b.r * dk * bk, skillOf(t, "hellfire"), skillOf(t, "firaga"), 1); // IN FLIGHT AS IN ORBIT (owner, 2026-11-10: "primary IFR meteors should look like the ones that are orbiting, not blank"): the Hellfire ring and Flare rays
   } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
@@ -341,7 +352,7 @@ function drawIfr(balls) {
   const ifrs = G.towers.filter(t => t.kind === "ifr" && t.ifrInit0);
   ctx.lineCap = "butt"; ctx.lineJoin = "round";
   if (balls) { for (const t of ifrs) drawIfrBalls(t, low); }
-  else { for (const t of ifrs) drawIfrFlares(t, false); for (const t of ifrs) { drawIfrFlares(t, true); drawIfrFires(t, low); } for (const t of G.towers) if (t.kind === "sol" && t.solFlares && t.solFlares.length) drawIfrFlares({ ifrFlares: t.solFlares }, false); } // (the circle over its own flares, as before; SCORCH V's SOL flares last)
+  else { for (const t of ifrs) drawIfrFlares(t, false); for (const t of ifrs) { drawIfrFlares(t, true); drawIfrFires(t, low); } for (const t of ifrs) drawIfrMini(t); for (const t of G.towers) if (t.kind === "sol" && t.solFlares && t.solFlares.length) drawIfrFlares({ ifrFlares: t.solFlares }, false); } // (the circle over its own flares, as before; SCORCH V's SOL flares last)
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
 // the CHARGE BALLS UNDER THE PRISM (owner, 2026-10-20: "centered on the corner of the hexagon where it meets the floor ... always tower
