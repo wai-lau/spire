@@ -10,7 +10,7 @@
 //   72 Judgement   comes alone; killed, she rises once at the start of her lane at full HP with 6 swarm waves (JUDGEMENT_SWARM), VEILED while they live
 //   84 Justice     no single hit takes more than JUSTICE_CAP of its HP; at the crossing of a 7 x 13 cross of armored, shielded escorts (laid straight)
 //   96 Temperance  regenerates TEMPERANCE_REGEN of its HP a second; at the centre of a 3 x 12 shield lattice (2026-11-05)
-//  108 Death       a juiced-up Star (owner): no tricks, the most HP but the Chariot; a third of a wave of each of the four types round her at once (2026-11-09; half before)
+//  108 Death       a juiced-up Star (owner): no tricks; a sixth of a plain wave of each of the four types, each on its own usual lane (five lanes 2026-11-09, a sixth 2026-11-11; a third, half before); her own HP halved 2026-11-12 so she comes close, never breaches
 //  120 Devil       THE FINAL BOSS: her host first (half a fast + half a swarm wave, devilEscorts), the six once half of it is on screen; comes as SIX
 //                  (DEVIL_COPIES), each a full boss on its own copy of the lane, two a lane - each one through costs a sixth of its HP% in lives
 // (the order and the tricks: owner, 2026-11-07 22:15 / 22:30 / 22:40; the waves are ARCANA's order x STAR_EVERY)
