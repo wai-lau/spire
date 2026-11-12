@@ -102,11 +102,11 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
     for (let i = 0; i < 120 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60);
     out.homeNear = 50 - near.shield; out.homeFar = 50 - far.shield; out.fanFire = t.ifrFires.length; near.dead = far.dead = true;
-    /* the capstone: a fan meteor's hit fissures into two at +-30 degrees, which skip that enemy and do not fissure */
+    /* the capstone no longer fissures (owner, 2026-10-26); a shard's hit re-splits into IFR_RESPLIT small meteors that only hit (owner, 2026-11-10) */
     t = fresh(6); st = towerStats(t); out.fissure = st.fissure; const c = held(t, t.x + 60, t.y); egridAt = NaN;
     t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
     for (let i = 0; i < 60 && t.ifrBalls.length === 1; i++) stepIfrBalls(t, st, 1 / 60);
-    out.kids = t.ifrBalls.map(k => Math.round(Math.atan2(k.vy, k.vx) * 180 / Math.PI)).sort((x, y) => x - y); out.kidGen = t.ifrBalls.map(k => k.gen);
+    out.kids = t.ifrBalls.map(k => Math.round(Math.atan2(k.vy, k.vx) * 180 / Math.PI)).sort((x, y) => x - y); out.kidGen = t.ifrBalls.map(k => k.gen); out.kidFis = t.ifrBalls.filter(k => k.fis).length; out.resplitWant = IFR_RESPLIT[5];
     stepIfrBalls(t, st, 1 / 60); out.cHits = 50 - c.shield;
     /* off the view: gone, no burst */
     for (const e of G.enemies) e.dead = true; t.ifrBalls.length = 0; t.ifrFires.length = 0; t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
@@ -128,7 +128,8 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (r.armEarly !== 0 || r.armLate !== 0) return "a spawned meteor 30 u from an enemy hit it " + r.armEarly + " times in its first 45 u (expected 0), " + r.armLate + " after (expected 0: it flies straight on and never turns back for it - owner, 2026-11-04: \"Non-homing shards\")";
   if (!(r.fuseMean > 95 && r.fuseMean < 118) || r.fuseFlares !== 40 || r.fuseLeft || r.fuseAt.some(d => d < 75 - 2 || d > 150 + 2)) return "spawned meteors' fuses: mean " + r.fuseMean.toFixed(0) + " u, " + r.fuseFlares + " burst of 40, " + r.fuseLeft + " still flying, at " + Math.min(...r.fuseAt).toFixed(0) + ".." + Math.max(...r.fuseAt).toFixed(0) + " (expected round 100 u, all between 75 and 150 - owner 2026-11-05: \"halve the IFR meteor shard travel distance\"; was round 200, 150-300)";
   if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire !== 1) return "a fan meteor: dead ahead hit " + r.homeNear + ", 35 u off its line " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 1: its own Hellfire)";
-  if (r.fissure || r.kidGen.some(g => g === 2)) return "the capstone still fissures: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen;
+  if (r.fissure || r.kidFis) return "the capstone still fissures: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen;
+  if (r.kids.length !== r.resplitWant || r.kidGen.some(g => g !== 2)) return "a shard's hit at Meteor V re-splits into " + r.kids.length + " small meteors " + JSON.stringify(r.kids) + " gen " + r.kidGen + " (expected IFR_RESPLIT[V] = " + r.resplitWant + ", gen 2 - owner, 2026-11-10: Meteor owns the splitting)";
   if (!r.offGone || r.offFires || r.offSteps < 5) return "off view: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires;
   return "";
 });
@@ -276,7 +277,7 @@ check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () 
   if (r.fires !== 40) return "40 impacts left " + r.fires + " live fires (owner, 2026-10-20: \"dont cap fire stacks\")";
   return "";
 });
-check("IFR flares: one where the main meteor lands; a fire lights its flares on a bell round its first second, inside it, near the centre more often, more of them in a wider fire", () => {
+check("IFR flares: one where the main meteor lands; a fire lights its flares on a bell round its first second, inside it, even over its area, more of them in a wider fire", () => {
   const r = run(`(() => {
     const fresh = (ax, k, need) => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let i = 0; i < k; i++) upgradeTower(t, ax, true); ifrAll(t, need); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
@@ -324,7 +325,7 @@ check("IFR flares: one where the main meteor lands; a fire lights its flares on 
     if (!(f.n >= 1)) return k + ": a grown fire lit " + f.n + " flares (1 at the least)";
     if (Math.abs(f.share - IFR_SHARD_HK_W * f.shareWant) > 1e-9) return k + ": a fire's share " + f.share + " (expected IFR_SHARD_HK 0.8 / sqrt(1 + the fan) = " + (IFR_SHARD_HK_W * f.shareWant).toFixed(3) + ": a Hellfire a meteor, the same burn a strike)";
     if (f.n >= 1 && f.lastT > f.window + 0.02) return k + ": its flares lit until " + f.lastT.toFixed(2) + " s (expected within its meteor's flare's life, " + f.window + " s - owner 2026-10-20)";
-    if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD < 0.5 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", nearer the centre)";
+    if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD > 0.55 * f.R && f.meanD < 0.78 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", EVEN over its area - mean ~2/3 R; owner, 2026-10-21: \"change the positional randomness to not prefer the center\")";
     if (f.n >= 5 && f.sizes < 2) return k + ": its flares are all one size";
   }
   if (Math.abs(r.beamIV[0] - 100) > 1e-6 || Math.abs(r.beamIV[1] - 16) > 1e-6 || Math.abs(r.beam0[0] - 2 * 50 * 100 / 210) > 1e-6 || Math.abs(r.beam0[1] - 2 * 10 * 16 / 24) > 1e-6 || !r.mono) return "Flare tables: IV " + r.beamIV + ", untaken " + r.beam0 + ", rising " + r.mono + " (expected IV 100 x 16, untaken doubled to 47.6 x 13.3, the rest between - owner 2026-10-20)";
