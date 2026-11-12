@@ -274,7 +274,7 @@ check("bosses (owner, 2026-11-05): the Devil's host (half a fast + half a swarm 
   if (r.tot !== r.want || !r.kin || !r.wander) return "Devil host " + JSON.stringify(r);
   if (r.at == null || r.at < r.tot / 2 || r.most !== 6) return "Devil gate: first devil after " + r.at + " of " + r.tot + " seen, " + r.most + " devils at once";
 });
-check("bosses (owner, 2026-11-05; a third 2026-11-09; five lanes 2026-11-09): Death's escort - a third of a plain wave of each type - walks five lanes, one a type on its own lane, tough as any escort, and only her lane lights", () => {
+check("bosses (owner, 2026-11-05; five lanes 2026-11-09; a sixth 2026-11-11): Death's escort - a sixth of a plain wave of each type - walks five lanes, one a type on its own lane, tough as any escort, and only her lane lights", () => {
   const r = run(`(() => { const bh = BAR_HOLD; BAR_HOLD = false; try { G = newGame(); G.lives = 1e6; G.started = true; G.wave = 107; sendWave();
     const esc = G.spawns.filter(w => w.heft), lanes = laneMap(108), ty = {}; for (const w of esc) ty[w.list[0]] = w.list.length;
     const boss = G.spawns.filter(w => ENEMIES[w.list[0]].star), lit = Object.keys(G.laneTotals || {});
@@ -282,7 +282,7 @@ check("bosses (owner, 2026-11-05; a third 2026-11-09; five lanes 2026-11-09): De
     G.enemies = []; for (let i = 0; i < 200 && esc.some(w => w.idx < w.list.length); i++) step(0.05);
     const k = G.enemies.filter(m => m.bossKin && m.type === "fast")[0];
     return { ty, nEsc: esc.length, lanesN: keys.size, boss: boss.length, lit, bossLit: boss.map(w => laneKey(lanes.bonus, w.ang)), kin: !!k };
-  } finally { BAR_HOLD = bh; } })()`), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.max(1, Math.round(typeWaveCount(k, 108) / 3)))`);
+  } finally { BAR_HOLD = bh; } })()`), want = run(`["fast", "swarm", "armor", "shield"].map(k => Math.max(1, Math.round(typeWaveCount(k, 108) / 6)))`);
   if (["fast", "swarm", "armor", "shield"].some((k, i) => r.ty[k] !== want[i]) || r.nEsc !== 4 || r.lanesN !== 4 || r.boss !== 1 || !r.kin
     || r.lit.length !== 1 || r.lit[0] !== r.bossLit[0]) return "Death five lanes " + JSON.stringify(r) + " (want " + want + ")";
 });

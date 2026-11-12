@@ -42,7 +42,8 @@ effects ride the picture. Enemy tracers taper along the
 lane; beam width is log of the hit; the screen shakes on a core hit.
 
 **Formation spacing is for the 1x zone, and nothing pops in.** An enemy runs `OFF_SCREEN_SPEED` (3x) until it is on screen and in
-a tower's reach, so a gap along the lane shrinks 3x as the front one slows first. A formation's FRONT spawns at the entry and the
+a tower's reach (the x3 TAPERS, owner 2026-11-09: "x3 speed outside every tower's range + movement, tapering over the last second": a wave whose
+seen unit would be in a reach `OFF_TAPER_D` (2) x its speed x `OFF_TAPER_S` (1 s) further along its lane, give or take its wander (`tapNear`), eases 3x -> 1x over that second, `G.waveTap`; a unit in reach still ends it at once), so a gap along the lane shrinks 3x as the front one slows first. A formation's FRONT spawns at the entry and the
 rest wait behind it off the board in `G.fleetQ`, walking in at 1x (as a boss's fleet does, `queueFleet`): each gap opens 3x on the
 way in and closes back to its slot in reach. The next group waits the formation's length longer. Smoke: no enemy of any wave
 type or boss fleet first appears more than a step past the entry.

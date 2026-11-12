@@ -306,3 +306,15 @@ and waves, team leak per type; a path's usefulness is the marginal team-leak dro
 | tower | what the test found | lever | result |
 |---|---|---|---|
 | CRR | Full Wing (Hangar V) worth 50 points of leak, Armament V 15, Tether V 4 | interceptors fly home when the target dies (owner, 11-01) and carry up to 40 volleys (11-07 "Ok no ammo limit"), so a retarget spends a full sortie; fewer retargets or a shorter reach barely helped | owner, 2026-11-09: one retarget, carrying part of the leftover ammo (the share from the sim) |
+
+### 13.12 The boss pass, 2026-11-09 .. 11-12 (Death on five lanes, Judgement on six; mates lead)
+
+Bosses are tuned to the towers, never the reverse; each fix is per-unit HP, never a count (owner, 2026-11-10: "raise per-unit HP (escort or hers), never the count"). Runs: `players3b.mjs`, good model, 40 games, bosses on; "depth" = the boss's progress over her neighbours' (1.0 = a normal wave), "ends" = runs that end at her.
+
+| Boss | Change | Old | New | Measured |
+|---|---|---|---|---|
+| Judgement | her own HP (`BOSS_HP.judgement`) | 5.7 | 45.6 (x8) | six lanes left her at depth 0.50; escort HP x2 / x4 / x8 moved nothing (0.50-0.53); her own HP x2 / x4 / x8: depth 0.75 / 0.70 / 1.00, ends 0 / 0 / 3% |
+| Death | escort share per type (`FLEET_SCATTER.death`) | 1/3 | 1/6 | five lanes doubled the runs she ends (one lane 9%, five 16-17%); 1/4 and 1/6 left ends at 16% but cut the lives she costs 32% -> 24%; every run she ended was Death herself reaching the core, not her escort |
+| Death | her own HP (`BOSS_HP.death`) | 1.79 | 0.9 (x0.5) | with the 1/6 escort: x0.5 ends 3%, lives lost 19%, depth 0.45; x0.4 ends 3%, 11%, 0.42; x0.3 ends 0%, 8%, 0.38 (escort 1/3: x0.8 18%, x0.6 14%) |
+
+Dropped: `DEATH_ESC_HP` (a sim lever on the old scatter path; her five-lane escort spawns through `deathEscorts`, toughened on the `w.heft` line). The answered questions: docs/answered-questions.md, 11-11.
