@@ -5,6 +5,7 @@ import { boot, check, drawn, calls, frames, ifrHelpers, perfMin } from "./harnes
 
 const env = boot();
 const { run } = env;
+const IFR_FIRE_R_I = run("IFR_FIRE_R[1]"); // (tier I's fire radius, for the fire check: 150 since the 2026-11-12 curve)
 ifrHelpers(run);
 
 check("IFR: each axis scales only its own numbers", () => {
@@ -25,7 +26,7 @@ check("IFR: each axis scales only its own numbers", () => {
   for (const ax of Object.keys(F)) { const stray = r.moved[ax].filter(k => !F[ax].includes(k)); if (stray.length) return ax + " moved another axis's numbers: " + stray; if (!r.moved[ax].length) return ax + " moved nothing"; }
   if (Math.abs(r.base.fireR - 16 * r.base.ballR) > 1e-9) return "Hellfire 0: the fire's max " + r.base.fireR + " is not 16x the meteor's size " + r.base.ballR + " (owner, 2026-10-20)";
   if (Math.abs(r.vi.meteor.ballR - 5.4) > 1e-9) return "Meteor IV meteor radius " + r.vi.meteor.ballR + " (expected 5.4: 20% of 27, owner 2026-10-20)";
-  if (r.vi.hellfire.fireR !== 180) return "Hellfire IV fire radius " + r.vi.hellfire.fireR + " (expected 180)";
+  if (r.vi.hellfire.fireR !== 300) return "Hellfire V fire radius " + r.vi.hellfire.fireR + " (expected 300: the 600 u cap, owner 2026-11-12)";
   if (r.base.triple || !r.vi.firaga.triple) return "three flares a meteor is not the Flare capstone's alone";
   if (!r.live.length || r.kept.length) return "a save keeps IFR live keys: " + r.kept + " (live: " + r.live + ")";
   if (r.oldOk !== true) return "a cleaned IFR threw on resume: " + r.oldOk;
@@ -249,10 +250,10 @@ check("IFR: the fire (Hellfire, its circle drawn at 16%, then 8%, its glow twice
     ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); try { G.towers = G.towers.filter(x => x !== t); for (let i = 0; i < 5; i++) step(1 / 30); out.sold = true; } catch (e) { out.sold = String(e); }
     return out;
   })()`);
-  if (r.r0 !== r.ballR || Math.abs(r.R0 - 16 * r.ballR) > 1e-9) return "Hellfire 0: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + ", then 16x it)";
+  if (r.r0 !== r.ballR || Math.abs(r.R0 - Math.max(16 * r.ballR, IFR_FIRE_R_I)) > 1e-9) return "Hellfire I: the fire opened at " + r.r0 + " and grows to " + r.R0 + " (expected the meteor's " + r.ballR + ", then the larger of 16x it and tier I's radius " + IFR_FIRE_R_I + ")";
   if (r.fireHits !== 1) return "the fire's ring hit an enemy " + r.fireHits + " times (expected once: owner, 2026-10-21, \"3x hellfire flare hit\")";
   if (!r.drawn) return "the fire's circle is not drawn at 16%, its glow x2 wide (drawIfrFires, IFR_FIRE_A / _W; owner 2026-10-21)";
-  if (r.R6 !== 180) return "Hellfire IV fire grows to " + r.R6 + " (expected 180)";
+  if (r.R6 !== 300) return "Hellfire V fire grows to " + r.R6 + " (expected 300: the 600 u cap, owner 2026-11-12)";
   if (Math.abs(r.grow - r.growWant) > 1 / 30 + 1e-6) return "the fire took " + r.grow.toFixed(3) + " s to grow (expected " + r.growWant.toFixed(3) + ")";
   if (!(r.until >= 0) || Math.abs(r.goneAt - r.until) > 1 / 30 + 1e-6 || r.goneAfter < 0.1) return "the fire went at " + r.goneAt.toFixed(2) + " s, its last flare out at " + r.until + " (owner, 2026-10-21: it stays till its flares are out)";
   if (r.sold !== true) return "selling the tower with a live fire threw: " + r.sold;
