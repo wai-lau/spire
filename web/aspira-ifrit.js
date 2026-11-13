@@ -57,9 +57,9 @@ const IFR_TICK_K = [0.41, 1.5, 1.6, 1.6] /* BATTERY 6.6.0 (2026-10-20): Flare: V
 const IFR_BIG_S = 2.8 /* 1260 / (IFR_FLARE_K 4.5 x the VI length 100): the big flare kept at its pinned 1260 u when the flares shrank (2026-10-20; was 4/3 x 210) */, IFR_BIG_K = 4, IFR_BIG_X = 1 / 9; // the Flare capstone's BIG flare, dead centre of a fire once all its flares are lit (owner, 2026-10-20): size x BIG_S the largest flare, hit x BIG_K, its x BIG_X as long (the old giant flare's)
 // SECONDARY AND TERTIARY METEORS ARE MINES (owner, 2026-11-12: "secondary and tertiary meteors should be mines that take some time to arm"):
 // a fan meteor (gen 1) or a re-split one (gen 2) hits nothing in flight; at its fuse it LANDS where it would have burst (t.ifrMines), lies dim
-// until armed, then goes off on the first enemy that touches it - a secondary mine: the shard's hit, its fire circle and its tertiaries thrown
+// until armed, then goes off on the first enemy that comes within IFR_MINE_REACH - a secondary mine: the shard's hit, its fire circle and its tertiaries thrown
 // on along its heading (which land as mines too); a tertiary mine: its hit and the 40 u circle (ifrMiniHit). An unused mine goes after its life
-const IFR_MINE_ARM_S = 1, IFR_MINE_LIFE_S = 6;
+const IFR_MINE_ARM_S = 1, IFR_MINE_LIFE_S = 6, IFR_MINE_REACH = 60; // REACH: an armed mine goes off when an enemy comes within this many u (owner, 2026-11-13: "IFR B" - a proximity mine; touch mines lost Ifrit its shield check)
 const IFR_MINI_L = 0.5; // a tertiary hit circle fades over this (the look, aspira-ifrit-draw.js; aged here by stepIfrBalls, so it lives in this game file)
 const IFR_ARM_HIT_U = 50; let IFR_REHIT_U = 65; /* both halved with the fuse (owner, 2026-11-05: "halve the IFR meteor shard travel distance"; were 100, 130) */ /* (let: the sims sweep it; under the fuse, IFR_FUSE_LO 150, or it never comes back) IFR_REHIT_U: a burst meteor flies this far OUT before it may home back onto the enemy its meteor struck (owner, 2026-10-26: "fly further before coming back for bosses") */ // a SPAWNED meteor (a fan shard) flies straight and NEVER homes (2026-11-04; IFR_ARM_U 50, its straight stretch before homing from 2026-10-20, gone), and hits nothing until it has flown ARM_HIT_U (owner, 2026-10-20: "100u instead of 50u for the non-hit")
 const IFR_FUSE_U = 100, IFR_FUSE_SD = 25, IFR_FUSE_LO = 75, IFR_FUSE_HI = 150; /* HALVED (owner, 2026-11-05: "halve the IFR meteor shard travel distance"; was 200, sd 50, 150-300) */ // owner, 2026-10-20: "meteors should explode around 200u, spread between 150u and 300u instead" (was round 400, sd 300); sd 50 my call // a SPAWNED meteor's FUSE: unspent, it bursts (a flare) once it has flown a distance drawn from a bell round FUSE_U, sd FUSE_SD, kept in [FUSE_LO, FUSE_HI] (owner, 2026-10-20: "a chance of exploding as it travels, time bell curve explosions around 400u away")
@@ -315,7 +315,7 @@ function stepIfrBalls(t, st, dt) {
   if (t.ifrMini) { for (const m of t.ifrMini) m.age += dt; while (t.ifrMini.length && t.ifrMini[0].age > IFR_MINI_L) t.ifrMini.shift(); }
 }
 // THE MINES (stepIfrBalls runs this): each ages, arms at IFR_MINE_ARM_S, and goes at IFR_MINE_LIFE_S; an armed one goes off on the first live,
-// seen enemy within its hit size - its blast as the meteor's hit was (ifrMineBlast), then it is gone
+// seen enemy within its reach (IFR_MINE_REACH) - its blast as the meteor's hit was (ifrMineBlast), then it is gone
 function stepIfrMines(t, st, dt, born) {
   for (const m of t.ifrMines) {
     m.age += dt;
@@ -323,7 +323,7 @@ function stepIfrMines(t, st, dt, born) {
     if (m.age < IFR_MINE_ARM_S) continue;
     for (const e of G.enemies) {
       if (e.dead || !e.seen) continue;
-      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + m.r;
+      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + Math.max(m.r, IFR_MINE_REACH);
       if ((e.x - m.x) ** 2 + (e.y - m.y) ** 2 <= r * r) { ifrMineBlast(t, st, m, e, born); m.gone = true; break; }
     }
   }

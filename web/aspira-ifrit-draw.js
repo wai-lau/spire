@@ -119,7 +119,7 @@ function drawIfrBalls(t, low) {
 }
 // THE MINES' LOOK (owner, 2026-11-12: "secondary and tertiary meteors should be mines that take some time to arm"): a landed meteor at its
 // flight size, dim while it arms (rising smoothly), a bright pulse the moment it is armed, then steady, fading out over its last IFR_MINE_FADE_S
-const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1;
+const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1, IFR_MINE_RING_A = 0.25;
 function drawIfrMines(t, low) {
   if (!t.ifrMines || !t.ifrMines.length) return;
   const dk = ifrDrawK(t);
@@ -129,6 +129,7 @@ function drawIfrMines(t, low) {
     if (since >= 0 && since < IFR_MINE_PULSE_S) { const p = 1 - since / IFR_MINE_PULSE_S; a = IFR_MINE_LIT + (1 - IFR_MINE_LIT) * p; inner = 1 + 1.5 * p; }
     const left = IFR_MINE_LIFE_S - m.age; if (left < IFR_MINE_FADE_S) a *= Math.max(0, left / IFR_MINE_FADE_S);
     drawIfrMeteor(m.x, m.y, m.r * sizeK * dk, COL.yellow, low, a, inner);
+    if (since >= 0) drawIfrRingAt(m.x, m.y, IFR_MINE_REACH, a * IFR_MINE_RING_A, low, 1); /* its reach, a faint ring once armed (owner, 2026-11-13: "IFR B") */
   }
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
