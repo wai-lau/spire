@@ -369,5 +369,7 @@ function arcChainSfx(share, depth) {
   const now = AC.currentTime; sfxBump("arc", now); if (!sfxMakeRoom("arc", now)) return;
   sfxOpt = { gain: Math.min(ARC_CHAIN_VOL, share) }; playSample("arc", depth * ARC_CHAIN_GAP);
 }
-// EVERY CLICK (owner, 2026-11-09: "clicking things should play the BUTTON.WAV sound"): a button, a card or a checkbox anywhere in the game
-if (typeof document !== "undefined") document.addEventListener("click", ev => { const b = ev.target && ev.target.closest && ev.target.closest("button, .asp-card, [role=checkbox]"); if (b && b.closest("#asp")) sfx("click"); }, true);
+// EVERY CLICK (owner, 2026-11-09: "clicking things should play the BUTTON.WAV sound"): a button, a card or a checkbox anywhere in the game -
+// but not a BUILD card (owner, 2026-11-13: "remove button sound when building towers, tower building already has a sound"): a card in the
+// build chooser (.asp-building) plays the tower's build sound (placeTower), or the error sound when it costs too much (noFunds)
+if (typeof document !== "undefined") document.addEventListener("click", ev => { const b = ev.target && ev.target.closest && ev.target.closest("button, .asp-card, [role=checkbox]"); if (b && b.closest("#asp") && !b.closest(".asp-building .asp-card")) sfx("click"); }, true);
