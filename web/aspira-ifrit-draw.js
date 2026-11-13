@@ -9,7 +9,7 @@
 // but not Meteor V's big ones (b.big, IFR_BIG_DRAW_K, as they were); the hit sizes (IFR_BALL_RAD) untouched
 const IFR_METEOR_SIZE_K = 2;
 const IFR_METEOR_DRAW_K = 1.25, ifrDrawK = t => IFR_METEOR_DRAW_K ** (typeof skillOf === "function" ? skillOf(t, "meteor") : 0);
-const IFR_MINI_R = 20, IFR_MINI_L = 0.5; // the tertiary meteor's hit ring: radius 20 u (40 u across: the owner's "40u circle"), fading over 0.5 s (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well")
+const IFR_MINI_R = 20; /* (IFR_MINI_L, the fade time, lives in aspira-ifrit.js: the game ages the circles and the simulator loads no draw file) */ // the tertiary meteor's hit ring: radius 20 u (40 u across: the owner's "40u circle"), fading over 0.5 s (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well")
 // THE TERTIARY HIT CIRCLE (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well"): a look only -
 // where a re-split small meteor hits, a ring in the fire circle's look that grows from 30% to full while it fades over IFR_MINI_L
 function drawIfrMini(t) {
