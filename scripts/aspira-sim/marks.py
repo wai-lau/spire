@@ -95,15 +95,26 @@ if dup:
 print(json.dumps(marks))
 # RULE (owner, 2026-10-19: "ensure that no tower has only 1 enemy type with checkmarks", "beats or at least helps"): every tower has a check (any size) on at least TWO types -
 # a tower with checks on one type alone (CRR, 2026-10-19: shields only) is a balance failure to fix, not a mark to fudge
+# THE SUMS (owner, 2026-10-23: "Col and row need to sum to 0"; 2026-11-13: "level 0 should sum to 0 though"): every row and every
+# column sums to 0 at every point level, 0 included - the rounding keeps the rows exact, so a column off 0 is a balance failure
+for t in TYPES:
+    if sum(m[t] for m in marks.values()):
+        print(f"RULE FAIL: the {t} column sums to {sum(m[t] for m in marks.values()):+d}, not 0")
+for k, m in marks.items():
+    if sum(m.values()):
+        print(f"RULE FAIL: {k.upper()}'s row sums to {sum(m.values()):+d}, not 0")
+# It counts from 3 points (owner, 2026-11-13, "yeah, A"): at 0 points a tower is its plain attack, and every tower on live 7.16.0 has a
+# single check there - a 0-point run is held to its band (--band, below) alone
 MIN_CHECKED = 2
-lone = {k: [t for t in TYPES if m[t] > 0] for k, m in marks.items() if sum(1 for t in TYPES if m[t] > 0) < MIN_CHECKED}
+PTS = re.search(r"\((\d+) pts\)", open(sys.argv[1]).read())
+PTS = int(PTS.group(1)) if PTS else None
+lone = {} if PTS == 0 else {k: [t for t in TYPES if m[t] > 0] for k, m in marks.items() if sum(1 for t in TYPES if m[t] > 0) < MIN_CHECKED}
 for k, ts in lone.items():
     print(f"RULE FAIL: {k.upper()} has checks on {len(ts)} enemy type(s) {ts} - every tower needs at least {MIN_CHECKED}")
 
 # THE BAND (owner, 2026-11-06 / 2026-11-07, above): with --band every cell within BAND of the target - 2 for a 0-point run, else 1
 if "--band" in sys.argv[2:]:
-    pts = re.search(r"\((\d+) pts\)", open(sys.argv[1]).read())
-    BAND = 2 if pts and int(pts.group(1)) == 0 else 1
+    BAND = 2 if PTS == 0 else 1
     # THE 13-POINT BAND (owner, 2026-11-10: "hey for 13 points, allow up to +1 on any type (up to total of +2)"): --band-total N caps a
     # tower's summed gap; marks5.sh reads 13 points with --focus --band --band-total 2 (each type within 1, at most 2 off in all)
     BAND_TOTAL = int(sys.argv[sys.argv.index("--band-total") + 1]) if "--band-total" in sys.argv else None
