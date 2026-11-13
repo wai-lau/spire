@@ -110,8 +110,11 @@ function solTrackBeams() {
       // the last SOL_SHOT_AT of REAL time before the pulse, when the shot's build-up sounds (solSfx, aspira-sfx.js); before that no line (owner, 2026-11-09:
       // "SOL charging time should last as long as the sound does at 1x speed" - the look only, the fire rate is unchanged)
       const shotS = typeof SOL_SHOT_AT === "number" ? SOL_SHOT_AT : 0.62, real = Math.max(0, t.solCd || 0) / (typeof gameSpeedX === "function" ? gameSpeedX() : 1);
-      if (!(B.aim > 0) && real > shotS) continue;
-      const p = B.aim > 0 ? 1 - B.aim / SOL_AIM : 1 - real / shotS;
+      // ONLY IN THE CHARGE WINDOW, NEVER UNDER THE KILL'S FLASH (owner, 2026-11-09: "after SOL beam finishes firing, beam needs to disappear, rn visually
+      // it looks like it retargets immediately and then halts for the frames after the beam kills the target"): no line for a new lock's aim (B.aim
+      // stays the game's), none while the killing beam's flash fades (t.solFl), then the line over the last SOL_SHOT_AT before the next pulse
+      if (real > shotS || (t.solFl && (t.solFl.fl ?? 1e9) < SOL_PULSE_FLASH)) continue;
+      const p = 1 - real / shotS;
       let aim = solAimF.get(t); if (!aim) solAimF.set(t, aim = { k: "beam", t: 0, life: 1, m: false, slim: false, color: TOWERS.sol.color, d: 0, share: 1, thin: SOL_AIM_W });
       aim.a = t; aim.b = B.e; aim.bw = undefined; aim.alpha = (SOL_AIM_A0 + SOL_AIM_A1 * Math.min(1, Math.max(0, p)) ** 2) / BEAM_BRIGHT; (out ||= []).push(aim); continue; }
     if (!((B.fl ?? 1e9) < SOL_PULSE_FLASH)) continue; // (a dropped lock's ghost: its flash only)
