@@ -318,3 +318,15 @@ Bosses are tuned to the towers, never the reverse; each fix is per-unit HP, neve
 | Death | her own HP (`BOSS_HP.death`) | 1.79 | 0.9 (x0.5) | with the 1/6 escort: x0.5 ends 3%, lives lost 19%, depth 0.45; x0.4 ends 3%, 11%, 0.42; x0.3 ends 0%, 8%, 0.38 (escort 1/3: x0.8 18%, x0.6 14%) |
 
 Dropped: `DEATH_ESC_HP` (a sim lever on the old scatter path; her five-lane escort spawns through `deathEscorts`, toughened on the `w.heft` line). The answered questions: docs/answered-questions.md, 11-11.
+
+### 13.13 Gravity's Nova catches up, 2026-11-13 (mates lead)
+
+The paths rule (owner, 2026-11-07: "make it so that, each upgrade path leaks roughly the same amount across types"): on 7.15.0 Gravity's Nova was the weakest path of any tower after Ifrit's. Lever: Nova's own hit table `GRV_NOVA_RATE` (Gravity's three parts are per-tier tables). Team path test, leak points vs Gravity's average, 13 / 9 points:
+
+| `GRV_NOVA_RATE` III / IV / V | Void | Nova | Gravity Well | Gravity's marks |
+|---|---|---|---|---|
+| 1.9 / 2.4 / 3.1 (old) | -6.4 / -2.9 | +11.7 / +4.2 | -5.3 / -1.3 | swarm +1, fast +1, shields -3, armor +1 |
+| 2.0 / 2.8 / 4.0 | -5.1 / -2.1 | +8.1 / +2.7 | -3.0 / -0.6 | the same |
+| 2.1 / 3.2 / 4.8 | -4.2 / -1.6 | +5.3 / +1.7 | -1.1 / -0.1 | the same |
+| 2.2 / 3.6 / 5.8 | -4.7 / -1.1 | +4.5 / +0.6 | +0.2 / +0.5 | the same |
+| **2.3 / 4.0 / 6.8 (new)** | -2.4 / -0.6 | +2.7 / -0.1 | -0.3 / +0.7 | the same; no other tower's mark moved |
