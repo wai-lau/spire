@@ -66,7 +66,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     const fan = t.ifrBalls.filter(b => b.gen === 1); out.fan = fan.length; out.want = st.fan; out.fanR = fan.map(b => b.r / st.ballR); out.fanV = fan.map(b => Math.hypot(b.vx, b.vy) / st.ballV);
     const angs = fan.map(b => (Math.atan2(b.vy, b.vx) + 2 * Math.PI) % (2 * Math.PI)).sort((a, b) => a - b); out.maxGap = Math.max(...angs.map((a, i) => (i ? a - angs[i - 1] : a + 2 * Math.PI - angs[angs.length - 1]))) * 180 / Math.PI;
     const w = Array.from({ length: 2000 }, () => ifrFanDelay(IFR_FAN_REF)); const w4 = Array.from({ length: 2000 }, () => ifrFanDelay(4 * IFR_FAN_REF)); out.wait4Mean = w4.reduce((a, b) => a + b, 0) / w4.length; out.fanWaits = fan.every(b => b.wait >= 0 && b.wait <= IFR_FAN_MAX_S * Math.sqrt(st.fan / IFR_FAN_REF) + 1e-9); out.waitMean = w.reduce((a, b) => a + b, 0) / w.length; out.waitMin = Math.min(...w); out.waitMax = Math.max(...w);
-    tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; /* the fan hits nothing here: no new fire */
+    tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; out.minesAfter = (t.ifrMines || []).length; /* the fan hits nothing in flight: no new fire, each lands as a MINE at its fuse (owner, 2026-11-12) */
     /* the LAUNCHED meteor never goes silently (owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening"): locked, the
        view does not cull it (its seen target may sit where the camera does not reach), and out of time it bursts where it is */
     { for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
@@ -83,30 +83,30 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
       out.corpseFire = t.ifrFires[0] ? Math.hypot(t.ifrFires[0].x - vx, t.ifrFires[0].y - vy) : NaN; out.decoy = 50 - decoy.shield; decoy.dead = true;
       for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; }
     /* a SPAWNED meteor hits nothing for its first IFR_ARM_HIT_U, 100 u (owner, 2026-10-20: "100u instead of 50u for the non-hit"), then it does; it never bends (no homing, 2026-11-04) */
-    { t.ifrFires.length = 0; t.ifrFlares.length = 0; const v = held(t, t.x + 30, t.y); egridAt = NaN;
+    { t.ifrFires.length = 0; t.ifrFlares.length = 0; t.ifrMines = []; const v = held(t, t.x + 30, t.y); egridAt = NaN; /* (no mines left from the fan above: owner, 2026-11-12) */
       t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV * IFR_FAN_V, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
       const w = held(t, t.x + 20, t.y + 25); egridAt = NaN; let k = 0, bent = 0; /* w: in homing reach from the start - no turn before 50 u (owner: "no homing for first 50") */
       while (t.ifrBalls.length && Math.hypot(t.ifrBalls[0].x - t.x, t.ifrBalls[0].y - t.y) < 45 && k++ < 600) { stepIfrBalls(t, st, 1 / 60); if (t.ifrBalls[0] && Math.abs(t.ifrBalls[0].vy) > 1e-9) bent++; }
       while (t.ifrBalls.length && (t.ifrBalls[0].flown || 0) < 95 && k++ < 1200) stepIfrBalls(t, st, 1 / 60); /* homing from 50 u, hitting only from 100 u (owner, 2026-10-20) */
       out.armEarly = 50 - v.shield + 50 - w.shield; out.bent = bent; w.dead = true; k = 0; while (t.ifrBalls.length && k++ < 1200) stepIfrBalls(t, st, 1 / 60); out.armLate = 50 - v.shield; v.dead = true; t.ifrBalls.length = 0; t.ifrFlares.length = 0; }
-    /* a SPAWNED meteor bursts on its own somewhere round 400 u out (owner, 2026-10-20: "a chance of exploding as it travels ... bell curve
-       explosions around 400u away"): no enemy anywhere - it flies, then bursts (a flare) at its fuse distance */
-    { for (const e of G.enemies) e.dead = true; t.ifrBalls.length = 0; t.ifrFlares.length = 0; const d = [];
+    /* a SPAWNED meteor flies to its fuse, a bell round 100 u out (owner, 2026-10-20: "a chance of exploding as it travels ... bell curve
+       explosions around 400u away"; halved 2026-11-05), and LANDS there as a mine (owner, 2026-11-12): no enemy anywhere - no fire, a mine each */
+    { for (const e of G.enemies) e.dead = true; t.ifrBalls.length = 0; t.ifrFlares.length = 0; t.ifrMines = []; const d = [];
       for (let i = 0; i < 40; i++) { t.ifrBalls.push({ x: CX, y: CY, vx: st.ballV * IFR_FAN_V, vy: 0, r: 2, gen: 1, skip: null, left: 30, wait: 0, fuse: ifrFuse() }); }
       const fs = t.ifrBalls.map(b => b.fuse); let k = 0; const ov = ifrOnView; ifrOnView = () => true;
       try { while (t.ifrBalls.length && k++ < 4000) stepIfrBalls(t, st, 1 / 60); } finally { ifrOnView = ov; }
-      out.fuseMean = fs.reduce((a, b) => a + b, 0) / fs.length; out.fuseFlares = (t.ifrFires || []).length; out.fuseLeft = t.ifrBalls.length; // (each burst's own fire: a shard lights no flare since 2026-11-05)
-      out.fuseAt = (t.ifrFires || []).map(f => Math.hypot(f.x - CX, f.y - CY)); t.ifrFlares.length = 0; if (t.ifrFires) t.ifrFires.length = 0; }
+      out.fuseMean = fs.reduce((a, b) => a + b, 0) / fs.length; out.fuseFlares = (t.ifrMines || []).length; out.fuseLeft = t.ifrBalls.length; // (each LANDS as a mine at its fuse since 2026-11-12, owner: "secondary and tertiary meteors should be mines that take some time to arm")
+      out.fuseAt = (t.ifrMines || []).map(m => Math.hypot(m.x - CX, m.y - CY)); out.fuseFires = (t.ifrFires || []).length; t.ifrFlares.length = 0; if (t.ifrFires) t.ifrFires.length = 0; t.ifrMines = []; }
     /* a fan meteor flies STRAIGHT (owner, 2026-11-04: "Non-homing shards"): it strikes what lies on its line (near, dead ahead) and
        never turns for what lies 35 u off it (far) */
-    t.ifrFires.length = 0; const near = held(t, t.x + 150, t.y), far = held(t, t.x + 250, t.y + 35); egridAt = NaN;
+    t.ifrFires.length = 0; t.ifrMines = []; const near = held(t, t.x + 150, t.y), far = held(t, t.x + 250, t.y + 35); egridAt = NaN;
     t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
     for (let i = 0; i < 120 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60);
     out.homeNear = 50 - near.shield; out.homeFar = 50 - far.shield; out.fanFire = t.ifrFires.length; near.dead = far.dead = true;
-    /* the capstone no longer fissures (owner, 2026-10-26); a shard's hit re-splits into IFR_RESPLIT small meteors that only hit (owner, 2026-11-10) */
+    /* the capstone no longer fissures (owner, 2026-10-26); a secondary mine going off re-splits into IFR_RESPLIT small meteors (owner, 2026-11-10; mines 2026-11-12) */
     t = fresh(6); st = towerStats(t); out.fissure = st.fissure; const c = held(t, t.x + 60, t.y); egridAt = NaN;
-    t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
-    for (let i = 0; i < 60 && t.ifrBalls.length === 1; i++) stepIfrBalls(t, st, 1 / 60);
+    t.ifrBalls.length = 0; t.ifrMines = [{ x: c.x, y: c.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, age: IFR_MINE_ARM_S }]; /* an armed SECONDARY MINE under the enemy (owner, 2026-11-12): going off, it throws its tertiaries on along its heading */
+    for (let i = 0; i < 60 && !t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60);
     out.kids = t.ifrBalls.map(k => Math.round(Math.atan2(k.vy, k.vx) * 180 / Math.PI)).sort((x, y) => x - y); out.kidGen = t.ifrBalls.map(k => k.gen); out.kidFis = t.ifrBalls.filter(k => k.fis).length; out.resplitWant = IFR_RESPLIT[5];
     stepIfrBalls(t, st, 1 / 60); out.cHits = 50 - c.shield;
     /* off the view: gone, no burst */
@@ -122,15 +122,16 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
   if (!(r.maxGap < 360 / r.want + 0.5)) return "the fan is not even round 360 degrees: largest gap " + r.maxGap.toFixed(1);
   if (Math.abs(r.wait4Mean / r.waitMean - 2) > 0.15) return "a fan 4x as big releases over " + (r.wait4Mean / r.waitMean).toFixed(2) + "x the time (expected 2: the root of the count)";
   if (!r.fanWaits || Math.abs(r.waitMean - 0.4) > 0.05 || r.waitMin < 0 || r.waitMax > 1 || r.waitMax - r.waitMin < 0.3) return "fan release times: mean " + r.waitMean.toFixed(2) + " in [" + r.waitMin.toFixed(2) + ", " + r.waitMax.toFixed(2) + "] (expected a bell round 0.4 s, sd 0.3)";
-  if (!(r.firesAfter > 1)) return "fires after the fan flew: " + r.firesAfter + " (owner, 2026-10-20: every meteor's landing makes its own - the fan's fuses too)";
+  if (r.firesAfter !== r.fires1) return "fires after the fan flew: " + r.firesAfter + " (expected only the main one's, " + r.fires1 + ": the fan's meteors are mines, owner 2026-11-12: \"secondary and tertiary meteors should be mines that take some time to arm\")";
+  if (!(r.minesAfter > 0)) return "no fan meteor lay as a mine after the fan flew (owner, 2026-11-12: mines)";
   if (r.culledFire !== 1 || r.timeoutFire !== 1) return "the launched meteor went silently: with the view seeing nothing it burst " + r.culledFire + " times, out of time " + r.timeoutFire + " (expected 1, 1)";
   if (!(r.corpseFire < 6) || r.decoy) return "its target died: the burst landed " + r.corpseFire + " u from the corpse, a live decoy took " + r.decoy + " (expected at the corpse, none)";
   if (r.bent) return "a spawned meteor turned (homed) " + r.bent + " steps in its first 45 u (expected straight)";
   if (r.armEarly !== 0 || r.armLate !== 0) return "a spawned meteor 30 u from an enemy hit it " + r.armEarly + " times in its first 45 u (expected 0), " + r.armLate + " after (expected 0: it flies straight on and never turns back for it - owner, 2026-11-04: \"Non-homing shards\")";
-  if (!(r.fuseMean > 95 && r.fuseMean < 118) || r.fuseFlares !== 40 || r.fuseLeft || r.fuseAt.some(d => d < 75 - 2 || d > 150 + 2)) return "spawned meteors' fuses: mean " + r.fuseMean.toFixed(0) + " u, " + r.fuseFlares + " burst of 40, " + r.fuseLeft + " still flying, at " + Math.min(...r.fuseAt).toFixed(0) + ".." + Math.max(...r.fuseAt).toFixed(0) + " (expected round 100 u, all between 75 and 150 - owner 2026-11-05: \"halve the IFR meteor shard travel distance\"; was round 200, 150-300)";
-  if (r.homeNear !== 1 || r.homeFar !== 0 || r.fanFire !== 1) return "a fan meteor: dead ahead hit " + r.homeNear + ", 35 u off its line " + r.homeFar + ", fires " + r.fanFire + " (expected 1, 0, 1: its own Hellfire)";
+  if (!(r.fuseMean > 95 && r.fuseMean < 118) || r.fuseFlares !== 40 || r.fuseFires || r.fuseLeft || r.fuseAt.some(d => d < 75 - 2 || d > 150 + 2)) return "spawned meteors' fuses: mean " + r.fuseMean.toFixed(0) + " u, " + r.fuseFlares + " mines landed of 40, " + r.fuseFires + " fires lit in flight, " + r.fuseLeft + " still flying, at " + Math.min(...r.fuseAt).toFixed(0) + ".." + Math.max(...r.fuseAt).toFixed(0) + " (expected round 100 u, all between 75 and 150 - owner 2026-11-05: \"halve the IFR meteor shard travel distance\"; was round 200, 150-300)";
+  if (r.homeNear !== 0 || r.homeFar !== 0 || r.fanFire !== 0) return "a fan meteor: dead ahead hit " + r.homeNear + ", 35 u off its line " + r.homeFar + ", fires " + r.fanFire + " (expected 0, 0, 0: it hits nothing in flight, it is a mine once it lands - owner, 2026-11-12: \"secondary and tertiary meteors should be mines that take some time to arm\")";
   if (r.fissure || r.kidFis) return "the capstone still fissures: kids " + JSON.stringify(r.kids) + " gen " + r.kidGen;
-  if (r.kids.length !== r.resplitWant || r.kidGen.some(g => g !== 2)) return "a shard's hit at Meteor V re-splits into " + r.kids.length + " small meteors " + JSON.stringify(r.kids) + " gen " + r.kidGen + " (expected IFR_RESPLIT[V] = " + r.resplitWant + ", gen 2 - owner, 2026-11-10: Meteor owns the splitting)";
+  if (r.kids.length !== r.resplitWant || r.kidGen.some(g => g !== 2)) return "a secondary mine going off at Meteor V re-splits into " + r.kids.length + " small meteors " + JSON.stringify(r.kids) + " gen " + r.kidGen + " (expected IFR_RESPLIT[V] = " + r.resplitWant + ", gen 2 - owner, 2026-11-10: Meteor owns the splitting)";
   if (!r.offGone || r.offFires || r.offSteps < 5) return "off view: gone " + r.offGone + " after " + r.offSteps + " steps, fires " + r.offFires;
   return "";
 });
@@ -290,8 +291,8 @@ check("IFR flares: one where the main meteor lands; a fire lights its flares on 
     out.firstFlares = t.ifrFlares.filter(f => !f.hf).length; a.dead = true;
     /* a fan meteor's landing: no flare (only the main meteor's) */
     const land = (t, st) => { t.ifrFlares.length = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0; const v = held(t, t.x + 65, t.y); egridAt = NaN; /* past IFR_ARM_HIT_U (50), inside the shortest fuse (75) - halved 2026-11-05; was 150 */
-      t.ifrBalls.push({ x: t.x, y: t.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, skip: null, left: 10, wait: 0 });
-      for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); v.dead = true;
+      t.ifrMines = [{ x: v.x, y: v.y, vx: st.ballV, vy: 0, r: st.ballR, gen: 1, age: IFR_MINE_ARM_S }]; /* a secondary MINE, armed, under the enemy (owner, 2026-11-12: the fan's meteors are mines) */
+      for (let i = 0; i < 30; i++) stepIfrBalls(t, st, 1 / 60); v.dead = true;
       const lf = t.ifrFlares.filter(f => !f.hf); return { n: lf.length, fires: t.ifrFires.length, jit: Math.max(...lf.map(f => Math.hypot(f.x - v.x, f.y - v.y))) }; };
     out.land0 = land(t, st); t = fresh("firaga", 6); st = towerStats(t); out.land6 = land(t, st);
     /* the fire's flares, at Hellfire 0 and 6 */
@@ -317,7 +318,7 @@ check("IFR flares: one where the main meteor lands; a fire lights its flares on 
     return out;
   })()`);
   if (r.firstFlares !== 1) return "the first hit lit " + r.firstFlares + " flares (expected one - owner 2026-10-20: every meteor, the first too)";
-  if (r.land0.fires !== 1) return "a fan meteor's landing made " + r.land0.fires + " fires (expected its own Hellfire - owner 2026-10-20: every meteor)";
+  if (r.land0.fires !== 1) return "a secondary mine going off made " + r.land0.fires + " fires (expected its own Hellfire - owner 2026-10-20: every meteor)";
   if (r.land0.n !== 0) return "a fan meteor's landing lit " + r.land0.n + " flares (expected none - owner, 2026-11-05: \"for IFR, only main meteor should cause the yellow flare\")";
   if (r.land6.n !== 0) return "at the Flare capstone a fan meteor's landing lit " + r.land6.n + " flares (expected none: only the main meteor's, 2026-11-05)";
   if (false) return "at the Flare capstone a landing lit " + r.land6.n + " flares (expected 2, within " + r.jmax + " u - owner, 2026-10-31: \"B\" then \"Both\": Flare V 2 flares a landing; was 3)";

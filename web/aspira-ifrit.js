@@ -55,6 +55,11 @@ function ifrFlareTiming(f) {
 const IFR_TICK_K0 = 0.98; /* x1.25 with Meteor + Hellfire x0.6 (2026-11-02; was 0.784) */ // a Flare tick, x the tower's damage - ONE number since the tier redesign (2026-10-24: its tier I value); IFR_TICK_K[0] below stays the FIRE flares' base
 const IFR_TICK_K = [0.41, 1.5, 1.6, 1.6] /* BATTERY 6.6.0 (2026-10-20): Flare: VI 2.5 */ /* x0.5 with the flares x3 (sweep 2026-10-19: more ticks to pop shields, less each - armor shrugs them off) */ /* x2 with the flares halved (2026-10-19); was [0.41, 0.6, 0.91, 1.36, 1.52, 2.27], VI 3.78 */ /* AXIS BALANCE (2026-10-19): stops IV and VI x0.75 - Hellfire carried the tower (81-89 mean leak 22 vs Meteor 80); was [0.41, 0.6, 0.91, 1.36, 2.02, 3.02] */ /* x1.2 with the longer flares (2026-10-19); was [0.34, 0.5, 0.76, 1.13, 1.68, 2.52] - was [0.08 .. 0.6] VI 1 (x4.2, moved with TICK_S: x5 overshot armor to 35%, x3.5 left it 68%) */; // Hellfire: a tick, x the blast hit
 const IFR_BIG_S = 2.8 /* 1260 / (IFR_FLARE_K 4.5 x the VI length 100): the big flare kept at its pinned 1260 u when the flares shrank (2026-10-20; was 4/3 x 210) */, IFR_BIG_K = 4, IFR_BIG_X = 1 / 9; // the Flare capstone's BIG flare, dead centre of a fire once all its flares are lit (owner, 2026-10-20): size x BIG_S the largest flare, hit x BIG_K, its x BIG_X as long (the old giant flare's)
+// SECONDARY AND TERTIARY METEORS ARE MINES (owner, 2026-11-12: "secondary and tertiary meteors should be mines that take some time to arm"):
+// a fan meteor (gen 1) or a re-split one (gen 2) hits nothing in flight; at its fuse it LANDS where it would have burst (t.ifrMines), lies dim
+// until armed, then goes off on the first enemy that touches it - a secondary mine: the shard's hit, its fire circle and its tertiaries thrown
+// on along its heading (which land as mines too); a tertiary mine: its hit and the 40 u circle (ifrMiniHit). An unused mine goes after its life
+const IFR_MINE_ARM_S = 1, IFR_MINE_LIFE_S = 6;
 const IFR_ARM_HIT_U = 50; let IFR_REHIT_U = 65; /* both halved with the fuse (owner, 2026-11-05: "halve the IFR meteor shard travel distance"; were 100, 130) */ /* (let: the sims sweep it; under the fuse, IFR_FUSE_LO 150, or it never comes back) IFR_REHIT_U: a burst meteor flies this far OUT before it may home back onto the enemy its meteor struck (owner, 2026-10-26: "fly further before coming back for bosses") */ // a SPAWNED meteor (a fan shard) flies straight and NEVER homes (2026-11-04; IFR_ARM_U 50, its straight stretch before homing from 2026-10-20, gone), and hits nothing until it has flown ARM_HIT_U (owner, 2026-10-20: "100u instead of 50u for the non-hit")
 const IFR_FUSE_U = 100, IFR_FUSE_SD = 25, IFR_FUSE_LO = 75, IFR_FUSE_HI = 150; /* HALVED (owner, 2026-11-05: "halve the IFR meteor shard travel distance"; was 200, sd 50, 150-300) */ // owner, 2026-10-20: "meteors should explode around 200u, spread between 150u and 300u instead" (was round 400, sd 300); sd 50 my call // a SPAWNED meteor's FUSE: unspent, it bursts (a flare) once it has flown a distance drawn from a bell round FUSE_U, sd FUSE_SD, kept in [FUSE_LO, FUSE_HI] (owner, 2026-10-20: "a chance of exploding as it travels, time bell curve explosions around 400u away")
 const ifrFuse = () => { let d; do d = IFR_FUSE_U + IFR_FUSE_SD * ifrNormal(); while (d < IFR_FUSE_LO || d > IFR_FUSE_HI); return d; }; // (a draw outside [LO, HI] drawn again)
@@ -273,7 +278,7 @@ function ifrTrailPush(b) {
   let len = 0; for (let i = tr.length - 1; i > 0; i--) { len += Math.hypot(tr[i].x - tr[i - 1].x, tr[i].y - tr[i - 1].y); if (len > IFR_TRACER_U) { tr.splice(0, i); break; } }
 }
 function stepIfrBalls(t, st, dt) {
-  if (!t.ifrBalls.length) return;
+  if (!t.ifrBalls.length && !(t.ifrMines && t.ifrMines.length) && !(t.ifrMini && t.ifrMini.length)) return;
   const all = G.enemies, born = [];
   for (const b of t.ifrBalls) {
     if (b.wait > 0) { b.wait -= dt; continue; } /* a fan meteor not released yet */
@@ -281,7 +286,7 @@ function stepIfrBalls(t, st, dt) {
     if (!atCorpse) { b.x += b.vx * dt; b.y += b.vy * dt; b.flown = (b.flown || 0) + Math.hypot(b.vx, b.vy) * dt; if (!b.gen) ifrTrailPush(b); }
     b.left -= dt;
     let hit = null;
-    if (armed) for (const e of all) { /* every enemy, not projGrid's cell (a few meteors a tower - cheap); a spawned one only once armed */
+    if (armed && !b.gen) for (const e of all) { /* every enemy, not projGrid's cell (a few meteors a tower - cheap); only the launched meteor hits in flight - the spawned ones are mines */
       if (e.dead || !e.seen || e.id === b.skip) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + b.r;
       if ((e.x - b.x) ** 2 + (e.y - b.y) ** 2 <= r * r) { hit = e; break; }
@@ -298,14 +303,37 @@ function stepIfrBalls(t, st, dt) {
     } else if (atCorpse) { /* at its dead target's spot: the launched one bursts there (fire, the fan); a fan meteor just goes */
       b.left = 0;
       b.ax = b.x; b.ay = b.y; if (!b.gen) { ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } else ifrImpact(t, st, b, false);
-    } else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; b.ax = b.x; b.ay = b.y; if (b.gen === 1) { ifrImpact(t, st, b, false); ifrResplit(born, st, b, null); } } /* its fuse: it bursts mid-flight */
+    } else if (b.gen && b.fuse != null && (b.flown || 0) >= b.fuse) { b.left = 0; (t.ifrMines ||= []).push({ x: b.x, y: b.y, vx: b.vx, vy: b.vy, gen: b.gen, r: b.r, age: 0, fis: b.fis }); } /* its fuse: it LANDS there, a mine */
     else if (!b.gen && b.left <= 0) { b.ax = b.x; b.ay = b.y; ifrImpact(t, st, b); ifrFan(born, st, b.x, b.y, null); } /* the launched one never goes silently: out of time, it bursts where it is */
     else if ((b.gen || (b.lock == null && b.cx == null)) && !ifrOnView(b.x, b.y, b.r)) b.left = 0; /* off the view: gone, no burst - never the launched one while it hunts (its seen target may sit where the camera does not reach; owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening") */
   }
   keepLive(t.ifrBalls);
+  if (t.ifrMines && t.ifrMines.length) stepIfrMines(t, st, dt, born);
   for (const [x, y, a, id, gen, wait, fis] of born) { ifrMeteor(t, st, x, y, a, gen, id, wait); if (fis) t.ifrBalls[t.ifrBalls.length - 1].fis = true; }
   // the mini hit circles' ages (look only)
   if (t.ifrMini) { for (const m of t.ifrMini) m.age += dt; while (t.ifrMini.length && t.ifrMini[0].age > IFR_MINI_L) t.ifrMini.shift(); }
+}
+// THE MINES (stepIfrBalls runs this): each ages, arms at IFR_MINE_ARM_S, and goes at IFR_MINE_LIFE_S; an armed one goes off on the first live,
+// seen enemy within its hit size - its blast as the meteor's hit was (ifrMineBlast), then it is gone
+function stepIfrMines(t, st, dt, born) {
+  for (const m of t.ifrMines) {
+    m.age += dt;
+    if (m.age >= IFR_MINE_LIFE_S) { m.gone = true; continue; }
+    if (m.age < IFR_MINE_ARM_S) continue;
+    for (const e of G.enemies) {
+      if (e.dead || !e.seen) continue;
+      const r = ENEMIES[e.type].size * (e.sizeMul || 1) + m.r;
+      if ((e.x - m.x) ** 2 + (e.y - m.y) ** 2 <= r * r) { ifrMineBlast(t, st, m, e, born); m.gone = true; break; }
+    }
+  }
+  t.ifrMines = t.ifrMines.filter(m => !m.gone);
+}
+function ifrMineBlast(t, st, m, e, born) {
+  const amt = st.dmg * st.routeK * (m.gen === 2 && !m.fis ? IFR_RESPLIT_K : 1), h0 = hitFrom; HIT_AT.x = m.x; HIT_AT.y = m.y; hitFrom = HIT_AT;
+  try { damage(e, amt, t, false, false, IFR_ROUTE_ST); } finally { hitFrom = h0; } onHit(e, t, st, amt);
+  if (m.gen === 2) { if (!m.fis) ifrMiniHit(t, m, e); return; } /* a tertiary mine: its hit and the 40 u circle */
+  const b = { x: m.x, y: m.y, vx: m.vx, vy: m.vy, ax: m.x, ay: m.y, r: m.r, gen: 1, hitId: e.id, flown: 0 };
+  ifrImpact(t, st, b, false); ifrResplit(born, st, b, e.id); /* a secondary mine: its fire circle, its tertiaries thrown on */
 }
 // THE IMPACT: the meteor's black fill is gone, its outline and glow become the FIRE (Hellfire, owner 2026-10-20), no flare (owner, 2026-10-20: "no flare on initial meteor hit"). The fire's numbers are fixed at impact; fires stack (owner: few, heavy meteors keep that rare)
 // EVERY METEOR'S landing (owner, 2026-10-20: "all meteors, main incl, each create their own hellfire"): a flare, and a Hellfire of its own -

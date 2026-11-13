@@ -117,6 +117,20 @@ function drawIfrBalls(t, low) {
     if (!b.gen) ifrBodyMarks(b.x, b.y, b.r * dk * bk, skillOf(t, "hellfire"), skillOf(t, "firaga"), 1); // IN FLIGHT AS IN ORBIT (owner, 2026-11-10: "primary IFR meteors should look like the ones that are orbiting, not blank"): the Hellfire ring and Flare rays
   } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
+// THE MINES' LOOK (owner, 2026-11-12: "secondary and tertiary meteors should be mines that take some time to arm"): a landed meteor at its
+// flight size, dim while it arms (rising smoothly), a bright pulse the moment it is armed, then steady, fading out over its last IFR_MINE_FADE_S
+const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1;
+function drawIfrMines(t, low) {
+  if (!t.ifrMines || !t.ifrMines.length) return;
+  const dk = ifrDrawK(t);
+  for (const m of t.ifrMines) {
+    const sizeK = (m.gen === 2 ? IFR_SHARD_DRAW * IFR_METEOR_SIZE_K : IFR_SHARD_DRAW) * IFR_METEOR_SIZE_K, since = m.age - IFR_MINE_ARM_S;
+    let a = since < 0 ? IFR_MINE_DIM + (0.55 - IFR_MINE_DIM) * (m.age / IFR_MINE_ARM_S) : IFR_MINE_LIT, inner = 1;
+    if (since >= 0 && since < IFR_MINE_PULSE_S) { const p = 1 - since / IFR_MINE_PULSE_S; a = IFR_MINE_LIT + (1 - IFR_MINE_LIT) * p; inner = 1 + 1.5 * p; }
+    const left = IFR_MINE_LIFE_S - m.age; if (left < IFR_MINE_FADE_S) a *= Math.max(0, left / IFR_MINE_FADE_S);
+    drawIfrMeteor(m.x, m.y, m.r * sizeK * dk, COL.yellow, low, a, inner);
+  }
+}
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)
 const IFR_FLARE_I0 = 3, IFR_FLARE_I_MAX = 6;
@@ -351,7 +365,7 @@ function drawIfr(balls) {
   // fire's circle and its flares
   const ifrs = G.towers.filter(t => t.kind === "ifr" && t.ifrInit0);
   ctx.lineCap = "butt"; ctx.lineJoin = "round";
-  if (balls) { for (const t of ifrs) drawIfrBalls(t, low); }
+  if (balls) { for (const t of ifrs) { drawIfrMines(t, low); drawIfrBalls(t, low); } }
   else { for (const t of ifrs) drawIfrFlares(t, false); for (const t of ifrs) { drawIfrFlares(t, true); drawIfrFires(t, low); } for (const t of ifrs) drawIfrMini(t); for (const t of G.towers) if (t.kind === "sol" && t.solFlares && t.solFlares.length) drawIfrFlares({ ifrFlares: t.solFlares }, false); } // (the circle over its own flares, as before; SCORCH V's SOL flares last)
   ctx.globalAlpha = 1; ctx.lineCap = "butt";
 }
