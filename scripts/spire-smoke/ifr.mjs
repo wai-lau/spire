@@ -69,7 +69,7 @@ check("IFR meteors: ONE homes onto its target from any distance; its first hit m
     tgt.dead = true; for (let i = 0; i < 300 && t.ifrBalls.length; i++) stepIfrBalls(t, st, 1 / 60); out.firesAfter = t.ifrFires.length; out.minesAfter = (t.ifrMines || []).length; /* the fan hits nothing in flight: no new fire, each lands as a MINE at its fuse (owner, 2026-11-12) */
     /* the LAUNCHED meteor never goes silently (owner, 2026-10-20: "initial meteor kinda just disappears with nothing happening"): locked, the
        view does not cull it (its seen target may sit where the camera does not reach), and out of time it bursts where it is */
-    { for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
+    { for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0; t.ifrMines = []; /* (2026-11-14: the fan above leaves armed proximity mines; one within 60 u of this block's target went off with the meteor - 2 fires, a ship failed once on it) */
       const v = held(t, t.x + 90, t.y - 40); egridAt = NaN; const ov = ifrOnView; /* (inside IFR's range, 140 since 2026-10-20) */ ifrOnView = () => false; /* the camera sees nothing */
       try { t.ifrCharge = 1; t.ifrGap = 0; ifrLaunch(t, st); let k = 0; while (!t.ifrFires.length && k++ < 600) stepIfrBalls(t, st, 1 / 60); } finally { ifrOnView = ov; }
       out.culledFire = t.ifrFires.length; v.dead = true; for (const b of t.ifrBalls) b.left = 0; t.ifrBalls.length = 0; t.ifrFires.length = 0;
@@ -280,7 +280,7 @@ check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () 
   return "";
 });
 check("IFR flares: one where the main meteor lands; a fire lights its flares on a bell round its first second, inside it, even over its area, more of them in a wider fire", () => {
-  const r = run(`(() => {
+  const r = run(`(() => { const rnd0 = Math.random; let sd = 4242; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; }; try { return (() => { /* SEEDED (2026-11-14): the flare spots are Math.random, and over 16 seeds Hellfire IV's mean sits at 0.579 R (0.556-0.606) against the 0.55 R line below - unseeded it failed a ship about once in 300 runs */
     const fresh = (ax, k, need) => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let i = 0; i < k; i++) upgradeTower(t, ax, true); ifrAll(t, need); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
     const out = {};
@@ -316,7 +316,7 @@ check("IFR flares: one where the main meteor lands; a fire lights its flares on 
       out.bigOff = bigs[0] ? Math.hypot(bigs[0].x - CX, bigs[0].y - CY) : NaN; out.bigL = bigs[0] ? bigs[0].L : NaN; out.bigWant = IFR_V_SPAN / 2; /* 1260 -> 150 (owner, 2026-11-05: "IFR flare V should only be like 300u wide and tall" - the owner setting the locked size) */ /* was 1260: (0.5 x 12 x the old capstone length 210) */ /* PINNED (owner, 2026-10-20): the size of a typical Flare-IV flare when IFR_FLARE_K was 12 - "do not change the flare sizes further without asking" */ out.normMax = IFR_FLARE_K * st.beamL; out.beamIV = [st.beamL, st.beamW]; out.beam0 = [IFR_BEAM_L[0], IFR_BEAM_W[0]]; out.mono = [IFR_BEAM_L, IFR_BEAM_W].every(T => T.every((v, i) => !i || v > T[i - 1])); out.bigHit = bigs[0] && bigs[0].hit; out.bigHitWant = st.dmg * st.flareK * IFR_BIG_K; }
     { const t = fresh("firaga", 0), st = towerStats(t); ifrImpact(t, st, { ax: CX, ay: CY, r: st.ballR }); const f = t.ifrFires[0]; let tm = 0; while (f.left > 0 && tm < 20) { stepIfrFires(t, st, 1 / 60); tm += 1 / 60; } out.bigN0 = t.ifrFlares.filter(q => q.big).length; } out.flareT = IFR_FIRE_FLARE_T; { const z = IFR_FIRE_FLARE_T / IFR_FIRE_FLARE_SD, pdf = Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI); let cdf = 0; for (let x = -8; x < z; x += 0.001) cdf += Math.exp(-x * x / 2) / Math.sqrt(2 * Math.PI) * 0.001; out.flareMean = IFR_FIRE_FLARE_T + IFR_FIRE_FLARE_SD * pdf / cdf; } /* the mean of the bell cut at 0 */
     return out;
-  })()`);
+  })(); } finally { Math.random = rnd0; } })()`);
   if (r.firstFlares !== 1) return "the first hit lit " + r.firstFlares + " flares (expected one - owner 2026-10-20: every meteor, the first too)";
   if (r.land0.fires !== 1) return "a secondary mine going off made " + r.land0.fires + " fires (expected its own Hellfire - owner 2026-10-20: every meteor)";
   if (r.land0.n !== 0) return "a fan meteor's landing lit " + r.land0.n + " flares (expected none - owner, 2026-11-05: \"for IFR, only main meteor should cause the yellow flare\")";
