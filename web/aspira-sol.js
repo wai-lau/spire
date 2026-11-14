@@ -47,14 +47,16 @@ function solScorchTick(e, dt) {
 const SOL_TICK = 0.25;
 // the fit (countermx 9 pts, 101-119, 2026-11-04): Breach's carry a pass by Breach tier, and the curve's damage x SOL_TRACK_DMG (a tracking
 // beam throws away the overkill a tick on every kill); SOL's marks hold at -2 -1 +2 +1, distance 24
-const SOL_TRACK_HOP = [0.5, 0.55, 0.6, 0.65, 0.7, 0.75], SOL_TRACK_DMG = 4.55; /* x1.3 (2026-11-06, after GRV one-nova: SOL trios 6/18 -> 7/18 over a 50-game screen, marks distance 14 held; was 3.5) */
+const SOL_TRACK_HOP = [0.6, 0.66, 0.72, 0.78, 0.84, 0.9] /* x1.2 with the aim rule and the big pulses (2026-11-13; every tier under 1 - the share is multiplied in at EACH enemy pierced, so 1 or more would grow along the line); was 0.5-0.75 */, SOL_TRACK_DMG = 4.55; /* x1.3 (2026-11-06, after GRV one-nova: SOL trios 6/18 -> 7/18 over a 50-game screen, marks distance 14 held; was 3.5) */
 // SCORCH_M stacks a shot's worth (1 / rate s) of beam time on an enemy: 1 broke ARC's two checks, 2 CRR's (the shield column), 3 holds them
-const SOL_SCORCH_M = 3;
+// - at the old pulse. 0.7 with the aim rule (2026-11-13): round(0.7 / SOL_PULSE_K 0.35) = 2 stacks a pulse, down from 3 at 0.75 - SOL
+// popped every shield at 13 points (1% leak, its shield mark +2 vs the target +1); 2 a pulse lets 11% through, every tower's checks held
+const SOL_SCORCH_M = 0.7;
 // THE PULSE'S CADENCE (owner, 2026-11-05: "pulse at the old rate! for SOL" / "reduce fire rate of SOL then" / "short aim time is mostly for
 // visual"): a shot every 1 / (rate x SOL_PULSE_K) s for st.dmg / SOL_PULSE_K (the damage a second held), its scorch in SOL_SCORCH_M /
 // SOL_PULSE_K stacks a shot (the stacks a second held: "scorch is what pops shields"); a NEW lock aims SOL_AIM s before it may fire
 const SOL_FL_KEEP = 0.3; /* x2 with SOL_PULSE_FLASH (owner, 2026-11-09: "visual-only: double duration of SOL beams"); a look only - nothing in the game reads the kept flash */ // s a pulse's flash shows (aspira-effects.js SOL_PULSE_FLASH: the same) - kept past the lock a killing pulse ends
-let SOL_PULSE_K = 0.75, SOL_AIM = 0.3; // (marks 9 pts 101-119: x1 76/24/0/21, x0.75 80/30/0/23, x0.5 83/34/0/26 - all swarm -3, distance 20; x0.75 shipped: "reduce fire rate of SOL then")
+let SOL_PULSE_K = 0.35 /* bigger, rarer pulses with the aim rule (owner, 2026-11-13: "What about lowering fire rate / Carry damage / Reflection count / Cmon, try stuff for SOL" -> "ship A / but no exceptions, keep trying things until it works"): a pulse's overkill on a weak swarm enemy is SOL's swarm weakness, which the aim rule had taken away (a pulse 2.1x the old) */, SOL_AIM = 0.3; // (marks 9 pts 101-119: x1 76/24/0/21, x0.75 80/30/0/23, x0.5 83/34/0/26 - all swarm -3, distance 20; x0.75 shipped: "reduce fire rate of SOL then")
 // SCORCH V's FLARE (owner, 2026-11-06: "SOL, don't require death, just first enemy hit, leave SOL colored IFR flare"): each shot's FIRST
 // enemy hit (the lock, whether it dies or not) leaves an IFR flare there in SOL's colour, burning as IFR's untaken Flare does (its length,
 // width, burn and tick: ifrFlareTiming(0), IFR_BEAM_L/W[0], the mean flare size) and ticking through ifrTickFlare. Its tick = IFR's flare tick
@@ -75,7 +77,7 @@ function stepSolFlares(t, st, dt) {
 // REFLECTION V (owner, 2026-11-06: "Reflection V, yes, so each beam splits into 2, off to the edge of the screen, no need for white flashes"):
 // each split beam splits again at ITS enemy into SOL_SUB_SPLIT more, to that enemy's nearest others (not the first target, not itself), each
 // running on to the edge as a split does (Breach's carry: the parent's share at its enemy, x st.hop a pass). Was: the split count's last step only
-const SOL_SUB_SPLIT = 2;
+const SOL_SUB_SPLIT = 0; /* NONE (owner, 2026-11-13: "either 2 subsplits with tighter restrictions or none at all", then "1A" for the build without): Reflection V's 2 sub-splits a split put the Reflection path 6 leak points ahead of Scorch and Breach at 13 points; with none every SOL path sits within 1.2 of its average. Never 1, never under 2 when they come back ("min 2 subsplits") */
 function solNearest(from, n, skip) {
   const out = [];
   for (const o of G.enemies) {
@@ -155,7 +157,12 @@ function stepSolTrack(t, st0, dt) {
   const st = solTrackSt(t, st0);
   let B = t.solB; if (t.solFlares) stepSolFlares(t, st, dt);
   if (t.solFl) { t.solFl.fl += dt; if (!(t.solFl.fl < SOL_FL_KEEP)) t.solFl = null; } // (a dropped lock's last flash, drawn out - solTrackBeams)
-  if (B && (B.e.dead || (B.e.x - t.x) ** 2 + (B.e.y - t.y) ** 2 > st.range * st.range)) { if ((B.fl ?? 1e9) < SOL_FL_KEEP) t.solFl = B; B = t.solB = null; } // (a pulse that killed: its flash still shows)
+  // A TARGET KILLED UNDER THE AIM KEEPS THE LOCK (owner, 2026-11-13: "SOL should not choose a new target if the target it was aiming at is killed
+  // during the aim, this is because the reflections can be good, and there's a possibility that SOL keeps picking targets that are about to die and never
+  // fires"): another tower's kill leaves the lock in place, and the next shot fires on schedule at that spot, its reflections splitting from there (B.ghost:
+  // that one shot, then the lock goes); SOL's OWN kill (B.own) re-locks as before, the new lock waiting SOL_AIM
+  if (B && B.e.dead && !B.own && !B.ghost) B.ghost = true;
+  if (B && ((B.e.dead && (B.own || B.fired)) || (!B.e.dead && (B.e.x - t.x) ** 2 + (B.e.y - t.y) ** 2 > st.range * st.range))) { if ((B.fl ?? 1e9) < SOL_FL_KEEP) t.solFl = B; B = t.solB = null; } // (a pulse that killed: its flash still shows)
   if (!B) { const e = pickTargets(t, st, 1)[0]; if (!e) { if (typeof solSfx === "function") solSfx(t, null, 0); return false; } B = t.solB = solTrackStart(t, st, e); t.solCd = Math.max(t.solCd || 0, SOL_AIM); B.aim = SOL_AIM; } // (B.aim: the aim line's draw)
   B.links = B.links.filter(l => !l.e.dead && !(l.par && l.par.e.dead));
   for (const l of B.links) l.hits = solLinkHits(B, l, st);
@@ -169,16 +176,16 @@ function stepSolTrack(t, st0, dt) {
   // THE MAIN BEAM PIERCES at Reflection 0 with Breach (owner, 2026-11-05: "for SOL, with no levels in reflection, breach should make the main
   // beam pierce"): on through its target to the play box's edge, Breach's carry at each enemy (B.pl: that line, as a split's)
   B.pl = !st.split && st.bk ? (B.pl || { e: B.e }) : null; if (B.pl) B.pl.hits = solLinkHits({ e: { x: t.x, y: t.y } }, B.pl, st).filter(h => h.e !== B.e);
-  while (t.solCd <= 0 && !B.e.dead) {
+  while (t.solCd <= 0 && (!B.e.dead || (B.ghost && !B.fired))) {
     t.solCd += gap; B.fl = 0; const d = st.dmg / SOL_PULSE_K, hit = new Set([B.e]);
     B.links = solTrackStart(t, st, B.e).links; for (const l of B.links) l.hits = solLinkHits(B, l, st); // (each shot splits to the nearest others NOW - those of the lock walk off or die)
-    solTickHit(t, st, B.e, d, t, true);
+    if (B.ghost) B.fired = true; else { solTickHit(t, st, B.e, d, t, true); if (B.e.dead) B.own = true; } // (a ghost shot: no hit on the dead target, its reflections still split from its spot)
     if (st.flare) solLandFlare(t, st, B.e); // (SCORCH V: the shot's first hit, dead or not)
     // NO ENEMY TWICE A SHOT (owner, 2026-11-05: "Make it so that SOL reflect cannot reflect to the same enemy"): an enemy on two splits'
     // lines, or a split's line back across the first target, takes the shot once (the first split to reach it)
     for (const l of B.links) for (const h of l.hits) if (!hit.has(h.e)) { hit.add(h.e); solTickHit(t, st, h.e, d * h.k, B.e, true); }
     if (B.pl) for (const h of B.pl.hits) if (!hit.has(h.e)) { hit.add(h.e); solTickHit(t, st, h.e, d * h.k, B.e, true); }
   }
-  if (typeof solSfx === "function") solSfx(t, B.e.dead ? null : B.e, t.solCd); // the shot's sound, lined up on the next pulse (aspira-sfx.js; the page only)
+  if (typeof solSfx === "function") solSfx(t, B.e.dead && !(B.ghost && !B.fired) ? null : B.e, t.solCd); // the shot's sound, lined up on the next pulse (aspira-sfx.js; the page only)
   return true;
 }

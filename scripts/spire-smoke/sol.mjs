@@ -23,14 +23,25 @@ check("SOL tracking beam, tier 0: it holds ONE target and hits only it, while it
   if (r.links !== 0) return "tier 0 made " + r.links + " splits (expected none)";
 });
 
-check("SOL tracking beam: it lets go when its target dies or leaves range, then locks again", () => {
+check("SOL tracking beam: it lets go of a dead target once its next shot has fired (owner, 2026-11-13: the lock is kept under the aim), and of one that leaves range at once, then locks again", () => {
   const r = run(`(() => { const { t, es, st } = solRig({}, [[60, 0], [70, 30]]); solRun(t, 0.5); const a = t.solB && t.solB.e;
-    a.dead = true; solRun(t, 0.5); const b = t.solB && t.solB.e;
+    a.dead = true; solRun(t, 1 / (st.rate * SOL_PULSE_K) + SOL_AIM + 0.2); const b = t.solB && t.solB.e; /* one pulse gap (the ghost shot) + a new lock's aim */
     b.x = t.x + st.range * 3; b.y = t.y; solRun(t, 0.5); const c = t.solB;
     return { first: a === es[0] || a === es[1], next: !!b && b !== a, gone: c === null || c === undefined }; })()`);
   if (!r.first) return "nothing held at first";
-  if (!r.next) return "after its target died the beam did not lock the other enemy";
+  if (!r.next) return "a pulse gap and an aim after its target died (its next shot fired) the beam did not lock the other enemy";
   if (!r.gone) return "a target moved out of range is still held (expected the beam to let go, with no one else in range)";
+});
+
+check("SOL keeps its lock when another tower kills its target under the aim: the next shot fires on schedule from that spot, its reflection hitting the next enemy, and only then a new lock (owner, 2026-11-13: \"SOL should not choose a new target if the target it was aiming at is killed during the aim\")", () => {
+  const r = run(`(() => { const { t, es } = solRig({ refraction: 1 }, [[60, 0], [80, 25], [55, 60]]); solRun(t, 0.05); const a = t.solB && t.solB.e;
+    if (!a) return { none: true }; a.dead = true; /* another tower's kill, before SOL's first shot */
+    let firstHitHeld = null, k = 0; while (k++ < 120) { stepSolTrack(t, towerStats(t), 1 / 60); if (es.some(e => e !== a && e.hp < e.max)) { firstHitHeld = !!t.solB && t.solB.e === a; break; } }
+    solRun(t, 0.1); return { hit: firstHitHeld !== null, held: firstHitHeld, after: !!t.solB && t.solB.e !== a }; })()`);
+  if (r.none) return "no lock after 0.05 s";
+  if (!r.hit) return "no shot landed within 2 s of the target's death";
+  if (!r.held) return "SOL dropped its lock when another tower killed the target (expected it to fire on schedule from that spot, its reflection hitting the next enemy)";
+  if (!r.after) return "SOL kept the dead target after its shot (expected a new lock)";
 });
 
 check("SOL Reflection: each split goes to its OWN enemy, the nearest ones - ANYWHERE (owner, 2026-11-05: \"grant unlimited range to SOL's reflected beams\"; within SOL's range of the held one before)", () => {
@@ -72,11 +83,11 @@ check("SOL Breach: every pulse strips its tier's share of the armor left (SOL_BR
   for (const w of r) if (Math.abs(w.left - w.want) > 0.02) return "Breach " + w.b + ": one pulse left " + (w.left * 100).toFixed(1) + "% of the armor (expected " + (w.want * 100).toFixed(1) + "%)";
 });
 
-check("SOL Scorch: the beam lays TWO burn stacks a second on what it holds (a stack per 1 / (SOL_SCORCH_M x rate) s of beam time, whole ticks), Scorch V twice the ticks at half", () => {
+check("SOL Scorch: each shot lays round(SOL_SCORCH_M / SOL_PULSE_K) burn stacks on what it holds - the card's \"scorches what it hits N times\" (two since 2026-11-13, owner \"1A\"; four before) - so the stacks a second are the shots a second x that, Scorch V twice the ticks at half", () => {
   const r = run(`(() => { const out = []; for (const f of [1, 3, 5]) { const { t, es } = solRig({ focus: f }, [[50, 0]]); const e = es[0]; t.solB = null;
-    solRun(t, 1); const n0 = (e.dots || []).length; solRun(t, 4); const st = solTrackSt(t, towerStats(t)), d = e.dots && e.dots[e.dots.length - 1];
-    out.push({ f, rate: ((e.dots || []).length - n0) / 4, v: d ? !!d.v : null, n: d ? d.left : 0, base: SOL_SCORCH_N[f] }); } return out; })()`);
-  for (const w of r) if (Math.abs(w.rate - 2) > 0.26) return "Scorch " + w.f + ": " + w.rate + " stacks a second (expected 2, the card's \"twice a second\")";
+    solRun(t, 1); const n0 = (e.dots || []).length; solRun(t, 24); const st = solTrackSt(t, towerStats(t)), d = e.dots && e.dots[e.dots.length - 1];
+    out.push({ f, rate: ((e.dots || []).length - n0) / 24, want: towerStats(t).rate * SOL_PULSE_K * Math.max(1, Math.round(SOL_SCORCH_M / SOL_PULSE_K)), v: d ? !!d.v : null, n: d ? d.left : 0, base: SOL_SCORCH_N[f] }); } return out; })()`);
+  for (const w of r) if (Math.abs(w.rate - w.want) > 0.15 * w.want) return "Scorch " + w.f + ": " + w.rate.toFixed(2) + " stacks a second (expected " + w.want.toFixed(2) + ": the shots a second x the stacks a shot)";
   const v = r.find(w => w.f === 5);
   if (!v.v || v.n < v.base * 2 - 1) return "Scorch V's stack: v " + v.v + ", " + v.n + " ticks left (expected v and about " + 2 * v.base + ")";
 });
@@ -95,18 +106,15 @@ check("SOL Scorch V: a shot's FIRST hit leaves ONE SOL flare that burns what it 
   if (!r.otherHurt) return "the flare burned nothing on its spokes";
 });
 
-check("SOL Reflection V: each split splits again into 2, both running to the play box's edge, carrying the parent's share (owner, 2026-11-06: \"each beam splits into 2, off to the edge of the screen\")", () => {
+check("SOL Reflection V: its splits split no further - more splits than Reflection IV, no sub-splits (owner, 2026-11-13: \"either 2 subsplits with tighter restrictions or none at all\" - none, \"1A\"; was 2 each, 2026-11-06)", () => {
   const r = run(`(() => { const spots = []; for (let i = 0; i < 14; i++) spots.push([40 + (i % 5) * 25, -80 + i * 14]); const { t, es, st } = solRig({ refraction: 5, breach: 2 }, spots);
-    t.solB = solTrackStart(t, solTrackSt(t, st), es[0]); solRun(t, 0.05); const B = t.solB; if (!B) return { bad: "no lock" }; const subs = B.links.filter(l => l.par), tr = solTrackSt(t, st);
+    t.solB = solTrackStart(t, solTrackSt(t, st), es[0]); solRun(t, 0.05); const B = t.solB; if (!B) return { bad: "no lock" }; const tr = solTrackSt(t, st);
     const v = solRig({ refraction: 4, breach: 2 }, spots); v.t.solB = solTrackStart(v.t, solTrackSt(v.t, v.st), v.es[0]); solRun(v.t, 0.05);
-    return { split: tr.split, subs: subs.length, per: B.links.filter(l => !l.par).map(p => subs.filter(s => s.par === p).length), from: subs.every(s => s.from === s.par.e), edge: subs.every(s => { const d = Math.hypot(s.e.x - s.from.x, s.e.y - s.from.y) || 1; return Math.abs(s.L - solOutLen(s.from.x, s.from.y, (s.e.x - s.from.x) / d, (s.e.y - s.from.y) / d)) < 1e-6 && s.L > 0; }),
-      carry: subs.every(s => s.hits.length && s.hits[0].k <= s.par.hits.find(h => h.e === s.par.e).k * tr.hop + 1e-9), ivSubs: v.t.solB ? v.t.solB.links.filter(l => l.par).length : -1 }; })()`);
+    return { split: tr.split, splitIV: solTrackSt(v.t, v.st).split, links: B.links.length, subs: B.links.filter(l => l.par).length, sub: SOL_SUB_SPLIT }; })()`);
   if (r.bad) return r.bad;
-  if (r.subs !== r.split * 2) return r.subs + " sub-splits for " + r.split + " splits (expected 2 each: " + JSON.stringify(r.per) + ")";
-  if (!r.from) return "a sub-split does not start at its parent's enemy";
-  if (!r.edge) return "a sub-split does not run to the play box's edge";
-  if (!r.carry) return "a sub-split's carry is above its parent's share x the hop";
-  if (r.ivSubs) return "Reflection IV made sub-splits (only the capstone does)";
+  if (r.sub !== 0 || r.subs) return r.subs + " sub-splits (SOL_SUB_SPLIT " + r.sub + "; expected none)";
+  if (r.links !== r.split) return r.links + " beams for " + r.split + " splits (expected one a split)";
+  if (!(r.split > r.splitIV)) return "Reflection V splits to " + r.split + ", IV to " + r.splitIV + " (the capstone should split to more)";
 });
 
 check("SOL's main beam is never thinner than a child beam - Reflection + Breach, every tier mix (owner, 2026-11-08: \"SOLs primary beam should never be thinner than any of the child beams\")", () => {
