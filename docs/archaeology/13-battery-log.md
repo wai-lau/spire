@@ -330,3 +330,25 @@ The paths rule (owner, 2026-11-07: "make it so that, each upgrade path leaks rou
 | 2.1 / 3.2 / 4.8 | -4.2 / -1.6 | +5.3 / +1.7 | -1.1 / -0.1 | the same |
 | 2.2 / 3.6 / 5.8 | -4.7 / -1.1 | +4.5 / +0.6 | +0.2 / +0.5 | the same |
 | **2.3 / 4.0 / 6.8 (new)** | -2.4 / -0.6 | +2.7 / -0.1 | -0.3 / +0.7 | the same; no other tower's mark moved |
+
+### 13.14 The Ifrit pass, 2026-11-10 .. 11-13 (the meteor decouple, the fire curve, mines; mates lead)
+
+Meteor buys the meteor's hit and its shards, never the charge time (owner, 2026-11-10: "this way, meteor won't need to increase fire rate, only direct hit damages and shard counts"); Hellfire's fire grows on one ratio a tier, never over 600 u across (owner, 2026-11-12: "without making it bigger than 600 units", "gradual slope with geometric/exponential shape"); the secondary and tertiary meteors became mines (owner, 2026-11-12: "secondary and tertiary meteors should be mines that take some time to arm"), set off within 60 u (the owner's pick, 2026-11-13).
+
+| Constant | Old (7.16.1) | New |
+|---|---|---|
+| `IFR_FIRE_R` (fire radius, u) | 0 / 30 / 60 / 85 / 160 / 180 | 0 / 150 / 178 / 212 / 252 / 300 |
+| `IFR_FIRE_V` (growth, u/s) | 180 / 210 / 240 / 360 / 540 / 660 | 180 / 600 / 712 / 848 / 1008 / 1200 (full size in 0.25 s) |
+| `IFR_SHARD_FIRE_K` (a secondary's fire, by Meteor tier) | - | 1 / 1.9 / 3.6 / 6.8 / 13 / 17 |
+| `IFR_FLARE_TK` (Flare's own hit) | - | 1 / 1 / 0.8 / 0.62 / 0.5 / 0.4 |
+| mines | - | arm 1 s (`IFR_MINE_ARM_S`), life 6 s (`IFR_MINE_LIFE_S`), reach 60 u (`IFR_MINE_REACH`) |
+
+Measured (marks, all towers, 2 seeds; leak % swarm / fast / shield / armor at 9 points):
+
+| | Ifrit, 9 pts | Ifrit's marks | Carrier's marks | rule fails vs live |
+|---|---|---|---|---|
+| live 7.16.1 | 12 / 72 / 38 / 94 | +1 -1 +1 -1 | -1 +1 +1 -1 | - |
+| touch mines | shield 56 | lost the shield check | | |
+| proximity mines (shipped) | 5 / 54 / 42 / 94 | +1 0 +1 -2 | -1 0 +1 0 | gone: Ifrit at 6 and 13 points, Freeze at 13; new: Carrier one check at 9 and 13, Arc and Sol off the 0-point band |
+
+Shipped with Carrier's fail standing (owner, 2026-11-13: "2B / work on carrier asap"): Ifrit became better against fast enemies than its own target (fast -1), so Carrier's fast lead over the others fell under one mark; Carrier's own leaks did not move. Tried for Carrier and dropped: the mine reach (45-60 u, no change), a slower fire (better against fast), a slower meteor (it leads its target), a smaller fire (costs Ifrit its shield check first), Carrier's rate / bolt / burst trades (stronger everywhere), Carrier's turn. The fix that holds both towers' live 9-point rows - the fire's one-time ring hit halved, the damage moved to the flares' ticks, which burn by the time an enemy spends in them - ships next as its own version.
