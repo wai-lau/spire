@@ -382,3 +382,16 @@ The owner's aim rule (docs/architecture/04-towers.md, SOL's "lock" row) ended SO
 | no sub-splits at Reflection V (owner: "either 2 subsplits with tighter restrictions or none at all") | every SOL path within 2.2 of its average on 7.18.0 (Scorch -2.2 / 0.0, Reflection +1.2 / -0.6, Breach +1.0 / +0.6 at 13 / 9 points; live: Scorch -5.8, Breach +3.7 at 13); 2 sub-splits held to a cone gave Carrier a fail at 13 |
 
 With SOL's shields now leaking (14% at 13 points) Carrier's shield lead grew and its fast mark fell to 0 at 13 points; SOL and Carrier trade marks there, so the fix is Carrier's: Armament V's burst, its swarm killer (the Armament row leaked 1% of swarm at 13 points), goes from 10 pellets to 4 (`CRR_BURST_N`; 6 fell short) - Carrier -2 +1 +1 0 at 13 points, its paths Hangar +5.4 / -0.3, Tether -1.4 / +0.8, Armament -4.0 / -0.6 at 13 / 9 points (7.15.0: +5.9 / +0.6, +2.1 / +2.5, -8.0 / -3.1). Shipped on 7.18.0: every mark level in band (4 seeds at 9 and 13), no tower gains a fail, and Sol's 0-point band, Carrier's and Freeze's 6-point misses go. In teams SOL lets 12% / 18% through at 9 / 13 points (live 18% / 35%, the weakest at 13). Found with `towergrid.py`-style searches: hold the other towers' leaks, search the tower's own, read off the leaks that pass.
+
+### 13.17 Ifrit at 6 points, 2026-11-14 (mates lead)
+
+Carrier's fix (13.15) put Ifrit back on its 7.16.1 misses at 6 points: one check (swarm) and its band. A search over Ifrit's own leaks, the other towers held (6 points: 11 / 91 / 29 / 85, swarm / fast / shield / armor), found three single moves that pass: swarm leak to 8% or under, shield to 12% or under, or armor to 88% or over. The armor levers (the meteor's hit at Meteor I-II x0.8, Flare's own hit at I-III x0.85, the Flare tick x0.9) cost shields instead (35-36%) and were dropped.
+
+| `IFR_SHARD_FIRE_K` at Meteor I / II (the secondary mines' fire) | Ifrit, 6 pts | Ifrit's marks | 3 pts |
+|---|---|---|---|
+| 1.9 / 3.6 (7.19.0) | 11 / 91 / 29 / 85 | +2 -1 0 -1 (one check) | armor -1 vs -3 (as since 7.16.0) |
+| **x1.3: 2.47 / 4.68 (shipped)** | **6 / 88 / 22 / 85 (4 seeds)** | **+2 -1 +1 -2** | the same |
+| x1.6 / x2 | 5 / 85 / 22 / 84, 3 / 80 / 19 / 81 | +2 -1 +1 -2 | the same |
+
+The 9-point spread builds sit at Meteor III, and 0 and 13 points never use Meteor I-II, so no other level moves; no other tower's marks change. Ifrit's 3-point band miss (armor) stays - next.
+
