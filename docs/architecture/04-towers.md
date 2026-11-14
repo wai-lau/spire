@@ -258,7 +258,7 @@ speeds, volley counts, reloads) and every superseded number are in ARCHAEOLOGY �
 |---|---|---|
 | Hangar | WIDTH: more interceptors (`CRR_HANGAR`), all waiting in orbit | **Warp Drive**: the biggest wing (41); each flies out at `CRR_WARP_V` (3000 u a second), faded out, and drops out of warp `CRR_WARP_END` orbit radii short of its target, just before it turns to face it, fading back in; no retarget at any tier, a target's death sends it home (§4.6) |
 | Tether (id `launch`) | the tether: more interceptors tethering, a harder slow, more damage per tether | **Anchor**: the hardest slow and most damage per tether |
-| Armament | DEPTH: a harder bolt (`CRR_BOLTS_BY`), more volleys a sortie | **Autopilot**: an interceptor bursts into 10 pellets (x1.125 td each) WHENEVER it heads home - out of volleys or target lost - and is rebuilt at home after the normal reload (§4.6) |
+| Armament | DEPTH: a harder bolt (`CRR_BOLTS_BY`), more volleys a sortie | **Autopilot**: an interceptor bursts into 4 pellets (x1.125 td each; 10 until 2026-11-13, when the burst made Armament CRR's swarm killer at 13 points) WHENEVER it heads home - out of volleys or target lost - and is rebuilt at home after the normal reload (§4.6) |
 
 The Orbital Relay multiplies the wing by `RELAY_MUL` (`relayStats`).
 

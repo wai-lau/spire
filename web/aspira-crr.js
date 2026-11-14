@@ -72,7 +72,7 @@ const CRR_LEASH = 7.4; /* ~1180 at range 160 (as simmed 2026-10-16) */ /* the 96
 // a warp step never jumps past it; i.warpAt: the spot, for the fade); the way home is normal.
 // The retarget it replaces (up to 2 a sortie within 300 u) put Hangar ~11 points ahead of the other paths at 13 points (team test 2026-11-09)
 let CRR_POP_S = 0.18, CRR_POP_R = 26; const CRR_WARP_V = 3000, CRR_WARP_END = 1.6;
-const CRR_BURST_N = 10, CRR_BURST_K = 1.125 /* x3 with the bolt at a third (2026-10-29): the pellet keeps its damage; was 0.375 */ /* x td: /4 when a bolt became td (2026-10-26; was 1.5 of the old st.dmg) */, CRR_PELLET_V = 340, CRR_PELLET_REACH = 90, CRR_PELLET_HIT = 3; // Autopilot's pellets
+const CRR_BURST_N = 4 /* 10 -> 4 (2026-11-13): Armament V's burst was CRR's swarm killer at 13 points (the Armament row leaked 1% of swarm, Hangar 54, Launch 38); with SOL's two scorch stacks a shot CRR's shield lead grew and its fast mark fell to 0 - a little weaker vs swarm, its own weakness, gives the fast check back (6 pellets fell short) */, CRR_BURST_K = 1.125 /* x3 with the bolt at a third (2026-10-29): the pellet keeps its damage; was 0.375 */ /* x td: /4 when a bolt became td (2026-10-26; was 1.5 of the old st.dmg) */, CRR_PELLET_V = 340, CRR_PELLET_REACH = 90, CRR_PELLET_HIT = 3; // Autopilot's pellets
 
 SKILL_TREES.crr = [
   { id: "hangar", name: "Hangar", tiers: [{ name: "Bay" }, { name: "Hold" }, { name: "Fleet" }] },

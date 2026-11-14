@@ -211,7 +211,8 @@ check("CRR Armament V bursts on EVERY way home: a forced return with ammo left t
     const i = t.icp[0]; i.state = "out"; i.e = es[0]; i.ammo = 3; i.hold = false; i.x = es[0].x; i.y = es[0].y; i.orb = true; t.carPellets = []; es[0].dead = true;
     stepIcp(i, t, towerStats(t), 1 / 60); return { n: (t.carPellets || []).length, a: (t.carPellets || []).map(p => Math.round(Math.atan2(p.vy, p.vx) * 1e4)), state: i.state, pops: (t.carPops || []).length }; })()`);
   const v = go(5), v2 = go(5), iv = go(4);
-  if (v.n !== 10 || v.state !== "home" || v.pops !== 1) return "Armament V " + JSON.stringify(v) + " (expected 10 pellets, a pop, rebuilt at home)";
+  const want = run("CRR_BURST_N");
+  if (v.n !== want || v.state !== "home" || v.pops !== 1) return "Armament V " + JSON.stringify(v) + " (expected " + want + " pellets, a pop, rebuilt at home)";
   if (JSON.stringify(v.a) !== JSON.stringify(v2.a)) return "the pellet angles differ between two identical runs (Math.random crept back)";
   if (iv.n !== 0 || iv.state !== "back") return "Armament IV " + JSON.stringify(iv) + " (expected no pellets, flying home)";
 });

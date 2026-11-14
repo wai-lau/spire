@@ -367,3 +367,18 @@ The Ifrit pass (13.14) shipped with Carrier on one check (owner, 2026-11-13: "2B
 | 0.3 | x1.6 / x1.8 | 10 / 69 / 44 / 94, 8 / 66 / 41 / 94 | +1 0 +1 -2 | one check again | 54 / 52 |
 
 Both towers are back on their 7.16.1 card rows; at 13 points Carrier passes its band and Ifrit stays in its own (+2 -1 +1 -2 against +2 -1 +2 -3). Against 7.17.0 the five levels lose five rule fails (Carrier at 9 and 13, Arc's 0-point band) and get two back: Ifrit at 6 points has one check (swarm) and misses its band again, exactly as on 7.16.1 - next. Tried first and dropped: the mine reach (45-60 u), a slower or a smaller fire, a slower meteor, flare density, and Carrier's own rate / bolts / burst / turn (its speed and orbit are the owner's numbers; it is "strong against fast + shield" by design).
+
+### 13.16 Sol keeps its aim, 2026-11-13 (mates lead)
+
+The owner's aim rule (docs/architecture/04-towers.md, SOL's "lock" row) ended SOL's starving - re-picking targets that died before its shot - and with it most of SOL's swarm weakness: at 9 points SOL leaked 14 / 16 / 0 / 16 (swarm / fast / shield / armor) against live's 47 / 8 / 0 / 10, an all-rounder with one check. The owner's levers (owner, 2026-11-13: "What about lowering fire rate / Carry damage / Reflection count / Cmon, try stuff for SOL", "Try 85deg and lower with varying amounts of fire rate increase") and the rule (owner: "ship A / but no exceptions, keep trying things until it works"):
+
+| Lever | Effect |
+|---|---|
+| a reflection cone (90, 85, 70, 55 degrees off the primary beam) | weaker against every type alike - dropped |
+| fewer reflections, a weaker carry, a longer aim | every type alike; the aim never binds once shots are slow (a new lock waits max(cooldown, `SOL_AIM`)) |
+| bigger, rarer shots (`SOL_PULSE_K` 0.75 -> 0.35) with the rate x1.4 | the one swarm-only lever (a big shot overkills a weak enemy): 0 / 3 / 6 / 9 points in band; 13 points off (SOL popped every shield: 1% leak, shield +2) |
+| Breach's carry x1.2 (0.6-0.9; never 1 or more - the share multiplies in at each enemy pierced) | armor back at 3 and 13 points |
+| two scorch stacks a shot instead of four (`SOL_SCORCH_M` 3 -> 0.7; owner, "1A") | shield leak 12% at 13 points: in band |
+| no sub-splits at Reflection V (owner: "either 2 subsplits with tighter restrictions or none at all") | every SOL path within 2.2 of its average on 7.18.0 (Scorch -2.2 / 0.0, Reflection +1.2 / -0.6, Breach +1.0 / +0.6 at 13 / 9 points; live: Scorch -5.8, Breach +3.7 at 13); 2 sub-splits held to a cone gave Carrier a fail at 13 |
+
+With SOL's shields now leaking (14% at 13 points) Carrier's shield lead grew and its fast mark fell to 0 at 13 points; SOL and Carrier trade marks there, so the fix is Carrier's: Armament V's burst, its swarm killer (the Armament row leaked 1% of swarm at 13 points), goes from 10 pellets to 4 (`CRR_BURST_N`; 6 fell short) - Carrier -2 +1 +1 0 at 13 points, its paths Hangar +5.4 / -0.3, Tether -1.4 / +0.8, Armament -4.0 / -0.6 at 13 / 9 points (7.15.0: +5.9 / +0.6, +2.1 / +2.5, -8.0 / -3.1). Shipped on 7.18.0: every mark level in band (4 seeds at 9 and 13), no tower gains a fail, and Sol's 0-point band, Carrier's and Freeze's 6-point misses go. In teams SOL lets 12% / 18% through at 9 / 13 points (live 18% / 35%, the weakest at 13). Found with `towergrid.py`-style searches: hold the other towers' leaks, search the tower's own, read off the leaks that pass.
