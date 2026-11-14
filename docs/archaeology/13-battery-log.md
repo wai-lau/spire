@@ -352,3 +352,18 @@ Measured (marks, all towers, 2 seeds; leak % swarm / fast / shield / armor at 9 
 | proximity mines (shipped) | 5 / 54 / 42 / 94 | +1 0 +1 -2 | -1 0 +1 0 | gone: Ifrit at 6 and 13 points, Freeze at 13; new: Carrier one check at 9 and 13, Arc and Sol off the 0-point band |
 
 Shipped with Carrier's fail standing (owner, 2026-11-13: "2B / work on carrier asap"): Ifrit became better against fast enemies than its own target (fast -1), so Carrier's fast lead over the others fell under one mark; Carrier's own leaks did not move. Tried for Carrier and dropped: the mine reach (45-60 u, no change), a slower fire (better against fast), a slower meteor (it leads its target), a smaller fire (costs Ifrit its shield check first), Carrier's rate / bolt / burst trades (stronger everywhere), Carrier's turn. The fix that holds both towers' live 9-point rows - the fire's one-time ring hit halved, the damage moved to the flares' ticks, which burn by the time an enemy spends in them - ships next as its own version.
+
+### 13.15 Carrier's fast check back, 2026-11-13 (mates lead)
+
+The Ifrit pass (13.14) shipped with Carrier on one check (owner, 2026-11-13: "2B / work on carrier asap"). Carrier's own leaks never moved: Ifrit's bigger fire hit every enemy crossing its ring once, at full value whatever its speed, so Ifrit beat fast enemies past its own target (fast -1) and Carrier's fast lead over the others fell under one mark. The fix moves the fire's damage from that ring hit into the Flare ticks, which burn by the time an enemy spends in them - a fast enemy crossing a fire takes less.
+
+| `IFR_FIRE_HK` (ring hit) | `IFR_TICK_K0` (Flare tick) | Ifrit 9 pts, leak % swarm / fast / shield / armor | Ifrit marks | Carrier marks | Ifrit mean leak |
+|---|---|---|---|---|---|
+| 0.6 (7.17.0) | 0.98 | 5 / 54 / 42 / 94 | +1 0 +1 -2 | -1 0 +1 0 (one check) | 49 |
+| 0.3 | 0.98 | 16 / 85 / 59 / 94 | +1 -1 +1 -1 | -1 +1 +1 -1 | 64 |
+| 0.4 | 0.98 | 11 / 72 / 50 / 94 | +2 -1 +1 -2 | -2 +1 +1 0 | 57 |
+| 0.3 | x1.2 | 14 / 80 / 52 / 94 | +1 -1 +1 -1 | -1 +1 +1 -1 | 60 |
+| **0.3** | **x1.4 = 1.372 (shipped)** | **12 / 74 / 48 / 94 (4 seeds)** | **+1 -1 +1 -1** | **-1 +1 +1 -1** | **57** |
+| 0.3 | x1.6 / x1.8 | 10 / 69 / 44 / 94, 8 / 66 / 41 / 94 | +1 0 +1 -2 | one check again | 54 / 52 |
+
+Both towers are back on their 7.16.1 card rows; at 13 points Carrier passes its band and Ifrit stays in its own (+2 -1 +1 -2 against +2 -1 +2 -3). Against 7.17.0 the five levels lose five rule fails (Carrier at 9 and 13, Arc's 0-point band) and get two back: Ifrit at 6 points has one check (swarm) and misses its band again, exactly as on 7.16.1 - next. Tried first and dropped: the mine reach (45-60 u), a slower or a smaller fire, a slower meteor, flare density, and Carrier's own rate / bolts / burst / turn (its speed and orbit are the owner's numbers; it is "strong against fast + shield" by design).
