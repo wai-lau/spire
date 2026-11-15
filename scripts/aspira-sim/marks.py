@@ -112,14 +112,23 @@ lone = {} if PTS == 0 else {k: [t for t in TYPES if m[t] > 0] for k, m in marks.
 for k, ts in lone.items():
     print(f"RULE FAIL: {k.upper()} has checks on {len(ts)} enemy type(s) {ts} - every tower needs at least {MIN_CHECKED}")
 
-# THE BAND (owner, 2026-11-06 / 2026-11-07, above): with --band every cell within BAND of the target - 2 for a 0-point run, else 1
+# THE BAND (owner, 2026-11-06 / 2026-11-07, above): with --band every cell within BAND of the target - 1 at 6 points (and 13, below);
+# at 0 and 3 points the direction rule instead (2026-11-15)
 if "--band" in sys.argv[2:]:
     BAND = 2 if PTS == 0 else 1
     # THE 13-POINT BAND (owner, 2026-11-10: "hey for 13 points, allow up to +1 on any type (up to total of +2)"): --band-total N caps a
     # tower's summed gap; marks5.sh reads 13 points with --focus --band --band-total 2 (each type within 1, at most 2 off in all)
     BAND_TOTAL = int(sys.argv[sys.argv.index("--band-total") + 1]) if "--band-total" in sys.argv else None
     tgt = json.loads((pathlib.Path(__file__).resolve().parent / "mark-target.json").read_text())
+    # AT 0 AND 3 POINTS ONLY THE DIRECTION (owner, 2026-11-15: "oh, ok for levels 0-3 make sure that the + or - is just in the correct
+    # direction / 0 is allowed to be +1 or -1"): each mark must have its target's sign - a 0 mark passes where the target is +1 or -1
+    DIRECTION = PTS is not None and PTS <= 3
     for k, m in marks.items():
+        if DIRECTION:
+            off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and not (m[t] * tgt[k][i] > 0 or (m[t] == 0 and abs(tgt[k][i]) == 1))]
+            if off:
+                print(f"RULE FAIL: {k.upper()} points the wrong way (the sign of each mark must match its target's; a 0 only where the target is +1 or -1): " + ", ".join(off))
+            continue
         off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and abs(m[t] - tgt[k][i]) > BAND]
         if off:
             print(f"RULE FAIL: {k.upper()} outside the +/-{BAND} band: " + ", ".join(off))
