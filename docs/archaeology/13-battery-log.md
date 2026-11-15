@@ -395,3 +395,15 @@ Carrier's fix (13.15) put Ifrit back on its 7.16.1 misses at 6 points: one check
 
 The 9-point spread builds sit at Meteor III, and 0 and 13 points never use Meteor I-II, so no other level moves; no other tower's marks change. Ifrit's 3-point band miss (armor) stays - next.
 
+### 13.18 Carrier at 3 points, Acid at 13, 2026-11-15 (mates lead)
+
+The owner's "Gettem all go" (2026-11-15, after the 7.20.0 table: 15 rule fails left, every one older than this week). A faster search tool made this round: `fastmarks.sh` / `fastmulti.sh` simulate only the towers a change touches and swap their rows into the cached 7.20.0 runs - the other towers' leaks cannot move, their marks are recomputed - about 5 s a level instead of 2-3 min.
+
+| Change | Fixes | Measured |
+|---|---|---|
+| `CRR_TETHER_AMP` I 0.1 -> 0.14 | Carrier at 3 points (one check, band) | 3 pts 44 / 34 / 11 / 59 -> 42 / 32 / 11 / 59: -1 +1 +1 -1 (4 seeds) |
+| `CRR_TETHER_AMP` III-IV 0.2 / 0.25 -> 0.24 / 0.27 | slack in Carrier's 9-point fast check, which a stronger Ifrit or Arc kept tipping | 9 pts fast leak 18 -> 14; its marks unchanged at every level |
+| `ACD_DOUBLE[0]` 0.75 -> 1.125 (a slower ramp; only [0] is read) | Acid at 13 points (gap 4) | 13 pts -0 -3 +1 +2, gap 2; 9-pt card row -1 -1 +1 +1 -> -1 -2 +1 +2 |
+
+Tried and left: Arc's chain falloff front-loaded (`ARC_AMP_FALL` 0.8 / 1.3 / 1.35 / 1.38 / 1.39 / 1.4) fixes Arc at 6 points but makes Arc far better against fast at 9 (58% -> 19%), tipping Carrier's fast check and giving Ifrit a 3-point fail. Arc at 3 points has the wrong shape for its target at tier I: even its damage x5-x8 fails (hit-scan chains catch fast enemies; armor eats its small hits, and bigger rarer hits, a stronger armor strip and more jumps barely move armor) - it needs a tier-I mechanic idea, for the owner. Acid at 0 and 3 points needs its tier-0 / tier-I attack much worse against fast (5% -> 44%+, 20% -> 50%+); the slower ramp moves those only to 6% / 29%.
+
