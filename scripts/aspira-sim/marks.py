@@ -121,13 +121,14 @@ if "--band" in sys.argv[2:]:
     BAND_TOTAL = int(sys.argv[sys.argv.index("--band-total") + 1]) if "--band-total" in sys.argv else None
     tgt = json.loads((pathlib.Path(__file__).resolve().parent / "mark-target.json").read_text())
     # AT 0 AND 3 POINTS ONLY THE DIRECTION (owner, 2026-11-15: "oh, ok for levels 0-3 make sure that the + or - is just in the correct
-    # direction / 0 is allowed to be +1 or -1"): each mark must have its target's sign - a 0 mark passes where the target is +1 or -1
+    # direction", then "for 0, 0 counts for all + - and +/- 1 / for 3, 0 is not allowed"): each mark must have its target's sign - at 0
+    # points a 0 mark passes against any target, at 3 points never
     DIRECTION = PTS is not None and PTS <= 3
     for k, m in marks.items():
         if DIRECTION:
-            off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and not (m[t] * tgt[k][i] > 0 or (m[t] == 0 and abs(tgt[k][i]) == 1))]
+            off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and not (m[t] * tgt[k][i] > 0 or (m[t] == 0 and PTS == 0))]
             if off:
-                print(f"RULE FAIL: {k.upper()} points the wrong way (the sign of each mark must match its target's; a 0 only where the target is +1 or -1): " + ", ".join(off))
+                print(f"RULE FAIL: {k.upper()} points the wrong way (each mark must have its target's sign; " + ("a 0 passes at 0 points" if PTS == 0 else "a 0 never passes at 3 points") + "): " + ", ".join(off))
             continue
         off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and abs(m[t] - tgt[k][i]) > BAND]
         if off:
