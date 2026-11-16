@@ -75,19 +75,21 @@ but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 
 |---|---|---|---|
 | 9 | the card's marks (spread builds) | `--write` | the first target: written into `VS_MARKS` |
 | 13 | each axis maxed in turn (V + IV + IV), averaged a tower | `--focus --band --band-total 2` | the second target (the capstone check): every cell within 1 of the target AND a tower's summed gap (the sum of each type's distance from its target) at most 2, else `RULE FAIL` (owner, 2026-11-10: "hey for 13 points, allow up to +1 on any type (up to total of +2)") |
-| 3, 6 | the early and mid game | `--band` | every cell within 1 of the target, else `RULE FAIL` |
-| 0 | the opening (tier 0 towers) | `--band` | every cell within 2 of the target, else `RULE FAIL` (owner, 2026-11-07 "1C") |
+| 3, 6 | the early and mid game | `--band` | every mark points its target's way - a 0 never passes, else `RULE FAIL` (owner, 2026-11-15: "oh, ok for levels 0-3 make sure that the + or - is just in the correct direction", "for 3, 0 is not allowed", "same for 6 points") |
+| 0 | the opening (tier 0 towers) | `--band` | no mark points against its target's way - a 0 always passes, else `RULE FAIL` (owner, 2026-11-15: "for 0, 0 counts for all + - and +/- 1"; the +/-2 band before) |
 
 The windows follow the good model's tower points by wave (median 3 at wave 60, 5 at 80, 8 at 100-110); the owner set the five levels and the
 bands, not the windows. All five in one go: `scripts/aspira-sim/marks5.sh`. By hand, from `scripts/aspira-sim`, with
-`KINDS=arc,frz,sol,acd,grv,crr,ifr` and 2 seeds. `N=1` (one tower of a kind) at 0 / 3 / 6 / 13: three towers clear the early windows at
-~0% leak and nothing ranks; 9 points keeps the default `N=3`:
+`KINDS=arc,frz,sol,acd,grv,crr,ifr` and 2 seeds. THREE towers of a kind at 0 / 3 / 6 / 9 points, on waves hard enough that three leak
+(cells leaking 3-95%: 0 pts 25 of 28, 3 pts 24, 6 pts 23); ONE tower alone at 13 - three maxed towers clear every wave and the game
+ends at 120 (owner, 2026-11-15: "no, measure them all with 3 towers", then "yes for 1"; 0 / 3 / 6 were one tower on waves 9-19 /
+55-65 / 81-89 before):
 
 | points | command |
 |---|---|
-| 0 | `SPREAD_ONLY=1 N=1 POINTS=0 WINDOWS=9-19 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
-| 3 | `SPREAD_ONLY=1 N=1 POINTS=3 WINDOWS=55-65 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
-| 6 | `SPREAD_ONLY=1 N=1 POINTS=6 WINDOWS=81-89 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
+| 0 | `SPREAD_ONLY=1 N=3 POINTS=0 WINDOWS=31-39 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
+| 3 | `SPREAD_ONLY=1 N=3 POINTS=3 WINDOWS=75-85 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
+| 6 | `SPREAD_ONLY=1 N=3 POINTS=6 WINDOWS=91-99 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
 | 9 | `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
 | 13 | `N=1 POINTS=13 WINDOWS=111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus --band --band-total 2` |
 
