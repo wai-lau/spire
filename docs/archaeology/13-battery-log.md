@@ -407,3 +407,11 @@ The owner's "Gettem all go" (2026-11-15, after the 7.20.0 table: 15 rule fails l
 
 Tried and left: Arc's chain falloff front-loaded (`ARC_AMP_FALL` 0.8 / 1.3 / 1.35 / 1.38 / 1.39 / 1.4) fixes Arc at 6 points but makes Arc far better against fast at 9 (58% -> 19%), tipping Carrier's fast check and giving Ifrit a 3-point fail. Arc at 3 points has the wrong shape for its target at tier I: even its damage x5-x8 fails (hit-scan chains catch fast enemies; armor eats its small hits, and bigger rarer hits, a stronger armor strip and more jumps barely move armor) - it needs a tier-I mechanic idea, for the owner. Acid at 0 and 3 points needs its tier-0 / tier-I attack much worse against fast (5% -> 44%+, 20% -> 50%+); the slower ramp moves those only to 6% / 29%.
 
+### 13.19 The marks method, Gravity at 0 points, 2026-11-15 (mates lead)
+
+The owner reset how the marks are read: at 0 / 3 / 6 points a mark only has to point its target's way (owner, 2026-11-15: "oh, ok for levels 0-3 make sure that the + or - is just in the correct direction", "for 0, 0 counts for all + - and +/- 1 / for 3, 0 is not allowed", "same for 6 points"), and every level measures three towers of a kind (owner: "no, measure them all with 3 towers", "yes for 1"). Three towers cleared the old early waves at ~0% leak, so the early levels moved to waves where three leak enough to rank (cells leaking 3-95%, of 28): 0 points waves 31-39 (25), 3 points 75-85 (24), 6 points 91-99 (23); 9 points stays 101-119; 13 points stays one tower alone on 111-119, because three maxed towers clear every wave (6 of 28 rank; two towers 10, three at double enemy HP 11) and the game ends at 120. Under the new method Freeze passes every level, so the Permafrost I slow cut (the owner's yes, earlier the same night) was not needed.
+
+| Change | Fixes | Measured |
+|---|---|---|
+| `GRV_PELLET_K[0]` 3 -> 4.8 (tier 0 only) | Gravity at 0 points (it leaned the wrong way against swarm) | 0 pts leak 70 / 81 / 33 / 75 -> 53 / 76 / 28 / 74: marks -1 0 0 +1 -> 0 0 0 0; no other level uses tier 0 |
+
