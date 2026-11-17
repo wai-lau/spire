@@ -27,10 +27,11 @@ function waveStats(n, w) {
   return out;
 }
 // THE MECHANIC, 1-2 lines at the top (owner, 2026-10-28: "add 1-2 lines at the top explaining the mechanic (not for bosses, the haiku
-// does that)"): what the type does, then the armor curve every type now carries (armorTake, aspira-acid.js)
+// does that)"): what the type does, then - on an armor wave's card only (owner, 2026-11-17: "only show armor blurb on armor cards") - the
+// armor curve (armorTake, aspira-acid.js)
 const WC_TYPE_NOTE = { swarm: "Many weak enemies at once.", fast: "Few enemies, very quick.", shield: "Each shield charge soaks one whole hit.", armor: "Heavy armor, slow." };
 const WC_ARMOR_NOTE = "Armor: a hit as big as the armor loses half; smaller hits lose more, bigger hits less.";
-const waveNote = w => (w.type === "bonus" || !WC_TYPE_NOTE[w.type] ? "" : "<p class=\"asp-wavecard-note\">" + WC_TYPE_NOTE[w.type] + " " + WC_ARMOR_NOTE + "</p>");
+const waveNote = w => (w.type === "bonus" || !WC_TYPE_NOTE[w.type] ? "" : "<p class=\"asp-wavecard-note\">" + WC_TYPE_NOTE[w.type] + (w.type === "armor" ? " " + WC_ARMOR_NOTE : "") + "</p>");
 function openWaveCard(n) {
   const w = WAVE_PLANS.get(n);
   if (!w) return;

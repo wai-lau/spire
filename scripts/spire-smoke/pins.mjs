@@ -356,3 +356,10 @@ check("Sol's ghost shot: a bare Sol never fires at a dead target's spot (it re-a
     finally { G = g0; } })()`);
 });
 
+
+// THE ARMOR BLURB ON ARMOR CARDS ONLY (owner, 2026-11-17: "only show armor blurb on armor cards"): a wave card's note carries WC_ARMOR_NOTE for an armor wave alone
+check("wave cards: the armor sentence shows on an armor wave's card only", () => {
+  return run(`(() => { const bad = [];
+    for (const type of ["swarm", "fast", "shield", "armor"]) { const has = waveNote({ type }).includes(WC_ARMOR_NOTE); if (has !== (type === "armor")) bad.push(type + (has ? " has it" : " lacks it")); }
+    return bad.join(", "); })()`);
+});
