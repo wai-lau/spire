@@ -322,34 +322,20 @@ check("iOS sound: a tap resumes an interrupted audio context, touchend and click
     finally { AC = ac0; muted = m0; } })()`);
 });
 
-// QUIET WHILE PAUSED OR IDLE (owner, 2026-11-17: "no sounds should play when the game is paused or idle"): a board sound is held while paused,
-// before the start, after the end and on the Challenge screen; a tap's feedback (click / error / win) and a card's demo are not
-check("quiet while paused or idle: board sounds are held while paused, before the start and after the end; a click still sounds; live ones fade", () => {
-  return run(`(() => { const p0 = ui.paused, g0 = G;
+// QUIET WHILE PAUSED (owner, 2026-11-17: "no sounds should play when the game is paused or idle", narrowed the same day: "no sound unless user clicked
+// something, or the game is unpaused"): a board sound is held only while PAUSED, and not when a tap caused it; unpaused - before the start, the
+// Challenge screen, the end - nothing is held (the boss death sound was being cut)
+check("quiet while paused: board sounds are held while paused unless a tap caused them; nothing is held while the game is unpaused (before the start, the end)", () => {
+  return run(`(() => { const p0 = ui.paused, g0 = G, u0 = sfxUserAt;
     try {
-      G = newGame(); G.started = true; ui.paused = false;
+      G = newGame(); G.started = true; ui.paused = false; sfxUserAt = -1e9;
       if (sfxHeld("sol")) return "a board sound was held while the game runs";
       ui.paused = true; if (!sfxHeld("sol")) return "a board sound was NOT held while paused";
       if (sfxHeld("click")) return "the click was held while paused (a tap's own feedback)";
-      ui.paused = false; G.started = false; if (!sfxHeld("kill")) return "a board sound was NOT held before the start";
-      G.started = true; G.over = true; if (!sfxHeld("ifr")) return "a board sound was NOT held after the end";
       if (sfxHeld("win")) return "the win jingle was held";
+      sfxUserAt = performance.now() / 1000; if (sfxHeld("up")) return "an upgrade the player tapped was held while paused"; sfxUserAt = -1e9;
+      ui.paused = false; G.started = false; if (sfxHeld("kill")) return "a sound was held before the start (only a pause quiets the board)";
+      G.started = true; G.over = true; if (sfxHeld("bossdeath")) return "a sound was held after the end";
       return ""; }
-    finally { ui.paused = p0; G = g0; } })()`);
-});
-
-// QUIET WHILE PAUSED OR IDLE (owner, 2026-11-17: "no sounds should play when the game is paused or idle"): a board sound is held while paused,
-// before the start and after the end; a tap's own feedback (click / error / win) and a card's demo are not
-check("quiet while paused or idle: board sounds are held while paused, before the start and after the end; a click and the win jingle still sound", () => {
-  return run(`(() => { const p0 = ui.paused, g0 = G;
-    try {
-      G = newGame(); G.started = true; ui.paused = false;
-      if (sfxHeld("sol")) return "a board sound was held while the game runs";
-      ui.paused = true; if (!sfxHeld("sol")) return "a board sound was NOT held while paused";
-      if (sfxHeld("click")) return "the click was held while paused (a tap's own feedback)";
-      ui.paused = false; G.started = false; if (!sfxHeld("kill")) return "a board sound was NOT held before the start";
-      G.started = true; G.over = true; if (!sfxHeld("ifr")) return "a board sound was NOT held after the end";
-      if (sfxHeld("win")) return "the win jingle was held";
-      return ""; }
-    finally { ui.paused = p0; G = g0; } })()`);
+    finally { ui.paused = p0; G = g0; sfxUserAt = u0; } })()`);
 });

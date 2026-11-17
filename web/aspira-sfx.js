@@ -277,7 +277,7 @@ function playSample(name, at = 0, off = 0) { // off: s into the clip to start fr
   g.gain.value = Math.min(sfxScale * sampleGain * (clip.norm || 1) * gainFor(name), clip.pk > 0 ? NORM_PEAK / clip.pk : Infinity) / (SOUND_MAX[name] ? 1 + n : 1);
   if (sfxOpt) { g.gain.value *= sfxOpt.gain ?? 1; if (sfxOpt.rate) src.playbackRate.value = sfxOpt.rate; sfxOpt = null; }
   src.connect(g).connect(master);
-  voices++; playing[name] = n + 1; const L = { name, nodes: [[src, g]], scene: sfxScene() }; sfxLive.add(L);
+  voices++; playing[name] = n + 1; const L = { name, nodes: [[src, g]], scene: sfxScene(), user: sfxUserNow() }; sfxLive.add(L);
   src.onended = () => { sfxEnd(src); playing[name]--; sfxLive.delete(L); };
   const t0 = AC.currentTime + at, dur = Math.max(0.01, clip.end - clip.start - off);
   if (clip.fade) { const v = g.gain.value; g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(v, t0 + SLICE_FADE[0]); g.gain.setValueAtTime(v, t0 + Math.max(SLICE_FADE[0], dur - SLICE_FADE[1])); g.gain.linearRampToValueAtTime(0, t0 + dur); }
@@ -291,9 +291,15 @@ const bossVoice = id => (SAMPLES["bossvoice." + id] && SAMPLES["bossvoice." + id
 // game RUNS - not paused, started, not over, not waiting on the Challenge button (afterBoss); live ones fade out the moment it stops (sfxHush, every
 // frame). Kept: a tap's own feedback (SFX_UI: the click, the refused-buy buzz, the win jingle) and a card's tower demo (its scene, sfxScene)
 const SFX_UI = /^(click|error|win)$/;
-const sfxQuiet = () => typeof ui === "object" && typeof G === "object" && (ui.paused || !G.started || G.over || (typeof afterBoss === "function" && afterBoss()));
-const sfxHeld = name => sfxQuiet() && !sfxScene() && !SFX_UI.test(name);
-function sfxHush() { if (!AC || !sfxQuiet()) return; const now = AC.currentTime; for (const L of [...sfxLive]) if (!L.cut && !L.scene && !SFX_UI.test(L.name)) sfxFade(L, now); }
+// ...NARROWED the same day (owner, 2026-11-17: "ok nvm, no sound while idle, i.e. no sound unless user clicked something, or the game is unpaused"; and
+// "fix" - the Challenge screen counted idle, so a boss's death sound and its coins were cut the frame it died): quiet = PAUSED only. While paused a sound
+// still plays when a tap of the player's caused it (within SFX_USER_S of the tap: a build, an upgrade, a button), and those are never hushed (L.user)
+const SFX_USER_S = 1; let sfxUserAt = -1e9;
+const sfxUserNow = () => performance.now() / 1000 - sfxUserAt < SFX_USER_S;
+for (const ev of ["pointerdown", "touchend", "click", "keydown"]) document.addEventListener(ev, () => { sfxUserAt = performance.now() / 1000; }, true); // (capture: marked before the button's own handler plays)
+const sfxQuiet = () => typeof ui === "object" && !!ui.paused;
+const sfxHeld = name => sfxQuiet() && !sfxScene() && !SFX_UI.test(name) && !sfxUserNow();
+function sfxHush() { if (!AC || !sfxQuiet()) return; const now = AC.currentTime; for (const L of [...sfxLive]) if (!L.cut && !L.scene && !L.user && !SFX_UI.test(L.name)) sfxFade(L, now); }
 function sfxSeq(names) {
   if (muted || !AC || AC.state !== "running" || names.some(sfxHeld)) return;
   let at = 0;
@@ -360,7 +366,7 @@ function sfx(name, ...args) {
   if (SFX_FIFO[name] && (playing[name] || 0) >= SOUND_MAX[name]) sfxFifoCut(name, now); // the OLDEST copy makes way (after the rare-first check: a cut copy frees no voice for a rarer sound)
   lastAt[name] = now; sfxStat.played[name] = (sfxStat.played[name] || 0) + 1;
   if (sample) return playSample(name);
-  const inst = { name, nodes: 0, live: { name, nodes: [], scene: sfxScene() } }; sfxLive.add(inst.live);
+  const inst = { name, nodes: 0, live: { name, nodes: [], scene: sfxScene(), user: sfxUserNow() } }; sfxLive.add(inst.live);
   curSound = inst;
   let h;
   try { h = SFX[name](...args); } finally { curSound = null; }

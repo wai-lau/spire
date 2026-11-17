@@ -84,11 +84,16 @@ const IFR_FIRE_A = 0.16, IFR_FIRE_W = 2; // its glow TWICE as wide, a little fai
 // enemy died), once grown - its ring has hit all it reached - fades out over IFR_FIRE_FADE_S game s (f.fadeAt, its age then). The LOOK only: the fire lives on,
 // lighting its queued flares (stepIfrFires); was every fire held at half till its flares were out (owner, 2026-10-21)
 const IFR_FIRE_TRACK_K = 3, IFR_FIRE_FADE_S = 0.4;
+// ONE ANIMATED FIRE (owner, 2026-11-17: "for IFR hellfire, only the main meteor should have the animated chains / other ones just use plain circles with
+// lower opacity / visual change only"): a fire the main meteor lit (f.big) keeps its look and Hellfire V's chains; every other fire draws a plain ring
+// at IFR_MINOR_FIRE_A of its alpha and no chains (they still burn: the look only)
+const IFR_MINOR_FIRE_A = 0.5;
 function drawIfrFires(t, low) {
   for (const f of t.ifrFires || []) {
     let a = f.r < f.R ? IFR_FIRE_A : IFR_FIRE_A / 2;
     if (f.eid != null) a = Math.min(1, a * IFR_FIRE_TRACK_K);
     else if (f.r >= f.R) { if (f.fadeAt == null) f.fadeAt = f.age0 || 0; a *= Math.max(0, 1 - ((f.age0 || 0) - f.fadeAt) / IFR_FIRE_FADE_S); if (a <= 0) continue; }
+    if (!f.big) { drawIfrRingAt(f.x, f.y, f.r, a * IFR_MINOR_FIRE_A, low, 1); continue; } /* a mine's or a shard's fire: a plain, fainter circle */
     if (f.chq && f.eid != null) { drawIfrMeteor(f.x, f.y, f.r, false, low, a, 1, IFR_FIRE_W, IFR_HF_COL, true); continue; } /* Hellfire V tracking: its outer chain ring is the ring (ifrChainDraw) - only the inner glow here */
     drawIfrMeteor(f.x, f.y, f.r, false, low, a, 1, IFR_FIRE_W, IFR_HF_COL); /* RED, its flares' colours (owner, 2026-10-22: "hellfire's fire ring should be red") */
   }
@@ -126,6 +131,14 @@ function drawIfrBalls(t, low) {
 // THE MINES' LOOK (owner, 2026-11-12: "secondary and tertiary meteors should be mines that take some time to arm"): a landed meteor at its
 // flight size, dim while it arms (rising smoothly), a bright pulse the moment it is armed, then steady, fading out over its last IFR_MINE_FADE_S
 const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1, IFR_MINE_RING_A = 0.07; // RING_A: the reach ring at minimal opacity, ~0.06 armed (owner, 2026-11-16: "IFR mines, only show detonation circle with minimally visible opacity"; was 0.25)
+// THE MINE'S X (2026-11-17): two strokes in Ifrit's colour, arms IFR_MINE_X_K x its drawn radius (at least IFR_MINE_X_MIN u), the arming pulse thickening it
+const IFR_MINE_X_K = 2.2, IFR_MINE_X_MIN = 4, IFR_MINE_X_W = 0.45;
+function ifrMineX(x, y, r, a, inner, low) {
+  const h = Math.max(IFR_MINE_X_MIN, r * IFR_MINE_X_K), col = COL[TOWERS.ifr.color];
+  ctx.save(); ctx.globalAlpha = Math.min(1, a); ctx.strokeStyle = col; ctx.lineCap = "round"; ctx.lineWidth = Math.max(1.2, h * IFR_MINE_X_W) * Math.min(2, inner);
+  if (!low) { ctx.shadowColor = col; ctx.shadowBlur = h; }
+  ctx.beginPath(); ctx.moveTo(x - h, y - h); ctx.lineTo(x + h, y + h); ctx.moveTo(x + h, y - h); ctx.lineTo(x - h, y + h); ctx.stroke(); ctx.restore();
+}
 function drawIfrMines(t, low) {
   if (!t.ifrMines || !t.ifrMines.length) return;
   for (const m of t.ifrMines) {
@@ -133,7 +146,7 @@ function drawIfrMines(t, low) {
     let a = since < 0 ? IFR_MINE_DIM + (0.55 - IFR_MINE_DIM) * (m.age / IFR_MINE_ARM_S) : IFR_MINE_LIT, inner = 1;
     if (since >= 0 && since < IFR_MINE_PULSE_S) { const p = 1 - since / IFR_MINE_PULSE_S; a = IFR_MINE_LIT + (1 - IFR_MINE_LIT) * p; inner = 1 + 1.5 * p; }
     const left = IFR_MINE_LIFE_S - m.age; if (left < IFR_MINE_FADE_S) a *= Math.max(0, left / IFR_MINE_FADE_S);
-    drawIfrMeteor(m.x, m.y, ifrShardDrawR(t, m.gen, m.r), true, low, a, inner); /* the meteor's own look: its black core and ember glow (owner, 2026-11-16: "IFR mines should look like the meteor") */
+    ifrMineX(m.x, m.y, ifrShardDrawR(t, m.gen, m.r), a, inner, low); /* a small X (owner, 2026-11-17: "IFR mines to be distinguishable from money, maybe replace mines with small X"; 11-16 to 11-17 the meteor look) */
     if (since >= 0) drawIfrRingAt(m.x, m.y, IFR_MINE_REACH, a * IFR_MINE_RING_A, low, 1); /* its reach, a faint ring once armed (owner, 2026-11-13: "IFR B") */
   }
 }
@@ -230,7 +243,7 @@ function drawIfrFlaresGl(t, low, hf) {
   for (const c of t.ifrFlares) {
     if (!(c.hf || c.chain) !== !hf) continue; /* Hellfire V's rings are drawn with the fire */
     const [fb, fs] = ifrFlick(c, performance.now() / 1000), f = Math.max(0, c.left / c.life) * fb;
-    if (c.chain) { ifrChainDraw(c, f, low, fs); continue; }
+    if (c.chain) { if (!c.fire || c.fire.big) ifrChainDraw(c, f, low, fs); continue; } /* the main meteor's fire only (IFR_MINOR_FIRE_A, drawIfrFires) */
     if (c.circ) ifrRingGl(c, f, low, fs);
     for (const [x0, y0, xe, ye] of ifrBeamEnds(c)) {
       const x1 = x0 + (xe - x0) * fs, y1 = y0 + (ye - y0) * fs, s = trimToTowers(x0, y0, x1, y1); if (!s) continue; /* (the ray x its size flicker - the look only) */
@@ -281,7 +294,7 @@ function drawIfrFlares(t, hf) { // hf: the fire's flares only, else the meteors'
   for (const c of t.ifrFlares) {
     if (!(c.hf || c.chain) !== !hf) continue;
     const f = Math.max(0, c.left / c.life) * ifrFlick(c, performance.now() / 1000)[0]; // (2D: the brightness flicker only - a stamp's fade step, no new strokes)
-    if (c.chain) { ifrChainDraw(c, f, low); continue; }
+    if (c.chain) { if (!c.fire || c.fire.big) ifrChainDraw(c, f, low); continue; }
     if (c.circ) ifrRing2D(c, f, low);
     if (IFR_STAMP_ON && !c.edges && ifrSpriteDraw(c, f, low)) continue; // one stamp, not ~18 strokes (perf, below)
     ifrFlareStrokes(c, f, low);

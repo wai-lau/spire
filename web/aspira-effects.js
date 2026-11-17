@@ -132,9 +132,13 @@ function solTrackBeams() {
     // a split from the first target THROUGH each enemy it crosses, dimming by its carry at each, and on past the last to the play box's edge
     // as drawn (solShowLen of l.L, the line's length the game uses - owner, 2026-11-04: "all secondary beams fly off to edge of screen")
     for (const l of B.links) {
-      const lw = l.L > 0 ? SOL_PIERCE_W : SOL_THIN_W; let from = l.from || B.e, k = 1, cut = false; for (const h of l.hits) { if (h.e.dead && !ghost) { cut = true; break; } seg(from, h.e, h.k, lw); kidW = Math.max(kidW, beamWidth(d * h.k) * lw); from = h.e; k = h.k; }
+      // STRAIGHT (owner, 2026-11-17: "why does SOL turn so many times here? ... should basically just hit first enemy then radiate out straight no?"): the
+      // hit is a straight line (solLinkHits: an enemy within its body of it is pierced), so each segment ends at that enemy's point ON the line, not at
+      // its centre - drawn through the centres it bent at every one. (pts: kind "on" keeps seg's fade-out flag for the run to the edge alone)
+      const lw = l.L > 0 ? SOL_PIERCE_W : SOL_THIN_W, org = l.from || B.e, ax = org.x, ay = org.y, d0 = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / d0, uy = (l.e.y - ay) / d0, pts = l.pts ||= [];
+      let from = org, k = 1, cut = false, pi = 0; for (const h of l.hits) { if (h.e.dead && !ghost) { cut = true; break; } const al = (h.e.x - ax) * ux + (h.e.y - ay) * uy, q = pts[pi] ||= { x: 0, y: 0, kind: "on" }; pi++; q.x = ax + ux * al; q.y = ay + uy * al; seg(from, q, h.k, lw); kidW = Math.max(kidW, beamWidth(d * h.k) * lw); from = q; k = h.k; }
       if (cut || !(l.L > 0)) continue;
-      const org = l.from || B.e, ax = org.x, ay = org.y, d0 = Math.hypot(l.e.x - ax, l.e.y - ay) || 1, ux = (l.e.x - ax) / d0, uy = (l.e.y - ay) / d0, L = solShowLen(ax, ay, ux, uy, l.L);
+      const L = solShowLen(ax, ay, ux, uy, l.L);
       const end = l.end ||= { x: 0, y: 0 }; end.x = ax + ux * L; end.y = ay + uy * L;
       if ((end.x - from.x) * ux + (end.y - from.y) * uy > 0) { seg(from, end, k * (st.hop || 1), lw); kidW = Math.max(kidW, beamWidth(d * k * (st.hop || 1)) * lw); }
     }

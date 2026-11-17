@@ -450,7 +450,7 @@ check("IFR flares: the same damage a second in ticks twice as fast hits a MOVING
   for (const k of ["cross", "along"]) { const q = b[k] / a[k]; /* live 1.05 / 1.11 */
     if (q < 0.97 || q > 1.2) return k + " (moving): " + b[k] + " at twice the ticks vs " + a[k] + " (x" + q.toFixed(2) + "; expected x0.97-1.2: a little more, its first tick lands sooner - a tick speed that loses or gains a moving enemy's hits)"; }
 });
-check("IFR's mines and meteors are drawn by the meteor's look, a tertiary half a secondary, growing smoothly with level", () => {
+check("IFR's mine and meteor sizes: a tertiary half a secondary, growing smoothly with level (mines drawn as an X since 2026-11-17)", () => {
   const r = run(`(() => {
     G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
     const t = G.towers[0], out = { sec: [], ter: [], prim: [] }, r0 = 1;
