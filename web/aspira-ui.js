@@ -325,16 +325,17 @@ document.addEventListener("keydown", ev => {
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
   // the chooser is open: only a card choice gets through (1-4)
   if (chooser.t) {
-    if (["1", "2", "3", "4"].includes(ev.key)) chooseUpgrade(Number(ev.key) - 1);
-    else if (ev.key === "Escape") closeChooser();
+    if (["1", "2", "3", "4"].includes(ev.key)) { sfx("click"); chooseUpgrade(Number(ev.key) - 1); }
+    else if (ev.key === "Escape") { sfx("click"); closeChooser(); }
     ev.preventDefault(); return;
   }
-  if (/^[1-9]$/.test(ev.key) && SPEEDS.filter(v => v >= 1)[ev.key - 1]) { ui.speed = SPEEDS.filter(v => v >= 1)[ev.key - 1]; ui.paused = false; } // 1-4: the 1x.. buttons in order (0.75x stays on ~)
-  else if (ev.key === "`" || ev.key === "~") { ui.speed = 0.75; ui.paused = false; } // 0.75x on ~, no button (owner, 2026-10-19)
-  else if (ev.key === "m" || ev.key === "M") setMuted(!muted);
-  else if (ev.key === " ") { ev.preventDefault(); ui.paused = !ui.paused; ui.pauseBtn = ui.paused; }
-  else if (ev.key === "u" || ev.key === "U") keyUpgrade(ui.sel && G.towers.find(x => x.id === ui.sel));
-  else if (ev.key === "Escape") { ui.build = null; ui.sel = null; refreshPanels(); }
+  // A KEY SOUNDS LIKE ITS BUTTON (owner, 2026-11-17: "the sounds should trigger on action, so pressing space to pause, should play the sound as if clicking pause")
+  if (/^[1-9]$/.test(ev.key) && SPEEDS.filter(v => v >= 1)[ev.key - 1]) { sfx("click"); ui.speed = SPEEDS.filter(v => v >= 1)[ev.key - 1]; ui.paused = false; } // 1-4: the 1x.. buttons in order (0.75x stays on ~)
+  else if (ev.key === "`" || ev.key === "~") { sfx("click"); ui.speed = 0.75; ui.paused = false; } // 0.75x on ~, no button (owner, 2026-10-19)
+  else if (ev.key === "m" || ev.key === "M") { setMuted(!muted); sfx("click"); }
+  else if (ev.key === " ") { ev.preventDefault(); sfx("click"); ui.paused = !ui.paused; ui.pauseBtn = ui.paused; }
+  else if (ev.key === "u" || ev.key === "U") { sfx("click"); keyUpgrade(ui.sel && G.towers.find(x => x.id === ui.sel)); }
+  else if (ev.key === "Escape") { if (ui.build || ui.sel) sfx("click"); ui.build = null; ui.sel = null; refreshPanels(); }
 });
 
 // ---------- loop ----------

@@ -238,18 +238,22 @@ function ifrChainDraw(c, f, low, fs = 1) {
   for (let k = 0; k < 2; k++) { ctx.strokeStyle = cols[k]; ctx.lineWidth = IFR_HFL_LW[k]; ctx.stroke(ev); ctx.stroke(od); ctx.shadowBlur = 0; }
   ctx.restore();
 }
+// FLARE V's CROSS OVER ITS CIRCLE (owner, 2026-11-17: "the intensity of the cross with x should be more than the circle, reduce circle, increase center"):
+// the circle at IFR_V_RING_I of the flare's brightness, its spokes (brightest at the centre, where they cross) at IFR_V_CROSS_I
+const IFR_V_RING_I = 0.5, IFR_V_CROSS_I = 1.5;
 function ifrRing2D(c, f, low) { ifrSpoke2D(c, f, low, () => { ctx.beginPath(); ctx.arc(c.x, c.y, c.circ, 0, 2 * Math.PI); }); }
 function drawIfrFlaresGl(t, low, hf) {
   for (const c of t.ifrFlares) {
     if (!(c.hf || c.chain) !== !hf) continue; /* Hellfire V's rings are drawn with the fire */
     const [fb, fs] = ifrFlick(c, performance.now() / 1000), f = Math.max(0, c.left / c.life) * fb;
     if (c.chain) { if (!c.fire || c.fire.big) ifrChainDraw(c, f, low, fs); continue; } /* the main meteor's fire only (IFR_MINOR_FIRE_A, drawIfrFires) */
-    if (c.circ) ifrRingGl(c, f, low, fs);
+    if (c.circ) ifrRingGl(c, f * IFR_V_RING_I, low, fs);
+    const fx = c.circ ? f * IFR_V_CROSS_I : f; // Flare V: the cross brighter than its circle
     for (const [x0, y0, xe, ye] of ifrBeamEnds(c)) {
       const x1 = x0 + (xe - x0) * fs, y1 = y0 + (ye - y0) * fs, s = trimToTowers(x0, y0, x1, y1); if (!s) continue; /* (the ray x its size flicker - the look only) */
       const L = Math.hypot(x1 - x0, y1 - y0) || 1, t0 = Math.hypot(s[0] - x0, s[1] - y0) / L, t1 = 1 - Math.hypot(x1 - s[2], y1 - s[3]) / L;
       for (let g = low ? IFR_GLOW_GL.length - 2 : 0; g < IFR_GLOW_GL.length; g++) { /* lowQ: the orange core + the white one */
-        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * fs * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * f * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), t0, t1, q[3]);
+        const q = IFR_GLOW_GL[g]; fxGlGlowLine(s[0], s[1], s[2], s[3], c.W * fs * q[0], ifrFlareCol(q[2], c), Math.min(1, q[1] * fx * IFR_GLOW_A * ifrFlareI(c) * ifrLayerK(q[2], c)), t0, t1, q[3]);
       }
     }
   }
@@ -295,9 +299,10 @@ function drawIfrFlares(t, hf) { // hf: the fire's flares only, else the meteors'
     if (!(c.hf || c.chain) !== !hf) continue;
     const f = Math.max(0, c.left / c.life) * ifrFlick(c, performance.now() / 1000)[0]; // (2D: the brightness flicker only - a stamp's fade step, no new strokes)
     if (c.chain) { if (!c.fire || c.fire.big) ifrChainDraw(c, f, low); continue; }
-    if (c.circ) ifrRing2D(c, f, low);
-    if (IFR_STAMP_ON && !c.edges && ifrSpriteDraw(c, f, low)) continue; // one stamp, not ~18 strokes (perf, below)
-    ifrFlareStrokes(c, f, low);
+    if (c.circ) ifrRing2D(c, f * IFR_V_RING_I, low);
+    const fx = c.circ ? f * IFR_V_CROSS_I : f; // Flare V: the cross brighter than its circle
+    if (IFR_STAMP_ON && !c.edges && ifrSpriteDraw(c, fx, low)) continue; // one stamp, not ~18 strokes (perf, below)
+    ifrFlareStrokes(c, fx, low);
   }
 }
 // THE STROKED FLARE (2D): every IFR_GLOW_GL layer as IFR_GLOW_LV strokes of its rays, under the flare's own scale

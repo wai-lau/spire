@@ -27,7 +27,6 @@ function openChangelog() {
     // "Subject:" lead in bold; Perf and Visual a size smaller (asp-log-small). GROUPED WITHIN (owner, 2026-11-09: "then group within
     // visual/balance if warranted"): in Balance and Visual, a subject with 2+ lines gets its own small heading (h5) and its lines drop the
     // repeated lead; a subject with one line stays a plain line with its bold lead
-    const SECTIONS = [["Balance", "b", true], ["Perf", "p", false], ["Visual", "vis", true]];
     const rank = new Map(LOG_SUBJECTS.map(([name], k) => [name, k]));
     const lead = i => i.match(/^([^:]{1,40}):\s*(.*)$/);
     const named = (s, head) => { const e = LOG_SUBJECTS.find(([n]) => n === s); return !!(e && e[1].test(head)); }; // the lead itself names the heading's subject: drop it under that heading
@@ -43,10 +42,10 @@ function openChangelog() {
       }
       return out + (open ? "</ul>" : "");
     };
-    const day = d => "<h3>" + d.v + " · " + d.day + "</h3>" + SECTIONS.map(([name, k, group]) => {
-      const is = (d[k] || []).map((i, n) => [i, n]).sort((a, b) => (rank.get(logSubject(a[0])) - rank.get(logSubject(b[0]))) || a[1] - b[1]).map(x => x[0]);
-      return is.length ? "<h4>" + name + "</h4>" + list(is, k !== "b", group) : "";
-    }).join("");
+    // BALANCE ONLY, NO HEADING (owner, 2026-11-17: "drop all non-balance change from changelog, no need for balance label anymore, just have the patch
+    // yellow"): an entry is its version (yellow, aspira-changelog.css) and its balance lines, a subject with 2+ lines grouped as before
+    const day = d => { const is = (d.b || []).map((i, n) => [i, n]).sort((a, b) => (rank.get(logSubject(a[0])) - rank.get(logSubject(b[0]))) || a[1] - b[1]).map(x => x[0]);
+      return is.length ? "<h3>" + d.v + " · " + d.day + "</h3>" + list(is, false, true) : ""; };
     card.innerHTML = '<h2>changes</h2><div class="asp-log-list">' + CHANGELOG.map(day).join("") + "</div>";
     button(card, "asp-primary", "close", closeChangelog);
     document.querySelector(".asp-board").appendChild(card);

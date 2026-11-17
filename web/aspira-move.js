@@ -63,7 +63,7 @@ const LEASH_HINT_S = 4, LEASH_HINT_FADE_S = 1;
 const hintLeash = t => { t.leashHint = performance.now() / 1000 + LEASH_HINT_S; };
 // AN UPGRADE READY (owner, 2026-10-13: "when a tower's upgrade is available, show a plus, centered on the origin hexagon of the
 // tower, flashing slowly, bold, flash the hex too at the same speed" - an UP CHEVRON since): affordable and not maxed; both pulse at UP_FLASH_HZ
-const UP_FLASH_HZ = 0.5, UP_PLUS_PX = 13; // the chevron half the size (owner, 2026-10-21: "make the chevrons 50% of current size"; was 26)
+const UP_FLASH_HZ = 0.5;
 const upReady = t => /* nextBuy: aspira-capstone.js */ { const b = nextBuy(t); return !!b && G.money >= b.cost; };
 const upPulse = now => 0.5 + 0.5 * Math.sin(now * UP_FLASH_HZ * 2 * Math.PI);
 // MORE OUTLINES, THE MORE YOU CAN BUY (owner, 2026-10-13: "more outlines ... levels of upgrades you can afford"): one hex per
@@ -76,13 +76,13 @@ function upAfford(t) {
   return n;
 }
 const upRings = t => upAfford(t);
-// an UP CHEVRON, h tall, centred on (x, y): a thick bent stroke in col over a dark outline (owner, 2026-10-13: "replace up arrow
-// with up chevron"; it was an arrow, before that a plus)
-function upArrow(x, y, h, col) {
-  const w = h * 0.5, top = y - h * 0.25, bot = y + h * 0.25;
-  ctx.beginPath(); ctx.moveTo(x - w, bot); ctx.lineTo(x, top); ctx.lineTo(x + w, bot);
-  ctx.lineCap = "round"; ctx.lineJoin = "round";
-  ctx.strokeStyle = COL.bg; ctx.lineWidth = h * 0.3; ctx.stroke(); ctx.strokeStyle = col; ctx.lineWidth = h * 0.18; ctx.stroke();
+// THE TOWER'S LEVEL ON ITS TILE (owner, 2026-11-17: "for the upgrade chevron on the floor, replace it with the tower level in roman numerals"; an up
+// chevron 2026-10-13 .. 11-17): roman(towerLevel) in the tower's colour over a dark outline, where the chevron was (an upgrade affordable); none at level 0
+const UP_LEVEL_PX = 15;
+function upLevel(x, y, t, col) {
+  const n = towerLevel(t); if (n < 1) return;
+  ctx.font = "bold " + UP_LEVEL_PX + "px " + CANVAS_FONT; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+  ctx.strokeStyle = COL.bg; ctx.lineWidth = 4; ctx.strokeText(roman(n), x, y); ctx.fillStyle = col; ctx.fillText(roman(n), x, y);
 }
 function drawUpPlus(at = (c, fn) => fn()) { // at: 3D draws each one flat at its tower's spot on the TOP layer, over the boss's HP lane (drawButtonsOver, aspira-draw.js)
   const now = performance.now() / 1000;
@@ -91,7 +91,7 @@ function drawUpPlus(at = (c, fn) => fn()) { // at: 3D draws each one flat at its
     const c = CELLS[t.cell], col = COL[TOWERS[t.kind].color];
     at(c, () => { ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = 0.2 + 0.7 * upPulse(now); // the hex FLASHES with the chevron, in more outlines the higher the tower (moved here from drawLeash, which turns over with the boss sky)
       for (let i = 0; i < upRings(t); i++) { towerHex(c, TOWER_K * (1 + UP_RING_K * i)); ctx.stroke(); } // the floor TILE, the size of a slot's (not the drawn tower's)
-      ctx.globalAlpha = 1; upArrow(c.x, c.y, UP_PLUS_PX, col); }); // ON THE TILE and STILL (owner, 2026-10-21: "Keep them on the tiles, also, don't animate them"; was pulsing with the rings)
+      ctx.globalAlpha = 1; upLevel(c.x, c.y, t, col); }); // ON THE TILE and STILL (owner, 2026-10-21: "Keep them on the tiles, also, don't animate them"; was pulsing with the rings)
   }
   ctx.globalAlpha = 1;
 }
