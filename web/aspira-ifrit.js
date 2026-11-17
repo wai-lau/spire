@@ -428,16 +428,21 @@ function ifrBeamEnds(f) { if (f.seg) return [f.seg]; if (f.chain) return IFR_NO_
 // weakness (owner's design) was gone (countermx 61-69: fast 30% leaked, armor 77%). let: the simulator can switch it off
 let IFR_CATCH = false; // OFF (owner, 2026-10-20: "just don't require lit for either flares"): every tick burns what touches a spoke
 const IFR_NONE = {}, IFR_NO_ENDS = [];
+// THE WORK COUNT (owner, 2026-11-17: "can we measure from operation counts instead? we should avoid relying on real world clock"): the smoke's
+// flare budgets count operations, never milliseconds - each flare stepped, each enemy a flare looks at, each spoke test, each hit (IFR_OPS, read
+// and zeroed by scripts/spire-smoke/ifr.mjs). The same code on the same scene gives the same count on any box at any load
+let IFR_OPS = 0;
 function ifrTickFlare(t, st, f, k = 1) { // k: x the flare's hit (a burning fire flare's step share of its tick)
   const ends = ifrBeamEnds(f), half = f.W / 2, amt = (f.hit ?? st.dmg * st.flareK) * k, reach = f.edges ? Infinity : f.L + half + IFR_BODY_MAX;
   const all = G.enemies, defs = ENEMIES; /* (locals: a global read in this loop costs more than the arithmetic) */
   const was = f.on || IFR_NONE, now = f.on = {}; /* CATCHING FIRE: who touched a spoke at the last tick (ids - plain data, G clones) */
+  let ops = all.length; /* (a local: added to IFR_OPS once, after the loop) */
   for (let i = 0; i < all.length; i++) {
     const e = all[i];
     if (e.dead || !e.seen) continue;
     const r = defs[e.type].size * (e.sizeMul || 1) + half, ex = e.x - f.x, ey = e.y - f.y;
     if (ex * ex + ey * ey > reach * reach) continue; /* no beam this short can reach it */
-    let hit = false;
+    ops += ends.length; let hit = false;
     for (let k = 0; k < ends.length; k++) {
       const b = ends[k], x0 = b[0], y0 = b[1], dx = b[2] - x0, dy = b[3] - y0, L2 = dx * dx + dy * dy || 1;
       let u = ((e.x - x0) * dx + (e.y - y0) * dy) / L2; if (u < 0) u = 0; else if (u > 1) u = 1; /* (no Math calls in the hot loop) */
@@ -448,11 +453,13 @@ function ifrTickFlare(t, st, f, k = 1) { // k: x the flare's hit (a burning fire
     const nh = (hit ? 1 : 0) + (ring ? 1 : 0); hit = nh > 0;
     if (!hit) continue;
     if (!ifrCatch(was, now, e.id)) continue; /* it burns only if it was on a spoke at the last tick too: a fast enemy crosses between ticks */
-    damage(e, amt * nh, t, false, false, IFR_BURN_ST); onHit(e, t, st, amt * nh); /* not quiet=true: damage() lets a shield bounce a quiet hit unpopped; IFR_BURN_ST's noFx + noNum keep it silent (ACD's pools, the same way) */
+    ops++; damage(e, amt * nh, t, false, false, IFR_BURN_ST); onHit(e, t, st, amt * nh); /* not quiet=true: damage() lets a shield bounce a quiet hit unpopped; IFR_BURN_ST's noFx + noNum keep it silent (ACD's pools, the same way) */
   }
+  IFR_OPS += ops;
 }
 function stepIfrFlares(t, st, dt) {
   if (!t.ifrFlares.length) return;
+  IFR_OPS += t.ifrFlares.length;
   for (const f of t.ifrFlares) {
     f.left -= dt; f.tick += dt; if (f.fire) { ifrChainSync(f); if (f.left <= 0) continue; } // a Hellfire V ring rides its fire (and goes, unticked, when the fire stops tracking)
     if (f.hf) continue; /* a fire flare struck as it appeared - it only shows now */

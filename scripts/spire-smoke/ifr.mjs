@@ -1,7 +1,7 @@
 // /spire IFR CHECKS (split from smoke.mjs at 935 lines, 2026-10-28; no check changed): the meteor, its axes, Hellfire and the
 // flares, and their look. Registered into the smoke harness; smoke.mjs imports this file before it reports. Its own page env.
 import fs from "node:fs";
-import { boot, check, drawn, calls, frames, ifrHelpers, perfMin } from "./harness.mjs";
+import { boot, check, drawn, calls, frames, ifrHelpers } from "./harness.mjs";
 
 const env = boot();
 const { run } = env;
@@ -402,30 +402,34 @@ check("IFR: a shielded enemy in a flare loses one charge a tick; Impact gives a 
   if (r.afterTicks !== 6) return "3 burn ticks left " + r.afterTicks + " charges of 9 (expected 6: every tick burns), enemy " + r.dist + " u out";
   return "";
 });
-check("IFR: no cap on live flares (owner, 2026-10-20: \"actually no cap\"); a frame of 200 fire flares (each struck once, as it appeared) over 200 enemies stays under 12 ms", () => {
+check("IFR: no cap on live flares (owner, 2026-10-20: \"actually no cap\"); a frame of 200 fire flares (each struck once, as it appeared) over 200 enemies does at most 2x its 2026-11-17 work (IFR_OPS, never the clock)", () => {
   const n = run(`(() => { G = newGame(); G.money = 1e9; ui.build = "ifr"; { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); }
     const t = G.towers[0]; ifrInit(t); const st = towerStats(t);
     for (let i = 0; i < 200; i++) { spawnEnemy("swarm", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.s = entryS(0) + i * 3; const p = pathAt(0, e.s, 0); e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e9; }
     for (let i = 0; i < 700; i++) ifrFlare(t, st, CX - 200 + (i % 40) * 10, CY - 150 + Math.floor(i / 40) * 15, ifrHfS(), false, true);
     return t.ifrFlares.length; })()`);
   run("{ const t = G.towers[0], st = towerStats(t); }"); const n2 = run("{ const t = G.towers[0]; t.ifrFlares.length = 200; t.ifrFlares.length }");
-  const { ms, note } = perfMin(run, "{ const t = G.towers[0], st = towerStats(t); for (const f of t.ifrFlares) f.left = 1; stepIfrFlares(t, st, 1 / 60); }", 12); // (the fastest of 30, again if the box is busy - harness.mjs)
-  console.log("  200 fire flares, a frame: " + ms.toFixed(1) + " ms");
+  // OPERATIONS, NOT MILLISECONDS (owner, 2026-11-17: "can we measure from operation counts instead? we should avoid relying on real world clock"):
+  // IFR_OPS counts the frame's work (aspira-ifrit.js) - the same on any box at any load; 200 on 2026-11-17 (was "under 12 ms" on the host clock)
+  const ops = run("(() => { const t = G.towers[0], st = towerStats(t); for (const f of t.ifrFlares) f.left = 1; IFR_OPS = 0; stepIfrFlares(t, st, 1 / 60); return IFR_OPS; })()"), OPS0 = 200;
+  console.log("  200 fire flares, a frame: " + ops + " operations (2026-11-17: " + OPS0 + ")");
   if (n !== 700) return "a tower kept " + n + " live flares of 700 lit (expected all: no cap)";
-  return ms < 12 ? "" : "a frame of 200 fire flares over 200 enemies took " + ms.toFixed(1) + " ms" + note;
+  return ops <= 2 * OPS0 ? "" : "a frame of 200 fire flares over 200 enemies did " + ops + " operations, over 2x its " + OPS0;
 });
-check("IFR: 200 enemies and 40 Flare IV flares tick under 16 ms", () => {
+check("IFR: 200 enemies and 40 Flare IV flares tick in at most 2x their 2026-11-17 work (IFR_OPS, never the clock)", () => {
   run(`G = newGame(); G.money = 1e9; ui.build = "ifr";
     { const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); }
     { const t = G.towers[0]; ifrInit(t); for (let k = 0; k < 6; k++) upgradeTower(t, "firaga", true);
       for (let i = 0; i < 200; i++) { spawnEnemy("swarm", 30, 0, 0); const e = G.enemies[G.enemies.length - 1]; e.s = entryS(0) + i * 3; const p = pathAt(0, e.s, 0); e.x = p.x; e.y = p.y; e.seen = true; e.stunT = 1e9; e.hp = e.max = 1e6; } egridAt = NaN;
       for (let i = 0; i < 40; i++) t.ifrFlares.push({ x: CX - 300 + i * 15, y: CY - 200 + i * 10, L: 140, W: 24, life: 10, left: 10, tick: 0, edges: true }); }`);
   run("{ const t = G.towers[0], st = towerStats(t); for (let i = 0; i < 3; i++) stepIfrFlares(t, st, st.tickS); }"); /* warm the JIT first, as a running game is */
-  /* the FASTEST of 30 single ticks, on the HOST clock (the vm's performance.now is dom.mjs's fake frame clock): a balance run saturating every core doubled the mean (2026-10-19), the minimum is what the code costs - and measured again after 2 s on a busy box (perfMin, harness.mjs) */
-  const { ms, note } = perfMin(run, "{ const t = G.towers[0], st = towerStats(t); for (const f of t.ifrFlares) f.left = 10; stepIfrFlares(t, st, st.tickS); }", 16); // (each tick a full one: the flares would burn out ~22 ticks in and the fastest read 0)
-  console.log("  hellfire tick " + ms.toFixed(1) + " ms");
+  // OPERATIONS, NOT MILLISECONDS (owner, 2026-11-17: "can we measure from operation counts instead? we should avoid relying on real world clock"):
+  // the tick's work (IFR_OPS, aspira-ifrit.js: each flare, each enemy looked at, each spoke test, each hit) - 73351 on 2026-11-17. Was the
+  // fastest of 30 ticks on the host clock under 16 ms, which failed with unchanged code whenever the box was busy (16.7 ms at load 11.5)
+  const ops = run("(() => { const t = G.towers[0], st = towerStats(t); for (const f of t.ifrFlares) f.left = 10; IFR_OPS = 0; stepIfrFlares(t, st, st.tickS); return IFR_OPS; })()"), OPS0 = 73351; // (each tick a full one: the flares would burn out ~22 ticks in)
+  console.log("  hellfire tick " + ops + " operations (2026-11-17: " + OPS0 + ")");
   if (!run("G.enemies.some(e => e.hp < 1e6)")) return "Hellfire ticks hit nothing";
-  return ms < 16 /* was 8 (owner, 2026-10-20): the droplet now measures 9-18 ms on code that passed - box drift, not a regression; 16 still catches a 2x */ ? "" : "a Hellfire tick took " + ms.toFixed(1) + " ms" + note;
+  return ops <= 2 * OPS0 /* 2x, as the old clock budget was meant to catch (owner, 2026-10-20: "16 still catches a 2x") */ ? "" : "a Hellfire tick did " + ops + " operations, over 2x its " + OPS0;
 });
 
 // THE TICK SPEED IS NOT A HIT LOSS (2026-11-05 dig, after 11-04's "faster ticks did less to moving enemies"): the same flare damage per
