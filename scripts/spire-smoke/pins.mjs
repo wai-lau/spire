@@ -339,3 +339,20 @@ check("quiet while paused: board sounds are held while paused unless a tap cause
       return ""; }
     finally { ui.paused = p0; G = g0; sfxUserAt = u0; } })()`);
 });
+
+// SOL'S GHOST SHOT (owner, 2026-11-17: "SOL should not fire a dead targets if there is currently nothing alive to breach/reflect to, or if it doesn't
+// have any levels in breach or reflect"): a bare Sol never fires at a dead target's spot; with Reflection it does while someone lives; a bare Sol aims x4
+check("Sol's ghost shot: a bare Sol never fires at a dead target's spot (it re-aims, x4 at level 0); with Reflection it does while an enemy lives", () => {
+  return run(`(() => { const g0 = G;
+    try {
+      G = newGame(); G.started = true; spawnEnemy("swarm", 30, 0, 0); spawnEnemy("swarm", 30, 0, 0); const [a, b] = G.enemies; a.seen = b.seen = true;
+      const bare = { kind: "sol", skills: {}, x: 0, y: 0, lvl: 1 }, refl = { kind: "sol", skills: { refraction: 1 }, x: 0, y: 0, lvl: 2 };
+      a.dead = true; const B = { e: a };
+      if (solGhostWorth(bare, solTrackSt(bare, towerStats(bare)), B)) return "a bare Sol would fire at a dead target's spot";
+      if (!solGhostWorth(refl, solTrackSt(refl, towerStats(refl)), B)) return "a Sol with Reflection would NOT fire at the spot though an enemy lives";
+      b.dead = true; if (solGhostWorth(refl, solTrackSt(refl, towerStats(refl)), B)) return "a Sol with Reflection would fire at the spot with nobody alive";
+      if (Math.abs(solAimS(bare) - 4 * SOL_AIM) > 1e-9 || Math.abs(solAimS(refl) - SOL_AIM) > 1e-9) return "the aim: bare " + solAimS(bare) + ", with a path " + solAimS(refl) + " (want 4x / 1x SOL_AIM)";
+      return ""; }
+    finally { G = g0; } })()`);
+});
+

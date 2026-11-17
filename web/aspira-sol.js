@@ -153,6 +153,14 @@ function solLinkHits(B, l, st) {
   on.sort((p, q) => p[0] - q[0]);
   let k = k0 * (st.hop || 1); return on.map(([, o]) => { const h = { e: o, k }; k *= st.hop || 1; return h; });
 }
+// A BARE SOL AIMS LONGER (2026-11-17, with the ghost rule above - owner "yes A go": its wasted ghost shots had kept a bare Sol weak at 0 points; three
+// Sols on one enemy wasted two shots of three there): at level 0 a new lock aims SOL_AIM0_K x SOL_AIM - the 0-point marks as live, the duo rule clean
+const SOL_AIM0_K = 4, solAimS = t => SOL_AIM * (towerLevel(t) === 0 ? SOL_AIM0_K : 1);
+function solGhostWorth(t, st, B) { // a ghost shot (its target died under the aim) hits someone alive: its splits, else (Breach alone) its piercing line
+  if (st.split) return solTrackStart(t, st, B.e).links.some(l => !l.e.dead);
+  if (st.bk) return solLinkHits({ e: { x: t.x, y: t.y } }, { e: B.e }, st).some(h => h.e !== B.e && !h.e.dead);
+  return false;
+}
 function stepSolTrack(t, st0, dt) {
   const st = solTrackSt(t, st0);
   let B = t.solB; if (t.solFlares) stepSolFlares(t, st, dt);
@@ -162,8 +170,13 @@ function stepSolTrack(t, st0, dt) {
   // fires"): another tower's kill leaves the lock in place, and the next shot fires on schedule at that spot, its reflections splitting from there (B.ghost:
   // that one shot, then the lock goes); SOL's OWN kill (B.own) re-locks as before, the new lock waiting SOL_AIM
   if (B && B.e.dead && !B.own && !B.ghost) B.ghost = true;
+  // ...BUT ONLY WHEN THE SHOT WOULD HIT SOMEONE (owner, 2026-11-17: "SOL should not fire a dead targets if there is currently nothing alive to
+  // breach/reflect to, or if it doesn't have any levels in breach or reflect" / "it should not waste the shot, but it should still need to aim at the next
+  // target"): a ghost with no Reflection and no Breach, or with no living enemy its splits or its piercing line reach, drops the lock as SOL's own kill
+  // does - the shot is kept (the timer carries) and the new lock aims (solAimS); checked every step until it fires
+  if (B && B.ghost && !B.fired && !solGhostWorth(t, st, B)) B.own = true;
   if (B && ((B.e.dead && (B.own || B.fired)) || (!B.e.dead && (B.e.x - t.x) ** 2 + (B.e.y - t.y) ** 2 > st.range * st.range))) { if ((B.fl ?? 1e9) < SOL_FL_KEEP) t.solFl = B; B = t.solB = null; } // (a pulse that killed: its flash still shows)
-  if (!B) { const e = pickTargets(t, st, 1)[0]; if (!e) { if (typeof solSfx === "function") solSfx(t, null, 0); return false; } B = t.solB = solTrackStart(t, st, e); t.solCd = Math.max(t.solCd || 0, SOL_AIM); B.aim = SOL_AIM; } // (B.aim: the aim line's draw)
+  if (!B) { const e = pickTargets(t, st, 1)[0]; if (!e) { if (typeof solSfx === "function") solSfx(t, null, 0); return false; } B = t.solB = solTrackStart(t, st, e); t.solCd = Math.max(t.solCd || 0, solAimS(t)); B.aim = solAimS(t); } // (B.aim: the aim line's draw)
   B.links = B.links.filter(l => !l.e.dead && !(l.par && l.par.e.dead));
   for (const l of B.links) l.hits = solLinkHits(B, l, st);
   // THE PULSE (owner, 2026-11-05: "Wait, SOL should still have it's old big hit fire rate / like, fire, pause, fire, pause"): the lock and

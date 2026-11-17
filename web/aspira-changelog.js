@@ -11,6 +11,8 @@
 // b / p / vis, 2026-10-21 .. 11-17). A ship with no balance change adds no line (spire-ship.sh --no-changelog "<why>")
 const CHANGELOG = [
   { v: "7.26", day: "Nov 17", b: [
+    "Sol: No longer fires at the spot of a target another tower killed unless the shot would still hit an enemy.",
+    "Sol: The bare tower aims four times as long at each new target.",
     "Ifrit: Meteor I's mines burn as hot as Meteor II's.",
     "Ifrit: Flare V's cross reaches further and its circle is smaller.",
   ] },
