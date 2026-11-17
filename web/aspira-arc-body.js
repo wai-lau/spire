@@ -124,11 +124,16 @@ function arcBoltFrom(f, x1, y1, x2, y2) { // the strike leaves the top-face corn
   for (let k = 0; k < 6; k++) { const a = g.a0 + arcTAU / 6 * k, px = tx + g.R * Math.cos(a), py = ty + g.R * Math.sin(a), d = (px - x2) ** 2 + (py - y2) ** 2; if (d < bd) { bd = d; best = [px, py]; } }
   return best;
 }
+// A BOLT ARCS LIKE A BALL (owner, 2026-11-17: "visually, make arcs arcs instead of straight / so, they should go upwards like a ball"): every bolt - the
+// strike and each hop - bows toward the screen's up (world -y, the way damage numbers rise) by ARC_BOW_K of its length (at most ARC_BOW_MAX u) at its
+// middle, sin(pi u) along it, so both ends stay on their enemies; the jags and the fork ride on the curve. The look only: the hits are unchanged
+const ARC_BOW_K = 0.3, ARC_BOW_MAX = 80;
 let arcBoltId = 0;
 function arcBoltPts(f, ax, ay, bx, by) { // the jagged polyline [x, y, ...] (and a short fork [x, y, ...]), fresh every ARC_BOLT_SLOT
   const id = f.arcId ||= ++arcBoltId, r = arcRng(arcH(id, Math.floor(performance.now() / 1000 / ARC_BOLT_SLOT))), S = ARC_BOLT_S;
   const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, n = Math.min(40, Math.max(5, Math.round(len / (8 * S)))), pts = [ax, ay];
-  for (let q = 1; q < n; q++) { const u = q / n, j = (r() - 0.5) * 2 * 6 * S * Math.sin(Math.PI * u) * (0.6 + 0.8 * r()); pts.push(ax + dx * u + nx * j, ay + dy * u + ny * j); }
+  const bow = Math.min(ARC_BOW_MAX, ARC_BOW_K * len); // the ball's rise (below)
+  for (let q = 1; q < n; q++) { const u = q / n, j = (r() - 0.5) * 2 * 6 * S * Math.sin(Math.PI * u) * (0.6 + 0.8 * r()); pts.push(ax + dx * u + nx * j, ay + dy * u + ny * j - bow * Math.sin(Math.PI * u)); }
   pts.push(bx, by);
   const m = (n >> 1) * 2, side = r() < 0.5 ? -1 : 1, ang = Math.atan2(dy, dx) + side * (0.7 + 0.4 * r());
   const fork = [pts[m], pts[m + 1], pts[m] + Math.cos(ang) * 6 * S + (r() - 0.5) * 3 * S, pts[m + 1] + Math.sin(ang) * 6 * S, pts[m] + Math.cos(ang) * 12 * S, pts[m + 1] + Math.sin(ang) * 12 * S + (r() - 0.5) * 4 * S];
