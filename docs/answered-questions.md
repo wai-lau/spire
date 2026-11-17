@@ -6,6 +6,13 @@ Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTION
 
 | When | Question | Answer |
 |---|---|---|
+| 11-17 ~16:20 | Sol's ghost shot makes bare Sol stronger and breaks three 0-point marks - how should it ship? | "it should not waste the shot, but it should still need to aim at the next target" (as built), then "yes A go": bare Sol aims 4x as long so the 0-point marks hold |
+| 11-17 ~15:50 | On-hit effects: which one look should every tower use (Arc none, Acid sparks, the rest a flash)? | "every tower gets sparks only" |
+| 11-17 ~09:35 | Offer: Ifrit's one-number 3-point fix (Meteor I mine fire 2.47 -> 4.68; Carrier's 3-point fail gains a cell, blurred Ifrit builds at 6 points 12 -> 18, a narrow window) | Yes |
+| 11-17 ~09:30 | Which new behaviours should I draft for Sol, Carrier and Ifrit (whose last mark fails and blurred builds no number fixes)? | All six: Sol's swarm-only weakness and one job per path; Carrier's fast-only tier-I tether and Tether III-V past the slow cap; Ifrit's opposite jobs (Hellfire vs fast, Flare/Meteor vs shields) and a Flare II-IV effect that is not damage |
+| 11-17 ~09:30 | The 75% target: boss HP alone gets good players to ~51-52%; which lever closes the rest? | Stop at ~52% for now |
+| 11-16 ~23:05 | "Balance the economy": what should a balanced economy mean? (184 good-player games: 0 max all three towers, the median buys 22 of 39 points) | Money is the limit all game - already met, so prices and bounty stay as they are |
+| 11-16 ~23:05 | Offer: a boss pass back to ~46% good-player wins (7.20.0 won 39.5%), tuning Temperance, Death and the Devil by their own HP, never their counts | Yes |
 | 11-16 ~16:30 | Arc is too weak at 2-5 points to have distinct builds (three Arcs leak 89-96% of every type at 3 points; it needs about x5 damage there, the 2x step rule allows x1.57): may its early levels grow faster than "no level damage steps above 2x"? | Yes: Arc alone steps x2.9 a level up to 3 points (x5 by then), easing back to today's curve by 8 points |
 | 11-15 ~07:10 | "Every un-spread build has a unique leak shape" - which test? The order of the four types cannot be unique (24 orders, 27 builds at 7-8 points) | Two builds are the same shape if they leak within 5 points of each other on every enemy type; the goal is no such pair |
 | 11-15 ~05:40 | Three towers rank at 0, 3, 6 and 9 points on harder waves, but at 13 three maxed towers clear every wave (the game ends at 120). Keep one tower alone at 13? | Yes: three towers at 0 (waves 31-39), 3 (75-85), 6 (91-99) and 9 (101-119); one tower alone at 13 (111-119) |
