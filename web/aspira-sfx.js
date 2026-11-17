@@ -261,7 +261,7 @@ const LOUD = /^(bosswarn|bossvoice|bossdeath|coreup|up|build|thud|click|error|wi
 // loudness normalization every tower attack's loudest 150 ms sits at -20 dBFS (SOL's shot -20.2, the others' median -20.0); what is quieter
 // is the DENSITY: SOL fires one voice a tower every 1.58 s, the others stack up to SOUND_MAX copies (1 + 1/2 + 1/3 = 1.83x, +5 dB). x2 =
 // +6 dB, its peak -11.7 -> -5.7 dBFS on one voice: no clipping, no limiter needed (a GainNode above 1 is fine)
-const SOUND_GAIN = { kill: 0.4, sol: 2, solshot: 2, coin: 0.25 /* softer than most (owner, 2026-11-16): under a kill (0.4) and a tower shot (0.6) */ };
+const SOUND_GAIN = { kill: 0.4, sol: 2, solshot: 2, coin: 0.125 /* softer than most (owner, 2026-11-16): under a kill (0.4) and a tower shot (0.6); halved the same day ("halve the coin volume", was 0.25) */ };
 const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? SOUND_GAIN[name.split(".")[0]] ?? 1); // ("kill.fast" trimmed as "kill")
 let sfxOpt = null; // { gain, rate } for the next playSample only (swarmKillSfx, arcChainSfx)
 function playSample(name, at = 0, off = 0) { // off: s into the clip to start from (SOL's shot, solSfx)
