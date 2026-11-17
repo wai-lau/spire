@@ -119,7 +119,7 @@ function drawIfrBalls(t, low) {
 }
 // THE MINES' LOOK (owner, 2026-11-12: "secondary and tertiary meteors should be mines that take some time to arm"): a landed meteor at its
 // flight size, dim while it arms (rising smoothly), a bright pulse the moment it is armed, then steady, fading out over its last IFR_MINE_FADE_S
-const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1, IFR_MINE_RING_A = 0.25;
+const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1, IFR_MINE_RING_A = 0.07; // RING_A: the reach ring at minimal opacity, ~0.06 armed (owner, 2026-11-16: "IFR mines, only show detonation circle with minimally visible opacity"; was 0.25)
 function drawIfrMines(t, low) {
   if (!t.ifrMines || !t.ifrMines.length) return;
   const dk = ifrDrawK(t);
