@@ -291,7 +291,7 @@ check("Challenge screen: the poem and the button sit inside one visible card wit
   // the smoke's DOM is a fake (no containment, no computed style), so the markup and the stylesheet are read as text
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
   const html = fs.readFileSync(path.join(root, "api/templates/aspira.html"), "utf8"), css = fs.readFileSync(path.join(root, "web/aspira.css"), "utf8");
-  const card = /<div[^>]*id="asp-chalcard"[^>]*>([\s\S]*?)<\/div>\s*<div class="asp-spend"/.exec(html);
+  const card = /<div[^>]*id="asp-chalcard"[^>]*>([\s\S]*?)<\/div>\s*(?:<label[^>]*id="asp-autochal"[\s\S]*?<\/label>\s*)?<div class="asp-spend"/.exec(html); // (the auto-challenge box may follow the card - under it, 2026-11-17)
   if (!card || !card[1].includes('id="asp-chalpoem"') || !card[1].includes('id="asp-challenge"')) return "the poem and the button are not both inside #asp-chalcard in the template";
   const rule = /#asp \.asp-chalcard \{([^}]*)\}/.exec(css);
   if (!rule || !/hsl\(var\(--bg-hsl\)\)/.test(rule[1]) || /background:[^;]*transparent/.test(rule[1])) return "the card's background is not the opaque --bg-hsl base";
@@ -305,4 +305,19 @@ check("Challenge screen: the poem and the button sit inside one visible card wit
   if (typeof r === "string") return r;
   if (r.up) return "challenge screen: the card is hidden";
   if (!r.after) return "after the click: the card is still shown";
+});
+
+// iOS SOUND + THE BOX UNDER THE CARD (owner, 2026-11-17: "Sound buggy/not playing on iOS", "Move auto challenge checkbox under card"): Safari parks
+// the audio context "interrupted" after a lock screen or a call and accepts only touchend / click as the gesture - a tap must resume any non-running
+// context; the auto-challenge box sits outside the card
+check("iOS sound: a tap resumes an interrupted audio context, touchend and click unlock it; the auto-challenge box sits under the card, not on it", () => {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+  const src = fs.readFileSync(path.join(root, "web/aspira-sfx.js"), "utf8"), tpl = fs.readFileSync(path.join(root, "api/templates/aspira.html"), "utf8");
+  if (!/addEventListener\("touchend", audioUnlock/.test(src) || !/addEventListener\("click", audioUnlock/.test(src)) return "audioUnlock is not bound to touchend and click";
+  const card = tpl.slice(tpl.indexOf('id="asp-chalcard"'), tpl.indexOf('id="asp-autochal"'));
+  if (!card.includes("</div>")) return "the auto-challenge box is still inside the card";
+  return run(`(() => { const ac0 = AC, m0 = muted; let resumed = 0;
+    try { AC = { state: "interrupted", resume() { resumed++; this.state = "running"; } }; muted = false; audioUnlock();
+      return resumed === 1 && AC.state === "running" ? "" : "an interrupted context was not resumed by a tap (resume calls " + resumed + ")"; }
+    finally { AC = ac0; muted = m0; } })()`);
 });

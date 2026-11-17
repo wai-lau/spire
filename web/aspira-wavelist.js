@@ -226,7 +226,8 @@ function fitWaveList() {
   if (!matchMedia(PHONE_PORTRAIT_Q).matches) return;
   if (!waveGapPx) { const t = document.createElement("div"); t.style.cssText = "position:absolute;visibility:hidden;width:var(--space-2)"; document.body.appendChild(t); waveGapPx = t.getBoundingClientRect().width; t.remove(); }
   const spots = [[CX, CY, CORE_R], ...CELLS.filter(c => OPEN_SLOTS.includes(c.ang)).map(c => [c.x, c.y, CELL_S])].map(([x, y, r]) => boardScreenRect(x, y, r));
-  const chal = $("asp-chalcard"); if (chal && !chal.hidden) spots.push(chal.getBoundingClientRect()); // (the Challenge card too: poem, button, auto-challenge box)
+  const chal = $("asp-chalcard"); if (chal && !chal.hidden) spots.push(chal.getBoundingClientRect()); // (the Challenge card too: poem and button)
+  const ac = $("asp-autochal"); if (ac && !ac.hidden && !ac.classList.contains("asp-autochal-on")) spots.push(ac.getBoundingClientRect()); // (and the auto-challenge box under it)
   const g = waveGapPx, hits = () => { const L = box.getBoundingClientRect(); return spots.some(b => L.left < b.right + g && b.left - g < L.right && L.top < b.bottom + g && b.top - g < L.bottom); };
   for (let n = Math.ceil(cells.length / 5); n > Math.max(waveLiveRows, 1) && hits(); n--)
     for (const c of cells.slice((n - 1) * 5)) c.style.display = "none";
@@ -254,9 +255,9 @@ function autoChalBox(chalUp, ready) { // place the box; -> true when the game sh
     box.hidden = !(typeof G === "object" && G.started && !G.over);
     return chalUp && ready && !ui.paused && !document.getElementById("asp-resume");
   }
-  if (box.parentNode === left) { btn.after(box); box.classList.remove("asp-autochal-on"); fitWaveList(); }
+  if (box.parentNode === left) { $("asp-chalcard").after(box); box.classList.remove("asp-autochal-on"); fitWaveList(); } // (beside the card, under it - owner, 2026-11-17: "Move auto challenge checkbox under card")
   box.hidden = !(chalUp && ready);
-  if (!box.hidden) { const r = btn.getBoundingClientRect(), root = $("asp").getBoundingClientRect(); box.style.left = (r.left + r.width / 2 - root.left) + "px"; box.style.top = (r.bottom - root.top + (waveGapPx || 8) / 2) + "px"; }
+  if (!box.hidden) { const r = $("asp-chalcard").getBoundingClientRect(), root = $("asp").getBoundingClientRect(); box.style.left = (r.left + r.width / 2 - root.left) + "px"; box.style.top = (r.bottom - root.top + (waveGapPx || 8) / 2) + "px"; }
   return false;
 }
 function placeChallenge() {

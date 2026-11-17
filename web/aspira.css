@@ -95,6 +95,7 @@ html, body, #asp { touch-action: manipulation; }
 #asp .asp-chalpoem[hidden] { display: none; }
 /* AUTO-CHALLENGE (owner, 2026-11-08): the box under the Challenge button (placed by autoChalBox), and under the wave heading once ticked */
 #asp .asp-autochal { white-space: nowrap; display: flex; align-items: center; gap: var(--space-1); font-size: var(--fs-2xs); color: hsl(var(--green-hsl)); cursor: pointer; }
+#asp .asp-autochal:not(.asp-autochal-on) { position: absolute; z-index: var(--z-overlay); transform: translateX(-50%); } /* UNDER the card, not on it (owner, 2026-11-17: "Move auto challenge checkbox under card") */
 #asp .asp-autochal.asp-autochal-on { pointer-events: auto; padding: var(--space-1) 0; }
 #asp .asp-autochal[hidden] { display: none; }
 #asp .asp-autochal input { accent-color: hsl(var(--green-hsl)); color-scheme: dark; margin: 0; } /* dark: the unticked box draws light on the board (it drew black on black) */

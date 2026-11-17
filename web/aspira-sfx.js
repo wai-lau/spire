@@ -53,7 +53,9 @@ function sfxMakeRoom(name, now) { // -> true when there is a voice for `name` (a
 }
 
 function audioUnlock() {
-  if (AC) { if (AC.state === "suspended" && !muted && !document.hidden) { AC.resume(); audioSlept = false; } return; }
+  // iOS (owner, 2026-11-17: "Sound buggy/not playing on iOS"): Safari parks the context "interrupted" (not "suspended") after a lock screen,
+  // a call or an app switch, and lets a page start or resume audio only from a touchend / click - so any state but running resumes, on those too
+  if (AC) { if (AC.state !== "running" && !muted && !document.hidden) { AC.resume(); audioSlept = false; } return; }
   try {
     AC = new (window.AudioContext || window.webkitAudioContext)();
     master = AC.createGain();
@@ -70,10 +72,14 @@ function audioUnlock() {
     noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
     const d = noiseBuf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    { const b = AC.createBuffer(1, 1, 22050), s = AC.createBufferSource(); s.buffer = b; s.connect(AC.destination); s.start(0); } // (older iOS unlocks on a sound started inside the gesture)
+    if (AC.state !== "running" && !muted && !document.hidden) AC.resume();
     audioSleep(); // (made while muted: asleep at once)
   } catch (_e) { AC = null; }
 }
 document.addEventListener("pointerdown", audioUnlock);
+document.addEventListener("touchend", audioUnlock, { passive: true }); // (iOS counts touchend and click as the gesture, not pointerdown)
+document.addEventListener("click", audioUnlock);
 document.addEventListener("keydown", audioUnlock);
 // the audio SLEEPS while nothing can be heard (battery, 2026-10-16): the tab hidden, or muted - a running context keeps the audio
 // thread (and a phone's audio hardware) awake, the limiter working on silence. Woken when neither holds, or by the next tap
@@ -82,7 +88,7 @@ let audioSlept = false;
 function audioSleep() {
   if (!AC) return;
   const sleep = document.hidden || muted;
-  if (sleep && AC.state === "running") { AC.suspend(); audioSlept = true; } else if (!sleep && audioSlept && AC.state === "suspended") { AC.resume(); audioSlept = false; }
+  if (sleep && AC.state === "running") { AC.suspend(); audioSlept = true; } else if (!sleep && audioSlept && AC.state !== "running") { AC.resume(); audioSlept = false; } /* (iOS: "interrupted" too) */
 }
 document.addEventListener("visibilitychange", audioSleep);
 
