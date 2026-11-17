@@ -435,3 +435,17 @@ Tried and left: shields ground the lightning (a chain stops at a shielded enemy)
 Also: ARC's beams keep their live length (`s.voltRate` in `arcBeamLife`); the demo respawn check skips beams onto killed walkers - ARC's bigger hits kill demo walkers, and a ghost-held beam read 245 u (live ends 116).
 
 Gates: duo rule clean, 21 of 21 pairs; boss gate (good players, 200 games): won 71 (35.5%; live 7.20.0: 79, 39.5% - within one standard error), every boss ends at most 10% of runs (the Devil 10%, Death 6%, Judgement 7%).
+
+### 13.21 Gravity's tier-0 pellets, 2026-11-17 (mates lead, tower followers)
+
+The owner's 2026-11-16 "be more aggressive with subagents": five tower followers searched number-only changes on 7.22 + Arc v17. Gravity's: `GRV_ACC_PEL[0]` 1 -> 0.6 and `GRV_PELLET_K[0]` 4.8 -> 8 - fewer, harder pellets from a void with no Gravity Well (both tables are read by the Gravity Well tier). Each pellet pops a shield charge, so Gravity turns weak against shields at 0 points (its target -3) and keeps swarm and armor.
+
+| Level | Gravity (spread) leak: swarm / fast / shield / armor | Fails |
+|---|---|---|
+| 0 points | 53 / 76 / 28 / 74 -> 47 / 70 / 35 / 72 | Gravity's wrong-way fail gone; Acid's 0-point fail gone too (the columns move); no new fail |
+| 3 / 6 / 9 / 13 points | unchanged (every spread and focus build there has Gravity Well I or more) | unchanged |
+
+The card demo: the Void layout (Gravity Well 0) runs ten walkers, was seven - with 0.6x the pellets it no longer showed two enemies hit at once.
+
+Duo rule: clean, 21 of 21 pairs. Left for later: Gravity's 3- and 6-point fails (fast and armor 0) - an aura-slow + Nova armor-strip patch at tiers I-II is written, not run. Sol had no number fix (its target needs swarm -3 with fast +1, and every Sol lever moves both together) - two mechanic ideas go to the owner.
+
