@@ -246,7 +246,7 @@ check("3D stars stay ROUND on screen on the GPU (owner, 2026-10-09: \"stars in b
 // THE BOSS ARRIVAL (owner, 2026-11-16: "when the triangle expands for bosses, add massive velocity for all coins towards their nearest tower or core
 // / then only play the boss sound (like the archon sounds) when the boss spawns"): while the triangle spreads, every coin flies home on real time
 // (rushCoins, aspira-floats.js) though the game holds; sending a boss wave says nothing, its first boss's spawn says the line, once a wave
-check("boss arrival: the spreading triangle sweeps every coin home, and the boss's line plays as it spawns - once a wave, not as the wave is sent", () => {
+check("boss arrival: the spreading triangle sweeps every coin home, and the boss's line plays once, as its wave is sent (under the opening triangle)", () => {
   return run(`(() => {
     const said = [], seq0 = sfxSeq, inv0 = Object.assign({}, bossInv);
     G = newGame(); G.money = 0; coins = []; sfxSeq = list => { said.push(...list); };
@@ -257,11 +257,11 @@ check("boss arrival: the spreading triangle sweeps every coin home, and the boss
       Object.assign(bossInv, { phase: "in", t0: performance.now() / 1000 - BOSS_SPOKE_T - 0.1, full: false });
       for (let i = 0; i < 20; i++) stepFloats(0.05); // 1 s of the spreading triangle
       if (coins.length || Math.round(G.money) !== 37) return "the triangle left " + coins.length + " coin(s) out, money " + G.money + " of 37";
-      G.wave = STAR_EVERY - 1; sendWave();
-      if (said.some(s => /^bossvoice/.test(s))) return "the boss line played as its wave was sent: " + said.join(", ");
+      G.wave = STAR_EVERY - 1; sendWave(); // (2026-11-17, owner: "go back to playing boss sound while triangle is opening up" - the line at the send again)
+      if (said.filter(s => /^bossvoice/.test(s)).length !== 1) return "the boss line did not play once as its wave was sent: " + said.join(", ");
       const n = G.wave; spawnEnemy("armor", n, 0, 0); bossSpawn(G.enemies[G.enemies.length - 1], n); spawnEnemy("armor", n, 0, 0); bossSpawn(G.enemies[G.enemies.length - 1], n);
       const lines = said.filter(s => /^bossvoice/.test(s)).length;
-      return lines === 1 ? "" : "the boss line played " + lines + " times for two bosses of one wave (want once)";
+      return lines === 1 ? "" : "the boss line played again as the bosses spawned (" + lines + " in all; want once, at the send)";
     } finally { sfxSeq = seq0; Object.assign(bossInv, inv0); coins = []; } })()`);
 });
 
@@ -320,4 +320,36 @@ check("iOS sound: a tap resumes an interrupted audio context, touchend and click
     try { AC = { state: "interrupted", resume() { resumed++; this.state = "running"; } }; muted = false; audioUnlock();
       return resumed === 1 && AC.state === "running" ? "" : "an interrupted context was not resumed by a tap (resume calls " + resumed + ")"; }
     finally { AC = ac0; muted = m0; } })()`);
+});
+
+// QUIET WHILE PAUSED OR IDLE (owner, 2026-11-17: "no sounds should play when the game is paused or idle"): a board sound is held while paused,
+// before the start, after the end and on the Challenge screen; a tap's feedback (click / error / win) and a card's demo are not
+check("quiet while paused or idle: board sounds are held while paused, before the start and after the end; a click still sounds; live ones fade", () => {
+  return run(`(() => { const p0 = ui.paused, g0 = G;
+    try {
+      G = newGame(); G.started = true; ui.paused = false;
+      if (sfxHeld("sol")) return "a board sound was held while the game runs";
+      ui.paused = true; if (!sfxHeld("sol")) return "a board sound was NOT held while paused";
+      if (sfxHeld("click")) return "the click was held while paused (a tap's own feedback)";
+      ui.paused = false; G.started = false; if (!sfxHeld("kill")) return "a board sound was NOT held before the start";
+      G.started = true; G.over = true; if (!sfxHeld("ifr")) return "a board sound was NOT held after the end";
+      if (sfxHeld("win")) return "the win jingle was held";
+      return ""; }
+    finally { ui.paused = p0; G = g0; } })()`);
+});
+
+// QUIET WHILE PAUSED OR IDLE (owner, 2026-11-17: "no sounds should play when the game is paused or idle"): a board sound is held while paused,
+// before the start and after the end; a tap's own feedback (click / error / win) and a card's demo are not
+check("quiet while paused or idle: board sounds are held while paused, before the start and after the end; a click and the win jingle still sound", () => {
+  return run(`(() => { const p0 = ui.paused, g0 = G;
+    try {
+      G = newGame(); G.started = true; ui.paused = false;
+      if (sfxHeld("sol")) return "a board sound was held while the game runs";
+      ui.paused = true; if (!sfxHeld("sol")) return "a board sound was NOT held while paused";
+      if (sfxHeld("click")) return "the click was held while paused (a tap's own feedback)";
+      ui.paused = false; G.started = false; if (!sfxHeld("kill")) return "a board sound was NOT held before the start";
+      G.started = true; G.over = true; if (!sfxHeld("ifr")) return "a board sound was NOT held after the end";
+      if (sfxHeld("win")) return "the win jingle was held";
+      return ""; }
+    finally { ui.paused = p0; G = g0; } })()`);
 });

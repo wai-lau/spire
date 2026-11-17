@@ -236,7 +236,7 @@ function sendWave() {
   // the boss is named in its HP BAR under the speed row (owner), not mid-screen
   // a boss is announced (owner): the advisor's double beep, then the Archon
   // (each boss has its own line, "bossvoice.<arcana>", else the shared one)
-  // (the line itself now plays when the boss SPAWNS, not here as its wave is sent - owner, 2026-11-16; bossSpawn, aspira-bosses.js)
+  if (G.wave % STAR_EVERY === 0) sfxSeq([bossVoice(arcanaOf(G.wave).id)]); // (no "bosswarn" double beep first - owner, 2026-10-12) - BACK at the send, under the opening triangle (owner, 2026-11-17: "go back to playing boss sound while triangle is opening up"; 11-16 to 11-17 it played at the spawn)
   sfx("wave");
   const lanes = laneMap(G.wave);
   // each type's group is SPLIT k ways (k = 1..6, owner) and each part rides a

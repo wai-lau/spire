@@ -370,6 +370,7 @@ function frame(now) {
   // while the upgrade cards are up the board is paused and all but frozen: ONE redraw a CHOOSER_REDRAW_MS, so its CSS blur
   // (aspira.css .asp-choosing) is rarely recomputed - but never none: a GPU that throws away an idle WebGL canvas's frame showed the
   // blur of a blank buffer, the board turned light grey under the cards ~10 s in (owner, 2026-10-19: "first tower buy inverts the screen")
+  if (typeof sfxHush === "function") sfxHush(); // no board sound while paused or idle (aspira-sfx.js)
   if (!warpInit()) { noWebGl(); return; } /* no WebGL: a notice, and the loop stops (the flat 2D picture is gone, 2026-10-18) */
   if ((!chooser.t || !(now < chooserDrawAt)) && !DIAG.includes("nocanvas")) { if (chooser.t) chooserDrawAt = now + CHOOSER_REDRAW_MS; warp3d(); } // 3D lays the frame, drawn to fit the whole board, on the spire (aspira-warp.js)
   // the HUD's text and buttons 10x a second, not every frame (perf, 2026-10-05)

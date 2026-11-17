@@ -287,8 +287,15 @@ function playSample(name, at = 0, off = 0) { // off: s into the clip to start fr
 // samples played back to back (owner: the boss warning - a double beep, then
 // the voice); missing ones are skipped, and a sequence never overlaps itself
 const bossVoice = id => (SAMPLES["bossvoice." + id] && SAMPLES["bossvoice." + id].length ? "bossvoice." + id : "bossvoice");
+// QUIET WHILE PAUSED OR IDLE (owner, 2026-11-17: "no sounds should play when the game is paused or idle"): the board's sounds start only while the
+// game RUNS - not paused, started, not over, not waiting on the Challenge button (afterBoss); live ones fade out the moment it stops (sfxHush, every
+// frame). Kept: a tap's own feedback (SFX_UI: the click, the refused-buy buzz, the win jingle) and a card's tower demo (its scene, sfxScene)
+const SFX_UI = /^(click|error|win)$/;
+const sfxQuiet = () => typeof ui === "object" && typeof G === "object" && (ui.paused || !G.started || G.over || (typeof afterBoss === "function" && afterBoss()));
+const sfxHeld = name => sfxQuiet() && !sfxScene() && !SFX_UI.test(name);
+function sfxHush() { if (!AC || !sfxQuiet()) return; const now = AC.currentTime; for (const L of [...sfxLive]) if (!L.cut && !L.scene && !SFX_UI.test(L.name)) sfxFade(L, now); }
 function sfxSeq(names) {
-  if (muted || !AC || AC.state !== "running") return;
+  if (muted || !AC || AC.state !== "running" || names.some(sfxHeld)) return;
   let at = 0;
   for (const name of names) {
     const list = SAMPLES[name];
@@ -339,7 +346,7 @@ const soundCredit = {};
 const gameSpeedX = () => (typeof ui !== "undefined" && typeof SPEED_MULT !== "undefined" && typeof speedX === "function" ? speedX() : 1);
 function sfx(name, ...args) {
   const sample = SAMPLES[name] && SAMPLES[name].length;
-  if (muted || !AC || AC.state !== "running" || !(SFX[name] || sample)) return null;
+  if (muted || !AC || AC.state !== "running" || !(SFX[name] || sample) || sfxHeld(name)) return null;
   const now = AC.currentTime; sfxBump(name, now);
   if (now - (lastAt[name] ?? -1) < (GAP[name] ?? GAP[name.split(".")[0]] ?? 0.03)) return null;
   if (SOUND_MAX[name] && (playing[name] || 0) >= SOUND_MAX[name] && !SFX_FIFO[name]) return null;
@@ -374,7 +381,7 @@ function swarmKillSfx(e) {
 // strike's volume x its share of the strike's damage (arcFall^depth), at most ARC_CHAIN_VOL; a step ARC_CHAIN_GAP s after the level before
 const ARC_CHAIN_VOL = 0.8, ARC_CHAIN_GAP = 0.05;
 function arcChainSfx(share, depth) {
-  if (muted || !AC || AC.state !== "running" || !(SAMPLES.arc && SAMPLES.arc.length) || (playing.arc || 0) >= 2 * SOUND_MAX.arc) return;
+  if (muted || !AC || AC.state !== "running" || sfxHeld("arc") || !(SAMPLES.arc && SAMPLES.arc.length) || (playing.arc || 0) >= 2 * SOUND_MAX.arc) return;
   const now = AC.currentTime; sfxBump("arc", now); if (!sfxMakeRoom("arc", now)) return;
   sfxOpt = { gain: Math.min(ARC_CHAIN_VOL, share) }; playSample("arc", depth * ARC_CHAIN_GAP);
 }
