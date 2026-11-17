@@ -162,6 +162,7 @@ function stepFx(dt) {
 }
 
 function stepFloats(dt) {
+  rushCoins(dt); // the boss sweep (above): real time, while the game holds
   drainTicks(); // the slow-motion tick numbers due by now
   for (const f of fx) if (f.k === "text") { f.t += dt; f.x += (f.vx || 0) * dt; f.y -= f.vy * dt; }
   fx = fx.filter(f => f.k !== "text" || f.t < f.life);
@@ -208,10 +209,18 @@ function coinHome(c) {
   return best;
 }
 const CRED_POP_MIN = 10, CRED_POP_MAX = 19; // a credit pop-up's biggest: HALF a damage number's as it was then (10 + 28 px; kept when the band narrowed, 2026-11-01) (owner, 2026-10-13: "reduce max size of credit popups to half")
+// THE BOSS SWEEP (owner, 2026-11-16: "when the triangle expands for bosses, add massive velocity for all coins towards their nearest tower or core"):
+// the game holds while the boss sky turns (skyTurning), so coins on game time would hang there; while the TRIANGLE spreads (after the spokes,
+// BOSS_SPOKE_T) stepFloats steps them on real time at COIN_RUSH_V - every coin is home before the boss walks in
+const COIN_RUSH_V = 1500; let coinRush = false;
+function rushCoins(dt) {
+  if (!coins.length || typeof bossInv === "undefined" || bossInv.phase !== "in" || bossInv.full || performance.now() / 1000 - bossInv.t0 < BOSS_SPOKE_T) return;
+  coinRush = true; try { stepCoins(dt); } finally { coinRush = false; }
+}
 function stepCoins(dt) {
   for (const c of coins) {
     c.t += dt;
-    const h = coinHome(c), dx = h.x - c.x, dy = h.y - c.y, d = Math.hypot(dx, dy), tm = c.t - COIN_HOLD, step = tm > 0 ? (COIN_V0 + COIN_ACC * tm) * dt : 0;
+    const h = coinHome(c), dx = h.x - c.x, dy = h.y - c.y, d = Math.hypot(dx, dy), tm = c.t - COIN_HOLD, step = coinRush ? COIN_RUSH_V * dt : tm > 0 ? (COIN_V0 + COIN_ACC * tm) * dt : 0;
     if (d <= h.r || step >= d) {
       c.done = true; G.money += c.b; if (c.ph < 6.283 * COIN_SFX_P && typeof sfx === "function") sfx("coin"); // the pickup clink (owner, 2026-11-16; aspira-sfx.js SFX_FILES.coin), on a COIN_SFX_P share of coins
       if (--c.grp.left > 0) continue; // the kill's popup waits for its last coin

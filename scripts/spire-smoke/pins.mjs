@@ -239,3 +239,25 @@ check("3D stars stay ROUND on screen on the GPU (owner, 2026-10-09: \"stars in b
   if (typeof r === "string") return r;
   if (!(r > 50)) return "only " + r + " stars on screen (the rig is broken)";
 });
+
+// THE BOSS ARRIVAL (owner, 2026-11-16: "when the triangle expands for bosses, add massive velocity for all coins towards their nearest tower or core
+// / then only play the boss sound (like the archon sounds) when the boss spawns"): while the triangle spreads, every coin flies home on real time
+// (rushCoins, aspira-floats.js) though the game holds; sending a boss wave says nothing, its first boss's spawn says the line, once a wave
+check("boss arrival: the spreading triangle sweeps every coin home, and the boss's line plays as it spawns - once a wave, not as the wave is sent", () => {
+  return run(`(() => {
+    const said = [], seq0 = sfxSeq, inv0 = Object.assign({}, bossInv);
+    G = newGame(); G.money = 0; coins = []; sfxSeq = list => { said.push(...list); };
+    try {
+      creditDot(CX + 500, CY, 37); const n0 = coins.length;
+      for (let i = 0; i < 20; i++) stepFloats(0.05); // 1 s with no boss sky: coins hold (COIN_HOLD) - stepFloats alone moves none
+      if (coins.length !== n0 || G.money !== 0) return "coins moved without the boss sky (" + coins.length + " of " + n0 + " left, money " + G.money + ")";
+      Object.assign(bossInv, { phase: "in", t0: performance.now() / 1000 - BOSS_SPOKE_T - 0.1, full: false });
+      for (let i = 0; i < 20; i++) stepFloats(0.05); // 1 s of the spreading triangle
+      if (coins.length || Math.round(G.money) !== 37) return "the triangle left " + coins.length + " coin(s) out, money " + G.money + " of 37";
+      G.wave = STAR_EVERY - 1; sendWave();
+      if (said.some(s => /^bossvoice/.test(s))) return "the boss line played as its wave was sent: " + said.join(", ");
+      const n = G.wave; spawnEnemy("armor", n, 0, 0); bossSpawn(G.enemies[G.enemies.length - 1], n); spawnEnemy("armor", n, 0, 0); bossSpawn(G.enemies[G.enemies.length - 1], n);
+      const lines = said.filter(s => /^bossvoice/.test(s)).length;
+      return lines === 1 ? "" : "the boss line played " + lines + " times for two bosses of one wave (want once)";
+    } finally { sfxSeq = seq0; Object.assign(bossInv, inv0); coins = []; } })()`);
+});

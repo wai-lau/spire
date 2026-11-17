@@ -132,6 +132,9 @@ const BOSS_PACE = 1 /* x2 (owner, 2026-10-17: "double movement speed of all boss
 // from spawnEnemy: name the boss for its wave, and pair up the two of a pair
 function bossSpawn(e, n) {
   e.arcana = arcanaOf(n).id;
+  // ITS LINE AS IT SPAWNS (owner, 2026-11-16: "then only play the boss sound (like the archon sounds) when the boss spawns"; was as its wave was
+  // sent, under the sky's spokes): once a boss wave - the Lovers and the Devil spawn several (G.bossVoiceAt, in G so a rewind replays it)
+  if (G.bossVoiceAt !== n) { G.bossVoiceAt = n; if (typeof sfxSeq === "function" && typeof bossVoice === "function") sfxSeq([bossVoice(e.arcana)]); }
   e.spd = (e.spd || 1) * (BOSS_SPEED[e.arcana] || 1) * BOSS_PACE;
   const grow = hpPow(eqWave(n)) + eqWave(n) * 4 / 18; // the armored enemy's armor curve (spawnEnemy)
   e.armor = e.armor0 = Math.floor((BOSS_ARMOR[e.arcana] || 0) * Math.pow(grow, ARMOR_EXP) * escale(e)); // (x the LATE SCALE)
