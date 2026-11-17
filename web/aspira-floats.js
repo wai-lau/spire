@@ -210,7 +210,7 @@ function stepCoins(dt) {
     c.t += dt;
     const h = coinHome(c), dx = h.x - c.x, dy = h.y - c.y, d = Math.hypot(dx, dy), tm = c.t - COIN_HOLD, step = tm > 0 ? (COIN_V0 + COIN_ACC * tm) * dt : 0;
     if (d <= h.r || step >= d) {
-      c.done = true; G.money += c.b;
+      c.done = true; G.money += c.b; if (typeof sfx === "function") sfx("coin"); // the pickup clink (owner, 2026-11-16; aspira-sfx.js SFX_FILES.coin)
       if (--c.grp.left > 0) continue; // the kill's popup waits for its last coin
       // SMALLER and from ABOVE the core, so it never hides it (owner, 2026-10-09): in 3D above its raised top too - a height
       // h stands h x tan(tilt) floor units up the screen

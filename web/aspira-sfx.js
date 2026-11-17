@@ -175,7 +175,7 @@ const SFX = {
   powerrelay: () => notes([330, 494], 0.09, { type: "square", dur: 0.12, vol: 0.12 }),
 };
 // minimum seconds between two plays of the same sound
-const GAP = { arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08, thud: 0.015, slam: 0.015 }; // (thud: the bar's pieces land 30 ms apart - the default 0.03 ate every other)
+const GAP = { coin: 0.06 /* a kill drops several coins (20 / 10 / 5 / 1s) that land close together: a quick rattle, not a pile-up */, arc: 0.07, kill: 0.04, frz: 0.1, leak: 0.5, carshot: 0.08, thud: 0.015, slam: 0.015 }; // (thud: the bar's pieces land 30 ms apart - the default 0.03 ate every other)
 
 // returns whatever the sound returns (a stop() handle for long sounds), or null
 // Optional SAMPLES (owner, 2026-10-02: Brood War sounds) replace a synth
@@ -198,7 +198,10 @@ const SFX_SAMPLE_SWAP = [["arc", "kill.shield"]];
 // "pabDth00.wav death sound for armor"; "current armor death sound, use it for the boss hp tile slam"; "pcaDth01.wav boss death sound"; "clicking
 // things should play the BUTTON.WAV sound"; "PError.wav for invalid commands like when you don't have enough money"; "PRescue.wav after beating
 // the game"; "replace SOL firing sound with TBaYam02.wav" (solSfx). ARC keeps the shield's old sample (the 11-07 swap, above)
-const SFX_FILES = { "kill.shield": "Sound/Terran/SCV/TSCDth00.wav", "kill.armor": "Sound/Protoss/Arbiter/pabDth00.wav", slam: "Sound/Bullet/TTaFir00.wav",
+// THE OWNER'S PICKS OF 2026-11-16 (her own Ratchet & Clank rips, data/aspira-sfx/RC/ - never committed, like the rest): "use these sounds at random when
+// picking up credits from dead enemies, play softer than most sounds" (coin: a landing coin, stepCoins in aspira-floats.js; SOUND_GAIN.coin) and
+// "use this for boss hp slam" (slam; was Sound/Bullet/TTaFir00.wav)
+const SFX_FILES = { "kill.shield": "Sound/Terran/SCV/TSCDth00.wav", "kill.armor": "Sound/Protoss/Arbiter/pabDth00.wav", slam: "RC/slam.wav", coin: ["RC/bolt-1.wav", "RC/bolt-2.wav", "RC/bolt-3.wav"],
   bossdeath: "Sound/Protoss/Carrier/pcaDth01.wav", click: "Sound/Misc/BUTTON.WAV", error: "Sound/Misc/PError.wav", win: "Sound/Misc/PRescue.wav", solshot: "Sound/Terran/Battle/TBaYam02.wav" };
 const swapSfxSamples = m => { for (const [a, b] of SFX_SAMPLE_SWAP) { const A = m[a], B = m[b]; if (B === undefined) delete m[a]; else m[a] = B; if (A === undefined) delete m[b]; else m[b] = A; } return m; };
 const migrateSfx = m => Object.fromEntries(Object.entries(m).map(([k, v]) => [sfxKey(k), v]));
@@ -258,7 +261,7 @@ const LOUD = /^(bosswarn|bossvoice|bossdeath|coreup|up|build|thud|click|error|wi
 // loudness normalization every tower attack's loudest 150 ms sits at -20 dBFS (SOL's shot -20.2, the others' median -20.0); what is quieter
 // is the DENSITY: SOL fires one voice a tower every 1.58 s, the others stack up to SOUND_MAX copies (1 + 1/2 + 1/3 = 1.83x, +5 dB). x2 =
 // +6 dB, its peak -11.7 -> -5.7 dBFS on one voice: no clipping, no limiter needed (a GainNode above 1 is fine)
-const SOUND_GAIN = { kill: 0.4, sol: 2, solshot: 2 };
+const SOUND_GAIN = { kill: 0.4, sol: 2, solshot: 2, coin: 0.25 /* softer than most (owner, 2026-11-16): under a kill (0.4) and a tower shot (0.6) */ };
 const gainFor = name => (LOUD.test(name) ? LOUD_GAIN : SOUND_MAX[name] ? TOWER_GAIN : 1) * (SOUND_GAIN[name] ?? SOUND_GAIN[name.split(".")[0]] ?? 1); // ("kill.fast" trimmed as "kill")
 let sfxOpt = null; // { gain, rate } for the next playSample only (swarmKillSfx, arcChainSfx)
 function playSample(name, at = 0, off = 0) { // off: s into the clip to start from (SOL's shot, solSfx)
