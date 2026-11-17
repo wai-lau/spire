@@ -461,3 +461,7 @@ The owner said yes to a boss pass (2026-11-16), then set its target: "a good pla
 
 Boss HP plateaus at ~51-53%: of B's 47 lost games, 42 end on ordinary waves (mostly 95-119), after lives lost to Justice's, Death's and Temperance's escorts. The rest of the way to 75% needs another lever (the escorts' per-unit HP, or the late waves) - the owner's call.
 
+### 13.23 Ifrit at 3 points, 2026-11-17 (mates lead, the Ifrit follower; owner "yes to offer")
+
+`IFR_SHARD_FIRE_K[1]` 2.47 -> 4.68 (Meteor I's mines burn as hot as Meteor II's): Ifrit's 3-point spread build leaks 30 / 100 / 68 / 89 -> 19 / 100 / 55 / 89; its two 3-point fails go (row +1 -1 +1 -1). Carrier's existing 3-point fail line gains its armor cell (0 vs -1) - every Ifrit row that clears its fails flips Carrier's armor or Sol's shield (the columns' rounding). 0 / 6 / 9 / 13 points unchanged. Blurred Ifrit builds at 3 points 4 -> 2, at 6 points 12 -> 18. The window is narrow (4.2 and 6.0 both fail).
+
