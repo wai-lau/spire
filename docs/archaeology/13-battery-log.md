@@ -449,3 +449,15 @@ The card demo: the Void layout (Gravity Well 0) runs ten walkers, was seven - wi
 
 Duo rule: clean, 21 of 21 pairs. Left for later: Gravity's 3- and 6-point fails (fast and armor 0) - an aura-slow + Nova armor-strip patch at tiers I-II is written, not run. Sol had no number fix (its target needs swarm -3 with fast +1, and every Sol lever moves both together) - two mechanic ideas go to the owner.
 
+### 13.22 The 75% boss pass, 2026-11-17 (mates lead, a boss follower)
+
+The owner said yes to a boss pass (2026-11-16), then set its target: "a good player should win like 75% of games". Lever: each boss's own HP only (never escort counts). Good players (players3b MODEL=good), the same first 100 games:
+
+| Run | Won of 100 |
+|---|---|
+| live 7.24.1 | 34 |
+| **A (shipped): Temperance, Judgement, Justice, Death, the Devil x0.5; the Lovers x0.6; Strength, the Empress x0.8** | **51** |
+| B: Death and Justice x0.15, the Devil and Temperance x0.2, Judgement x0.3, the Lovers x0.5, Strength and the Empress x0.7 | 53 |
+
+Boss HP plateaus at ~51-53%: of B's 47 lost games, 42 end on ordinary waves (mostly 95-119), after lives lost to Justice's, Death's and Temperance's escorts. The rest of the way to 75% needs another lever (the escorts' per-unit HP, or the late waves) - the owner's call.
+
