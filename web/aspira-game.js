@@ -148,7 +148,7 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   if (e.shield > 0) {
     e.shield -= 1;
     if (e.shield < SHIELD_BREAK_N && (!(st && st.noFx) || e.shield <= 0)) shieldBreak(e); // its last charges BREAK, loudly (aspira-floats.js) - a crowd of pools (noFx) only the LAST one (owner, 2026-10-14: ACD too much late)
-    if (!(st && st.noFx)) hitFlash(e, 18, 1, "cyan", 0.07);
+    burst(e.x, e.y, "cyan", st && st.noFx ? 1 : SHIELD_SPARK_N, SHIELD_SPARK); // a shield pop: always mid-sized blue sparks (owner, 2026-11-17), one from a damage-over-time tick
     // all of it soaked: a "0" in SHIELD blue, as BIG as the hit it swallowed (owner)
     dmgNumber(e, "0", amt, "cyan", (st && st.from) || hitFrom || t); // EVERY pop its own 0, even a quiet hit's - never summed (owner, 2026-10-21: "every shield pop should show a 0, that's the exception to the rule"); from: where it flies AWAY from (aspira-crr.js)
     return;
@@ -177,11 +177,11 @@ function damage(e, amt, t, quiet = false, crit = false, st = null) {
   { const c = escale(e); if (c < 1) { const v = Math.max(1, Math.floor(amt / c)) * c + (e.bank || 0); amt = Math.max(1, Math.floor(v)); e.bank = v - amt; } else amt = Math.max(1, Math.floor(amt)); } // a hit is a WHOLE number, rounded down - but one that lands always takes 1 (owner, 2026-10-08); under the LATE SCALE the rounding is the RAW hit's, its fraction (a debt too) banked on the enemy, so it plays as before (2026-10-22)
   e.hp -= amt;
   const showFx = !quiet && !(typeof farFx === "function" && farFx(e)); // farFx: 3D's far ring (aspira-quality.js); a noFx tick still gets its NUMBER below - only noNum hides it (owner, 2026-10-26: "scorch not showing damage numbers")
+  if (showFx && st && st.noFx && t) dotSparks(e, dmgMag(amt), TOWERS[t.kind].color); // a damage-over-time tick: far fewer sparks (aspira-floats.js)
   if (showFx && !(st && st.noFx)) { // noFx: unseen (crowded pools - aspira-acid.js); farFx: 3D's far ring (aspira-quality.js)
     // impact flash sized and lit by the damage; big hits also throw sparks
     const m = dmgMag(amt), col = t ? TOWERS[t.kind].color : "orange";
-    const hs = t && HIT_SPARKS[t.kind], none = t && HIT_FX_NONE[t.kind]; if (none) { /* ARC: nothing (HIT_FX_NONE) */ } else if (hs) burst(e.x, e.y, col, Math.max(hs.min, Math.round(m * hs.per)), hs); else hitFlash(e, 5 + 8 * m, m, col, 0.05 + 0.027 * m); // ACD: no circle, its own sparks (HIT_SPARKS, aspira-floats.js)
-    if (!hs && !none && m > 1.2) burst(e.x, e.y, col, Math.round(m * 3));
+    if (t) burst(e.x, e.y, col, Math.max(HIT_SPARK.min, Math.round(m * HIT_SPARK.per)), hitSparkO(m)); else hitFlash(e, 5 + 8 * m, m, col, 0.05 + 0.027 * m); // EVERY TOWER: sparks only, their count and size by the damage (aspira-floats.js)
     // damage number, jittered so rapid hits don't stack
     // armor-blunted hits read GREYER the more armor took off them (owner, 2026-10-09: "greyness of damage popups should be
     // correlated to the percentage of damage mitigated by armor" - was all-or-nothing grey), white to the graticule's Silver

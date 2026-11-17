@@ -131,10 +131,22 @@ const SPARK_MAX = 300;
 let sparkN = 0; // alive now (stepFx recounts)
 // A HIT'S SPARKS BY TOWER (owner, 2026-10-26: "for ARC, on hit, no circle, but more thin sparks / for ACD, no circle on hit, slower and
 // thicker sparks"): per - sparks per unit of the hit's size (dmgMag), at least min; v x the speed; w the size; streak: a thin line along its flight
-const HIT_SPARKS = { acd: { per: 2, min: 1, v: 0.35, w: 5, life: 2 } };
-// NO SPARKS FOR ARC (owner, 2026-11-05: "Also sparks from ARC look ugly, remove"): its hits throw nothing - no streaks (HIT_SPARKS.arc, was per 6, min 3), no
-// big-hit burst, no circle; the chain is the hit. Its burn's sparks went too (drawBurnSparks, aspira-chains.js - no longer called)
-const HIT_FX_NONE = { arc: true };
+// SPARKS ONLY, EVERY TOWER (owner, 2026-11-17: "every tower gets sparks only"): a tower's hit throws sparks in its colour, as many as its size asks
+// (Acid's look since 2026-10: per x the hit's magnitude, at least min) - no flash circle, no big-hit burst; Arc throws them too (11-05 to 11-17 it threw
+// nothing: "sparks from ARC look ugly, remove"). A shield hit keeps its cyan flash and "0" (damage()); damage-over-time ticks (noFx) stay quiet
+const HIT_SPARK = { per: 2, min: 1, v: 0.35, w: 5, life: 2 };
+// ...THEIR COUNT AND SIZE BY THE DAMAGE (owner, 2026-11-17: "spark size and quantity should be correlated to damage dealt, always use mid-sized blue
+// sparks when popping shield"): m = dmgMag (0.5 .. 3): count HIT_SPARK.per x m, width 2 + 1.5 m (2.75 .. 6.5 u), a little faster the bigger
+const hitSparkO = m => ({ v: HIT_SPARK.v * (0.8 + 0.2 * m), w: 2 + 1.5 * m, life: HIT_SPARK.life });
+const SHIELD_SPARK_N = 4, SHIELD_SPARK = { v: 0.35, w: 4, life: 2 }; // a shield pop: mid-sized, in shield blue (cyan)
+// DAMAGE OVER TIME, FAR FEWER (owner, 2026-11-17: "DoTs should create much fewer sparks to compensate for the fact they hit so much more often"): a
+// tick's sparks are DOT_SPARK_K of a hit's, banked on the enemy until a whole spark is due (no random draw: the simulator's games stay the same)
+const DOT_SPARK_K = 0.1;
+function dotSparks(e, m, col) {
+  e.dotSpark = (e.dotSpark || 0) + m * HIT_SPARK.per * DOT_SPARK_K;
+  if (e.dotSpark < 1) return;
+  const n = Math.floor(e.dotSpark); e.dotSpark -= n; burst(e.x, e.y, col, n, hitSparkO(m));
+}
 function burst(x, y, color, n, o = null) {
   n = Math.min(n, SPARK_MAX - sparkN); sparkN += Math.max(0, n);
   for (let i = 0; i < n; i++) {
