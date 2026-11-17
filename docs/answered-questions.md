@@ -6,6 +6,8 @@ Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTION
 
 | When | Question | Answer |
 |---|---|---|
+| 11-16 ~16:30 | Arc is too weak at 2-5 points to have distinct builds (three Arcs leak 89-96% of every type at 3 points; it needs about x5 damage there, the 2x step rule allows x1.57): may its early levels grow faster than "no level damage steps above 2x"? | Yes: Arc alone steps x2.9 a level up to 3 points (x5 by then), easing back to today's curve by 8 points |
+| 11-15 ~07:10 | "Every un-spread build has a unique leak shape" - which test? The order of the four types cannot be unique (24 orders, 27 builds at 7-8 points) | Two builds are the same shape if they leak within 5 points of each other on every enemy type; the goal is no such pair |
 | 11-15 ~05:40 | Three towers rank at 0, 3, 6 and 9 points on harder waves, but at 13 three maxed towers clear every wave (the game ends at 120). Keep one tower alone at 13? | Yes: three towers at 0 (waves 31-39), 3 (75-85), 6 (91-99) and 9 (101-119); one tower alone at 13 (111-119) |
 | 11-15 ~05:05 | Every level tests one tower alone except 9 points (three of a kind). Test 9 points with one tower alone too (on earlier waves, 91-99)? | No: "measure them all with 3 towers" - every level tests three of a kind, on waves hard enough that three towers leak |
 | 11-15 ~04:30 | The 0-point test (waves 9-19) is too easy: Carrier let nothing through, so its 0-point marks were only the other towers' averages. Move it to harder waves? | Yes, waves 21-29: every tower leaks something there on most types |

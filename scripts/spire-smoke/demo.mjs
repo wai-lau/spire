@@ -189,7 +189,7 @@ check("demo respawn: no ARC chain runs across the scene - walkers leave at the l
       const skills = key === "base" ? {} : { [key]: 3 }, t = { kind: "arc", cell, x: C.x, y: C.y, lvl: 1, skills }; t.lvl = 1 + towerLevel(t);
       const st = towerStats(t), S = demoScene("arc", skills, cell, demoPlace("arc", st, cell, DEMO_LAYOUTS.arc[key])), lim = Math.max(st.range, st.arcRange || 0) * 1.3;
       let worst = 0, laps = 0; const n0 = S.T.length;
-      for (let f = 0; f < 1500; f++) { demoFrame(S); for (const b of S.fx) { if (b.k !== "beam" || b.color !== TOWERS.arc.color) continue;
+      for (let f = 0; f < 1500; f++) { demoFrame(S); for (const b of S.fx) { if (b.k !== "beam" || b.color !== TOWERS.arc.color || (b.a && b.a.dead) || (b.b && b.b.dead)) continue; // a KILLED walker's ghost drifts off (demoStep) and its last beam follows it - not a respawn; the in-sight check above skips dead ends too (2026-11-16: Arc's bigger hits kill demo walkers, a ghost-held beam read 245 u, live ends 116)
         const x1 = b.a ? b.a.x : b.x1, y1 = b.a ? b.a.y : b.y1, x2 = b.b ? b.b.x : b.x2, y2 = b.b ? b.b.y : b.y2; worst = Math.max(worst, Math.hypot(x2 - x1, y2 - y1)); } }
       laps = S.T.length - n0;
       if (worst > lim) bad.push("arc." + key + ": a chain " + worst.toFixed(0) + " u long (reach " + (lim / 1.3).toFixed(0) + ")");

@@ -415,3 +415,23 @@ The owner reset how the marks are read: at 0 / 3 / 6 points a mark only has to p
 |---|---|---|
 | `GRV_PELLET_K[0]` 3 -> 4.8 (tier 0 only) | Gravity at 0 points (it leaned the wrong way against swarm) | 0 pts leak 70 / 81 / 33 / 75 -> 53 / 76 / 28 / 74: marks -1 0 0 +1 -> 0 0 0 0; no other level uses tier 0 |
 
+
+### 13.20 Arc's early growth and a slower Arc, 2026-11-16 (mates lead)
+
+The owner's build graph (2026-11-15: "maybe we need a DAG / each level in depth is total number of points / connections are nodes that differ by 1 upgrade point / for each node measure the performance against each type / report on the variance in performance between the nodes on each level"), then "make sure that every un-spread build has a unique leak shape" - her "A": two builds are the same shape if they leak within 5 points of each other on every type. Every build of every tower (200 each, levels 0-13, live 7.21.0): 819 blurred pairs, 816 of them real (not stuck at 0% or 100%); Arc 319, all 105 at 4 points. Noise: the same build on new seeds stays within 5 points on every type 95% of the time.
+
+Cause: three ARCs at 3 points leaked 89-96% of every type whatever the build. Path levers (Voltage jumps, Conductivity carry, Shock's armor break x3), rate x2 and range x1.5 moved nothing; only damage did (x3: 82 / 95 / 81 / 87, x5: 66 / 92 / 61 / 83, x10: 18 / 62 / 24 / 68). ARC grew x1.72 a level; the 2x rule allowed x1.57 by 3 points.
+
+| Change | Owner | Measured |
+|---|---|---|
+| `ARC_EARLY_DMG` (new): x2.9 a level to 3 points (x4.79), easing back to x1 by 8 | "A" (2026-11-16) - the one exception to "no level damage steps above 2x" | with the rows below: Arc at 3 points 91 / 96 / 89 / 89 -> 59 / 87 / 85 / 76 (4 seeds) |
+| `ARC_VOLT_RATE` (new): fire rate x0.25 / 0.3 / 0.5 / 0.8 / 1 / 1 by Voltage tier, each hit divided by it | "can we reduce fire rate to make it worse vs shields? try things man" (2026-11-16); by Voltage tier, not level: "rate only via an axis" (2026-10-25) | the same marks as the level taper; shield leak rises as the rate falls (3 points 63 -> 85) |
+| `ARC_RES_STRIP` 0 / .05 / .1 / .19 / .32 / .48 -> 0 / .4 / .5 / .55 / .6 / .7 | (balance) | Arc's 6-point armor check; without it 6 points keeps armor wrong |
+
+Marks: Arc passes at 0 and 6 points (was wrong-way at both); at 3 it has two checks, swarm and fast still 0 (was one check, three cells wrong); 9 and 13 points unchanged. Ifrit's 3-point line gains its armor cell. The 9-point card row: Arc +1 -1 -1 +1 -> +1 0 -2 +1, Acid shield +1 -> +2 and armor +2 -> +1, Ifrit gains fast -1 (Arc better against armor moves the column). Build graph: Arc's blurred pairs 319 -> 39 (2-7 points 291 -> 24).
+
+Tried and left: shields ground the lightning (a chain stops at a shielded enemy) - fixed 0 points, added blur at 6-9, the owner: "I really don't like shield grounding arc"; a slower ARC at every level (x0.5, x0.35) - 13 points worse (bigger hits made ARC better against fast); more Voltage jumps at tier I (5 -> 16) - against "raise arc damage while reducing chaining/forking" (2026-11-07), and v17 without it scores better; a shorter tier I-II jump reach - fast moved toward its target but not a mark, and Gravity's 3-point marks shifted; a bigger tier-I armor break (0.6) - armor leak unmoved.
+
+Also: ARC's beams keep their live length (`s.voltRate` in `arcBeamLife`); the demo respawn check skips beams onto killed walkers - ARC's bigger hits kill demo walkers, and a ghost-held beam read 245 u (live ends 116).
+
+Gates: duo rule clean, 21 of 21 pairs; boss gate (good players, 200 games): won 71 (35.5%; live 7.20.0: 79, 39.5% - within one standard error), every boss ends at most 10% of runs (the Devil 10%, Death 6%, Judgement 7%).

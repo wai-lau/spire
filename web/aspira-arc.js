@@ -49,13 +49,21 @@ const ARC_JUMP_BASE = 234, ARC_VOLTAGE_JUMP = [1, 1.15, 1.45, 1.75];
 // STAT_SLOW_T s - never a shielded enemy, applySlow) and breaks ARC_RES_STRIP of the armor left (shredPct); no
 // charges, no bursts. A bolt never strikes a unit twice (skillHop). Numbers 0..V, let: the battery fits them
 let ARC_AMP_FALL = [0.8, 0.9, 1, 1.1, 1.25, 1.4], ARC_VOLT_JUMPS = [2, 5, 8, 12, 16, 20] /* tiers I-V x0.67 with the hit x1.5, tier 0 kept at one chain hitting three (owner 2026-10-29) (owner, 2026-11-07: "raise arc damage while reducing chaining/forking"); was 2 8 12 18 24 30 */ /* x1.5 from Voltage I with ARC_DMG_K (battery 7.7.0, 2026-11-05: ARC less damage, more hits - the 10-29 lever; tier 0 kept at 2 for "ARC 0: one chain (hits 3)"); was 2 5 8 12 16 20 */ /* more chaining, the brief; tier 0 stays one chain hitting three (owner, 2026-10-29) (was 2 3 4 5 6 8) */, ARC_VOLT_REACH = [187.5, 212.5, 237.5, 268.75, 300, 337.5] /* x1.25 with the radial hops (2026-11-06; was 150 170 190 215 240 270): a jump that may only go further out needs the reach - marks distance 10 -> 8 */ /* BACK to the 7.7.13 reach (2026-11-05): halved in 7.7.16 for the marks gap, it took ARC trios to 6/23 won vs 7.6.0's 17/23 over two 50-game screens; the marks pay ARC 2 -> 4, distance 12 -> 14 (reach x0.75 the same) */, ARC_FORK_FROM = 2; /* forks from Voltage II with the fewer jumps (owner, 2026-11-07; was I) */ /* forks from Voltage I, the brief (was II) */
-let ARC_RES_SLOW = [0, 0, 0, 0, 0, 0] /* Shock no longer slows, the brief - worse vs fast (was 0 .15 .25 .38 .47 .58) */ /* 0..V, with ARC's geometric curve (owner, 2026-11-01: "Release the arc change") */, ARC_RES_STRIP = [0, 0.05, 0.1, 0.19, 0.32, 0.48] /* 0..V, with it */;
+let ARC_RES_SLOW = [0, 0, 0, 0, 0, 0] /* Shock no longer slows, the brief - worse vs fast (was 0 .15 .25 .38 .47 .58) */ /* 0..V, with ARC's geometric curve (owner, 2026-11-01: "Release the arc change") */, ARC_RES_STRIP = [0, 0.4, 0.5, 0.55, 0.6, 0.7] /* front-loaded at I with the slower Arc below - its big early hits make the break count: Arc's 6-point armor check (build graph 2026-11-16; was 0 .05 .1 .19 .32 .48) */ /* 0..V, with it */;
 // ARC_DMG_K (battery 7.7.0, 2026-11-05): every ARC hit x0.3 with the jumps x1.5 - its overkill on light types (0% leak late) traded for reach
 const ARC_DMG_K = 0.3; // (x1.15 = 0.345 for 7.7.25 only: a patch for the halved reach, reverted with it)
 const ARC_RES_DMG = [1, 1, 1.05, 1.1, 1.15, 1.2]; // Shock's hit factor 0..V
 // SHOCKED (owner, 2026-11-01, picked "1"; 2026-11-07: from EVERY tower, not just ARC - damage(), aspira-game.js): each Shock hit marks its target for
 // the slow's time (STAT_SLOW_T, refreshed on hit); a marked enemy takes x(1 + ARC_SHOCK_AMP) from every tower's hits (damage(), aspira-game.js)
 let ARC_SHOCK_AMP = [0, 0.3, 0.7, 1.6, 1.8, 2]; // +% from every tower on a shocked enemy 0..V (front-loaded at III: band 2026-11-01)
+// ARC'S EARLY GROWTH (owner, 2026-11-16, picked "A"): ARC alone steps x2.9 a level up to 3 points (x4.79 by then), easing back to the curve by 8
+// points - the one exception to "no level damage steps above 2x". Three ARCs at 3 points leaked 89-96% of every type, whatever the build, so its
+// builds could not differ (319 of the 819 blurred build pairs, the build graph). By points spent (towerLevel), 0..7; 8+ is x1
+const ARC_EARLY_DMG = [1, 1.686, 2.843, 4.793, 3.502, 2.56, 1.871, 1.368];
+// A SLOWER ARC, BIGGER HITS (owner, 2026-11-16: "can we reduce fire rate to make it worse vs shields? try things man"): each hit pops at most one
+// shield, so fewer, bigger hits (the same damage a second) leak more shields; the rate comes back with Voltage's tier ("rate only via an axis",
+// owner 2026-10-25) - live rate from Voltage IV. Fire rate x this, hit / this, by Voltage tier 0..V
+const ARC_VOLT_RATE = [0.25, 0.3, 0.5, 0.8, 1, 1];
 function arcSkillStats(t, s, b) {
   const c = skillOf(t, "conductivity"), v = skillOf(t, "voltage"), z = skillOf(t, "capacitance");
   curveBase(t, s, b); // damage, rate, range: the STAT CURVE by total level (tier redesign 2026-10-24)
@@ -64,6 +72,7 @@ function arcSkillStats(t, s, b) {
   s.carry = 0; s.arcFall = ARC_AMP_FALL[c]; s.arcShrink = ARC_SHRINK; s.resSlow = ARC_RES_SLOW[z]; s.resStrip = ARC_RES_STRIP[z]; s.shockAmp = ARC_SHOCK_AMP[z]; s.burn = ARC_BURN; s.skill = true;
   s.ground = c >= CAPSTONE_TIER; s.storm = v >= CAPSTONE_TIER; s.shockPass = z >= CAPSTONE_TIER; // the capstones (ARC_GROUND_R ..)
   s.dmg *= ARC_RES_DMG[z] * ARC_DMG_K; // Shock (id capacitance) hits a little harder by tier, each tier at most 2x the last with the curve's x1.9 (owner, 2026-11-01: "no level damage steps above 2x")
+  s.voltRate = ARC_VOLT_RATE[v]; s.rate *= ARC_VOLT_RATE[v]; s.dmg *= (ARC_EARLY_DMG[towerLevel(t)] ?? 1) / ARC_VOLT_RATE[v]; // the early growth + the slower ARC (above)
 }
 
 // THE THREE CAPSTONES (owner, 2026-11-06, "arc ones are good, except, shock V should apply the dead shocked enemy debuffs from ARC to all
@@ -81,7 +90,7 @@ let arcPassDepth = 0, arcPassLeft = ARC_PASS_FRAME;
 // reach - and each jump hits ARC_FALL as hard and reaches ARC_SHRINK as far.
 // THE FLICKER KEEPS UP WITH THE RATE (owner, 2026-10-26: "as ARC fire rate increases, the beam duration should also decrease to match and
 // maintain flickering"): a beam lasts CHAIN_BEAM_LIFE x the bare ARC's rate over this one's, never longer
-const arcBeamLife = st => CHAIN_BEAM_LIFE * Math.min(1, TOWERS.arc.rate * ARC_BURST_RATE / (st.rate || 1));
+const arcBeamLife = st => CHAIN_BEAM_LIFE * Math.min(1, TOWERS.arc.rate * ARC_BURST_RATE * (st.voltRate || 1) / (st.rate || 1)); // voltRate: the rate before the slower ARC (ARC_VOLT_RATE) - the beams keep their live length, only fewer fire (a quarter-rate beam held its walker to 245 u, the demo respawn check)
 function fireSkillChain(t, st, e, seen) {
   if (seen && seen.has(e.id)) return; // a second strike never re-hits what the first took
   const col = TOWERS[t.kind].color, d = shotDamage(t, st, e, st.dmg);
