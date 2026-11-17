@@ -450,3 +450,19 @@ check("IFR flares: the same damage a second in ticks twice as fast hits a MOVING
   for (const k of ["cross", "along"]) { const q = b[k] / a[k]; /* live 1.05 / 1.11 */
     if (q < 0.97 || q > 1.2) return k + " (moving): " + b[k] + " at twice the ticks vs " + a[k] + " (x" + q.toFixed(2) + "; expected x0.97-1.2: a little more, its first tick lands sooner - a tick speed that loses or gains a moving enemy's hits)"; }
 });
+check("IFR's mines and meteors are drawn by the meteor's look, a tertiary half a secondary, growing smoothly with level", () => {
+  const r = run(`(() => {
+    G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]);
+    const t = G.towers[0], out = { sec: [], ter: [], prim: [] }, r0 = 1;
+    for (const [m, h, f] of [[0, 0, 0], [1, 1, 1], [2, 1, 1], [3, 2, 1], [3, 3, 3], [4, 3, 3], [5, 4, 4]]) {
+      t.skills = { meteor: m, hellfire: h, firaga: f }; out.prim.push([towerLevel(t), m, ifrDrawK(t)]);
+      out.sec.push(ifrShardDrawR(t, 1, r0)); out.ter.push(ifrShardDrawR(t, 2, r0));
+    }
+    t.skills = {}; out.base = ifrShardDrawR(t, 1, r0); out.baseK = ifrDrawK(t);
+    return out;
+  })()`);
+  if (Math.abs(r.baseK - 1) > 1e-9 || Math.abs(r.base - 4 / 3) > 1e-9) return "at level 0 a secondary is drawn " + r.base + " x its radius (expected 4/3 as before) and the growth x" + r.baseK + " (expected 1)";
+  for (let i = 0; i < r.sec.length; i++) { if (Math.abs(r.ter[i] * 2 - r.sec[i]) > 1e-9) return "a tertiary is not half a secondary at step " + i; if (i && r.sec[i] < r.sec[i - 1]) return "the drawn size fell as the level rose at step " + i; }
+  if (r.prim[r.prim.length - 1][2] > 3.05 + 1e-9) return "level 13 + Meteor V grows the meteor x" + r.prim[r.prim.length - 1][2] + " (expected no more than the old top, 3.05)";
+  return "";
+});

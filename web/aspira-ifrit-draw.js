@@ -8,7 +8,14 @@
 // DRAWN x IFR_METEOR_SIZE_K - in flight with its tracer, the burst shards, the charges in orbit (their Hellfire ring and Flare rays with them) -
 // but not Meteor V's big ones (b.big, IFR_BIG_DRAW_K, as they were); the hit sizes (IFR_BALL_RAD) untouched
 const IFR_METEOR_SIZE_K = 2;
-const IFR_METEOR_DRAW_K = 1.25, ifrDrawK = t => IFR_METEOR_DRAW_K ** (typeof skillOf === "function" ? skillOf(t, "meteor") : 0);
+// GROWS SMOOTHLY (owner, 2026-11-16: "mines and meteors should grow in size based on overall level, meteor adds a size multiplier when meteor is flung, but this size change should be more gradual and less abrupt"):
+// the drawn meteor and mines are x (1 + IFR_LVL_DRAW_G per tower level, 0-13) x (1 + IFR_TIER_DRAW_G per Meteor tier, 0-V) - level 0 as before, level 13 + Meteor V x3.04
+// (the old steps x1.25 a tier topped out at x3.05); the DRAWING only, no hit size reads it
+const IFR_LVL_DRAW_G = 0.04, IFR_TIER_DRAW_G = 0.2;
+const ifrLevelK = t => 1 + IFR_LVL_DRAW_G * (typeof towerLevel === "function" ? towerLevel(t) : 0);
+const ifrDrawK = t => ifrLevelK(t) * (1 + IFR_TIER_DRAW_G * (typeof skillOf === "function" ? skillOf(t, "meteor") : 0));
+const IFR_TERT_DRAW_K = 0.5; /* a tertiary (gen 2) mine or meteor drawn HALF a secondary's (owner, 2026-11-16: "tertiary mines should be half the size of the secondary mines") */
+const ifrShardDrawR = (t, gen, r) => r * (gen === 2 ? IFR_TERT_DRAW_K : 1) * IFR_SHARD_DRAW * IFR_METEOR_SIZE_K * ifrDrawK(t); // a secondary / tertiary meteor's drawn radius, in flight and as a mine alike (no jump on landing)
 const IFR_MINI_R = 20; /* (IFR_MINI_L, the fade time, lives in aspira-ifrit.js: the game ages the circles and the simulator loads no draw file) */ // the tertiary meteor's hit ring: radius 20 u (40 u across: the owner's "40u circle"), fading over 0.5 s (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well")
 // THE TERTIARY HIT CIRCLE (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well"): a look only -
 // where a re-split small meteor hits, a ring in the fire circle's look that grows from 30% to full while it fades over IFR_MINI_L
@@ -24,7 +31,7 @@ function drawIfrCharge(t, st, low, far) { // far: true the meteors behind the to
   const cy = ifrCentre(t).y;
   const n = Math.max(1, st.store || 1); // the stored meteors, evenly round the orbit; the one still charging grows to the meteor it launches
   const h = skillOf(t, "hellfire"), fl = skillOf(t, "firaga");
-  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n); if (far != null && (c.y < cy) !== far) continue; const f = Math.min(1, t.ifrCharge - k), r = st.ballR * (0.3 + 0.7 * f) * IFR_METEOR_SIZE_K; drawIfrMeteor(c.x, c.y, r, true, low); ifrBodyMarks(c.x, c.y, r, h, fl, f); } // (the charges in orbit x IFR_METEOR_SIZE_K since 2026-11-09; they had kept their size so as not to crowd the tower's hex)
+  for (let k = 0; k < n && k < t.ifrCharge; k++) { const c = ifrChargeAt(t, k, n); if (far != null && (c.y < cy) !== far) continue; const f = Math.min(1, t.ifrCharge - k), r = st.ballR * (0.3 + 0.7 * f) * IFR_METEOR_SIZE_K * ifrLevelK(t); drawIfrMeteor(c.x, c.y, r, true, low); ifrBodyMarks(c.x, c.y, r, h, fl, f); } // (the charges in orbit x IFR_METEOR_SIZE_K since 2026-11-09; they had kept their size so as not to crowd the tower's hex)
 }
 // THE BODY SHOWS THE BUILD (owner, 2026-11-06: "I want the upgrades to each update a visual feature of the tower as well as their attacks / for example
 // with IFR / for the meteors that orbit it / meteor: bigger (already exists) / hellfire: brighter/thicker red ring around / flare: little flare on top of
@@ -111,9 +118,8 @@ function drawIfrBalls(t, low) {
   const dk = ifrDrawK(t);
   for (const b of t.ifrBalls) if (!(b.wait > 0)) {
     const bk = b.big ? IFR_BIG_DRAW_K : IFR_METEOR_SIZE_K; /* Meteor V's big one as it was; every other meteor and shard x2 */
-    const sizeK = b.gen === 1 ? IFR_SHARD_DRAW : (b.gen === 2 ? IFR_SHARD_DRAW * IFR_METEOR_SIZE_K : 1); // tertiaries (gen 2) drawn x2 more, the hitbox unchanged (owner, 2026-11-10: "visual, double size of ifr secondary and tertiary meteors"; the secondaries got theirs in 7.14.x)
     if (!b.gen) drawMeteorTrail(b, dk * bk);
-    drawIfrMeteor(b.x, b.y, b.r * sizeK * dk * bk, b.gen ? COL.yellow : true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
+    drawIfrMeteor(b.x, b.y, b.gen ? ifrShardDrawR(t, b.gen, b.r) : b.r * dk * bk, true, low, b.gen ? Math.min(1, (b.flown || 0) / IFR_FADE_IN_U) : 1);
     if (!b.gen) ifrBodyMarks(b.x, b.y, b.r * dk * bk, skillOf(t, "hellfire"), skillOf(t, "firaga"), 1); // IN FLIGHT AS IN ORBIT (owner, 2026-11-10: "primary IFR meteors should look like the ones that are orbiting, not blank"): the Hellfire ring and Flare rays
   } /* (IFR_FADE_IN_U: full by 25 u - owner, 2026-10-21: "make the IFR secondary meteors fade in much faster (like 100% around 25u away)"; was over its harmless 100) */ /* (wait: a fan meteor not released yet); a SPAWNED one fades in over its harmless first IFR_ARM_HIT_U (owner, 2026-10-20) */
 }
@@ -122,13 +128,12 @@ function drawIfrBalls(t, low) {
 const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1, IFR_MINE_RING_A = 0.07; // RING_A: the reach ring at minimal opacity, ~0.06 armed (owner, 2026-11-16: "IFR mines, only show detonation circle with minimally visible opacity"; was 0.25)
 function drawIfrMines(t, low) {
   if (!t.ifrMines || !t.ifrMines.length) return;
-  const dk = ifrDrawK(t);
   for (const m of t.ifrMines) {
-    const sizeK = (m.gen === 2 ? IFR_SHARD_DRAW * IFR_METEOR_SIZE_K : IFR_SHARD_DRAW) * IFR_METEOR_SIZE_K, since = m.age - IFR_MINE_ARM_S;
+    const since = m.age - IFR_MINE_ARM_S;
     let a = since < 0 ? IFR_MINE_DIM + (0.55 - IFR_MINE_DIM) * (m.age / IFR_MINE_ARM_S) : IFR_MINE_LIT, inner = 1;
     if (since >= 0 && since < IFR_MINE_PULSE_S) { const p = 1 - since / IFR_MINE_PULSE_S; a = IFR_MINE_LIT + (1 - IFR_MINE_LIT) * p; inner = 1 + 1.5 * p; }
     const left = IFR_MINE_LIFE_S - m.age; if (left < IFR_MINE_FADE_S) a *= Math.max(0, left / IFR_MINE_FADE_S);
-    drawIfrMeteor(m.x, m.y, m.r * sizeK * dk, COL.yellow, low, a, inner);
+    drawIfrMeteor(m.x, m.y, ifrShardDrawR(t, m.gen, m.r), true, low, a, inner); /* the meteor's own look: its black core and ember glow (owner, 2026-11-16: "IFR mines should look like the meteor") */
     if (since >= 0) drawIfrRingAt(m.x, m.y, IFR_MINE_REACH, a * IFR_MINE_RING_A, low, 1); /* its reach, a faint ring once armed (owner, 2026-11-13: "IFR B") */
   }
 }
