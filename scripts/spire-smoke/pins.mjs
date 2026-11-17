@@ -1,6 +1,9 @@
 // /spire RULE PINS (2026-11-05): rules shipped without a check of their own. Each one FAILS on the behaviour it replaced (proven by
 // putting the old code back on a scratch copy). Registered into the smoke harness; smoke.mjs imports this file before it reports.
 // Its own page env, so the smoke checks' game state never leaks in.
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { boot, check, frames } from "./harness.mjs";
 import { makeGame } from "../aspira-sim/sim.mjs";
 
@@ -282,4 +285,24 @@ check("Challenge screen: the corner title keeps the boss just beaten in gray wit
   if (b.gray) return "after the click: the corner name is still gray";
   if (b.corner !== r.hint) return "after the click: the corner poem is not the new boss's hint";
   if (!b.midHidden) return "after the click: the centred poem is still up";
+});
+
+check("Challenge screen: the poem and the button sit inside one visible card with an opaque background; after challengeNext() the card is hidden (owner, 2026-11-16: \"Put this on a card / Haiku unreadable on challenge screen\")", () => {
+  // the smoke's DOM is a fake (no containment, no computed style), so the markup and the stylesheet are read as text
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+  const html = fs.readFileSync(path.join(root, "api/templates/aspira.html"), "utf8"), css = fs.readFileSync(path.join(root, "web/aspira.css"), "utf8");
+  const card = /<div[^>]*id="asp-chalcard"[^>]*>([\s\S]*?)<\/div>\s*<div class="asp-spend"/.exec(html);
+  if (!card || !card[1].includes('id="asp-chalpoem"') || !card[1].includes('id="asp-challenge"')) return "the poem and the button are not both inside #asp-chalcard in the template";
+  const rule = /#asp \.asp-chalcard \{([^}]*)\}/.exec(css);
+  if (!rule || !/hsl\(var\(--bg-hsl\)\)/.test(rule[1]) || /background:[^;]*transparent/.test(rule[1])) return "the card's background is not the opaque --bg-hsl base";
+  const r = run(`(() => {
+    G = newGame(); G.started = true; G.wave = STAR_EVERY; G.challenged = 0; G.enemies = []; G.spawns = []; G.fleetQ = []; G.nextIn = 1e9;
+    const card = $("asp-chalcard");
+    const snap = () => { updateHud(); updateWaveList(); placeChallenge(); return card.hidden; };
+    if (!afterBoss()) return "the rig is not on the Challenge screen";
+    const up = snap(); challengeNext(); return { up, after: snap() };
+  })()`);
+  if (typeof r === "string") return r;
+  if (r.up) return "challenge screen: the card is hidden";
+  if (!r.after) return "after the click: the card is still shown";
 });

@@ -226,8 +226,7 @@ function fitWaveList() {
   if (!matchMedia(PHONE_PORTRAIT_Q).matches) return;
   if (!waveGapPx) { const t = document.createElement("div"); t.style.cssText = "position:absolute;visibility:hidden;width:var(--space-2)"; document.body.appendChild(t); waveGapPx = t.getBoundingClientRect().width; t.remove(); }
   const spots = [[CX, CY, CORE_R], ...CELLS.filter(c => OPEN_SLOTS.includes(c.ang)).map(c => [c.x, c.y, CELL_S])].map(([x, y, r]) => boardScreenRect(x, y, r));
-  const chal = $("asp-challenge"); if (chal && !chal.hidden) spots.push(chal.getBoundingClientRect()); // (the Challenge button too)
-  const ac = $("asp-autochal"); if (ac && !ac.hidden && !ac.classList.contains("asp-autochal-on")) spots.push(ac.getBoundingClientRect()); // (and the auto-challenge box under it)
+  const chal = $("asp-chalcard"); if (chal && !chal.hidden) spots.push(chal.getBoundingClientRect()); // (the Challenge card too: poem, button, auto-challenge box)
   const g = waveGapPx, hits = () => { const L = box.getBoundingClientRect(); return spots.some(b => L.left < b.right + g && b.left - g < L.right && L.top < b.bottom + g && b.top - g < L.bottom); };
   for (let n = Math.ceil(cells.length / 5); n > Math.max(waveLiveRows, 1) && hits(); n--)
     for (const c of cells.slice((n - 1) * 5)) c.style.display = "none";
@@ -264,10 +263,10 @@ function placeChallenge() {
   const btn = $("asp-challenge");
   const ready = bossInv.phase === "off" && performance.now() / 1000 - (bossInv.offAt || 0) >= CHALLENGE_DELAY;
   if (autoChalBox(!btn.hidden, ready)) { challengeNext(); return; }
-  const poem = $("asp-chalpoem"); poem.hidden = btn.hidden; // the poem of the boss the button challenges, centred above it (owner, 2026-11-16: "Show centered poem above challenge button")
+  const poem = $("asp-chalpoem"), card = $("asp-chalcard"); poem.hidden = card.hidden = btn.hidden; // (the card holds the poem, the button and the auto-challenge box: owner, 2026-11-16: "Put this on a card") // the poem of the boss the button challenges, centred above it (owner, 2026-11-16: "Show centered poem above challenge button")
   if (btn.hidden) return;
   { const h = arcanaOf(G.wave + STAR_EVERY).hint.join("\n"); if (poem.textContent !== h) poem.textContent = h; }
-  btn.style.visibility = poem.style.visibility = ready ? "" : "hidden";
+  card.style.visibility = ready ? "" : "hidden";
   if (!ready) return;
   // under the core AND clear of the build slots round it (a slot under the button could not be tapped)
   const wy = Math.max(CY + CORE_R + LIFE_GAP * LIFE_RINGS, ...CELLS.map(c => c.y + CELL_S * TOWER_K)) + CHALLENGE_BELOW, root = $("asp").getBoundingClientRect();
@@ -278,10 +277,9 @@ function placeChallenge() {
   const r = warp.ent.getBoundingClientRect();
   const x = r.left + P.x * r.width / warp.ent.width, y = r.top + P.y * r.height / warp.ent.height;
   // ...and INSIDE the window, above the speed bar (landscape phones put the lowest slot past it): clamped by its own rect
-  const b = btn.getBoundingClientRect(), foot = document.querySelector(".asp-foot"), fy = foot ? foot.getBoundingClientRect().top : innerHeight, g = waveGapPx || 8;
+  const b = card.getBoundingClientRect(), foot = document.querySelector(".asp-foot"), fy = foot ? foot.getBoundingClientRect().top : innerHeight, g = waveGapPx || 8;
   const cx = Math.min(Math.max(x, root.left + b.width / 2 + g), root.right - b.width / 2 - g), cy = Math.max(root.top + g, Math.min(y, fy - b.height - g));
   const L = (cx - root.left) + "px", T = (cy - root.top) + "px";
-  poem.style.left = L; poem.style.top = T;
-  if (btn.style.left === L && btn.style.top === T) return;
-  btn.style.left = L; btn.style.top = T; fitWaveList(); // (the list keeps clear of it: it moved)
+  if (card.style.left === L && card.style.top === T) return;
+  card.style.left = L; card.style.top = T; fitWaveList(); // (the list keeps clear of it: it moved)
 }
