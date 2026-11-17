@@ -109,7 +109,7 @@ function solTrackBeams() {
       // plain line in SOL's colour from the tower to its lock, brightening as the next pulse comes - over the aim of a NEW lock (B.aim, SOL_AIM), else over
       // the last SOL_SHOT_AT of REAL time before the pulse, when the shot's build-up sounds (solSfx, aspira-sfx.js); before that no line (owner, 2026-11-09:
       // "SOL charging time should last as long as the sound does at 1x speed" - the look only, the fire rate is unchanged)
-      const shotS = typeof SOL_SHOT_AT === "number" ? SOL_SHOT_AT : 0.62, real = Math.max(0, t.solCd || 0) / (typeof gameSpeedX === "function" ? gameSpeedX() : 1);
+      const shotS = typeof solShotS === "function" ? solShotS(t) : 0.62, real = Math.max(0, t.solCd || 0) / (typeof gameSpeedX === "function" ? gameSpeedX() : 1);
       // ONLY IN THE CHARGE WINDOW, NEVER UNDER THE KILL'S FLASH (owner, 2026-11-09: "after SOL beam finishes firing, beam needs to disappear, rn visually
       // it looks like it retargets immediately and then halts for the frames after the beam kills the target"): no line for a new lock's aim (B.aim
       // stays the game's), none while the killing beam's flash fades (t.solFl), then the line over the last SOL_SHOT_AT before the next pulse

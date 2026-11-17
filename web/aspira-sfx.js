@@ -326,6 +326,10 @@ function sfxFor(name, kind) {
 // yamato"): the "sol" clip plays its build-up only - faded out over SOL_SHOT_FADE at its own shot - and "solshot" (TBaYam02) lands on the pulse;
 // without a "solshot" sample the old whole clip plays. The charge line (aspira-effects.js) keeps spanning the build-up
 const SOL_SHOT_AT = 0.62, SOL_SHOT_FADE = 0.025, solVoice = new WeakMap();
+// A BARE SOL'S CHARGE, STRETCHED (owner, 2026-11-17: "extend the sound effect of aiming a bit to compensate" - a bare Sol aims SOL_AIM0_K x as long,
+// aspira-sol.js): its build-up plays SOL_AIM0_SND x slower (a lower pitch - no pitch-kept stretch in WebAudio), so it fills 0.93 s of its 1.2 s aim
+// at 1x, not 0.62; the aim line (aspira-effects.js) spans the same window
+const SOL_AIM0_SND = 1.5, solShotS = t => SOL_SHOT_AT * (typeof towerLevel === "function" && towerLevel(t) === 0 ? SOL_AIM0_SND : 1);
 function solVoiceStop(t, v) {
   solVoice.delete(t); if (!v || !AC) return;
   const n = AC.currentTime;
@@ -338,11 +342,13 @@ function solSfx(t, e, cd) { // each SOL step: e its lock (null: none), cd the ga
   if (v && pre && v.e !== e) { solVoiceStop(t, v); return; } // lost or switched before the shot: stop, never play out
   if (!e || (v && pre) || muted || AC.state !== "running" || !(SAMPLES.sol && SAMPLES.sol.length)) return;
   const real = Math.max(0, cd) / gameSpeedX();
-  if (real > SOL_SHOT_AT || (v && now < v.shot + 0.05)) return; // not yet in reach of the shot / the last shot just landed
+  const win = solShotS(t), rate = SOL_SHOT_AT / win;
+  if (real > win || (v && now < v.shot + 0.05)) return; // not yet in reach of the shot / the last shot just landed
   if (v) solVoiceStop(t, v);
   if ((playing.sol || 0) >= SOUND_MAX.sol) return;
   sfxBump("sol", now); if (!sfxMakeRoom("sol", now)) return;
-  const src = playSample("sol", 0, SOL_SHOT_AT - real), yam = SAMPLES.solshot && SAMPLES.solshot.length;
+  if (rate !== 1) sfxOpt = { rate }; // (playSample reads sfxOpt once)
+  const src = playSample("sol", 0, (win - real) * rate), yam = SAMPLES.solshot && SAMPLES.solshot.length;
   let bang = null;
   if (yam) { const g = src.__g.gain, v0 = g.value, at = now + real; try { g.setValueAtTime(v0, Math.max(now, at - SOL_SHOT_FADE)); g.linearRampToValueAtTime(0, at); src.stop(at + 0.01); } catch (err) { /* (a stopped source) */ } bang = playSample("solshot", real); }
   solVoice.set(t, { src, bang, e, shot: now + real });
