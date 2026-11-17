@@ -39,7 +39,7 @@ are this repo's gitignored `data/aspira-sfx/`.
 - **Shipping** (owner, 2026-10-19: "every group of changes that is the result of a balance battery run should result in a new minor version"; "stop
   doing the new day new minor thing"; 2026-11-05: separate copies of the code): a battery's changes = the next MINOR, anything else a PATCH, ONCE A
   SHIP, not a commit. The peers commit on their own branches in their own worktrees (`peer-balance` / `peer-visual` at `.wt/balance` / `.wt/visual`)
-  and never touch `web/aspira-version.txt`; `~/.claude/spire-ship2.sh [--minor] "<subject>" [branch ...]` cherry-picks their unshipped commits onto
+  and never touch `web/aspira-version.txt`; `~/.claude/spire-ship.sh [--minor] "<subject>" [branch ...]` (it refuses a ship whose commits add no line to `web/aspira-changelog.js` - owner, 2026-11-16: "ensure this always is the case"; `--no-changelog "<reason>"` only when a player notices nothing) cherry-picks their unshipped commits onto
   `tier-redesign`, bumps the version once, smokes, runs the spire pytest, pushes, moves exec-fn's pointer and deploys; each peer then `git rebase
   tier-redesign`. A new tower is a new major. ARCHITECTURE.md §9.4.
 - **Every balance patch runs the marks at FIVE point levels** (`VS_MARKS`, owner 2026-10-18; 2026-11-06: "also add a 0 point and 3 point check",
