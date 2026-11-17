@@ -179,6 +179,9 @@ let coins = [];
 // jitter from the enemy (COIN_JIT units); every coin banks its own value, and the kill's "+Nc" pops once, when its LAST
 // coin lands (the group's `left`). A fraction rides on the last coin; a sub-1 bounty is one plain dot.
 const COIN_FACES = [20, 10, 5], COIN_JIT = 14;
+// A CHANCE TO CLINK (owner, 2026-11-16: "credit collection sound is playing too frequently, maybe each coin has a chance of playing a sound instead
+// of always plays"): a landing coin clinks only if its random phase (ph, drawn when it dropped) falls in this share - no extra random draw
+const COIN_SFX_P = 0.25;
 let INSTANT_COINS = false; // the simulator: a kill banks at once, no coins to fly (2026-10-15, simulation speed - they were ~9% of a late game)
 function creditDot(x, y, b) {
   if (INSTANT_COINS) { G.money += b; return; }
@@ -210,7 +213,7 @@ function stepCoins(dt) {
     c.t += dt;
     const h = coinHome(c), dx = h.x - c.x, dy = h.y - c.y, d = Math.hypot(dx, dy), tm = c.t - COIN_HOLD, step = tm > 0 ? (COIN_V0 + COIN_ACC * tm) * dt : 0;
     if (d <= h.r || step >= d) {
-      c.done = true; G.money += c.b; if (typeof sfx === "function") sfx("coin"); // the pickup clink (owner, 2026-11-16; aspira-sfx.js SFX_FILES.coin)
+      c.done = true; G.money += c.b; if (c.ph < 6.283 * COIN_SFX_P && typeof sfx === "function") sfx("coin"); // the pickup clink (owner, 2026-11-16; aspira-sfx.js SFX_FILES.coin), on a COIN_SFX_P share of coins
       if (--c.grp.left > 0) continue; // the kill's popup waits for its last coin
       // SMALLER and from ABOVE the core, so it never hides it (owner, 2026-10-09): in 3D above its raised top too - a height
       // h stands h x tan(tilt) floor units up the screen
