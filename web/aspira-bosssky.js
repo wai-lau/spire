@@ -123,6 +123,7 @@ function starRed() {
 const bossShownN = () => {
   const b = G.enemies.find(e => (e.arcana || e.bossKin) && !e.dead); if (b) return b.n;
   if (G.wave > 0 && G.wave % STAR_EVERY === 0 && bossUp()) return G.wave;
+  if (afterBoss()) return G.wave; // the CHALLENGE screen keeps the boss just beaten (gray, no corner poem) until the button is clicked (owner, 2026-11-16: "On challenge screen, keep showing old boss name in gray")
   return Math.min(WIN_WAVE, (Math.floor(G.wave / STAR_EVERY) + 1) * STAR_EVERY);
 };
 // the shown boss's haiku for the HTML above the title (updateHud)

@@ -264,8 +264,10 @@ function placeChallenge() {
   const btn = $("asp-challenge");
   const ready = bossInv.phase === "off" && performance.now() / 1000 - (bossInv.offAt || 0) >= CHALLENGE_DELAY;
   if (autoChalBox(!btn.hidden, ready)) { challengeNext(); return; }
+  const poem = $("asp-chalpoem"); poem.hidden = btn.hidden; // the poem of the boss the button challenges, centred above it (owner, 2026-11-16: "Show centered poem above challenge button")
   if (btn.hidden) return;
-  btn.style.visibility = ready ? "" : "hidden";
+  { const h = arcanaOf(G.wave + STAR_EVERY).hint.join("\n"); if (poem.textContent !== h) poem.textContent = h; }
+  btn.style.visibility = poem.style.visibility = ready ? "" : "hidden";
   if (!ready) return;
   // under the core AND clear of the build slots round it (a slot under the button could not be tapped)
   const wy = Math.max(CY + CORE_R + LIFE_GAP * LIFE_RINGS, ...CELLS.map(c => c.y + CELL_S * TOWER_K)) + CHALLENGE_BELOW, root = $("asp").getBoundingClientRect();
@@ -279,6 +281,7 @@ function placeChallenge() {
   const b = btn.getBoundingClientRect(), foot = document.querySelector(".asp-foot"), fy = foot ? foot.getBoundingClientRect().top : innerHeight, g = waveGapPx || 8;
   const cx = Math.min(Math.max(x, root.left + b.width / 2 + g), root.right - b.width / 2 - g), cy = Math.max(root.top + g, Math.min(y, fy - b.height - g));
   const L = (cx - root.left) + "px", T = (cy - root.top) + "px";
+  poem.style.left = L; poem.style.top = T;
   if (btn.style.left === L && btn.style.top === T) return;
   btn.style.left = L; btn.style.top = T; fitWaveList(); // (the list keeps clear of it: it moved)
 }

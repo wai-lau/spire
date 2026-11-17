@@ -86,6 +86,9 @@ html, body, #asp { touch-action: manipulation; }
   50% { opacity: 0.7; filter: none; }
 }
 #asp #asp-challenge[hidden] { display: none; }
+/* the next boss's poem, centred above the Challenge button (placeChallenge) (owner, 2026-11-16: "Show centered poem above challenge button") */
+#asp .asp-chalpoem { position: absolute; z-index: var(--z-overlay); transform: translate(-50%, -100%); text-align: center; white-space: pre; font-size: var(--fs-2xs); line-height: var(--lh-snug); color: hsl(var(--pink-hsl)); pointer-events: none; padding-bottom: var(--space-1); }
+#asp .asp-chalpoem[hidden] { display: none; }
 /* AUTO-CHALLENGE (owner, 2026-11-08): the box under the Challenge button (placed by autoChalBox), and under the wave heading once ticked */
 #asp .asp-autochal { position: absolute; z-index: var(--z-overlay); transform: translateX(-50%); white-space: nowrap; display: flex; align-items: center; gap: var(--space-1); font-size: var(--fs-2xs); color: hsl(var(--green-hsl)); cursor: pointer; }
 #asp .asp-autochal.asp-autochal-on { position: static; transform: none; pointer-events: auto; padding: var(--space-1) 0; }
@@ -216,6 +219,7 @@ html, body, #asp { touch-action: manipulation; }
   text-transform: uppercase;
   color: hsl(var(--orange-hsl));
 }
+.asp-title.asp-title-done { color: hsl(var(--gray-hsl) / 0.45); } /* the Challenge screen: the boss just beaten (owner, 2026-11-16) */
 .asp-title.asp-title-boss { color: hsl(var(--pink-hsl)); } /* a boss's name in the title spot while it is out (aspira-ui.js) */
 
 /* ONE row (owner): small type, tight gaps, never wrapping */

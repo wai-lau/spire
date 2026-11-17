@@ -257,7 +257,7 @@ let lastNote = "", waveListAt = 0, hudAt = 0;
 function updateHud() {
   updateSpend(); // the spend bar's credits (aspira-chooser.js)
   updatePowers(); // the core powers' buttons under the title (aspira-powers.js)
-  { const h = bossHint(); if ($("asp-bosshint").textContent !== h) $("asp-bosshint").textContent = h; } // the boss's haiku above the title
+  { const h = afterBoss() ? "" : bossHint(); if ($("asp-bosshint").textContent !== h) $("asp-bosshint").textContent = h; } // the boss's haiku above the title
   setText($("asp-lives"), G.lives);
   setText($("asp-int"), (G.interest * 100).toFixed(1) + "%");
   setText($("asp-wave"), G.wave); // the HUD keeps Arabic numerals (owner); the upcoming-wave list is Roman
@@ -279,6 +279,7 @@ function updateHud() {
   const boss = G.enemies.find(e => (e.arcana || e.bossKin) && !e.dead);
   setText(document.querySelector(".asp-title"), arcanaOf(bossShownN()).name.toLowerCase());
   document.querySelector(".asp-title").classList.toggle("asp-title-boss", !!boss);
+  document.querySelector(".asp-title").classList.toggle("asp-title-done", afterBoss()); // the beaten boss's name in gray while the Challenge button is up; the corner poem hides (owner, 2026-11-16: "Hide poem on bottom right during challenge screen")
   if (!ui.paused) ui.pauseBtn = false;
   $("asp-sp-pause").classList.toggle("on", ui.paused); $("asp-sp-pause").classList.toggle("asp-held", ui.paused && !!ui.pauseBtn); // paused by the button: it flashes (owner, 2026-10-14) - a card's pause does not
   const mute = $("asp-mute");

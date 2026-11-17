@@ -261,3 +261,25 @@ check("boss arrival: the spreading triangle sweeps every coin home, and the boss
       return lines === 1 ? "" : "the boss line played " + lines + " times for two bosses of one wave (want once)";
     } finally { sfxSeq = seq0; Object.assign(bossInv, inv0); coins = []; } })()`);
 });
+
+check("Challenge screen: the corner title keeps the boss just beaten in gray with no corner poem, the NEXT boss's poem sits above the button; a click shows the new boss and its poem in the corner (owner, 2026-11-16: \"Show centered poem above challenge button / Hide poem on bottom right during challenge screen / On challenge screen, keep showing old boss name in gray / Upon clicking challenge / Update boss name in corner and show new poem\")", () => {
+  const r = run(`(() => {
+    G = newGame(); G.started = true; G.wave = STAR_EVERY; G.challenged = 0; G.enemies = []; G.spawns = []; G.fleetQ = []; G.nextIn = 1e9;
+    const title = document.querySelector(".asp-title"), corner = $("asp-bosshint"), mid = $("asp-chalpoem"), btn = $("asp-challenge");
+    const snap = () => { updateHud(); updateWaveList(); placeChallenge(); return { name: title.textContent, gray: title.classList.contains("asp-title-done"), corner: corner.textContent, mid: mid.textContent, midHidden: mid.hidden, btnHidden: btn.hidden }; };
+    if (!afterBoss()) return "the rig is not on the Challenge screen";
+    const beaten = arcanaOf(STAR_EVERY), next = arcanaOf(STAR_EVERY * 2), a = snap();
+    challengeNext(); const b = snap();
+    return { beaten: beaten.name.toLowerCase(), next: next.name.toLowerCase(), hint: next.hint.join("\\n"), a, b };
+  })()`);
+  if (typeof r === "string") return r;
+  const { a, b } = r;
+  if (a.name !== r.beaten) return "challenge screen: corner name " + a.name + ", not the beaten boss " + r.beaten;
+  if (!a.gray) return "challenge screen: the corner name is not gray (asp-title-done)";
+  if (a.corner !== "") return "challenge screen: the corner poem is still shown";
+  if (a.midHidden || a.mid !== r.hint) return "challenge screen: the centred poem is not the next boss's hint (" + JSON.stringify(a.mid) + ")";
+  if (b.name !== r.next) return "after the click: corner name " + b.name + ", not the new boss " + r.next;
+  if (b.gray) return "after the click: the corner name is still gray";
+  if (b.corner !== r.hint) return "after the click: the corner poem is not the new boss's hint";
+  if (!b.midHidden) return "after the click: the centred poem is still up";
+});
