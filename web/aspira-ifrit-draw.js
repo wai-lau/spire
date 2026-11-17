@@ -132,7 +132,7 @@ function drawIfrBalls(t, low) {
 // flight size, dim while it arms (rising smoothly), a bright pulse the moment it is armed, then steady, fading out over its last IFR_MINE_FADE_S
 const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1, IFR_MINE_RING_A = 0.07; // RING_A: the reach ring at minimal opacity, ~0.06 armed (owner, 2026-11-16: "IFR mines, only show detonation circle with minimally visible opacity"; was 0.25)
 // THE MINE'S X (2026-11-17): two strokes in Ifrit's colour, arms IFR_MINE_X_K x its drawn radius (at least IFR_MINE_X_MIN u), the arming pulse thickening it
-const IFR_MINE_X_K = 2.2, IFR_MINE_X_MIN = 4, IFR_MINE_X_W = 0.45;
+const IFR_MINE_X_K = 2.2, IFR_MINE_X_MIN = 4, IFR_MINE_X_W = 0.45, IFR_MINE_X_A = 0.5; // X_A: the X at half its alpha (owner, 2026-11-17: "halve mine intensity")
 function ifrMineX(x, y, r, a, inner, low) {
   const h = Math.max(IFR_MINE_X_MIN, r * IFR_MINE_X_K), col = COL[TOWERS.ifr.color];
   ctx.save(); ctx.globalAlpha = Math.min(1, a); ctx.strokeStyle = col; ctx.lineCap = "round"; ctx.lineWidth = Math.max(1.2, h * IFR_MINE_X_W) * Math.min(2, inner);
@@ -146,15 +146,16 @@ function drawIfrMines(t, low) {
     let a = since < 0 ? IFR_MINE_DIM + (0.55 - IFR_MINE_DIM) * (m.age / IFR_MINE_ARM_S) : IFR_MINE_LIT, inner = 1;
     if (since >= 0 && since < IFR_MINE_PULSE_S) { const p = 1 - since / IFR_MINE_PULSE_S; a = IFR_MINE_LIT + (1 - IFR_MINE_LIT) * p; inner = 1 + 1.5 * p; }
     const left = IFR_MINE_LIFE_S - m.age; if (left < IFR_MINE_FADE_S) a *= Math.max(0, left / IFR_MINE_FADE_S);
-    ifrMineX(m.x, m.y, ifrShardDrawR(t, m.gen, m.r), a, inner, low); /* a small X (owner, 2026-11-17: "IFR mines to be distinguishable from money, maybe replace mines with small X"; 11-16 to 11-17 the meteor look) */
+    ifrMineX(m.x, m.y, ifrShardDrawR(t, m.gen, m.r), a * IFR_MINE_X_A, inner, low); /* a small X (owner, 2026-11-17: "IFR mines to be distinguishable from money, maybe replace mines with small X"; 11-16 to 11-17 the meteor look) */
     if (since >= 0) drawIfrRingAt(m.x, m.y, IFR_MINE_REACH, a * IFR_MINE_RING_A, low, 1); /* its reach, a faint ring once armed (owner, 2026-11-13: "IFR B") */
   }
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
 // [IFR_FLARE_I0, IFR_FLARE_I_MAX] - the untaken flare IFR_FLARE_I0 bright (owner, 2026-10-20: "make level 0 flares much more visible"; was 1, the cap 3)
 const IFR_FLARE_I0 = 3, IFR_FLARE_I_MAX = 6;
+const IFR_FLARE_LOOK_K = 1.5; // every flare - a meteor's and the fire's (Hellfire's) - x1.5 brighter (owner, 2026-11-17: "1.5x flare and hellfire flare intensity"); Hellfire V's chain rings keep IFR_CHAIN_I
 const IFR_FLARE_MAIN_K = 3 /* 2 -> 3 (owner, 2026-10-20: "make the non-hellfire stars brighter") */; // a METEOR's flare (not the fire's) x this - "make non-hellfire flares more opaque and intense" (owner, 2026-10-20)
-function ifrFlareI(f) { if (f.hitI != null) return f.hitI; if (f.chain) return IFR_CHAIN_I; return (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
+function ifrFlareI(f) { if (f.hitI != null) return f.hitI; if (f.chain) return IFR_CHAIN_I; return IFR_FLARE_LOOK_K * (f.hf ? 1 : IFR_FLARE_MAIN_K) * Math.min(IFR_FLARE_I_MAX, IFR_FLARE_I0 * Math.max(1, Math.sqrt((f.hit || 0) / (TOWERS.ifr.dmg * IFR_TICK_K[0])))); } // (the root: stop I's hit is ~4x the untaken one, VI's ~9x)
 // THE GLOW (owner, 2026-10-19: "hellfire highlight should be a glow which reduces in opacity gradually near the end of spoke"; 2026-11-04: "replace
 // all stepped opacity flares to use a faded glow instead"): each spoke is three glow layers - a halo, a mid and a narrow core, each brightest on
 // its centre line, clear at the hit band's edge and fading as (1 - t)^3 to the tip. 3D: GLOW LINES on the GPU (shape 7, aspira-fxgl.js); 2D:
