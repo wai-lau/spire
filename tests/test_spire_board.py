@@ -182,3 +182,15 @@ def test_shown_caps_each_major_not_the_whole_board(monkeypatch):
     rows += [{"initials": "OLD", "lives": 0, "won": False, "wave": 12, "ts": 99, "ver": "6.3.1"}, {"initials": "NOV", "lives": 0, "won": False, "wave": 11, "ts": 98}]
     got = [r["initials"] for r in spire_board.shown(rows)]
     assert got == ["N04", "N03", "OLD", "NOV"]
+
+
+def test_shown_majors_one_to_six_are_one_group(monkeypatch):
+    """v1 to v6 share ONE page (owner, 2026-11-17: "merge scoreboard for v1 to v6"): the top SHOW_MAX across all of them, rows
+    with no version included; v7 keeps its own cap."""
+    monkeypatch.setattr(spire_board, "SHOW_MAX", 2)
+    rows = [{"initials": f"O{i}", "lives": 0, "won": False, "wave": 20 + i, "ts": i, "ver": v} for i, v in enumerate(["3.1.0", "5.2.1", "6.4.0", "1.0"])]
+    rows += [{"initials": "NOV", "lives": 0, "won": False, "wave": 11, "ts": 50}]
+    rows += [{"initials": f"S{i}", "lives": 0, "won": False, "wave": 30 + i, "ts": 60 + i, "ver": "7.2.0"} for i in range(3)]
+    got = [r["initials"] for r in spire_board.shown(rows)]
+    assert got == ["S2", "S1", "O3", "O2"]
+

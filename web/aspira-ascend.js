@@ -11,7 +11,9 @@ const ASC_URL = "/api/spire/ascendants", ASC_MIN_WAVE = 11;
 // chevrons either side of the title page to the older and newer majors that have rows, each greyed at its end. Ranked within the major as ever
 const ASC_ROWS = 11; // the board's height in rows (ascRender)
 const ASC_MAJOR_FROM = [[Date.UTC(2026, 9, 15) / 1000, 5], [Date.UTC(2026, 9, 11) / 1000, 4], [0, 3]]; // [from ts, major], newest first - rows with no version only
-const ascMajor = e => { const m = /^(\d+)\./.exec((e.ver || "")); if (m) return +m[1]; const ts = e.ts || 0; return (ASC_MAJOR_FROM.find(([t]) => ts >= t) || [0, 0])[1]; };
+// V1 TO V6, ONE PAGE (owner, 2026-11-17: "merge scoreboard for v1 to v6"): a major up to ASC_MERGED_TO pages as ASC_MERGED_TO, titled "v1-6"
+const ASC_MERGED_TO = 6, ascPageKey = m => (m <= ASC_MERGED_TO ? ASC_MERGED_TO : m), ascPageName = k => (k === ASC_MERGED_TO ? "v1\u2013" + ASC_MERGED_TO : "v" + k);
+const ascMajor = e => { const m = /^(\d+)\./.exec((e.ver || "")); if (m) return ascPageKey(+m[1]); const ts = e.ts || 0; return ascPageKey((ASC_MAJOR_FROM.find(([t]) => ts >= t) || [0, 0])[1]); };
 const ascVerNow = () => { const el = document.querySelector(".asp-ver span"); return el ? el.textContent.trim() : ""; };
 const ASC_TITLE = '<div class="asp-asc-head"><button type="button" class="asp-primary asp-asc-chev" data-d="-1" aria-label="Older version">\u2039</button><p class="asp-asc-title">Top players</p><button type="button" class="asp-primary asp-asc-chev" data-d="1" aria-label="Newer version">\u203A</button></div>';
 const asc = { all: [], mine: null, pending: null, major: 0 };
@@ -56,7 +58,7 @@ function ascRender() {
   if (!board) return;
   const ms = ascMajors(), i = ms.indexOf(asc.major), title = document.querySelector("#asp-asc .asp-asc-title");
   for (const b of document.querySelectorAll("#asp-asc .asp-asc-chev")) b.disabled = +b.dataset.d < 0 ? i <= 0 : i >= ms.length - 1;
-  if (title) { title.textContent = "Top players"; const v = document.createElement("span"); v.className = "asp-asc-maj"; v.textContent = "v" + asc.major; title.append(v); } // two lines, the chevrons as tall as both (owner, 2026-11-09)
+  if (title) { title.textContent = "Top players"; const v = document.createElement("span"); v.className = "asp-asc-maj"; v.textContent = ascPageName(asc.major); title.append(v); } // two lines, the chevrons as tall as both (owner, 2026-11-09)
   board.textContent = "";
   const mine = asc.mine, pending = asc.pending && ascMajor(asc.pending) === asc.major ? asc.pending : null;
   let entries = asc.all.filter(e => ascMajor(e) === asc.major);

@@ -43,6 +43,7 @@ HIDDEN = "spire_ascendants_hidden.json"
 # board is shown, the journal untouched like OWNER_MARKS and HIDDEN
 FIXES = "spire_ascendants_fix.json"
 SHOW_MAX = 500  # the most the GET returns OF EACH MAJOR VERSION (display only - the store keeps every entry)
+MERGED_TO = 6  # majors 1 .. MERGED_TO are ONE page (owner, 2026-11-17: "merge scoreboard for v1 to v6"); rows with no version are from before 5.x, so in it too
 
 
 def shown(rows: list) -> list:
@@ -52,6 +53,7 @@ def shown(rows: list) -> list:
     out = []
     for r in ranked(rows):
         k = str(r.get("ver", "")).split(".")[0]
+        k = k if k.isdigit() and int(k) > MERGED_TO else "1-%d" % MERGED_TO
         seen[k] = seen.get(k, 0) + 1
         if seen[k] <= SHOW_MAX:
             out.append(r)
