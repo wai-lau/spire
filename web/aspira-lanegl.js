@@ -27,7 +27,8 @@ const lglBody = (prof, aSrc, curtain) => "(1.0 - " + prof.slice(0, -1).map(([, l
 // width of the old profile, so it reaches as far as before; glowK: the glow's alpha over its old share of the line's (c.x / (c.y x the glow's base)), at
 // most 1 - an aurora's AUR_GLOW lifts it there, so its interior is the line's body; a dimmer glow (a fading lane) is fainter
 const lglGlow = (hw, body, glowK, d) => `{ float a = min(1.0, ${body} * ${glowK}) * (1.0 - smoothstep(${(hw * LGL_GLOW_IN).toFixed(4)}, ${hw.toFixed(4)}, ${d})); laneG = laneG * (1.0 - a) + vec4(col, 1.0) * a; }`;
-const AUR_GLOW = 2.2, AUR_WIDE = 0.8, AUR_CURTAIN = 0.35; // the aurora: its glow's alpha x, its distance x (under 1: wider)
+const AUR_GLOW = 2.2, AUR_WIDE = 0.8, AUR_CURTAIN = 0.35; // (AUR_CURTAIN: the line body's mean curtain share, lglBody)
+const AUR_BODY = 0.9, AUR_EDGE = 5.0, AUR_TAIL = 1.3, AUR_WHITE = 0.3; // THE CURTAIN (2026-11-18): its alpha x the line's, the edge's sharpness, the rays' fade, the edge's whiteness // the aurora: its glow's alpha x, its distance x (under 1: wider)
 const LANE_GLSL = `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 #define LHP highp
@@ -37,7 +38,7 @@ const LANE_GLSL = `
 uniform LHP vec4 laneA[${LGL_N}]; uniform vec4 laneB[${LGL_N}], laneC[${LGL_N}]; uniform float laneN, laneK; uniform LHP float laneTime; uniform LHP vec2 laneSh; uniform sampler2D laneT;
 varying LHP vec2 lw;
 vec4 laneG, laneL;
-void laneFlush(float dG, float dL, vec4 b, vec4 c, LHP vec2 p) { // one group: b = colour + group, c = glow alpha, line alpha, boss; p: the pixel (world, round the core)
+void laneFlush(float dG, float dL, float sL, vec4 b, vec4 c, LHP vec2 p) { // sL: the nearest lane's signed distance (its side) // one group: b = colour + group, c = glow alpha, line alpha, boss; p: the pixel (world, round the core)
   vec3 col = b.rgb;
   if (c.z < 0.5 && (dL < ${(LGL_LMAX - 1).toFixed(1)} || dG < ${(LGL_DMAX - 1).toFixed(1)})) { // AN AURORA (its maths only near a lit lane) (owner, 2026-11-06: "how hard would it be to just visually make the non boss lanes look like auroras?" - "1", on the floor):
     // shimmer bands drifting along the spiral (radius + angle), the glow's edge waving (its distance offset by slow waves), a gentle pulse, a faint
@@ -55,13 +56,19 @@ void laneFlush(float dG, float dL, vec4 b, vec4 c, LHP vec2 p) { // one group: b
     ${lglLevels(BOSS_LINE_SOFT, "1.0", "c.y", "dL", "laneL")}
   } else {
     ${lglGlow(LIT_GLOW_SOFT[0][0] / 2 * LANE_PLAIN_W, lglBody(LIT_LINE_SOFT, "c.y", true), "min(1.0, c.x / max(1e-4, c.y * " + LIT_GLOW_A.toFixed(4) + "))", "dG")}
-    ${lglLevels(LIT_LINE_SOFT, LANE_PLAIN_W.toFixed(4), "c.y", "dL", "laneL")} /* x LANE_PLAIN_W (4 since 2026-11-07): the glow's 72 u half width inside LGL_DMAX, the line's 24 inside LGL_LMAX */
-    if (dL < ${(LGL_LMAX - 1).toFixed(1)}) { // THE CURTAIN along the whole lane: the line's own distance field (LGL_LMAX u either side), a smooth (1 - d)^2 fade across, waving and
-      // shimmering like the glow above - on the line's layer, which runs the lane's length (the glow's is masked to the core's surround)
+    ${lglLevels(LIT_LINE_SOFT.slice(0, -1), LANE_PLAIN_W.toFixed(4), "c.y", "dL", "laneL")} /* NO CRISP LINE (owner, 2026-11-18: "improve lane aurora-ness, they still look like lines with glow"): the soft levels only, the curtain below is the body; x LANE_PLAIN_W (4 since 2026-11-07): the glow's 72 u half width inside LGL_DMAX, the line's 24 inside LGL_LMAX */
+    if (dL < ${(LGL_LMAX - 1).toFixed(1)}) { // THE CURTAIN, the lane's body (owner, 2026-11-18: "improve lane aurora-ness, they still look like lines with
+      // glow"): an aurora's bright, sharp lower edge on one side of the lane (sL < 0), its rays fading out long on the other; RAYS across the band - its
+      // brightness streaked along the lane (three drifting waves round the spiral), the edge folding (wob) - whiter at the edge, the lane's colour in the rays
       LHP float ang = atan(p.y, p.x), rr = length(p), t = laneTime;
-      float sh = 0.5 + 0.5 * sin(rr * 0.045 - t * 0.7 + 1.7 * sin(ang * 2.0 + t * 0.25)), wob = 3.0 * sin(rr * 0.031 + t * 0.9 + ang * 3.0);
-      float a = c.y * ${AUR_CURTAIN.toFixed(2)} * (0.35 + 0.9 * sh) * pow(max(0.0, 1.0 - max(0.0, dL + wob) / ${(LGL_LMAX - 2).toFixed(1)}), 2.0);
-      laneL = laneL * (1.0 - a) + vec4(col, 1.0) * a;
+      float sh = 0.5 + 0.5 * sin(rr * 0.045 - t * 0.7 + 1.7 * sin(ang * 2.0 + t * 0.25)), wob = 4.0 * sin(rr * 0.031 + t * 0.9 + ang * 3.0) + 2.0 * sin(ang * 11.0 - t * 0.6);
+      float x = clamp((sL + wob) / ${(LGL_LMAX - 2).toFixed(1)}, -1.0, 1.0);
+      float prof = x < 0.0 ? pow(1.0 + x, ${AUR_EDGE.toFixed(1)}) : pow(1.0 - x, ${AUR_TAIL.toFixed(2)}); // sharp edge / long tail
+      float ray = pow(0.5 + 0.5 * sin(ang * 90.0 + 2.5 * sin(ang * 7.0 + t * 0.35) + t * 0.6), 2.0);
+      ray = 0.35 + 0.65 * mix(ray, 0.5 + 0.5 * sin(ang * 37.0 - t * 0.45 + 1.3 * sin(ang * 5.0 - t * 0.2)), 0.4);
+      float a = min(1.0, c.y * ${AUR_BODY.toFixed(2)} * (0.55 + 0.6 * sh) * prof * (x < 0.0 ? 1.0 : ray));
+      vec3 cc = mix(col, vec3(1.0), ${AUR_WHITE.toFixed(2)} * pow(max(0.0, 1.0 - abs(x)), 3.0));
+      laneL = laneL * (1.0 - a) + vec4(cc, 1.0) * a;
     }
   }
 }
@@ -70,16 +77,16 @@ void lanes() { // laneG, laneL: the lit lanes' glow and line, premultiplied, mas
   if (laneN < 0.5) return;
   LHP vec2 p = lw + laneSh; float r = length(p);
   if (r > ${R0.toFixed(1)}) return; // (both masks are nothing past R0)
-  float dG = 1e3, dL = 1e3, grp = -1.0; vec4 b = vec4(0.0), c = vec4(0.0);
+  float dG = 1e3, dL = 1e3, sL = 1e3, grp = -1.0; vec4 b = vec4(0.0), c = vec4(0.0);
   for (int i = 0; i < ${LGL_N}; i++) {
     if (float(i) >= laneN) break;
-    if (laneB[i].w != grp) { if (grp >= 0.0) laneFlush(dG, dL, b, c, p); grp = laneB[i].w; dG = 1e3; dL = 1e3; b = laneB[i]; c = laneC[i]; }
+    if (laneB[i].w != grp) { if (grp >= 0.0) laneFlush(dG, dL, sL, b, c, p); grp = laneB[i].w; dG = 1e3; dL = 1e3; sL = 1e3; b = laneB[i]; c = laneC[i]; }
     LHP vec4 A = laneA[i]; LHP vec2 q = vec2(A.x * p.x + A.y * p.y, A.x * p.y - A.y * p.x); // turned back by the lane's angle
     LHP vec2 t = clamp(q / ${(2 * LGL_RT).toFixed(1)} + 0.5, ${(0.5 / LGL_T).toFixed(6)}, ${(1 - 0.5 / LGL_T).toFixed(6)});
     vec4 s = texture2D(laneT, A.zw + t * vec2(0.25, ${(1 / 3).toFixed(6)}));
-    dL = min(dL, max(abs(s.r * 2.0 - 1.0) * ${LGL_LMAX.toFixed(1)}, s.g * ${LGL_LMAX.toFixed(1)} - ${(0.75 * 2 * LGL_RT / LGL_T).toFixed(4)})); dG = min(dG, s.b * ${LGL_DMAX.toFixed(1)});
+    { float sd = (s.r * 2.0 - 1.0) * ${LGL_LMAX.toFixed(1)}, d1 = max(abs(sd), s.g * ${LGL_LMAX.toFixed(1)} - ${(0.75 * 2 * LGL_RT / LGL_T).toFixed(4)}); if (d1 < dL) { dL = d1; sL = sd; } } dG = min(dG, s.b * ${LGL_DMAX.toFixed(1)});
   }
-  if (grp >= 0.0) laneFlush(dG, dL, b, c, p);
+  if (grp >= 0.0) laneFlush(dG, dL, sL, b, c, p);
   float gm = pow(max(0.0, 1.0 - r / ${GLOW_FADE_R.toFixed(1)}), ${GLOW_FALLOFF.toFixed(1)}), ce = ${(LANE_END_IN * CORE_R).toFixed(3)}, co = ${(LANE_END_OUT * CORE_R).toFixed(3)};
   gm *= clamp((r - ce) / (co - ce), 0.0, 1.0); // laneCoreFade: gone inside LANE_END_IN core radii, whole from LANE_END_OUT
   laneG *= gm; laneL *= clamp((${R0.toFixed(1)} - r) / ${(R0 * (1 - LANE_FULL)).toFixed(3)}, 0.0, 1.0); // the line's mask: full to LANE_FULL of R0, nothing at R0
