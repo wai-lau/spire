@@ -23,8 +23,22 @@ function trailGrad(col) {
   let g = m.get(col); if (!g) { g = ctx.createLinearGradient(0, 0, 1, 0); g.addColorStop(0, col); g.addColorStop(1, "transparent"); m.set(col, g); }
   return g;
 }
+// RELATIVE TO THE WAVE'S TYPES (owner, 2026-11-18: "visually (all relative to other types for the wave) / enemy edge-line thickness should be correlated
+// to armor / tracer length should be correlated to _current_ enemy speed"; then "scaled relative not to enemies still alive, scale to the other types, as
+// if they were spawned on this wave"): per wave number, the most armor and the fastest pace ANY of the four types would spawn with there (armorAt,
+// paceAt - swarm's speed jitter at its mean), cached for good. A tracer: TRAIL_REF x its current pace (effSpeed: slows, stuns) over that fastest on its
+// lane - a slowed one shrinks, a stunned one has none; swarm keeps none (perf, owner), the star its own. The die's edge: solidEdgeW (aspira-solids.js)
+const TRAIL_REF = 120, WAVE_TYPES = ["swarm", "fast", "shield", "armor"], waveRefs = new Map();
+const paceAt = (type, n) => ENEMIES[type].speed * ENEMY_SPEED * (type === "fast" ? lateK(n, "fast") * (n === 1 ? FIRST_FAST_SPD : 1) : 1) * speedRamp(n) * (ENEMIES[type].star ? 1 : speedGrow(n) * tune(type, "speed", n) * plainK(type)); // (spawnEnemy's spd, the jitter at its mean)
+function waveRefOf(e) {
+  const n = e.wave || 1; let r = waveRefs.get(n);
+  if (!r) waveRefs.set(n, r = { armor: Math.max(...WAVE_TYPES.map(t => armorAt(t, n))), pace: Math.max(...WAVE_TYPES.map(t => paceAt(t, n))) });
+  return r;
+}
+const trailLen = e => (e.type === "bonus" ? TRAIL.bonus : !TRAIL[e.type] ? 0 : (r => (r.pace > 0 ? TRAIL_REF * Math.min(1, effSpeed(e) / (r.pace * PATHS[e.pi].pace)) : TRAIL[e.type]))(waveRefOf(e)));
 function drawStarTrail(e, size) {
-  const tail = TRAIL[e.type], pts = TRAIL_P; let np = 0;
+  const tail = Math.round(trailLen(e) / TRAIL_STEP) * TRAIL_STEP, pts = TRAIL_P; let np = 0; // (whole steps: the tail ends on a sample)
+  if (tail < TRAIL_STEP) return;
   // CURVED: the lane behind it (owner, 2026-10-09: "they should be curved" - a straight tail along the heading was
   // tried and dropped), shifted by how far it wanders off the lane (a swarmer's jitter) so the tail meets the body
   const here = pathAt(e.pi, e.s, e.ang || 0), ox = e.x - here.x, oy = e.y - here.y;

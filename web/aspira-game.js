@@ -67,6 +67,11 @@ function shieldsOf(type, n) {
 const SHIELD_EARLY = 0.6, ARMOR_EARLY = 2 /* owner, 2026-10-12: "make early armor stronger" (was 1.6) */, early = (k, n) => k + (1 - k) * Math.min(1, Math.max(0, (n - 20) / 10));
 const SWARM_HP_X = 1.5; // a swarm wave's whole HP x1.5 (owner, 2026-10-12), spread by the jitter (spawnEnemy)
 const enemyHpRaw = (type, n0, n = eqWave(n0)) => tune(type, "hp", n0) * earlyHpX(type, n0) * (9 * hpPow(n) + n * 2) * ENEMIES[type].hp * 2 * (ENEMIES[type].star ? 1 : plainHpMul(n0) * plainHpGrow(n0) * plainEnd(n)) * shieldsOf(type, n0).hpMul * (type === "shield" ? early(SHIELD_EARLY, n) : type === "armor" ? early(ARMOR_EARLY, n) : type === "swarm" ? SWARM_HP_X : 1); // x2: half as many enemies (owner); 9 / 2 (2026-10-08: all HP halved, was 18 / 4)
+// A TYPE'S ARMOR AT WAVE n, as it spawns (lifted out of spawnEnemy unchanged, 2026-11-18, for the enemy look's per-wave scale - waveRefOf, aspira-enemies.js)
+function armorAt(type, n) {
+  const d = ENEMIES[type], armorOf = t => Math.floor(ENEMIES[t].armor * ENEMY_HP_MUL * armorGrow(n) * scaleOf(n)); /* x the LATE SCALE (aspira-waves.js) */ // (armorGrow: aspira-defs.js) // x ENEMY_HP_MUL like the HP (2026-10-11: left out of the HP cut, armor ate 4.4x more of each hit)
+  return Math.max(Math.floor((ARMOR_ALL[type] || 0) * armorOf("armor")), d.armor ? Math.floor(armorOf(type) * tune(type, "armor", n)) : type === "fast" ? Math.floor(tune("fast", "armor", n) * armorOf("armor")) : 0); // the armor levers: a late fast carries a share of an armor unit's armor
+}
 function spawnEnemy(type, n, pi, ang = 0) {
   const d = ENEMIES[type], s0 = entryS(pi), p0 = pathAt(pi, s0, ang);
   // a SWARMER's HP - and its SIZE - jitter 30-300% of the average, which is SWARM_HP_X the wave's (owner, 2026-10-12: "increase
@@ -77,9 +82,8 @@ function spawnEnemy(type, n, pi, ang = 0) {
   // armor/shields, late waves were pure dps and ARC spam won. Armor grows with
   // the curve to ARMOR_EXP (0.4; was the square root), shields with its 0.4 power - normalised so
   // shields still start at exactly their base (8) on their first wave (3).
-  const armorOf = t => Math.floor(ENEMIES[t].armor * ENEMY_HP_MUL * armorGrow(n) * scaleOf(n)); /* x the LATE SCALE (aspira-waves.js) */ // (armorGrow: aspira-defs.js) // x ENEMY_HP_MUL like the HP (2026-10-11: left out of the HP cut, armor ate 4.4x more of each hit)
   const shield = type === "swarm" ? Math.round(tune("swarm", "shield", n) * shieldsOf("shield", n).shield) : Math.round(type === "shield" ? monoUp("sh|" + "shield", n, m => shieldsOf("shield", m).shield * tune("shield", "shield", m)) : shieldsOf(type, n).shield * tune(type, "shield", n)); // NO DROPS on the charges too (a late lever under the one before holds the level till the curve passes it) // the shield levers (TYPE_TUNE, aspira-waves.js): a late swarm carries a share of a shield unit's charges
-  const armor = Math.max(Math.floor((ARMOR_ALL[type] || 0) * armorOf("armor")), d.armor ? Math.floor(armorOf(type) * tune(type, "armor", n)) : type === "fast" ? Math.floor(tune("fast", "armor", n) * armorOf("armor")) : 0); // the armor levers: a late fast carries a share of an armor unit's armor
+  const armor = armorAt(type, n); // (the armor levers: armorAt, below)
   G.enemies.push({
     armor, armor0: armor, shield, shieldMax: shield, wave: n, aug: type === "swarm" && shield > 0 ? "shield" : type === "fast" && armor > 0 ? "armor" : null, /* aug: its late HYBRID trait - its outline wears that type's colour (owner, 2026-10-13) */ // armor0: as spawned (damageCredit) // the wave it CAME from (the end screen's leaks)
     // swarm members wander widely off the lane, each at its own speed (+-50%, its own roll - never tied to its size)

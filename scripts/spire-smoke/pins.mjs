@@ -98,7 +98,7 @@ check("a tracer wholly off the canvas draws nothing, one on it still draws (draw
   frames(env, 3);
   const r = JSON.parse(run(`(() => { const [far, near] = G.enemies, c = warp.ent.getContext("2d"), main = ctx; ctx = c; let n = 0; const f0 = c.fill;
     c.fill = (...a) => { n++; return f0.apply(c, a); };
-    const fills = e => { n = 0; const F = warpFrame(e.x, e.y, 0); ctx.setTransform(F[0], F[1], F[2], F[3], F[4], F[5]); warp.eF = F; try { drawStarTrail(e, 10); } finally { warp.eF = null; } return n; };
+    const fills = e => { n = 0; const F = warpFrame(e.x, e.y, 0), st = e.stunT; e.stunT = 0; /* (held by a stun to stay put; a stunned enemy draws NO tracer since 2026-11-18 - drawn moving) */ ctx.setTransform(F[0], F[1], F[2], F[3], F[4], F[5]); warp.eF = F; try { drawStarTrail(e, 10); } finally { warp.eF = null; e.stunT = st; } return n; };
     try { return JSON.stringify({ far: fills(far), near: fills(near) }); } finally { c.fill = f0; ctx = main; } })()`));
   if (!(r.near > 0)) return "the tracer by the core drew nothing (the rig is broken, or the cull culls what shows)";
   if (r.far) return "the tracer at the lane's start (off the canvas) still drew " + r.far + " fills";

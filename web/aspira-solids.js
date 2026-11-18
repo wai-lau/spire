@@ -54,6 +54,10 @@ const solidSize = e => { const d = ENEMIES[e.type], f = Math.max(0, e.hp / e.max
 // its GEOMETRY is built once a frame (solidGeom, cached on the enemy by warp.frame) and only DRAWN per floor slice -
 // it was rebuilt in each of warpBands' nine passes, half the 3D frame with 130 enemies (profiled 2026-10-09)
 const SOLID_DRAWN = []; // warpSolidWhole's which-faces-drew scratch, reused (perf, 2026-10-28)
+// THE EDGE BY ARMOR, RELATIVE TO THE WAVE (owner, 2026-11-18: "enemy edge-line thickness should be correlated to armor", "relative to other types
+// for the wave"): 1.2 with no armor up to 2.6 for the wave's most armored (waveRefOf, aspira-enemies.js) - its CURRENT armor, so a strip thins it
+// (was 2.2 with any armor, else 1.2)
+const solidEdgeW = e => { const r = typeof waveRefOf === "function" ? waveRefOf(e) : null, a = e.armor || 0; return r && r.armor > 0 ? 1.2 + 1.4 * Math.min(1, a / r.armor) : a ? 2.2 : 1.2; };
 function solidGeom(e) {
   const d = ENEMIES[e.type], f = Math.max(0, e.hp / e.max), size = solidSize(e);
   if (!(size > 0.5) || !Number.isFinite(e.x) || !Number.isFinite(e.y)) return null; // (a NaN spot would make a gradient throw)
@@ -114,7 +118,7 @@ function solidGeom(e) {
     D.v = Q[E[0]]; D.w = Q[E[1]]; D.n = (sa >= 0) + (sb >= 0); D.f.length = 0; if (sa < 0) D.f.push(sb); else if (sb < 0) D.f.push(sa); else D.f.push(sa, sb);
   }
   edges.length = ne;
-  return { faces, edges, spike, size, fa, col: COL[d.color], ocol: COL[d.color], /* ocol: the OUTLINE's - its OWN type's colour (owner, 2026-11-05: "for all the enemies, remove the 'double type' visual effects"; a late swarm with shields / fast with armor wore that type's outline since 2026-10-13 - e.aug stays, the wave card's "late trait" row) */ frz: SOLID_FROZEN_A * frostK(e), rime: rimeK(e), lw: (e.armor ? 2.2 : 1.2) * cam.k };
+  return { faces, edges, spike, size, fa, col: COL[d.color], ocol: COL[d.color], /* ocol: the OUTLINE's - its OWN type's colour (owner, 2026-11-05: "for all the enemies, remove the 'double type' visual effects"; a late swarm with shields / fast with armor wore that type's outline since 2026-10-13 - e.aug stays, the wave card's "late trait" row) */ frz: SOLID_FROZEN_A * frostK(e), rime: rimeK(e), lw: solidEdgeW(e) * cam.k };
 }
 // the opacity the floor's slices give depth z (aspira-fog.js warpBands): 1 at the floor, down to the deepest slice's
 const belowFade = z => Math.max(1 - (WARP_FADE_BANDS - 0.5) / WARP_FADE_BANDS, Math.min(1, 1 + z / WARP_FADE_Z));
