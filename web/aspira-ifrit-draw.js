@@ -147,7 +147,7 @@ function drawIfrMines(t, low) {
     if (since >= 0 && since < IFR_MINE_PULSE_S) { const p = 1 - since / IFR_MINE_PULSE_S; a = IFR_MINE_LIT + (1 - IFR_MINE_LIT) * p; inner = 1 + 1.5 * p; }
     const left = IFR_MINE_LIFE_S - m.age; if (left < IFR_MINE_FADE_S) a *= Math.max(0, left / IFR_MINE_FADE_S);
     ifrMineX(m.x, m.y, ifrShardDrawR(t, m.gen, m.r), a * IFR_MINE_X_A, inner, low); /* a small X (owner, 2026-11-17: "IFR mines to be distinguishable from money, maybe replace mines with small X"; 11-16 to 11-17 the meteor look) */
-    if (since >= 0) drawIfrRingAt(m.x, m.y, IFR_MINE_REACH, a * IFR_MINE_RING_A, low, 1); /* its reach, a faint ring once armed (owner, 2026-11-13: "IFR B") */
+    /* NO REACH RING (owner, 2026-11-18: "actually don't show circles for any mines"; was a faint ring once armed, IFR_MINE_RING_A, 2026-11-13 "IFR B") */
   }
 }
 // A FLARE'S INTENSITY REFLECTS ITS DAMAGE (owner, 2026-10-20): its glow's alpha x the root of its hit over the untaken flare's, kept in
