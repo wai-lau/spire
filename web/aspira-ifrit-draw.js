@@ -132,7 +132,7 @@ function drawIfrBalls(t, low) {
 // flight size, dim while it arms (rising smoothly), a bright pulse the moment it is armed, then steady, fading out over its last IFR_MINE_FADE_S
 const IFR_MINE_DIM = 0.3, IFR_MINE_LIT = 0.85, IFR_MINE_PULSE_S = 0.3, IFR_MINE_FADE_S = 1, IFR_MINE_RING_A = 0.07; // RING_A: the reach ring at minimal opacity, ~0.06 armed (owner, 2026-11-16: "IFR mines, only show detonation circle with minimally visible opacity"; was 0.25)
 // THE MINE'S X (2026-11-17): two strokes in Ifrit's colour, arms IFR_MINE_X_K x its drawn radius (at least IFR_MINE_X_MIN u), the arming pulse thickening it
-const IFR_MINE_X_K = 2.2, IFR_MINE_X_MIN = 4, IFR_MINE_X_W = 0.45, IFR_MINE_X_A = 0.5; // X_A: the X at half its alpha (owner, 2026-11-17: "halve mine intensity")
+const IFR_MINE_X_K = 1.1, IFR_MINE_X_MIN = 2 /* both HALVED (owner, 2026-11-18: "halve visual size of IFR mines"; were 2.2, 4) */, IFR_MINE_X_W = 0.45, IFR_MINE_X_A = 0.5; // X_A: the X at half its alpha (owner, 2026-11-17: "halve mine intensity")
 function ifrMineX(x, y, r, a, inner, low) {
   const h = Math.max(IFR_MINE_X_MIN, r * IFR_MINE_X_K), col = COL[TOWERS.ifr.color];
   ctx.save(); ctx.globalAlpha = Math.min(1, a); ctx.strokeStyle = col; ctx.lineCap = "round"; ctx.lineWidth = Math.max(1.2, h * IFR_MINE_X_W) * Math.min(2, inner);
