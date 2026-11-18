@@ -32,8 +32,8 @@ const IFR_FISSURE_DEG = 30, IFR_FLY_S = 10, IFR_FLY_R = 1400; // the capstone's 
 const IFR_BALL_RAD = [2.7, 3, 3.7, 4.7] /* x0.2 (owner, 2026-10-20: "reduce meteor size to 20% of current"; was [13.5 .. 23.5] VI 27) */ /* HALVED (owner, 2026-10-20: "meteor is also too big, halve all the current sizes"); was [27 .. 47] VI 54 */; // Meteor: the meteor's radius, u (solo.mjs 2026-10-20: the hex's width across untaken - half of it leaked the wave-4 swarm, 15 lives; owner: "twice the size" of it at VI: 54, capstone.js)
 // Hellfire: THE FIRE the meteor leaves (owner, 2026-10-20; no ring, no burn - stepIfrFires): it opens at the meteor's size, grows at IFR_FIRE_V to IFR_FIRE_R (never below IFR_FIRE_FLOOR x the meteor) ("small ticks, many"), and stays until its last flare is out (FIRE_LINGER gone)
 const IFR_FIRE_FLOOR = 16; // the fire's max is never under this x the meteor's radius - with no Hellfire too (owner, 2026-10-20: "even with no hellfire bought, fire should start at 16x meteor size"; was 1x)
-const IFR_FIRE_R = [0, 150, 178, 212, 252, 300] /* GEOMETRIC, x 2^(1/4) a tier from I to the cap (owner, 2026-11-12: "gradual slope with geometric/exponential shape");  HELLFIRE'S FIRE GROWS WITH ITS TIER (owner, 2026-11-11: the shield check comes back through a fire circle that grows with Hellfire's tier; 2026-11-12: "without making it bigger than 600 units" - no fire over 600 u across): written with all SIX tiers (tier I is not tierMid of 0 and II); was 0 30 60 85 160 V 180 (BATTERY 6.6.0, 2026-10-20: "spread hellfire across more time and space") */; // u radius
-const IFR_FIRE_V = [180, 600, 712, 848, 1008, 1200]; // u/s - every fire from tier I up reaches its full size in 0.25 s (2026-11-12: with the wider fires, the old speeds took up to 0.45 s, and a fire lights its flares while it grows, so they bunched in the middle against the owner's 2026-10-21 "change the positional randomness to not prefer the center"); written with all six tiers; was 180 210 240 360 540 V 660 (x3, owner 2026-10-21: "triple hellfire expansion speed")
+const IFR_FIRE_R = [0, 175, 200, 229, 262, 300] /* I 150 -> 175, II-IV re-spread GEOMETRIC to the cap, x1.144 a tier (owner, 2026-11-18: "3A" - Ifrit's 3-point shield fail on 16 seeds; Hellfire's circle is her shield lever) */ /* GEOMETRIC, x 2^(1/4) a tier from I to the cap (owner, 2026-11-12: "gradual slope with geometric/exponential shape");  HELLFIRE'S FIRE GROWS WITH ITS TIER (owner, 2026-11-11: the shield check comes back through a fire circle that grows with Hellfire's tier; 2026-11-12: "without making it bigger than 600 units" - no fire over 600 u across): written with all SIX tiers (tier I is not tierMid of 0 and II); was 0 30 60 85 160 V 180 (BATTERY 6.6.0, 2026-10-20: "spread hellfire across more time and space") */; // u radius
+const IFR_FIRE_V = [180, 700, 800, 916, 1048, 1200] /* R / 0.25 s with the 2026-11-18 radii (was 180 600 712 848 1008 1200) */; // u/s - every fire from tier I up reaches its full size in 0.25 s (2026-11-12: with the wider fires, the old speeds took up to 0.45 s, and a fire lights its flares while it grows, so they bunched in the middle against the owner's 2026-10-21 "change the positional randomness to not prefer the center"); written with all six tiers; was 180 210 240 360 540 V 660 (x3, owner 2026-10-21: "triple hellfire expansion speed")
 // FLARE SIZES (owner, 2026-10-20; LOCKED - no size change without asking): the capstone (VI) is the old III, 100 x 16 ("don't make flares
 // larger than the current one for III"); the untaken flare is twice its scaled size ("double the size of the bottom end, squeeze the others
 // between") and the stops between keep their places, squeezed into the range left (ifrSqueeze). The old scale: 50 .. 140 (VI 210) x 10 .. 20 (VI 24)
@@ -319,15 +319,29 @@ function stepIfrBalls(t, st, dt) {
 function stepIfrMines(t, st, dt, born) {
   for (const m of t.ifrMines) {
     m.age += dt;
-    if (m.age >= IFR_MINE_LIFE_S) { m.gone = true; continue; }
+    if (m.age >= IFR_MINE_LIFE_S && !m.tgt) { m.gone = true; continue; } // (a flying mine finishes its flight)
     if (m.age < IFR_MINE_ARM_S) continue;
+    if (m.tgt) { ifrMineFly(t, st, m, dt, born); continue; } // triggered: flying at its enemy (ifrMineFly)
     for (const e of G.enemies) {
       if (e.dead || !e.seen) continue;
       const r = ENEMIES[e.type].size * (e.sizeMul || 1) + Math.max(m.r, IFR_MINE_REACH);
-      if ((e.x - m.x) ** 2 + (e.y - m.y) ** 2 <= r * r) { ifrMineBlast(t, st, m, e, born); m.gone = true; break; }
+      if ((e.x - m.x) ** 2 + (e.y - m.y) ** 2 <= r * r) { m.tgt = e; break; }
     }
   }
   t.ifrMines = t.ifrMines.filter(m => !m.gone);
+}
+// A TRIGGERED MINE HOMES (owner, 2026-11-18: "for IFR mines, when they are triggered, they should home in on the enemy and explode on hit (instead
+// of exploding immediately)"): it flies at the enemy that tripped it at its shard's speed (at least IFR_MINE_HOME_V0 u/s) and goes off on contact,
+// its blast and fire there; its enemy dead in flight, it turns to the nearest live one within IFR_MINE_REACH, else lies down again, armed (16 seeds:
+// every level within 2 points of the mines that burst in place)
+const IFR_MINE_HOME_V0 = 300;
+function ifrMineFly(t, st, m, dt, born) {
+  let e = m.tgt;
+  if (e.dead || !e.seen) { e = null; let bd = IFR_MINE_REACH ** 2; for (const o of G.enemies) { if (o.dead || !o.seen) continue; const d = (o.x - m.x) ** 2 + (o.y - m.y) ** 2; if (d < bd) { bd = d; e = o; } } m.tgt = e; if (!e) return; }
+  const v = Math.max(IFR_MINE_HOME_V0, Math.hypot(m.vx || 0, m.vy || 0)), dx = e.x - m.x, dy = e.y - m.y, d = Math.hypot(dx, dy) || 1;
+  const reach = ENEMIES[e.type].size * (e.sizeMul || 1) + m.r;
+  if (d - reach <= v * dt) { m.x = e.x - dx / d * Math.min(d, reach); m.y = e.y - dy / d * Math.min(d, reach); ifrMineBlast(t, st, m, e, born); m.gone = true; return; }
+  m.x += dx / d * v * dt; m.y += dy / d * v * dt; m.vx = dx / d * v; m.vy = dy / d * v;
 }
 function ifrMineBlast(t, st, m, e, born) {
   const amt = st.dmg * st.routeK * (m.gen === 2 && !m.fis ? IFR_RESPLIT_K : 1), h0 = hitFrom; HIT_AT.x = m.x; HIT_AT.y = m.y; hitFrom = HIT_AT;
@@ -380,7 +394,7 @@ function stepIfrFires(t, st, dt) {
     if (f.ch && !f.chq && f.eid != null) { f.chq = []; for (let k = 0; k < f.ch; k++) { const c = ifrChain(t, st, f, k); f.until = Math.max(f.until || 0, f.age0 + c.life); } } /* Hellfire V: both its rings at once, only while it rides an enemy */
     if (f.eid != null) { const e = G.enemies.find(o => o.id === f.eid); if (e && !e.dead) { f.x = e.x; f.y = e.y; } else f.eid = null; } /* A FIRE RIDES ITS ENEMY (owner, 2026-10-24: "make hellfires track enemies (keep them in the center of the hellfire) / they fall off on enemy death"): the meteor's hit, kept dead centre; its death drops the fire where it fell. Flares already lit stay put */
     if (f.r < f.R) { f.r = Math.min(f.R, f.r + f.v * dt); ifrRingHit(t, st, f); }
-    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.sqrt(Math.random()); /* EVEN over the fire's area (owner, 2026-10-21: "change the positional randomness to not prefer the center"; was u^IFR_LAND_POW) */ const fl = ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true, (f.hk ?? 1) * (f.split ?? 1)); if (fl) fl.split = f.split; f.until = Math.max(f.until || 0, f.age0 + ((fl && fl.life) || 0)); /* (fl: a stand-in may return nothing) */
+    while (f.flq.length && f.flq[f.flq.length - 1] <= f.age0) { f.flq.pop(); const a = Math.random() * 2 * Math.PI, d = f.r * Math.random(); /* CENTRE-WEIGHTED (owner, 2026-11-18: "can we move IFR hellfire flares more likely closer to the center?"): uniform in radius, so denser toward the centre (was even over the area, 2026-10-21 "change the positional randomness to not prefer the center"; marks within noise, 16 seeds) */ const fl = ifrFlare(t, st, f.x + Math.cos(a) * d, f.y + Math.sin(a) * d, ifrHfS(), false, true, (f.hk ?? 1) * (f.split ?? 1)); if (fl) fl.split = f.split; f.until = Math.max(f.until || 0, f.age0 + ((fl && fl.life) || 0)); /* (fl: a stand-in may return nothing) */
       if (!f.flq.length && f.big) ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); } /* inside the fire as it is then; the last one lit, the Flare capstone's BIG flare dead centre */
     if (f.nf && f.big && f.r >= f.R) { f.big = false; ifrFlare(t, st, f.x, f.y, IFR_FLARE_K * IFR_BIG_S, true); }
     if (!f.flq.length && !(f.chq && f.chq.length) && f.r >= f.R && f.age0 >= (f.until || 0)) f.left = 0; /* its last flare OUT: it goes (owner, 2026-10-21: "hellfire ring should remain on screen until all hellfire flares have gone out") */

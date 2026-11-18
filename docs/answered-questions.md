@@ -6,6 +6,11 @@ Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTION
 
 | When | Question | Answer |
 |---|---|---|
+| 11-18 ~14:40 | 7.27.0 (Arc's 13-point fix + the Ifrit package) tips Carrier's 9-point card to one check (fast +1 -> 0 by centring) - ship anyway or hold for a Carrier fix? | Ship it now; fix Carrier's fast check next |
+| 11-17 ~22:00 | Ifrit's 3-point fail: Hellfire I's fire circle 150 -> 175 - keep the other tiers or re-spread them geometric? | Geometric (175 / 200 / 229 / 262 / 300), "also can we move IFR hellfire flares more likely closer to the center?" |
+| 11-17 ~20:00 | The six drafts: only Carrier C1 works (at Tether I every interceptor on a fast enemy tethers it) - ship it? | No: "want to avoid type specific mechanics" |
+| 11-17 ~18:55 | Arc fails its 13-point marks (too good vs fast): ship the fix that reverses part of "slower, bigger hits" at Voltage IV-V (fire rate x2, each hit halved, chain carry 1.25 / 1.4 -> 1.12 / 1.18)? | Yes, ship it |
+| 11-17 ~18:10 | The ship smoke's Ifrit timing check fails whenever the box is busy: time the flare tick in CPU time, raise the limit, or wait for a quiet box? | "can we measure from operation counts instead? we should avoid relying on real world clock" - every timing check counts operations instead |
 | 11-17 ~16:20 | Sol's ghost shot makes bare Sol stronger and breaks three 0-point marks - how should it ship? | "it should not waste the shot, but it should still need to aim at the next target" (as built), then "yes A go": bare Sol aims 4x as long so the 0-point marks hold |
 | 11-17 ~15:50 | On-hit effects: which one look should every tower use (Arc none, Acid sparks, the rest a flash)? | "every tower gets sparks only" |
 | 11-17 ~09:35 | Offer: Ifrit's one-number 3-point fix (Meteor I mine fire 2.47 -> 4.68; Carrier's 3-point fail gains a cell, blurred Ifrit builds at 6 points 12 -> 18, a narrow window) | Yes |

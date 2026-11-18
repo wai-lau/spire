@@ -279,7 +279,7 @@ check("IFR: the DAM core power raises every IFR hit; fires stack, uncapped", () 
   if (r.fires !== 40) return "40 impacts left " + r.fires + " live fires (owner, 2026-10-20: \"dont cap fire stacks\")";
   return "";
 });
-check("IFR flares: one where the main meteor lands; a fire lights its flares on a bell round its first second, inside it, even over its area, more of them in a wider fire", () => {
+check("IFR flares: one where the main meteor lands; a fire lights its flares on a bell round its first second, inside it, weighted toward its centre, more of them in a wider fire", () => {
   const r = run(`(() => { const rnd0 = Math.random; let sd = 4242; Math.random = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; }; try { return (() => { /* SEEDED (2026-11-14): the flare spots are Math.random, and over 16 seeds Hellfire IV's mean sits at 0.579 R (0.556-0.606) against the 0.55 R line below - unseeded it failed a ship about once in 300 runs */
     const fresh = (ax, k, need) => { G = newGame(); G.money = 1e9; ui.build = "ifr"; const ci = CELLS.findIndex((c, i) => cellOpen(i)); placeTower(CELLS[ci]); const t = G.towers[0]; for (let i = 0; i < k; i++) upgradeTower(t, ax, true); ifrAll(t, need); ifrInit(t); for (const e of G.enemies) e.dead = true; return t; };
     const held = (t, x, y) => { const e = ifrNear("shield", t, 300); e.x = x; e.y = y; e.shield = 50; e.stunT = 1e9; return e; };
@@ -327,7 +327,7 @@ check("IFR flares: one where the main meteor lands; a fire lights its flares on 
     if (!(f.n >= 1)) return k + ": a grown fire lit " + f.n + " flares (1 at the least)";
     if (Math.abs(f.share - IFR_SHARD_HK_W * f.shareWant) > 1e-9) return k + ": a fire's share " + f.share + " (expected IFR_SHARD_HK 0.8 / sqrt(1 + the fan) = " + (IFR_SHARD_HK_W * f.shareWant).toFixed(3) + ": a Hellfire a meteor, the same burn a strike)";
     if (f.n >= 1 && f.lastT > f.window + 0.02) return k + ": its flares lit until " + f.lastT.toFixed(2) + " s (expected within its meteor's flare's life, " + f.window + " s - owner 2026-10-20)";
-    if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD > 0.55 * f.R && f.meanD < 0.78 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", EVEN over its area - mean ~2/3 R; owner, 2026-10-21: \"change the positional randomness to not prefer the center\")";
+    if (!(f.maxD <= f.R + 1e-6) || (f.n >= 40 && !(f.meanD > 0.35 * f.R && f.meanD < 0.6 * f.R))) return k + ": " + f.n + " flares up to " + f.maxD.toFixed(1) + " u out, mean " + f.meanD.toFixed(1) + " (inside R " + f.R + ", CENTRE-WEIGHTED, uniform in radius - mean ~1/2 R (less: flares lit while it grows); owner, 2026-11-18: \"move IFR hellfire flares more likely closer to the center\" (was even over the area, 2026-10-21))";
     if (f.n >= 5 && f.sizes < 2) return k + ": its flares are all one size";
   }
   if (Math.abs(r.beamIV[0] - 125) > 1e-6 /* the capstone's spokes x1.25 (owner, 2026-11-17: "increase crossx size so that the crossx pokes out"; was 100) */ || Math.abs(r.beamIV[1] - 16) > 1e-6 || Math.abs(r.beam0[0] - 2 * 50 * 100 / 210) > 1e-6 || Math.abs(r.beam0[1] - 2 * 10 * 16 / 24) > 1e-6 || !r.mono) return "Flare tables: IV " + r.beamIV + ", untaken " + r.beam0 + ", rising " + r.mono + " (expected IV 125 x 16 since 2026-11-17, untaken doubled to 47.6 x 13.3, the rest between - owner 2026-10-20)";
