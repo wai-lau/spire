@@ -103,7 +103,7 @@ KINDS.forEach((k, i) => {
 });
 [["pause", "pause"], ...SPEEDS.map(v => [v, v + "×"])].forEach(([v, label]) => {
   button($("asp-speed"), "", label, () => {
-    if (v === "pause") { ui.paused = !ui.paused; ui.pauseBtn = ui.paused; } else { ui.speed = v; ui.paused = false; } // pauseBtn: paused BY the button (it flashes)
+    if (v === "pause") { if (setPaused(!ui.paused)) ui.pauseBtn = ui.paused; } else { ui.speed = v; setPaused(false); } // pauseBtn: paused BY the button (it flashes)
   }, v === "pause" ? "asp-sp-pause" : speedId(v));
 });
 
@@ -224,6 +224,11 @@ function flashBuild() {
 // upgrade choosers already did): the tower's or the core's card, and the pause
 // the player had before it is put back when it closes
 const cardPause = { on: false, was: false };
+// CARDS HOLD THE PAUSE (owner, 2026-11-18: "do not allow the game to be unpaused while build or upgrade cards are open"): while the build
+// chooser or a tower / core card is open nothing unpauses - the pause button, a speed button or key (a picked speed still takes), space;
+// a blocked press plays the error sound. Closing the card restores the pause it found (cardPause.was, chooser.wasPaused)
+const cardHold = () => { const ch = $("asp-chooser"); return cardPause.on || !!(ch && !ch.hidden); };
+function setPaused(p) { if (!p && ui.paused && cardHold()) { sfx("error"); return false; } ui.paused = p; return true; }
 function refreshPanels() {
   flashBuild();
   const pop = $("asp-pop"), placing = $("asp-placing");
@@ -330,10 +335,10 @@ document.addEventListener("keydown", ev => {
     ev.preventDefault(); return;
   }
   // A KEY SOUNDS LIKE ITS BUTTON (owner, 2026-11-17: "the sounds should trigger on action, so pressing space to pause, should play the sound as if clicking pause")
-  if (/^[1-9]$/.test(ev.key) && SPEEDS.filter(v => v >= 1)[ev.key - 1]) { sfx("click"); ui.speed = SPEEDS.filter(v => v >= 1)[ev.key - 1]; ui.paused = false; } // 1-4: the 1x.. buttons in order (0.75x stays on ~)
-  else if (ev.key === "`" || ev.key === "~") { sfx("click"); ui.speed = 0.75; ui.paused = false; } // 0.75x on ~, no button (owner, 2026-10-19)
+  if (/^[1-9]$/.test(ev.key) && SPEEDS.filter(v => v >= 1)[ev.key - 1]) { if (!(ui.paused && cardHold())) sfx("click"); ui.speed = SPEEDS.filter(v => v >= 1)[ev.key - 1]; setPaused(false); } // 1-4: the 1x.. buttons in order (0.75x stays on ~)
+  else if (ev.key === "`" || ev.key === "~") { if (!(ui.paused && cardHold())) sfx("click"); ui.speed = 0.75; setPaused(false); } // 0.75x on ~, no button (owner, 2026-10-19)
   else if (ev.key === "m" || ev.key === "M") { setMuted(!muted); sfx("click"); }
-  else if (ev.key === " ") { ev.preventDefault(); sfx("click"); ui.paused = !ui.paused; ui.pauseBtn = ui.paused; }
+  else if (ev.key === " ") { ev.preventDefault(); if (!(ui.paused && cardHold())) sfx("click"); if (setPaused(!ui.paused)) ui.pauseBtn = ui.paused; }
   else if (ev.key === "u" || ev.key === "U") { sfx("click"); keyUpgrade(ui.sel && G.towers.find(x => x.id === ui.sel)); }
   else if (ev.key === "Escape") { if (ui.build || ui.sel) sfx("click"); ui.build = null; ui.sel = null; refreshPanels(); }
 });

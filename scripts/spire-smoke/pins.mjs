@@ -363,3 +363,15 @@ check("wave cards: the armor sentence shows on an armor wave's card only", () =>
     for (const type of ["swarm", "fast", "shield", "armor"]) { const has = waveNote({ type }).includes(WC_ARMOR_NOTE); if (has !== (type === "armor")) bad.push(type + (has ? " has it" : " lacks it")); }
     return bad.join(", "); })()`);
 });
+
+// CARDS HOLD THE PAUSE (owner, 2026-11-18: "do not allow the game to be unpaused while build or upgrade cards are open")
+check("an open build or upgrade card holds the pause: nothing unpauses until it closes", () => {
+  return run(`(() => { let h = $("asp-chooser"); if (!h) { h = document.createElement("div"); h.id = "asp-chooser"; h.hidden = true; document.body.appendChild(h); } /* (the harness page has none) */ const c0 = cardPause.on, p0 = ui.paused, h0 = h.hidden, bad = [];
+    try {
+      cardPause.on = true; ui.paused = true; setPaused(false); if (!ui.paused) bad.push("a tower card open, the game unpaused");
+      cardPause.on = false; h.hidden = false; ui.paused = true; setPaused(false); if (!ui.paused) bad.push("the build chooser open, the game unpaused");
+      h.hidden = true; ui.paused = true; setPaused(false); if (ui.paused) bad.push("no card open, the game would not unpause");
+      return bad.join("; ");
+    } finally { cardPause.on = c0; ui.paused = p0; h.hidden = h0; } })()`);
+});
+
