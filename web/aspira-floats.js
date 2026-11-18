@@ -147,11 +147,16 @@ function dotSparks(e, m, col) {
   if (e.dotSpark < 1) return;
   const n = Math.floor(e.dotSpark); e.dotSpark -= n; burst(e.x, e.y, col, n, hitSparkO(m));
 }
+// SMALLER SPARKS (owner, 2026-11-18: "reduce the size of the sparks so that the smallest ones are 1px / The biggest sparks should be reduced
+// in size by the same ratio"; then "no fixed screen sizes, just use ~1px at default screen size"): every spark's width x SPARK_K, one ratio
+// for all - at the default view (390 x 844, 1 CSS px = 1.28 u) the smallest hit spark (2.75 u) draws ~1 px, the biggest (6.5 u) ~2.4 px; it
+// zooms with the board like everything else
+const SPARK_K = 0.466;
 function burst(x, y, color, n, o = null) {
   n = Math.min(n, SPARK_MAX - sparkN); sparkN += Math.max(0, n);
   for (let i = 0; i < n; i++) {
     const a = Math.random() * 6.283, v = (40 + Math.random() * 120) * (o ? o.v : 1);
-    fx.push({ k: "spark", x, y, vx: Math.cos(a) * v * 3, vy: Math.sin(a) * v * 3, color, t: 0, life: (0.4 + Math.random() * 0.3) / 3 * (o && o.life || 1), w: o ? o.w : 3, streak: !!(o && o.streak) });
+    fx.push({ k: "spark", x, y, vx: Math.cos(a) * v * 3, vy: Math.sin(a) * v * 3, color, t: 0, life: (0.4 + Math.random() * 0.3) / 3 * (o && o.life || 1), w: (o ? o.w : 3) * SPARK_K, streak: !!(o && o.streak) });
   }
 }
 let bannerText = "", bannerT = 0, bannerCol = "orange";
