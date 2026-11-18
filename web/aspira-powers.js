@@ -20,7 +20,9 @@ function powerTap(d) {
 const relayPause = { was: false };
 function setRelayArm(on) {
   if (on && !ui.relayArm) { relayPause.was = ui.paused; ui.paused = true; }
-  else if (!on && ui.relayArm) ui.paused = relayPause.was;
+  else if (!on && ui.relayArm && ui.paused && !ui.pauseBtn) ui.paused = relayPause.was; // only the RELAY'S OWN pause is undone: a pause or unpause the player
+  // pressed while it was armed stands (owner, 2026-11-18: "orbital relay is broken after a pause without selecting a target" - pause, arm, unpause, tap a tower
+  // restored the stale "was paused": the game froze with the pause button off, the relay's 10 s stuck)
   ui.relayArm = on;
 }
 // from onTap: an armed Relay goes to the tower tapped (even with a build pending); a tap on anything else

@@ -375,3 +375,16 @@ check("an open build or upgrade card holds the pause: nothing unpauses until it 
     } finally { cardPause.on = c0; ui.paused = p0; h.hidden = h0; } })()`);
 });
 
+// THE RELAY NEVER LEAVES A HIDDEN PAUSE (owner, 2026-11-18: "orbital relay is broken after a pause without selecting a target ... it just shows 9s on and is stuck there forever")
+check("Orbital Relay: a pause the player changes while it is armed stands - pause, arm, unpause, tap a tower leaves the game running", () => {
+  return run(`(() => { const p0 = ui.paused, b0 = ui.pauseBtn, a0 = ui.relayArm, bad = [];
+    try {
+      const go = (pre, mid) => { ui.relayArm = false; ui.paused = pre; ui.pauseBtn = pre; setRelayArm(true); mid(); setRelayArm(false); return ui.paused; };
+      if (go(true, () => { ui.paused = false; ui.pauseBtn = false; }) !== false) bad.push("paused, armed, unpaused, disarmed: the game paused again with the pause button off");
+      if (go(false, () => { ui.paused = true; ui.pauseBtn = true; }) !== true) bad.push("armed, paused by the button, disarmed: the player's pause was undone");
+      if (go(false, () => {}) !== false) bad.push("armed then disarmed: the relay's own pause stayed");
+      if (go(true, () => {}) !== true) bad.push("paused, armed, disarmed: the player's pause was lost");
+      return bad.join("; ");
+    } finally { ui.paused = p0; ui.pauseBtn = b0; ui.relayArm = a0; } })()`);
+});
+
