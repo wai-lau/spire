@@ -388,3 +388,12 @@ check("Orbital Relay: a pause the player changes while it is armed stands - paus
     } finally { ui.paused = p0; ui.pauseBtn = b0; ui.relayArm = a0; } })()`);
 });
 
+// NEVER TWO AT ONCE (owner, 2026-11-18: "ensure that two damage numbers are never exactly overlapping by adding a min 0.1s delay between numbers")
+check("damage numbers: one enemy shows at most one number per 0.1 s - a second due at once waits, and a dead enemy's waiting ones are dropped", () => {
+  return run(`(() => { G = newGame(); spawnEnemy("armor", 30, 0, 0); const e = G.enemies[0], n0 = fx.length, p0 = performance.now; let t = 1000; performance.now = () => t;
+    try { dmgNumber(e, "5", 5, "white"); dmgNumber(e, "7", 7, "cyan"); const shown1 = fx.length - n0; drainTicks(); const shown2 = fx.length - n0; t += 101; drainTicks(); const shown3 = fx.length - n0;
+      dmgNumber(e, "9", 9, "white"); dmgNumber(e, "4", 4, "white"); e.dead = true; t += 500; drainTicks(); const shown4 = fx.length - n0;
+      return shown1 === 1 && shown2 === 1 && shown3 === 2 && shown4 === 2 ? "" : "numbers shown: at once " + shown1 + ", same frame " + shown2 + ", 0.1 s later " + shown3 + ", a dead enemy's queue " + shown4 + " (want 1, 1, 2, 2: both waiting numbers dropped)"; }
+    finally { performance.now = p0; } })()`);
+});
+

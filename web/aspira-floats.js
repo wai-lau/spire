@@ -25,7 +25,17 @@ const DMG_SIZE_EXP = 0.7, DMG_PX_MIN = 14, DMG_PX_SPAN = 16, DMG_FLY = 90; // DM
 // have them fly in the direction away from the source of damage"); none: upward, as before
 // grey: the share of the hit armor took (0..1) - the number is drawn that far from white toward Silver (dmgColor)
 const DMG_FLY_BIG = 0.5;
+// NEVER TWO AT ONCE (owner, 2026-11-18: "ensure that two damage numbers are never exactly overlapping by adding a min 0.1s delay between
+// numbers"): an enemy shows at most one number every DMG_GAP_S real seconds - one due sooner waits (dmgWait) and drainTicks shows it on time; once
+// the enemy dies its waiting ones are dropped (owner, 2026-11-18: "if enemy dies, delete the queue")
+const DMG_GAP_S = 0.1, dmgWait = [];
 function dmgNumber(e, label, size, color, src, grey = 0) {
+  const now = performance.now(), at = Math.max(now, e.dmgNumAt || 0);
+  e.dmgNumAt = at + DMG_GAP_S * 1000;
+  if (at > now) { dmgWait.push({ at, e, label, size, color, src: src ? { x: src.x ?? e.x, y: src.y ?? e.y } : null, grey, g: G }); return; }
+  dmgShow(e, label, size, color, src, grey);
+}
+function dmgShow(e, label, size, color, src, grey = 0) {
   G.dmgAcc = (G.dmgAcc || 0) + size; // (into the running damage a second: stepFx)
   const pop = label === "0" && color === "cyan", rel = pop ? 1 : Math.min(1, size / Math.max(1, G.dps || 0) / DMG_DPS_K) ** DMG_SIZE_EXP; // a SHIELD POP's 0 always full size (owner, 2026-10-18)...
   if (dmgLive.length >= DMG_MAX) {
@@ -68,6 +78,7 @@ function dmgSum(e, amt, size, color, src, grey = 0, win = DMG_SUM_S) { // win: t
 }
 function dmgTick(e, amt, raw, color, t, grey) { dmgSum(e, amt, raw, color, t, grey); } // (rate: the old split's - no longer read)
 function drainTicks() {
+  if (dmgWait.length) { const now = performance.now(); for (let i = 0; i < dmgWait.length; i++) { const w = dmgWait[i]; if (w.at > now) continue; if (w.g === G && !w.e.dead) dmgShow(w.e, w.label, w.size, w.color, w.src, w.grey); dmgWait.splice(i--, 1); } } // (a new game drops the old ones; a DEAD enemy's waiting numbers go unshown - owner, 2026-11-18: "if enemy dies, delete the queue")
   if (!dmgSums.size) return;
   const now = performance.now();
   for (const [key, b] of dmgSums) {

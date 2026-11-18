@@ -350,13 +350,15 @@ check("GRV: a void every shot, at its starting mass, novas before it only from N
   if (r.n.nN !== 1) return "Nova I: " + JSON.stringify(r.n) + " (expected one nova - owner, 2026-11-06)";
   return "";
 });
-check("every shield pop shows its own 0 at once, quiet hits too (owner, 2026-10-21)", () => {
+check("every shield pop shows its own 0, quiet hits too (owner, 2026-10-21) - one at once, the rest 0.1 s apart (owner, 2026-11-18: never two at once)", () => {
   const r = run(`(() => {
     G = newGame(); dmgLive = []; dmgSums.clear(); spawnEnemy("shield", 20, 0, 0); const e = G.enemies[0]; e.seen = true; e.shield = 5;
     const t = { x: 0, y: 0, id: 1, kind: "ifr" }; for (let i = 0; i < 3; i++) damage(e, 10, t, false, false, IFR_BURN_ST);
-    return { zeros: dmgLive.filter(f => f.text === "0").length, left: e.shield };
+    const atOnce = dmgLive.filter(f => f.text === "0").length; for (const w of dmgWait) w.at = 0; drainTicks(); /* (the 0.1 s gaps passed) */
+    return { atOnce, zeros: dmgLive.filter(f => f.text === "0").length, left: e.shield };
   })()`);
   if (r.left !== 2) return "3 quiet hits left " + r.left + " charges (expected 2)";
+  if (r.atOnce !== 1) return "3 shield pops in one instant showed " + r.atOnce + " zeros at once (expected 1: the rest 0.1 s apart)";
   return r.zeros === 3 ? "" : "3 shield pops showed " + r.zeros + " zeros (expected 3)";
 });
 check("damage numbers (owner, 2026-10-21): a lone hit shows at once; more within 0.5 s sum into one number at the window's end", () => {
@@ -364,7 +366,7 @@ check("damage numbers (owner, 2026-10-21): a lone hit shows at once; more within
     G = newGame(); dmgLive = []; dmgSums.clear(); spawnEnemy("armor", 5, 0, 0); const e = G.enemies[0], t = { x: 0, y: 0, id: 1 };
     dmgTick(e, 7, 7, "white", t, 0); const first = dmgLive.length;
     dmgTick(e, 5, 5, "white", t, 0); dmgTick(e, 6, 6, "white", t, 0); const held = dmgLive.length;
-    for (const b of dmgSums.values()) b.until = 0; drainTicks(); const after = dmgLive.length, label = fx[fx.length - 1].text;
+    for (const b of dmgSums.values()) b.until = 0; e.dmgNumAt = 0; /* (its 0.1 s number gap long passed: the window is 0.5 s) */ drainTicks(); const after = dmgLive.length, label = fx[fx.length - 1].text;
     for (const b of dmgSums.values()) b.until = 0; drainTicks(); return { first, held, after, label, left: dmgSums.size };
   })()`);
   if (r.first !== 1) return "the first hit showed " + r.first + " numbers (expected 1, at once)";
