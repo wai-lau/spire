@@ -8,6 +8,7 @@ tests the worktree, not whatever the live server holds. SPIRE_EXEC_FN names exec
 
     cd <exec-fn> && .venv/bin/pytest apps/spire/tests/test_spire_endfit_browser.py -q -p no:cacheprovider
 """
+from spire_mute import MUTE_JS
 import os
 from pathlib import Path
 
@@ -105,6 +106,7 @@ MEASURE = r"""() => {
 def test_end_screen_fits(_browser, w, h):
     mob = w < 500 or h < 500
     ctx = _browser.new_context(viewport={"width": w, "height": h}, device_scale_factor=2 if mob else 1, is_mobile=mob, has_touch=mob)
+    ctx.add_init_script(MUTE_JS)  # silent (owner, 2026-11-18: "mute any tests by default")
     try:
         page = ctx.new_page()
         page.route(HOST + "/**", _serve)

@@ -9,6 +9,7 @@ so it tests the worktree, not whatever the live server holds.
 """
 from pathlib import Path
 
+from spire_mute import MUTE_JS
 import pytest
 
 pytest.importorskip("playwright.sync_api")
@@ -84,6 +85,7 @@ MEASURE = r"""kind => {
 def test_tower_card_fits_every_tower(_browser, w, h):
     mob = w < 500 or h < 500
     ctx = _browser.new_context(viewport={"width": w, "height": h}, device_scale_factor=2 if mob else 1, is_mobile=mob, has_touch=mob)
+    ctx.add_init_script(MUTE_JS)  # silent (owner, 2026-11-18: "mute any tests by default")
     try:
         page = ctx.new_page()
         page.route(HOST + "/**", _serve)

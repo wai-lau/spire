@@ -7,6 +7,7 @@ so it tests the worktree, not whatever the live server holds.
 """
 from pathlib import Path
 
+from spire_mute import MUTE_JS
 import pytest
 
 pytest.importorskip("playwright.sync_api")
@@ -54,6 +55,7 @@ def spire_page(_browser):
 
     def make(w=1280, h=800):
         ctx = _browser.new_context(viewport={"width": w, "height": h})
+        ctx.add_init_script(MUTE_JS)  # silent (owner, 2026-11-18: "mute any tests by default")
         ctxs.append(ctx)
         page = ctx.new_page()
         page.route(HOST + "/**", _serve)
@@ -145,6 +147,7 @@ def gl_page(_pw):
 
     def make(w, h, **opts):
         ctx = b.new_context(viewport={"width": w, "height": h}, **opts)
+        ctx.add_init_script(MUTE_JS)  # silent (owner, 2026-11-18: "mute any tests by default")
         ctxs.append(ctx)
         page = ctx.new_page()
         page.route(HOST + "/**", _serve)
