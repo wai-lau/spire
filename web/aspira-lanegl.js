@@ -8,7 +8,7 @@
 // and laneCoreFade mask them. Every frame, from litLanes(): a lane lights the frame its wave is sent and goes out the frame its last
 // enemy dies, and fades in smoothly - no board redraw, no fade layer, no upload. The 2D view keeps the 2D lanes. LANE_GL false: the old way
 let LANE_GL = true;
-const LGL_T = 512, LGL_RT = R0 + 6, LGL_DMAX = 76, LGL_LMAX = 26 /* 66 / 16 until LANE_PLAIN_W 4 (2026-11-07): a non-boss glow's half width 72, its line's 24 */, LGL_N = 16; // T: a path's tile, texels a side, over +-RT world units round the core; DMAX: the glow's farthest distance kept (a boss glow's half width + AA), LMAX the line's (a boss line's); N: lanes a frame
+const LGL_T = 512, LGL_RT = R0 + 6, LGL_DMAX = 76, LGL_LMAX = 52 /* x2 (2026-11-18, the aurora's long rays - the paper's rays run far above the lower border) */ /* 66 / 16 until LANE_PLAIN_W 4 (2026-11-07): a non-boss glow's half width 72, its line's 24 */, LGL_N = 16; // T: a path's tile, texels a side, over +-RT world units round the core; DMAX: the glow's farthest distance kept (a boss glow's half width + AA), LMAX the line's (a boss line's); N: lanes a frame
 // A TILE A PATH, 4 x 3 in the atlas: R the line's SIGNED distance (+-LMAX: which side of its nearest segment), G its plain distance (0..LMAX), B the glow's
 // (0..DMAX). A plain distance read between texels is too far by up to half a texel at the line itself (its V does not interpolate) - the line came out
 // beaded (WebKit, 2026-10-31); the signed one interpolates straight through 0 there, but jumps where two turns of the spiral are as near - so the line's
@@ -28,7 +28,7 @@ const lglBody = (prof, aSrc, curtain) => "(1.0 - " + prof.slice(0, -1).map(([, l
 // most 1 - an aurora's AUR_GLOW lifts it there, so its interior is the line's body; a dimmer glow (a fading lane) is fainter
 const lglGlow = (hw, body, glowK, d) => `{ float a = min(1.0, ${body} * ${glowK}) * (1.0 - smoothstep(${(hw * LGL_GLOW_IN).toFixed(4)}, ${hw.toFixed(4)}, ${d})); laneG = laneG * (1.0 - a) + vec4(col, 1.0) * a; }`;
 const AUR_GLOW = 2.2, AUR_WIDE = 0.8, AUR_CURTAIN = 0.35; // (AUR_CURTAIN: the line body's mean curtain share, lglBody)
-const AUR_BODY = 0.9, AUR_EDGE = 5.0, AUR_TAIL = 1.3, AUR_WHITE = 0.3; // THE CURTAIN (2026-11-18): its alpha x the line's, the edge's sharpness, the rays' fade, the edge's whiteness // the aurora: its glow's alpha x, its distance x (under 1: wider)
+const AUR_BODY = 2.4, AUR_EDGE_K = 0.77, AUR_TAIL_K = 0.6, AUR_RAY_FLOOR = 0.3, AUR_WHITE = 0.25; // THE CURTAIN (2026-11-18): its alpha x the line's; below the border e^(k y), k 0.77 = 10% in 3 u; above e^(-y / (52 u x TAIL_K x the ray's height)); between rays FLOOR of a ray; whiteness at the border // THE CURTAIN (2026-11-18): its alpha x the line's, the edge's sharpness, the rays' fade, the edge's whiteness // the aurora: its glow's alpha x, its distance x (under 1: wider)
 const LANE_GLSL = `
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 #define LHP highp
@@ -56,18 +56,20 @@ void laneFlush(float dG, float dL, float sL, vec4 b, vec4 c, LHP vec2 p) { // sL
     ${lglLevels(BOSS_LINE_SOFT, "1.0", "c.y", "dL", "laneL")}
   } else {
     ${lglGlow(LIT_GLOW_SOFT[0][0] / 2 * LANE_PLAIN_W, lglBody(LIT_LINE_SOFT, "c.y", true), "min(1.0, c.x / max(1e-4, c.y * " + LIT_GLOW_A.toFixed(4) + "))", "dG")}
-    ${lglLevels(LIT_LINE_SOFT.slice(0, -1), LANE_PLAIN_W.toFixed(4), "c.y", "dL", "laneL")} /* NO CRISP LINE (owner, 2026-11-18: "improve lane aurora-ness, they still look like lines with glow"): the soft levels only, the curtain below is the body; x LANE_PLAIN_W (4 since 2026-11-07): the glow's 72 u half width inside LGL_DMAX, the line's 24 inside LGL_LMAX */
-    if (dL < ${(LGL_LMAX - 1).toFixed(1)}) { // THE CURTAIN, the lane's body (owner, 2026-11-18: "improve lane aurora-ness, they still look like lines with
-      // glow"): an aurora's bright, sharp lower edge on one side of the lane (sL < 0), its rays fading out long on the other; RAYS across the band - its
-      // brightness streaked along the lane (three drifting waves round the spiral), the edge folding (wob) - whiter at the edge, the lane's colour in the rays
+    /* NO LINE AT ALL (owner, 2026-11-18: "still don't like the aurora rendering" + a photo: soft rays, no core): the curtain below is the whole body */
+    if (dL < ${(LGL_LMAX - 1).toFixed(1)}) { // THE CURTAIN (owner, 2026-11-18: "still don't like the aurora rendering", the Baranoski et al. 2003 aurora paper + a
+      // photo of soft green rays): a SHARP lower border (below it the light falls to 10% within ~3 u - the paper: "to 10% within a few kilometers below the
+      // maximum, and to 1% a kilometer or two below that"), above it RAYS - thin field-aligned filaments, uneven in brightness and each its own height,
+      // fading softly upward; the border folds slowly, the rays drift and flicker (curls live 0.25-0.75 s); whitish at the border, the lane's colour above
       LHP float ang = atan(p.y, p.x), rr = length(p), t = laneTime;
-      float sh = 0.5 + 0.5 * sin(rr * 0.045 - t * 0.7 + 1.7 * sin(ang * 2.0 + t * 0.25)), wob = 4.0 * sin(rr * 0.031 + t * 0.9 + ang * 3.0) + 2.0 * sin(ang * 11.0 - t * 0.6);
-      float x = clamp((sL + wob) / ${(LGL_LMAX - 2).toFixed(1)}, -1.0, 1.0);
-      float prof = x < 0.0 ? pow(1.0 + x, ${AUR_EDGE.toFixed(1)}) : pow(1.0 - x, ${AUR_TAIL.toFixed(2)}); // sharp edge / long tail
-      float ray = pow(0.5 + 0.5 * sin(ang * 90.0 + 2.5 * sin(ang * 7.0 + t * 0.35) + t * 0.6), 2.0);
-      ray = 0.35 + 0.65 * mix(ray, 0.5 + 0.5 * sin(ang * 37.0 - t * 0.45 + 1.3 * sin(ang * 5.0 - t * 0.2)), 0.4);
-      float a = min(1.0, c.y * ${AUR_BODY.toFixed(2)} * (0.55 + 0.6 * sh) * prof * (x < 0.0 ? 1.0 : ray));
-      vec3 cc = mix(col, vec3(1.0), ${AUR_WHITE.toFixed(2)} * pow(max(0.0, 1.0 - abs(x)), 3.0));
+      float y = sL + 3.0 * sin(rr * 0.031 + t * 0.5 + ang * 3.0) + 1.5 * sin(ang * 11.0 - t * 0.4); // <0 below the border, >0 up into the rays (folds)
+      float ray = 0.5 + 0.5 * (0.5 * sin(ang * 53.0 + t * 0.07 + 2.0 * sin(ang * 7.0 + t * 0.13)) + 0.3 * sin(ang * 97.0 - t * 0.05 + 1.3 * sin(ang * 13.0 - t * 0.11)) + 0.2 * sin(ang * 29.0 + t * 0.03));
+      ray = smoothstep(0.2, 0.95, ray) * (0.85 + 0.15 * sin(t * 9.0 + ang * 61.0)); // sparse soft rays, flickering
+      float len = 0.3 + 0.7 * (0.5 + 0.5 * sin(ang * 41.0 + 1.7 * sin(ang * 5.0 + t * 0.09))); // each ray's own height
+      float broad = 0.7 + 0.3 * sin(rr * 0.02 - t * 0.3 + 1.5 * sin(ang * 2.0 + t * 0.2)); // slow brightening along the lane
+      float prof = y < 0.0 ? exp(y * ${AUR_EDGE_K.toFixed(2)}) : exp(-y / max(1.0, ${(LGL_LMAX - 2).toFixed(1)} * ${AUR_TAIL_K.toFixed(2)} * len)) * (${AUR_RAY_FLOOR.toFixed(2)} + ${(1 - AUR_RAY_FLOOR).toFixed(2)} * ray);
+      float a = min(1.0, c.y * ${AUR_BODY.toFixed(2)} * broad * prof);
+      vec3 cc = mix(col, vec3(1.0), ${AUR_WHITE.toFixed(2)} * exp(-abs(y) * 0.3));
       laneL = laneL * (1.0 - a) + vec4(cc, 1.0) * a;
     }
   }
