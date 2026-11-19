@@ -6,6 +6,10 @@ Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTION
 
 | When | Question | Answer |
 |---|---|---|
+| 11-18 ~20:20 | The white Permafrost/Fracture ice cannot be reproduced here - which device / setting / moment? | "I can't reproduce the ice thing either now" - closed until it shows again |
+| 11-18 ~18:35 | The early-level fails resist number fixes (every lever lifts all four types): change the 3-point rule? | Yes: at 3 points a 0 passes, as at 0 points; 6 points keeps the rule |
+| 11-18 ~17:10 | Carrier's tether rework (tether only while behind, strength by angle, slower orbit) weakens Carrier from 6 points up - keep, adjust or drop? | Adjust: keep the "behind" rule and give tethers back their strength by tier |
+| 11-18 ~17:10 | Offer: Gravity Well pellets at tier II 19.8 -> 33 clears its 6-point fail (and Nova I armor strip 0.175 -> 0.3 its 3-point one-check fail) | Yes |
 | 11-18 ~14:40 | 7.27.0 (Arc's 13-point fix + the Ifrit package) tips Carrier's 9-point card to one check (fast +1 -> 0 by centring) - ship anyway or hold for a Carrier fix? | Ship it now; fix Carrier's fast check next |
 | 11-17 ~22:00 | Ifrit's 3-point fail: Hellfire I's fire circle 150 -> 175 - keep the other tiers or re-spread them geometric? | Geometric (175 / 200 / 229 / 262 / 300), "also can we move IFR hellfire flares more likely closer to the center?" |
 | 11-17 ~20:00 | The six drafts: only Carrier C1 works (at Tether I every interceptor on a fast enemy tethers it) - ship it? | No: "want to avoid type specific mechanics" |

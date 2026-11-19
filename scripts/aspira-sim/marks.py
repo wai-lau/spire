@@ -108,7 +108,8 @@ for k, m in marks.items():
 MIN_CHECKED = 2
 PTS = re.search(r"\((\d+) pts\)", open(sys.argv[1]).read())
 PTS = int(PTS.group(1)) if PTS else None
-lone = {} if PTS == 0 else {k: [t for t in TYPES if m[t] > 0] for k, m in marks.items() if sum(1 for t in TYPES if m[t] > 0) < MIN_CHECKED}
+EARLY = PTS is not None and PTS <= 3  # 0 AND 3 points: a 0 mark passes, no two-checks minimum (owner, 2026-11-18: "at 3 points let a 0 pass, as at 0 points" - the early fails resisted every number: each lever lifts all four types)
+lone = {} if EARLY else {k: [t for t in TYPES if m[t] > 0] for k, m in marks.items() if sum(1 for t in TYPES if m[t] > 0) < MIN_CHECKED}
 for k, ts in lone.items():
     print(f"RULE FAIL: {k.upper()} has checks on {len(ts)} enemy type(s) {ts} - every tower needs at least {MIN_CHECKED}")
 
@@ -126,9 +127,9 @@ if "--band" in sys.argv[2:]:
     DIRECTION = PTS is not None and PTS <= 6
     for k, m in marks.items():
         if DIRECTION:
-            off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and not (m[t] * tgt[k][i] > 0 or (m[t] == 0 and PTS == 0))]
+            off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and not (m[t] * tgt[k][i] > 0 or (m[t] == 0 and EARLY))]
             if off:
-                print(f"RULE FAIL: {k.upper()} points the wrong way (each mark must have its target's sign; " + ("a 0 passes at 0 points" if PTS == 0 else f"a 0 never passes at {PTS} points") + "): " + ", ".join(off))
+                print(f"RULE FAIL: {k.upper()} points the wrong way (each mark must have its target's sign; " + ("a 0 passes at 0 and 3 points" if EARLY else f"a 0 never passes at {PTS} points") + "): " + ", ".join(off))
             continue
         off = [f"{t} {m[t]:+d} vs {tgt[k][i]:+d}" for i, t in enumerate(TYPES) if k in tgt and abs(m[t] - tgt[k][i]) > BAND]
         if off:

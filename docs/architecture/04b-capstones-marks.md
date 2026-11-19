@@ -75,8 +75,8 @@ but 0 3 and 6 should never drift more than +/- 1 point away from target marks"; 
 |---|---|---|---|
 | 9 | the card's marks (spread builds) | `--write` | the first target: written into `VS_MARKS` |
 | 13 | each axis maxed in turn (V + IV + IV), averaged a tower | `--focus --band --band-total 2` | the second target (the capstone check): every cell within 1 of the target AND a tower's summed gap (the sum of each type's distance from its target) at most 2, else `RULE FAIL` (owner, 2026-11-10: "hey for 13 points, allow up to +1 on any type (up to total of +2)") |
-| 3, 6 | the early and mid game | `--band` | every mark points its target's way - a 0 never passes, else `RULE FAIL` (owner, 2026-11-15: "oh, ok for levels 0-3 make sure that the + or - is just in the correct direction", "for 3, 0 is not allowed", "same for 6 points") |
-| 0 | the opening (tier 0 towers) | `--band` | no mark points against its target's way - a 0 always passes, else `RULE FAIL` (owner, 2026-11-15: "for 0, 0 counts for all + - and +/- 1"; the +/-2 band before) |
+| 6 | the mid game | `--band` | every mark points its target's way - a 0 never passes, else `RULE FAIL` (owner, 2026-11-15: "for 3, 0 is not allowed", "same for 6 points"); every tower at least two checks |
+| 0, 3 | the opening (tier 0) and the early game | `--band` | no mark points against its target's way - a 0 always passes, no two-checks minimum, else `RULE FAIL` (owner, 2026-11-15: "for 0, 0 counts for all + - and +/- 1"; 3 points joined it 2026-11-18: "at 3 points let a 0 pass, as at 0 points" - the early fails resisted every number, each lever lifting all four types) |
 
 The windows follow the good model's tower points by wave (median 3 at wave 60, 5 at 80, 8 at 100-110); the owner set the five levels and the
 bands, not the windows. All five in one go: `scripts/aspira-sim/marks5.sh`. By hand, from `scripts/aspira-sim`, with

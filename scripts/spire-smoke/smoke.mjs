@@ -215,7 +215,7 @@ check("Temporal Drive: the field draws", () => {
 });
 
 check("two fingers move two towers at once", () => {
-  run(`G = newGame(); G.money = 1e6; for (const k of ["arc", "frz"]) { ui.build = k;
+  run(`G = newGame(); G.money = 1e6; Object.assign(bossInv, { phase: "off", full: false }); /* (an earlier boss check's sky turn is timed on the REAL clock: still turning or not by now, it froze the towers on a slow run - 2026-11-18) */ for (const k of ["arc", "frz"]) { ui.build = k;
          const ci = CELLS.findIndex((c, i) => cellOpen(i) && !G.towers.some(t => t.cell === i)); placeTower(CELLS[ci]); }
        ui.build = null; ui.sel = null;`);
   const cvEl = env.dom.byId("asp-cv"), dpr = run("canvasDpr()");
