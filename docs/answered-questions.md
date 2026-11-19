@@ -6,6 +6,8 @@ Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTION
 
 | When | Question | Answer |
 |---|---|---|
+| 11-19 ~06:00 | Sol beats fast, shield and armor completely at 6 points, so the marks cannot tell them apart (a 0 fails where the target wants +1): change the rule, accept the fail, or cut Sol hard? | "try to find some other way to fix SOL, dont want ot overpowered" - no rule change and no blanket cut: find a Sol change that makes it leak those types at 6 points |
+| 11-19 ~06:00 | The new tether (only behind, fast in front and slow behind, Tether V lines slow) fixes Carrier's 9-point fail but adds a 13-point swarm fail: ship it? | Yes - ship it, then work on Carrier's 13-point swarm |
 | 11-18 ~20:20 | The white Permafrost/Fracture ice cannot be reproduced here - which device / setting / moment? | "I can't reproduce the ice thing either now" - closed until it shows again |
 | 11-18 ~18:35 | The early-level fails resist number fixes (every lever lifts all four types): change the 3-point rule? | Yes: at 3 points a 0 passes, as at 0 points; 6 points keeps the rule |
 | 11-18 ~17:10 | Carrier's tether rework (tether only while behind, strength by angle, slower orbit) weakens Carrier from 6 points up - keep, adjust or drop? | Adjust: keep the "behind" rule and give tethers back their strength by tier |
