@@ -34,7 +34,7 @@ const ARCANA = [
   { id: "empress", name: "The Empress", hint: ["Wound her, and she sleeps", "behind a veil of her young;", "slay them, and she wakes."] },
   { id: "judgement", name: "Judgement", hint: ["The trumpet sounds once;", "the fallen rise as its shield;", "none may judge the judge."] },
   { id: "justice", name: "Justice", hint: ["The scales hold steady.", "No blow, however heavy,", "outweighs the balance."] },
-  { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "the wound fills, and heals."] },
+  { id: "temperance", name: "Temperance", hint: ["What is poured away", "returns to the cup again;", "healing the wounded"] }, /* last line (owner, 2026-11-19: "last line of temperance should say: healing the wounded"; was "the wound fills, and heals.") */
   { id: "death", name: "Death", hint: ["Ghosts haunt these dark halls,", "they tell tales of a spire", "all their tales lead here."] } /* the owner's own words (owner, 2026-11-09: "ghosts haunt these dark halls, / they tell tales of a spire / all their tales lead here."), the set's capital */,
   { id: "devil", name: "The Devil", hint: ["Six faces hunger", "three vermillion paths, beware,", "even one dooms all."] },
 ];
