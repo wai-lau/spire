@@ -6,6 +6,7 @@ Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTION
 
 | When | Question | Answer |
 |---|---|---|
+| 11-19 ~13:00 | Offer: Carrier Hangar IV 48 interceptors (was 33), Hangar V 60 (was 41) - fixes the 13-point fail the new tether brought, and Acid's with it | "yes to task" - shipped as 7.31; then "stop waiting for me" (passing fixes now ship without an offer) |
 | 11-19 ~10:40 | Offer: Sol's Reflection II splits into 3 beams, not 4 - a small swarm-only nerf that clears two of Sol's three 6-point failures (shield still 0), every other level identical | "Yes to offer" - shipped as 7.30 |
 | 11-19 ~09:00 | Offer: late waves keep ~2,000 "+3c" kill pop-ups live with a trio (most of the slow logs' effects at waves 76-88) - past ~60 live, sum new ones into the nearest pop-up (money unchanged) | "yes to offer" - built: past 60 live, a kill's credits add into the newest pop-up at the same tower or core |
 | 11-19 ~06:00 | Sol beats fast, shield and armor completely at 6 points, so the marks cannot tell them apart (a 0 fails where the target wants +1): change the rule, accept the fail, or cut Sol hard? | "try to find some other way to fix SOL, dont want ot overpowered" - no rule change and no blanket cut: find a Sol change that makes it leak those types at 6 points |
