@@ -397,3 +397,19 @@ check("damage numbers: one enemy shows at most one number per 0.1 s - a second d
     finally { performance.now = p0; } })()`);
 });
 
+// THE TETHER ORBIT AND TETHER V's CHAINS (owner, 2026-11-19: "the orbit speed should be relative to how behind the interceptors are, they should move very
+// fast when in orbit in front of the target / at tether 5, an interceptor should be spending most of its orbit time behind the enemy"; 2026-11-18: "at
+// tether 5, the chains should slow anything passing through the chain for some amount of time"): Tether V out on one target, the share of orbit time
+// behind it (44% with the orbit rule off); then an enemy parked on a tether's line is slowed
+check("CRR Tether V: interceptors spend most of each orbit behind their target, and a tether line slows an enemy crossing it", () => {
+  const r = run(`(() => { const { t, es } = pinCrr({ launch: 5, hangar: 1 }, [150]); const e = es[0]; e.stunT = 0; let orb = 0, back = 0, slowed = "never tethered";
+    for (let k = 0; k < 1200; k++) { step(1 / 60); const st = towerStats(t);
+      for (const i of t.icp || []) { if (i.state === "out" && i.e === e && i.orb) { orb++; if (carBehind(i, e) > 0) back++; }
+        if (slowed === "never tethered" && carTethered(t, i, st)) { /* the first tether held: an enemy parked on its line */
+          spawnEnemy("swarm", 30, 0, 0); const o = G.enemies[G.enemies.length - 1]; o.x = (i.x + e.x) / 2; o.y = (i.y + e.y) / 2; o.slowT = 0; o.seen = true; o.hp = o.max = 1e9;
+          carChainSlow(t, [[i, e]], e, null); slowed = o.slowT > 0; G.enemies.pop(); } } }
+    return { share: back / Math.max(1, orb), slowed, orb }; })()`);
+  if (!(r.orb > 60)) return "the rig orbited only " + r.orb + " steps";
+  if (!(r.share > 0.6)) return "behind its target " + Math.round(r.share * 100) + "% of the orbit (expected over 60%)";
+  return r.slowed === true ? "" : "an enemy on the tether line: " + r.slowed;
+});

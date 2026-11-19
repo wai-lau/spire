@@ -37,7 +37,7 @@ const CRR_VOLLEY_K = 4; /* 2 -> 4 with CRR_AMMO halved (2026-10-18) */
 // x the shot is gone). Capstone (Chain): the beam runs on to the nearest other enemy within the interceptor's circling range of its
 // target, slowing and marking it too. Index 0 = untaken; capstone.js pushes VI
 const CRR_TETHER_SLOW = [0.175 /* (index 0 is rewritten by aspira-tier01.js: Tether 0 none, I 0.175) */ /* x0.5, EACH TETHER A MODEST SLOW so several on one target add up (owner, 2026-11-04: "for tether, also, reduce the slow, so that it matters to have multiple interceptors on a target"; was 0.35 0.45 0.55 0.65) */ /* every CRR tethers a little (owner, 2026-10-18: CRR better vs fast) */, 0.225, 0.275, 0.325], CRR_TETHER_PULSE = 0.5 /* the beam's flash only */;
-const CRR_TETHER_AMP = [0, 0.14, 0.15, 0.24, 0.27, 0.3]; /* I 0.1 -> 0.14 and III-IV 0.2 / 0.25 -> 0.24 / 0.27 (2026-11-15, owner "Gettem all go"): at 3 points Carrier sat one check short (a tethered enemy takes a little more, so fast enemies held by a tether die), and at 9 points its fast check sat on an edge that a stronger Ifrit or Arc kept tipping - III gives it slack (9-pt fast leak 18 -> 14); every tier still rises */ // + damage taken a tether, by Tether tier 0..V (written whole) - a first guess, the battery fits it
+const CRR_TETHER_AMP = [0, 0.14, 0.225, 0.3, 0.34, 0.375]; /* II x1.5, III-V x1.25 with the behind-only tether (2026-11-19: back to its strength at 6 and 9 points, 16 seeds; was 0.15 0.24 0.27 0.3) */ /* I 0.1 -> 0.14 and III-IV 0.2 / 0.25 -> 0.24 / 0.27 (2026-11-15, owner "Gettem all go"): at 3 points Carrier sat one check short (a tethered enemy takes a little more, so fast enemies held by a tether die), and at 9 points its fast check sat on an edge that a stronger Ifrit or Arc kept tipping - III gives it slack (9-pt fast leak 18 -> 14); every tier still rises */ // + damage taken a tether, by Tether tier 0..V (written whole) - a first guess, the battery fits it
 // (CRR_SLOW / CRR_SLOW_S - every bolt slowed 20% for 0.6 s, 2026-10-15 - GONE: owner, 2026-11-04 "remove bolt slow")
 const CRR_BOLT_SIDE = 6; /* the u between bolts side by side in a volley (was CRR_BOLT_PAIR 2 with it, the pair stream; a volley is now its bolts at once) (owner, 2026-10-16: "for each interceptor volley, shoot 2 at a time instead of one, halve fire rate, round up to nearest number of bolts") */
 // BOLTS A VOLLEY by Armament tier 0..V (tier redesign, owner 2026-10-24: tier 0 "one interceptor", Armament I "shots split in two"): one bolt, then
@@ -89,7 +89,7 @@ function carSkillStats(t, s, b) {
   const h = skillOf(t, "hangar"), l = skillOf(t, "launch"), a = skillOf(t, "armament");
   curveBase(t, s, b); s.dmgCurve = s.dmg; s.rateCurve = s.rate; s.targets = 1; s.dmg *= CRR_BOLT_K; // the STAT CURVE (tier redesign 2026-10-24; was CRR_SHOT_MUL x CRR_SIDE_DMG)
   s.bolts = CRR_SALVO[a]; s.dmg *= CRR_BOLTS_BY[a]; s.tetherN = CRR_TETHER_N[l];
-  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V * CRR_SPEED_LVL ** Math.max(0, (t.lvl || 1) - 1); s.reload = CRR_RELOAD_S; s.tSlow = crrTetherSlow(l); s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.warp = h >= CAPSTONE_TIER ? CRR_WARP_V : 0; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
+  s.wing = CRR_HANGAR[h]; s.speed = CRR_SPEED_V * CRR_SPEED_LVL ** Math.max(0, (t.lvl || 1) - 1); s.reload = CRR_RELOAD_S; s.tTier = l; s.tSlow = crrTetherSlow(l); s.tAmp = CRR_TETHER_AMP[l]; s.tChain = l >= CRR_CHAIN_FROM; s.ammo = CRR_AMMO[a]; s.autopilot = a >= CAPSTONE_TIER; s.warp = h >= CAPSTONE_TIER ? CRR_WARP_V : 0; s.hold = CRR_HANGAR[h]; /* EVERY ready interceptor waits in orbit round the carrier (owner, 2026-11-04: "make CRR ready interceptors wait in orbit around the tower / when launching interceptors, launch from orbit first, FIFO"); was CRR_HOLD_FRAC of the wing by Hangar tier */ s.skill = true;
 }
 
 // an interceptor: home (reloading), out (to its target, then circling it, firing), back (home)
@@ -219,12 +219,43 @@ function stepIcp(i, t, st, dt) {
 // the TETHER's work a frame (see CRR_TETHER_SLOW): slow its target (and the capstone's chained one), pulse both every CRR_TETHER_PULSE s
 // TETHERED: the first st.tetherN interceptors OUT on a live target, in wing order - not interceptor 0 alone, which reloading
 // left Tether I with nothing tethered (tier redesign 2026-10-25). Only those draw a beam (drawCar)
-const carTethered = (t, i, st) => i.state === "out" && !!i.ve && !i.ve.dead && t.icp.filter(j => j.state === "out" && j.ve && !j.ve.dead).indexOf(i) < st.tetherN;
+// THE TETHER BY ANGLE (owner, 2026-11-18: "while the interceptors are behind the target (based on lane) they all tether, they stop when ahead /
+// tether strength should be related to angle formed with lane tangent, if 0, the slow is at its highest"): every interceptor out on a live target
+// tethers while BEHIND it - its pull max(0, -cos) of the angle between the target->interceptor line and the target's way along its lane (its
+// lane's tangent, toward the core): straight behind 1, side-on 0, ahead none. The slow x the pull (x CRR_TW_K); the mark while behind
+// ORBIT BY TIER (owner, 2026-11-18: "always only behind, however, change the orbit speeds so that they spend more time behind as tether levels up"),
+// BOTH WAYS (owner, 2026-11-19: "the orbit speed should be relative to how behind the interceptors are, they should move very fast when in orbit in
+// front of the target / at tether 5, an interceptor should be spending most of its orbit time behind the enemy"): speed x e^(-K[tier] x b), b from -1
+// straight ahead to 1 straight behind - fast in front (at most CRR_TW_FRONT_MAX x), slow behind; K grows with the Tether tier (0: off)
+const CRR_TW_K_T = [0, 0.4, 0.8, 1.2, 1.6, 2.0], CRR_TW_FRONT_MAX = 4; // (Tether V: 67% of each loop behind, from 44%)
+const carBehind = (i, e) => { const g = carLaneDir(e), dx = i.x - e.x, dy = i.y - e.y, d = Math.hypot(dx, dy) || 1; return -(dx * g._tx + dy * g._ty) / d; };
+// TETHER V's CHAINS SLOW WHAT CROSSES THEM (owner, 2026-11-18: "at tether 5, the chains should slow anything passing through the chain for some amount of time"):
+// any other enemy within CRR_CHAIN_W u of a tether's line (interceptor -> target -> its chained one) is slowed CRR_CHAIN_SLOW for CRR_CHAIN_SLOW_S
+const CRR_CHAIN_SLOW = 0.5, CRR_CHAIN_SLOW_S = 1.5, CRR_CHAIN_W = 8;
+let CRR_TW_K = 1; // (the 2026-11-18 "slow down orbit speed while tethering" lever is the orbit-by-position rule above)
+function carLaneDir(e) { // the target's way along its lane, a unit vector (cached on the enemy while it stays at the same spot)
+  if (e._ts === e.s && e._tx !== undefined) return e;
+  if (!PATHS[e.pi]) { const dx = CX - e.x, dy = CY - e.y, d = Math.hypot(dx, dy) || 1; e._tx = dx / d; e._ty = dy / d; e._ts = e.s; return e; } // (no lane - a rig's enemy: toward the core)
+  const a = pathAt(e.pi, e.s, e.ang || 0), b = pathAt(e.pi, e.s + 4, e.ang || 0), dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+  e._tx = dx / d; e._ty = dy / d; e._ts = e.s; return e;
+}
+// ONLY BEHIND (owner, 2026-11-18: "always only behind"): the pull is max(0, -cos) - straight behind 1, side-on and ahead none
+function carPull(i, e) { const g = carLaneDir(e), dx = i.x - e.x, dy = i.y - e.y, d = Math.hypot(dx, dy) || 1; return Math.max(0, -(dx * g._tx + dy * g._ty) / d); }
+const carTethered = (t, i, st) => i.state === "out" && !!i.ve && !i.ve.dead && st.tSlow > 0 && t.icp.filter(j => j.state === "out" && j.ve && !j.ve.dead).indexOf(i) < st.tetherN && carPull(i, i.ve) > 0; // (the first st.tetherN out on a live target, in wing order - and only from behind)
+function carChainSlow(t, segs, a, b) {
+  for (const o of G.enemies) {
+    if (o.dead || !o.seen || o === a || o === b) continue;
+    const r = ENEMIES[o.type].size * (o.sizeMul || 1) + CRR_CHAIN_W;
+    for (const [p, q] of segs) { const dx = q.x - p.x, dy = q.y - p.y, L2 = dx * dx + dy * dy || 1; let u = ((o.x - p.x) * dx + (o.y - p.y) * dy) / L2; u = u < 0 ? 0 : u > 1 ? 1 : u;
+      const ex = o.x - p.x - dx * u, ey = o.y - p.y - dy * u; if (ex * ex + ey * ey <= r * r) { applySlow(o, CRR_CHAIN_SLOW, CRR_CHAIN_SLOW_S, "chain:" + t.id); break; } }
+  }
+}
 function carTether(i, t, st, dt) {
   const e = i.ve, r2 = (CRR_ORBIT * 1.2) ** 2;
   if (st.tChain && (!i.tc || i.tc.dead || i.tc === e || carDist2(i.tc, e) > r2)) { i.tc = null; let bd = r2; for (const o of G.enemies) { if (o.dead || !o.seen || o === e) continue; const d = carDist2(o, e); if (d < bd) { bd = d; i.tc = o; } } }
   const key = i.tkey ||= "tether:" + t.id + ":" + t.icp.indexOf(i); // EACH TETHER its own slow and mark: they stack (owner, 2026-10-26)
-  for (const o of [e, i.tc]) if (o && !o.dead) { applySlow(o, st.tSlow, 0.15, key); if (st.tAmp) applyMark(o, 1 + st.tAmp, 0.15, key); } // (doubled on fast, never the shielded - applySlow)
+  for (const o of [e, i.tc]) if (o && !o.dead) { const k = carPull(i, o); if (!(k > 0)) continue; applySlow(o, Math.min(TOWER_SLOW_MAX, st.tSlow * k * CRR_TW_K), 0.15, key); if (st.tAmp) applyMark(o, 1 + st.tAmp, 0.15, key); } // (doubled on fast, never the shielded - applySlow)
+  if (CRR_CHAIN_SLOW > 0 && st.tTier >= 5 && carPull(i, e) > 0) carChainSlow(t, [[i, e], ...(i.tc && !i.tc.dead ? [[e, i.tc]] : [])], e, i.tc);
   i.tp = (i.tp || 0) + dt;
   if (i.tp < CRR_TETHER_PULSE) return;
   i.tp -= CRR_TETHER_PULSE; i.tf = 1; // (the beam's flash - drawCar)
@@ -295,7 +326,8 @@ function carOrbit(i, e, st, d, dt) {
   const v = CRR_ORBIT_V + (Math.max(st.speed, CRR_ORBIT_V) - CRR_ORBIT_V) * f, end = R * CRR_WARP_END;
   if (i.warp && r <= end + 1) { i.warp = false; i.warpAt = { x: i.x, y: i.y }; i.v = v; } // WARP DRIVE ends just before the turn to face (the fade's cue)
   if (i.warp) i.v = Math.min(st.warp, (r - end) / Math.max(dt, 1e-6)); // (a warp step lands ON the switch, never past it into the circle)
-  carSteer(i, -(x * q + y * k), -(y * q - x * k), i.warp ? i.v : v, dt, i.orb ? 0 : 1); /* ORBITING, IT STEERS INTO THINGS (owner, 2026-11-04: "allow steering into things when orbiting an enemy"): no avoidance round the core or towers on its target's circle; on the way out and home as before */
+  const kk = CRR_TW_K_T[st.tTier] || 0, tw = st.tSlow > 0 && kk && !i.warp ? Math.min(CRR_TW_FRONT_MAX, Math.exp(-kk * carBehind(i, e))) : 1; // (the tether lingers)
+  carSteer(i, -(x * q + y * k), -(y * q - x * k), i.warp ? i.v : v * tw, dt, i.orb ? 0 : 1); /* ORBITING, IT STEERS INTO THINGS (owner, 2026-11-04: "allow steering into things when orbiting an enemy"): no avoidance round the core or towers on its target's circle; on the way out and home as before */
 }
 // a shot: st.bolts light-blue bolts, each the tower's damage - armor takes a bigger share of small hits (armorTake: R / (R + hit), since 2026-10-28): ATC's armor weakness (with
 // the steep hit tables a single big hit shrugged armor off). A STREAM (owner, 2026-10-16: "bolts should come from the center of the

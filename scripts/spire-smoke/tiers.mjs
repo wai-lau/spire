@@ -348,10 +348,14 @@ check("later: towerLevel counts only the tower's own axes (a stray key in a save
   const n = run(`towerLevel({ kind: "arc", skills: { conductivity: 2, void: 3, junk: 9 } })`);
   if (n !== 2) return "towerLevel " + n + " (expected 2)";
 });
-check("later: CRR's tether rides the first interceptor OUT on a target, not interceptor 0, and only it draws a beam", () => {
+check("later: CRR's tether rides the first interceptor OUT on a target, not interceptor 0, and only it draws a beam - and only from behind (owner, 2026-11-18: \"always only behind\")", () => {
   const r = run(`(() => { G = newGame(); const t = { id: 99, kind: "crr", x: CX, y: CY, lvl: 3, skills: { hangar: 1, launch: 1 } }, st = towerStats(t, true), e = { x: CX + 30, y: CY, hp: 1e9, dead: false };
-    t.icp = [{ state: "home" }, { state: "out", ve: e }, { state: "out", ve: e }]; return t.icp.map(i => carTethered(t, i, st)); })()`);
-  if (JSON.stringify(r) !== "[false,true,false]") return "tethered " + JSON.stringify(r) + " (expected only the first one out)";
+    /* (a laneless enemy heads for the core: behind it is the side away from the core, x > CX + 30) */
+    const behind = () => ({ state: "out", ve: e, x: CX + 50, y: CY }), ahead = () => ({ state: "out", ve: e, x: CX + 10, y: CY });
+    t.icp = [{ state: "home" }, behind(), behind()]; const a = t.icp.map(i => carTethered(t, i, st));
+    t.icp = [{ state: "home" }, ahead(), behind()]; const b = t.icp.map(i => carTethered(t, i, st)); return [a, b]; })()`);
+  if (JSON.stringify(r[0]) !== "[false,true,false]") return "tethered " + JSON.stringify(r[0]) + " (expected only the first one out)";
+  if (JSON.stringify(r[1]) !== "[false,false,false]") return "first one out IN FRONT of its target: tethered " + JSON.stringify(r[1]) + " (expected none - only from behind, and only the first one out)";
 });
 check("no card sentence names a number over 800% for ANY build, every axis mix 0-V (owner, 2026-10-31; a Void V + Nova V GRV read 2325%, 2026-11-06)", () => {
   const r = run(`(() => { const out = []; for (const kind of Object.keys(SKILL_TREES)) { const ids = SKILL_TREES[kind].map(a => a.id); for (let a = 0; a <= 5; a++) for (let b = 0; b <= 5; b++) for (let c = 0; c <= 5; c++) { const d = describeTower(kind, { [ids[0]]: a, [ids[1]]: b, [ids[2]]: c }); for (const m of d.matchAll(/(\\d+)%/g)) if (+m[1] > 800) { out.push(kind + " " + a + b + c + ": " + m[0]); break; } } } return out; })()`);
