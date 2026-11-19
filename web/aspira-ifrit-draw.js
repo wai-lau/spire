@@ -7,15 +7,16 @@
 // TWICE AS BIG (owner, 2026-11-09: "double the size of all meteors and secondary meteors; leave special meteor V meteors alone"): every meteor
 // DRAWN x IFR_METEOR_SIZE_K - in flight with its tracer, the burst shards, the charges in orbit (their Hellfire ring and Flare rays with them) -
 // but not Meteor V's big ones (b.big, IFR_BIG_DRAW_K, as they were); the hit sizes (IFR_BALL_RAD) untouched
-const IFR_METEOR_SIZE_K = 2;
+const IFR_METEOR_SIZE_K = 1.4; // x0.7 (owner, 2026-11-19: "reduce IFR visual meteor size to 70% of current size at all levels"; was 2)
 // GROWS SMOOTHLY (owner, 2026-11-16: "mines and meteors should grow in size based on overall level, meteor adds a size multiplier when meteor is flung, but this size change should be more gradual and less abrupt"):
-// the drawn meteor and mines are x (1 + IFR_LVL_DRAW_G per tower level, 0-13) x (1 + IFR_TIER_DRAW_G per Meteor tier, 0-V) - level 0 as before, level 13 + Meteor V x3.04
+// the drawn meteor and mines are x (1 + IFR_LVL_DRAW_G per tower level, 0-13) x (1 + IFR_TIER_DRAW_G per Meteor tier, 0-V) - level 0 as before, level 13 + Meteor V x2.03 (x3.04 before 2026-11-19)
 // (the old steps x1.25 a tier topped out at x3.05); the DRAWING only, no hit size reads it
-const IFR_LVL_DRAW_G = 0.04, IFR_TIER_DRAW_G = 0.2;
+const IFR_LVL_DRAW_G = 0.04, IFR_TIER_DRAW_G = 0.2 / 3; // (the Meteor tier's part a THIRD of what it was - owner, 2026-11-19: "meteor 5 size multiplier should be reduced to 1/3 of what it currently is": Meteor V x2 -> x1.33)
 const ifrLevelK = t => 1 + IFR_LVL_DRAW_G * (typeof towerLevel === "function" ? towerLevel(t) : 0);
 const ifrDrawK = t => ifrLevelK(t) * (1 + IFR_TIER_DRAW_G * (typeof skillOf === "function" ? skillOf(t, "meteor") : 0));
 const IFR_TERT_DRAW_K = 0.5; /* a tertiary (gen 2) mine or meteor drawn HALF a secondary's (owner, 2026-11-16: "tertiary mines should be half the size of the secondary mines") */
-const ifrShardDrawR = (t, gen, r) => r * (gen === 2 ? IFR_TERT_DRAW_K : 1) * IFR_SHARD_DRAW * IFR_METEOR_SIZE_K * ifrDrawK(t); // a secondary / tertiary meteor's drawn radius, in flight and as a mine alike (no jump on landing)
+const IFR_SHARD_SIZE_K = 2; // the shards and mines keep the meteor scale they had (2) - the 2026-11-19 x0.7 is the meteors'
+const ifrShardDrawR = (t, gen, r) => r * (gen === 2 ? IFR_TERT_DRAW_K : 1) * IFR_SHARD_DRAW * IFR_SHARD_SIZE_K * ifrDrawK(t); // a secondary / tertiary meteor's drawn radius, in flight and as a mine alike (no jump on landing)
 const IFR_MINI_R = 20; /* (IFR_MINI_L, the fade time, lives in aspira-ifrit.js: the game ages the circles and the simulator loads no draw file) */ // the tertiary meteor's hit ring: radius 20 u (40 u across: the owner's "40u circle"), fading over 0.5 s (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well")
 // THE TERTIARY HIT CIRCLE (owner, 2026-11-10: "just visually, tertiary meteors should show a small 40u circle on hit as well"): a look only -
 // where a re-split small meteor hits, a ring in the fire circle's look that grows from 30% to full while it fades over IFR_MINI_L
@@ -99,7 +100,7 @@ function drawIfrFires(t, low) {
   }
 }
 const IFR_FADE_IN_U = 8; // a burst meteor is full within 8 u of flight (owner, 2026-10-26: "IFR should fade in faster"; was 25)
-const IFR_BIG_DRAW_K = 2; // Meteor V: a big meteor (b.big, aspira-ifrit.js) is drawn this x - its tracer too; the hitbox is unchanged
+const IFR_BIG_DRAW_K = 1.4; // Meteor V: a big meteor (b.big, aspira-ifrit.js) is drawn this x - its tracer too; the hitbox is unchanged (x0.7 with every meteor, owner 2026-11-19; was 2) // Meteor V: a big meteor (b.big, aspira-ifrit.js) is drawn this x - its tracer too; the hitbox is unchanged
 const IFR_CHAIN_I = 3; // Hellfire V's rings as flares: their glow intensity (as a flare's, IFR_FLARE_I0) where a flare path reads it (ifrFlareI); the chain links' own look: ifrChainDraw
 const IFR_SHARD_DRAW = 1 / 3 * 2; /* x2 again on 7.14.1's x2 (owner, 2026-11-10: "visual, double size of ifr secondary and tertiary meteors") - the burst shards drawn at 2/3 of their radius x IFR_METEOR_SIZE_K */ // (IFR_TRACER_U: aspira-ifrit.js - the sim loads no draw file)
 // THE LAUNCHED METEOR'S TRACER, like an enemy's (owner, 2026-10-26: "meteor tracer should depend on movement and fade out like enemies"):
