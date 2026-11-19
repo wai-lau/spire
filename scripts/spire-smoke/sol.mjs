@@ -126,3 +126,19 @@ check("SOL's main beam is never thinner than a child beam - Reflection + Breach,
     return bad; })()`);
   if (r.length) return r.slice(0, 4).join("; ");
 });
+// THE GLOWS IN FEW BLURS (perf, 2026-11-19, owner: "check perf, SOL lags at high levels"): a high-level pulse's beams (Reflection's splits through every
+// enemy they pierce) are drawn with a few blurred fills - each shadowBlur fill is its own blur pass, and the flash frames queued ~80 one-a-segment.
+// An operation count, not a clock: a maxed Reflection in a crowd, its busiest frame's queue grouped by solGlowGroups (aspira-solbeam.js)
+check("SOL's beam glows: a maxed Reflection's busiest frame takes at most 35 blurred fills (one a segment it was ~80 in a late wave, 224 in this rig; grouped 30), and every segment is drawn", () => {
+  const r = run(`(() => { const spots = []; for (let i = 0; i < 48; i++) spots.push([60 + 9 * (i % 12), -66 + 12 * Math.floor(i / 12) + 3 * (i % 3)]);
+    const { t } = solRig({ focus: 4, refraction: 5, breach: 4 }, spots); let worst = { naive: 0, fills: 0, lost: 0 };
+    for (let i = 0; i < 60 * 6; i++) { stepSolTrack(t, towerStats(t), 1 / 60);
+      const q = (solTrackBeams() || []).filter(f => f.slim).map(f => ({ a: Math.min(1, (f.alpha ?? 1) * BEAM_BRIGHT) * (f.share ?? 1) ** 2, w1: beamWidth(f.d || 0) * (f.thin || 1), first: f.first, off: f.off, m: null }));
+      const naive = q.reduce((n, x) => n + (x.first || x.off ? 2 : 1), 0); if (naive <= worst.naive) continue;
+      const { groups, single } = solGlowGroups(q), seen = new Set(); for (const g of groups.values()) g.items.forEach(x => seen.add(x)); single.forEach(s => seen.add(s.q));
+      worst = { naive, fills: groups.size + single.reduce((n, s) => n + (s.q.first ? 2 : 1), 0), lost: q.filter(x => !seen.has(x)).length }; }
+    return worst; })()`);
+  if (r.naive < 30) return "the rig's busiest frame queued only " + r.naive + " fills one a segment - not a crowd (expected 30+)";
+  if (r.lost) return r.lost + " segments in no group and not drawn alone";
+  return r.fills <= 35 ? "" : "busiest frame " + r.fills + " blurred fills (one a segment: " + r.naive + ")";
+});

@@ -20,12 +20,13 @@ function solBeamPush(f, A, B, w1, a, ws, map) {
   const w0 = f.prev && f.prev._w && f.prev._w < w1 ? f.prev._w : w1;
   solBeamQ.push({ ax: A.x, ay: A.y, bx: B.x, by: B.y, w0, w1, a, first: f.first, off: f.off, ws, m: map ? null : ctx.getTransform() });
 }
-function solBeamShape(q, k) { // the body as a closed path: w0 -> w1 wide (x k), round-ended
+function solBeamShape(q, k, P = ctx) { // the body as a closed path: w0 -> w1 wide (x k), round-ended - on the canvas, or added to a Path2D P
   const dx = q.bx - q.ax, dy = q.by - q.ay, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, h0 = q.w0 * k / 2, h1 = q.w1 * k / 2, ang = Math.atan2(dy, dx);
-  ctx.beginPath(); ctx.moveTo(q.ax + nx * h0, q.ay + ny * h0); ctx.lineTo(q.bx + nx * h1, q.by + ny * h1); ctx.arc(q.bx, q.by, h1, ang + Math.PI / 2, ang - Math.PI / 2, true);
-  ctx.lineTo(q.ax - nx * h0, q.ay - ny * h0); ctx.arc(q.ax, q.ay, h0, ang - Math.PI / 2, ang + Math.PI / 2, true); ctx.closePath();
+  if (P === ctx) ctx.beginPath();
+  P.moveTo(q.ax + nx * h0, q.ay + ny * h0); P.lineTo(q.bx + nx * h1, q.by + ny * h1); P.arc(q.bx, q.by, h1, ang + Math.PI / 2, ang - Math.PI / 2, true);
+  P.lineTo(q.ax - nx * h0, q.ay - ny * h0); P.arc(q.ax, q.ay, h0, ang - Math.PI / 2, ang + Math.PI / 2, true); P.closePath();
 }
-function solBeamFill(q, css, k, glow) { // the body in `css`, faded along it as the beam asks; glow: its shadowBlur (device px)
+function solBeamFill(q, css, k, glow, solidOff = true) { // the body in `css`, faded along it as the beam asks; glow: its shadowBlur (device px)
   const dx = q.bx - q.ax, dy = q.by - q.ay, L = Math.hypot(dx, dy) || 1, ang = Math.atan2(dy, dx);
   if (q.m) ctx.setTransform(q.m); else ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.shadowColor = css; ctx.shadowBlur = glow; ctx.globalAlpha = Math.min(1, q.a);
@@ -45,17 +46,45 @@ function solBeamFade(q, css, k, dx, dy, L, ang) {
     solBeamShape(part(t0, t1), k); ctx.fillStyle = pat; ctx.fill();
     solBeamShape(part(t1, 1), k); ctx.fillStyle = css; ctx.fill();
   } else { // off screen: from full at its start to SOLB_OFF_END at its end - that much solid, the rest the ramp reversed
-    const a = ctx.globalAlpha; ctx.globalAlpha = a * SOLB_OFF_END; ctx.fillStyle = css; ctx.fill();
+    const a = ctx.globalAlpha; if (solidOff) { ctx.globalAlpha = a * SOLB_OFF_END; ctx.fillStyle = css; ctx.fill(); SOL_GLOW_OPS.fills += ctx.shadowBlur > 0; }
     pat.setTransform(new DOMMatrix().translateSelf(q.bx, q.by).rotateSelf(ang * 180 / Math.PI + 180).scaleSelf(L / 256, 1));
     ctx.globalAlpha = a * (1 - SOLB_OFF_END); ctx.fillStyle = pat; ctx.fill(); ctx.globalAlpha = a;
   }
+}
+// THE GLOWS IN FEW BLURS (perf, 2026-11-19, owner: "check perf, SOL lags at high levels"): every shadowBlur fill is its own blur pass, and a high-level
+// pulse queued up to ~80 in its flash frames (60 plain segments - Refraction's splits through every enemy they pierce); the plain segments (and an
+// off-screen run's solid underlay) now share ONE Path2D a group - alpha and blur each in x steps (SOLB_GLOW_AQ, SOLB_GLOW_BQ - relative, so a faint split stays faint) - one fill and one blur
+// a group (~8 at that peak; one fainter than SOLB_GLOW_MIN, which cannot show, none), the ramp-faded parts still each their own. The same look but where two glows overlap (the union is blurred, not the sum)
+const SOLB_GLOW_AQ = 1.3, SOLB_GLOW_MIN = 1 / 255, SOLB_GLOW_BQ = 1.25, SOL_GLOW_OPS = { fills: 0 }; // (SOL_GLOW_OPS: blurred fills drawn, counted for the smoke's op check)
+function solGlowGroups(list) { // which queued beams share one blurred fill: the groups (by key: alpha a, blur b, their items) and the ones drawn alone
+  const groups = new Map(), single = [];
+  for (const q of list) {
+    const b = SOLB_GLOW * q.w1 * (q.m ? Math.hypot(q.m.a, q.m.b) : 1), a = Math.min(1, q.a), part = (al, solo) => {
+      if (al < SOLB_GLOW_MIN) return; // (a glow under one 8-bit step of alpha cannot show - no fill at all)
+      const bq = b > 1 ? SOLB_GLOW_BQ ** Math.round(Math.log(b) / Math.log(SOLB_GLOW_BQ)) : b, aq = al > 0 ? Math.min(1, SOLB_GLOW_AQ ** Math.round(Math.log(al) / Math.log(SOLB_GLOW_AQ))) : 0, key = aq + "|" + bq;
+      let g = groups.get(key); if (!g) groups.set(key, g = { a: aq, b: bq, items: [] }); g.items.push(solo || q);
+    };
+    if (q.first) { single.push({ q, b, solidOff: true }); continue; } // (the tower end: clear, ramp, solid - its own fills)
+    if (q.off) { part(a * SOLB_OFF_END); single.push({ q, b, solidOff: false }); continue; } // (an off-screen run: its solid underlay grouped, its ramp alone)
+    part(a);
+  }
+  return { groups, single };
 }
 function solBeamFlush() {
   if (!solBeamQ.length) return;
   ctx.save();
   try {
     const glow = COL[TOWERS.sol.color];
-    for (const q of solBeamQ) solBeamFill(q, glow, SOL_BEAM_W, SOLB_GLOW * q.w1 * (q.m ? Math.hypot(q.m.a, q.m.b) : 1)); // every glow first
+    if (typeof Path2D === "function") { // every glow first: the groups, one fill each, then the faded parts alone
+      const { groups, single } = solGlowGroups(solBeamQ);
+      ctx.fillStyle = glow; ctx.shadowColor = glow;
+      for (const g of groups.values()) {
+        const P = new Path2D();
+        for (const q of g.items) { const s = new Path2D(); solBeamShape(q, SOL_BEAM_W, s); if (q.m) P.addPath(s, q.m); else P.addPath(s); }
+        ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.shadowBlur = g.b; ctx.globalAlpha = g.a; ctx.fillStyle = glow; ctx.fill(P); SOL_GLOW_OPS.fills++;
+      }
+      for (const s of single) { solBeamFill(s.q, glow, SOL_BEAM_W, s.b, s.solidOff); SOL_GLOW_OPS.fills += s.q.first ? 2 : 1; }
+    } else for (const q of solBeamQ) { solBeamFill(q, glow, SOL_BEAM_W, SOLB_GLOW * q.w1 * (q.m ? Math.hypot(q.m.a, q.m.b) : 1)); SOL_GLOW_OPS.fills += (q.first || q.off) ? 2 : 1; } // (no Path2D: one each)
     ctx.shadowBlur = 0;
     for (const q of solBeamQ) solBeamFill(q, COL.white, SOL_BEAM_W * 0.55, 0); // then every white core, over all of them
   } finally { ctx.restore(); solBeamQ.length = 0; }
