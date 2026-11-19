@@ -413,3 +413,16 @@ check("CRR Tether V: interceptors spend most of each orbit behind their target, 
   if (!(r.share > 0.6)) return "behind its target " + Math.round(r.share * 100) + "% of the orbit (expected over 60%)";
   return r.slowed === true ? "" : "an enemy on the tether line: " + r.slowed;
 });
+// FEWER CREDIT POP-UPS (owner, 2026-11-19: yes to "when more than ~60 are up, sum the new ones into the nearest pop-up"): 500 kills' coins landing on the
+// core at once leave at most CRED_POP_CAP pop-ups live, every credit still banked, and the pop-ups' sums add up to what was banked
+check("credit pop-ups: 500 kills at once leave at most 60 live, the money all banked and every credit in some pop-up's sum", () => {
+  const r = run(`(() => { G = newGame(); fx.length = 0; coins.length = 0; credPops = []; const m0 = G.money; let total = 0;
+    for (let k = 0; k < 500; k++) { const b = 3 + (k % 5); total += b; creditDot(CX + 1, CY + 1, b); }
+    for (let s = 0; s < 120; s++) { stepCoins(1 / 60); for (const f of fx) f.t += 1 / 60 * 0.01; }
+    const pops = fx.filter(f => f.k === "text" && /c$/.test(f.text) && f.gold > 0);
+    return { live: pops.length, banked: G.money - m0, total, sum: pops.reduce((a, f) => a + f.gold, 0), big: pops.reduce((a, f) => (f.gold > a.gold ? f : a), { gold: 0 }) }; })()`);
+  if (Math.abs(r.banked - r.total) > 1e-6) return "banked " + r.banked + " of " + r.total;
+  if (r.live > 60) return r.live + " credit pop-ups live (cap 60)";
+  if (Math.abs(r.sum - r.total) > 1e-6) return "pop-ups sum " + r.sum + " of " + r.total + " banked";
+  return r.big.gold > 7 && r.big.text === "+" + Math.round(r.big.gold) + "c" ? "" : "the biggest pop-up holds " + r.big.gold + " and reads " + r.big.text + " (expected a merged sum, read in full)";
+});

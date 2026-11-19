@@ -6,6 +6,7 @@ Questions the owner answered, moved out of the Leader's gitignored OPEN-QUESTION
 
 | When | Question | Answer |
 |---|---|---|
+| 11-19 ~09:00 | Offer: late waves keep ~2,000 "+3c" kill pop-ups live with a trio (most of the slow logs' effects at waves 76-88) - past ~60 live, sum new ones into the nearest pop-up (money unchanged) | "yes to offer" - built: past 60 live, a kill's credits add into the newest pop-up at the same tower or core |
 | 11-19 ~06:00 | Sol beats fast, shield and armor completely at 6 points, so the marks cannot tell them apart (a 0 fails where the target wants +1): change the rule, accept the fail, or cut Sol hard? | "try to find some other way to fix SOL, dont want ot overpowered" - no rule change and no blanket cut: find a Sol change that makes it leak those types at 6 points |
 | 11-19 ~06:00 | The new tether (only behind, fast in front and slow behind, Tether V lines slow) fixes Carrier's 9-point fail but adds a 13-point swarm fail: ship it? | Yes - ship it, then work on Carrier's 13-point swarm |
 | 11-18 ~20:20 | The white Permafrost/Fracture ice cannot be reproduced here - which device / setting / moment? | "I can't reproduce the ice thing either now" - closed until it shows again |

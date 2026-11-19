@@ -229,10 +229,10 @@ function creditDot(x, y, b) {
 // slide; a tower takes a coin within COIN_TOWER_R of its centre and pops the kill's "+Nc" above itself
 const COIN_TOWER_R = 12;
 function coinHome(c) {
-  let best = { x: CX, y: CY, r: CORE_R, core: true }, bd = Math.hypot(CX - c.x, CY - c.y);
+  let best = { x: CX, y: CY, r: CORE_R, core: true, key: "core" }, bd = Math.hypot(CX - c.x, CY - c.y);
   for (const t of G.towers) {
     const d = Math.hypot(t.x - c.x, t.y - c.y);
-    if (d < bd) { bd = d; best = { x: t.x, y: t.y, r: COIN_TOWER_R, core: false }; }
+    if (d < bd) { bd = d; best = { x: t.x, y: t.y, r: COIN_TOWER_R, core: false, key: t }; } // (key: the same spot from one step to the next - credPopInto)
   }
   return best;
 }
@@ -244,6 +244,19 @@ const COIN_RUSH_V = 1500; let coinRush = false;
 function rushCoins(dt) {
   if (!coins.length || typeof bossInv === "undefined" || bossInv.phase !== "in" || bossInv.full || performance.now() / 1000 - bossInv.t0 < BOSS_SPOKE_T) return;
   coinRush = true; try { stepCoins(dt); } finally { coinRush = false; }
+}
+// FEWER CREDIT POP-UPS (owner, 2026-11-19: yes to the offer - "when more than ~60 are up, sum the new ones into the nearest pop-up"; late waves kept ~530 alive
+// a tower, ~2,000 with a trio - most of the slow logs' 3,500-5,800 effects at waves 76-88): past CRED_POP_CAP live, a kill's credits add into the newest live
+// pop-up at the same spot (the tower or core its coins flew to), which reads the new sum and rewinds to CRED_MERGE_T into its life; the money is unchanged
+const CRED_POP_CAP = 60, CRED_MERGE_T = 0.3;
+let credPops = []; // the live credit pop-ups, oldest first
+const credText = gb => "+" + (gb < 10 ? +gb.toFixed(1) : Math.round(gb)) + "c";
+const credSize = gb => Math.round(CRED_POP_MIN + (CRED_POP_MAX - CRED_POP_MIN) * Math.min(1, gb / (G.maxGold || 1)) ** DMG_SIZE_EXP); // SIZED LIKE A DAMAGE NUMBER (owner, 2026-10-09)
+function credPopInto(h) { // the pop-up a new one merges into, or null (under the cap, or none live at that spot)
+  if (credPops.length && !(credPops[0].t < credPops[0].life)) credPops = credPops.filter(f => f.t < f.life && fx.includes(f));
+  if (credPops.length < CRED_POP_CAP) return null;
+  for (let i = credPops.length - 1; i >= 0; i--) if (credPops[i].home === h.key && credPops[i].t < credPops[i].life) return credPops[i];
+  return null;
 }
 function stepCoins(dt) {
   for (const c of coins) {
@@ -259,9 +272,10 @@ function stepCoins(dt) {
       // the biggest payout yet, on the damage numbers' scale (was a flat 12px)
       const gb = c.grp.b;
       G.maxGold = Math.max(G.maxGold || 1, gb);
-      const rel = (gb / G.maxGold) ** DMG_SIZE_EXP;
-      float(h.x, h.y - h.r - 22 - lift, "+" + (gb < 10 ? +gb.toFixed(1) : Math.round(gb)) + "c", "orange", Math.round(CRED_POP_MIN + (CRED_POP_MAX - CRED_POP_MIN) * rel), 2.0); // credits read "Nc"
-      fx[fx.length - 1].shrink = true; // it holds, then shrinks + fades like a damage number (owner)
+      const into = credPopInto(h);
+      if (into) { into.gold += gb; into.text = credText(into.gold); into.size = credSize(into.gold); into.t = Math.min(into.t, CRED_MERGE_T); continue; }
+      float(h.x, h.y - h.r - 22 - lift, credText(gb), "orange", credSize(gb), 2.0); // credits read "Nc"
+      const f = fx[fx.length - 1]; f.shrink = true; f.gold = gb; f.home = h.key; credPops.push(f); // it holds, then shrinks + fades like a damage number (owner)
     } else { c.x += dx / d * step; c.y += dy / d * step; }
   }
   coins = coins.filter(c => !c.done);
