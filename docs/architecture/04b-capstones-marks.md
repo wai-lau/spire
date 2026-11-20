@@ -85,13 +85,20 @@ bands, not the windows. All five in one go: `scripts/aspira-sim/marks5.sh`. By h
 ends at 120 (owner, 2026-11-15: "no, measure them all with 3 towers", then "yes for 1"; 0 / 3 / 6 were one tower on waves 9-19 /
 55-65 / 81-89 before):
 
+**Every cell is averaged over two difficulties** (`DIFF=avg`, countermx.mjs): an easy run (enemy HP x0.35, shield charges x4) and a hard
+run (HP x2.5, shields x4) of the same games, the mean printed. A cell at 0% or 100% says nothing about how far a tower is from the edge, and
+a single harder setting only trades 0s for 100s; the pair centres on the game's own HP (geometric mean x0.94) and leaves 0 / 3 / 6 points
+with no saturated cell, 9 and 13 with a few at 100% (towers that lose a type even when it is easy). Owner, 2026-11-20: "avoid choosing
+difficulty that leads to 0s, it chops the analysis" / "we don't want there to be saturation at 100% leak either". The commands below
+carry it; drop `DIFF=avg` for the single run.
+
 | points | command |
 |---|---|
-| 0 | `SPREAD_ONLY=1 N=3 POINTS=0 WINDOWS=31-39 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
-| 3 | `SPREAD_ONLY=1 N=3 POINTS=3 WINDOWS=75-85 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
-| 6 | `SPREAD_ONLY=1 N=3 POINTS=6 WINDOWS=91-99 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
-| 9 | `SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
-| 13 | `N=1 POINTS=13 WINDOWS=111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus --band --band-total 2` |
+| 0 | `DIFF=avg SPREAD_ONLY=1 N=3 POINTS=0 WINDOWS=31-39 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
+| 3 | `DIFF=avg SPREAD_ONLY=1 N=3 POINTS=3 WINDOWS=75-85 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
+| 6 | `DIFF=avg SPREAD_ONLY=1 N=3 POINTS=6 WINDOWS=91-99 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
+| 9 | `DIFF=avg SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
+| 13 | `DIFF=avg N=1 POINTS=13 WINDOWS=111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus --band --band-total 2` |
 
 ### 4.9 Trio scale and the designed deaths
 
