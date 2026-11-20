@@ -22,9 +22,16 @@ const PATCH = process.env.BV_PATCH ? fs.readFileSync(process.env.BV_PATCH, "utf8
 // HOLDS per tower in each window, from trioplan's buy logs - JSON {"13-19": {"arc": {"conductivity": 2, ...}, ...}, ...}. It replaces
 // "spread" (same row label, so marks.py reads it unchanged); a tower's level is 1 + its tiers bought
 const HELD = process.env.HELD ? JSON.parse(process.env.HELD.startsWith("{") ? process.env.HELD : fs.readFileSync(process.env.HELD, "utf8")) : null;
+// DIFF=avg (2026-11-20): balanced mode runs both an EASY difficulty (enemy HP x0.35, shield charges x4) and a HARD difficulty (HP x2.5, shields x4)
+// for every cell, then prints the mean of the two runs' percentages. Applied by patching spawnEnemy so ASPIRA_PATCH keeps working and stacks.
+const DIFF = process.env.DIFF || "none";
+function diffPatch(factor, shield) {
+  return `{ const _s = spawnEnemy; spawnEnemy = (...a) => { const r = _s(...a); const e = G.enemies[G.enemies.length - 1]; if (e && !e._hpx) { e._hpx = 1; e.hp *= ${factor}; e.max *= ${factor}; if (e.shield > 0) { e.shield = Math.round(e.shield * ${shield}); if (e.shieldMax) e.shieldMax = Math.round(e.shieldMax * ${shield}); } } return r; }; }`;
+}
 
-export default async function task({ kind, build, type, from, to, seed, points: POINTS, mates }) {
-  const g = makeGame(seed, PATCH); g.reset();
+export default async function task({ kind, build, type, from, to, seed, points: POINTS, mates, diff }) {
+  const gamePatch = diff === "easy" ? [PATCH, diffPatch(0.35, 4)].filter(Boolean).join("\n") : diff === "hard" ? [PATCH, diffPatch(2.5, 4)].filter(Boolean).join("\n") : PATCH;
+  const g = makeGame(seed, gamePatch); g.reset();
   g.run(`for (let n = ${from}; n <= ${to}; n++) if (n % 10) WAVE_TYPE_FORCE[n] = ${JSON.stringify(type)};`);
   g.run(`G.started = true; G.money = 1e12; G.lives = 1e6; G.wave = ${from - 1}; G.lastType = ${JSON.stringify(type)};`);
   if (TEAM) g.run("OPEN_SLOTS = SLOT_ANGLES.slice(); G.opened ||= {}; CELLS.forEach((c, i) => { if (c.unlock) G.opened[i] = true; });"); // every slot: four towers
@@ -63,14 +70,31 @@ if (isMainThread && process.argv[1] && process.argv[1].endsWith("countermx.mjs")
   const TRIO = TEAM && process.env.TRIO === "1", TRIOS = k => { const o = ["arc", "frz", "sol", "acd"].filter(x => x !== k); return [[o[0], o[1]], [o[0], o[2]], [o[1], o[2]]]; };
   const AX = { arc: ["conductivity", "voltage", "capacitance"], frz: ["temp", "rime", "moons"], sol: ["focus", "refraction", "breach"], acd: ["corrosion", "spray", "contagion"], grv: ["void", "supernova", "radiation"], crr: ["hangar", "launch", "armament"], ifr: ["meteor", "hellfire", "firaga"] };
   const jobs = [];
-  for (const [from, to, points] of WINDOWS) for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) for (const type of TYPES) for (let seed = 1 + (Number(process.env.SEED0) || 0); seed <= SEEDS + (Number(process.env.SEED0) || 0); seed++) for (const mates of TRIO ? TRIOS(kind) : [null]) jobs.push({ kind, build, type, from, to, seed, points, mates });
+  for (const [from, to, points] of WINDOWS) for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) for (const type of TYPES) for (let seed = 1 + (Number(process.env.SEED0) || 0); seed <= SEEDS + (Number(process.env.SEED0) || 0); seed++) for (const mates of TRIO ? TRIOS(kind) : [null]) {
+    if (DIFF === "avg") { jobs.push({ kind, build, type, from, to, seed, points, mates, diff: "easy" }); jobs.push({ kind, build, type, from, to, seed, points, mates, diff: "hard" }); }
+    else jobs.push({ kind, build, type, from, to, seed, points, mates, diff: null });
+  }
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true });
-  console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at ${["-", "I", "II", "III", "IV", "V"][snapStop(Math.min(POINTS, POINTS_AT[POINTS_AT.length - 1]))]} + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds: % LEAKED`);
+  console.log(TRIO ? "TRIO: the kind + two others (spread), every trio holding it," : TEAM ? "TEAM: one of the kind + one of every other kind (spread)," : `${N} towers of one kind,`, ` ${POINTS} points (spread, or that axis at ${["-", "I", "II", "III", "IV", "V"][snapStop(Math.min(POINTS, POINTS_AT[POINTS_AT.length - 1]))]} + rest spread), every ordinary wave forced to one type, ${SEEDS} seeds` + (DIFF === "avg" ? " (avg of easy and hard): " : ": ") + "% LEAKED");
   for (const [from, to, points] of WINDOWS) {
     console.log(`\nwaves ${from}-${to} (${points} pts)`.padEnd(26) + TYPES.map(t => t.padStart(8)).join(""));
     for (const kind of KINDS) for (const build of process.env.SPREAD_ONLY === "1" ? ["spread"] : ["spread", ...AX[kind]]) {
-      const cells = TYPES.map(type => { const rs = jobs.map((j, i) => (j.kind === kind && j.build === build && j.type === type && j.from === from ? res[i] : null)).filter(Boolean);
-        const l = rs.reduce((a, r) => a + r.leaked, 0), s = rs.reduce((a, r) => a + r.spawned, 0); return (s ? Math.round(100 * l / s) + "%" : "-").padStart(8); });
+      const cells = TYPES.map(type => {
+        if (DIFF === "avg") {
+          // average the easy and hard results
+          const easyRs = jobs.map((j, i) => (j.kind === kind && j.build === build && j.type === type && j.from === from && j.diff === "easy" ? res[i] : null)).filter(Boolean);
+          const hardRs = jobs.map((j, i) => (j.kind === kind && j.build === build && j.type === type && j.from === from && j.diff === "hard" ? res[i] : null)).filter(Boolean);
+          if (easyRs.length === 0 || hardRs.length === 0) return "-".padStart(8);
+          const el = easyRs.reduce((a, r) => a + r.leaked, 0), es = easyRs.reduce((a, r) => a + r.spawned, 0);
+          const hl = hardRs.reduce((a, r) => a + r.leaked, 0), hs = hardRs.reduce((a, r) => a + r.spawned, 0);
+          const ep = es ? Math.round(100 * el / es) : 0, hp = hs ? Math.round(100 * hl / hs) : 0;
+          return (Math.round((ep + hp) / 2) + "%").padStart(8);
+        } else {
+          const rs = jobs.map((j, i) => (j.kind === kind && j.build === build && j.type === type && j.from === from ? res[i] : null)).filter(Boolean);
+          const l = rs.reduce((a, r) => a + r.leaked, 0), s = rs.reduce((a, r) => a + r.spawned, 0);
+          return (s ? Math.round(100 * l / s) + "%" : "-").padStart(8);
+        }
+      });
       console.log(("  " + kind.toUpperCase() + " " + build).padEnd(25) + cells.join(""));
     }
   }
