@@ -55,7 +55,7 @@ const ARC_DMG_K = 0.3; // (x1.15 = 0.345 for 7.7.25 only: a patch for the halved
 const ARC_RES_DMG = [1, 1, 1.05, 1.1, 1.15, 1.2]; // Shock's hit factor 0..V
 // SHOCKED (owner, 2026-11-01, picked "1"; 2026-11-07: from EVERY tower, not just ARC - damage(), aspira-game.js): each Shock hit marks its target for
 // the slow's time (STAT_SLOW_T, refreshed on hit); a marked enemy takes x(1 + ARC_SHOCK_AMP) from every tower's hits (damage(), aspira-game.js)
-let ARC_SHOCK_AMP = [0, 0.3, 0.7, 1.6, 1.8, 2]; // +% from every tower on a shocked enemy 0..V (front-loaded at III: band 2026-11-01)
+let ARC_SHOCK_AMP = [0, 0.39, 0.91, 2.08, 2.34, 2.6]; /* x1.3 (2026-11-21, the re-balance on the averaged marks - owner: "B go now"): 16 seeds on 7.33, rule fails over all five levels 15 -> 14; tier 0 unchanged (duo rule); 26 of 35 trios won (7.33 27, single games) */ // +% from every tower on a shocked enemy 0..V (front-loaded at III: band 2026-11-01)
 // ARC'S EARLY GROWTH (owner, 2026-11-16, picked "A"): ARC alone steps x2.9 a level up to 3 points (x4.79 by then), easing back to the curve by 8
 // points - the one exception to "no level damage steps above 2x". Three ARCs at 3 points leaked 89-96% of every type, whatever the build, so its
 // builds could not differ (319 of the 819 blurred build pairs, the build graph). By points spent (towerLevel), 0..7; 8+ is x1
