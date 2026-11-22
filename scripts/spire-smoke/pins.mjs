@@ -426,3 +426,12 @@ check("credit pop-ups: 500 kills at once leave at most 60 live, the money all ba
   if (Math.abs(r.sum - r.total) > 1e-6) return "pop-ups sum " + r.sum + " of " + r.total + " banked";
   return r.big.gold > 7 && r.big.text === "+" + Math.round(r.big.gold) + "c" ? "" : "the biggest pop-up holds " + r.big.gold + " and reads " + r.big.text + " (expected a merged sum, read in full)";
 });
+// TETHER V's ORBITS DOUBLE (owner, 2026-11-19: "for Tether 5, make the orbits 200% bigger" / "double"): an interceptor round its target at Tether V
+// circles at twice the radius it does at Tether IV (carR, i.orbK set by stepCar), and the card says so
+check("CRR Tether V: interceptors circle half again as wide round their target as at Tether IV, and the card says so", () => {
+  const r = run(`(() => { const rad = l => { const { t, es } = pinCrr({ launch: l, hangar: 1 }, [150]); es[0].stunT = 0; let best = 0;
+      for (let k = 0; k < 600; k++) { step(1 / 60); for (const i of t.icp || []) if (i.state === "out" && i.orb) best = Math.max(best, i.orbK || 1); } return best; };
+    return { iv: rad(4), v: rad(5), card: String(describeTower("crr", { launch: 5 })).includes("half again as wide") }; })()`);
+  if (r.iv !== 1 || r.v !== 1.5) return "orbit factor at Tether IV " + r.iv + ", V " + r.v + " (expected 1 and 1.5)";
+  return r.card ? "" : "the Tether V card does not mention the wider orbit";
+});

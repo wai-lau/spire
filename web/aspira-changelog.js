@@ -11,6 +11,8 @@
 // b / p / vis, 2026-10-21 .. 11-17). A ship with no balance change adds no line (spire-ship.sh --no-changelog "<why>")
 const CHANGELOG = [
   { v: "7.35", day: "Nov 21", b: [
+    "Carrier: Interceptors circle their target at a steady pace, slow behind it and fast in front, more so the higher the Tether tier.",
+    "Carrier: At Tether V, interceptors circle half again as wide round their target.",
     "Arc: Hits harder at every level.",
     "Arc: Voltage I and II fire more often, with smaller bolts.",
   ] },

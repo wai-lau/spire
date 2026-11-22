@@ -91,6 +91,9 @@ a single harder setting only trades 0s for 100s; the pair centres on the game's 
 with no saturated cell, 9 and 13 with a few at 100% (towers that lose a type even when it is easy). Owner, 2026-11-20: "avoid choosing
 difficulty that leads to 0s, it chops the analysis" / "we don't want there to be saturation at 100% leak either". The commands below
 carry it; drop `DIFF=avg` for the single run.
+The **build card** (`VS_MARKS`, `marks.py --write`) is written from the 9-point table measured the SINGLE-run way (no `DIFF`): it is what a player meets
+at normal difficulty, with the bigger contrast; balancing reads the averaged tables (owner, 2026-11-22: "1A" - the averaged card had flattened, Sol,
+Gravity Well and Carrier down to two marks each).
 
 | points | command |
 |---|---|

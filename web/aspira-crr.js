@@ -60,7 +60,10 @@ const CRR_ORBIT = 75 /* x0.5 (owner, 2026-10-16: "reduce enemy orbit distance to
 // ORBIT JITTER (owner, 2026-10-16: "add orbit jitter to the interceptors, like 20%"): each interceptor's circle breathes +-20%
 // on a slow wave of its own (a random phase and pace a sortie), so a wing's loops never stack into one ring
 const CRR_ORBIT_JIT = 0.2, CRR_JIT_W = [1.2, 2.6]; // the radius's swing; its pace in rad/s, low .. high
-const carR = i => CRR_ORBIT * (1 + CRR_ORBIT_JIT * Math.sin(i.jp || 0));
+// TETHER V's ORBITS 200% BIGGER (owner, 2026-11-19: "for Tether 5, make the orbits 200% bigger"): the circle round an enemy x CRR_ORBIT_TK[Tether tier]
+// (x1.5 at V, and the orbit speed x the same so a loop takes as long - owner, 2026-11-22: "1.5x orbit, match speeds so that radial speed is same"; a x2 circle at the live speed spent only a third of each loop behind its target, against "most of its orbit time behind"), set on the interceptor each step (i.orbK, stepCar) - the chain's reach to a second enemy stays CRR_ORBIT
+const CRR_ORBIT_TK = [1, 1, 1, 1, 1, 1.5];
+const carR = i => CRR_ORBIT * (i.orbK || 1) * (1 + CRR_ORBIT_JIT * Math.sin(i.jp || 0));
 const CRR_TURN_R = 50; // the tightest turn, in u: turn rate = speed / this (twice the circle's, so the circle can be held)
 const CRR_LEASH = 7.4; /* ~1180 at range 160 (as simmed 2026-10-16) */ /* the 960 chase at range 130 (owner, 2026-10-16: "Interceptor range should still be huge") */ /* 4: a 960 chase at range 240 (2026-10-16: 780, 960 and 1200 all leaked the same - the chase is not what binds) */ /* the same 780 chase at range 330 (2026-10-16) */ /* 3 at range 260: the same 780 chase now the range is 460 (2026-10-16) */ // a target further than this x the reach from the carrier is let go - the one tower that PURSUES (was 1.2: fast
 // enemies left reach mid-sortie and ATC, built against fast, leaked them worst - counter matrix 2026-10-15)
@@ -191,6 +194,7 @@ function stepIcp(i, t, st, dt) {
     // into core) / Or / Out of ammo"): no leash lets a target go; a dead target sends it home (CRR_HOP 0)
     if (!i.e || i.e.dead) { i.e = carHop(i.e || i, t, st); i.orb = false; if (!i.e) { carReturn(i, t, st); return; } }
     const e = i.e, d = Math.sqrt(carDist2(i, e));
+    i.orbK = CRR_ORBIT_TK[st.tTier] || 1; // (Tether V: the bigger circle - carR)
     carOrbit(i, e, st, d, dt);
     if (!i.orb && d > carR(i) * 1.3) { carTurn(i, i.ang, dt); return; } /* FIRES ONLY IN ORBIT (owner, 2026-11-04: "interceptors should only start firing once they enter orbit"; CRR_FIRE_R 340 let it fire on the way, gone) */
     if (!i.orb && d <= carR(i) * 1.3) i.orb = true; // onto the circle round its target
@@ -227,7 +231,7 @@ function stepIcp(i, t, st, dt) {
 // BOTH WAYS (owner, 2026-11-19: "the orbit speed should be relative to how behind the interceptors are, they should move very fast when in orbit in
 // front of the target / at tether 5, an interceptor should be spending most of its orbit time behind the enemy"): speed x e^(-K[tier] x b), b from -1
 // straight ahead to 1 straight behind - fast in front (at most CRR_TW_FRONT_MAX x), slow behind; K grows with the Tether tier (0: off)
-const CRR_TW_K_T = [0, 0.4, 0.8, 1.2, 1.6, 2.0], CRR_TW_FRONT_MAX = 4; // (Tether V: 67% of each loop behind, from 44%)
+const CRR_TW_K_T = [0, 0.4, 0.8, 1.2, 1.6, 4], CRR_TW_FRONT_MAX = 8; /* V 2 -> 4, front x4 -> x8 with the orbit by angle and Tether V's x1.5 circle (owner, 2026-11-22: "just reduce the speed behind further, and increase the speed in front, 1.5x orbit pls"; "% time behind should be monotonically increasing"): time behind by tier I-V 32 / 46 / 50 / 61 / 79% (three distances, 3,600 steps) */ // (Tether V: 67% of each loop behind, from 44%)
 const carBehind = (i, e) => { const g = carLaneDir(e), dx = i.x - e.x, dy = i.y - e.y, d = Math.hypot(dx, dy) || 1; return -(dx * g._tx + dy * g._ty) / d; };
 // TETHER V's CHAINS SLOW WHAT CROSSES THEM (owner, 2026-11-18: "at tether 5, the chains should slow anything passing through the chain for some amount of time"):
 // any other enemy within CRR_CHAIN_W u of a tether's line (interceptor -> target -> its chained one) is slowed CRR_CHAIN_SLOW for CRR_CHAIN_SLOW_S
@@ -322,8 +326,20 @@ function carOrbit(i, e, st, d, dt) {
   if (i.te === e) { i.x += e.x - i.tx; i.y += e.y - i.ty; } // the circle RIDES with its target (a fast enemy dragged a world-frame circle off it: 13% of fast leaked)
   i.te = e; i.tx = e.x; i.ty = e.y; i.jp = (i.jp || 0) + (i.jw || 0) * dt;
   const x = i.x - e.x, y = i.y - e.y, R = carR(i), r = Math.max(d, 1), q = r * r - R * R, k = 2 * R * r;
+  // ON THE CIRCLE, BY ANGLE (owner, 2026-11-22: "measure speed radially, this way it ignores tangential speed"): once it orbits, an interceptor's
+  // place is its angle round the target - the angle turns at CRR_ORBIT_V / CRR_ORBIT rad/s at every radius (a wider Tether V circle takes a loop
+  // as long: "match speeds so that radial speed is same"), x the behind factor (slow behind, fast in front - CRR_TW_K_T, CRR_TW_FRONT_MAX). No speed
+  // easing or turn cap on the circle, so the time behind follows the factor straight (steering kept them from it: a x1.5 circle sat at 49% behind)
+  if (i.orb && !i.warp) {
+    const g = carLaneDir(e); if (i.th === undefined) i.th = Math.atan2(y, x);
+    const b = -(Math.cos(i.th) * g._tx + Math.sin(i.th) * g._ty), kk = CRR_TW_K_T[st.tTier] || 0;
+    const tw = st.tSlow > 0 && kk ? Math.min(CRR_TW_FRONT_MAX, Math.exp(-kk * b)) : 1, w = CRR_ORBIT_V / CRR_ORBIT * tw;
+    i.th += w * dt; i.x = e.x + Math.cos(i.th) * R; i.y = e.y + Math.sin(i.th) * R; i.ang = i.th + Math.PI / 2; i.v = w * R;
+    i.tx = e.x; i.ty = e.y; return;
+  }
+  i.th = undefined;
   const f = Math.max(0, Math.min(1, (r - R * 1.2) / (R * 2))); // full Launch speed until 3 R out, easing to CRR_ORBIT_V by 1.2 R
-  const v = CRR_ORBIT_V + (Math.max(st.speed, CRR_ORBIT_V) - CRR_ORBIT_V) * f, end = R * CRR_WARP_END;
+  const ov = CRR_ORBIT_V * (i.orbK || 1), v = ov + (Math.max(st.speed, ov) - ov) * f, end = R * CRR_WARP_END;
   if (i.warp && r <= end + 1) { i.warp = false; i.warpAt = { x: i.x, y: i.y }; i.v = v; } // WARP DRIVE ends just before the turn to face (the fade's cue)
   if (i.warp) i.v = Math.min(st.warp, (r - end) / Math.max(dt, 1e-6)); // (a warp step lands ON the switch, never past it into the circle)
   const kk = CRR_TW_K_T[st.tTier] || 0, tw = st.tSlow > 0 && kk && !i.warp ? Math.min(CRR_TW_FRONT_MAX, Math.exp(-kk * carBehind(i, e))) : 1; // (the tether lingers)
