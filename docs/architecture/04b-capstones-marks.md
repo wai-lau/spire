@@ -91,14 +91,15 @@ x0.25, x0.5, x1, x2, x4, the mean leak printed. A cell at 0% or 100% says nothin
 hard pair it replaced (`DIFF=avg`: HP x0.35 and x2.5, shields x4 in both, still runnable) saturated at both ends: 43-52% of cells at 0-2% or
 88%+, Arc and Ifrit tied on fast at 0% easy / 93% hard, and shields x4 held Arc, Frost and Gravity Well near 90% at either HP. The grid leaves
 0-10% of cells saturated (owner, 2026-11-23: "A"); it costs 2.5x the pair's sim time, and the ties it removed had been hiding real fails
-(13 -> 22 on 16 seeds of 7.35.1). The commands below carry it; drop `DIFF=grid` for the single run.
+(13 -> 22 on 16 seeds of 7.35.1). The commands below carry it; drop `DIFF=grid` for the single run. On grid tables **one mark is 16 points of gap**, not 20 (`marks.py --grid`, or read off a `DIFF=grid` header):
+the grid squeezes every double-centred gap to 0.84x (owner, 2026-11-23: "A or C", taken as the measured 16); the card's single-run table keeps 20.
 The **build card** (`VS_MARKS`, `marks.py --write`) is written from the 9-point table measured the SINGLE-run way (no `DIFF`): it is what a player meets
 at normal difficulty, with the bigger contrast; balancing reads the grid tables (owner, 2026-11-22: "1A" - the averaged card had flattened, Sol,
 Gravity Well and Carrier down to two marks each).
 
 | points | command |
 |---|---|
-| 0 | `DIFF=grid SPREAD_ONLY=1 N=3 POINTS=0 WINDOWS=31-39 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
+| 0 | `DIFF=grid SPREAD_ONLY=1 N=3 POINTS=0 WINDOWS=31-39 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` (the grid header sets the 16-point mark) |
 | 3 | `DIFF=grid SPREAD_ONLY=1 N=3 POINTS=3 WINDOWS=75-85 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
 | 6 | `DIFF=grid SPREAD_ONLY=1 N=3 POINTS=6 WINDOWS=91-99 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
 | 9 | `DIFF=grid SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |

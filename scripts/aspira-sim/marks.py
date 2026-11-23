@@ -49,6 +49,12 @@ def split(n, w):
 # dashes is fine) - and rounded so each row still sums to 0 (largest remainder). The old fixed 3 checks / 3 x's and the STOPS check
 # are gone: both broke the sums.
 PER_MARK = 20
+# ON THE GRID AVERAGE one mark is 16 points of gap (owner, 2026-11-23: "A or C", taken as 16): averaging over five difficulties squeezes
+# every double-centred gap to 0.84x the easy + hard one (3 / 6 / 9 pts: 0.84 / 0.82 / 0.87), so 20 x 0.84 keeps a mark the same gap.
+# --grid, or a countermx DIFF=grid header; the build card's single-run table keeps 20.
+GRID_PER_MARK = 16
+if "--grid" in sys.argv[2:] or "grid average" in open(sys.argv[1]).readline():
+    PER_MARK = GRID_PER_MARK
 
 
 def marks_of(leak):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # score.py: merge tower rows into a base countermx set and run marks.py per level
-# Usage: python3 score.py --base DIR [tower=PREFIX ...]
+# Usage: python3 score.py --base DIR [--grid] [tower=PREFIX ...]
 import argparse
 import os
 import re
@@ -14,6 +14,7 @@ LEVELS = [0, 3, 6, 9, 13]
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--base', required=True)
+    parser.add_argument('--grid', action='store_true', help='grid-average tables: one mark per 16 points (marks.py --grid)')
     parser.add_argument('towers', nargs='*')
     return parser.parse_args()
 
@@ -81,13 +82,15 @@ def replace_tower_rows(merged_file, new_blocks, kind):
         f.writelines(out)
     return merged_file
 
-def run_marks(merged, level):
+def run_marks(merged, level, grid=False):
     marks_script = os.path.join(os.path.dirname(__file__), 'marks.py')
     args = [sys.executable, marks_script, merged]
     if level in (0, 3, 6):
         args.append('--band')
     if level == 13:
         args.extend(['--focus', '--band', '--band-total', '2'])
+    if grid:
+        args.append('--grid')
     r = subprocess.run(args, capture_output=True, text=True)
     return r.stdout
 
@@ -107,7 +110,7 @@ def main():
         level_counts = {}
         for level in LEVELS:
             merged_file = merge_into_base(args.base, towers, level, tmpdir)
-            output = run_marks(merged_file, level)
+            output = run_marks(merged_file, level, args.grid)
             fails = list(count_rule_fails(level, output))
             for f in fails:
                 print(f"{level}: {f}")
