@@ -85,23 +85,24 @@ bands, not the windows. All five in one go: `scripts/aspira-sim/marks5.sh`. By h
 ends at 120 (owner, 2026-11-15: "no, measure them all with 3 towers", then "yes for 1"; 0 / 3 / 6 were one tower on waves 9-19 /
 55-65 / 81-89 before):
 
-**Every cell is averaged over two difficulties** (`DIFF=avg`, countermx.mjs): an easy run (enemy HP x0.35, shield charges x4) and a hard
-run (HP x2.5, shields x4) of the same games, the mean printed. A cell at 0% or 100% says nothing about how far a tower is from the edge, and
-a single harder setting only trades 0s for 100s; the pair centres on the game's own HP (geometric mean x0.94) and leaves 0 / 3 / 6 points
-with no saturated cell, 9 and 13 with a few at 100% (towers that lose a type even when it is easy). Owner, 2026-11-20: "avoid choosing
-difficulty that leads to 0s, it chops the analysis" / "we don't want there to be saturation at 100% leak either". The commands below
-carry it; drop `DIFF=avg` for the single run.
+**Every cell is the grid average** (`DIFF=grid`, countermx.mjs): the same games at five difficulties, enemy HP and shield charges both
+x0.25, x0.5, x1, x2, x4, the mean leak printed. A cell at 0% or 100% says nothing about how far a tower is from the edge (owner, 2026-11-20:
+"avoid choosing difficulty that leads to 0s, it chops the analysis" / "we don't want there to be saturation at 100% leak either"). The easy +
+hard pair it replaced (`DIFF=avg`: HP x0.35 and x2.5, shields x4 in both, still runnable) saturated at both ends: 43-52% of cells at 0-2% or
+88%+, Arc and Ifrit tied on fast at 0% easy / 93% hard, and shields x4 held Arc, Frost and Gravity Well near 90% at either HP. The grid leaves
+0-10% of cells saturated (owner, 2026-11-23: "A"); it costs 2.5x the pair's sim time, and the ties it removed had been hiding real fails
+(13 -> 22 on 16 seeds of 7.35.1). The commands below carry it; drop `DIFF=grid` for the single run.
 The **build card** (`VS_MARKS`, `marks.py --write`) is written from the 9-point table measured the SINGLE-run way (no `DIFF`): it is what a player meets
-at normal difficulty, with the bigger contrast; balancing reads the averaged tables (owner, 2026-11-22: "1A" - the averaged card had flattened, Sol,
+at normal difficulty, with the bigger contrast; balancing reads the grid tables (owner, 2026-11-22: "1A" - the averaged card had flattened, Sol,
 Gravity Well and Carrier down to two marks each).
 
 | points | command |
 |---|---|
-| 0 | `DIFF=avg SPREAD_ONLY=1 N=3 POINTS=0 WINDOWS=31-39 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
-| 3 | `DIFF=avg SPREAD_ONLY=1 N=3 POINTS=3 WINDOWS=75-85 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
-| 6 | `DIFF=avg SPREAD_ONLY=1 N=3 POINTS=6 WINDOWS=91-99 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
-| 9 | `DIFF=avg SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
-| 13 | `DIFF=avg N=1 POINTS=13 WINDOWS=111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus --band --band-total 2` |
+| 0 | `DIFF=grid SPREAD_ONLY=1 N=3 POINTS=0 WINDOWS=31-39 node countermx.mjs 2 > m0.out && python3 marks.py m0.out --band` |
+| 3 | `DIFF=grid SPREAD_ONLY=1 N=3 POINTS=3 WINDOWS=75-85 node countermx.mjs 2 > m3.out && python3 marks.py m3.out --band` |
+| 6 | `DIFF=grid SPREAD_ONLY=1 N=3 POINTS=6 WINDOWS=91-99 node countermx.mjs 2 > m6.out && python3 marks.py m6.out --band` |
+| 9 | `DIFF=grid SPREAD_ONLY=1 POINTS=9 WINDOWS=101-109,111-119 node countermx.mjs 2 > m9.out && python3 marks.py m9.out --write` |
+| 13 | `DIFF=grid N=1 POINTS=13 WINDOWS=111-119 node countermx.mjs 2 > m13.out && python3 marks.py m13.out --focus --band --band-total 2` |
 
 ### 4.9 Trio scale and the designed deaths
 

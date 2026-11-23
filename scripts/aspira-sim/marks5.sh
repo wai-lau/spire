@@ -9,8 +9,8 @@
 set -euo pipefail
 D=$(cd "$1" && pwd); O=$(realpath -m "$2"); P=""; [ -n "${3:-}" ] && P=$(cat "$3")
 cd "$D/scripts/aspira-sim"
-# every level averaged over an easy and a hard run (countermx DIFF=avg - no cell at 0% / 100%; owner, 2026-11-20); DIFF= (empty) for the single run
-run() { nice -n 10 env KINDS=arc,frz,sol,acd,grv,crr,ifr ASPIRA_WEB=../../web ASPIRA_PATCH="$P" DIFF="${DIFF-avg}" POOL_WORKERS="${POOL_WORKERS:-10}" "$@"; }
+# every level the grid average (countermx DIFF=grid - five difficulties x0.25..x4, no cell at 0% / 100%; owner, 2026-11-23 "A"); DIFF= (empty) for the single run
+run() { nice -n 10 env KINDS=arc,frz,sol,acd,grv,crr,ifr ASPIRA_WEB=../../web ASPIRA_PATCH="$P" DIFF="${DIFF-grid}" POOL_WORKERS="${POOL_WORKERS:-10}" "$@"; }
 run SPREAD_ONLY=1 N=3 POINTS=0 WINDOWS=31-39 node countermx.mjs 2 > "$O-0.out" 2>/dev/null
 run SPREAD_ONLY=1 N=3 POINTS=3 WINDOWS=75-85 node countermx.mjs 2 > "$O-3.out" 2>/dev/null
 run SPREAD_ONLY=1 N=3 POINTS=6 WINDOWS=91-99 node countermx.mjs 2 > "$O-6.out" 2>/dev/null
