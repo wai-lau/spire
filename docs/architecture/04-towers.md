@@ -63,7 +63,7 @@ CRR is GEOMETRIC too: `geo` [0.8565, 1.4444], boosted early and tapering to the 
 
 **The card's damage unit** (`td`): ACD, FRZ and GRV count theirs `TD_UNIT` {acd 8, frz 3, grv 4} x bigger (`tdOf`, aspira-stats.js; the
 card reads it through `tdU`, aspira-desc.js) - a LABEL only, the damage dealt is unchanged - so no share on a card passes 800% (FRZ's chill
-top 2260% -> 753%, capped by `FRZ_BITE_TD` at 800% until 2026-11-24, 1600% since (owner: "A" - the one exception, so fast enemies keep their edge over swarm), GRV Void V 3000% -> 750%, the void's crush capped at 800% by `GRV_CRUSH_TD`, ACD's ramp 1/8 to 8 td). Smoke: no card sentence names a
+top 2260% -> 753%, now capped at 800% by `FRZ_BITE_TD`, GRV Void V 3000% -> 750%, the void's crush capped at 800% by `GRV_CRUSH_TD`, ACD's ramp 1/8 to 8 td). Smoke: no card sentence names a
 number over 800%, every axis of every tower at tiers 0-V, and every axis MIX 0-V (a Void V + Nova V GRV read 2325% before the cap). Burns read their share A SECOND, a CRR sortie its share A BOLT (`docs/spire-wording.md` rule 3).
 
 | tower | tier 0 | axis 1, tier I | axis 2, tier I | axis 3, tier I |
@@ -132,7 +132,7 @@ ARCHAEOLOGY §4.
 
 **Role.** Everything inside the aura is slowed (only while inside) and takes a quiet tick;
 **armor bites the tick**, and it hurts by the speed the slow takes (`frzBite`: `FRZ_CHILL_K` x slow x the enemy's own speed / `ENEMY_BASE_SPEED`, owner
-2026-11-06 "1 yes"; it reads speed, never type, so fast enemies take most), never over `FRZ_BITE_TD` (16) x td - 8 until 2026-11-24, when fast AND swarm both sat on it at full slow and the bite lost its speed edge (owner: "A"). **No armor reduction** (owner, 2026-10-29: "no armor reduction effects, more slow").
+2026-11-06 "1 yes"; it reads speed, never type, so fast enemies take most), never over `FRZ_BITE_TD` (8) x td. **No armor reduction** (owner, 2026-10-29: "no armor reduction effects, more slow").
 **Weakness: shields and armor** - a shielded enemy cannot be slowed (no chill, no Fracture, a Permafrost pulse does nothing);
 a tick on it pops one charge.
 

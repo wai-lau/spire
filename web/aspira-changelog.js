@@ -11,7 +11,7 @@
 // b / p / vis, 2026-10-21 .. 11-17). A ship with no balance change adds no line (spire-ship.sh --no-changelog "<why>")
 const CHANGELOG = [
   { v: "7.36", day: "Nov 24", b: [
-    "Frost: The extra damage it deals to slowed enemies can go twice as high, so the fastest enemies take the most.",
+    "Frost: Its extra damage against slowed enemies is back to the 7.35 limit.",
   ] },
   { v: "7.35", day: "Nov 21", b: [
     "Carrier: Interceptors circle their target at a steady pace, slow behind it and fast in front, more so the higher the Tether tier.",
