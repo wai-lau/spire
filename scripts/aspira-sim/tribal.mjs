@@ -13,9 +13,11 @@ export default async function task({ trio, seed }) {
 if (isMainThread && process.argv[1].endsWith("tribal.mjs")) {
   const only = (process.env.TRIOS || "").split(",").filter(Boolean).map(t => t.split("+").sort().join("+")); // TRIOS=arc+grv+ifr,...: a chunk (battery.sh tribal <kind>: the trios holding one tower, ~20 min - a whole run is a 45 min monolith, 2026-10-27)
   const trios = []; for (let a = 0; a < ALL.length; a++) for (let b = a + 1; b < ALL.length; b++) for (let c = b + 1; c < ALL.length; c++) { const t = [ALL[a], ALL[b], ALL[c]]; if (!only.length || only.includes(t.slice().sort().join("+"))) trios.push(t); }
-  const jobs = []; for (const trio of trios) for (const seed of (process.env.SEEDS || "1,2").split(",").map(Number)) jobs.push({ trio, seed });
+  const SEEDLIST = (process.env.SEEDS || "1,2").split(",").map(Number); // SEEDS is a LIST of seed numbers, not a count
+  if (/^\s*\d+\s*$/.test(process.env.SEEDS || "") && SEEDLIST[0] > 1) console.error(`WARNING: SEEDS=${SEEDLIST[0]} is a LIST (a single number = that ONE seed), so this runs seed ${SEEDLIST[0]} only: ONE game per team. For ${SEEDLIST[0]} games use SEEDS=${Array.from({ length: SEEDLIST[0] }, (_, i) => i + 1).join(",")}`);
+  const jobs = []; for (const trio of trios) for (const seed of SEEDLIST) jobs.push({ trio, seed });
   const res = await runPool(new URL(import.meta.url), jobs, { quiet: true, out: process.argv[2] || null });
-  console.log("EVERY TRIO, perfect play (smart saver, both powers) to wave 120: wins / games, wave reached each game, lives left each game");
+  console.log(`EVERY TRIO, perfect play (smart saver, both powers) to wave 120: wins / games, wave reached each game, lives left each game; ${SEEDLIST.length} game(s) per team (seeds ${SEEDLIST.join(",")})`);
   const rows = trios.map(trio => { const m = res.filter((r, i) => jobs[i].trio === trio); return { trio, m, wins: m.filter(r => r.won).length, w: Math.min(...m.map(r => r.wave)) }; })
     .sort((x, y) => y.wins - x.wins || y.w - x.w);
   for (const r of rows) console.log(r.trio.join("+").toUpperCase().padEnd(12), `won ${r.wins}/${r.m.length}`.padEnd(9), "waves", r.m.map(x => x.wave).join("/").padEnd(8), "lives", r.m.map(x => x.lives).join("/"));
