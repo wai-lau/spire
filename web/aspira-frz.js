@@ -87,8 +87,8 @@ function frzSources(t, st) {
 let FRZ_CHILL_K = 27; /* x3 (2026-10-29, the mark target FRZ fast +2: countermx 9 pts 101-119 fast leaked 47% at 18, 22% at 27, 6% at 36 - 36 lifted shield and armor too); was 9 */ // x1.5: lifts Fracture (owner, 2026-10-26 "Lift sublimation": Temp focus 33% leaked vs Rime 18, Moons 14 -> 25; was 6)
 // THE CHILL BITES BY THE SPEED IT TAKES (owner, 2026-11-06: "1 yes"): the bonus x the enemy's own speed / ENEMY_BASE_SPEED - speed lost in u/s, not a
 // share - fast 1.71x, swarm 1.10x, shield 0.93x, armor 0.70x (marks 9 pts 101-119: FRZ row +2 +1 -1 -2 -> +1 +2 -1 -2 = the target; reads speed, never type)
-// ... and NEVER over 8x td (owner, 2026-10-31: "Nothing should ever be above like 800%" - the number itself, not only the card): FRZ_BITE_TD x td at most
-const FRZ_BITE_TD = 8, frzBite = e => Math.min(FRZ_BITE_TD * tdU("frz"), 1 + FRZ_CHILL_K * (e.slowT > 0 ? e.slowF : 0) * ENEMIES[e.type].speed * (e.spd || 1) / ENEMY_BASE_SPEED);
+// ... and capped at FRZ_BITE_TD x td (owner, 2026-10-31: "Nothing should ever be above like 800%" - the number itself, not only the card; raised to 16x for this bonus 2026-11-24): FRZ_BITE_TD x td at most
+const FRZ_BITE_TD = 16 /* 8 -> 16 (owner, 2026-11-24: "A" - the one exception to the 800% rule): at 8 fast AND swarm sat on the cap at full slow (raw 38 / 25 over 24), so the bite lost its speed edge and every Frost-vs-fast lever was dead; grid marks 16 seeds, whole table 14 -> 9 fails, duo 21/21, trios 28 of 35 */, frzBite = e => Math.min(FRZ_BITE_TD * tdU("frz"), 1 + FRZ_CHILL_K * (e.slowT > 0 ? e.slowF : 0) * ENEMIES[e.type].speed * (e.spd || 1) / ENEMY_BASE_SPEED);
 // MAX RIME (owner, 2026-10-11: "if something reaches max rime, it spreads to the nearest unit that is not yet max
 // rime"): an enemy its rime alone slows FRZ_RIME_FULL (before the slow's shaping) holds no more - a pulse that reaches it
 // passes its rime to the nearest living enemy that can still take it, a frost line between them
