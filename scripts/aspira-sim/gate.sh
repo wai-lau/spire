@@ -26,16 +26,18 @@ run() {
   local tree=$1 out=$2; shift 2
   if [ -n "$DRY" ]; then echo "[$tree] $* > $out"; return; fi
   [ -s "$out" ] && { echo "skip $out" >&2; return; }
-  (cd "$tree/scripts/aspira-sim" && nice -n 10 env KINDS="$KINDS" ASPIRA_WEB=../../web ASPIRA_PATCH="$P" "$@" > "$out.tmp") && mv "$out.tmp" "$out"
+  local pp=""; [ "$SIDE" = new ] && pp=$P  # the patch is the CANDIDATE's: live runs unpatched
+  (cd "$tree/scripts/aspira-sim" && nice -n 10 env KINDS="$KINDS" ASPIRA_WEB=../../web ASPIRA_PATCH="$pp" "$@" > "$out.tmp") && mv "$out.tmp" "$out"
 }
 for side in new live; do
-  tree=$NEW; [ $side = live ] && tree=$LIVE
+  tree=$NEW; [ $side = live ] && tree=$LIVE; SIDE=$side
   d=$OUT/$side; mkdir -p "$d"
   for L in $LEVELS; do for B in $BLOCKS; do
     # shellcheck disable=SC2046
     run "$tree" "$d/m$L-s$B.out" env $(lvl "$L") DIFF=grid SEED0="$B" node countermx.mjs 4 2>/dev/null
   done; done
-  run "$tree" "$d/duo.out" env DUO_GRID="{\"$side\": $(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$P")}" node duo0.mjs "$DUOSEEDS"
+  dp=""; [ $side = new ] && dp=$P
+  run "$tree" "$d/duo.out" env DUO_GRID="{\"$side\": $(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$dp")}" node duo0.mjs "$DUOSEEDS"
   run "$tree" "$d/trio.out" env BOSS_SKIP=1 SEEDS="$TRIOSEEDS" node tribal.mjs
 done
 [ -n "$DRY" ] && exit 0
