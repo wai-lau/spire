@@ -252,12 +252,14 @@ function drawCells(at = (c, fn) => fn()) { // at: 3D draws each slot flat at its
 // BEAMS OVER THE ENEMIES (owner, 2026-10-26: "enemies should always be occluded by [beams]" - "Beams + bolts"): in 3D a beam is not the
 // floor's - it is drawn on the enemies' layer after the dice (pass "beams", warpEntities), so a strike into a lattice of armor shows
 const beamsUp = () => typeof q3d === "function" && q3d() && typeof warp !== "undefined" && !!warp.ent;
+let dmgDrawn = 0; // damage numbers drawn this frame (perflog numMax reads and clears it)
 function drawFx(pass, at = (x, y, fn) => fn(), map = null) {
   const glFx = pass === "shots" && typeof fxGlTake === "function" && fxGlTake(); // 3D: hits, sparks, flashes and rings go to the GPU in one batch (aspira-fxgl.js)
   const up = beamsUp(), tb = pass === "text" || pass === "dmg" ? null : solTrackBeams(), list = tb && tb.length ? fx.concat(tb) : fx; // (SOL's held beams: drawn as beams, never in fx - aspira-effects.js)
   for (const f of list) {
     const kind = f.k !== "text" ? (f.k === "beam" && up ? "beams" : "shots") : f.under ? "dmg" : "text";
     if (kind !== pass || f.t >= f.life) continue; // a retired damage number (dmgNumber) is not drawn
+    if (kind === "dmg") dmgDrawn++;
     // full strength for the first half of the effect's life, then fade out
     const k = 1 - f.t / f.life; f.fadeA = Math.min(1, k * 2); // (fadeA: the GPU's ARC core, full but for the fade - fxGlBeam)
     if (glFx && fxGlFx(f, k, Math.min(1, k * 2))) continue; // (before the canvas's alpha is touched: thousands a frame)
