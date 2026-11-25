@@ -45,14 +45,25 @@ done
 
 # average the seed blocks of each level into one grid table, score it with marks.py
 for side in new live; do d=$OUT/$side; for L in $LEVELS; do
+  # rows matched by wave window + label, never by line number (2026-11-25: seeded block files of another layout averaged the wrong rows)
   python3 - "$d/m$L-s"*.out > "$d/m$L.out" <<'PY'
 import re, sys
-tabs = [open(f).read().splitlines() for f in sys.argv[1:]]
-for i, line in enumerate(tabs[0]):
-    m = re.match(r"(\s+[A-Z]+ [a-z]+\s+)(\d+)%\s+(\d+)%\s+(\d+)%\s+(\d+)%", line)
-    if not m: print(line); continue
-    cells = [sum(int(re.match(r"\s+[A-Z]+ [a-z]+\s+(\d+)%\s+(\d+)%\s+(\d+)%\s+(\d+)%", t[i]).group(j)) for t in tabs) / len(tabs) for j in range(1, 5)]
-    print(m.group(1) + "".join(f"{round(c)}%".rjust(8) for c in cells))
+R = re.compile(r"(\s+([A-Z]+ [a-z]+)\s+)(\d+)%\s+(\d+)%\s+(\d+)%\s+(\d+)%")
+W = re.compile(r"^waves (\S+)")
+def rows(f):
+    d, w = {}, None
+    for l in open(f):
+        if W.match(l): w = W.match(l).group(1)
+        m = R.match(l)
+        if m: d[(w, m.group(2))] = [int(m.group(i)) for i in range(3, 7)]
+    return d
+tabs = [rows(f) for f in sys.argv[1:]]; w = None
+for l in open(sys.argv[1]):
+    if W.match(l): w = W.match(l).group(1)
+    m = R.match(l)
+    if not m: print(l, end=""); continue
+    vs = [t[(w, m.group(2))] for t in tabs if (w, m.group(2)) in t]
+    print(m.group(1) + "".join(f"{round(sum(v[j] for v in vs) / len(vs))}%".rjust(8) for j in range(4)))
 PY
   # shellcheck disable=SC2046
   (cd "$NEW/scripts/aspira-sim" && python3 marks.py "$d/m$L.out" --grid $(flags "$L")) > "$d/m$L.marks" 2>&1 || true
