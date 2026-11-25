@@ -38,7 +38,8 @@ for side in new live; do
   done; done
   dp=""; [ $side = new ] && dp=$P
   run "$tree" "$d/duo.out" env DUO_GRID="{\"$side\": $(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$dp")}" node duo0.mjs "$DUOSEEDS"
-  run "$tree" "$d/trio.out" env BOSS_SKIP=1 SEEDS="$TRIOSEEDS" node tribal.mjs
+  # one file a seed: a reset keeps every finished seed (2026-11-24: three WSL resets lost a whole 2 h trio run each)
+  for sd in ${TRIOSEEDS//,/ }; do run "$tree" "$d/trio-s$sd.out" env BOSS_SKIP=1 SEEDS="$sd" node tribal.mjs; done
 done
 [ -n "$DRY" ] && exit 0
 
@@ -68,9 +69,12 @@ def duo(side):
     except OSError: return None
 def trios(side):
     r = {}
-    for l in open(f"{out}/{side}/trio.out"):
-        m = re.match(r"(\S+)\s+won (\d+)/(\d+)", l)
-        if m: r[m.group(1)] = (int(m.group(2)), int(m.group(3)))
+    for fn in sorted(glob.glob(f"{out}/{side}/trio-s*.out")):
+        for l in open(fn):
+            m = re.match(r"(\S+)\s+won (\d+)/(\d+)", l)
+            if m:
+                w, g = r.get(m.group(1), (0, 0))
+                r[m.group(1)] = (w + int(m.group(2)), g + int(m.group(3)))
     return r
 print(f"{'':22}{'Old (live)':>12}{'New (cand.)':>13}")
 tot = {"live": 0, "new": 0}
