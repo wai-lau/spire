@@ -10,6 +10,9 @@
 // is { v, day, b: [lines] } - balance changes alone, "Subject: Sentence." in sentence case; no Perf / Visual lines and no section headings (they were
 // b / p / vis, 2026-10-21 .. 11-17). A ship with no balance change adds no line (spire-ship.sh --no-changelog "<why>")
 const CHANGELOG = [
+  { v: "7.37", day: "Nov 25", b: [
+    "Arc: Voltage IV and V fire fewer, bigger bolts that jump to more enemies.",
+  ] },
   { v: "7.36", day: "Nov 24", b: [
     "Frost: Its extra damage against slowed enemies is back to the 7.35 limit.",
   ] },
